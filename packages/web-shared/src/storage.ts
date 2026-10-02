@@ -20,6 +20,7 @@ import type {
   DashboardScope,
 } from "./dto.js";
 import type { GovernanceTracking } from "./governance-tracking.js";
+import type { RecordAuthors } from "./governance.js";
 import type { RegistryResult, StoredPreview } from "./chart-results.js";
 
 /**
@@ -133,6 +134,9 @@ export interface StorageDriver {
 
   /** All governance records. */
   listGovernance(): Promise<GovernanceRecord[]>;
+
+  /** Who created and last changed each governance record, keyed by record id. */
+  listGovernanceAuthors(): Promise<Record<string, RecordAuthors>>;
 
   /**
    * Create a record, recording `userId` as its creator and last editor.

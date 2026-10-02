@@ -8,6 +8,7 @@ import type {
   Disposition,
   GovernanceInput,
   GovernanceRecord,
+  RecordAuthors,
   RecordStat,
 } from "@scoutui/web-shared";
 import { type GovernanceField, invalidGovernanceFields } from "@scoutui/web-shared/client";
@@ -19,6 +20,7 @@ import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/component
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
 import {
+  authorLine,
   countLabel,
   groupRecords,
   type Left,
@@ -190,10 +192,11 @@ interface GovernanceManagerProps {
   /** Distinct scanned repos. With one repo, rows don't show a repo count. */
   repoCount: number;
   summary: string | null;
+  authors: Record<string, RecordAuthors>;
   notice: React.ReactNode;
 }
 
-export function GovernanceManager({ records, sources, stats, repoCount, summary, notice }: GovernanceManagerProps) {
+export function GovernanceManager({ records, sources, stats, repoCount, summary, authors, notice }: GovernanceManagerProps) {
   // With no records, the form opens straight away.
   const [formOpen, setFormOpen] = useState(records.length === 0);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -212,6 +215,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   const [focusAfterClose, setFocusAfterClose] = useState<{ recordId: string | undefined } | null>(null);
 
   const editingId = formOpen ? form.id : undefined;
+  const editing = editingId ? records.find((r) => r.id === editingId) : undefined;
   const searching = query.trim() !== "";
   const matches = records.filter((r) => matchesRecordQuery(r, query));
   const visible = records.filter((r) => r.id === editingId || matchesRecordQuery(r, query));
@@ -327,6 +331,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
       form={form}
       setForm={setForm}
       sources={sources}
+      byline={editing ? authorLine(editing, authors[editing.id]) : null}
       takeFocus={focusForm}
       onCancel={cancelForm}
       onDeleted={onDeleted}
@@ -861,6 +866,7 @@ function RecordForm({
   form,
   setForm,
   sources,
+  byline,
   takeFocus,
   onCancel,
   onDeleted,
@@ -870,6 +876,8 @@ function RecordForm({
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   sources: AutocompleteSource[];
+  /** Who added and last changed the record being edited. */
+  byline: string | null;
   /** Scroll the form into view and focus its first field when it opens. */
   takeFocus: boolean;
   onCancel: () => void;
@@ -954,7 +962,10 @@ function RecordForm({
 
   return (
     <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
-      <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
+      <div className="space-y-1">
+        <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
+        {byline ? <p className="text-xs text-muted-foreground">{byline}</p> : null}
+      </div>
 
       {/* Source picker: the pick decides the grain */}
       <div className="flex flex-col gap-1.5">

@@ -11,6 +11,7 @@ import {
   CHART_RESULTS_FORMAT_VERSION, chartResultKey, enqueueChartResults, type DashboardPreview, type RegistryResult, type StoredPreview,
 } from "../chart-results.js";
 import type { GovernanceTracking } from "../governance-tracking.js";
+import type { RecordAuthors } from "../governance.js";
 import {
   reduceRepoSummary, reduceRepoDetail, reduceComponentRows, reduceComponentDetailHead,
   reduceOccurrences, reducePackagesAcrossScans, reducePackageDetail,
@@ -281,6 +282,18 @@ export class PostgresDriver implements StorageDriver {
       disposition: r.disposition,
       createdAt: new Date(r.created_at).toISOString(), updatedAt: new Date(r.updated_at).toISOString(),
     }));
+  }
+
+  async listGovernanceAuthors(): Promise<Record<string, RecordAuthors>> {
+    const result = await this.db.execute(sql`
+      SELECT governance.id, creator.name AS creator_name, creator.email AS creator_email,
+        editor.name AS editor_name, editor.email AS editor_email
+      FROM governance
+      LEFT JOIN "user" creator ON creator.id = governance.created_by_user_id
+      LEFT JOIN "user" editor ON editor.id = governance.updated_by_user_id`);
+    return Object.fromEntries((result.rows as {
+      id: string; creator_name: string | null; creator_email: string | null; editor_name: string | null; editor_email: string | null;
+    }[]).map((r) => [r.id, { createdBy: r.creator_name ?? r.creator_email, updatedBy: r.editor_name ?? r.editor_email }]));
   }
 
   async createGovernance(input: GovernanceInput, userId?: string): Promise<GovernanceRecord> {

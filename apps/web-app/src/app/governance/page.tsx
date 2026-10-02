@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance" };
 
 export default async function GovernancePage() {
-  const { records, tags, registry } = await getStorage().withReadSnapshot(async snapshot => ({
+  const { records, authors, tags, registry } = await getStorage().withReadSnapshot(async snapshot => ({
     records: await snapshot.listGovernance(),
+    authors: await snapshot.listGovernanceAuthors(),
     tags: await snapshot.listTags(),
     registry: await snapshot.getStoredRegistry(),
   }));
@@ -33,6 +34,7 @@ export default async function GovernancePage() {
         stats={stats}
         repoCount={repoCount}
         summary={registry ? progressLabel({ inProgress: active, complete, unseen }) : null}
+        authors={authors}
         notice={notice ? <ChartResultsState notice={notice} besideNumbers={registry !== null} /> : null}
       />
 

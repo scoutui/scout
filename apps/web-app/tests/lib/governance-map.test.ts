@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GovernanceRecord, RecordStat } from "@scoutui/web-shared";
 import {
+  authorLine,
   countLabel,
   groupRecords,
   leftOf,
@@ -257,5 +258,21 @@ describe("wording", () => {
     [{ packageName: "new-icons" }, { name: "new-icons", packageName: null }],
   ])("successorLabel(%o)", (s, expected) => {
     expect(successorLabel(s)).toEqual(expected);
+  });
+});
+
+describe("authorLine", () => {
+  const now = new Date("2026-10-05T12:00:00Z");
+  const changed = { createdAt: "2026-10-02T09:00:00.000Z", updatedAt: "2026-10-03T09:00:00.000Z" };
+  const unchanged = { createdAt: "2026-10-02T09:00:00.000Z", updatedAt: "2026-10-02T09:00:00.000Z" };
+  it.each([
+    ["names both people when it was changed", changed, { createdBy: "Ana", updatedBy: "Sam" }, "Added by Ana on 2 Oct · changed by Sam on 3 Oct"],
+    ["leaves out the change when it was never changed", unchanged, { createdBy: "Ana", updatedBy: "Ana" }, "Added by Ana on 2 Oct"],
+    ["gives dates alone without authors", changed, { createdBy: null, updatedBy: null }, "Added 2 Oct · changed 3 Oct"],
+    ["gives the change's date alone when its author is gone", changed, { createdBy: "Ana", updatedBy: null }, "Added by Ana on 2 Oct · changed 3 Oct"],
+    ["adds the year when it isn't this year", { createdAt: "2025-10-02T09:00:00.000Z", updatedAt: "2025-10-02T09:00:00.000Z" }, undefined, "Added 2 Oct 2025"],
+    ["writes September as Sep", { createdAt: "2026-09-02T09:00:00.000Z", updatedAt: "2026-09-02T09:00:00.000Z" }, undefined, "Added 2 Sep"],
+  ] as const)("%s", (_, times, authors, line) => {
+    expect(authorLine({ ...button, ...times }, authors, now)).toBe(line);
   });
 });

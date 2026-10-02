@@ -52,6 +52,7 @@ function governance() {
       stats={{}}
       repoCount={0}
       summary={null}
+      authors={{}}
       notice={null}
     />,
   );

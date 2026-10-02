@@ -1,5 +1,6 @@
-import type { GovernanceRecord, RecordStat } from "@scoutui/web-shared";
+import type { GovernanceRecord, RecordAuthors, RecordStat } from "@scoutui/web-shared";
 import { resolveGovernance } from "@scoutui/web-shared/client";
+import { formatDay } from "@/lib/dashboard-format";
 import { packageComponentFiltersToParams } from "@/lib/package-facets";
 import { hrefWithQuery } from "@/lib/query-string";
 
@@ -177,4 +178,18 @@ export function wholePackageLabel(componentCount: number | null): string {
 
 export function successorLabel(s: Successor): { name: string; packageName: string | null } {
   return s.exportName ? { name: s.exportName, packageName: s.packageName } : { name: s.packageName, packageName: null };
+}
+
+function shortDate(iso: string, now: Date): string {
+  const year = new Date(iso).getUTCFullYear();
+  return year === now.getUTCFullYear() ? formatDay(iso) : `${formatDay(iso)} ${year}`;
+}
+
+export function authorLine(record: GovernanceRecord, authors: RecordAuthors | undefined, now = new Date()): string {
+  const created = shortDate(record.createdAt, now);
+  const added = authors?.createdBy ? `Added by ${authors.createdBy} on ${created}` : `Added ${created}`;
+  if (Date.parse(record.updatedAt) <= Date.parse(record.createdAt)) return added;
+  const updated = shortDate(record.updatedAt, now);
+  const changed = authors?.updatedBy ? `changed by ${authors.updatedBy} on ${updated}` : `changed ${updated}`;
+  return `${added} · ${changed}`;
 }
