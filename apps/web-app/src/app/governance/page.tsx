@@ -23,6 +23,7 @@ export default async function GovernancePage() {
   const active = countOf("active");
   const complete = countOf("complete");
   const unseen = countOf("unseen");
+  const packageNames = [...new Set(sources.map((s) => s.packageName))].sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
@@ -35,9 +36,8 @@ export default async function GovernancePage() {
         notice={notice ? <ChartResultsState notice={notice} besideNumbers={registry !== null} /> : null}
       />
 
-      <section className="space-y-4">
-        <h2 className="text-base font-medium">Tags</h2>
-        <TagsPanel allTags={tags} />
+      <section aria-labelledby="tags-title">
+        <TagsPanel allTags={tags} packageNames={packageNames} />
       </section>
     </div>
   );

@@ -63,3 +63,9 @@ export function looksAlike(a: string, b: string): boolean {
   const pb = PRIMITIVE_BY_TOKEN.get(b);
   return pa !== undefined && pb !== undefined && LOOKALIKES.has(`${pa}|${pb}`);
 }
+
+const PALETTE_NAMES = ["Teal", "Violet", "Blue", "Grey"];
+
+export function tagColourName(hex: string): string {
+  return PALETTE_NAMES[CHART_SERIES_PALETTE.findIndex((c) => c === hex)] ?? hex;
+}
