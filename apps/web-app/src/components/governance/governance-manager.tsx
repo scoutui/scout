@@ -489,7 +489,8 @@ function GroupHeader({
         <span className="font-mono text-xs font-medium wrap-anywhere md:truncate" title={group.packageName}>
           {group.packageName}
         </span>
-        <span className="text-xs text-muted-foreground md:shrink-0 md:whitespace-pre"> · {countLabel(group.rows.length)}</span>
+        <wbr />
+        <span className="text-xs whitespace-nowrap text-muted-foreground md:shrink-0 md:whitespace-pre"> · {countLabel(group.rows.length)}</span>
       </span>
     ) : (
       <span className="text-xs font-medium text-muted-foreground">Whole packages</span>

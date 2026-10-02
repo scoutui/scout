@@ -87,8 +87,8 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
                 <th scope="col" id={TAG_COLUMN_ID.packages} className={TH}>
                   Packages
                 </th>
-                <th scope="col" className={TH}>
-                  Matches
+                <th scope="col" className={cn(TH, "px-0 md:px-3")}>
+                  <span className="sr-only md:not-sr-only">Matches</span>
                 </th>
                 <th scope="col" className={TH}>
                   <span className="sr-only">Edit</span>
@@ -128,6 +128,14 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
 
 function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[]; onEdit: () => void }) {
   const matches = packageNames.filter((n) => tagMatchesPackage(tag, n));
+  const matchText =
+    matches.length > 0 ? (
+      <span className="tabular-nums" title={matches.join(", ")}>
+        {packageCount(matches.length)}
+      </span>
+    ) : (
+      <span className="text-muted-foreground">No scanned package</span>
+    );
   return (
     <tr className="transition-colors duration-150 ease-out hover:bg-secondary dark:hover:bg-accent motion-reduce:transition-none">
       <td className={CELL}>
@@ -150,15 +158,12 @@ function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[
             </span>
           ))}
         </span>
+        <span aria-hidden className="mt-1 block text-[0.8125rem] md:hidden">
+          {matchText}
+        </span>
       </td>
-      <td className={cn(CELL, "text-[0.8125rem]")}>
-        {matches.length > 0 ? (
-          <span className="tabular-nums" title={matches.join(", ")}>
-            {packageCount(matches.length)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">No scanned package</span>
-        )}
+      <td className={cn(CELL, "px-0 text-[0.8125rem] md:px-3")}>
+        <span className="sr-only md:not-sr-only">{matchText}</span>
       </td>
       <td className={cn(CELL, "text-right")}>
         <Button

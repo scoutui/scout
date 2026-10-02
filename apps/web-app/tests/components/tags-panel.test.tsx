@@ -28,13 +28,13 @@ describe("TagsPanel", () => {
     expect(within(row).getByText("Grey")).toBeInTheDocument();
     expect(within(row).getByText("@vben/*")).toBeInTheDocument();
     expect(within(row).getByText("legacy-kit")).toBeInTheDocument();
-    const matches = within(row).getByText("3 packages");
+    const matches = within(within(row).getByRole("cell", { name: "3 packages" })).getByText("3 packages");
     expect(matches).toHaveAttribute("title", "@vben/icons, @vben/layouts, legacy-kit");
   });
 
   it("says when a tag matches no scanned package", () => {
     render(<TagsPanel allTags={[{ ...vben, rule: { glob: [], exact: ["gone"] } }]} packageNames={packageNames} />);
-    expect(screen.getByText("No scanned package")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "No scanned package" })).toBeInTheDocument();
   });
 
   it("previews what the Packages box matches while you type", () => {
