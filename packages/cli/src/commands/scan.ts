@@ -214,7 +214,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     return { output: null, upload: "failed" };
   }
 
-  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, t0 });
+  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt: t0 });
 
   // A dry run writes the scan file; an upload doesn't.
   if (uploader === undefined) await writeJson(artifact, outputPath);
@@ -324,9 +324,10 @@ export async function scanRepository(input: {
   files: string[];
   meta: StampedMeta;
   log: Logger;
-  t0: number;
+  /** performance.now() when the scan started. */
+  startedAt: number;
 }): Promise<{ artifact: ScanArtifact; stats: ScanStats }> {
-  const { cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, t0 } = input;
+  const { cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt } = input;
   const { quiet } = log;
 
   // Re-base a scanRoot-relative POSIX path into outputRoot-relative POSIX.
@@ -696,7 +697,7 @@ export async function scanRepository(input: {
 
   const stats = buildScanStats({
     filesScanned: files.length,
-    scanDurationMs: Math.round(t1 - t0),
+    scanDurationMs: Math.round(t1 - startedAt),
     components: artifact.components,
     occurrences: artifact.occurrences,
   });
