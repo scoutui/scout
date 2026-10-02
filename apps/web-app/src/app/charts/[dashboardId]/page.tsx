@@ -202,10 +202,10 @@ export default async function DashboardViewPage({
         </div>
       )}
 
-      {derived ? (
+      {derivedEntry ? (
         <p className="mt-3 text-xs text-muted-foreground">
           Created from a Governance record.{" "}
-          <Link href="/governance" className="underline underline-offset-2 transition-colors hover:text-foreground">
+          <Link href={`/governance#record-${derivedEntry.record.id}`} className="underline underline-offset-2 transition-colors hover:text-foreground">
             Manage records
           </Link>{" "}
           in Governance.

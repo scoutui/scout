@@ -25,10 +25,10 @@ const btn = component(packageExport("@legacy/ui", "Button"));
 const newBtn = component(packageExport("@new/ui", "Button"));
 
 describe("deriveRecordStats", () => {
-  it("reports a record whose target never scanned as unseen, with no tracking edge", () => {
+  it("reports an unseen record with nothing left, in no repo, covering no component", () => {
     const r = rec({ targetPackage: "@ghost/ui", targetExport: "Nope" });
     const { stats } = deriveRecordStats([r], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3]])]);
-    expect(stats.r1).toEqual({ status: "unseen", repos: 0, trackingId: null, successorDeprecated: false });
+    expect(stats.r1).toEqual({ status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: false });
   });
 
   it("reports an in-flight migration as active with a tracking edge", () => {
@@ -37,14 +37,35 @@ describe("deriveRecordStats", () => {
     expect(stats.r1?.trackingId).toBe("migration:r1");
   });
 
-  it("counts coverage as repos whose latest scan still shows the deprecated side", () => {
+  it("counts occurrences left over each repo's latest scan and names the repos still using it", () => {
     const scans = [
-      digest("a", "2026-01-01T00:00:00Z", [[btn, 3]]),
-      digest("b", "2026-01-01T00:00:00Z", [[newBtn, 4]]),
+      digest("b", "2026-01-01T00:00:00Z", [[btn, 5]]),
+      digest("b", "2026-02-01T00:00:00Z", [[btn, 3]]),
+      digest("a", "2026-01-01T00:00:00Z", [[btn, 2]]),
+      digest("c", "2026-01-01T00:00:00Z", [[newBtn, 4]]),
     ];
     const { stats, repoCount } = deriveRecordStats([rec({})], scans);
-    expect(repoCount).toBe(2);
-    expect(stats.r1?.repos).toBe(1);
+    expect(repoCount).toBe(3);
+    expect(stats.r1).toMatchObject({ left: 5, leftIn: ["a", "b"] });
+  });
+
+  it("lists the components a record covers in the latest scans only", () => {
+    const card = component(packageExport("@legacy/ui", "Card"));
+    const dialog = component(packageExport("@legacy/ui", "Dialog"));
+    const whole = rec({ grain: "package", targetExport: null, disposition: { kind: "retired", reason: "gone" } });
+    const scans = [
+      digest("a", "2026-01-01T00:00:00Z", [[btn, 1], [dialog, 2]]),
+      digest("a", "2026-02-01T00:00:00Z", [[btn, 1], [card, 1]]),
+    ];
+    const { stats } = deriveRecordStats([whole], scans);
+    expect(stats.r1?.componentIds).toEqual([btn.id, card.id].sort());
+  });
+
+  it("covers no component once a complete record's components leave every latest scan", () => {
+    const r = rec({ disposition: { kind: "retired", reason: "removed" } });
+    const scans = [digest("a", "2026-01-01T00:00:00Z", [[btn, 3]]), digest("a", "2026-02-01T00:00:00Z", [])];
+    const { stats } = deriveRecordStats([r], scans);
+    expect(stats.r1).toMatchObject({ status: "complete", left: 0, leftIn: [], componentIds: [] });
   });
 
   it("reports repoCount so a one-repo estate can drop the coverage phrase", () => {

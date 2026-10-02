@@ -4,12 +4,15 @@
 // export a component-grain one. Search is tokenised (lib/identity-groups).
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronsUpDown, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { buildIdentityGroups, filterIdentityGroups } from "@/lib/identity-groups";
 import { cn } from "@/lib/utils";
 
 export type IdentityPick = { packageName: string; exportName?: string };
+
+export function pickLabel(pick: { packageName: string; exportName?: string | undefined }): string {
+  return pick.exportName ? `${pick.exportName} · ${pick.packageName}` : pick.packageName;
+}
 
 type Row =
   | { kind: "package"; packageName: string; totalExports: number }
@@ -25,8 +28,9 @@ export function GroupedIdentityPicker({
   disabled,
   ariaLabel,
   ariaDescribedBy,
+  invalid,
 }: {
-  /** Display string of the current pick ("pkg" or "pkg/export"), empty if none. */
+  /** `pickLabel` of the current pick, empty if none. */
   value: string;
   onSelect: (pick: IdentityPick) => void;
   sources: { packageName: string; exportName?: string }[];
@@ -35,6 +39,7 @@ export function GroupedIdentityPicker({
   disabled?: boolean;
   ariaLabel?: string | undefined;
   ariaDescribedBy?: string | undefined;
+  invalid?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -128,24 +133,19 @@ export function GroupedIdentityPicker({
       }}
     >
       <PopoverTrigger
-        render={
-          <Button
-            id={id}
-            variant="outline"
-            size="sm"
-            disabled={disabled}
-            aria-label={ariaLabel}
-            aria-describedby={ariaDescribedBy}
-            className="w-full justify-between font-normal"
-          >
-            <span className={cn("truncate text-xs", value ? "font-mono" : "text-muted-foreground")}>
-              {value || placeholder}
-            </span>
-            <ChevronsUpDown className="ml-1 shrink-0 opacity-50" />
-          </Button>
-        }
-      />
-      <PopoverContent align="start" className="w-[min(30rem,calc(100vw-2rem))] gap-0 p-0">
+        id={id}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={invalid || undefined}
+        className="flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-expanded:border-ring aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+      >
+        <span className={cn("min-w-0 truncate", value ? "font-mono text-xs" : "text-muted-foreground")}>
+          {value || placeholder}
+        </span>
+        <ChevronsUpDown aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[min(30rem,calc(100vw-2rem))] min-w-(--anchor-width) gap-0 p-0">
         <div className="flex items-center gap-2 border-b px-2.5 py-2">
           <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
           <input
@@ -171,7 +171,7 @@ export function GroupedIdentityPicker({
               </div>
             ) : row.kind === "package" ? (
               // biome-ignore lint/a11y/useSemanticElements: custom option pattern with divs allows flexible styling
-              <div key={row.packageName} role="option" id={optionId(i)} aria-selected={row.packageName === value} data-row-index={i} tabIndex={-1}>
+              <div key={row.packageName} role="option" id={optionId(i)} aria-selected={pickLabel(row) === value} data-row-index={i} tabIndex={-1}>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -180,7 +180,7 @@ export function GroupedIdentityPicker({
                   className={cn(
                     "flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors",
                     i === activeIndex ? "bg-muted/50" : "hover:bg-muted/50",
-                    row.packageName === value && "bg-muted/40",
+                    pickLabel(row) === value && "bg-muted/40",
                   )}
                 >
                   <span className="truncate font-mono text-xs font-medium">{row.packageName}</span>
@@ -195,7 +195,7 @@ export function GroupedIdentityPicker({
                 // biome-ignore lint/a11y/useSemanticElements: custom option pattern with divs allows flexible styling
                 role="option"
                 id={optionId(i)}
-                aria-selected={`${row.packageName}/${row.exportName}` === value}
+                aria-selected={pickLabel(row) === value}
                 data-row-index={i}
                 tabIndex={-1}
               >
@@ -207,7 +207,7 @@ export function GroupedIdentityPicker({
                   className={cn(
                     "flex w-full items-center px-2.5 py-1 pl-7 text-left transition-colors",
                     i === activeIndex ? "bg-muted/50" : "hover:bg-muted/50",
-                    `${row.packageName}/${row.exportName}` === value && "bg-muted/40",
+                    pickLabel(row) === value && "bg-muted/40",
                   )}
                 >
                   <span className="truncate font-mono text-xs">{row.exportName}</span>

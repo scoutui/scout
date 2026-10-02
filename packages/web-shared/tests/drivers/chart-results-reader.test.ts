@@ -47,8 +47,8 @@ describe.skipIf(!process.env.DATABASE_URL)("stored chart results", { timeout: 30
       expect(await driver.getStoredTracking({ kind: "all" })).toEqual(expected.tracking);
       expect(await driver.getStoredTracking({ kind: "repo", repoId: "repo-b" })).toEqual(expected.repoTracking["repo-b"]);
       expect(await driver.getStoredTracking({ kind: "repo", repoId: "repo-missing" })).toBeNull();
-      expect(await driver.getStoredRegistry()).toEqual(expected.registry);
       const built = { snapshotAt: expect.any(String) };
+      expect(await driver.getStoredRegistry()).toEqual({ ...expected.registry, ...built });
       expect(await driver.getStoredPreviews()).toEqual({ [estate.id]: { ...expected.previews[estate.id], ...built }, [repo.id]: { ...expected.previews[repo.id], ...built } });
       await pool.query("UPDATE scans SET created_at = '2026-09-22T08:00:00Z' WHERE scan_id = 'scan-a'");
       await pool.query("UPDATE scans SET created_at = '2026-09-21T10:05:00Z' WHERE scan_id = 'scan-b'");

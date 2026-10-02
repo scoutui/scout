@@ -33,6 +33,7 @@ describe("matchesRecordQuery", () => {
   });
   it("matches the successor", () => {
     expect(matchesRecordQuery(rec({}), "webbutton")).toBe(true);
+    expect(matchesRecordQuery(rec({}), "WebButton · @new/ui")).toBe(true);
   });
   it("matches the retirement reason", () => {
     expect(matchesRecordQuery(rec({ disposition: { kind: "retired", reason: "CSS rewrite" } }), "rewrite")).toBe(true);

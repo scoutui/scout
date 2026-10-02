@@ -5,13 +5,15 @@ import { type GovernanceTracking, deriveGovernanceTracking } from "./governance-
 import { type RegistryStats, deriveRecordStats } from "./governance-registry.js";
 import { type GovernanceTarget, listGovernanceTargets } from "./governance.js";
 
-export const CHART_RESULTS_VERSION = 4;
-export const CHART_RESULTS_FORMAT_VERSION = 3;
+export const CHART_RESULTS_VERSION = 5;
+export const CHART_RESULTS_FORMAT_VERSION = 4;
 
 export type DashboardPreview = { view: DashboardView; missing: boolean };
 /** A stored preview, and when the snapshot it was derived from was read. */
 export type StoredPreview = DashboardPreview & { snapshotAt: string };
 export type RegistryResult = RegistryStats & { sources: GovernanceTarget[] };
+/** The stored registry, and when the snapshot it was derived from was read. */
+export type StoredRegistry = RegistryResult & { snapshotAt: string };
 export type ChartResultsInput = { digests: DigestScan[]; tags: Tag[]; governance: GovernanceRecord[]; dashboards: Dashboard[] };
 export type ChartResults = {
   tracking: GovernanceTracking[];

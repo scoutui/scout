@@ -19,6 +19,16 @@ export function newestScanFirst(a: ScanOrderMeta, b: ScanOrderMeta): number {
     || b.scanId.localeCompare(a.scanId);
 }
 
+/** Each repository's latest scan (`newestScanFirst`). */
+export function latestScanPerRepo<T extends { meta: ScanOrderMeta & { repo: { id: string } } }>(scans: T[]): T[] {
+  const latest = new Map<string, T>();
+  for (const scan of scans) {
+    const current = latest.get(scan.meta.repo.id);
+    if (!current || newestScanFirst(scan.meta, current.meta) < 0) latest.set(scan.meta.repo.id, scan);
+  }
+  return [...latest.values()];
+}
+
 function columns(alias: string | undefined): string {
   return alias ? `${alias}.` : "";
 }

@@ -78,7 +78,7 @@ The dashboard doesn't reread the raw artifact every time you open a page. When i
 
 Most pages read only each repo's latest scans, so they come back first. A chart over time needs every scan in its range, so it comes back last.
 
-Some numbers are worked out by the worker ahead of time rather than when you open the page: record statuses on the **governance** page, the migration and retirement charts, the rows on a repo's **Adoption** tab, and chart previews on the **charts** page. The worker updates them after each new scan and after each change to a record, tag or chart, so they catch up a moment later and a reload shows the new numbers. Until the worker has worked them out for the first time, for example straight after an upgrade, they show **Preparing scan data**.
+Some numbers are worked out by the worker ahead of time rather than when you open the page: the occurrences left on the **governance** page, the migration and retirement charts, the rows on a repo's **Adoption** tab, and chart previews on the **charts** page. The worker updates them after each new scan and after each change to a record, tag or chart, so they catch up a moment later and a reload shows the new numbers. Until the worker has worked them out for the first time, for example straight after an upgrade, they show **Preparing scan data**.
 
 When a repo's latest scan couldn't be prepared or can't be read, they use its newest ready scan and name the repo above the numbers. **Numbers may be out of date** means the worker couldn't work them out again; ask your dashboard administrator to retry it.
 

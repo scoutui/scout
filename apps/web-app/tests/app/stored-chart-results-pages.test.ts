@@ -1,6 +1,7 @@
 import type { Pool } from "pg";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { enqueueChartResults, PostgresDriver, PROJECTION_VERSION, type Dashboard, type GovernanceRecord, type StorageDriver } from "@scoutui/web-shared";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { processChartResultsJob } from "../../src/lib/chart-results-job.ts";
@@ -16,7 +17,7 @@ vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 vi.mock("@/auth", () => ({ auth: async () => null }));
 
-type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown };
+type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[] };
 
 function allPropsFor(node: ReactNode, name: string, found: Props[] = []): Props[] {
   for (const child of Children.toArray(node)) {
@@ -26,6 +27,15 @@ function allPropsFor(node: ReactNode, name: string, found: Props[] = []): Props[
     for (const [key, value] of Object.entries(child.props)) {
       if (key !== "children" && isValidElement(value)) allPropsFor(value, name, found);
     }
+  }
+  return found;
+}
+
+function hrefsIn(node: ReactNode, found: string[] = []): string[] {
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<{ children?: ReactNode; href?: unknown }>(child)) continue;
+    if (typeof child.props.href === "string") found.push(child.props.href);
+    hrefsIn(child.props.children, found);
   }
   return found;
 }
@@ -123,6 +133,32 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(registry?.stats[unseen.id]?.status).toBe("unseen");
       expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ stats: registry?.stats, sources: registry?.sources, repoCount: registry?.repoCount })]);
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([]);
+      const packageNames = allPropsFor(tree, "TagsPanel")[0]?.packageNames;
+      expect(packageNames).toContain("@sample/core");
+      expect(packageNames).toEqual([...new Set(packageNames)].sort((a, b) => a.localeCompare(b)));
+    });
+  });
+
+  it("shows no data for a record changed since the registry was stored, and for its package's total, keeping other packages' counts", async () => {
+    await withReadModelDatabase(async pool => {
+      for (const artifact of genericArtifacts()) await publishScan(pool, artifact, { uploadedByUserId: null });
+      await pool.query("UPDATE scans SET artifact = '{}'::json");
+      driver = new PostgresDriver(pool);
+      database = pool;
+      const button = { grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "retired", reason: "Retired" } } as const;
+      const changed = await driver.createGovernance(button);
+      const kept = await driver.createGovernance({ ...button, targetPackage: "@sample/mixed", targetExport: "Field" });
+      await storeResults(pool);
+      await driver.updateGovernance(changed.id, { ...button, disposition: { kind: "retired", reason: "Use the new button" } });
+      const { default: page } = await import("@/app/governance/page");
+      const tree = await page();
+      const rows = renderToStaticMarkup(tree).split("<tr").slice(1).map(tr => tr.slice(0, tr.indexOf("</tr>")));
+      const count = (tr: string | undefined) => tr?.split("<td").at(-2)?.replace(/^[^>]*>|<[^>]+>/g, "").trim();
+      expect(count(rows.find(tr => tr.includes(`id="record-${changed.id}"`)))).toBe("No data");
+      expect(count(rows.find(tr => tr.includes('aria-label="Records in @sample/core"')))).toBe("No data");
+      expect(count(rows.find(tr => tr.includes(`id="record-${kept.id}"`)))).toBe("2 left in 2 repos, trend for Field");
+      expect(count(rows.find(tr => tr.includes('aria-label="Records in @sample/mixed"')))).toBe("2 left in 2 repos");
+      expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ summary: "1 in progress" })]);
     });
   });
 
@@ -135,6 +171,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(tree, "GovernanceManager")).toEqual([
         expect.objectContaining({ records: expect.arrayContaining([expect.objectContaining({ id: retired.id })]), stats: {}, sources: [], repoCount: 0 }),
       ]);
+      expect(allPropsFor(tree, "TagsPanel")).toEqual([expect.objectContaining({ packageNames: null })]);
     });
   });
 
@@ -149,6 +186,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(stored).toBeDefined();
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
+      expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(allPropsFor(await page(trackingParams(`retirement:${added.id}`)), "ReadModelState")).toEqual([preparing]);
       expect(digests).not.toHaveBeenCalled();
       await expect(page(trackingParams(`retirement:${unseen.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");

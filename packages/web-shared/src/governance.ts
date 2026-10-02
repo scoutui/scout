@@ -9,6 +9,9 @@ export type GovernanceLookup = { packageName: string; name: string | null };
 /** The fields of a governance record that decide what it matches. */
 export type GovernanceRule = Pick<GovernanceRecord, "grain" | "targetPackage" | "targetExport">;
 
+/** Who created a governance record and who last changed it, by name or else email; null when unknown or the account is gone. */
+export type RecordAuthors = { createdBy: string | null; updatedBy: string | null };
+
 /**
  * The record governing a lookup, or null. Precedence: a component-grain record on
  * the exact name, then a component-grain record on the name's compound root

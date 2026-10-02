@@ -101,6 +101,6 @@ You see migrations under **Migrations** on the **charts** page and under **Migra
 
 ## Retirement
 
-The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the occurrences still in use. Its record reads **complete** on the **governance** page once no repo's latest scan uses it.
+The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the occurrences still in use. Its record reads **None left** on the **governance** page once no repo's latest scan uses it.
 
 You see retirements under **Retirements** on the **charts** page and under **Retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration#record-a-retirement).

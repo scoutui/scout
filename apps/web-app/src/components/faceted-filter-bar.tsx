@@ -154,7 +154,7 @@ export function tagFacet(
     empty: (
       <>
         No library tags yet.{" "}
-        <Link href="/governance" className="text-foreground underline-offset-4 hover:underline">
+        <Link href="/governance#tags" className="text-foreground underline-offset-4 hover:underline">
           Add one in Governance
         </Link>
       </>

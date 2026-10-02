@@ -1,19 +1,38 @@
 "use client";
-import { useState } from "react";
-import { Edit2, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Pencil, Plus } from "lucide-react";
 import type { Tag } from "@scoutui/web-shared";
-import { TagEditor } from "./tag-manager";
+import { tagMatchesPackage } from "@scoutui/web-shared/client";
+import { packageCount, TAG_COLUMN_ID, TagEditor, TagSwatch, TagTableColumns } from "./tag-manager";
 import { Button } from "@/components/ui/button";
-import { paletteToken } from "@/lib/chart-palette";
+import { tagColourName } from "@/lib/chart-palette";
+import { cn } from "@/lib/utils";
 
-/**
- * Inline tag-management panel for /governance: the full tag list, with Edit
- * and New tag opening TagEditor inline. TagEditor makes the saveTag /
- * deleteTag calls.
- */
-export function TagsPanel({ allTags }: { allTags: Tag[] }) {
+const TH = "h-9 bg-muted px-3 text-left text-label text-muted-foreground";
+const CELL = "px-3 py-2.5 align-middle max-md:py-0";
+
+const editButtonId = (tagId: string) => `edit-tag-${tagId}`;
+
+export function TagsPanel({
+  allTags,
+  packageNames,
+}: {
+  allTags: Tag[];
+  /** Null while scan results are rebuilding. */
+  packageNames: string[] | null;
+}) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const addTagRef = useRef<HTMLButtonElement>(null);
+  /** Set when a tag form closes: the tag whose Edit button takes focus, or undefined for Add tag. */
+  const [focusAfterClose, setFocusAfterClose] = useState<{ tagId: string | undefined } | null>(null);
+
+  useEffect(() => {
+    if (!focusAfterClose) return;
+    setFocusAfterClose(null);
+    const edit = focusAfterClose.tagId ? document.getElementById(editButtonId(focusAfterClose.tagId)) : null;
+    (edit ?? addTagRef.current)?.focus();
+  }, [focusAfterClose]);
 
   function openNew() {
     setCreating(true);
@@ -25,87 +44,157 @@ export function TagsPanel({ allTags }: { allTags: Tag[] }) {
     setCreating(false);
   }
 
-  function closeForm() {
+  function closeForm(focusTagId?: string) {
     setCreating(false);
     setEditingId(null);
+    setFocusAfterClose({ tagId: focusTagId });
   }
 
-  const isEmpty = allTags.length === 0 && !creating;
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Group packages by library for adoption charts and filtering.
-        </p>
-        <Button variant="outline" size="sm" onClick={openNew} disabled={creating}>
+    <>
+      <div className="flex items-baseline gap-2">
+        <h2 id="tags-title" className="text-base font-medium">
+          Tags
+        </h2>
+        {allTags.length > 0 ? (
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {allTags.length.toLocaleString()} {allTags.length === 1 ? "tag" : "tags"}
+          </span>
+        ) : null}
+        <Button
+          ref={addTagRef}
+          variant="outline"
+          size="sm"
+          onClick={openNew}
+          disabled={creating || editingId !== null}
+          className="ml-auto self-center"
+        >
           <Plus />
-          New tag
+          Add tag
         </Button>
       </div>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">
+        Group packages by library for adoption charts and filtering.
+      </p>
 
-      {/* Inline create form */}
-      {creating && (
-        <div className="panel p-4">
-          <h3 className="mb-3 text-sm font-medium">New tag</h3>
-          <TagEditor allTags={allTags} onDone={closeForm} />
+      {allTags.length === 0 && !creating ? (
+        <p className="text-sm text-muted-foreground">No tags yet.</p>
+      ) : (
+        <div className="panel overflow-hidden">
+          <table aria-labelledby="tags-title" className="w-full table-fixed text-sm max-md:block">
+            <TagTableColumns />
+            <thead className="max-md:sr-only">
+              <tr className="border-b border-border">
+                <th scope="col" id={TAG_COLUMN_ID.name} className={TH}>
+                  Name
+                </th>
+                <th scope="col" id={TAG_COLUMN_ID.packages} className={TH}>
+                  Packages
+                </th>
+                <th scope="col" className={TH}>
+                  Matches
+                </th>
+                <th scope="col" className={TH}>
+                  <span className="sr-only">Edit</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border max-md:block">
+              {creating ? (
+                <TagEditor
+                  allTags={allTags}
+                  packageNames={packageNames}
+                  onDone={() => closeForm()}
+                  onDeleted={() => closeForm()}
+                />
+              ) : null}
+              {allTags.map((tag) =>
+                editingId === tag.id ? (
+                  <TagEditor
+                    key={tag.id}
+                    tag={tag}
+                    allTags={allTags}
+                    packageNames={packageNames}
+                    onDone={() => closeForm(tag.id)}
+                    onDeleted={() => closeForm()}
+                  />
+                ) : (
+                  <TagRow key={tag.id} tag={tag} packageNames={packageNames} onEdit={() => openEdit(tag.id)} />
+                ),
+              )}
+            </tbody>
+          </table>
         </div>
       )}
+    </>
+  );
+}
 
-      {/* Tag list */}
-      {isEmpty ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          No tags yet. Group packages by library with a new tag.
-        </p>
-      ) : (
-        allTags.length > 0 && (
-          <ul className="panel divide-y divide-border overflow-hidden">
-            {allTags.map((tag) => {
-              const ruleCount = tag.rule.glob.length + tag.rule.exact.length;
-              return (
-                <li key={tag.id}>
-                  {editingId === tag.id ? (
-                    <div className="p-4">
-                      <h3 className="mb-3 text-sm font-medium">Edit tag</h3>
-                      <TagEditor
-                        tag={tag}
-                        allTags={allTags}
-                        onDone={closeForm}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3 px-3 py-2.5 text-sm">
-                      <div className="min-w-0 flex-1 flex items-center gap-2.5">
-                        <span
-                          aria-hidden
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: paletteToken(tag.color) }}
-                        />
-                        <span className="min-w-0 truncate font-mono text-xs text-foreground">
-                          {tag.value}
-                        </span>
-                      </div>
+function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[] | null; onEdit: () => void }) {
+  const matches = packageNames?.filter((n) => tagMatchesPackage(tag, n));
+  const matchText = !matches ? (
+    <span className="text-muted-foreground">No data</span>
+  ) : matches.length > 0 ? (
+    <span className="tabular-nums" title={matches.join(", ")}>
+      {packageCount(matches.length)}
+    </span>
+  ) : (
+    <span className="text-muted-foreground">No scanned package</span>
+  );
+  return (
+    <tr className="transition-colors duration-150 ease-out hover:bg-secondary max-md:grid max-md:grid-cols-[minmax(0,1fr)_3rem] max-md:items-center max-md:gap-y-1 max-md:py-2.5 dark:hover:bg-accent motion-reduce:transition-none">
+      <td className={cn(CELL, "max-md:col-start-1 max-md:row-start-1")}>
+        <span className="flex items-center gap-2">
+          <TagSwatch color={tag.color} label={tagColourName(tag.color)} />
+          <span className="min-w-0 font-mono text-xs wrap-anywhere">{tag.value}</span>
+        </span>
+      </td>
+      <td className={cn(CELL, "max-md:col-span-full max-md:row-start-2")}>
+        <TagPackages tag={tag} />
+      </td>
+      <td className={cn(CELL, "text-[0.8125rem] max-md:col-span-full max-md:row-start-3 max-md:text-muted-foreground")}>
+        {matchText}
+      </td>
+      <td className={cn(CELL, "text-right max-md:col-start-2 max-md:row-start-1")}>
+        <Button
+          id={editButtonId(tag.id)}
+          variant="ghost"
+          size="icon-xs"
+          onClick={onEdit}
+          aria-label={`Edit ${tag.value}`}
+          title="Edit"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Pencil strokeWidth={1.5} className="size-3.5" />
+        </Button>
+      </td>
+    </tr>
+  );
+}
 
-                      <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
-                        {ruleCount.toLocaleString()} rule{ruleCount === 1 ? "" : "s"}
-                      </span>
-
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => openEdit(tag.id)}
-                        aria-label="Edit tag"
-                      >
-                        <Edit2 />
-                      </Button>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )
-      )}
-    </div>
+function TagPackages({ tag }: { tag: Tag }) {
+  const [open, setOpen] = useState(false);
+  const entries = [...tag.rule.exact, ...tag.rule.glob];
+  const folds = entries.length >= 6;
+  const hidden = entries.length - 4;
+  return (
+    <span className="flex flex-wrap items-baseline gap-x-3.5 gap-y-0.5 font-mono text-xs">
+      {(folds && !open ? entries.slice(0, 4) : entries).map((entry) => (
+        <span key={entry} className="min-w-0 wrap-anywhere">
+          {entry}
+        </span>
+      ))}
+      {folds ? (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? undefined : `Show ${hidden.toLocaleString()} more packages in ${tag.value}`}
+          onClick={() => setOpen(!open)}
+          className="inline-flex h-5 cursor-pointer items-center rounded-sm border border-border px-2 font-sans text-[0.6875rem] leading-none whitespace-nowrap text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+        >
+          {open ? "Show fewer" : `+${hidden.toLocaleString()} more`}
+        </button>
+      ) : null}
+    </span>
   );
 }

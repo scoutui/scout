@@ -9,8 +9,8 @@ const storage = vi.hoisted(() => ({
   ]),
   upsertTag: vi.fn(async () => ({})),
   listGovernance: vi.fn(async () => []),
-  createGovernance: vi.fn(async () => ({})),
-  updateGovernance: vi.fn(async () => ({})),
+  createGovernance: vi.fn(async () => ({ id: "gov-1" })),
+  updateGovernance: vi.fn(async () => ({ id: "gov-2" })),
   upsertDashboard: vi.fn(async () => ({ id: "dash-1" })),
 }));
 
@@ -45,11 +45,11 @@ describe("save actions", () => {
     await expect(saveTag(send({ ...tag, extra: "dropped" }))).resolves.toEqual({ ok: true });
     expect(storage.upsertTag).toHaveBeenCalledWith(tag, "user-1");
 
-    await expect(saveGovernance(send({ ...governance, extra: "dropped" }))).resolves.toEqual({ ok: true });
+    await expect(saveGovernance(send({ ...governance, extra: "dropped" }))).resolves.toEqual({ ok: true, id: "gov-1" });
     expect(storage.createGovernance).toHaveBeenCalledWith(governance, "user-1");
 
-    await expect(saveGovernance(send({ id: "gov-1", ...governance }))).resolves.toEqual({ ok: true });
-    expect(storage.updateGovernance).toHaveBeenCalledWith("gov-1", { id: "gov-1", ...governance }, "user-1");
+    await expect(saveGovernance(send({ id: "gov-2", ...governance }))).resolves.toEqual({ ok: true, id: "gov-2" });
+    expect(storage.updateGovernance).toHaveBeenCalledWith("gov-2", { id: "gov-2", ...governance }, "user-1");
 
     await saveDashboard(send({ ...dashboard, extra: "dropped" }));
     expect(storage.upsertDashboard).toHaveBeenCalledWith({ ...dashboard, createdByUserId: "user-1" });

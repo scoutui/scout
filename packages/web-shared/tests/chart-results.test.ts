@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
+import { componentKey } from "@scoutui/scan-format";
 import type { Dashboard, DashboardConfig, GovernanceRecord } from "../src/dto.js";
 import { type GovernanceTracking, deriveGovernanceTracking } from "../src/governance-tracking.js";
 import { deriveRecordStats } from "../src/governance-registry.js";
 import { renderDashboard } from "../src/dashboard-render.js";
 import { chartResultKey, chartResultRows, deriveChartResults } from "../src/chart-results.js";
-import { received } from "./helpers/builders.js";
+import { packageExport, received, tag } from "./helpers/builders.js";
 import { canonical } from "./helpers/canonical.js";
 import { genericArtifacts, governance as fixtureGovernance, tags } from "./helpers/fixtures.js";
 
@@ -72,12 +73,21 @@ describe("deriveChartResults", () => {
 
   it("summarises each record's reach and lists the governable sources", () => {
     const { registry } = deriveChartResults(input);
+    const core = (exportName: string, publicEntry?: string) => componentKey(packageExport("@sample/core", exportName, publicEntry));
+    const button = [core("Button"), core("Button", "./alternate"), core("Button.Icon")];
+    const both = ["repo-a", "repo-b"];
     expect(registry).toEqual({
       stats: {
-        package: { status: "active", repos: 2, trackingId: "retirement:package", successorDeprecated: false },
-        exact: { status: "active", repos: 2, trackingId: "migration:exact", successorDeprecated: false },
-        field: { status: "active", repos: 2, trackingId: "migration:field", successorDeprecated: true },
-        absent: { status: "unseen", repos: 0, trackingId: null, successorDeprecated: false },
+        package: {
+          status: "active", left: 6, leftIn: both, componentIds: [...button, core("ActionButton"), componentKey(tag("sample-button"))].sort(),
+          trackingId: "retirement:package", successorDeprecated: false,
+        },
+        exact: { status: "active", left: 3, leftIn: both, componentIds: [...button].sort(), trackingId: "migration:exact", successorDeprecated: false },
+        field: {
+          status: "active", left: 2, leftIn: both, componentIds: [componentKey(packageExport("@sample/mixed", "Field"))],
+          trackingId: "migration:field", successorDeprecated: true,
+        },
+        absent: { status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: false },
       },
       repoCount: 3,
       sources: [

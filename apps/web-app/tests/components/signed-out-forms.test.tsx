@@ -6,7 +6,7 @@ import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
 import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-button";
 import { GovernanceManager } from "@/components/governance/governance-manager";
 import { QuickTag } from "@/components/tags/quick-tag";
-import { TagEditor } from "@/components/tags/tag-manager";
+import { TagsPanel } from "@/components/tags/tags-panel";
 
 // The real server actions run against a session that has ended.
 vi.mock("@/auth", () => ({ auth: async () => null }));
@@ -20,6 +20,8 @@ vi.mock("@/app/charts/dashboard-actions", async (importOriginal) => ({
   previewDashboard: async () => ({ state: "ready", value: { kind: "series", series: [] } }),
   pickableForRepo: async () => ({ state: "ready", value: { components: [], packages: [] } }),
 }));
+
+Element.prototype.scrollIntoView = vi.fn();
 
 const tag: Tag = {
   id: "t1",
@@ -49,6 +51,9 @@ function governance() {
       ]}
       stats={{}}
       repoCount={0}
+      summary={null}
+      authors={{}}
+      notice={null}
     />,
   );
 }
@@ -71,26 +76,29 @@ describe("forms after the session has ended", () => {
 
   it("tells the governance form to sign in again to save", async () => {
     governance();
-    fireEvent.click(screen.getByRole("button", { name: "Edit record" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this record.")).toBeInTheDocument();
   });
 
   it("tells governance delete to sign in again", async () => {
     governance();
-    fireEvent.click(screen.getByRole("button", { name: "Delete record" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(await screen.findByText("Your session has ended. Sign in again to delete this record.")).toBeInTheDocument();
   });
 
   it("tells the tag editor to sign in again to save or delete", async () => {
-    render(<TagEditor tag={tag} allTags={[tag]} onDone={() => {}} />);
+    render(<TagsPanel allTags={[tag]} packageNames={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit core" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this tag.")).toBeInTheDocument();
     // The error can show before the save's transition ends, while Delete is still disabled.
     const remove = screen.getByRole("button", { name: "Delete" });
     await waitFor(() => expect(remove).toBeEnabled());
     fireEvent.click(remove);
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(await screen.findByText("Your session has ended. Sign in again to delete this tag.")).toBeInTheDocument();
   });
 

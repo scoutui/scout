@@ -20,7 +20,8 @@ import type {
   DashboardScope,
 } from "./dto.js";
 import type { GovernanceTracking } from "./governance-tracking.js";
-import type { RegistryResult, StoredPreview } from "./chart-results.js";
+import type { RecordAuthors } from "./governance.js";
+import type { StoredPreview, StoredRegistry } from "./chart-results.js";
 
 /**
  * A write that would collide with another record's target. The DB constraint
@@ -134,6 +135,9 @@ export interface StorageDriver {
   /** All governance records. */
   listGovernance(): Promise<GovernanceRecord[]>;
 
+  /** Who created and last changed each governance record, keyed by record id. */
+  listGovernanceAuthors(): Promise<Record<string, RecordAuthors>>;
+
   /**
    * Create a record, recording `userId` as its creator and last editor.
    * Throws `GovernanceTargetConflictError` if the target is already governed.
@@ -166,7 +170,7 @@ export interface StorageDriver {
   // ---- Stored chart results (null when no row has the current format) ----
 
   getStoredTracking(scope: DashboardScope): Promise<GovernanceTracking[] | null>;
-  getStoredRegistry(): Promise<RegistryResult | null>;
+  getStoredRegistry(): Promise<StoredRegistry | null>;
   /** Current-format previews keyed by dashboard id. */
   getStoredPreviews(): Promise<Record<string, StoredPreview>>;
   /** When the dashboard last received a scan, as an ISO string, or null when there are no scans. */

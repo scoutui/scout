@@ -140,11 +140,11 @@ describe.each(PAGES)("the filter bar on the $page", ({ renderTags, oneValueFacet
     expect(screen.queryByText(/No library tags/)).toBeNull();
   });
 
-  it("points an estate with no tags at Governance instead of saying No matches", async () => {
+  it("points an estate with no tags at the Tags section of Governance instead of saying No matches", async () => {
     renderTags([]);
     await openFacet(/^tag/i);
     expect(await screen.findByText(/No library tags yet/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /add one in Governance/i })).toHaveAttribute("href", "/governance");
+    expect(screen.getByRole("link", { name: /add one in Governance/i })).toHaveAttribute("href", "/governance#tags");
     expect(screen.queryByText("No matches.")).toBeNull();
   });
 

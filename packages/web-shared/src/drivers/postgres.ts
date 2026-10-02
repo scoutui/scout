@@ -8,9 +8,10 @@ import type {
   GovernanceRecord, GovernanceInput, Disposition,
 } from "../dto.js";
 import {
-  CHART_RESULTS_FORMAT_VERSION, chartResultKey, enqueueChartResults, type DashboardPreview, type RegistryResult, type StoredPreview,
+  CHART_RESULTS_FORMAT_VERSION, chartResultKey, enqueueChartResults, type DashboardPreview, type RegistryResult, type StoredPreview, type StoredRegistry,
 } from "../chart-results.js";
 import type { GovernanceTracking } from "../governance-tracking.js";
+import type { RecordAuthors } from "../governance.js";
 import {
   reduceRepoSummary, reduceRepoDetail, reduceComponentRows, reduceComponentDetailHead,
   reduceOccurrences, reducePackagesAcrossScans, reducePackageDetail,
@@ -283,6 +284,18 @@ export class PostgresDriver implements StorageDriver {
     }));
   }
 
+  async listGovernanceAuthors(): Promise<Record<string, RecordAuthors>> {
+    const result = await this.db.execute(sql`
+      SELECT governance.id, creator.name AS creator_name, creator.email AS creator_email,
+        editor.name AS editor_name, editor.email AS editor_email
+      FROM governance
+      LEFT JOIN "user" creator ON creator.id = governance.created_by_user_id
+      LEFT JOIN "user" editor ON editor.id = governance.updated_by_user_id`);
+    return Object.fromEntries((result.rows as {
+      id: string; creator_name: string | null; creator_email: string | null; editor_name: string | null; editor_email: string | null;
+    }[]).map((r) => [r.id, { createdBy: r.creator_name ?? r.creator_email, updatedBy: r.editor_name ?? r.editor_email }]));
+  }
+
   async createGovernance(input: GovernanceInput, userId?: string): Promise<GovernanceRecord> {
     const id = randomUUID();
     const dispJson = JSON.stringify(input.disposition);
@@ -377,19 +390,22 @@ export class PostgresDriver implements StorageDriver {
 
   // ---- Stored chart results ----
 
-  private async storedResult<T>(key: string): Promise<T | null> {
+  private async storedResult<T>(key: string): Promise<{ payload: T; snapshotAt: string } | null> {
     const result = await this.db.execute(sql`
-      SELECT payload FROM chart_results WHERE key = ${key} AND format_version = ${CHART_RESULTS_FORMAT_VERSION}`);
-    const row = (result.rows as { payload: T }[])[0];
-    return row ? row.payload : null;
+      SELECT payload, snapshot_at FROM chart_results WHERE key = ${key} AND format_version = ${CHART_RESULTS_FORMAT_VERSION}`);
+    const row = (result.rows as { payload: T; snapshot_at: string | Date }[])[0];
+    return row ? { payload: row.payload, snapshotAt: new Date(row.snapshot_at).toISOString() } : null;
   }
 
   async getStoredTracking(scope: DashboardScope): Promise<GovernanceTracking[] | null> {
-    return this.storedResult(scope.kind === "all" ? chartResultKey.tracking : chartResultKey.repoTracking(scope.repoId));
+    const stored = await this.storedResult<GovernanceTracking[]>(
+      scope.kind === "all" ? chartResultKey.tracking : chartResultKey.repoTracking(scope.repoId));
+    return stored ? stored.payload : null;
   }
 
-  async getStoredRegistry(): Promise<RegistryResult | null> {
-    return this.storedResult(chartResultKey.registry);
+  async getStoredRegistry(): Promise<StoredRegistry | null> {
+    const stored = await this.storedResult<RegistryResult>(chartResultKey.registry);
+    return stored ? { ...stored.payload, snapshotAt: stored.snapshotAt } : null;
   }
 
   async getStoredPreviews(): Promise<Record<string, StoredPreview>> {

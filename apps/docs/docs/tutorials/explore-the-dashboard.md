@@ -110,14 +110,14 @@ We press the × on the pill to remove the filter, and both files are back. A com
 
 A [tag](/docs/reference/glossary#tag) groups packages under one name, so the dashboard can count a library as one thing. We'll make two: `acme-ui` for the current library and `acme-ui-legacy` for the old one.
 
-We select **governance** in the top navigation. A **New lifecycle record** form is already open at the top; we'll use it in step 6. For now we scroll down to the **Tags** section.
+We select **governance** in the top navigation. A **New record** form is already open at the top; we'll use it in step 6. For now we scroll down to the **Tags** section.
 
-1. We press **New tag**.
-2. We type `acme-ui` into the **value (e.g. core)** box and keep the colour it offers.
-3. Under **Exact names**, we enter `@acme/ui`.
+1. We press **Add tag**.
+2. We type `acme-ui` into **Name** and keep the colour it offers.
+3. In **Packages**, we enter `@acme/ui`. The form shows `Matches 1 package: @acme/ui`.
 4. We press **Create**.
 
-The tag list shows `acme-ui` with `1 rule`. We repeat the steps for `acme-ui-legacy`, with the exact name `@acme/ui-legacy`.
+The tag list shows `acme-ui` with `1 package`. We repeat the steps for `acme-ui-legacy`, with the exact name `@acme/ui-legacy`.
 
 We use exact names so each tag matches one package. A glob pattern such as `@acme/ui*` would match `@acme/ui-legacy` too, and the old library would count in both tags. [Tags](/docs/guides/dashboard/tag-your-libraries#match-packages-with-a-glob-pattern) covers glob patterns.
 
@@ -127,14 +127,14 @@ To see the tags at work, we select **packages** in the top navigation. `@acme/ui
 
 We want everyone to move from `LegacyButton` to `Button`. A [lifecycle record](/docs/reference/glossary#lifecycle-record) tells the dashboard that. The dashboard then marks `LegacyButton` [deprecated](/docs/reference/glossary#deprecated) in every repo, including scans already uploaded.
 
-We select **governance** again. In the **New lifecycle record** form:
+We select **governance** again. In the **New record** form:
 
-1. We click **Source**, type `legacy button`, and pick the `LegacyButton` row under `@acme/ui-legacy`.
-2. We leave **Disposition** on **Superseded**.
+1. We click **Package or component**, type `legacy button`, and pick the `LegacyButton` row under `@acme/ui-legacy`.
+2. We leave **Type** on **Superseded**.
 3. We click **Superseded by**, type `button`, and pick the `Button` row under `@acme/ui`.
 4. We press **Create**.
 
-The record's row shows `@acme/ui-legacy / LegacyButton` with `superseded → @acme/ui/Button`. Its status is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 active · 0 complete`, and the row reads `active`, because `acme/storefront` still uses `LegacyButton`. If the row has no status yet, we wait a moment and reload again.
+Under **Records**, `LegacyButton` now reads **Superseded by** `Button · @acme/ui`. Its count is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Occurrences left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
 
 We select **repos** and open `acme/storefront`:
 
