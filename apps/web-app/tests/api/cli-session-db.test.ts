@@ -77,6 +77,35 @@ describe.skipIf(!RUN_DB)("durable CLI sessions in PostgreSQL", () => {
     expect(await resolveCliSession(issued[0]?.token ?? "")).toBeNull();
   });
 
+  it.each([
+    { case: "signed in just now", signedInDaysAgo: 0, lastUsedDaysAgo: 0, accepted: true },
+    { case: "unused for 29 days", signedInDaysAgo: 29, lastUsedDaysAgo: 29, accepted: true },
+    { case: "unused for 31 days", signedInDaysAgo: 31, lastUsedDaysAgo: 31, accepted: false },
+    { case: "signed in 89 days ago and used yesterday", signedInDaysAgo: 89, lastUsedDaysAgo: 1, accepted: true },
+    { case: "signed in 91 days ago and used yesterday", signedInDaysAgo: 91, lastUsedDaysAgo: 1, accepted: false },
+  ])("a session $case is accepted: $accepted", async ({ signedInDaysAgo, lastUsedDaysAgo, accepted }) => {
+    const issued = await consumeApprovedDeviceCode(await approvedCode(), userId);
+    const token = issued?.token ?? "";
+    await pool.query(
+      "UPDATE cli_sessions SET created_at = now() - make_interval(days => $2), last_used_at = now() - make_interval(days => $3) WHERE user_id = $1",
+      [userId, signedInDaysAgo, lastUsedDaysAgo],
+    );
+
+    const resolved = await resolveCliSession(token);
+
+    const { rows } = await pool.query(
+      "SELECT last_used_at > now() - interval '1 minute' AS used_now FROM cli_sessions WHERE user_id = $1",
+      [userId],
+    );
+    if (accepted) {
+      expect(resolved).toMatchObject({ userId });
+      expect(rows).toEqual([{ used_now: true }]);
+    } else {
+      expect(resolved).toBeNull();
+      expect(rows).toEqual([]);
+    }
+  });
+
   it("revokes only the selected session for a user", async () => {
     const first = await consumeApprovedDeviceCode(await approvedCode(), userId);
     const second = await consumeApprovedDeviceCode(await approvedCode(), userId);

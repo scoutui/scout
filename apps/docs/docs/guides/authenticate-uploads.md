@@ -50,7 +50,16 @@ The CLI saves your session in the system keychain. When it can't use one, for ex
 Warning: Couldn't save your session to the system keychain, so it was saved to ~/.config/scoutui/hosts.json instead.
 ```
 
-[Where the session is saved](/docs/reference/cli#where-the-session-is-saved) has the details. Either way, you stay signed in until you run `auth logout`; sessions don't expire.
+[Where the session is saved](/docs/reference/cli#where-the-session-is-saved) has the details.
+
+Your sign-in ends when the first of these happens:
+
+- You run `auth logout`.
+- You don't use it for 30 days. Every upload and every `auth status` counts as use.
+- 90 days pass since you signed in, however often you use it.
+- You sign out of your identity provider, if the dashboard [receives back-channel logouts](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider) from it.
+
+When it ends, `scan` and `auth status` tell you to sign in again (see [Check or end your sign-in](#check-or-end-your-sign-in)). Don't use a personal sign-in in CI: it ends after 90 days at most. Use a CI upload token instead: see [Run a scan and upload in CI](/docs/guides/run-in-ci).
 
 ## Name the host you upload to
 

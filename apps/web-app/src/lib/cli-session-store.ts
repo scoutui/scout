@@ -6,20 +6,36 @@ import { generateUserSessionToken, hashToken, isUserSessionToken } from "@/lib/c
 
 const { cliDeviceCodes, cliSessions, users } = schema;
 
+const IDLE_LIMIT = sql`interval '30 days'`;
+const SIGN_IN_LIMIT = sql`interval '90 days'`;
+
+/**
+ * Accepts a token last used within IDLE_LIMIT and signed in within
+ * SIGN_IN_LIMIT, and records the use. A refused token's row is deleted.
+ */
 export async function resolveCliSession(
   token: string,
 ): Promise<{ sessionId: string; userId: string; email: string } | null> {
   if (!isUserSessionToken(token)) return null;
 
   return withCredentialStoreError(async () => {
-    const [session] = await getDb()
-      .select({ sessionId: cliSessions.id, userId: cliSessions.userId, email: users.email })
-      .from(cliSessions)
-      .innerJoin(users, eq(cliSessions.userId, users.id))
-      .where(eq(cliSessions.tokenHash, hashToken(token)))
-      .limit(1);
+    const db = getDb();
+    const tokenHash = hashToken(token);
+    const [session] = await db
+      .update(cliSessions)
+      .set({ lastUsedAt: sql`now()` })
+      .from(users)
+      .where(and(
+        eq(cliSessions.tokenHash, tokenHash),
+        eq(cliSessions.userId, users.id),
+        gt(cliSessions.lastUsedAt, sql`now() - ${IDLE_LIMIT}`),
+        gt(cliSessions.createdAt, sql`now() - ${SIGN_IN_LIMIT}`),
+      ))
+      .returning({ sessionId: cliSessions.id, userId: cliSessions.userId, email: users.email });
+    if (session) return session;
 
-    return session ?? null;
+    await db.delete(cliSessions).where(eq(cliSessions.tokenHash, tokenHash));
+    return null;
   });
 }
 

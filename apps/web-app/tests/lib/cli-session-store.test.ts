@@ -5,16 +5,12 @@ import type { SQL } from "drizzle-orm";
 import * as realSchema from "@/db/schema";
 import { hashToken } from "@/lib/cli-session-tokens";
 
-const mockSessionRows: Array<{ sessionId: string; userId: string; email: string }> = [];
 const mockUserRows: Array<{ email: string }> = [];
 const mockUpdateRows: Array<{ id: string }> = [];
 const mockDeleteRows: Array<{ id: string }> = [];
 
-const mockInnerJoin = vi.fn((_table: unknown, _on: SQL) => ({ where: vi.fn((_condition: SQL) => ({ limit: vi.fn(async () => [...mockSessionRows]) })) }));
 const mockSelect = vi.fn((_fields: unknown) => ({
-  from: vi.fn((table) => table === realSchema.cliSessions
-    ? { innerJoin: mockInnerJoin }
-    : { where: vi.fn((_condition: SQL) => ({ limit: vi.fn(async () => [...mockUserRows]) })) }),
+  from: vi.fn((_table: unknown) => ({ where: vi.fn((_condition: SQL) => ({ limit: vi.fn(async () => [...mockUserRows]) })) })),
 }));
 const mockUpdateWhere = vi.fn((_condition: SQL) => ({ returning: vi.fn(async () => [...mockUpdateRows]) }));
 const mockUpdateSet = vi.fn((_values: unknown) => ({ where: mockUpdateWhere }));
@@ -27,7 +23,7 @@ const mockExecute = vi.fn(async (_query: SQL) => []);
 const mockTx = { execute: mockExecute, update: mockUpdate, insert: mockInsert, select: mockSelect };
 const mockTransaction = vi.fn(async (callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
 const mockDb = {
-  select: mockSelect,
+  update: mockUpdate,
   delete: mockDelete,
   transaction: mockTransaction,
 };
@@ -56,7 +52,6 @@ async function expectSanitizedFailure(operation: () => Promise<unknown>): Promis
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSessionRows.length = 0;
   mockUserRows.length = 0;
   mockUpdateRows.length = 0;
   mockDeleteRows.length = 0;
@@ -65,30 +60,12 @@ beforeEach(() => {
 describe("resolveCliSession", () => {
   it("rejects malformed tokens before any query", async () => {
     expect(await resolveCliSession("not-a-user-token")).toBeNull();
-    expect(mockSelect).not.toHaveBeenCalled();
-  });
-
-  it("resolves a session and its user's email by token hash", async () => {
-    mockSessionRows.push({ sessionId: "session-1", userId: "user-1", email: "a@example.com" });
-
-    expect(await resolveCliSession(validToken)).toEqual({
-      sessionId: "session-1", userId: "user-1", email: "a@example.com",
-    });
-    expect(mockSelect).toHaveBeenCalledOnce();
-    expect(mockInnerJoin).toHaveBeenCalledWith(realSchema.users, expect.anything());
-    const where = mockInnerJoin.mock.results[0]?.value.where.mock.calls[0]?.[0] as SQL;
-    const query = dialect.sqlToQuery(where);
-    expect(query.sql).toContain('"cli_sessions"."token_hash"');
-    expect(query.params).toContain(hashToken(validToken));
-    expect(query.params).not.toContain(validToken);
-  });
-
-  it("returns null for an unknown well-formed token", async () => {
-    expect(await resolveCliSession(validToken)).toBeNull();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 
   it("does not expose a credential or its hash when resolution fails", async () => {
-    mockSelect.mockImplementationOnce(() => { throw sensitiveFailure(); });
+    mockUpdate.mockImplementationOnce(() => { throw sensitiveFailure(); });
     await expectSanitizedFailure(() => resolveCliSession(validToken));
   });
 });

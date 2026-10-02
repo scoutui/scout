@@ -14,7 +14,7 @@ const RUN_DB = process.env["DATABASE_URL"] != null;
  * session route are all real; only the identity provider's two HTTP endpoints
  * are stubbed.
  */
-describe.skipIf(!RUN_DB)("back-channel logout ends a signed-in person's browser session", () => {
+describe.skipIf(!RUN_DB)("back-channel logout ends a signed-in person's sessions", () => {
   let pool: Pool;
   let database: ReturnType<typeof openReadModelDatabase>;
   let POST: (req: Request) => Promise<Response>;
@@ -207,18 +207,17 @@ describe.skipIf(!RUN_DB)("back-channel logout ends a signed-in person's browser 
     expect((await (await GET(sessionRequest(TOKEN))).json())?.user?.email).toBe(USER.email);
   });
 
-  it("leaves CLI sessions active after browser logout", async () => {
+  it("ends the subject's CLI sessions too, and nobody else's", async () => {
     await pool.query(
-      "INSERT INTO cli_sessions (id, user_id, token_hash) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING",
-      ["cli-474", USER.id, "hash-474"],
+      "INSERT INTO cli_sessions (id, user_id, token_hash) VALUES ($1, $2, $3), ($4, $5, $6) ON CONFLICT (id) DO NOTHING",
+      ["cli-474", USER.id, "hash-474", "cli-474-other", OTHER.id, "hash-474-other"],
     );
     try {
-      await POST(logoutRequest(await logoutToken(SUB)));
-      const { rows } = await pool.query("SELECT id FROM cli_sessions WHERE id = $1", ["cli-474"]);
-      expect(rows).toHaveLength(1);
-      expect(rows[0]?.id).toBe("cli-474");
+      expect((await POST(logoutRequest(await logoutToken(SUB)))).status).toBe(200);
+      const { rows } = await pool.query("SELECT id FROM cli_sessions WHERE id = ANY($1)", [["cli-474", "cli-474-other"]]);
+      expect(rows).toEqual([{ id: "cli-474-other" }]);
     } finally {
-      await pool.query("DELETE FROM cli_sessions WHERE id = $1", ["cli-474"]);
+      await pool.query("DELETE FROM cli_sessions WHERE id = ANY($1)", [["cli-474", "cli-474-other"]]);
     }
   });
 });

@@ -164,7 +164,7 @@ For the full sign-in steps, see [Authenticate the CLI for uploads](/docs/guides/
 
 `hosts.json` also lists the hosts you are signed in to, your default host and the email for each. It's at `~/.config/scoutui/hosts.json`, or `$XDG_CONFIG_HOME/scoutui/hosts.json` when `XDG_CONFIG_HOME` is set.
 
-Sessions don't expire. You stay signed in until you run `auth logout`.
+A session ends after 30 days without use, or 90 days after you signed in, whichever comes first. Uploads, `auth status`, and `auth login` when it finds a saved session count as use. `auth logout` ends it at once, and so does signing out of your identity provider when the dashboard [receives back-channel logouts](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider).
 
 ## Host resolution
 

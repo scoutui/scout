@@ -321,9 +321,9 @@ CLI sign-in and CI uploads are rate limited per client address. The dashboard re
 
 The check uses up that address's CLI sign-in limit for ten minutes, so run it before people start signing in.
 
-### End web sessions when people sign out of the provider
+### End sessions when people sign out of the provider
 
-A browser session lasts up to 12 hours, even after the person signs out of the provider. If your provider sends OIDC back-channel logouts (Keycloak, Authentik and Zitadel do; Okta, Google and GitLab don't), it can end that person's web sessions when they sign out. Their CLI sign-in is not affected. Register this URL with the provider:
+A browser session lasts up to 12 hours. A CLI sign-in lasts until 30 days pass without use, or 90 days after sign-in. Both keep working after the person signs out of the provider or loses access to it. If your provider sends OIDC back-channel logouts (Keycloak, Authentik and Zitadel do; Okta, Google and GitLab don't), the dashboard ends that person's browser sessions and CLI sign-ins when they sign out. Register this URL with the provider:
 
 ```text
 https://scout.example.com/api/auth/backchannel-logout
