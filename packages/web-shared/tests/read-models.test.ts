@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { componentKey } from "@scoutui/scan-format";
-import { createProjectionContext, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows } from "../src/index.js";
+import type { GovernanceRecord } from "../src/dto.js";
+import { createProjectionContext, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows, reduceComponentRows, reduceRepoSummary } from "../src/index.js";
 import { projectCompositionGraph } from "./helpers/composition-graph.js";
 import { genericArtifacts } from "./helpers/fixtures.ts";
-import { artifact, component, packageExport, repoDeclaration, resolvedAt, unresolvedAt } from "./helpers/builders.js";
+import { artifact, component, packageExport, received, repoDeclaration, resolvedAt, unresolvedAt } from "./helpers/builders.js";
 
 describe("immutable read models", () => {
   it("projects resolved call sites only, and unresolved ones leave component counts unchanged", () => {
@@ -47,5 +48,20 @@ describe("immutable read models", () => {
     Object.defineProperty(scan, "occurrences", { get() { throw new Error("Occurrences accessed"); } });
     if (projection === "graph") expect(projectCompositionGraph(scan).nodes).toHaveLength(9);
     if (projection === "facts") expect(deriveFactScan(scan).components).toHaveLength(9);
+  });
+
+  it("counts the same deprecated components in a repo's summary as in its component rows", () => {
+    const button = component(packageExport("@example/ui", "Button"));
+    const card = component(packageExport("@example/ui", "Card"));
+    const scan = artifact({ components: [button, card], occurrences: [resolvedAt(button, "src/App.tsx"), resolvedAt(card, "src/App.tsx", 2)] });
+    const fact = { ...deriveFactScan(scan), meta: received(scan).meta };
+    const t = "2026-01-01T00:00:00Z";
+    const governance: GovernanceRecord[] = [{
+      id: "retire-button", grain: "component", targetPackage: "@example/ui", targetExport: "Button",
+      disposition: { kind: "retired", reason: "replaced" }, createdAt: t, updatedAt: t,
+    }];
+    const rows = reduceComponentRows(fact, "", governance).filter(row => row.deprecated);
+    expect(rows.map(row => row.componentId)).toEqual([button.id]);
+    expect(reduceRepoSummary(fact, { scanCount: 1, delta: null }, governance).deprecatedCount).toBe(rows.length);
   });
 });

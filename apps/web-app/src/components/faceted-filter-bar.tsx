@@ -118,7 +118,7 @@ export function FacetedFilterBar({
       {allPills.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
           {allPills.map((p) => (
-            <Pill key={p.key} onRemove={p.onRemove}>
+            <Pill key={p.key} label={`Remove ${p.field} ${p.value}`} onRemove={p.onRemove}>
               {p.color ? <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: paletteToken(p.color) }} /> : null}
               <span className="text-muted-foreground">{p.field}</span>
               <span className={cn("font-medium", p.mono && "font-mono")}>{p.value}</span>
@@ -149,6 +149,7 @@ export function tagFacet(
     values: tags.map((t) => ({ value: t.value, count: t.count, color: t.color })),
     selected,
     onSelect,
+    mono: true,
     searchPlaceholder: "Search tags…",
     empty: (
       <>
@@ -345,14 +346,14 @@ function CheckRow({
   );
 }
 
-function Pill({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
+function Pill({ children, label, onRemove }: { children: React.ReactNode; label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex h-6 items-center gap-1 rounded-md border border-border bg-background pl-2 pr-1 text-xs">
       <span className="inline-flex items-center gap-1.5">{children}</span>
       <button
         type="button"
         onClick={onRemove}
-        aria-label="Remove filter"
+        aria-label={label}
         className="inline-flex size-4 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <X className="size-3" />

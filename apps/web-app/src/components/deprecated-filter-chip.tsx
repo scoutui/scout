@@ -12,12 +12,14 @@ import { StatusFilterChip } from "@/components/status-filter-chip";
  */
 export function DeprecatedFilterChip({
   count,
+  total,
   maxCount,
   active,
   onToggle,
   className,
 }: {
   count: number;
+  total?: number | undefined;
   maxCount?: number | undefined;
   active: boolean;
   onToggle: () => void;
@@ -29,6 +31,7 @@ export function DeprecatedFilterChip({
       tone="warn"
       label="deprecated"
       count={count}
+      total={total}
       maxCount={maxCount}
       active={active}
       onToggle={onToggle}

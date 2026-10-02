@@ -88,11 +88,13 @@ export function PackageComponentsTable({
             </button>
           ) : null}
         </div>
-        <DeprecatedFilterChip
-          count={deprecatedCount}
-          active={filters.deprecated}
-          onToggle={() => setFilters({ ...filters, deprecated: !filters.deprecated })}
-        />
+        {deprecatedCount > 0 || filters.deprecated ? (
+          <DeprecatedFilterChip
+            count={deprecatedCount}
+            active={filters.deprecated}
+            onToggle={() => setFilters({ ...filters, deprecated: !filters.deprecated })}
+          />
+        ) : null}
         <span className="hidden shrink-0 text-xs text-muted-foreground tabular-nums sm:inline">
           {filtering ? (
             <>

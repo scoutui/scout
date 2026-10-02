@@ -20,13 +20,26 @@ const options: FacetOptions = {
   changedMax: 0,
 };
 
-function renderBar(opts: FacetOptions = options, facets: FacetState = emptyFacets()) {
+function renderBar(opts: FacetOptions = options, facets: FacetState = emptyFacets(), deprecatedTotal = 2) {
   const onChange = vi.fn();
   render(
-    <FilterBar facets={facets} onChange={onChange} options={opts} resultCount={4} total={4} diffShown={null} filtering={isFiltering(facets)} />,
+    <FilterBar
+      facets={facets}
+      onChange={onChange}
+      options={opts}
+      resultCount={4}
+      total={4}
+      deprecatedTotal={deprecatedTotal}
+      diffShown={null}
+      filtering={isFiltering(facets)}
+    />,
   );
   return onChange;
 }
+
+/** Matches the count line: its <span> holds the whole sentence, and child spans
+ *  hold the numbers. */
+const sentence = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
 
 /** Open the `+ Filter` popover and step into one facet. Base UI popovers open
  *  under fireEvent.click in jsdom (governance-manager.test.tsx does the same). */
@@ -135,6 +148,13 @@ describe.each(PAGES)("the filter bar on the $page", ({ renderTags, oneValueFacet
     expect(screen.queryByText("No matches.")).toBeNull();
   });
 
+  it("sets tag names in mono in the Tag list", async () => {
+    renderTags([{ value: "core", color: "#0f766e", count: 3 }]);
+    await openFacet(/^tag/i);
+    const option = await screen.findByRole("button", { name: /^core/ });
+    expect(within(option).getByText("core").className).toMatch(/(^|\s)font-mono(\s|$)/);
+  });
+
   it("still says No matches when a tag search misses", async () => {
     // >8 items so the search input renders.
     renderTags(Array.from({ length: 9 }, (_, i) => ({ value: `lib-${i}`, color: "#0f766e", count: 1 })));
@@ -182,6 +202,82 @@ describe("FilterBar status chips", () => {
     fireEvent.click(since);
     expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), deprecated: true, changed: false });
   });
+
+  it("the deprecated chip is absent when the table has no deprecated components at all", () => {
+    renderBar({ ...options, deprecatedMax: 0, deprecatedCount: 0 });
+    expect(screen.queryByRole("button", { name: /^deprecated/ })).toBeNull();
+  });
+
+  it("the deprecated chip renders pressed and enabled under a pasted deprecated:true, even with no deprecated components, so it can be unpressed", () => {
+    renderBar({ ...options, deprecatedMax: 0, deprecatedCount: 0 }, { ...emptyFacets(), deprecated: true });
+    const chip = screen.getByRole("button", { name: /^deprecated/ });
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    expect(chip).not.toBeDisabled();
+  });
+
+  it("the deprecated chip stays in place, disabled, when the other filters leave it no rows", () => {
+    renderBar({ ...options, deprecatedMax: 2, deprecatedCount: 0 }, { ...emptyFacets(), tags: ["pie"] });
+    const chip = screen.getByRole("button", { name: /^deprecated/ });
+    expect(chip.textContent).toBe("deprecated0 of 2");
+    expect(chip).toBeDisabled();
+  });
+
+  // `deprecatedTotal` is 2 in every row. A null `changedCount` means there is no changed view, so `changed:true` changes nothing.
+  it.each([
+    { when: "no other filter is on", facets: {}, changedCount: null, count: 2, text: "deprecated2" },
+    { when: "a tag narrows the table", facets: { tags: ["pie"] }, changedCount: null, count: 1, text: "deprecated1 of 2" },
+    { when: "search text narrows the table", facets: { text: "but" }, changedCount: null, count: 1, text: "deprecated1 of 2" },
+    { when: "only a pasted deprecated:false is on", facets: { deprecated: false }, changedCount: null, count: 2, text: "deprecated2" },
+    { when: "only its own deprecated:true is on", facets: { deprecated: true }, changedCount: null, count: 2, text: "deprecated2" },
+    { when: "a tag is on and changed:true is inert", facets: { changed: true, tags: ["pie"] }, changedCount: null, count: 1, text: "deprecated1 of 2" },
+  ] satisfies { when: string; facets: Partial<FacetState>; changedCount: number | null; count: number; text: string }[])(
+    "when $when, the deprecated chip reads $text",
+    ({ facets, changedCount, count, text }) => {
+      renderBar({ ...options, deprecatedCount: count, changedCount }, { ...emptyFacets(), ...facets }, 2);
+      expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe(text);
+    },
+  );
+});
+
+describe("PackageFilterBar deprecated chip and count line", () => {
+  it("has no deprecated chip when no package has deprecated components in use", () => {
+    renderPackageBar({ deprecatedMax: 0, deprecatedCount: 0 }, {});
+    expect(screen.queryByRole("button", { name: /^deprecated/ })).toBeNull();
+  });
+
+  // `deprecatedMax` is 3 in every row.
+  it.each([
+    { when: "no filter is on", facets: {}, count: 3, text: "deprecated3" },
+    { when: "a tag narrows the list", facets: { tags: ["pie"] }, count: 1, text: "deprecated1 of 3" },
+    { when: "only a pasted deprecated:false is on", facets: { deprecated: false }, count: 3, text: "deprecated3" },
+  ] satisfies { when: string; facets: Partial<React.ComponentProps<typeof PackageFilterBar>["facets"]>; count: number; text: string }[])(
+    "when $when, the deprecated chip reads $text",
+    ({ facets, count, text }) => {
+      renderPackageBar({ deprecatedMax: 3, deprecatedCount: count }, facets);
+      expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe(text);
+    },
+  );
+
+  // The bar shows 4 rows in every case.
+  it.each([
+    { when: "unfiltered", total: 162, facets: {}, text: "162 packages" },
+    { when: "unfiltered with one package", total: 1, facets: {}, text: "1 package" },
+    { when: "a tag narrows the list", total: 162, facets: { tags: ["pie"] }, text: "4 of 162 packages" },
+  ])("$when, the count reads $text", ({ total, facets, text }) => {
+    renderPackageBar({ total }, facets);
+    expect(screen.getByText(sentence(text))).toBeInTheDocument();
+  });
+});
+
+describe("FilterBar pills", () => {
+  it("names a package pill's field package, and each remove button by its pill's field and value", () => {
+    const onChange = renderBar(options, { ...emptyFacets(), packages: ["@x/lib"], tags: ["pie"] });
+    expect(screen.getByText("package")).toBeInTheDocument();
+    expect(screen.queryByText("pkg")).toBeNull();
+    expect(screen.getByRole("button", { name: "Remove package @x/lib" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove tag pie" }));
+    expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), packages: ["@x/lib"], tags: [] });
+  });
 });
 
 describe("FilterBar occurrence vocabulary", () => {
@@ -205,7 +301,16 @@ describe("FilterBar since-previous-scan chip", () => {
   it("follows the deprecated chip with icon, word and count, and toggles changed:true", () => {
     const onChange = vi.fn();
     render(
-      <FilterBar facets={emptyFacets()} onChange={onChange} options={withChanged} resultCount={4} total={4} diffShown={null} filtering={false} />,
+      <FilterBar
+        facets={emptyFacets()}
+        onChange={onChange}
+        options={withChanged}
+        resultCount={4}
+        total={4}
+        deprecatedTotal={2}
+        diffShown={null}
+        filtering={false}
+      />,
     );
     const chip = screen.getByRole("button", { name: /^since previous scan/ });
     expect(chip).toHaveAttribute("aria-pressed", "false");
@@ -228,7 +333,7 @@ describe("FilterBar since-previous-scan chip", () => {
     expect(chip.className).not.toMatch(/destructive/);
     expect(chip.className).toMatch(/focus-visible:ring-3/);
     expect(chip.className).toMatch(/focus-visible:ring-ring\//);
-    expect(screen.queryByRole("button", { name: "Remove filter" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Remove / })).toBeNull();
     expect(screen.queryByText("Clear all")).toBeNull();
   });
 
@@ -237,15 +342,16 @@ describe("FilterBar since-previous-scan chip", () => {
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
   });
 
-  it("renders nothing, unpressed, when the other filters leave it no rows", () => {
+  it("stays in place at 0, disabled and unpressed, when the other filters leave it no rows", () => {
     renderBar({ ...options, changedCount: 0 });
-    expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
+    const chip = screen.getByRole("button", { name: /^since previous scan/ });
+    expect(chip.textContent).toBe("since previous scan0");
+    expect(chip).toBeDisabled();
+    expect(chip).toHaveAttribute("aria-pressed", "false");
   });
 });
 
 describe("FilterBar result count in the changed view", () => {
-  // The count <span> holds the whole sentence; its child spans hold the numbers.
-  const sentence = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
   const renderCount = (
     diffShown: { total: number; added: number; removed: number; changed: number } | null,
     { filtering, resultCount }: { filtering: boolean; resultCount: number },
@@ -257,6 +363,7 @@ describe("FilterBar result count in the changed view", () => {
         options={{ ...options, changedCount: resultCount }}
         resultCount={resultCount}
         total={1879}
+        deprecatedTotal={2}
         diffShown={diffShown}
         filtering={filtering}
       />,
