@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <style>
+    .north { fill: #18191c; }
+    .south { stroke: #18191c; }
+    @media (prefers-color-scheme: dark) {
+      .north { fill: #f2f3f7; }
+      .south { stroke: #f2f3f7; }
+    }
+  </style>
+  <path class="north" d="M8 1.4 L10 8 L8 8 L6 8 Z"/>
+  <path class="south" d="M8 14.6 L6 8 L8 8 L10 8 Z" fill="none" stroke-width="0.9" stroke-linejoin="round"/>
+</svg>

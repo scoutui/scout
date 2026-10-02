@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a new capability or an improvement.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The question you want answered or the problem you hit, not only the solution you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What do you do today?
+      description: Your current workaround, if you have one.
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Optional. How you think it could work.

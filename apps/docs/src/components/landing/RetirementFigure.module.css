@@ -1,0 +1,35 @@
+/* The Charts page's retirements section: its heading, then one tracking row. The figure is always left to right.
+   Below 1280px the row drops its mini, as the web app's does. */
+
+.figure {
+  max-width: 54rem;
+  margin: 2.25rem 0 0;
+  min-width: 0;
+}
+
+.panel {
+  overflow: hidden;
+}
+
+.spark {
+  display: none;
+  flex: none;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--pal-orange-graphic);
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkDot {
+  fill: var(--pal-orange-graphic);
+}
+
+@media (min-width: 1280px) {
+  .spark {
+    display: block;
+  }
+}

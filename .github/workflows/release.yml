@@ -1,0 +1,305 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  release:
+    name: Release
+    if: github.repository == 'scoutui/scout'
+    runs-on: ubuntu-latest
+    # Pushes run this job one at a time and in order. A waiting push is never
+    # cancelled, and the jobs below don't wait.
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+      queue: max
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # changesets/action pushes the version branch and tags with the token
+      # it writes to ~/.netrc, so the checkout doesn't keep its own.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.0
+
+      - run: corepack enable
+
+      - run: yarn install --immutable
+
+      - run: yarn turbo run lint test build
+
+      # The action writes NPM_TOKEN to ~/.npmrc only when it publishes, so the
+      # install, lint, test and build steps above never see it.
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        with:
+          version: yarn run version
+          publish: yarn run release
+          title: "chore(release): version packages"
+          commit: "chore(release): version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The CLI's build writes dist/sbom.cdx.json, which ships in the npm
+      # package. This attaches the same file to the CLI's GitHub Release.
+      - name: Attach the CLI's SBOM to its GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISHED: ${{ steps.changesets.outputs.publishedPackages }}
+        run: |
+          version=$(jq -r '.[] | select(.name == "@scoutui/cli") | .version' <<<"$PUBLISHED")
+          if [ -z "$version" ]; then
+            echo "The CLI wasn't published, so there's no SBOM to attach."
+            exit 0
+          fi
+          gh release upload "@scoutui/cli@$version" packages/cli/dist/sbom.cdx.json --clobber
+
+  versions:
+    name: Check versions
+    if: github.repository == 'scoutui/scout'
+    runs-on: ubuntu-latest
+    outputs:
+      # The web app's and the chart's version, each set only when this commit
+      # changed it.
+      web-app: ${{ steps.ver.outputs.web-app }}
+      chart: ${{ steps.ver.outputs.chart }}
+      chart-version: ${{ steps.ver.outputs.chart-version }}
+      chart-app-version: ${{ steps.ver.outputs.chart-app-version }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Install yq
+        run: |
+          wget -q https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_amd64 \
+            -O "$RUNNER_TEMP/yq"
+          echo "c7a1278e6bbc4924f41b56db838086c39d13ee25dcb22089e7fbf16ac901f0d4  $RUNNER_TEMP/yq" \
+            | sha256sum -c -
+          cp "$RUNNER_TEMP/yq" /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+
+      - name: Compare with the previous commit
+        id: ver
+        run: |
+          curr_app=$(jq -r .version apps/web-app/package.json)
+          curr_chart=$(yq '.version' charts/scout/Chart.yaml)
+          # A root commit has no previous commit, so it counts as no change.
+          if git rev-parse -q --verify HEAD~1 >/dev/null; then
+            prev_app=$(git show HEAD~1:apps/web-app/package.json | jq -r .version)
+            prev_chart=$(git show HEAD~1:charts/scout/Chart.yaml | yq '.version')
+          else
+            prev_app=$curr_app
+            prev_chart=$curr_chart
+          fi
+          if [ "$prev_app" != "$curr_app" ]; then
+            echo "web-app=$curr_app" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$prev_chart" != "$curr_chart" ]; then
+            echo "chart=$curr_chart" >> "$GITHUB_OUTPUT"
+          fi
+          echo "chart-version=$curr_chart" >> "$GITHUB_OUTPUT"
+          echo "chart-app-version=$(yq '.appVersion' charts/scout/Chart.yaml)" >> "$GITHUB_OUTPUT"
+          echo "Web app $prev_app -> $curr_app, chart $prev_chart -> $curr_chart."
+
+  dashboard:
+    name: Release dashboard image
+    needs: versions
+    if: needs.versions.outputs.web-app != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      IMAGE: ghcr.io/scoutui/scout-web-app
+      VERSION: ${{ needs.versions.outputs.web-app }}
+      CHART_VERSION: ${{ needs.versions.outputs.chart-version }}
+      CHART_APP_VERSION: ${{ needs.versions.outputs.chart-app-version }}
+    steps:
+      - name: Check the chart runs this version
+        run: |
+          if [ "$CHART_APP_VERSION" != "$VERSION" ]; then
+            echo "::error::The chart runs web app $CHART_APP_VERSION, not $VERSION, so $VERSION can't be released. Release a new web app version through the version pull request, which points the chart at it."
+            exit 1
+          fi
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Refuses a tag that already exists unless this commit pushed it, so a
+      # re-run of this job carries on from where the last attempt stopped.
+      - name: Check the image tag is new
+        id: tag
+        run: |
+          if image=$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{json .Image}}' 2>"$RUNNER_TEMP/inspect.err"); then
+            built_from=$(jq -r '(.config // (to_entries[0].value.config)).Labels["org.opencontainers.image.revision"] // empty' <<<"$image")
+            if [ "$built_from" != "$GITHUB_SHA" ]; then
+              echo "::error::$IMAGE:$VERSION already exists, built from ${built_from:-an unknown commit}. Release a new web app version instead."
+              exit 1
+            fi
+            echo "$IMAGE:$VERSION was already pushed from this commit, so it isn't built again."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          elif grep -qF "$IMAGE:$VERSION: not found" "$RUNNER_TEMP/inspect.err"; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Couldn't check whether $IMAGE:$VERSION exists: $(cat "$RUNNER_TEMP/inspect.err")"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.tag.outputs.build == 'true'
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Compute tags
+        if: steps.tag.outputs.build == 'true'
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=${{ env.VERSION }}
+
+      - name: Build and push
+        if: steps.tag.outputs.build == 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: apps/web-app/Dockerfile
+          target: runner
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Attaches an SPDX SBOM and SLSA provenance to each architecture's
+          # image, stored in the registry next to it.
+          sbom: true
+          provenance: mode=max
+
+      - name: Point latest at this version if it's the newest
+        run: |
+          if image=$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{json .Image}}' 2>"$RUNNER_TEMP/latest.err"); then
+            current=$(jq -r '(.config // (to_entries[0].value.config)).Labels["org.opencontainers.image.version"] // empty' <<<"$image")
+          elif grep -qF "$IMAGE:latest: not found" "$RUNNER_TEMP/latest.err"; then
+            current=""
+          else
+            echo "::error::Couldn't read $IMAGE:latest: $(cat "$RUNNER_TEMP/latest.err")"
+            exit 1
+          fi
+          newest=$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -n 1)
+          if [ "$newest" = "$VERSION" ]; then
+            docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE:$VERSION"
+          else
+            echo "$IMAGE:latest stays at $current, which is newer than $VERSION."
+          fi
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release="web-app@$VERSION"
+          if gh release view "$release" >/dev/null 2>&1; then
+            echo "$release already exists."
+            exit 0
+          fi
+          digest=$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{json .Manifest}}' | jq -r .digest)
+          {
+            awk -v heading="## $VERSION" '$0 == heading { found = 1; next } found && /^## / { exit } found' apps/web-app/CHANGELOG.md
+            echo
+            echo "### Deploy"
+            echo
+            echo "- Image: \`$IMAGE:$VERSION\` (\`$digest\`), for linux/amd64 and linux/arm64."
+            echo "- Chart: \`oci://ghcr.io/scoutui/charts/scout\` version \`$CHART_VERSION\` runs this version."
+          } > "$RUNNER_TEMP/notes.md"
+          gh release create "$release" --target "$GITHUB_SHA" --title "$release" --notes-file "$RUNNER_TEMP/notes.md"
+
+  chart:
+    name: Publish chart
+    needs: [versions, dashboard]
+    # Publishes after the dashboard's image, or on its own when the web app's
+    # version didn't change.
+    if: >-
+      !cancelled() && needs.versions.outputs.chart != '' &&
+      (needs.dashboard.result == 'success' || needs.versions.outputs.web-app == '')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      CHART_VERSION: ${{ needs.versions.outputs.chart }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.20.0
+
+      - name: Build chart
+        run: |
+          helm lint charts/scout
+          helm package charts/scout
+
+      - name: Login to GHCR (OCI)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GITHUB_TOKEN" \
+            | helm registry login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Push chart to OCI
+        run: |
+          helm push "scout-$CHART_VERSION.tgz" oci://ghcr.io/scoutui/charts
+
+  deploy-docs:
+    name: Deploy docs
+    needs: [release, dashboard]
+    if: >-
+      !cancelled() && vars.DOCS_DEPLOY_ENABLED == 'true' &&
+      (needs.release.outputs.published == 'true' || needs.dashboard.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.docs.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build and deploy docs
+        id: docs
+        uses: ./.github/actions/deploy-docs

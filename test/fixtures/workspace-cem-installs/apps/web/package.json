@@ -1,0 +1,6 @@
+{
+  "name": "workspace-cem-installs-web",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": { "@example/wc-kit": "1.0.0" }
+}

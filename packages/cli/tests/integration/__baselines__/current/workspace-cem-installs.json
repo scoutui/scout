@@ -1,0 +1,213 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "workspace-cem-installs",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "8f9e2359df8ebb49",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-cem-installs",
+        "filePath": "apps/site/pages/index.vue",
+        "exportName": "Index"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "owningPackage": "workspace-cem-installs-site",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "499e5bce2c8cca46": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "89e0d1af09b12cc7",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-cem-installs",
+        "filePath": "apps/web/src/App.vue",
+        "exportName": "App"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "owningPackage": "workspace-cem-installs-web",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "fcf4ea2742dd1be9": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "499e5bce2c8cca46",
+      "identity": {
+        "kind": "tag",
+        "tagName": "x-button"
+      },
+      "attribution": {
+        "status": "resolved",
+        "target": {
+          "kind": "package",
+          "packageName": "@example/x-button"
+        },
+        "confidence": "declared",
+        "evidence": [
+          {
+            "source": "cem",
+            "strength": "declared",
+            "locator": {
+              "packageName": "@example/x-button",
+              "version": "0.0.0"
+            },
+            "target": {
+              "kind": "package",
+              "packageName": "@example/x-button"
+            },
+            "disposition": "supports"
+          }
+        ]
+      },
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8f9e2359df8ebb49": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "fcf4ea2742dd1be9",
+      "identity": {
+        "kind": "tag",
+        "tagName": "wc-button"
+      },
+      "attribution": {
+        "status": "resolved",
+        "target": {
+          "kind": "package",
+          "packageName": "@example/wc-kit"
+        },
+        "confidence": "declared",
+        "evidence": [
+          {
+            "source": "cem",
+            "strength": "declared",
+            "locator": {
+              "packageName": "@example/wc-kit",
+              "version": "1.0.0"
+            },
+            "target": {
+              "kind": "package",
+              "packageName": "@example/wc-kit"
+            },
+            "disposition": "supports"
+          }
+        ]
+      },
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "label": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "Buy",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "89e0d1af09b12cc7": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "5b79f8c102845ae8",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "499e5bce2c8cca46"
+      },
+      "filePath": "apps/site/pages/index.vue",
+      "line": 2,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "8f9e2359df8ebb49"
+    },
+    {
+      "occurrenceId": "36bd04b56c582993",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fcf4ea2742dd1be9"
+      },
+      "filePath": "apps/web/src/App.vue",
+      "line": 2,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Buy"
+        }
+      },
+      "ownerComponentId": "89e0d1af09b12cc7"
+    }
+  ],
+  "diagnostics": []
+}

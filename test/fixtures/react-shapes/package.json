@@ -1,0 +1,11 @@
+{
+  "name": "react-shapes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/design-system": "0.0.0",
+    "@example/owner-edges": "0.0.0",
+    "@example/react-ds": "0.0.0"
+  }
+}

@@ -1,0 +1,40 @@
+name: Consumer CI (cadence)
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC nightly, on the default branch only
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cadence:
+    if: github.repository == 'scoutui/scout'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [pie-aperture, cal.diy, elk, vue-vben-admin, payload]
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.0
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn turbo run build --filter=@scoutui/cli
+      # Runs the target's own install and codegen, so it gets no secrets.
+      - name: Clone and install (${{ matrix.target }})
+        run: yarn workspace consumer-ci run cadence --target "$TARGET" --step prepare --work-dir "$RUNNER_TEMP/consumer-ci"
+      - name: Scan and upload (${{ matrix.target }})
+        env:
+          SCOUTUI_HOST: ${{ secrets.SCOUTUI_HOST }}
+          SCOUTUI_TOKEN: ${{ secrets.SCOUTUI_UPLOAD_TOKEN }}
+        run: yarn workspace consumer-ci run cadence --target "$TARGET" --step scan --work-dir "$RUNNER_TEMP/consumer-ci"

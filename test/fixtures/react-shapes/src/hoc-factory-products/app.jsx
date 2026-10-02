@@ -1,0 +1,10 @@
+import React from 'react';
+import { Dropdown } from './dropdown-control.js';
+import SignupForm from './signup-form.jsx';
+import { Foo, Bar } from './products.jsx';
+import { Junk } from './junk.jsx';
+import { Pennant } from './pennant.jsx';
+import { Marquee } from './marquee.jsx';
+import { Gallery, Swatch } from './swatch.jsx';
+const App = () => <div><Dropdown name="a" /><SignupForm title="t" /><Foo /><Bar /><Junk /><Pennant label="p" /><Marquee /><Gallery /><Swatch /></div>;
+export { App };

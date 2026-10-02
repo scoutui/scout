@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "scout.fullname" . }}-config
+  labels:
+    {{- include "scout.labels" . | nindent 4 }}
+data:
+  NODE_ENV: "production"
+  AUTH_URL: {{ required "Set auth.url to the dashboard's full address, such as https://scout.example.com." .Values.auth.url | quote }}
+  AUTH_TRUST_HOST: "true"
+  OIDC_ISSUER_URL: {{ required "Set auth.oidc.issuerUrl to the issuer URL of the dashboard's application in your identity provider." .Values.auth.oidc.issuerUrl | quote }}
+  OIDC_CLIENT_ID: {{ required "Set auth.oidc.clientId to the client ID of the dashboard's application in your identity provider." .Values.auth.oidc.clientId | quote }}
+  {{- with .Values.auth.oidc.allowedDomains }}
+  OIDC_ALLOWED_DOMAINS: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.auth.requiredGroup }}
+  SCOUTUI_REQUIRED_GROUP: {{ . | quote }}
+  {{- end }}

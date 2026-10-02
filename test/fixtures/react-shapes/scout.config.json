@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "react-shapes",
+  "include": [
+    "src/**/*.{ts,tsx,js,jsx}"
+  ],
+  "exclude": [
+    "**/*.{test,spec,stories}.*",
+    "**/node_modules/**"
+  ]
+}

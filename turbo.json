@@ -1,0 +1,34 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": [],
+      // Turbo 2 filters task environments, so an undeclared DATABASE_URL never
+      // reaches vitest and the database suites skip.
+      //
+      // `env`, not `passThroughEnv`: whether it is set changes which tests run,
+      // so it belongs in the hash. Otherwise a cached run where the suites
+      // skipped would satisfy a run where they should execute.
+      "env": ["DATABASE_URL"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "smoke": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

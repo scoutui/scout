@@ -1,0 +1,236 @@
+suite: Deployment + Service
+release:
+  name: cc
+  namespace: default
+set:
+  database.host: external-postgres
+  auth.url: https://scout.example.com
+  auth.oidc.issuerUrl: https://auth.example.com/application/o/scout/
+  auth.oidc.clientId: scout
+tests:
+  - it: deployment reads the selected database password key alongside auth secrets
+    template: deployment.yaml
+    set:
+      image:
+        tag: "test-tag"
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: db-secret, key: password }
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/scoutui/scout-web-app:test-tag"
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            configMapRef:
+              name: cc-scout-config
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: cc-secret
+          count: 2
+      - notContains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: db-secret
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef: { name: db-secret, key: password }
+
+  - it: deployment uses image.tag override when set
+    template: deployment.yaml
+    set:
+      image:
+        tag: "pr-118-abc1234"
+      auth:
+        sessionSecretRef:     { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:    { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:    { name: cc-secret, key: POSTGRES_PASSWORD }
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/scoutui/scout-web-app:pr-118-abc1234"
+
+  - it: service exposes port 3000
+    template: service.yaml
+    set:
+      auth:
+        sessionSecretRef:     { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:    { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:    { name: cc-secret, key: POSTGRES_PASSWORD }
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: scout
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: web-app
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - contains:
+          path: spec.ports
+          content:
+            port: 3000
+            targetPort: http
+            protocol: TCP
+            name: http
+
+  - it: probes the health endpoint, not a rendered page
+    template: deployment.yaml
+    set:
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: cc-secret, key: POSTGRES_PASSWORD }
+    asserts:
+      # /login rendered a full page through the auth provider chain on every
+      # probe interval, and coupled liveness to the auth config.
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /api/health
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /api/health
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /api/health
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.periodSeconds
+          value: 5
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 60
+
+  - it: mounts /tmp writable so readOnlyRootFilesystem can stay on
+    template: deployment.yaml
+    set:
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: cc-secret, key: POSTGRES_PASSWORD }
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 64Mi
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 1Gi
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: scout
+            app.kubernetes.io/instance: cc
+
+  - it: runs the web pod under the runtime seccomp profile without a service account token
+    set:
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: cc-secret, key: POSTGRES_PASSWORD }
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: deployment.yaml
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+        template: serviceaccount.yaml
+
+  - it: turns startup migrations on and sizes the pool from database.poolMax
+    template: deployment.yaml
+    set:
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: cc-secret, key: POSTGRES_PASSWORD }
+        poolMax: 5
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MIGRATE_ON_START
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_POOL_MAX
+            value: "5"
+
+  - it: turns startup migrations off from database.migrateOnStart
+    template: deployment.yaml
+    set:
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: cc-secret, key: POSTGRES_PASSWORD }
+        migrateOnStart: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MIGRATE_ON_START
+            value: "false"
+
+  - it: asks an external database for the configured TLS mode
+    template: deployment.yaml
+    set:
+      auth:
+        sessionSecretRef:    { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:   { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:   { name: cc-secret, key: POSTGRES_PASSWORD }
+        sslMode: verify-full
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            value: "postgres://scout:$(POSTGRES_PASSWORD)@external-postgres:5432/scout?sslmode=verify-full"

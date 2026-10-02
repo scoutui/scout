@@ -1,0 +1,188 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@scoutui/palette/palette.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-mona-sans), system-ui, sans-serif;
+  --font-mono: "Monaspace Neon", ui-monospace, monospace;
+  --font-heading: var(--font-mona-sans), system-ui, sans-serif;
+  --color-chart-6: var(--chart-6);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-faint: var(--faint);
+  --color-status-ok: var(--status-ok);
+  --color-status-prog: var(--status-prog);
+  --color-status-err: var(--status-err);
+  --color-status-warn: var(--status-warn);
+  --color-status-warn-text: var(--status-warn-text);
+  --color-status-warn-tint: var(--status-warn-tint);
+  --color-status-warn-border: var(--status-warn-border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-viz-primary: var(--viz-primary);
+  --color-viz-legacy: var(--viz-legacy);
+  --color-viz-cat-2: var(--viz-cat-2);
+  --color-viz-cat-3: var(--viz-cat-3);
+  --color-viz-deprecated: var(--viz-deprecated);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Roles mapped to palette primitives. The values live in @scoutui/palette;
+   this block names what each one is for. The palette re-tunes every primitive
+   under `.dark`, which the theme script sets on <html> (the same element as
+   :root), so these var() references resolve to the dark values there without
+   a `.dark` role block. */
+:root {
+  /* Chrome: neutral, with no brand hue, so every chromatic colour on screen means something. */
+  --background: var(--pal-neutral-canvas);
+  --foreground: var(--pal-neutral-ink);
+  --card: var(--pal-neutral-panel);
+  --card-foreground: var(--pal-neutral-ink);
+  --popover: var(--pal-neutral-panel);
+  --popover-foreground: var(--pal-neutral-ink);
+  --primary: var(--pal-neutral-ink); /* ink fill in light, near-white in dark */
+  --primary-foreground: var(--pal-neutral-ink-inverse);
+  --secondary: var(--pal-neutral-mist);
+  --secondary-foreground: var(--pal-neutral-ink);
+  --muted: var(--pal-neutral-band);
+  --muted-foreground: var(--pal-neutral-muted);
+  --faint: var(--pal-neutral-faint);
+  --accent: var(--pal-neutral-hover); /* shadcn's neutral hover and active band, not a brand hue */
+  --accent-foreground: var(--pal-neutral-ink);
+  --border: var(--pal-neutral-hairline);
+  --input: var(--pal-neutral-hairline);
+  --ring: var(--pal-neutral-ink); /* one neutral focus ring; ≥ 3:1 at the /50 it is painted at */
+  --selected: var(--pal-neutral-hover);
+  --selected-edge: var(--pal-neutral-edge);
+
+  /* Status: ok, warn, error. Always shown with a glyph and a word. */
+  --status-ok: var(--pal-green-graphic);
+  --status-prog: var(--pal-neutral-muted);
+  --status-err: var(--pal-red-graphic); /* failures, destructive, validation, a Δ moving the wrong way */
+  --destructive: var(--status-err);
+  --status-warn: var(--pal-orange-graphic); /* deprecated, config warnings: glyphs, dots, strokes */
+  --status-warn-text: var(--pal-orange-text); /* warn words and counts */
+  --status-warn-tint: var(--pal-orange-tint);
+  --status-warn-border: var(--pal-orange-border);
+
+  /* Data-viz: each colour stands for a meaning. */
+  --viz-primary: var(--pal-teal-graphic);
+  --viz-legacy: var(--pal-grey-graphic);
+  --viz-cat-2: var(--pal-violet-graphic);
+  --viz-cat-3: var(--pal-blue-graphic);
+  --viz-deprecated: var(--status-warn); /* the deprecated series role is warn, not error */
+  --chart-1: var(--viz-primary);
+  --chart-2: var(--viz-cat-2);
+  --chart-3: var(--viz-cat-3);
+  --chart-4: var(--viz-legacy);
+  --chart-5: var(--viz-legacy);
+  --chart-6: var(--viz-legacy);
+
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-kerning: normal;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Programming ligatures (==>, !=, <=) stay off in the mono face, which shows
+     identifiers, paths and package names as typed. */
+  code,
+  kbd,
+  samp,
+  .font-mono {
+    font-variant-ligatures: none;
+  }
+}
+
+/* Selected or pressed state: a neutral fill a clear step off the hover band,
+   plus an edge on elements that draw a border, so selection survives hover
+   without relying on a hue. */
+@utility selected {
+  background-color: var(--selected);
+  border-color: var(--selected-edge);
+}
+
+/* Label role for column headers and tag keys. */
+@utility text-label {
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-feature-settings: "liga" off;
+}
+
+/* Code role for inline literal metadata (paths, remotes, commit SHAs) in table
+   rows and headers. */
+@utility text-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-weight: 400;
+  font-variant-ligatures: none;
+}
+
+/* Elevation: a panel reads as an inset region on the canvas, through tonal
+   separation and a hairline ring with at most a faint shadow, not as a floating
+   card. */
+@utility panel {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 1px oklch(0.2 0.01 265 / 0.03);
+}
+.dark .panel {
+  box-shadow: 0 1px 1px oklch(0 0 0 / 0.20);
+}
+
+/* The theme swaps instantly: crossfading inverted light and dark palettes
+   flashes every high-contrast element. For the one frame theme-provider sets
+   this class, per-element transitions are off so the whole UI flips at once. */
+html.theme-switching * {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .composition-canvas .react-flow__edge-path {
+    transition:
+      stroke 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      stroke-width 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

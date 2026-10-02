@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "baseurl-imports",
+  "include": [
+    "app/**/*.{ts,tsx}",
+    "src/**/*.{ts,tsx}"
+  ],
+  "exclude": [
+    "**/*.{test,spec,stories}.*",
+    "**/node_modules/**"
+  ]
+}

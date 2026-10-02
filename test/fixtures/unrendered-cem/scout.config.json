@@ -1,0 +1,5 @@
+{
+  "repoId": "unrendered-cem",
+  "include": ["src/**/*.{ts,vue}"],
+  "exclude": ["**/node_modules/**"]
+}

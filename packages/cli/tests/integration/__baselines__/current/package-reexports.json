@@ -1,0 +1,706 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "package-reexports",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "86ca8213f1cd45a0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/star-reexports/Page.vue",
+        "exportName": "Page"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "65385e93190ff80f": 1,
+          "a84b87dca0ce7478": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "3f7c11105b3449ec",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/bundled-entry/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e023354b8401972a": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "1cccd6fb492a4245",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/leaf-relabel/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "b2b7b323def4a5e8": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "5dd9bdedbb6b504e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/leaf-relabel/Direct.tsx",
+        "exportName": "Direct"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "b2b7b323def4a5e8": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "17e3248107ea8d72",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/star-reexports/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "65385e93190ff80f": 1,
+          "a84b87dca0ce7478": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b7a609de6f636720",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/star-reexports/Other.tsx",
+        "exportName": "Other"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "638b177beaed7895": 1,
+          "1f8816125c4ea18a": 1,
+          "a84b87dca0ce7478": 1,
+          "e158ad2e457a5506": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "5edba85b47bef499",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/undeclared-leaf/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "40d245e00cda4b28": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "e023354b8401972a",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/bundled-aggregator",
+        "publicEntry": "",
+        "exportName": "BundledX"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "3f7c11105b3449ec": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "b2b7b323def4a5e8",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/x-button",
+        "publicEntry": "dist/react",
+        "exportName": "XButton"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "1cccd6fb492a4245": 1,
+          "5dd9bdedbb6b504e": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "65385e93190ff80f",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/button",
+        "publicEntry": "",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "17e3248107ea8d72": 1,
+          "86ca8213f1cd45a0": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "a84b87dca0ce7478",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/card",
+        "publicEntry": "",
+        "exportName": "Card"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 3,
+        "fileCount": 3
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "KitCard"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "17e3248107ea8d72": 1,
+          "b7a609de6f636720": 1,
+          "86ca8213f1cd45a0": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 3
+      }
+    },
+    {
+      "id": "638b177beaed7895",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/all",
+        "publicEntry": "",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "AllDefault"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b7a609de6f636720": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "1f8816125c4ea18a",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/own",
+        "publicEntry": "",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "OwnButton"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b7a609de6f636720": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "e158ad2e457a5506",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/icons",
+        "publicEntry": "",
+        "exportName": "Icons.Star"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b7a609de6f636720": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "40d245e00cda4b28",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/widget",
+        "publicEntry": "dist/react",
+        "exportName": "XWidget"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5edba85b47bef499": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "b891d9c85b8211e6",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e023354b8401972a"
+      },
+      "filePath": "src/bundled-entry/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/bundled-aggregator",
+          "name": "BundledX"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "3f7c11105b3449ec"
+    },
+    {
+      "occurrenceId": "9c116c774ce71bfe",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b2b7b323def4a5e8"
+      },
+      "filePath": "src/leaf-relabel/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/aggregator/react/button",
+          "name": "XButton"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "1cccd6fb492a4245"
+    },
+    {
+      "occurrenceId": "16aaac00b5c8e115",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b2b7b323def4a5e8"
+      },
+      "filePath": "src/leaf-relabel/Direct.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/x-button/dist/react.js",
+          "name": "XButton"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5dd9bdedbb6b504e"
+    },
+    {
+      "occurrenceId": "71e76b3c8f736a48",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "65385e93190ff80f"
+      },
+      "filePath": "src/star-reexports/App.tsx",
+      "line": 6,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/all",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "17e3248107ea8d72"
+    },
+    {
+      "occurrenceId": "b20cfafb493f4d0c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a84b87dca0ce7478"
+      },
+      "filePath": "src/star-reexports/App.tsx",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/all",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "17e3248107ea8d72"
+    },
+    {
+      "occurrenceId": "abee6e361456ec8d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "638b177beaed7895"
+      },
+      "filePath": "src/star-reexports/Other.tsx",
+      "line": 8,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/all",
+          "name": "default"
+        }
+      ],
+      "writtenName": "AllDefault",
+      "props": {},
+      "ownerComponentId": "b7a609de6f636720"
+    },
+    {
+      "occurrenceId": "58c6f6c28b2d6924",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "1f8816125c4ea18a"
+      },
+      "filePath": "src/star-reexports/Other.tsx",
+      "line": 9,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/own",
+          "name": "Button"
+        }
+      ],
+      "writtenName": "OwnButton",
+      "props": {},
+      "ownerComponentId": "b7a609de6f636720"
+    },
+    {
+      "occurrenceId": "0f8227a4f0a6b840",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a84b87dca0ce7478"
+      },
+      "filePath": "src/star-reexports/Other.tsx",
+      "line": 10,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/kit",
+          "name": "Card"
+        }
+      ],
+      "writtenName": "KitCard",
+      "props": {},
+      "ownerComponentId": "b7a609de6f636720"
+    },
+    {
+      "occurrenceId": "aa190c12d242530d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e158ad2e457a5506"
+      },
+      "filePath": "src/star-reexports/Other.tsx",
+      "line": 11,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/kit",
+          "name": "Icons"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "b7a609de6f636720"
+    },
+    {
+      "occurrenceId": "60cdbed93056ebf1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "65385e93190ff80f"
+      },
+      "filePath": "src/star-reexports/Page.vue",
+      "line": 6,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/all",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "86ca8213f1cd45a0"
+    },
+    {
+      "occurrenceId": "0076db8522ac13ee",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a84b87dca0ce7478"
+      },
+      "filePath": "src/star-reexports/Page.vue",
+      "line": 7,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/all",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "86ca8213f1cd45a0"
+    },
+    {
+      "occurrenceId": "2101c1be293e319f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "40d245e00cda4b28"
+      },
+      "filePath": "src/undeclared-leaf/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/widget-aggregator/react/widget",
+          "name": "XWidget"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5edba85b47bef499"
+    }
+  ],
+  "diagnostics": []
+}

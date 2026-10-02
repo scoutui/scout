@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "index.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "customElement": true,
+          "tagName": "web-button",
+          "name": "WebButton",
+          "description": "A button web component",
+          "attributes": [
+            {
+              "name": "variant",
+              "type": { "text": "'primary' | 'secondary'" },
+              "default": "'primary'",
+              "description": "Visual variant"
+            },
+            {
+              "name": "size",
+              "type": { "text": "'small' | 'medium' | 'large'" },
+              "default": "'medium'",
+              "description": "Button size"
+            }
+          ],
+          "events": [
+            { "name": "click", "type": { "text": "MouseEvent" }, "description": "Fires on click" }
+          ],
+          "slots": [
+            { "name": "", "description": "Default slot" }
+          ]
+        }
+      ]
+    }
+  ]
+}

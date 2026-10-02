@@ -1,0 +1,42 @@
+{
+  "name": "@scoutui/parser-react",
+  "version": "0.1.0",
+  "description": "Finds the components used in React code for the Scout CLI.",
+  "homepage": "https://scoutui.dev",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "lint": "biome lint src tests",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@oxc-project/types": "0.130.0",
+    "@scoutui/reference-graph": "0.1.0",
+    "oxc-walker": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "oxc-parser": "0.130.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.5"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

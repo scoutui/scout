@@ -1,0 +1,5 @@
+{
+  "repoId": "workspace-exports-resolution",
+  "include": ["packages/**/*.{ts,tsx}"],
+  "exclude": ["**/node_modules/**", "**/dist/**"]
+}

@@ -1,0 +1,63 @@
+/*
+ * Scout palette: the one place colour values live.
+ * Primitives only: apps map their own role names (shadcn, --ifm-*, status, viz)
+ * onto these. Light values on :root; dark on both the web-app's `.dark` class and
+ * Docusaurus's `[data-theme="dark"]` attribute. Contrast, vibrancy and CVD
+ * separation are pinned by tests/palette.test.ts: re-tune here, then run it.
+ */
+:root {
+  --pal-neutral-canvas: oklch(0.966 0.004 265);
+  --pal-neutral-panel: oklch(1 0 265);
+  --pal-neutral-band: oklch(0.974 0.002 265);
+  --pal-neutral-mist: oklch(0.953 0.003 265);
+  --pal-neutral-hover: oklch(0.93 0.004 265);
+  --pal-neutral-hairline: oklch(0.905 0.004 265);
+  --pal-neutral-edge: oklch(0.82 0.005 265);
+  --pal-neutral-faint: oklch(0.53 0.005 265);
+  --pal-neutral-muted: oklch(0.475 0.006 265);
+  --pal-neutral-ink: oklch(0.215 0.006 265);
+  --pal-neutral-ink-inverse: oklch(0.985 0.002 265);
+
+  --pal-red-graphic: oklch(0.56 0.216 27);
+  --pal-red-tint: oklch(0.962 0.016 27);
+  --pal-orange-graphic: oklch(0.65 0.152 55);
+  --pal-orange-text: oklch(0.54 0.127 55);
+  --pal-orange-tint: oklch(0.962 0.019 55);
+  --pal-orange-border: oklch(0.86 0.079 55);
+  --pal-green-graphic: oklch(0.515 0.134 150);
+  --pal-green-tint: oklch(0.962 0.035 150);
+
+  --pal-teal-graphic: oklch(0.58 0.094 196);
+  --pal-violet-graphic: oklch(0.62 0.15 305);
+  --pal-blue-graphic: oklch(0.5 0.13 255);
+  --pal-grey-graphic: oklch(0.66 0.01 265);
+}
+
+.dark,
+[data-theme="dark"] {
+  --pal-neutral-canvas: oklch(0.14 0.004 265);
+  --pal-neutral-panel: oklch(0.175 0.005 265);
+  --pal-neutral-band: oklch(0.2 0.006 265);
+  --pal-neutral-mist: oklch(0.235 0.006 265);
+  --pal-neutral-hover: oklch(0.245 0.006 265);
+  --pal-neutral-hairline: oklch(0.255 0.006 265);
+  --pal-neutral-edge: oklch(0.4 0.008 265);
+  --pal-neutral-faint: oklch(0.6 0.008 265);
+  --pal-neutral-muted: oklch(0.68 0.008 265);
+  --pal-neutral-ink: oklch(0.965 0.005 265);
+  --pal-neutral-ink-inverse: oklch(0.2 0.008 265);
+
+  --pal-red-graphic: oklch(0.66 0.21 22);
+  --pal-red-tint: oklch(0.245 0.05 22);
+  --pal-orange-graphic: oklch(0.77 0.157 60);
+  --pal-orange-text: oklch(0.77 0.157 60);
+  --pal-orange-tint: oklch(0.245 0.05 60);
+  --pal-orange-border: oklch(0.38 0.08 60);
+  --pal-green-graphic: oklch(0.72 0.163 158);
+  --pal-green-tint: oklch(0.245 0.05 158);
+
+  --pal-teal-graphic: oklch(0.76 0.124 190);
+  --pal-violet-graphic: oklch(0.72 0.15 305);
+  --pal-blue-graphic: oklch(0.58 0.14 258);
+  --pal-grey-graphic: oklch(0.48 0.012 265);
+}

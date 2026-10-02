@@ -1,0 +1,63 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "scout.fullname" . }}
+  labels:
+    {{- include "scout.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "scout.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web-app
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: http
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "scout.workerName" . }}
+  labels:
+    {{- include "scout.workerSelectorLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "scout.workerSelectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: health
+          protocol: TCP
+{{- if .Values.postgresql.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "scout.postgresqlName" . }}
+  labels:
+    {{- include "scout.postgresqlSelectorLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "scout.postgresqlSelectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "scout.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: web-app
+        - podSelector:
+            matchLabels:
+              {{- include "scout.workerSelectorLabels" . | nindent 14 }}
+      ports:
+        - port: postgresql
+          protocol: TCP
+{{- end }}
+{{- end }}

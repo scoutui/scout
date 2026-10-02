@@ -1,0 +1,35 @@
+{
+  "name": "scoutui-monorepo",
+  "homepage": "https://scoutui.dev",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@4.14.1",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "consumer-ci",
+    "scripts"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "version": "changeset version && yarn install --mode update-lockfile && yarn version:sync-chart",
+    "version:sync-chart": "node scripts/sync-chart-app-version.mjs",
+    "release": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@changesets/changelog-github": "0.7.0",
+    "@changesets/cli": "2.31.0",
+    "turbo": "2.9.14",
+    "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "webpack": "5.95.0"
+  }
+}

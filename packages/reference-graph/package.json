@@ -1,0 +1,38 @@
+{
+  "name": "@scoutui/reference-graph",
+  "version": "0.1.0",
+  "description": "Follows imports across a repository so the Scout CLI can tell which component each usage refers to.",
+  "homepage": "https://scoutui.dev",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "lint": "biome lint src tests",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@scoutui/scan-format": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.5"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

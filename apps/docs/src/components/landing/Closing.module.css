@@ -1,0 +1,60 @@
+/* The self-hosting stop at the end of the line, then the close. */
+
+.facts {
+  max-width: 44rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--landing-hairline);
+}
+
+.fact {
+  margin: 0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--landing-hairline);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--landing-ink);
+  text-wrap: pretty;
+}
+
+@media (min-width: 997px) {
+  .fact {
+    font-size: 1.0625rem;
+  }
+}
+
+.deploy {
+  margin: 1.5rem 0 0;
+  font-size: 1rem;
+}
+
+/* ---- Close -------------------------------------------------------------------- */
+
+.close {
+  padding-block: 5rem 5.5rem;
+}
+
+@media (min-width: 997px) {
+  .close {
+    padding-block: 7.5rem 8.5rem;
+  }
+}
+
+.closeTitle {
+  max-width: 20em;
+  margin: 0;
+  font-family: var(--ifm-font-family-base);
+  font-size: clamp(1.875rem, 1.1rem + 2.6vw, 3rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--landing-ink);
+  text-wrap: balance;
+}
+
+.closeActions {
+  gap: 0.75rem 1rem;
+  margin-top: 2rem;
+}
+

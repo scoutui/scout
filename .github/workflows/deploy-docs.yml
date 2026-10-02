@@ -1,0 +1,28 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.docs.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build and deploy docs
+        id: docs
+        uses: ./.github/actions/deploy-docs

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "unrendered-cem",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "a88a18eed3bae216",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "unrendered-cem",
+        "filePath": "src/Page.vue",
+        "exportName": "Page"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "afd6808adf23d611": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "afd6808adf23d611",
+      "identity": {
+        "kind": "tag",
+        "tagName": "fake-beta-one"
+      },
+      "attribution": {
+        "status": "resolved",
+        "target": {
+          "kind": "package",
+          "packageName": "@example/elements"
+        },
+        "confidence": "declared",
+        "evidence": [
+          {
+            "source": "cem",
+            "strength": "declared",
+            "locator": {
+              "packageName": "@example/elements",
+              "version": "1.0.0"
+            },
+            "target": {
+              "kind": "package",
+              "packageName": "@example/elements"
+            },
+            "disposition": "supports"
+          }
+        ]
+      },
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "a88a18eed3bae216": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "ccabbad2a6a66350",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "afd6808adf23d611"
+      },
+      "filePath": "src/Page.vue",
+      "line": 2,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "a88a18eed3bae216"
+    }
+  ],
+  "diagnostics": []
+}

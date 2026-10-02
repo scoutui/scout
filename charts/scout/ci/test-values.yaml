@@ -1,0 +1,26 @@
+# Dummy values for `helm template` validation, not for real deployments.
+auth:
+  url: "https://scout.example.com"
+  sessionSecretRef:
+    name: dummy-secret
+    key: AUTH_SECRET
+  oidc:
+    issuerUrl: "https://auth.example.com/application/o/scout/"
+    clientId: "scout"
+    clientSecretRef:
+      name: dummy-secret
+      key: OIDC_CLIENT_SECRET
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: dummy-secret
+ingress:
+  enabled: true
+  className: internal
+  hosts:
+    - host: scout.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts: [scout.example.com]

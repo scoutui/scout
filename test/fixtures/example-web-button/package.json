@@ -1,0 +1,19 @@
+{
+  "name": "@example/web-button",
+  "version": "1.13.4",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "customElements": "custom-elements.json",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./dist/react.js": "./dist/react.js",
+    "./dist/react": "./dist/react.js"
+  },
+  "files": [
+    "index.js",
+    "dist",
+    "custom-elements.json"
+  ]
+}

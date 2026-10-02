@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "jsx": "preserve", "moduleResolution": "Bundler" },
+  "include": ["app", "components"]
+}

@@ -1,0 +1,222 @@
+/* A stop on the life line: the line's segment, the marker and the stage label. */
+
+.stage {
+  --pt: 4rem;
+  --pb: 1.5rem;
+  --marker: 0.875rem;
+  /* The y of the marker's centre: the middle of the heading's first line. */
+  --mk: calc(var(--pt) + 0.9375rem);
+  /* The line's and the marker's offset from the frame's inline-start edge. */
+  --line-at: calc(var(--landing-gutter) + var(--line-x) - var(--line-width) / 2);
+  --marker-at: calc(var(--landing-gutter) + var(--line-x) - var(--marker) / 2);
+
+  scroll-margin-top: var(--ifm-navbar-height);
+}
+
+@media (min-width: 997px) {
+  .stage {
+    --pt: 6.5rem;
+    --mk: calc(var(--pt) + 1.125rem);
+  }
+}
+
+/* A stage that carries on from the one before it sits closer, so the stops read in pairs. */
+.joined {
+  --pt: 2.75rem;
+}
+
+@media (min-width: 997px) {
+  .joined {
+    --pt: 4rem;
+  }
+}
+
+.frame {
+  padding-top: var(--pt);
+  padding-bottom: var(--pb);
+}
+
+.frame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--line-at);
+  width: var(--line-width);
+  background: var(--line-color);
+}
+
+.frame:dir(rtl)::before {
+  right: var(--line-at);
+  left: auto;
+}
+
+/* ---- Variants ------------------------------------------------------------- */
+
+.band {
+  background: var(--landing-stripe);
+  border-block: 1px solid var(--landing-hairline);
+}
+
+.band > .frame {
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 997px) {
+  .band > .frame {
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* The line runs over the band's borders so it stays unbroken. */
+.band > .frame::before {
+  top: -1px;
+  bottom: -1px;
+}
+
+/* The last stop: the line ends at its marker. */
+.last > .frame::before {
+  bottom: auto;
+  height: var(--mk);
+}
+
+.last > .frame {
+  padding-bottom: 0;
+}
+
+/* ---- Marker and stage label ----------------------------------------------- */
+
+.marker {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--mk) - var(--marker) / 2);
+  left: var(--marker-at);
+  box-sizing: border-box;
+  width: var(--marker);
+  height: var(--marker);
+  border: 2px solid var(--landing-ink);
+  border-radius: 50%;
+  background: var(--landing-ground);
+}
+
+.frame:dir(rtl) > .marker {
+  right: var(--marker-at);
+  left: auto;
+}
+
+.band .marker {
+  background: var(--landing-stripe);
+}
+
+.last .marker {
+  background: var(--landing-ink);
+}
+
+/* The stage's name beside its marker, from 997px. Phones leave the heading to name the stage. */
+.rail {
+  display: none;
+}
+
+@media (min-width: 997px) {
+  .rail {
+    display: block;
+    position: absolute;
+    top: calc(var(--mk) - 0.75rem);
+    left: var(--landing-gutter);
+    width: calc(var(--line-x) - 1.5rem);
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+    text-align: right;
+    color: var(--landing-muted);
+  }
+
+  .frame:dir(rtl) > .rail {
+    right: var(--landing-gutter);
+    left: auto;
+    margin: 0;
+    text-align: left;
+  }
+}
+
+/* ---- Scroll progress ---------------------------------------------------------- */
+
+/* Where scroll-driven animations exist, an ink segment fills each stage's line down to the middle of
+   the screen, and each marker and stage name fill as the line reaches them. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .stage {
+      view-timeline-name: --stage;
+      view-timeline-axis: block;
+    }
+
+    .frame::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--line-at);
+      width: var(--line-width);
+      background: var(--landing-ink);
+      clip-path: inset(0 0 100% 0);
+      animation-name: line-fill;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --stage;
+      animation-range: cover 50vh cover calc(100% - 50vh);
+    }
+
+    .frame:dir(rtl)::after {
+      right: var(--line-at);
+      left: auto;
+    }
+
+    .band > .frame::after {
+      top: -1px;
+      bottom: -1px;
+    }
+
+    .last > .frame::after {
+      bottom: auto;
+      height: var(--mk);
+      animation-range: cover 50vh cover calc(50vh + var(--mk));
+    }
+
+    .marker,
+    .rail {
+      animation-name: marker-fill;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --stage;
+      animation-range: cover calc(50vh + var(--mk) - var(--marker) / 2) cover
+        calc(50vh + var(--mk) + var(--marker) / 2);
+    }
+
+    /* The stage's name turns to ink with its marker. */
+    .rail {
+      animation-name: rail-ink;
+    }
+  }
+}
+
+@keyframes line-fill {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes marker-fill {
+  to {
+    border-color: var(--landing-ink);
+    background-color: var(--landing-ink);
+  }
+}
+
+@keyframes rail-ink {
+  to {
+    color: var(--landing-ink);
+  }
+}

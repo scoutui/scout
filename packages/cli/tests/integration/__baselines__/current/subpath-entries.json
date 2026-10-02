@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "subpath-entries",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "8d631234fd836946",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "subpath-entries",
+        "filePath": "src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "d95f162618f064c6": 1,
+          "01d1fe668b54977c": 1,
+          "adf6ac7a06b4c654": 2
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "d95f162618f064c6",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/shoelace",
+        "publicEntry": "dist/react/card/index",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "FakeCard"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8d631234fd836946": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "01d1fe668b54977c",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/shoelace",
+        "publicEntry": "dist/react/input/index",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "label": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "Name",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "writtenNames": [
+        "FakeInput"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8d631234fd836946": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "adf6ac7a06b4c654",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/shoelace",
+        "publicEntry": "dist/react/button/index",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "variant": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "primary",
+              "count": 1
+            },
+            {
+              "provenance": "written",
+              "value": "default",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "size": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "medium",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 1
+        }
+      },
+      "writtenNames": [
+        "FakeButton"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8d631234fd836946": 2
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "7b60bbc68c93a061",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "d95f162618f064c6"
+      },
+      "filePath": "src/App.tsx",
+      "line": 7,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shoelace/dist/react/card/index.js",
+          "name": "default"
+        }
+      ],
+      "writtenName": "FakeCard",
+      "props": {},
+      "ownerComponentId": "8d631234fd836946"
+    },
+    {
+      "occurrenceId": "8401a8fd337e69e3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "01d1fe668b54977c"
+      },
+      "filePath": "src/App.tsx",
+      "line": 8,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shoelace/dist/react/input/index.js",
+          "name": "default"
+        }
+      ],
+      "writtenName": "FakeInput",
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Name"
+        }
+      },
+      "ownerComponentId": "8d631234fd836946"
+    },
+    {
+      "occurrenceId": "a68040e813c81ca1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "adf6ac7a06b4c654"
+      },
+      "filePath": "src/App.tsx",
+      "line": 9,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shoelace/dist/react/button/index.js",
+          "name": "default"
+        }
+      ],
+      "writtenName": "FakeButton",
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "primary"
+        },
+        "size": {
+          "tier": "written",
+          "value": "medium"
+        }
+      },
+      "ownerComponentId": "8d631234fd836946"
+    },
+    {
+      "occurrenceId": "6a5e6061b6f2ca4b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "adf6ac7a06b4c654"
+      },
+      "filePath": "src/App.tsx",
+      "line": 12,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shoelace/dist/react/button/index.js",
+          "name": "default"
+        }
+      ],
+      "writtenName": "FakeButton",
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "default"
+        }
+      },
+      "ownerComponentId": "8d631234fd836946"
+    }
+  ],
+  "diagnostics": []
+}

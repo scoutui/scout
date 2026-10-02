@@ -1,0 +1,14 @@
+{
+  "name": "@example/x-button",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "customElements": "custom-elements.json",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./dist/react.js": "./dist/react.js",
+    "./dist/react": "./dist/react.js"
+  }
+}

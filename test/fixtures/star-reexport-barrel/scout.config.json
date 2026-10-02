@@ -1,0 +1,5 @@
+{
+  "repoId": "star-reexport-barrel",
+  "include": ["packages/**/*.{ts,tsx}"],
+  "exclude": ["**/node_modules/**", "**/dist/**"]
+}

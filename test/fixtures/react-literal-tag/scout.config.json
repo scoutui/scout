@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "react-literal-tag",
+  "include": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}"
+  ],
+  "exclude": [
+    "**/*.{test,spec,stories}.*",
+    "**/node_modules/**"
+  ]
+}

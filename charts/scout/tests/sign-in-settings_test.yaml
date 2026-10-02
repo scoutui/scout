@@ -1,0 +1,57 @@
+suite: Sign-in settings
+release:
+  name: cc
+  namespace: default
+values:
+  - ../ci/test-values.yaml
+tests:
+  - it: asks for the dashboard's address
+    set: { auth.url: "" }
+    asserts:
+      - failedTemplate:
+          errorMessage: Set auth.url to the dashboard's full address, such as https://scout.example.com.
+
+  - it: asks for the identity provider's issuer URL
+    set: { auth.oidc.issuerUrl: "" }
+    asserts:
+      - failedTemplate:
+          errorMessage: Set auth.oidc.issuerUrl to the issuer URL of the dashboard's application in your identity provider.
+
+  - it: asks for the identity provider's client ID
+    set: { auth.oidc.clientId: "" }
+    asserts:
+      - failedTemplate:
+          errorMessage: Set auth.oidc.clientId to the client ID of the dashboard's application in your identity provider.
+
+  - it: asks for the Secret that holds AUTH_SECRET
+    set: { auth.sessionSecretRef.name: "" }
+    asserts:
+      - failedTemplate:
+          errorMessage: Set auth.sessionSecretRef.name to the Secret that holds AUTH_SECRET.
+
+  - it: asks for the Secret that holds OIDC_CLIENT_SECRET
+    set: { auth.oidc.clientSecretRef.name: "" }
+    asserts:
+      - failedTemplate:
+          errorMessage: Set auth.oidc.clientSecretRef.name to the Secret that holds OIDC_CLIENT_SECRET.
+
+  - it: names the key each sign-in Secret must hold, whatever key the values name
+    template: NOTES.txt
+    set:
+      auth.sessionSecretRef: { name: session-secret, key: session-key }
+      auth.oidc.clientSecretRef: { name: client-secret, key: client-key }
+    asserts:
+      - matchRegexRaw:
+          pattern: "Secret client-secret, key OIDC_CLIENT_SECRET = <client secret>"
+      - matchRegexRaw:
+          pattern: "Secret session-secret, key AUTH_SECRET = "
+      - notMatchRegexRaw:
+          pattern: "session-key|client-key"
+
+  - it: gives sign-in and upload commands for the installed CLI
+    template: NOTES.txt
+    asserts:
+      - matchRegexRaw:
+          pattern: "\n  yarn scout auth login --host https://scout\\.example\\.com\n"
+      - matchRegexRaw:
+          pattern: "\n  yarn scout scan --host https://scout\\.example\\.com\n"

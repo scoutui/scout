@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in the CLI, the dashboard or the docs doesn't work as expected.
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you ran, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: A public repo, or a minimal snippet and config. If your code is private, rename things in the snippet.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Scout version
+      description: Output of `scout --version`, or the web app image tag.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, package manager, and the framework the scanned code uses (React, Vue, custom elements).
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output
+      description: Any error output or diagnostics. Remove anything private.
+      render: shell

@@ -1,0 +1,409 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "workspace-subscan",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "93767a0c14a8b7ae",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "apps/web/src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/web",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e37b620312476a5b": 1,
+          "a8ccae49e77587a3": 1,
+          "aeb23d65757b5d71": 1,
+          "952fa8a2046587ee": 1,
+          "aff663ef7f33a8b2": 1,
+          "a39eac46e7bbfb7b": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "a8ccae49e77587a3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "apps/web/src/card.tsx",
+        "exportName": "Card"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "title": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "hi",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "title": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/web",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "a39eac46e7bbfb7b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/badge.tsx",
+        "exportName": "Badge"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "e37b620312476a5b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/button.tsx",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "size": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "lg",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "aeb23d65757b5d71",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/chip.tsx",
+        "exportName": "Chip"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "952fa8a2046587ee",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/table.tsx",
+        "exportName": "Row"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Table.Row"
+      ],
+      "definition": {
+        "line": 5,
+        "column": 0
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "aff663ef7f33a8b2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/table.tsx",
+        "exportName": "Cell"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 9,
+        "column": 0
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "2191e9c84c38cafe",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e37b620312476a5b"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 10,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "size": {
+          "tier": "written",
+          "value": "lg"
+        }
+      },
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "9079f0361c0d37fb",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a8ccae49e77587a3"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 11,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./card",
+          "name": "Card"
+        }
+      ],
+      "props": {
+        "title": {
+          "tier": "written",
+          "value": "hi"
+        }
+      },
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "3e020eb79bd193aa",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "aeb23d65757b5d71"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 12,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Chip"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "f7747dc5283e9fd6",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "952fa8a2046587ee"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 13,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Table"
+        }
+      ],
+      "writtenName": "Table.Row",
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "e888e6bf04874cd0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "aff663ef7f33a8b2"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 14,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "cdde5cf6405dc4f1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a39eac46e7bbfb7b"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 7,
+      "column": 10,
+      "credit": {
+        "kind": "argument",
+        "callee": "useSlot",
+        "index": 0
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Badge"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    }
+  ],
+  "diagnostics": []
+}

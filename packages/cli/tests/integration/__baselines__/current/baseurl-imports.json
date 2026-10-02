@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "baseurl-imports",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "917b9fce7b237b59",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "baseurl-imports",
+        "filePath": "app/Banner.tsx",
+        "exportName": "Banner"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "917e6a84a0a0c61e": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "917e6a84a0a0c61e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "baseurl-imports",
+        "filePath": "src/Page.tsx",
+        "exportName": "Page"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "917b9fce7b237b59": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "ee5739fa9d9d11a9",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "917b9fce7b237b59"
+      },
+      "filePath": "src/Page.tsx",
+      "line": 5,
+      "column": 31,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "app/Banner",
+          "name": "Banner"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "917e6a84a0a0c61e"
+    }
+  ],
+  "diagnostics": []
+}

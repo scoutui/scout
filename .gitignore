@@ -1,0 +1,23 @@
+.turbo/
+node_modules/
+dist/
+# Fixture repos under test/fixtures commit what an install would leave there:
+# a package's published dist/ and, where a scan needs one, its node_modules/.
+# Nothing installs into them, so neither is ignored.
+!test/fixtures/**/node_modules/
+!test/fixtures/**/node_modules/**
+!test/fixtures/**/dist/
+!test/fixtures/**/dist/**
+.DS_Store
+*.log
+.yarn/cache
+.yarn/install-state.gz
+.yarn/build-state.yml
+.yarn/unplugged
+.pnp.*
+.turbo/
+coverage/
+
+# Artifacts a scan writes inside a fixture; baselines live in
+# packages/cli/tests/integration/__baselines__/current/
+test/fixtures/**/scout-scan.json

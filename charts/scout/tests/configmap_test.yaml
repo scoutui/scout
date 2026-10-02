@@ -1,0 +1,45 @@
+suite: ConfigMap
+templates:
+  - configmap.yaml
+release:
+  name: cc
+  namespace: default
+tests:
+  - it: renders required env keys
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+    asserts:
+      - equal:
+          path: data.NODE_ENV
+          value: production
+      - equal:
+          path: data.AUTH_URL
+          value: "https://scout.example.com"
+      - equal:
+          path: data.AUTH_TRUST_HOST
+          value: "true"
+      - equal:
+          path: data.OIDC_ISSUER_URL
+          value: "https://auth.example.com/application/o/scout/"
+      - equal:
+          path: data.OIDC_CLIENT_ID
+          value: "scout"
+      - notExists:
+          path: data.OIDC_ALLOWED_DOMAINS
+
+  - it: includes allowedDomains when set
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+          allowedDomains: "example.org,example.com"
+    asserts:
+      - equal:
+          path: data.OIDC_ALLOWED_DOMAINS
+          value: "example.org,example.com"

@@ -1,0 +1,1240 @@
+{
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 2
+        },
+        "scannerName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scannerVersion": {
+          "type": "string"
+        },
+        "scanId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scannedAt": {
+          "type": "string"
+        },
+        "repo": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "gitRemote": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "committedAt": {
+              "type": "string"
+            },
+            "branchPosition": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "initialCommit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branch": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "gitRemote",
+            "commit",
+            "committedAt",
+            "initialCommit",
+            "branch"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "scannerVersion",
+        "scanId",
+        "scannedAt",
+        "repo"
+      ],
+      "additionalProperties": true
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "identity": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "package-export"
+                  },
+                  "packageName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "publicEntry": {
+                    "type": "string"
+                  },
+                  "exportName": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "packageName",
+                  "publicEntry",
+                  "exportName"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "repository-declaration"
+                  },
+                  "repoId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "filePath": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "exportName": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "repoId",
+                  "filePath",
+                  "exportName"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "tag"
+                  },
+                  "tagName": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "tagName"
+                ],
+                "additionalProperties": true
+              }
+            ]
+          },
+          "framework": {
+            "type": "string",
+            "enum": [
+              "react",
+              "vue"
+            ]
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "resolved"
+                  },
+                  "target": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "package"
+                          },
+                          "packageName": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "packageName"
+                        ],
+                        "additionalProperties": true
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "repository"
+                          },
+                          "repoId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "filePath": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "exportName": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "repoId",
+                          "filePath",
+                          "exportName"
+                        ],
+                        "additionalProperties": true
+                      }
+                    ]
+                  },
+                  "confidence": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "strength": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "locator": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "filePath": {
+                                  "type": "string"
+                                },
+                                "line": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "filePath",
+                                "line"
+                              ],
+                              "additionalProperties": true
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "packageName": {
+                                  "type": "string"
+                                },
+                                "version": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "packageName",
+                                "version"
+                              ],
+                              "additionalProperties": true
+                            }
+                          ]
+                        },
+                        "target": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "package"
+                                },
+                                "packageName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "packageName"
+                              ],
+                              "additionalProperties": true
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "repository"
+                                },
+                                "repoId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "filePath": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "exportName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "repoId",
+                                "filePath",
+                                "exportName"
+                              ],
+                              "additionalProperties": true
+                            }
+                          ]
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "strength",
+                        "locator",
+                        "disposition"
+                      ],
+                      "additionalProperties": true
+                    }
+                  }
+                },
+                "required": [
+                  "status",
+                  "target",
+                  "confidence",
+                  "evidence"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "unknown"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "strength": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "locator": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "filePath": {
+                                  "type": "string"
+                                },
+                                "line": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "filePath",
+                                "line"
+                              ],
+                              "additionalProperties": true
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "packageName": {
+                                  "type": "string"
+                                },
+                                "version": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "packageName",
+                                "version"
+                              ],
+                              "additionalProperties": true
+                            }
+                          ]
+                        },
+                        "target": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "package"
+                                },
+                                "packageName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "packageName"
+                              ],
+                              "additionalProperties": true
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "repository"
+                                },
+                                "repoId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "filePath": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "exportName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "repoId",
+                                "filePath",
+                                "exportName"
+                              ],
+                              "additionalProperties": true
+                            }
+                          ]
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "strength",
+                        "locator",
+                        "disposition"
+                      ],
+                      "additionalProperties": true
+                    }
+                  }
+                },
+                "required": [
+                  "status",
+                  "reason",
+                  "evidence"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "conflict"
+                  },
+                  "strongestClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "candidates": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "package"
+                            },
+                            "packageName": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "packageName"
+                          ],
+                          "additionalProperties": true
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "repository"
+                            },
+                            "repoId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "filePath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "exportName": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "repoId",
+                            "filePath",
+                            "exportName"
+                          ],
+                          "additionalProperties": true
+                        }
+                      ]
+                    }
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "strength": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "locator": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "filePath": {
+                                  "type": "string"
+                                },
+                                "line": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "filePath",
+                                "line"
+                              ],
+                              "additionalProperties": true
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "packageName": {
+                                  "type": "string"
+                                },
+                                "version": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "packageName",
+                                "version"
+                              ],
+                              "additionalProperties": true
+                            }
+                          ]
+                        },
+                        "target": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "package"
+                                },
+                                "packageName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "packageName"
+                              ],
+                              "additionalProperties": true
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "repository"
+                                },
+                                "repoId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "filePath": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "exportName": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "repoId",
+                                "filePath",
+                                "exportName"
+                              ],
+                              "additionalProperties": true
+                            }
+                          ]
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "strength",
+                        "locator",
+                        "disposition"
+                      ],
+                      "additionalProperties": true
+                    }
+                  }
+                },
+                "required": [
+                  "status",
+                  "strongestClass",
+                  "candidates",
+                  "evidence"
+                ],
+                "additionalProperties": true
+              }
+            ]
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "occurrenceCount": {
+                "type": "number"
+              },
+              "fileCount": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "occurrenceCount",
+              "fileCount"
+            ],
+            "additionalProperties": true
+          },
+          "usage": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "root",
+              "none"
+            ]
+          },
+          "props": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "values": {
+                  "type": "array",
+                  "items": {}
+                },
+                "dynamic": {
+                  "type": "number"
+                },
+                "omitted": {
+                  "type": "number"
+                },
+                "other": {
+                  "type": "number"
+                },
+                "truncated": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "values",
+                "dynamic",
+                "omitted"
+              ],
+              "additionalProperties": true
+            }
+          },
+          "events": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "boundCount": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "boundCount"
+              ],
+              "additionalProperties": true
+            }
+          },
+          "writtenNames": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "composition": {},
+          "declared": {},
+          "definition": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "number"
+              },
+              "column": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "line",
+              "column"
+            ],
+            "additionalProperties": true
+          },
+          "owningPackage": {
+            "type": "string"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "identity",
+          "stats",
+          "usage",
+          "props",
+          "composition",
+          "version"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "occurrences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "occurrenceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "resolved"
+                  },
+                  "componentId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "status",
+                  "componentId"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "unresolved"
+                  },
+                  "reason": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "package-not-installed"
+                              },
+                              "packageName": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "packageName"
+                            ],
+                            "additionalProperties": true
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "module-not-found"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": true
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "unbound-name"
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "name"
+                            ],
+                            "additionalProperties": true
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "chain-bailed"
+                              },
+                              "code": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "code"
+                            ],
+                            "additionalProperties": true
+                          }
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": true
+                      }
+                    ]
+                  },
+                  "componentId": {
+                    "not": {}
+                  }
+                },
+                "required": [
+                  "status",
+                  "reason"
+                ],
+                "additionalProperties": true
+              }
+            ]
+          },
+          "filePath": {
+            "type": "string"
+          },
+          "line": {
+            "type": "number"
+          },
+          "column": {
+            "type": "number"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "render"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": true
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "argument"
+                      },
+                      "callee": {
+                        "type": "string"
+                      },
+                      "index": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "callee",
+                      "index"
+                    ],
+                    "additionalProperties": true
+                  }
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": true
+              }
+            ]
+          },
+          "trace": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "import"
+                        },
+                        "specifier": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "specifier",
+                        "name"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "tag"
+                        },
+                        "written": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "written"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "hoc"
+                        },
+                        "callee": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "callee"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "lazy"
+                        },
+                        "callee": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "callee"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "dynamic-map"
+                        },
+                        "mapName": {
+                          "type": "string"
+                        },
+                        "mapLoc": {
+                          "type": "object",
+                          "properties": {
+                            "file": {
+                              "type": "string"
+                            },
+                            "line": {
+                              "type": "number"
+                            },
+                            "column": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "file",
+                            "line",
+                            "column"
+                          ],
+                          "additionalProperties": true
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "mapName",
+                        "mapLoc"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "helper-call"
+                        },
+                        "callee": {
+                          "type": "string"
+                        },
+                        "calleeFile": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "callee",
+                        "calleeFile"
+                      ],
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "prop-forward"
+                        },
+                        "bindingName": {
+                          "type": "string"
+                        },
+                        "constructionSite": {
+                          "type": "object",
+                          "properties": {
+                            "file": {
+                              "type": "string"
+                            },
+                            "line": {
+                              "type": "number"
+                            },
+                            "column": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "file",
+                            "line",
+                            "column"
+                          ],
+                          "additionalProperties": true
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "bindingName",
+                        "constructionSite"
+                      ],
+                      "additionalProperties": true
+                    }
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": true
+                }
+              ]
+            }
+          },
+          "writtenName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "props": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ownerComponentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "occurrenceId",
+          "resolution",
+          "filePath",
+          "line",
+          "column",
+          "credit",
+          "trace",
+          "props"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {}
+    }
+  },
+  "required": [
+    "meta",
+    "components",
+    "occurrences",
+    "diagnostics"
+  ],
+  "additionalProperties": true,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

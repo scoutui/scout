@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "unresolved-install",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "7373dea162d47280",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "unresolved-install",
+        "filePath": "src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "edc6bc1106a38b7f",
+      "resolution": {
+        "status": "unresolved",
+        "reason": {
+          "kind": "package-not-installed",
+          "packageName": "@example/ui"
+        }
+      },
+      "filePath": "src/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ui",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "kind": {
+          "tier": "written",
+          "value": "primary"
+        }
+      },
+      "ownerComponentId": "7373dea162d47280"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "dependency-not-installed",
+      "severity": "warning",
+      "packageName": "@example/ui",
+      "occurrenceCount": 1,
+      "declaredIn": "package.json"
+    }
+  ]
+}

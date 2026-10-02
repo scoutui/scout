@@ -1,0 +1,4 @@
+{
+  "repoId": "workspace-cem-installs",
+  "include": ["src/**/*.vue"]
+}

@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "per-package-aliases",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "7815b54597b9e8e2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "per-package-aliases",
+        "filePath": "apps/one/src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "owningPackage": "@aliases/one",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e4532db7e3c234d9": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "e4532db7e3c234d9",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "per-package-aliases",
+        "filePath": "apps/one/src/components/card.tsx",
+        "exportName": "Card"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "title": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "hi",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@aliases/one",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "7815b54597b9e8e2": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "5612d9667ea40e61",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "per-package-aliases",
+        "filePath": "apps/two/src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "owningPackage": "@aliases/two",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "2d32b9ee23d38230": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "2d32b9ee23d38230",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "per-package-aliases",
+        "filePath": "apps/two/src/components/panel.tsx",
+        "exportName": "Panel"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "title": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "hi",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@aliases/two",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5612d9667ea40e61": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "df75fe2b63ef38ea",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e4532db7e3c234d9"
+      },
+      "filePath": "apps/one/src/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@/components/card",
+          "name": "Card"
+        }
+      ],
+      "props": {
+        "title": {
+          "tier": "written",
+          "value": "hi"
+        }
+      },
+      "ownerComponentId": "7815b54597b9e8e2"
+    },
+    {
+      "occurrenceId": "b59df658f0c0e495",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "2d32b9ee23d38230"
+      },
+      "filePath": "apps/two/src/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@/components/panel",
+          "name": "Panel"
+        }
+      ],
+      "props": {
+        "title": {
+          "tier": "written",
+          "value": "hi"
+        }
+      },
+      "ownerComponentId": "5612d9667ea40e61"
+    }
+  ],
+  "diagnostics": []
+}

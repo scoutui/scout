@@ -1,0 +1,22 @@
+{
+  "name": "consumer-ci",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cadence": "tsx run.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ."
+  },
+  "dependencies": {
+    "execa": "9.5.2"
+  },
+  "devDependencies": {
+    "@scoutui/scan-format": "0.1.0",
+    "@types/node": "24.12.2",
+    "tsx": "4.19.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.5"
+  }
+}

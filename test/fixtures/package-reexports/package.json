@@ -1,0 +1,15 @@
+{
+  "name": "package-reexports",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/aggregator": "0.0.0",
+    "@example/all": "1.0.0",
+    "@example/bundled-aggregator": "0.0.0",
+    "@example/kit": "1.0.0",
+    "@example/own": "1.0.0",
+    "@example/widget-aggregator": "1.0.0",
+    "@example/x-button": "0.0.0"
+  }
+}

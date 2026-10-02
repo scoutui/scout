@@ -1,0 +1,55 @@
+suite: Ingress
+templates:
+  - ingress.yaml
+release:
+  name: cc
+  namespace: default
+tests:
+  - it: not rendered when disabled
+    set:
+      auth:
+        sessionSecretRef:     { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:    { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:    { name: cc-secret, key: POSTGRES_PASSWORD }
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders with className, host, and TLS when enabled
+    set:
+      auth:
+        sessionSecretRef:     { name: cc-secret, key: AUTH_SECRET }
+        oidc:
+          clientSecretRef:    { name: cc-secret, key: OIDC_CLIENT_SECRET }
+      database:
+        passwordSecretRef:    { name: cc-secret, key: POSTGRES_PASSWORD }
+      ingress:
+        enabled: true
+        className: internal
+        hosts:
+          - host: scout.example.com
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts: [scout.example.com]
+    asserts:
+      - isKind:
+          of: Ingress
+      - equal:
+          path: spec.ingressClassName
+          value: internal
+      - equal:
+          path: spec.rules[0].host
+          value: scout.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: cc-scout
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: scout.example.com
