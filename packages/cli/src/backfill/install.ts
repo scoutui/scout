@@ -1,13 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 export type Lockfile = { dir: string; name: "pnpm-lock.yaml" | "yarn.lock" | "package-lock.json" };
 
-/**
- * How to install from a lockfile. `install` and `nuxtPrepare` are the arguments after the program: `npm`, or for Yarn
- * and pnpm, Corepack running `spec`.
- */
+/** How to install from a lockfile. `packageManagerCommand` turns `install` or `nuxtPrepare` into the command to run. */
 export type InstallPlan = {
   manager: "npm" | "yarn" | "pnpm";
   spec?: string;
@@ -115,9 +111,13 @@ export function installPlan(lockfile: Lockfile["name"], head: string, packageMan
   };
 }
 
-/** The Corepack script the CLI carries, which runs Yarn and pnpm as `node <script> <spec> …`. */
-export function corepackScript(): string {
-  return fileURLToPath(new URL("dist/corepack.js", import.meta.resolve("corepack/package.json")));
+/** The command that runs `plan`'s `install` or `nuxtPrepare`: the user's own `npm`, or Yarn and pnpm through Corepack. */
+export function packageManagerCommand(
+  plan: InstallPlan,
+  step: "install" | "nuxtPrepare",
+): { command: string; args: string[] } {
+  if (plan.spec === undefined) return { command: "npm", args: [...plan[step]] };
+  return { command: "npx", args: ["--yes", "corepack@0.36.0", plan.spec, ...plan[step]] };
 }
 
 function names(packageManager: string | undefined, manager: string): packageManager is string {
