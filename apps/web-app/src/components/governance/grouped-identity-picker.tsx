@@ -232,7 +232,7 @@ export function GroupedIdentityPicker({
     <div
       ref={refs.setReference}
       onMouseDown={(e) => {
-        if (disabled || e.target === inputRef.current) return;
+        if (disabled || e.button !== 0 || e.target === inputRef.current) return;
         e.preventDefault();
         inputRef.current?.focus();
         setOpen(true);

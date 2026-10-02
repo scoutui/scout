@@ -91,7 +91,7 @@ function matchPackageTerm(term: string, packageName: string): number | null {
   if (lower.startsWith(term)) return 1;
   const word = words(packageName).find((w) => lower.startsWith(term, w.start));
   if (!word) return null;
-  return word.start === 0 || (word.start === 1 && lower.startsWith("@")) ? 1 : 2;
+  return word.start === 1 && lower.startsWith("@") ? 1 : 2;
 }
 
 /** Every term must match; the weakest decides the tier. */
