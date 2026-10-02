@@ -82,6 +82,7 @@
   --ring: var(--pal-neutral-ink); /* one neutral focus ring; ≥ 3:1 at the /50 it is painted at */
   --selected: var(--pal-neutral-hover);
   --selected-edge: var(--pal-neutral-edge);
+  --scrollbar-thumb: var(--pal-neutral-edge);
 
   /* Status: ok, warn, error. Always shown with a glyph and a word. */
   --status-ok: var(--pal-green-graphic);
@@ -119,6 +120,11 @@
   }
   html {
     @apply font-sans;
+    color-scheme: light;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   /* Programming ligatures (==>, !=, <=) stay off in the mono face, which shows
      identifiers, paths and package names as typed. */
