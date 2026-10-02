@@ -53,8 +53,8 @@ export const TAG_COLUMN_ID = {
 export function TagTableColumns() {
   return (
     <colgroup>
-      <col className="w-28 md:w-40" />
-      <col className="w-0 md:w-42" />
+      <col className="w-28 lg:w-40" />
+      <col className="w-0 md:w-28 lg:w-42" />
       <col />
       <col className="w-0 md:w-40" />
       <col className="w-12" />
@@ -62,7 +62,8 @@ export function TagTableColumns() {
   );
 }
 
-const FORM_GRID = "md:grid md:grid-cols-[10rem_10.5rem_minmax(0,1fr)_10rem_3rem]";
+const FORM_GRID =
+  "md:grid md:grid-cols-[7rem_7rem_minmax(0,1fr)_10rem_3rem] lg:grid-cols-[10rem_10.5rem_minmax(0,1fr)_10rem_3rem]";
 
 export function TagSwatch({ color, className }: { color: string; className?: string }) {
   return (
@@ -170,7 +171,7 @@ export function TagEditor({
               value={color}
               onValueChange={(v) => setColor(v as string)}
               aria-labelledby={TAG_COLUMN_ID.colour}
-              className="flex flex-wrap gap-1.5 md:grid md:grid-cols-2 md:gap-1"
+              className="flex flex-wrap gap-1.5 md:grid md:gap-1 lg:grid-cols-2"
             >
               {TAG_PALETTE.map((c) => (
                 <Radio.Root
