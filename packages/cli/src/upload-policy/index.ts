@@ -14,10 +14,22 @@ const DEPENDENCIES_NOT_INSTALLED =
  * prepared.
  */
 export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], scanRoot: string): string | null {
-  if (!declaredDependenciesInstalled(graph, files)) return DEPENDENCIES_NOT_INSTALLED;
-  if (nuxtAppUnprepared(scanRoot)) {
+  const problem = setupProblem(graph, files, scanRoot);
+  if (problem === "dependencies-missing") return DEPENDENCIES_NOT_INSTALLED;
+  if (problem === "nuxt-unprepared") {
     return "Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.";
   }
+  return null;
+}
+
+/** Which of `setupRefusal`'s two problems stops an upload before scanning, or null when there's neither. */
+export function setupProblem(
+  graph: WorkspaceGraph,
+  files: readonly string[],
+  scanRoot: string,
+): "dependencies-missing" | "nuxt-unprepared" | null {
+  if (!declaredDependenciesInstalled(graph, files)) return "dependencies-missing";
+  if (nuxtAppUnprepared(scanRoot)) return "nuxt-unprepared";
   return null;
 }
 

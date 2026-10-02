@@ -9,7 +9,7 @@ export type GitState = { kind: "ok"; tracked: TrackedBranch } | { kind: "refused
 
 const REFUSED = "Couldn't upload the scan:";
 
-function refused(reason: string): GitState {
+function refused(reason: string): { kind: "refused"; message: string } {
   return { kind: "refused", message: `${REFUSED} ${reason}` };
 }
 
@@ -19,6 +19,26 @@ function refused(reason: string): GitState {
  * one the clone recorded as `<remote>/HEAD`; the remote itself is never asked.
  */
 export async function checkGitState(checkout: Checkout, opts: { cwd: string; branch?: string }): Promise<GitState> {
+  const tracked = await checkTrackedBranch(checkout, opts);
+  if (tracked.kind === "refused") return tracked;
+  const { remote, branch } = tracked;
+  const commit = checkout.commit.slice(0, 7);
+  const position = await firstParentPosition(opts.cwd, `refs/remotes/${remote}/${branch}`, checkout.commit);
+  if (position === null) {
+    if (checkout.branch === branch) return refused(`this commit isn't on ${remote}/${branch} yet. Push it and try again.`);
+    if (checkout.branch !== null) {
+      return refused(`you're on ${checkout.branch}, and the dashboard tracks ${branch}. Switch to ${branch} and try again.`);
+    }
+    return refused(`commit ${commit} isn't on ${branch}. Check out ${branch} and try again.`);
+  }
+  return { kind: "ok", tracked: { branch, position } };
+}
+
+/** The remote and branch the dashboard tracks for this checkout, or why it can't be uploaded: no remote or several, a shallow clone, or no tracked branch. */
+export async function checkTrackedBranch(
+  checkout: Pick<Checkout, "remote" | "shallow">,
+  opts: { cwd: string; branch?: string },
+): Promise<{ kind: "ok"; remote: string; branch: string } | { kind: "refused"; message: string }> {
   const { remote } = checkout;
   if (remote.kind === "none") {
     return refused("this checkout has no remote, so Scout can't tell which repository it is. Add one with git remote add origin <url> and try again.");
@@ -31,16 +51,7 @@ export async function checkGitState(checkout: Checkout, opts: { cwd: string; bra
       ? refused(`couldn't tell which branch the dashboard tracks. Run git remote set-head ${remote.name} --auto and try again.`)
       : refused(`there's no ${branch} on ${remote.name}. If the branch was renamed, update "branch" in scout.config.json.`);
   }
-  const commit = checkout.commit.slice(0, 7);
-  const position = await firstParentPosition(opts.cwd, `refs/remotes/${remote.name}/${branch}`, checkout.commit);
-  if (position === null) {
-    if (checkout.branch === branch) return refused(`this commit isn't on ${remote.name}/${branch} yet. Push it and try again.`);
-    if (checkout.branch !== null) {
-      return refused(`you're on ${checkout.branch}, and the dashboard tracks ${branch}. Switch to ${branch} and try again.`);
-    }
-    return refused(`commit ${commit} isn't on ${branch}. Check out ${branch} and try again.`);
-  }
-  return { kind: "ok", tracked: { branch, position } };
+  return { kind: "ok", remote: remote.name, branch };
 }
 
 /**

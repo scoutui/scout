@@ -8,7 +8,7 @@ const exec = promisify(execFile);
 const NETWORK_TIMEOUT_MS = 10_000;
 const SSH_LOOKUP_TIMEOUT_MS = 3_000;
 /** Room for `git status` to list every changed and untracked file in a large checkout. */
-const STATUS_MAX_BUFFER = 256 * 1024 * 1024;
+export const STATUS_MAX_BUFFER = 256 * 1024 * 1024;
 
 /** What git says about the checkout at a folder, each case told apart. */
 export type RepositoryProbe =
@@ -17,14 +17,14 @@ export type RepositoryProbe =
   | { kind: "failed"; detail: string }
   | { kind: "ok"; commit: string; shallow: boolean; initialCommit: string | null };
 
-type GitRun = { ok: true; stdout: string } | { ok: false; exitCode: unknown; stderr: string; detail: string };
+export type GitRun = { ok: true; stdout: string } | { ok: false; exitCode: unknown; stderr: string; detail: string };
 
 /**
  * Runs git with its messages in English, so a failure can be told apart by its text.
  * `network` turns git's credential prompts off and gives up after `NETWORK_TIMEOUT_MS`.
  * `raw` keeps stdout as git printed it, untrimmed. `maxBuffer` raises the limit on how much stdout git may print.
  */
-async function runGit(
+export async function runGit(
   root: string,
   args: string[],
   opts: { network?: boolean; raw?: boolean; maxBuffer?: number } = {},

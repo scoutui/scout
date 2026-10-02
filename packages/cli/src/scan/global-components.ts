@@ -276,7 +276,7 @@ export function nuxtAppUnprepared(scanRoot: string): boolean {
 }
 
 /** Whether `scanRoot`'s `package.json` lists `nuxt` in `dependencies` or `devDependencies`. */
-function declaresNuxt(scanRoot: string): boolean {
+export function declaresNuxt(scanRoot: string): boolean {
   try {
     const pkg = JSON.parse(readFileSync(join(scanRoot, "package.json"), "utf8")) as {
       dependencies?: Record<string, string>;
