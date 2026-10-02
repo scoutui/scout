@@ -8,6 +8,11 @@ import { emptyScanRefusal, setupProblem } from "../upload-policy/index.js";
 import { Logger } from "../util/log.js";
 import { isPnpProject } from "../util/pnp-check.js";
 
+/** The file the child writes the scan to, in its output folder. */
+export const COMMIT_SCAN_FILE = "scan.json";
+/** The file the child writes its `CommitScanResult` to, in its output folder. */
+export const COMMIT_RESULT_FILE = "result.json";
+
 /** What scanning one commit came to, as the child writes it to `result.json`. With `scanned`, the scan file is `scan.json` beside it. */
 export type CommitScanResult =
   | { kind: "scanned" }
@@ -24,7 +29,7 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
   if (configPath === undefined || outDir === undefined) return 2;
   const scanLog = new Logger({ quiet: !log.debug, debug: log.debug });
   const finish = async (result: CommitScanResult): Promise<number> => {
-    await writeFile(join(outDir, "result.json"), JSON.stringify(result));
+    await writeFile(join(outDir, COMMIT_RESULT_FILE), JSON.stringify(result));
     return 0;
   };
 
@@ -65,14 +70,14 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
     startedAt,
   });
   if (emptyScanRefusal(stats, { configPath: cfg.configPath }) !== null) return finish({ kind: "empty" });
-  await writeFile(join(outDir, "scan.json"), JSON.stringify(artifact));
+  await writeFile(join(outDir, COMMIT_SCAN_FILE), JSON.stringify(artifact));
   return finish({ kind: "scanned" });
 }
 
 /** What the child wrote to `result.json` in `outDir`, or null when it wrote none. */
 export async function readCommitScanResult(outDir: string): Promise<CommitScanResult | null> {
   try {
-    return JSON.parse(await readFile(join(outDir, "result.json"), "utf8")) as CommitScanResult;
+    return JSON.parse(await readFile(join(outDir, COMMIT_RESULT_FILE), "utf8")) as CommitScanResult;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw err;
