@@ -3,11 +3,14 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  type CorepackPlan,
   findLockfile,
   type InstallPlan,
   installPlan,
   type Lockfile,
+  type NpmPlan,
   packageManagerCommand,
+  readPackageManager,
 } from "../../../src/backfill/install.js";
 
 const PACKAGE_LOCK = '{\n  "name": "lockfile-probe",\n  "lockfileVersion": 3,\n  "requires": true,\n';
@@ -24,14 +27,14 @@ function pnpmLock(version: string): string {
   return `lockfileVersion: '${version}'\n\nsettings:\n  autoInstallPeers: true\n  excludeLinksFromLockfile: false\n\n`;
 }
 
-const NPM_PLAN: InstallPlan = {
+const NPM_PLAN: NpmPlan = {
   manager: "npm",
   install: ["ci", "--ignore-scripts", "--no-audit", "--no-fund"],
   nuxtPrepare: ["exec", "--", "nuxt", "prepare"],
   label: "npm ci",
 };
 
-function yarnClassicPlan(spec: string): InstallPlan {
+function yarnClassicPlan(spec: string): CorepackPlan {
   return {
     manager: "yarn",
     spec,
@@ -41,7 +44,7 @@ function yarnClassicPlan(spec: string): InstallPlan {
   };
 }
 
-function yarnBerryPlan(spec: string): InstallPlan {
+function yarnBerryPlan(spec: string): CorepackPlan {
   return {
     manager: "yarn",
     spec,
@@ -51,7 +54,7 @@ function yarnBerryPlan(spec: string): InstallPlan {
   };
 }
 
-function pnpmPlan(spec: string): InstallPlan {
+function pnpmPlan(spec: string): CorepackPlan {
   return {
     manager: "pnpm",
     spec,
@@ -131,31 +134,89 @@ describe("findLockfile", () => {
   });
 });
 
+describe("readPackageManager", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = realpathSync(mkdtempSync(join(tmpdir(), "scout-package-manager-")));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it.each<[string, Record<string, unknown>, string | undefined]>([
+    [
+      "takes packageManager over devEngines.packageManager",
+      { packageManager: "pnpm@9.15.9", devEngines: { packageManager: { name: "pnpm", version: "^10.0.0" } } },
+      "pnpm@9.15.9",
+    ],
+    [
+      "takes the version devEngines.packageManager gives the lockfile's manager, as written",
+      { devEngines: { packageManager: { name: "pnpm", version: "^9.0.0" } } },
+      "pnpm@^9.0.0",
+    ],
+    [
+      "takes the devEngines.packageManager entry that names the lockfile's manager from a list",
+      {
+        devEngines: {
+          packageManager: [
+            { name: "yarn", version: "4.12.0" },
+            { name: "pnpm", version: "^9.0.0", onFail: "error" },
+          ],
+        },
+      },
+      "pnpm@^9.0.0",
+    ],
+    [
+      "ignores a devEngines.packageManager entry that names another manager",
+      { devEngines: { packageManager: { name: "yarn", version: "4.12.0" } } },
+      undefined,
+    ],
+    [
+      "ignores a devEngines.packageManager entry with no version",
+      { devEngines: { packageManager: { name: "pnpm", onFail: "error" } } },
+      undefined,
+    ],
+  ])("%s", (_title, manifest, packageManager) => {
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "example-web", ...manifest }));
+    expect(readPackageManager({ dir, name: "pnpm-lock.yaml" })).toBe(packageManager);
+  });
+});
+
 describe("packageManagerCommand", () => {
-  it.each<[string, InstallPlan, "install" | "nuxtPrepare", { command: string; args: string[] }]>([
+  const corepack = { script: "/run/tools/node_modules/corepack/dist/corepack.js" };
+
+  it.each<
+    [
+      string,
+      Parameters<typeof packageManagerCommand>[0],
+      "install" | "nuxtPrepare",
+      { command: string; args: string[] },
+    ]
+  >([
     [
       "runs npm's install with the user's own npm",
-      installPlan("package-lock.json", PACKAGE_LOCK, undefined),
+      NPM_PLAN,
       "install",
       { command: "npm", args: ["ci", "--ignore-scripts", "--no-audit", "--no-fund"] },
     ],
     [
       "runs npm's nuxt prepare with the user's own npm",
-      installPlan("package-lock.json", PACKAGE_LOCK, undefined),
+      NPM_PLAN,
       "nuxtPrepare",
       { command: "npm", args: ["exec", "--", "nuxt", "prepare"] },
     ],
     [
-      "runs Yarn's install through Corepack 0.36.0 with npx",
-      installPlan("yarn.lock", yarnBerryLock(8, "10"), "yarn@4.12.0"),
+      "runs Yarn's install through the fetched Corepack with the Node running Scout",
+      { ...yarnBerryPlan("yarn@4.12.0"), corepack },
       "install",
-      { command: "npx", args: ["--yes", "corepack@0.36.0", "yarn@4.12.0", "install", "--immutable", "--mode=skip-build"] },
+      { command: process.execPath, args: [corepack.script, "yarn@4.12.0", "install", "--immutable", "--mode=skip-build"] },
     ],
     [
-      "runs pnpm's nuxt prepare through Corepack 0.36.0 with npx",
-      installPlan("pnpm-lock.yaml", pnpmLock("9.0"), undefined),
+      "runs pnpm's nuxt prepare through the fetched Corepack with the Node running Scout",
+      { ...pnpmPlan("pnpm@12.8.1"), corepack },
       "nuxtPrepare",
-      { command: "npx", args: ["--yes", "corepack@0.36.0", "pnpm@12.8.1", "exec", "nuxt", "prepare"] },
+      { command: process.execPath, args: [corepack.script, "pnpm@12.8.1", "exec", "nuxt", "prepare"] },
     ],
   ])("%s", (_title, plan, step, command) => {
     expect(packageManagerCommand(plan, step)).toStrictEqual(command);
