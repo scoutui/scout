@@ -402,7 +402,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
 
 // Below md the header hides and each row stacks: name and edit, then the decision, then the count.
 const ROW =
-  "grid grid-cols-[minmax(0,1fr)_3rem] items-center md:grid-cols-[11rem_6.5rem_minmax(0,1fr)_9.5rem_3rem] lg:grid-cols-[16rem_6.5rem_minmax(0,1fr)_11rem_3rem]";
+  "grid grid-cols-[minmax(0,1fr)_3rem] items-center md:grid-cols-[11rem_minmax(0,1fr)_11rem_3rem] lg:grid-cols-[16rem_6.5rem_minmax(0,1fr)_11rem_3rem]";
 const OCC_CELL = "flex min-w-0 items-center pl-3";
 const EDIT_CELL = "flex min-w-0 justify-end pr-3";
 const LINK =
@@ -459,7 +459,8 @@ function RecordTable({
       />
     );
 
-  const groupBody = (group: PackageGroup) => {
+  /** With `shown` false, only the row being edited shows, in its usual place. */
+  const groupBody = (group: PackageGroup, shown = true) => {
     if (group.kind === "whole") {
       return (
         <tbody key={group.packageName} className="block">
@@ -467,21 +468,20 @@ function RecordTable({
         </tbody>
       );
     }
-    const open = searching || !folded.has(group.packageName);
+    const open = shown && (searching || !folded.has(group.packageName));
     return (
       <tbody key={group.packageName} className="block pt-1 pb-1.5">
         <GroupHeader
           group={group}
           open={open}
           repoCount={repoCount}
-          onFold={searching ? null : () => onFold(group.packageName)}
+          onFold={searching || !shown ? null : () => onFold(group.packageName)}
         />
         {group.rows.filter((row) => open || row.record.id === editingId).map((row) => recordRow(row, false))}
       </tbody>
     );
   };
 
-  const hiddenEdit = completeShown ? undefined : map.complete.flatMap(rowsOf).find((row) => row.record.id === editingId);
   const completeLabel = (
     <>
       <ChevronRight
@@ -513,7 +513,7 @@ function RecordTable({
             <th scope="col" className="min-w-0 pr-3 pl-8 text-left text-label text-muted-foreground">
               Name
             </th>
-            <td />
+            <td className="max-lg:sr-only" />
             <th scope="col" className="min-w-0 px-3 text-left text-label text-muted-foreground">
               Replacement or reason
             </th>
@@ -525,7 +525,7 @@ function RecordTable({
             </th>
           </tr>
         </thead>
-        {map.groups.map(groupBody)}
+        {map.groups.map((group) => groupBody(group))}
         {map.complete.length > 0 ? (
           <tbody className="block pt-1 pb-1.5">
             <tr className={cn(ROW, "min-h-10")}>
@@ -546,8 +546,9 @@ function RecordTable({
             </tr>
           </tbody>
         ) : null}
-        {completeShown ? map.complete.map(groupBody) : null}
-        {hiddenEdit ? <tbody className="block">{recordRow(hiddenEdit, true)}</tbody> : null}
+        {map.complete
+          .filter((group) => completeShown || rowsOf(group).some((row) => row.record.id === editingId))
+          .map((group) => groupBody(group, completeShown))}
       </table>
     </section>
   );
@@ -572,7 +573,11 @@ function GroupHeader({
   );
   return (
     <tr className={cn(ROW, "min-h-10 max-md:py-1")}>
-      <th scope="row" className="min-w-0 self-stretch text-left font-normal max-md:col-span-full max-md:h-8">
+      <th
+        scope="row"
+        colSpan={3}
+        className="min-w-0 self-stretch text-left font-normal max-md:col-span-full max-md:h-8 md:col-span-2 lg:col-span-3"
+      >
         <div className="flex h-full min-w-0 items-center pl-[0.4375rem]">
           {onFold ? (
             <button
@@ -604,8 +609,6 @@ function GroupHeader({
           </span>
         </div>
       </th>
-      <td className="max-md:hidden" />
-      <td className="max-md:hidden" />
       <td className={cn(OCC_CELL, "max-md:col-span-full max-md:pr-3 max-md:pl-8")}>
         <Occurrences left={group.left} repoCount={repoCount} trend={null} selected={false} />
       </td>
@@ -659,13 +662,13 @@ function RecordRow({
         {record.grain === "package" ? (
           <span className="flex min-w-0 flex-col items-start max-md:gap-y-1">
             {nameEl}
-            <span className="text-xs whitespace-nowrap text-muted-foreground">{wholePackageLabel(componentCount)}</span>
+            <span className="text-xs text-muted-foreground">{wholePackageLabel(componentCount)}</span>
           </span>
         ) : (
           nameEl
         )}
       </th>
-      <td className="min-w-0 pl-3 text-xs whitespace-nowrap text-muted-foreground max-md:hidden">
+      <td className="min-w-0 pl-3 text-xs whitespace-nowrap text-muted-foreground max-lg:sr-only">
         {record.disposition.kind === "superseded" ? "Superseded by" : "Retired"}
       </td>
       <td className="min-w-0 px-3 max-md:col-span-full max-md:row-start-2 max-md:pl-8">
@@ -676,7 +679,9 @@ function RecordRow({
             title={record.disposition.reason}
             className="block text-sm/normal wrap-anywhere md:line-clamp-2 md:group-focus-within/row:line-clamp-none md:group-hover/row:line-clamp-none"
           >
-            <span className="text-xs text-muted-foreground md:hidden">Retired · </span>
+            <span aria-hidden className="text-xs text-muted-foreground lg:hidden">
+              Retired ·{" "}
+            </span>
             {record.disposition.reason}
           </span>
         )}
@@ -721,7 +726,9 @@ function SuccessorCell({
         className="min-w-0 font-mono text-xs wrap-anywhere md:truncate"
         title={pickLabel(by)}
       >
-        <span className="font-sans text-muted-foreground md:hidden">Superseded by </span>
+        <span aria-hidden className="font-sans text-muted-foreground lg:hidden">
+          Superseded by{" "}
+        </span>
         <span className="text-foreground">{successor.name}</span>
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
       </span>

@@ -57,7 +57,7 @@ const stats = {
 const row = (id: string) => document.getElementById(`record-${id}`) as HTMLElement;
 const groupHeader = (packageName: string) =>
   screen.getByRole("button", { name: `Records in ${packageName}` }).closest("tr") as HTMLElement;
-const countCell = (tr: HTMLElement) => tr.children[3] as HTMLElement;
+const countCell = (tr: HTMLElement) => tr.children[tr.children.length - 2] as HTMLElement;
 const countText = (tr: HTMLElement) => countCell(tr).textContent?.trim();
 
 describe("GovernanceManager", () => {
@@ -208,13 +208,35 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("keeps the record being edited on screen when the complete section folds", () => {
+  it("keeps the edit form as it is, and focus on the toggle, when the complete section folds", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Show 1 complete" }));
     fireEvent.click(screen.getByRole("button", { name: "Edit OldThing" }));
-    fireEvent.click(screen.getByRole("button", { name: "1 complete" }));
-    expect(screen.getByRole("button", { name: "Show 1 complete" })).toHaveAttribute("aria-expanded", "false");
-    expect(screen.getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    const heading = screen.getByRole("heading", { name: "Edit record" });
+    const toggle = screen.getByRole("button", { name: "1 complete" });
+    toggle.focus();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Edit record" })).toBe(heading);
+    expect(screen.getByText("Delete this record?")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Records in @legacy/ui" })).toBeNull();
+  });
+
+  it("keeps the edit form as it is, and focus on the fold button, when its package folds", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    const heading = screen.getByRole("heading", { name: "Edit record" });
+    const fold = screen.getByRole("button", { name: "Records in @acme/old" });
+    fold.focus();
+    fireEvent.click(fold);
+    expect(fold).toHaveAttribute("aria-expanded", "false");
+    expect(fold).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Edit record" })).toBe(heading);
+    expect(screen.getByText("Delete this record?")).toBeInTheDocument();
+    expect(row("r2")).toBeNull();
   });
 
   it("shows where a deprecated successor goes next", () => {
