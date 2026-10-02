@@ -63,6 +63,8 @@ describe("searchTargets: ranking", () => {
   it("marks the matched parts of the name", () => {
     const rows = search({ sources: estate, query: "dp", scope: "@example/new-ui" }).rows;
     expect(rows.find((r) => r.kind === "component" && r.exportName === "DialogPopup")).toMatchObject({ matched: [[0, 1], [6, 7]] });
+    const overlapping = search({ sources: estate, query: "dia dialog", scope: "@example/new-ui" }).rows;
+    expect(overlapping.find((r) => r.kind === "component" && r.exportName === "DialogPanel")).toMatchObject({ matched: [[0, 6]] });
   });
 
   it("offers a target only older scans have, after the used ones", () => {
@@ -83,7 +85,11 @@ describe("searchTargets: packages", () => {
 
   it("puts packages whose name matches before the components, at most three", () => {
     expect(labels({ sources: estate, query: "new" }).slice(0, 2)).toEqual(["package @example/new-ui", "Button @example/new-ui"]);
-    expect(labels({ sources: estate, query: "example" }).filter((l) => l.startsWith("package"))).toHaveLength(3);
+    expect(labels({ sources: estate, query: "old-ui" }).slice(0, 2)).toEqual(["package @example/old-ui", "Button @example/old-ui"]);
+    expect(labels({ sources: estate, query: "example/new-ui" }).slice(0, 2)).toEqual(["package @example/new-ui", "Button @example/new-ui"]);
+    expect(labels({ sources: [...estate].reverse(), query: "example" }).filter((l) => l.startsWith("package"))).toEqual([
+      "package @example/old-ui", "package @example/new-ui", "package @example/legacy-kit",
+    ]);
     expect(labels({ sources: estate, query: "button" })[0]).toBe("Button @example/old-ui");
   });
 
@@ -164,6 +170,10 @@ describe("searchTargets: refusals", () => {
   it("refuses nothing in a replacement, and leaves out the record's own source", () => {
     const rows = labels({ mode: "successor", sources: estate, records, scope: "@example/old-ui", exclude: { packageName: "@example/old-ui", exportName: "SkeletonText" } });
     expect(rows).toContain("Button @example/old-ui");
+    expect(rows).toContain("all @example/old-ui");
     expect(rows).not.toContain("SkeletonText @example/old-ui");
+    const wholeExcluded = labels({ mode: "successor", sources: estate, records, scope: "@example/old-ui", exclude: { packageName: "@example/old-ui" } });
+    expect(wholeExcluded).toContain("SkeletonText @example/old-ui");
+    expect(wholeExcluded).not.toContain("all @example/old-ui");
   });
 });

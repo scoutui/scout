@@ -1,8 +1,8 @@
-import type { GovernanceRecord } from "@scoutui/web-shared";
+import type { GovernanceRecord, GovernanceTarget } from "@scoutui/web-shared";
 import { targetConflict } from "@scoutui/web-shared/client";
 
 /** A package or component the picker offers, with its occurrences in each repo's latest scan. */
-export type PickerTarget = { packageName: string; exportName?: string; occurrences: number };
+export type PickerTarget = GovernanceTarget;
 export type IdentityPick = { packageName: string; exportName?: string };
 
 export type SearchRow =
@@ -21,7 +21,7 @@ export type SearchInput = {
   editingId?: string | undefined;
   /** A target left out of the list. */
   exclude?: IdentityPick | null | undefined;
-  /** With no search, names that share a word with this come first. */
+  /** In successor mode, narrowed to a package and with no search, names that share a word with this come first. */
   similarTo?: string | null | undefined;
 };
 
@@ -76,6 +76,22 @@ function matchTerm(term: string, name: string, packageName: string | null): Matc
   if (at >= 0) return { tier: 5, matched: [[at, at + term.length]] };
   if (packageName?.toLowerCase().includes(term)) return { tier: 5, matched: [] };
   return null;
+}
+
+/**
+ * How one lower-case term matches a package name: 0 the whole name, 1 its start or
+ * the start of its first word after a leading `@`, 2 the start of any other word.
+ * From a word's start the term runs on across separators: `example/new-ui` matches
+ * `@example/new-ui` at 1, `old-ui` matches `@example/old-ui` at 2. Null when it
+ * doesn't match.
+ */
+function matchPackageTerm(term: string, packageName: string): number | null {
+  const lower = packageName.toLowerCase();
+  if (lower === term) return 0;
+  if (lower.startsWith(term)) return 1;
+  const word = words(packageName).find((w) => lower.startsWith(term, w.start));
+  if (!word) return null;
+  return word.start === 0 || (word.start === 1 && lower.startsWith("@")) ? 1 : 2;
 }
 
 /** Every term must match; the weakest decides the tier. */
@@ -148,7 +164,8 @@ const sameTarget = (a: IdentityPick, b: IdentityPick) =>
 
 /**
  * The rows the picker shows for a search, and the row Enter takes by default: the
- * first component that can be picked, never a whole package.
+ * first component that can be picked or, when no row is a component, the first
+ * package row; otherwise none. Never a whole package.
  */
 export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultIndex: number | null } {
   const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -184,8 +201,8 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
       rows.push(...[...packages.keys()].sort(byOccurrences).map(packageRow));
     } else {
       const matching = [...packages.keys()].flatMap((name) => {
-        const m = matchAll(terms, name, null);
-        return m && m.tier <= 2 ? [{ name, tier: m.tier }] : [];
+        const tiers = terms.map((t) => matchPackageTerm(t, name));
+        return tiers.every((t) => t !== null) ? [{ name, tier: Math.max(...tiers) }] : [];
       });
       matching.sort((a, b) => a.tier - b.tier || byOccurrences(a.name, b.name));
       rows.push(...matching.slice(0, MAX_PACKAGE_ROWS).map((p) => packageRow(p.name)));
