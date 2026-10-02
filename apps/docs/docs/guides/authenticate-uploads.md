@@ -59,7 +59,7 @@ Your sign-in ends when the first of these happens:
 - 90 days pass since you signed in, however often you use it.
 - You sign out of your identity provider, if the dashboard [receives back-channel logouts](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider) from it.
 
-When it ends, `scan` and `auth status` tell you to sign in again (see [Check or end your sign-in](#check-or-end-your-sign-in)). Because a sign-in lasts 90 days at most, a CI job uses a CI upload token instead: see [Run a scan and upload in CI](/docs/guides/run-in-ci).
+When it ends, `scan` and `auth status` tell you to sign in again (see [Check or end your sign-in](#check-or-end-your-sign-in)). Don't use a personal sign-in in CI: it ends after 90 days at most. Use a CI upload token instead: see [Run a scan and upload in CI](/docs/guides/run-in-ci).
 
 ## Name the host you upload to
 
