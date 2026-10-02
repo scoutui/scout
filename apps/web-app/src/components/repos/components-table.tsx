@@ -37,6 +37,7 @@ export function ComponentsTable({
   repoId,
   rows,
   marks,
+  notInLatest,
   search,
 }: {
   repoId: string;
@@ -46,6 +47,8 @@ export function ComponentsTable({
    *  marks as ghosts, and points the Occurrences header at the Δ, opening
    *  ascending. */
   marks?: Record<string, DiffMark> | undefined;
+  /** Components the latest scan doesn't have. They have no detail page, so their rows have no link. */
+  notInLatest?: ReadonlySet<string> | undefined;
   /** The search box text: a row it finds only by a written name says which. */
   search?: string;
 }) {
@@ -153,16 +156,17 @@ export function ComponentsTable({
           if (mark?.kind === "removed") {
             return <GhostRow key={row.componentId} r={row} index={vr.index} measure={virtualizer.measureElement} slotCh={slotCh} />;
           }
+          const linked = !notInLatest?.has(row.componentId);
           return (
             <TableRow
               key={row.componentId}
               data-index={vr.index}
               ref={virtualizer.measureElement}
-              className="relative cursor-pointer hover:bg-muted/50"
+              className={linked ? "relative cursor-pointer hover:bg-muted/50" : undefined}
             >
               <RowCells
                 r={row}
-                href={hrefFor(repoId, row.componentId)}
+                href={linked ? hrefFor(repoId, row.componentId) : undefined}
                 mark={mark}
                 delta={marks ? deltaOf(mark, row.occurrenceCount) : undefined}
                 slotCh={slotCh}
@@ -201,7 +205,7 @@ function hrefFor(repoId: string, componentId: string): string {
 }
 
 /** The cells of one component: name and detail link, package, version, files and occurrences. */
-function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow; href: string; mark?: DiffMark | undefined; delta?: number | undefined; slotCh: number; writtenAs?: string | undefined }) {
+function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow; href: string | undefined; mark?: DiffMark | undefined; delta?: number | undefined; slotCh: number; writtenAs?: string | undefined }) {
   const deprecated = r.deprecated;
 
   return (
@@ -211,14 +215,20 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
           {/* The row's one link: its ::after fills the positioned <tr>, so the
               whole row is the pointer target and keyboard users get one stop
               per row. */}
-          <Link
-            href={href}
-            prefetch={false}
-            title={deprecated ? `${r.displayName} (deprecated)` : r.displayName}
-            className="truncate font-mono font-medium outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring/50"
-          >
-            {r.displayName}
-          </Link>
+          {href === undefined ? (
+            <span className="truncate font-mono font-medium" title={deprecated ? `${r.displayName} (deprecated)` : r.displayName}>
+              {r.displayName}
+            </span>
+          ) : (
+            <Link
+              href={href}
+              prefetch={false}
+              title={deprecated ? `${r.displayName} (deprecated)` : r.displayName}
+              className="truncate font-mono font-medium outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring/50"
+            >
+              {r.displayName}
+            </Link>
+          )}
           {deprecated ? <DeprecatedMark /> : null}
           {/* An added row with no occurrences says so beside the badge instead
               of showing ±0 (below sm the occurrences tier already reads
@@ -232,6 +242,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
               ) : null}
             </>
           ) : null}
+          {href === undefined ? <span className="shrink-0 text-xs text-muted-foreground">not in the latest scan</span> : null}
         </div>
         {r.disambiguator ? (
           <div className="truncate text-code text-muted-foreground" title={r.disambiguator}>

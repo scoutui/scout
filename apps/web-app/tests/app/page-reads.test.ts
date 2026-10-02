@@ -60,7 +60,7 @@ function recordQueries(allowUsage = false) {
   };
 }
 
-type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown };
+type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown };
 
 /** A read of every component fact in a scan, not one component's. */
 const readsEveryComponent = (query: string) => /\bscan_component_facts\b/.test(query) && !/\bcomponent_id = \$2\b/.test(query);
@@ -223,6 +223,26 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
         title: "No components found",
         description: "This scan found no components. Check the include patterns in scout.config.json, then scan again.",
       });
+    });
+  });
+
+  it("flags the components an older scan has that the latest scan doesn't", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const field = componentKey(packageExport("@sample/mixed", "Field"));
+      const next = genericArtifacts()[0];
+      if (!next) throw new Error("Missing scan fixture");
+      next.meta.scanId = "scan-next";
+      next.meta.repo.commit = "next";
+      next.meta.repo.committedAt = "2026-06-03T00:00:00Z";
+      next.components = next.components.filter(c => c.id !== field);
+      next.occurrences = next.occurrences.filter(o => o.occurrenceId !== "field");
+      await publishScan(pool, next, { uploadedByUserId: null });
+      const { default: page } = await import("@/app/repos/[repoId]/page");
+      const older = await page({ ...repoParams, searchParams: Promise.resolve({ scan: "scan-current" }) });
+      expect(propsFor(older, "ComponentsExplorer")?.notInLatest).toEqual([field]);
+      const latest = await page({ ...repoParams, searchParams });
+      expect(propsFor(latest, "ComponentsExplorer")?.notInLatest).toEqual([]);
     });
   });
 

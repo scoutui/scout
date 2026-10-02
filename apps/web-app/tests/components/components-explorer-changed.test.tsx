@@ -204,4 +204,18 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
     expect(picked).toHaveAttribute("aria-pressed", "true");
     expect(menuRow(/^@x\/lib/)?.textContent).toBe("@x/lib1");
   });
+
+  it("leaves a row the latest scan doesn't have unlinked in both views, and says so", () => {
+    render(<ComponentsExplorer repoId="r1" rows={rows} notInLatest={["fresh"]} deprecatedTotal={0} diff={diff} />);
+    const expectUnlinked = () => {
+      const tr = screen.getByText("Fresh").closest("tr") as HTMLElement;
+      expect(within(tr).getByText("not in the latest scan")).toBeInTheDocument();
+      expect(tr.querySelector("a, button, [tabindex]")).toBeNull();
+      expect(screen.getAllByText("not in the latest scan")).toHaveLength(1);
+      expect(screen.getByRole("link", { name: "Grew" })).toHaveAttribute("href", "/repos/r1/components/grew");
+    };
+    expectUnlinked();
+    fireEvent.click(sinceChip());
+    expectUnlinked();
+  });
 });
