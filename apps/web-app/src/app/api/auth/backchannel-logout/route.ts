@@ -6,8 +6,8 @@ import { clientKey, logRateLimitRejection, rateLimit } from "@/lib/rate-limit";
 
 /**
  * OIDC Back-Channel Logout receiver: the identity provider POSTs a signed
- * logout token here when a person's IdP session ends, and their browser
- * sessions go with it. No browser is involved.
+ * logout token here when a person's IdP session ends, and their browser and
+ * CLI sessions go with it. No browser is involved.
  *
  * The middleware matcher excludes `/api/auth`, so there is no session check
  * here: the logout token's signature is the authentication.
