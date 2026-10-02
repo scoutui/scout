@@ -91,6 +91,7 @@ describe("parseSince", () => {
   it.each<[string, string]>([
     ["a month and day without leading zeros", "2026-4-2"],
     ["a day the month doesn't have", "2026-02-30"],
+    ["a month the year doesn't have", "2026-13-01"],
     ["a date written DD/MM/YYYY", "02/04/2026"],
     ["an empty value", ""],
   ])("rejects %s", (_, value) => {
