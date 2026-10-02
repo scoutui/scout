@@ -158,7 +158,7 @@ function sharesWord(a: string, b: string): boolean {
 }
 
 /** How many components each package has among the targets. */
-export function componentCounts(sources: GovernanceTarget[]): Map<string, number> {
+export function componentCounts(sources: { packageName: string; exportName?: string | undefined }[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const s of sources) {
     if (s.exportName !== undefined) counts.set(s.packageName, (counts.get(s.packageName) ?? 0) + 1);
