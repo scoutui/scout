@@ -232,7 +232,7 @@ describe("wording", () => {
   it.each([
     [{ inProgress: 5, complete: 1, unseen: 0 }, "5 in progress · 1 complete"],
     [{ inProgress: 0, complete: 6, unseen: 0 }, "6 complete"],
-    [{ inProgress: 1, complete: 0, unseen: 2 }, "1 in progress · 2 never matched a scan"],
+    [{ inProgress: 1, complete: 0, unseen: 2 }, "1 in progress · 2 not in any scan"],
     [{ inProgress: 0, complete: 0, unseen: 0 }, ""],
   ])("progressLabel(%o) is %s", (p, expected) => {
     expect(progressLabel(p)).toBe(expected);

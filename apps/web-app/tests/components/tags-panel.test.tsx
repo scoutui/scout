@@ -10,30 +10,30 @@ vi.mock("@/app/packages/tag-actions", () => ({
   deleteTag: vi.fn(async () => ({ ok: true })),
 }));
 
-const vben: Tag = {
+const acme: Tag = {
   id: "t1",
-  value: "vben",
+  value: "acme",
   category: "library",
   color: "#7d8088",
-  rule: { glob: ["@vben/*"], exact: ["legacy-kit"] },
+  rule: { glob: ["@acme/*"], exact: ["legacy-kit"] },
 };
-const packageNames = ["@vben/icons", "@vben/layouts", "legacy-kit", "react"];
+const packageNames = ["@acme/icons", "@acme/layouts", "legacy-kit", "react"];
 
 beforeEach(() => vi.clearAllMocks());
 
 describe("TagsPanel", () => {
   it("lists each tag's packages and how many scanned packages it matches", () => {
-    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
-    const row = screen.getByRole("row", { name: /vben/ });
-    expect(within(row).getByText("@vben/*")).toBeInTheDocument();
+    render(<TagsPanel allTags={[acme]} packageNames={packageNames} />);
+    const row = screen.getByRole("row", { name: /acme/ });
+    expect(within(row).getByText("@acme/*")).toBeInTheDocument();
     expect(within(row).getByText("legacy-kit")).toBeInTheDocument();
     const matches = within(within(row).getByRole("cell", { name: "3 packages" })).getByText("3 packages");
-    expect(matches).toHaveAttribute("title", "@vben/icons, @vben/layouts, legacy-kit");
+    expect(matches).toHaveAttribute("title", "@acme/icons, @acme/layouts, legacy-kit");
   });
 
   it("puts each tag's swatch before its name, named by its colour, with no Colour column", () => {
-    const custom: Tag = { ...vben, id: "t2", value: "house", color: "#123456", rule: { glob: [], exact: ["house-kit"] } };
-    render(<TagsPanel allTags={[vben, custom]} packageNames={packageNames} />);
+    const custom: Tag = { ...acme, id: "t2", value: "house", color: "#123456", rule: { glob: [], exact: ["house-kit"] } };
+    render(<TagsPanel allTags={[acme, custom]} packageNames={packageNames} />);
     expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
       "Name",
       "Packages",
@@ -41,7 +41,7 @@ describe("TagsPanel", () => {
       "Edit",
     ]);
     for (const [tagName, colour] of [
-      ["vben", "Grey"],
+      ["acme", "Grey"],
       ["house", "#123456"],
     ] as const) {
       const [nameCell] = within(screen.getByRole("row", { name: new RegExp(tagName) })).getAllByRole("cell");
@@ -53,7 +53,7 @@ describe("TagsPanel", () => {
   });
 
   it("shows four of six or more packages and toggles the rest", () => {
-    const libs: Tag = { ...vben, value: "libs", rule: { glob: [], exact: ["p1", "p2", "p3", "p4", "p5", "p6"] } };
+    const libs: Tag = { ...acme, value: "libs", rule: { glob: [], exact: ["p1", "p2", "p3", "p4", "p5", "p6"] } };
     render(<TagsPanel allTags={[libs]} packageNames={packageNames} />);
     const more = screen.getByRole("button", { name: "Show 2 more packages in libs", expanded: false });
     expect(more).toHaveTextContent("+2 more");
@@ -74,19 +74,19 @@ describe("TagsPanel", () => {
   });
 
   it("shows every package when there are five", () => {
-    const libs: Tag = { ...vben, value: "libs", rule: { glob: ["p5*"], exact: ["p1", "p2", "p3", "p4"] } };
+    const libs: Tag = { ...acme, value: "libs", rule: { glob: ["p5*"], exact: ["p1", "p2", "p3", "p4"] } };
     render(<TagsPanel allTags={[libs]} packageNames={packageNames} />);
     for (const entry of ["p1", "p2", "p3", "p4", "p5*"]) expect(screen.getByText(entry)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /more packages/ })).toBeNull();
   });
 
   it("says when a tag matches no scanned package", () => {
-    render(<TagsPanel allTags={[{ ...vben, rule: { glob: [], exact: ["gone"] } }]} packageNames={packageNames} />);
+    render(<TagsPanel allTags={[{ ...acme, rule: { glob: [], exact: ["gone"] } }]} packageNames={packageNames} />);
     expect(screen.getByRole("cell", { name: "No scanned package" })).toBeInTheDocument();
   });
 
   it("says No data for matches while scan results are rebuilding", () => {
-    render(<TagsPanel allTags={[vben]} packageNames={null} />);
+    render(<TagsPanel allTags={[acme]} packageNames={null} />);
     const cell = screen.getByRole("cell", { name: "No data" });
     expect(within(cell).getByText("No data")).not.toHaveAttribute("title");
     expect(screen.queryByRole("cell", { name: "No scanned package" })).toBeNull();
@@ -96,7 +96,7 @@ describe("TagsPanel", () => {
     render(<TagsPanel allTags={[]} packageNames={packageNames} />);
     fireEvent.click(screen.getByRole("button", { name: "Add tag" }));
     const box = screen.getByRole("textbox", { name: "Packages" });
-    fireEvent.change(box, { target: { value: "@vben/*" } });
+    fireEvent.change(box, { target: { value: "@acme/*" } });
     expect(screen.getByText(/^Matches 2 packages:/)).toBeInTheDocument();
     fireEvent.change(box, { target: { value: "nothing-*" } });
     expect(screen.getByText("Matches no scanned package")).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe("TagsPanel", () => {
   it("previews no matches while scan results are rebuilding", () => {
     render(<TagsPanel allTags={[]} packageNames={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Add tag" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Packages" }), { target: { value: "@vben/*" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Packages" }), { target: { value: "@acme/*" } });
     expect(screen.queryByText(/^Matches /)).toBeNull();
   });
 
@@ -125,36 +125,36 @@ describe("TagsPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add tag" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Name" }), { target: { value: "kit" } });
     fireEvent.click(screen.getByRole("radio", { name: "Violet" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Packages" }), { target: { value: "@vben/*\nlegacy-kit" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Packages" }), { target: { value: "@acme/*\nlegacy-kit" } });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     const { saveTag } = await import("@/app/packages/tag-actions");
     await vi.waitFor(() =>
       expect(saveTag).toHaveBeenCalledWith(
-        expect.objectContaining({ value: "kit", color: "#9b6bce", rule: { glob: ["@vben/*"], exact: ["legacy-kit"] } }),
+        expect.objectContaining({ value: "kit", color: "#9b6bce", rule: { glob: ["@acme/*"], exact: ["legacy-kit"] } }),
       ),
     );
   });
 
   it("saves an edited tag's rule back unchanged when nothing was edited", async () => {
-    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
-    fireEvent.click(screen.getByRole("button", { name: "Edit vben" }));
+    render(<TagsPanel allTags={[acme]} packageNames={packageNames} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit acme" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     const { saveTag } = await import("@/app/packages/tag-actions");
-    await vi.waitFor(() => expect(saveTag).toHaveBeenCalledWith(expect.objectContaining({ id: "t1", rule: vben.rule })));
+    await vi.waitFor(() => expect(saveTag).toHaveBeenCalledWith(expect.objectContaining({ id: "t1", rule: acme.rule })));
   });
 
   it("returns focus to the tag's Edit button when its form is cancelled", () => {
-    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
-    fireEvent.click(screen.getByRole("button", { name: "Edit vben" }));
+    render(<TagsPanel allTags={[acme]} packageNames={packageNames} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit acme" }));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.getByRole("button", { name: "Edit vben" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Edit acme" })).toHaveFocus();
   });
 
   it("asks before deleting a tag and says what it affects", async () => {
-    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
-    fireEvent.click(screen.getByRole("button", { name: "Edit vben" }));
+    render(<TagsPanel allTags={[acme]} packageNames={packageNames} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit acme" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByText("Delete vben? Charts that use it lose that line.")).toBeInTheDocument();
+    expect(screen.getByText("Delete acme? Charts that use it lose that line.")).toBeInTheDocument();
     const { deleteTag } = await import("@/app/packages/tag-actions");
     expect(deleteTag).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));

@@ -211,7 +211,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   const revealId = useRef<string | null>(null);
   const recordsRef = useRef(records);
   const addRecordRef = useRef<HTMLButtonElement>(null);
-  /** Set when Cancel or Delete closes the form: the record whose row takes focus, or undefined for Add record. */
+  /** Set when Cancel or Delete closes the form: the record whose Edit button takes focus, or undefined for Add record. */
   const [focusAfterClose, setFocusAfterClose] = useState<{ recordId: string | undefined } | null>(null);
 
   const editingId = formOpen ? form.id : undefined;
@@ -265,8 +265,8 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   useEffect(() => {
     if (!focusAfterClose) return;
     setFocusAfterClose(null);
-    const row = focusAfterClose.recordId ? document.getElementById(`record-${focusAfterClose.recordId}`) : null;
-    (row ?? addRecordRef.current)?.focus();
+    const edit = focusAfterClose.recordId ? document.getElementById(editButtonId(focusAfterClose.recordId)) : null;
+    (edit ?? addRecordRef.current)?.focus();
   }, [focusAfterClose]);
 
   useEffect(() => {
@@ -316,6 +316,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   function search(value: string) {
     setQuery(value);
     setHighlightId(null);
+    revealId.current = null;
   }
 
   function toggleFold(packageName: string) {
@@ -368,7 +369,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
       {records.length === 0 && !formOpen ? (
         <div className="space-y-1 py-4">
           <p className="text-sm text-muted-foreground">
-            No lifecycle records yet.
+            No records yet.
           </p>
         </div>
       ) : (
@@ -415,6 +416,7 @@ const LINK =
 const CHEVRON = "size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ease-out motion-reduce:transition-none";
 
 const rowsOf = (group: PackageGroup) => (group.kind === "whole" ? [group.row] : group.rows);
+const editButtonId = (recordId: string) => `edit-record-${recordId}`;
 
 function RecordTable({
   map,
@@ -568,7 +570,6 @@ function GroupHeader({
   group: Extract<PackageGroup, { kind: "components" }>;
   open: boolean;
   repoCount: number;
-  /** Null while a search runs: the chevron shows open and doesn't fold. */
   onFold: (() => void) | null;
 }) {
   const name = "min-w-0 font-mono text-xs font-medium wrap-anywhere md:truncate";
@@ -701,6 +702,7 @@ function RecordRow({
       </td>
       <td className={cn(EDIT_CELL, "max-md:col-start-2 max-md:row-start-1 max-md:self-start")}>
         <Button
+          id={editButtonId(record.id)}
           variant="ghost"
           size="icon-xs"
           onClick={onEdit}
@@ -803,7 +805,7 @@ function Occurrences({
     </>
   );
   const look =
-    "inline-grid min-w-0 max-w-full grid-cols-[2.25rem_minmax(0,auto)] items-center gap-x-1.5 text-sm whitespace-nowrap tabular-nums max-md:grid-cols-[auto_minmax(0,auto)] max-md:gap-x-1";
+    "inline-grid min-w-0 max-w-full grid-cols-[minmax(2.25rem,auto)_minmax(0,auto)] items-center gap-x-1.5 text-sm whitespace-nowrap tabular-nums max-md:grid-cols-[auto_minmax(0,auto)] max-md:gap-x-1";
   if (!linked) return <span className={look}>{content}</span>;
   return (
     <Link

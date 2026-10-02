@@ -158,7 +158,7 @@ export function progressLabel(p: GroupProgress): string {
   return [
     p.inProgress > 0 ? `${p.inProgress.toLocaleString()} in progress` : null,
     p.complete > 0 ? `${p.complete.toLocaleString()} complete` : null,
-    p.unseen > 0 ? `${p.unseen.toLocaleString()} never matched a scan` : null,
+    p.unseen > 0 ? `${p.unseen.toLocaleString()} not in any scan` : null,
   ]
     .filter(Boolean)
     .join(" · ");

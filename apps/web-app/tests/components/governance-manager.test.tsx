@@ -302,13 +302,13 @@ describe("GovernanceManager", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
     expect(screen.queryByRole("heading", { level: 2, name: "New record" })).not.toBeInTheDocument();
-    expect(screen.getByText("No lifecycle records yet.")).toBeInTheDocument();
+    expect(screen.getByText("No records yet.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /add record/i }));
     expect(screen.getByRole("heading", { level: 2, name: "New record" })).toBeInTheDocument();
   });
 
-  it("opens Edit in the record's row and moves focus into the form", () => {
+  it("opens Edit in the record's row and moves focus into the form, and Cancel returns focus to its Edit button", () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     const row = document.getElementById("record-r1");
@@ -316,6 +316,8 @@ describe("GovernanceManager", () => {
     expect(within(row as HTMLElement).getByRole("heading", { level: 3, name: "Edit record" })).toBeInTheDocument();
     expect(row?.contains(document.activeElement)).toBe(true);
     expect(within(row as HTMLElement).getByRole("button", { name: /^Package or component: Button · @acme\/old$/ })).toBeInTheDocument();
+    fireEvent.click(within(row as HTMLElement).getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("button", { name: "Edit Button" })).toHaveFocus();
   });
 
   it("says who added and changed a record in its edit form, and nothing in a new record's", () => {
