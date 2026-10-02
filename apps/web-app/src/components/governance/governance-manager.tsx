@@ -382,8 +382,9 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
               editingId={editingId}
               editForm={recordForm}
               highlightId={highlightId}
-              isOpen={(packageName) => searching || !folded.has(packageName)}
-              completeShown={searching || completeOpen}
+              searching={searching}
+              folded={folded}
+              completeOpen={completeOpen}
               onFold={toggleFold}
               onToggleComplete={() => setCompleteOpen((open) => !open)}
               onEdit={openEdit}
@@ -399,8 +400,9 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
 // Records table
 // ---------------------------------------------------------------------------
 
-// Below sm the header hides and each row stacks: name and edit, then the decision, then the count.
-const ROW = "grid grid-cols-[minmax(0,1fr)_3rem] items-center sm:grid-cols-[16rem_6.5rem_minmax(0,1fr)_11rem_3rem]";
+// Below md the header hides and each row stacks: name and edit, then the decision, then the count.
+const ROW =
+  "grid grid-cols-[minmax(0,1fr)_3rem] items-center md:grid-cols-[11rem_6.5rem_minmax(0,1fr)_9.5rem_3rem] lg:grid-cols-[16rem_6.5rem_minmax(0,1fr)_11rem_3rem]";
 const OCC_CELL = "flex min-w-0 items-center pl-3";
 const EDIT_CELL = "flex min-w-0 justify-end pr-3";
 const LINK =
@@ -416,8 +418,9 @@ function RecordTable({
   editingId,
   editForm,
   highlightId,
-  isOpen,
-  completeShown,
+  searching,
+  folded,
+  completeOpen,
   onFold,
   onToggleComplete,
   onEdit,
@@ -429,13 +432,16 @@ function RecordTable({
   /** Shown in place of the row being edited. */
   editForm: React.ReactNode;
   highlightId: string | null;
-  isOpen: (packageName: string) => boolean;
-  completeShown: boolean;
+  /** While a search runs, every group shows open and nothing folds. */
+  searching: boolean;
+  folded: ReadonlySet<string>;
+  completeOpen: boolean;
   onFold: (packageName: string) => void;
   onToggleComplete: () => void;
   onEdit: (record: GovernanceRecord) => void;
 }) {
   const titleId = useId();
+  const completeShown = searching || completeOpen;
 
   const recordRow = (row: MapRow, standalone: boolean) =>
     row.record.id === editingId ? (
@@ -461,16 +467,35 @@ function RecordTable({
         </tbody>
       );
     }
-    const open = isOpen(group.packageName);
+    const open = searching || !folded.has(group.packageName);
     return (
       <tbody key={group.packageName} className="block pt-1 pb-1.5">
-        <GroupHeader group={group} open={open} repoCount={repoCount} onFold={() => onFold(group.packageName)} />
+        <GroupHeader
+          group={group}
+          open={open}
+          repoCount={repoCount}
+          onFold={searching ? null : () => onFold(group.packageName)}
+        />
         {group.rows.filter((row) => open || row.record.id === editingId).map((row) => recordRow(row, false))}
       </tbody>
     );
   };
 
   const hiddenEdit = completeShown ? undefined : map.complete.flatMap(rowsOf).find((row) => row.record.id === editingId);
+  const completeLabel = (
+    <>
+      <ChevronRight
+        aria-hidden
+        strokeWidth={1.5}
+        className={cn(CHEVRON, "group-hover/toggle:text-foreground", completeShown && "rotate-90")}
+      />
+      <span className="text-xs font-medium text-muted-foreground group-hover/toggle:text-foreground">
+        {completeShown
+          ? `${map.completeRecords.toLocaleString()} complete`
+          : `Show ${map.completeRecords.toLocaleString()} complete`}
+      </span>
+    </>
+  );
 
   return (
     <section>
@@ -483,7 +508,7 @@ function RecordTable({
         </span>
       </div>
       <table aria-labelledby={titleId} className="panel block overflow-hidden [&>tbody+tbody]:border-t">
-        <thead className="block max-sm:sr-only">
+        <thead className="block max-md:sr-only">
           <tr className={cn(ROW, "h-9 border-b border-border bg-muted")}>
             <th scope="col" className="min-w-0 pr-3 pl-8 text-left text-label text-muted-foreground">
               Name
@@ -505,23 +530,18 @@ function RecordTable({
           <tbody className="block pt-1 pb-1.5">
             <tr className={cn(ROW, "min-h-10")}>
               <th scope="row" className="col-span-full self-stretch text-left font-normal">
-                <button
-                  type="button"
-                  aria-expanded={completeShown}
-                  onClick={onToggleComplete}
-                  className="group/toggle flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring"
-                >
-                  <ChevronRight
-                    aria-hidden
-                    strokeWidth={1.5}
-                    className={cn(CHEVRON, "group-hover/toggle:text-foreground", completeShown && "rotate-90")}
-                  />
-                  <span className="text-xs font-medium text-muted-foreground group-hover/toggle:text-foreground">
-                    {completeShown
-                      ? `${map.completeRecords.toLocaleString()} complete`
-                      : `Show ${map.completeRecords.toLocaleString()} complete`}
-                  </span>
-                </button>
+                {searching ? (
+                  <div className="flex min-h-10 items-center gap-1.5 px-3">{completeLabel}</div>
+                ) : (
+                  <button
+                    type="button"
+                    aria-expanded={completeShown}
+                    onClick={onToggleComplete}
+                    className="group/toggle flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring"
+                  >
+                    {completeLabel}
+                  </button>
+                )}
               </th>
             </tr>
           </tbody>
@@ -542,26 +562,34 @@ function GroupHeader({
   group: Extract<PackageGroup, { kind: "components" }>;
   open: boolean;
   repoCount: number;
-  onFold: () => void;
+  /** Null while a search runs: the chevron shows open and doesn't fold. */
+  onFold: (() => void) | null;
 }) {
-  const name = "min-w-0 font-mono text-xs font-medium wrap-anywhere sm:truncate";
+  const name = "min-w-0 font-mono text-xs font-medium wrap-anywhere md:truncate";
+  const gutter = "mr-px inline-flex size-6 shrink-0 items-center justify-center rounded-sm";
+  const chevron = (
+    <ChevronRight aria-hidden strokeWidth={1.5} className={cn(CHEVRON, "group-hover/fold:text-foreground", open && "rotate-90")} />
+  );
   return (
-    <tr className={cn(ROW, "min-h-10 max-sm:py-1")}>
-      <th scope="row" className="min-w-0 self-stretch text-left font-normal max-sm:col-span-full max-sm:h-8">
+    <tr className={cn(ROW, "min-h-10 max-md:py-1")}>
+      <th scope="row" className="min-w-0 self-stretch text-left font-normal max-md:col-span-full max-md:h-8">
         <div className="flex h-full min-w-0 items-center pl-[0.4375rem]">
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-label={`Records in ${group.packageName}`}
-            onClick={onFold}
-            className="group/fold mr-px inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
-          >
-            <ChevronRight
-              aria-hidden
-              strokeWidth={1.5}
-              className={cn(CHEVRON, "group-hover/fold:text-foreground", open && "rotate-90")}
-            />
-          </button>
+          {onFold ? (
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-label={`Records in ${group.packageName}`}
+              onClick={onFold}
+              className={cn(
+                gutter,
+                "group/fold cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring",
+              )}
+            >
+              {chevron}
+            </button>
+          ) : (
+            <span className={gutter}>{chevron}</span>
+          )}
           <span className="flex min-w-0 items-baseline">
             {group.href ? (
               <Link href={group.href} title={group.packageName} className={cn(name, LINK)}>
@@ -576,12 +604,12 @@ function GroupHeader({
           </span>
         </div>
       </th>
-      <td className="max-sm:hidden" />
-      <td className="max-sm:hidden" />
-      <td className={cn(OCC_CELL, "max-sm:col-span-full max-sm:pr-3 max-sm:pl-8")}>
+      <td className="max-md:hidden" />
+      <td className="max-md:hidden" />
+      <td className={cn(OCC_CELL, "max-md:col-span-full max-md:pr-3 max-md:pl-8")}>
         <Occurrences left={group.left} repoCount={repoCount} trend={null} selected={false} />
       </td>
-      <td className="max-sm:hidden" />
+      <td className="max-md:hidden" />
     </tr>
   );
 }
@@ -603,7 +631,7 @@ function RecordRow({
   const { record, stat, componentCount, nextHop } = row;
   const name = rowName(record);
   const href = recordHref(record, stat);
-  const nameClass = "inline-block max-w-full align-top font-mono text-xs wrap-anywhere sm:truncate";
+  const nameClass = "block w-fit max-w-full font-mono text-xs wrap-anywhere md:truncate";
   const nameEl = href ? (
     <Link href={href} title={name} className={cn(nameClass, LINK)}>
       {name}
@@ -620,16 +648,16 @@ function RecordRow({
       aria-current={highlighted ? "true" : undefined}
       className={cn(
         ROW,
-        "group/row min-h-9 scroll-mt-24 py-1.5 outline-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring motion-reduce:transition-none max-sm:gap-y-1 max-sm:py-2",
-        standalone && "py-[0.6875rem] max-sm:py-3",
+        "group/row min-h-9 scroll-mt-24 py-1.5 outline-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring motion-reduce:transition-none max-md:gap-y-1 max-md:py-2",
+        standalone && "py-[0.6875rem] max-md:py-3",
         highlighted
           ? "selected shadow-[inset_0_1px_0_var(--selected-edge),inset_0_-1px_0_var(--selected-edge)]"
           : "hover:bg-secondary dark:hover:bg-accent",
       )}
     >
-      <th scope="row" className="min-w-0 pr-3 pl-8 text-left font-normal max-sm:col-start-1 max-sm:row-start-1">
+      <th scope="row" className="min-w-0 pr-3 pl-8 text-left font-normal max-md:col-start-1 max-md:row-start-1">
         {record.grain === "package" ? (
-          <span className="flex min-w-0 flex-col items-start max-sm:gap-y-1">
+          <span className="flex min-w-0 flex-col items-start max-md:gap-y-1">
             {nameEl}
             <span className="text-xs whitespace-nowrap text-muted-foreground">{wholePackageLabel(componentCount)}</span>
           </span>
@@ -637,23 +665,23 @@ function RecordRow({
           nameEl
         )}
       </th>
-      <td className="min-w-0 pl-3 text-xs whitespace-nowrap text-muted-foreground max-sm:hidden">
+      <td className="min-w-0 pl-3 text-xs whitespace-nowrap text-muted-foreground max-md:hidden">
         {record.disposition.kind === "superseded" ? "Superseded by" : "Retired"}
       </td>
-      <td className="min-w-0 px-3 max-sm:col-span-full max-sm:row-start-2 max-sm:pl-8">
+      <td className="min-w-0 px-3 max-md:col-span-full max-md:row-start-2 max-md:pl-8">
         {record.disposition.kind === "superseded" ? (
           <SuccessorCell by={record.disposition.by} deprecated={stat?.successorDeprecated === true} nextHop={nextHop} />
         ) : (
           <span
             title={record.disposition.reason}
-            className="block text-sm/normal wrap-anywhere sm:line-clamp-2 sm:group-focus-within/row:line-clamp-none sm:group-hover/row:line-clamp-none"
+            className="block text-sm/normal wrap-anywhere md:line-clamp-2 md:group-focus-within/row:line-clamp-none md:group-hover/row:line-clamp-none"
           >
-            <span className="text-xs text-muted-foreground sm:hidden">Retired · </span>
+            <span className="text-xs text-muted-foreground md:hidden">Retired · </span>
             {record.disposition.reason}
           </span>
         )}
       </td>
-      <td className={cn(OCC_CELL, "max-sm:col-span-full max-sm:row-start-3 max-sm:pr-3 max-sm:pl-8")}>
+      <td className={cn(OCC_CELL, "max-md:col-span-full max-md:row-start-3 max-md:pr-3 max-md:pl-8")}>
         <Occurrences
           left={leftOf(stat)}
           repoCount={repoCount}
@@ -661,7 +689,7 @@ function RecordRow({
           selected={highlighted}
         />
       </td>
-      <td className={cn(EDIT_CELL, "max-sm:col-start-2 max-sm:row-start-1 max-sm:self-start")}>
+      <td className={cn(EDIT_CELL, "max-md:col-start-2 max-md:row-start-1 max-md:self-start")}>
         <Button
           variant="ghost"
           size="icon-xs"
@@ -688,12 +716,12 @@ function SuccessorCell({
 }) {
   const successor = successorLabel(by);
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 sm:flex-nowrap">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 md:flex-nowrap">
       <span
-        className="min-w-0 font-mono text-xs wrap-anywhere sm:truncate"
+        className="min-w-0 font-mono text-xs wrap-anywhere md:truncate"
         title={pickLabel(by)}
       >
-        <span className="font-sans text-muted-foreground sm:hidden">Superseded by </span>
+        <span className="font-sans text-muted-foreground md:hidden">Superseded by </span>
         <span className="text-foreground">{successor.name}</span>
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
       </span>
@@ -704,7 +732,7 @@ function SuccessorCell({
         </span>
       ) : null}
       {nextHop ? (
-        <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere sm:flex-1 sm:truncate">
+        <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere md:flex-1 md:truncate">
           {`→ ${pickLabel(nextHop)}`}
         </span>
       ) : null}
@@ -727,51 +755,47 @@ function Occurrences({
 }) {
   const t = leftText(left, repoCount);
   const ok = selected ? "text-[color-mix(in_oklab,var(--status-ok)_85%,var(--foreground))]" : "text-status-ok";
-  const slot = "flex justify-end max-sm:justify-start max-sm:empty:hidden";
-  const look =
-    "inline-grid grid-cols-[2.25rem_auto] items-center gap-x-1.5 text-sm whitespace-nowrap tabular-nums max-sm:grid-cols-[auto_auto] max-sm:gap-x-1";
-  let content: React.ReactNode;
+  const repo = t.kind === "count" && t.where !== null && left.kind === "count" && left.repos.length === 1;
+  const linked = trend !== null && (t.kind === "count" || t.kind === "none");
+  let glyph: React.ReactNode = null;
+  let words: React.ReactNode = t.text;
+  let wordsClass = "";
   if (t.kind === "count") {
-    content = (
-      <>
-        <span className={slot}>{t.n}</span>
-        {t.where === null ? (
-          <span className="sm:hidden">left</span>
-        ) : (
-          <span>
-            <span className="sm:hidden">left </span>
-            in{" "}
-            {left.kind === "count" && left.repos.length === 1 ? (
-              <span className="font-mono text-xs">{t.where}</span>
-            ) : (
-              t.where
-            )}
-          </span>
-        )}
-      </>
-    );
+    glyph = t.n;
+    wordsClass = "truncate";
+    words =
+      t.where === null ? (
+        <span className="md:hidden">left</span>
+      ) : (
+        <>
+          <span className="md:hidden">left </span>
+          in {repo ? <span className="font-mono text-xs">{t.where}</span> : t.where}
+        </>
+      );
   } else if (t.kind === "none") {
-    content = (
-      <>
-        <span className={cn(slot, ok)}>
-          <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5" />
-        </span>
-        <span className={ok}>{t.text}</span>
-      </>
-    );
+    glyph = <CircleCheck aria-hidden strokeWidth={1.5} className={cn("size-3.5", ok)} />;
+    wordsClass = ok;
+  } else if (t.kind === "unseen") {
+    glyph = <TriangleAlert aria-hidden strokeWidth={1.5} className="size-3.5 text-status-warn" />;
+    wordsClass = "text-status-warn-text";
   } else {
-    content = (
-      <>
-        <span className={slot} />
-        <span className={t.kind === "unseen" ? "text-status-warn-text" : "text-muted-foreground"}>{t.text}</span>
-      </>
-    );
+    wordsClass = "text-muted-foreground";
   }
-  if (!trend || (t.kind !== "count" && t.kind !== "none")) return <span className={look}>{content}</span>;
+  const content = (
+    <>
+      <span className="flex justify-end max-md:justify-start max-md:empty:hidden">{glyph}</span>{" "}
+      <span title={repo ? t.text : undefined} className={cn("min-w-0", wordsClass)}>
+        {words}
+        {linked ? <span className="sr-only">, trend for {trend.name}</span> : null}
+      </span>
+    </>
+  );
+  const look =
+    "inline-grid min-w-0 max-w-full grid-cols-[2.25rem_minmax(0,auto)] items-center gap-x-1.5 text-sm whitespace-nowrap tabular-nums max-md:grid-cols-[auto_minmax(0,auto)] max-md:gap-x-1";
+  if (!linked) return <span className={look}>{content}</span>;
   return (
     <Link
       href={trend.href}
-      aria-label={`${t.text}, trend for ${trend.name}`}
       className={cn(
         look,
         "rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring [&:focus-visible>*]:underline [&:hover>*]:underline",

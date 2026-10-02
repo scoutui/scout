@@ -53,10 +53,12 @@ const stats = {
   "r-done": { status: "complete", left: 0, leftIn: [], componentIds: ["c-old"], trackingId: "retirement:r-done", successorDeprecated: false },
 } satisfies Record<string, RecordStat>;
 
+// jsdom applies no CSS, so link names include the stacked layout's "left" and a space at each element edge.
 const row = (id: string) => document.getElementById(`record-${id}`) as HTMLElement;
 const groupHeader = (packageName: string) =>
   screen.getByRole("button", { name: `Records in ${packageName}` }).closest("tr") as HTMLElement;
-const occurrences = (tr: HTMLElement) => tr.children[3] as HTMLElement;
+const countCell = (tr: HTMLElement) => tr.children[3] as HTMLElement;
+const countText = (tr: HTMLElement) => countCell(tr).textContent?.trim();
 
 describe("GovernanceManager", () => {
   beforeEach(() => {
@@ -88,28 +90,31 @@ describe("GovernanceManager", () => {
     expect(within(chip).getByTitle("No replacement")).toBeInTheDocument();
   });
 
-  it("links each count to the record's trend, named for the record", () => {
+  it("links each count to the record's trend, named by its visible text and the record", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
-    expect(screen.getByRole("link", { name: "20 in 2 repos, trend for Button" })).toHaveAttribute("href", "/charts/migration%3Ar1");
-    expect(screen.getByRole("link", { name: "17 in repo-a, trend for Field" })).toHaveAttribute("href", "/charts/migration%3Ar3");
-    expect(occurrences(row("r4")).textContent).toBe("Not in any scan");
+    const button = screen.getByRole("link", { name: "20 left in 2 repos , trend for Button" });
+    expect(button).toHaveAttribute("href", "/charts/migration%3Ar1");
+    expect(button).not.toHaveAttribute("aria-label");
+    expect(screen.getByRole("link", { name: "17 left in repo-a , trend for Field" })).toHaveAttribute("href", "/charts/migration%3Ar3");
+    expect(countText(row("r4"))).toBe("Not in any scan");
+    expect(countCell(row("r4")).querySelector("svg")).not.toBeNull();
     expect(within(row("r4")).queryByRole("link", { name: /trend for/ })).toBeNull();
   });
 
   it("drops the repo from counts when fewer than two repos are scanned", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={1} summary={null} notice={null} />);
-    expect(screen.getByRole("link", { name: "17, trend for Field" })).toBeInTheDocument();
-    expect(occurrences(row("r3")).textContent).not.toContain("repo-a");
+    expect(screen.getByRole("link", { name: "17 left , trend for Field" })).toBeInTheDocument();
+    expect(countText(row("r3"))).not.toContain("repo-a");
   });
 
   it("shows each package's total as plain text in its header", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
     const header = groupHeader("@acme/old");
     expect(header.textContent).toContain("@acme/old · 2 components");
-    expect(occurrences(header).textContent).toContain("23");
-    expect(occurrences(header).textContent).toContain("in 2 repos");
-    expect(occurrences(header).querySelector("a")).toBeNull();
-    expect(occurrences(groupHeader("@acme/forms")).textContent).toContain("in repo-a");
+    expect(countText(header)).toContain("23");
+    expect(countText(header)).toContain("in 2 repos");
+    expect(countCell(header).querySelector("a")).toBeNull();
+    expect(countText(groupHeader("@acme/forms"))).toContain("in repo-a");
   });
 
   it("links a name to its component page, or its package page for a whole package, and leaves it plain when nothing is left to show", () => {
@@ -134,7 +139,8 @@ describe("GovernanceManager", () => {
     const table = screen.getByRole("table", { name: "Records" });
     const rows = [...table.querySelectorAll<HTMLElement>("tbody > tr")];
     expect(rows).toHaveLength(9);
-    expect(rows.map((tr) => occurrences(tr).textContent)).toEqual(Array(9).fill("No data"));
+    expect(rows.map(countText)).toEqual(Array(9).fill("No data"));
+    expect(rows.filter((tr) => countCell(tr).querySelector("svg"))).toEqual([]);
     expect(within(table).queryByText("None left")).toBeNull();
     expect(within(table).queryAllByRole("link", { name: /trend for/ })).toEqual([]);
   });
@@ -142,10 +148,10 @@ describe("GovernanceManager", () => {
   it("shows no data for a record saved since the last rebuild, and for its package's total, keeping the other counts", () => {
     const { r2: _saved, ...rest } = stats;
     render(<GovernanceManager records={records} sources={sources} stats={rest} repoCount={3} summary={null} notice={null} />);
-    expect(occurrences(row("r2")).textContent).toBe("No data");
-    expect(occurrences(groupHeader("@acme/old")).textContent).toBe("No data");
-    expect(screen.getByRole("link", { name: "20 in 2 repos, trend for Button" })).toBeInTheDocument();
-    expect(occurrences(groupHeader("@acme/forms")).textContent).toContain("17");
+    expect(countText(row("r2"))).toBe("No data");
+    expect(countText(groupHeader("@acme/old"))).toBe("No data");
+    expect(screen.getByRole("link", { name: "20 left in 2 repos , trend for Button" })).toBeInTheDocument();
+    expect(countText(groupHeader("@acme/forms"))).toContain("17");
   });
 
   it("folds finished packages behind Show N complete", () => {
@@ -155,13 +161,13 @@ describe("GovernanceManager", () => {
     expect(row("r-done")).toBeNull();
     fireEvent.click(toggle);
     expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
-    expect(within(row("r-done")).getByRole("link", { name: "None left, trend for OldThing" })).toHaveAttribute(
+    expect(within(row("r-done")).getByRole("link", { name: "None left , trend for OldThing" })).toHaveAttribute(
       "href",
       "/charts/retirement%3Ar-done",
     );
   });
 
-  it("folds and unfolds a package from its own button, and a search shows matches in a folded package until it's cleared", () => {
+  it("folds and unfolds a package from its own button, and a search shows matches in a folded package, without fold buttons, until it's cleared", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
     const fold = screen.getByRole("button", { name: "Records in @acme/old" });
     expect(fold).toHaveAttribute("aria-expanded", "true");
@@ -172,18 +178,20 @@ describe("GovernanceManager", () => {
 
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "button" } });
     expect(row("r1")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Records in @acme/old" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByRole("button", { name: /^Records in/ })).toBeNull();
 
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
     expect(row("r1")).toBeNull();
+    expect(screen.getByRole("button", { name: "Records in @acme/old" })).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(screen.getByRole("button", { name: "Records in @acme/old" }));
     expect(row("r1")).not.toBeNull();
   });
 
-  it("opens the complete section while a search matches a finished package", () => {
+  it("opens the complete section, without its toggle, while a search matches a finished package", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "oldthing" } });
-    expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("1 complete")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /complete/ })).toBeNull();
     expect(row("r-done")).not.toBeNull();
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
     expect(screen.getByRole("button", { name: "Show 1 complete" })).toHaveAttribute("aria-expanded", "false");
