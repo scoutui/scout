@@ -41,6 +41,7 @@ export function CohortShareOverTime({
     cohortKey: s.cohortKey,
     label: s.label,
     value: s.points[s.points.length - 1]?.value ?? 0,
+    role: s.role,
   }));
 
   if (rows.length < 2) {

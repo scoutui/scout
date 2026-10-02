@@ -145,5 +145,22 @@ describe("editing a saved chart", () => {
     expect(screen.getByRole("button", { name: "Remove unknown component" })).toBeInTheDocument();
     expect(container.innerHTML).not.toContain(componentId);
   });
+
+  it("marks a deprecated series in the series list", async () => {
+    const config = {
+      scope: { kind: "all" as const },
+      cohorts: [{ kind: "component" as const, componentId: "old" }, { kind: "component" as const, componentId: "new" }],
+      chartType: "trend" as const,
+      metric: "count" as const,
+    };
+    const points = [{ t: "2026-09-01T00:00:00Z", value: 10 }];
+    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series: [
+      { cohortKey: "component:old", label: "OldButton", color: "", role: "deprecated", points },
+      { cohortKey: "component:new", label: "NewButton", color: "", points },
+    ] } });
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config }} />);
+    expect((await screen.findByText("deprecated")).closest("li")).toHaveTextContent("OldButton");
+    expect(screen.getAllByText("deprecated")).toHaveLength(1);
+  });
 });
 
