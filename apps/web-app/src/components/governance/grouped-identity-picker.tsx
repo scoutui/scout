@@ -17,7 +17,10 @@ export function pickLabel(pick: { packageName: string; exportName?: string | und
   return pick.exportName ? `${pick.exportName} · ${pick.packageName}` : pick.packageName;
 }
 
-const keepFocus = (e: React.MouseEvent) => e.preventDefault();
+const keepFocus = (e: React.MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+};
 
 const components = (n: number) => `${n.toLocaleString()} component${n === 1 ? "" : "s"}`;
 
@@ -83,6 +86,8 @@ function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean
 }
 
 const rowKey = (row: SearchRow) => `${row.kind}:${row.packageName}:${row.kind === "component" ? row.exportName : ""}`;
+
+const optionId = (listId: string, row: SearchRow) => `${listId}-${rowKey(row)}`;
 
 export function GroupedIdentityPicker({
   id,
@@ -152,16 +157,16 @@ export function GroupedIdentityPicker({
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(4),
-      flip({ padding: 8 }),
       size({
         padding: 8,
         apply({ rects, availableHeight, elements }) {
           Object.assign(elements.floating.style, {
             width: `${rects.reference.width}px`,
-            maxHeight: `${Math.min(availableHeight, Math.min(384, window.innerHeight * 0.6))}px`,
+            maxHeight: `${Math.max(200, Math.min(availableHeight, 384, window.innerHeight * 0.6))}px`,
           });
         },
       }),
+      flip({ padding: 8 }),
     ],
   });
 
@@ -170,9 +175,9 @@ export function GroupedIdentityPicker({
   }, [open]);
 
   useEffect(() => {
-    if (!isPositioned || activeIndex === null) return;
-    document.getElementById(`${listId}-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
-  }, [isPositioned, activeIndex, listId]);
+    if (!isPositioned || active === undefined) return;
+    document.getElementById(optionId(listId, active))?.scrollIntoView({ block: "nearest" });
+  }, [isPositioned, active, listId]);
 
   const showValue = !open && value !== null;
   const inputValue = open ? query : value ? pickLabel(value) : "";
@@ -217,7 +222,7 @@ export function GroupedIdentityPicker({
     } else if (e.key === "Escape") {
       e.preventDefault();
       close();
-    } else if (e.key === "Tab" && active?.kind === "package" && (highlight !== null || query !== "")) {
+    } else if (e.key === "Tab" && !e.shiftKey && active?.kind === "package" && (highlight !== null || query !== "")) {
       e.preventDefault();
       narrow(active.packageName);
     }
@@ -226,6 +231,12 @@ export function GroupedIdentityPicker({
   return (
     <div
       ref={refs.setReference}
+      onMouseDown={(e) => {
+        if (disabled || e.target === inputRef.current) return;
+        e.preventDefault();
+        inputRef.current?.focus();
+        setOpen(true);
+      }}
       className={cn(
         "relative flex h-8 w-full min-w-0 items-center gap-1.5 rounded-lg border bg-transparent px-2.5 text-sm transition-colors focus-within:ring-3 dark:bg-input/30",
         invalid
@@ -260,7 +271,7 @@ export function GroupedIdentityPicker({
         aria-expanded={listShown}
         aria-controls={listId}
         aria-autocomplete="list"
-        aria-activedescendant={listShown && activeIndex !== null ? `${listId}-${activeIndex}` : undefined}
+        aria-activedescendant={listShown && active ? optionId(listId, active) : undefined}
         aria-invalid={invalid || undefined}
         aria-describedby={ariaDescribedBy}
         autoComplete="off"
@@ -315,7 +326,7 @@ export function GroupedIdentityPicker({
                   // biome-ignore lint/a11y/useKeyWithClickEvents: the combobox input handles the keys for every option
                   <div
                     key={rowKey(row)}
-                    id={`${listId}-${i}`}
+                    id={optionId(listId, row)}
                     // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox option of rich content
                     role="option"
                     aria-selected={i === activeIndex}

@@ -41,10 +41,14 @@ beforeAll(() => {
 });
 
 describe("GroupedIdentityPicker", () => {
-  it("reaches an already-recorded option with the arrows, and Enter there picks nothing", () => {
+  it("points to each search's first pick, reaches an already-recorded option with the arrows, and Enter there picks nothing", () => {
     const onSelect = vi.fn();
     render(<Field records={[recorded]} onSelect={onSelect} />);
+    fireEvent.change(input(), { target: { value: "card" } });
+    expect(active().textContent).toMatch(/^Card/);
+    const cardOption = input().getAttribute("aria-activedescendant");
     fireEvent.change(input(), { target: { value: "button" } });
+    expect(input().getAttribute("aria-activedescendant")).not.toBe(cardOption);
     expect(active().textContent).toContain("@example/new-ui");
     fireEvent.keyDown(input(), { key: "ArrowDown" });
     expect(active()).toHaveAttribute("aria-disabled", "true");
@@ -93,9 +97,15 @@ describe("GroupedIdentityPicker", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     const field = input() as HTMLInputElement;
     expect([field.selectionStart, field.selectionEnd]).toEqual([0, "Card · @example/old-ui".length]);
+    fireEvent.click(input());
+    fireEvent.change(input(), { target: { value: "but" } });
+    fireEvent.blur(input());
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(input()).toHaveValue("Card · @example/old-ui");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
-  it("lets Tab leave an untouched list, and narrows on Tab once the arrows reach a package row", () => {
+  it("lets Tab leave an untouched list and Shift+Tab leave any list, and narrows on Tab once the arrows reach a package row", () => {
     const onScopeChange = vi.fn();
     render(<Field onScopeChange={onScopeChange} />);
     fireEvent.click(input());
@@ -105,7 +115,15 @@ describe("GroupedIdentityPicker", () => {
     fireEvent.blur(input());
     fireEvent.click(input());
     fireEvent.keyDown(input(), { key: "ArrowDown" });
+    expect(fireEvent.keyDown(input(), { key: "Tab", shiftKey: true })).toBe(true);
+    expect(onScopeChange).not.toHaveBeenCalled();
     expect(fireEvent.keyDown(input(), { key: "Tab" })).toBe(false);
     expect(onScopeChange).toHaveBeenLastCalledWith("@example/new-ui");
+  });
+
+  it("opens the list from a press on the chevron", () => {
+    render(<Field />);
+    fireEvent.mouseDown(input().parentElement?.querySelector(".lucide-chevrons-up-down") as Element);
+    expect(screen.getByRole("listbox", { name: "Package or component" })).toBeInTheDocument();
   });
 });
