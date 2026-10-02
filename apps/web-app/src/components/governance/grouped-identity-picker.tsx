@@ -335,29 +335,29 @@ export function GroupedIdentityPicker({
               {hasRows ? (
                 // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox list of rich rows
                 <div id={listId} role="listbox" aria-labelledby={labelId} tabIndex={-1}>
-              {rows.map((row, i) => {
-                const refused = row.kind !== "package" && row.refusal !== null;
-                return (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: the combobox input handles the keys for every option
-                  <div
-                    key={rowKey(row)}
-                    id={optionId(listId, row)}
-                    // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox option of rich content
-                    role="option"
-                    aria-selected={i === activeIndex}
-                    aria-disabled={refused || undefined}
-                    tabIndex={-1}
-                    onClick={() => choose(row)}
-                    className={cn(
-                      "flex cursor-default items-baseline gap-2 px-2.5 py-1.5",
-                      i === activeIndex ? "bg-muted" : "hover:bg-muted/60",
-                      refused && "text-muted-foreground",
-                    )}
-                  >
-                    <RowContent row={row} active={i === activeIndex} narrowed={scope !== null} />
-                  </div>
-                );
-              })}
+                  {rows.map((row, i) => {
+                    const refused = row.kind !== "package" && row.refusal !== null;
+                    return (
+                      // biome-ignore lint/a11y/useKeyWithClickEvents: the combobox input handles the keys for every option
+                      <div
+                        key={rowKey(row)}
+                        id={optionId(listId, row)}
+                        // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox option of rich content
+                        role="option"
+                        aria-selected={i === activeIndex}
+                        aria-disabled={refused || undefined}
+                        tabIndex={-1}
+                        onClick={() => choose(row)}
+                        className={cn(
+                          "flex cursor-default items-baseline gap-2 px-2.5 py-1.5",
+                          i === activeIndex ? "bg-muted" : "hover:bg-muted/60",
+                          refused && "text-muted-foreground",
+                        )}
+                      >
+                        <RowContent row={row} active={i === activeIndex} narrowed={scope !== null} />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : null}
               {message ? (
