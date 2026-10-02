@@ -26,7 +26,7 @@ Selecting a package row searches that package only, which helps when several pac
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first. Components [defined in the repo](/docs/reference/glossary#defined-in-the-repo) are never offered.
 
-A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered under a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
+A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered with a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 
 Each package or component can have one record, and a package has either one whole-package record or records on single components, not both. In **Package or component**, a row that can't take a new record is dimmed and says why, such as **Already recorded**. If saving is refused, a message in the form says why, and for an existing record usually offers **Go to the existing record** so you can edit that one instead.
 
