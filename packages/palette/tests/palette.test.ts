@@ -158,6 +158,19 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
     }
   });
 
+  it("keeps teal, violet, blue and the Local line apart: ΔE ≥ 15, and ≥ 6 under deuteranopia and protanopia", () => {
+    const lines = ["teal-graphic", "violet-graphic", "blue-graphic", "grey-soft"];
+    for (const [i, a] of lines.entries()) {
+      for (const b of lines.slice(i + 1)) {
+        expect(deltaE(rgb(theme, a), rgb(theme, b)), `${a}/${b}`).toBeGreaterThanOrEqual(15);
+        for (const kind of ["deutan", "protan"] as const) {
+          const d = deltaE(simulate(rgb(theme, a), kind), simulate(rgb(theme, b), kind));
+          expect(d, `${a}/${b} ${kind}`).toBeGreaterThanOrEqual(6);
+        }
+      }
+    }
+  });
+
   it("steps the selected fill clear of the hover band and the panel", () => {
     const [selected] = token(theme, "neutral-hover");
     const [band] = token(theme, "neutral-band");
