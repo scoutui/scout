@@ -36,8 +36,8 @@ describe("cohortColor", () => {
     expect(cohortColor({ cohortKey: "tag:primitives", color: "#9b6bce" }, 0)).toBe("var(--viz-cat-2)");
     expect(cohortColor({ cohortKey: "tag:web", color: "#7c3aed" }, 0)).toBe("#7c3aed");
   });
-  it("gives the local cohort the semantic legacy grey", () => {
-    expect(cohortColor({ cohortKey: "local", color: "" }, 2)).toBe("var(--viz-legacy)");
+  it("gives the local cohort its own lighter grey, not the grey tag colour", () => {
+    expect(cohortColor({ cohortKey: "local", color: "" }, 2)).toBe("var(--viz-local)");
   });
   it("rotates the identity hues for uncoloured cohorts, never the grey slot", () => {
     expect(cohortColor({ cohortKey: "package:@x/y", color: "" }, 0)).toBe(CHART_SERIES_PALETTE[0]);
@@ -80,6 +80,13 @@ describe("seriesDashes", () => {
   it("dashes the palette wrap: the 4th uncoloured series repeats the 3-hue rotation", () => {
     const s = ["a", "b", "c", "d"].map((cohortKey) => ({ cohortKey, color: "" }));
     expect(seriesDashes(s)).toEqual([undefined, undefined, undefined, "5 4"]);
+  });
+
+  it("dashes Local drawn after a grey tag: the two greys match in dark mode", () => {
+    expect(seriesDashes([{ cohortKey: "tag:legacy", color: "#7d8088" }, { cohortKey: "local", color: "" }])).toEqual([
+      undefined,
+      "5 4",
+    ]);
   });
 
   it("mixes roles and rotation independently", () => {

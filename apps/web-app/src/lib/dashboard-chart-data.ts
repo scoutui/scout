@@ -83,15 +83,15 @@ export function expandRowShares(
  * `/`, which break generated CSS custom properties.
  *
  * A governance role (from web-shared) wins, then an authored tag colour, then
- * grey for `local` (the off-system cohort), then the identity rotation. Green is
- * kept for the progress readout and never colours a series: red next to green is
- * the classic colour-blindness trap.
+ * a lighter grey for `local` (the off-system cohort), then the identity
+ * rotation. Green is kept for the progress readout and never colours a series:
+ * red next to green is the classic colour-blindness trap.
  */
 export function cohortColor(cohort: { cohortKey: string; color: string; role?: CohortRole | undefined }, index: number): string {
   if (cohort.role === "deprecated") return "var(--viz-deprecated)";
   if (cohort.role === "successor") return "var(--viz-primary)";
   if (cohort.color) return paletteToken(cohort.color);
-  if (cohort.cohortKey === "local") return "var(--viz-legacy)";
+  if (cohort.cohortKey === "local") return "var(--viz-local)";
   return identityColor(index);
 }
 
@@ -112,7 +112,9 @@ export function seriesDashes(
 ): Array<string | undefined> {
   const used = new Map<string, number>();
   return series.map((s, i) => {
-    const colour = cohortColor(s, i);
+    const drawn = cohortColor(s, i);
+    // Local's grey and the grey tag colour are the same colour in dark mode.
+    const colour = drawn === "var(--viz-local)" ? "var(--viz-legacy)" : drawn;
     const n = used.get(colour) ?? 0;
     used.set(colour, n + 1);
     return DASH_STEPS[Math.min(n, DASH_STEPS.length - 1)];

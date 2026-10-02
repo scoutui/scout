@@ -98,6 +98,7 @@
   /* Data-viz: each colour stands for a meaning. */
   --viz-primary: var(--pal-teal-graphic);
   --viz-legacy: var(--pal-grey-graphic);
+  --viz-local: var(--pal-grey-soft);
   --viz-cat-2: var(--pal-violet-graphic);
   --viz-cat-3: var(--pal-blue-graphic);
   --viz-deprecated: var(--status-warn); /* the deprecated series role is warn, not error */
