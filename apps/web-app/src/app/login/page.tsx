@@ -29,7 +29,7 @@ export default async function LoginPage({
         <div className="flex flex-col items-center gap-3 text-center">
           <BrandMark className="size-10 rounded-lg" />
           <div className="space-y-1">
-            <h1 className="text-lg font-semibold tracking-tight">Scout</h1>
+            <h1 className="font-wordmark text-lg font-semibold tracking-[0.01em]">Scout</h1>
             <p className="text-sm text-muted-foreground">
               Design-system component usage across your repos.
             </p>

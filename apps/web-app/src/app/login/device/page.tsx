@@ -18,7 +18,7 @@ export default async function DevicePage({
   if (!code) {
     return (
       <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-sm flex-col items-center justify-center gap-6 px-6 text-center">
-        <div className="text-2xl font-semibold tracking-tight">Scout</div>
+        <div className="font-wordmark text-2xl font-semibold">Scout</div>
         <p className="text-sm text-muted-foreground">
           This page approves a CLI sign-in and needs a device code. Run{" "}
           <code className="font-mono text-foreground">scout auth login</code> in your
@@ -71,7 +71,7 @@ export default async function DevicePage({
   if (approved === "1" || denied === "1") {
     return (
       <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-sm flex-col items-center justify-center gap-10 px-6">
-        <div className="text-2xl font-semibold tracking-tight">Scout</div>
+        <div className="font-wordmark text-2xl font-semibold">Scout</div>
         <div className="flex w-full flex-col gap-4 rounded-lg border bg-card p-6 text-card-foreground">
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -107,7 +107,7 @@ export default async function DevicePage({
   return (
     <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-sm flex-col items-center justify-center gap-10 px-6">
       <ClearDeviceSignInAttempt />
-      <div className="text-2xl font-semibold tracking-tight">Scout</div>
+      <div className="font-wordmark text-2xl font-semibold">Scout</div>
       <div className="flex w-full flex-col gap-4 rounded-lg border bg-card p-6 text-card-foreground">
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
