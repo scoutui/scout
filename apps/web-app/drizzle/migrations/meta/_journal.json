@@ -36,6 +36,13 @@
       "when": 1790931782929,
       "tag": "0004_committed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790957383123,
+      "tag": "0005_cli_session_last_used",
+      "breakpoints": true
     }
   ]
 }

@@ -175,6 +175,7 @@ export const cliSessions = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull().unique(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ byUser: index("cli_sessions_user_id").on(t.userId) }),
 );
