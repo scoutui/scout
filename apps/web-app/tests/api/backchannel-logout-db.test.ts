@@ -14,7 +14,7 @@ const RUN_DB = process.env["DATABASE_URL"] != null;
  * session route are all real; only the identity provider's two HTTP endpoints
  * are stubbed.
  */
-describe.skipIf(!RUN_DB)("back-channel logout ends a signed-in person's browser session", () => {
+describe.skipIf(!RUN_DB)("back-channel logout ends a signed-in person's sessions", () => {
   let pool: Pool;
   let database: ReturnType<typeof openReadModelDatabase>;
   let POST: (req: Request) => Promise<Response>;
