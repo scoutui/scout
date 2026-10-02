@@ -5,6 +5,7 @@ import type { ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMe
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { seriesCanOverlap } from "@/lib/cohort-overlap";
+import type { LibraryTag } from "@/lib/chart-builder-series";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
 import { type ChartCohort, chartColors, drawnChartCohorts } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
@@ -117,7 +118,7 @@ export function DashboardBuilder({
   packages,
   saved,
 }: {
-  libraryTags: Array<{ id: string; label: string; color: string }>;
+  libraryTags: LibraryTag[];
   repos: string[];
   components: PickableComponent[];
   packages: string[];
@@ -308,7 +309,13 @@ export function DashboardBuilder({
 
   // The share caption shows only for the share metric, and only when the series can
   // overlap so a component can count toward two of them.
-  const showShareCaption = effectiveMetric === "share" && seriesCanOverlap(cohorts);
+  const showShareCaption =
+    effectiveMetric === "share" &&
+    seriesCanOverlap(cohorts, {
+      components: scopedPickable?.components ?? components,
+      packages: scopedPickable?.packages ?? packages,
+      tags: libraryTags,
+    });
 
   const selectedKeys = new Set(cohorts.map(selectorKey));
 

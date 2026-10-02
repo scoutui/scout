@@ -9,7 +9,7 @@ vi.stubEnv("DATABASE_URL", "");
 
 const row: ComponentRow = {
   componentId: "77b809260ecd27fe", kind: "react-component", scope: "external", packageName: "@x/lib", displayName: "Address",
-  disambiguator: null, version: "1.2.3", occurrenceCount: 3, fileCount: 2, deprecated: false, tags: [],
+  disambiguator: null, version: "1.2.3", occurrenceCount: 3, fileCount: 2, deprecated: true, tags: [],
 };
 const storage = {
   async withReadSnapshot<T>(read: (snapshot: StorageDriver) => Promise<T>) { return read(this as unknown as StorageDriver); },
@@ -34,7 +34,7 @@ describe("pickableForRepo", () => {
     expect(result.state).toBe("ready");
     if (result.state !== "ready") throw new Error("Expected ready picker");
     expect(result.value.packages).toEqual(["@x/aggregate", "@x/lib"]);
-    expect(result.value.components).toHaveLength(1);
+    expect(result.value.components).toEqual([{ componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", deprecated: true }]);
   });
 
   it("returns no options when the repo has no scan", async () => {

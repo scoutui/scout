@@ -8,6 +8,7 @@ export type PickableComponent = {
   componentId: string;
   displayName: string;
   packageName: string | null;
+  deprecated: boolean;
 };
 
 // A group row. Without a `selector` it adds a tag series; non-tag rows such as the
