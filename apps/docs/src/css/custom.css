@@ -6,6 +6,7 @@
  */
 
 /* Self-hosted fonts (offline, no CDN, no layout shift), matching the web app. */
+@import "@fontsource/geologica/600.css";
 @import "@fontsource/mona-sans/400.css";
 @import "@fontsource/mona-sans/500.css";
 @import "@fontsource/mona-sans/600.css";
@@ -249,8 +250,9 @@ html.plugin-pages .navbar__inner {
   margin-left: 0.5rem;
 }
 .navbar__title {
+  font-family: "Geologica", var(--ifm-font-family-base);
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: 0.01em;
 }
 
 /* GitHub: the mark alone in the bar, muted until hovered. */

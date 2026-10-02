@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Scout link preview card</title>
+<link rel="stylesheet" href="../../../packages/palette/palette.css">
+<style>
+@font-face {
+  font-family: Geologica;
+  font-weight: 600;
+  src: url(../../../node_modules/@fontsource/geologica/files/geologica-latin-600-normal.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Mona Sans";
+  font-weight: 500;
+  src: url(../../../node_modules/@fontsource/mona-sans/files/mona-sans-latin-500-normal.woff2) format("woff2");
+}
+html, body { margin: 0; }
+body {
+  width: 1200px;
+  height: 630px;
+  box-sizing: border-box;
+  padding: 0 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--pal-neutral-canvas);
+  color: var(--pal-neutral-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.lockup { display: flex; align-items: center; gap: 40px; }
+.mark { width: 132px; height: 132px; flex: none; }
+.mark .tile { fill: var(--pal-neutral-band); stroke: var(--pal-neutral-edge); }
+.mark .north { fill: var(--pal-neutral-ink); }
+.mark .south { stroke: var(--pal-neutral-muted); }
+.name {
+  font: 600 172px/1 Geologica, sans-serif;
+  letter-spacing: -0.04em;
+  margin-left: -6px;
+  transform: translateY(-4px);
+}
+.line {
+  margin: 56px 0 0;
+  font: 500 58px/1.18 "Mona Sans", sans-serif;
+  letter-spacing: -0.012em;
+  color: var(--pal-neutral-muted);
+}
+.line span { display: block; }
+</style>
+<body>
+  <div class="lockup">
+    <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect class="tile" x="0.5" y="0.5" width="23" height="23" rx="6.5" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      <g transform="translate(4 4)">
+        <path class="north" d="M8 1.4 L10 8 L8 8 L6 8 Z"/>
+        <path class="south" d="M8 14.6 L6 8 L8 8 L10 8 Z" stroke-width="0.9" stroke-linejoin="round"/>
+      </g>
+    </svg>
+    <div class="name">Scout</div>
+  </div>
+  <p class="line"><span>Design-system usage analytics</span><span>for React and Vue</span></p>
+</body>
+</html>
