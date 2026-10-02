@@ -86,7 +86,7 @@ The scan reads its settings from `scout.config.json`. We create one with `init`:
 npx scout init -y --framework react
 ```
 
-`-y` accepts the defaults instead of asking questions, and `--framework react` tells it which file types to include. A Vue repo passes `--framework vue` instead, and a repo with both passes the flag twice. With `vue` alone, `init` writes an `include` pattern that matches no files, so we change it to `src/**/*.vue` ([Configure a scan](/docs/guides/configure-a-scan#point-include-at-your-source-files) shows how).
+`-y` accepts the defaults instead of asking questions, and `--framework react` tells it which file types to include. A Vue repo passes `--framework vue` instead, and a repo with both passes the flag twice.
 
 `init` prints:
 

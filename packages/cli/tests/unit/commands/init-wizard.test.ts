@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { runInit } from "../../../src/commands/init.js";
+import { walkFiles } from "../../../src/walker/files.js";
 import { PromptCancelledError, type PromptAdapter } from "../../../src/prompts/adapter.js";
 import { fakeSsh } from "../../helpers/fake-ssh.js";
 
@@ -117,7 +118,7 @@ describe("init wizard", () => {
     expect(cfg.include).toEqual(["src/**/*.{ts,tsx,jsx,js,vue}"]);
   });
 
-  it("offers only React and Vue in the interactive framework prompt", async () => {
+  it("offers only React and Vue, and picking Vue writes an include that finds .vue and .ts files", async () => {
     let offered: string[] = [];
     const prompts = stubAdapter({
       multiselect: async (o) => {
@@ -128,6 +129,10 @@ describe("init wizard", () => {
     await runInit({ cwd: tmp, interactive: true, prompts });
     expect(offered).toEqual(["react", "vue"]);
     const cfg = JSON.parse(readFileSync(join(tmp, "scout.config.json"), "utf8"));
-    expect(cfg.include).toEqual(["src/**/*.{vue}"]);
+    mkdirSync(join(tmp, "src", "components"), { recursive: true });
+    writeFileSync(join(tmp, "src", "components", "Button.vue"), "<template><button /></template>\n");
+    writeFileSync(join(tmp, "src", "components", "index.ts"), 'export { default as Button } from "./Button.vue";\n');
+    const files = await walkFiles({ root: tmp, include: cfg.include, exclude: cfg.exclude, gitignore: false });
+    expect(files).toEqual([join(tmp, "src", "components", "Button.vue"), join(tmp, "src", "components", "index.ts")]);
   });
 });

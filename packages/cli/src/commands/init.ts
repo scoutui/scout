@@ -25,7 +25,7 @@ const DEFAULT_INCLUDE = "src/**/*.{ts,tsx,jsx,js,vue}";
 
 const FRAMEWORK_EXTS: Record<Framework, string[]> = {
   react: ["ts", "tsx", "js", "jsx"],
-  vue: ["vue"],
+  vue: ["ts", "tsx", "js", "jsx", "vue"],
 };
 
 const FRAMEWORK_OPTIONS: { value: Framework; label: string }[] = [
