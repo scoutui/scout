@@ -5,7 +5,6 @@ import type { Tag } from "@scoutui/web-shared";
 import { tagMatchesPackage } from "@scoutui/web-shared/client";
 import { packageCount, TAG_COLUMN_ID, TagEditor, TagSwatch, TagTableColumns } from "./tag-manager";
 import { Button } from "@/components/ui/button";
-import { tagColourName } from "@/lib/chart-palette";
 import { cn } from "@/lib/utils";
 
 const TH = "h-9 bg-muted px-3 text-left text-label text-muted-foreground";
@@ -13,7 +12,14 @@ const CELL = "px-3 py-2.5 align-middle";
 
 const editButtonId = (tagId: string) => `edit-tag-${tagId}`;
 
-export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNames: string[] }) {
+export function TagsPanel({
+  allTags,
+  packageNames,
+}: {
+  allTags: Tag[];
+  /** Null while scan results are rebuilding. */
+  packageNames: string[] | null;
+}) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const addTagRef = useRef<HTMLButtonElement>(null);
@@ -81,9 +87,6 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
                 <th scope="col" id={TAG_COLUMN_ID.name} className={TH}>
                   Name
                 </th>
-                <th scope="col" id={TAG_COLUMN_ID.colour} className={cn(TH, "px-0 md:px-3")}>
-                  <span className="sr-only md:not-sr-only">Colour</span>
-                </th>
                 <th scope="col" id={TAG_COLUMN_ID.packages} className={TH}>
                   Packages
                 </th>
@@ -126,38 +129,27 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
   );
 }
 
-function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[]; onEdit: () => void }) {
-  const matches = packageNames.filter((n) => tagMatchesPackage(tag, n));
-  const matchText =
-    matches.length > 0 ? (
-      <span className="tabular-nums" title={matches.join(", ")}>
-        {packageCount(matches.length)}
-      </span>
-    ) : (
-      <span className="text-muted-foreground">No scanned package</span>
-    );
+function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[] | null; onEdit: () => void }) {
+  const matches = packageNames?.filter((n) => tagMatchesPackage(tag, n));
+  const matchText = !matches ? (
+    <span className="text-muted-foreground">No data</span>
+  ) : matches.length > 0 ? (
+    <span className="tabular-nums" title={matches.join(", ")}>
+      {packageCount(matches.length)}
+    </span>
+  ) : (
+    <span className="text-muted-foreground">No scanned package</span>
+  );
   return (
     <tr className="transition-colors duration-150 ease-out hover:bg-secondary dark:hover:bg-accent motion-reduce:transition-none">
       <td className={CELL}>
         <span className="flex items-center gap-2">
-          <TagSwatch color={tag.color} className="md:hidden" />
+          <TagSwatch color={tag.color} />
           <span className="min-w-0 font-mono text-xs wrap-anywhere">{tag.value}</span>
         </span>
       </td>
-      <td className={cn(CELL, "px-0 md:px-3")}>
-        <span className="flex items-center gap-2 text-[0.8125rem]">
-          <TagSwatch color={tag.color} className="hidden md:inline-block" />
-          <span className="sr-only md:not-sr-only">{tagColourName(tag.color)}</span>
-        </span>
-      </td>
       <td className={CELL}>
-        <span className="flex flex-wrap gap-x-3.5 gap-y-0.5 font-mono text-xs">
-          {[...tag.rule.exact, ...tag.rule.glob].map((entry) => (
-            <span key={entry} className="min-w-0 wrap-anywhere">
-              {entry}
-            </span>
-          ))}
-        </span>
+        <TagPackages tag={tag} />
         <span aria-hidden className="mt-1 block text-[0.8125rem] md:hidden">
           {matchText}
         </span>
@@ -179,5 +171,32 @@ function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[
         </Button>
       </td>
     </tr>
+  );
+}
+
+function TagPackages({ tag }: { tag: Tag }) {
+  const [open, setOpen] = useState(false);
+  const entries = [...tag.rule.exact, ...tag.rule.glob];
+  const folds = entries.length >= 6;
+  const hidden = entries.length - 4;
+  return (
+    <span className="flex flex-wrap items-baseline gap-x-3.5 gap-y-0.5 font-mono text-xs">
+      {(folds && !open ? entries.slice(0, 4) : entries).map((entry) => (
+        <span key={entry} className="min-w-0 wrap-anywhere">
+          {entry}
+        </span>
+      ))}
+      {folds ? (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? undefined : `Show ${hidden.toLocaleString()} more packages in ${tag.value}`}
+          onClick={() => setOpen(!open)}
+          className="inline-flex h-5 cursor-pointer items-center rounded-sm border border-border px-2 font-sans text-[0.6875rem] leading-none whitespace-nowrap text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+        >
+          {open ? "Show fewer" : `+${hidden.toLocaleString()} more`}
+        </button>
+      ) : null}
+    </span>
   );
 }

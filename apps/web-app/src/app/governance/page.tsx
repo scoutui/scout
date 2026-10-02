@@ -24,7 +24,9 @@ export default async function GovernancePage() {
   const active = countOf("active");
   const complete = countOf("complete");
   const unseen = countOf("unseen");
-  const packageNames = [...new Set(sources.map((s) => s.packageName))].sort((a, b) => a.localeCompare(b));
+  const packageNames = registry
+    ? [...new Set(sources.map((s) => s.packageName))].sort((a, b) => a.localeCompare(b))
+    : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">

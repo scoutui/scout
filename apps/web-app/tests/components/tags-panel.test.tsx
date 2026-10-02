@@ -22,19 +22,68 @@ const packageNames = ["@vben/icons", "@vben/layouts", "legacy-kit", "react"];
 beforeEach(() => vi.clearAllMocks());
 
 describe("TagsPanel", () => {
-  it("lists each tag's colour by name, its packages, and how many scanned packages it matches", () => {
+  it("lists each tag's packages and how many scanned packages it matches", () => {
     render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
     const row = screen.getByRole("row", { name: /vben/ });
-    expect(within(row).getByText("Grey")).toBeInTheDocument();
     expect(within(row).getByText("@vben/*")).toBeInTheDocument();
     expect(within(row).getByText("legacy-kit")).toBeInTheDocument();
     const matches = within(within(row).getByRole("cell", { name: "3 packages" })).getByText("3 packages");
     expect(matches).toHaveAttribute("title", "@vben/icons, @vben/layouts, legacy-kit");
   });
 
+  it("puts each tag's swatch before its name, with no Colour column", () => {
+    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
+    expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
+      "Name",
+      "Packages",
+      "Matches",
+      "Edit",
+    ]);
+    const [nameCell] = within(screen.getByRole("row", { name: /vben/ })).getAllByRole("cell");
+    const swatch = nameCell?.querySelector("[aria-hidden]");
+    expect(swatch).not.toBeNull();
+    const name = within(nameCell as HTMLElement).getByText("vben");
+    expect(swatch?.compareDocumentPosition(name)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("shows four of six or more packages and toggles the rest", () => {
+    const libs: Tag = { ...vben, value: "libs", rule: { glob: [], exact: ["p1", "p2", "p3", "p4", "p5", "p6"] } };
+    render(<TagsPanel allTags={[libs]} packageNames={packageNames} />);
+    const more = screen.getByRole("button", { name: "Show 2 more packages in libs", expanded: false });
+    expect(more).toHaveTextContent("+2 more");
+    expect(screen.getByText("p4")).toBeInTheDocument();
+    expect(screen.queryByText("p5")).toBeNull();
+    expect(screen.queryByText("p6")).toBeNull();
+
+    more.focus();
+    fireEvent.click(more);
+    const fewer = screen.getByRole("button", { name: "Show fewer", expanded: true });
+    expect(fewer).toHaveFocus();
+    expect(screen.getByText("p5")).toBeInTheDocument();
+    expect(screen.getByText("p6")).toBeInTheDocument();
+
+    fireEvent.click(fewer);
+    expect(screen.getByRole("button", { name: "Show 2 more packages in libs", expanded: false })).toHaveFocus();
+    expect(screen.queryByText("p5")).toBeNull();
+  });
+
+  it("shows every package when there are five", () => {
+    const libs: Tag = { ...vben, value: "libs", rule: { glob: ["p5*"], exact: ["p1", "p2", "p3", "p4"] } };
+    render(<TagsPanel allTags={[libs]} packageNames={packageNames} />);
+    for (const entry of ["p1", "p2", "p3", "p4", "p5*"]) expect(screen.getByText(entry)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /more packages/ })).toBeNull();
+  });
+
   it("says when a tag matches no scanned package", () => {
     render(<TagsPanel allTags={[{ ...vben, rule: { glob: [], exact: ["gone"] } }]} packageNames={packageNames} />);
     expect(screen.getByRole("cell", { name: "No scanned package" })).toBeInTheDocument();
+  });
+
+  it("says No data for matches while scan results are rebuilding", () => {
+    render(<TagsPanel allTags={[vben]} packageNames={null} />);
+    const cell = screen.getByRole("cell", { name: "No data" });
+    expect(within(cell).getByText("No data")).not.toHaveAttribute("title");
+    expect(screen.queryByRole("cell", { name: "No scanned package" })).toBeNull();
   });
 
   it("previews what the Packages box matches while you type", () => {
@@ -45,6 +94,24 @@ describe("TagsPanel", () => {
     expect(screen.getByText(/^Matches 2 packages:/)).toBeInTheDocument();
     fireEvent.change(box, { target: { value: "nothing-*" } });
     expect(screen.getByText("Matches no scanned package")).toBeInTheDocument();
+  });
+
+  it("previews no matches while scan results are rebuilding", () => {
+    render(<TagsPanel allTags={[]} packageNames={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add tag" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Packages" }), { target: { value: "@vben/*" } });
+    expect(screen.queryByText(/^Matches /)).toBeNull();
+  });
+
+  it("names each colour choice in the tag form", () => {
+    render(<TagsPanel allTags={[]} packageNames={packageNames} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add tag" }));
+    const radios = within(screen.getByRole("radiogroup", { name: "Colour" })).getAllByRole("radio");
+    expect(radios.map((r) => r.getAttribute("aria-label"))).toEqual(["Teal", "Violet", "Blue", "Grey"]);
+    for (const radio of radios) {
+      expect(radio).toHaveAttribute("title", radio.getAttribute("aria-label"));
+      expect(radio).toHaveTextContent(/^$/);
+    }
   });
 
   it("saves entries with a * as patterns and the rest as exact names", async () => {

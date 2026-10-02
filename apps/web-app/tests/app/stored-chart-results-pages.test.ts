@@ -138,6 +138,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(tree, "GovernanceManager")).toEqual([
         expect.objectContaining({ records: expect.arrayContaining([expect.objectContaining({ id: retired.id })]), stats: {}, sources: [], repoCount: 0 }),
       ]);
+      expect(allPropsFor(tree, "TagsPanel")).toEqual([expect.objectContaining({ packageNames: null })]);
     });
   });
 

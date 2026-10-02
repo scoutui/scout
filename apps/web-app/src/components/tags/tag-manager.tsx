@@ -45,7 +45,6 @@ export function packageCount(n: number): string {
 /** Ids of the tag table's column headers, which also label the form's fields. */
 export const TAG_COLUMN_ID = {
   name: "tags-col-name",
-  colour: "tags-col-colour",
   packages: "tags-col-packages",
 } as const;
 
@@ -53,17 +52,15 @@ export const TAG_COLUMN_ID = {
 export function TagTableColumns() {
   return (
     <colgroup>
-      <col className="w-28 lg:w-40" />
-      <col className="w-0 md:w-28 lg:w-42" />
+      <col className="w-28 md:w-40" />
       <col />
-      <col className="w-0 md:w-40" />
+      <col className="w-0 md:w-44" />
       <col className="w-12" />
     </colgroup>
   );
 }
 
-const FORM_GRID =
-  "md:grid md:grid-cols-[7rem_7rem_minmax(0,1fr)_10rem_3rem] lg:grid-cols-[10rem_10.5rem_minmax(0,1fr)_10rem_3rem]";
+const FORM_GRID = "md:grid md:grid-cols-[10rem_minmax(0,1fr)_11rem_3rem]";
 
 export function TagSwatch({ color, className }: { color: string; className?: string }) {
   return (
@@ -87,7 +84,8 @@ export function TagEditor({
 }: {
   tag?: Tag;
   allTags: Tag[];
-  packageNames: string[];
+  /** Null while scan results are rebuilding. */
+  packageNames: string[] | null;
   /** After Save, Create or Cancel. */
   onDone: () => void;
   onDeleted: () => void;
@@ -103,7 +101,7 @@ export function TagEditor({
 
   const rule = splitPatterns(packages);
   const draft: Tag = { id: tag?.id ?? "", value: name.trim(), category: "library", color, rule };
-  const matches = packageNames.filter((n) => tagMatchesPackage(draft, n));
+  const matches = packageNames?.filter((n) => tagMatchesPackage(draft, n));
 
   function submit() {
     const value = name.trim();
@@ -137,7 +135,7 @@ export function TagEditor({
 
   return (
     <tr>
-      <td colSpan={5} className="p-0">
+      <td colSpan={4} className="p-0">
         <div className={cn("flex flex-col gap-4 p-3 md:items-start md:gap-x-0 md:gap-y-3 md:px-0", FORM_GRID)}>
           <div className={FIELD}>
             <label htmlFor="tag-name" className={SMALL_LABEL}>
@@ -161,26 +159,27 @@ export function TagEditor({
                 Enter a name.
               </p>
             ) : null}
-          </div>
-
-          <div className={FIELD}>
-            <span aria-hidden className={SMALL_LABEL}>
+            <span id="tag-colour-label" className="sr-only">
               Colour
             </span>
             <RadioGroup
               value={color}
               onValueChange={(v) => setColor(v as string)}
-              aria-labelledby={TAG_COLUMN_ID.colour}
-              className="flex flex-wrap gap-1.5 md:grid md:gap-1 lg:grid-cols-2"
+              aria-labelledby="tag-colour-label"
+              className="flex gap-1"
             >
               {TAG_PALETTE.map((c) => (
                 <Radio.Root
                   key={c}
                   value={c}
-                  className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 text-xs text-muted-foreground transition-colors duration-150 ease-out outline-none not-data-checked:hover:bg-muted not-data-checked:hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-checked:selected data-checked:text-foreground motion-reduce:transition-none"
+                  aria-label={tagColourName(c)}
+                  title={tagColourName(c)}
+                  className="group/swatch flex size-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out outline-none not-data-checked:hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
                 >
-                  <TagSwatch color={c} />
-                  {tagColourName(c)}
+                  <TagSwatch
+                    color={c}
+                    className="size-3.5 group-data-checked/swatch:outline-2 group-data-checked/swatch:outline-offset-2 group-data-checked/swatch:outline-solid group-data-checked/swatch:outline-foreground"
+                  />
                 </Radio.Root>
               ))}
             </RadioGroup>
@@ -204,19 +203,21 @@ export function TagEditor({
             </p>
           </div>
 
-          <p aria-live="polite" className="min-w-0 text-[0.8125rem] leading-5 tabular-nums md:col-span-2 md:px-3 md:pt-1.5">
-            {matches.length === 0 ? (
-              "Matches no scanned package"
-            ) : (
-              <>
-                {`Matches ${packageCount(matches.length)}: `}
-                <span className="font-mono text-xs wrap-anywhere text-muted-foreground">
-                  {matches.slice(0, 4).join(", ")}
-                </span>
-                {matches.length > 4 ? ", …" : null}
-              </>
-            )}
-          </p>
+          {matches ? (
+            <p aria-live="polite" className="min-w-0 text-[0.8125rem] leading-5 tabular-nums md:col-span-2 md:px-3 md:pt-1.5">
+              {matches.length === 0 ? (
+                "Matches no scanned package"
+              ) : (
+                <>
+                  {`Matches ${packageCount(matches.length)}: `}
+                  <span className="font-mono text-xs wrap-anywhere text-muted-foreground">
+                    {matches.slice(0, 4).join(", ")}
+                  </span>
+                  {matches.length > 4 ? ", …" : null}
+                </>
+              )}
+            </p>
+          ) : null}
 
           {error ? (
             <p role="alert" className="text-xs text-destructive md:col-span-full md:px-3">
