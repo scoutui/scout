@@ -12,15 +12,15 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 ## Record a migration
 
 1. Select **governance** in the top navigation and press **Add record**. With no records yet, the form is already open.
-2. Open **Package or component** and type a few words, such as `legacy button`. Every word must match the package name or the component name.
+2. In **Package or component**, type a few words, such as `legacy button`. Every word must match the component name or its package's name. Each component is listed with its package beside it, and packages whose names match come first.
 3. Pick what the record covers:
-   - the `LegacyButton` row under `@acme/ui-legacy`, for that component, or
-   - the **whole package** row for `@acme/ui-legacy`, for every component in it.
-
-   The hint under the field confirms which one you picked.
+   - the `LegacyButton` row with `@acme/ui-legacy` beside it, for that component, or
+   - the whole package: select the `@acme/ui-legacy` package row, then **All of @acme/ui-legacy**, for every component in it. The line under the field says how many components that marks.
 4. Leave **Type** on **Superseded**.
-5. Open **Superseded by** and pick the `Button` row under `@acme/ui`. If you pick the package row instead, the whole of `@acme/ui` counts as the replacement.
-6. Press **Create**.
+5. In **Superseded by**, type `button` and pick the `Button` row with `@acme/ui` beside it. To make the whole of `@acme/ui` the replacement, select its package row, then **All of @acme/ui**.
+6. Press **Create**. The form stays open for the next record, with a line under **New record** that reads `LegacyButton superseded by Button`. **Package or component** and **Superseded by** are empty again, and **Type** stays as it was. Press **Close** when you're done.
+
+Selecting a package row searches that package only, which helps when several packages have a `Button`. The package shows as a tag in the box and stays there for the next record. Press its **×**, or Backspace in the empty box, to search every package again.
 
 ![The New record form, filled in to record VxeButton from vxe-pc-ui as superseded by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
@@ -28,14 +28,14 @@ The pickers only offer packages and components that appear in uploaded scans. If
 
 A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered under a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 
-Each package or component can have one record, and a package has either one whole-package record or records on single components, not both. If saving is refused, a message in the form says why, and for an existing record usually offers **Go to the existing record** so you can edit that one instead.
+Each package or component can have one record, and a package has either one whole-package record or records on single components, not both. In **Package or component**, a row that can't take a new record is dimmed and says why, such as **Already recorded**. If saving is refused, a message in the form says why, and for an existing record usually offers **Go to the existing record** so you can edit that one instead.
 
 ## Record a retirement
 
 Retire a component when it is being removed with no replacement, for example `Modal` from `@acme/ui-legacy`.
 
 1. On the **governance** page, press **Add record**.
-2. In **Package or component**, pick the `Modal` row under `@acme/ui-legacy`, or the package's **whole package** row.
+2. In **Package or component**, pick the `Modal` row with `@acme/ui-legacy` beside it, or select the `@acme/ui-legacy` package row, then **All of @acme/ui-legacy**.
 3. Set **Type** to **Retired**.
 4. In **Reason**, say why it is going, for example `Removed in @acme/ui-legacy 4.0; no replacement.`
 5. Press **Create**.
