@@ -171,6 +171,12 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
     }
   });
 
+  it("sets the chart colours at ≥ 3:1 on the panel", () => {
+    for (const name of ["berry-graphic", "sky-graphic", "indigo-graphic", "pink-graphic"]) {
+      expect(contrast(rgb(theme, name), rgb(theme, "neutral-panel")), name).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it("steps the selected fill clear of the hover band and the panel", () => {
     const [selected] = token(theme, "neutral-hover");
     const [band] = token(theme, "neutral-band");
@@ -196,5 +202,38 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
 describe("palette parity", () => {
   it("declares the same primitives in both themes", () => {
     expect([...THEMES.dark.keys()].sort()).toEqual([...THEMES.light.keys()].sort());
+  });
+});
+
+describe("lookalikes.json", () => {
+  it("lists exactly the chart colour pairs under ΔE 15, or under 6 for deuteranopia or protanopia, in either theme", () => {
+    const chart = [
+      "teal-graphic",
+      "violet-graphic",
+      "blue-graphic",
+      "berry-graphic",
+      "sky-graphic",
+      "indigo-graphic",
+      "pink-graphic",
+      "grey-graphic",
+      "grey-soft",
+    ];
+    const themes = ["light", "dark"] as const;
+    const kinds = ["deutan", "protan"] as const;
+    const expected: string[] = [];
+    for (const [i, a] of chart.entries()) {
+      for (const b of chart.slice(i + 1)) {
+        const normal = Math.min(...themes.map((t) => deltaE(rgb(t, a), rgb(t, b))));
+        const cvd = Math.min(
+          ...themes.flatMap((t) => kinds.map((k) => deltaE(simulate(rgb(t, a), k), simulate(rgb(t, b), k)))),
+        );
+        if (normal < 15 || cvd < 6) expected.push([a, b].sort().join("|"));
+      }
+    }
+    const listed = JSON.parse(readFileSync(new URL("../lookalikes.json", import.meta.url), "utf8")) as [
+      string,
+      string,
+    ][];
+    expect(listed.map((pair) => [...pair].sort().join("|")).sort()).toEqual(expected.sort());
   });
 });

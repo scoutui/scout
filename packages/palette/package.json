@@ -6,10 +6,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./palette.css": "./palette.css"
+    "./palette.css": "./palette.css",
+    "./lookalikes.json": "./lookalikes.json"
   },
   "files": [
-    "palette.css"
+    "palette.css",
+    "lookalikes.json"
   ],
   "scripts": {
     "test": "vitest run",

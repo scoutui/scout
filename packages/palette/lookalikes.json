@@ -1,0 +1,14 @@
+[
+  ["teal-graphic", "sky-graphic"],
+  ["teal-graphic", "pink-graphic"],
+  ["teal-graphic", "grey-graphic"],
+  ["violet-graphic", "sky-graphic"],
+  ["violet-graphic", "indigo-graphic"],
+  ["violet-graphic", "pink-graphic"],
+  ["violet-graphic", "grey-graphic"],
+  ["blue-graphic", "indigo-graphic"],
+  ["sky-graphic", "grey-graphic"],
+  ["sky-graphic", "grey-soft"],
+  ["pink-graphic", "grey-graphic"],
+  ["grey-graphic", "grey-soft"]
+]
