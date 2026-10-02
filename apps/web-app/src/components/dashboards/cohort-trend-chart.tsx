@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
-// From this many series the overlay becomes small multiples: the palette has 4 hues
-// (more fail the CVD floors), so an overlay would have to repeat them.
+// From this many series the overlay becomes small multiples: of the 7 colours in the
+// chart order, at most 4 look unlike each other, so a fifth line would look like another.
 const FACET_THRESHOLD = 5;
 
 /**

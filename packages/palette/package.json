@@ -7,11 +7,11 @@
   "type": "module",
   "exports": {
     "./palette.css": "./palette.css",
-    "./lookalikes.json": "./lookalikes.json"
+    "./chart-colors.json": "./chart-colors.json"
   },
   "files": [
     "palette.css",
-    "lookalikes.json"
+    "chart-colors.json"
   ],
   "scripts": {
     "test": "vitest run",

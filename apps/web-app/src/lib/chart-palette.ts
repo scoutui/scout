@@ -1,4 +1,4 @@
-import lookalikePairs from "@scoutui/palette/lookalikes.json";
+import chartColorData from "@scoutui/palette/chart-colors.json";
 
 /**
  * The tag colour palette, in order. Chart lines that bring no colour of their
@@ -44,35 +44,22 @@ export function paletteToken(hex: string): string {
   return PALETTE_TOKENS[hex] ?? hex;
 }
 
-/** The colours a chart gives, in order, to lines that bring no colour of their own. */
-export const CHART_ORDER = [
-  "var(--viz-primary)",
-  "var(--viz-cat-2)",
-  "var(--viz-cat-3)",
-  "var(--viz-cat-4)",
-  "var(--viz-cat-5)",
-  "var(--viz-cat-6)",
-  "var(--viz-cat-7)",
-] as const;
+/**
+ * The colours a chart gives, in order, to lines that bring no colour of their own.
+ * The order and the lookalike pairs live in `@scoutui/palette/chart-colors.json`.
+ */
+export const CHART_ORDER = chartColorData.order.map((c) => c.token);
 
-const PRIMITIVES: Record<string, string> = {
-  "var(--viz-primary)": "teal-graphic",
-  "var(--viz-cat-2)": "violet-graphic",
-  "var(--viz-cat-3)": "blue-graphic",
-  "var(--viz-cat-4)": "berry-graphic",
-  "var(--viz-cat-5)": "sky-graphic",
-  "var(--viz-cat-6)": "indigo-graphic",
-  "var(--viz-cat-7)": "pink-graphic",
-  "var(--viz-legacy)": "grey-graphic",
-  "var(--viz-local)": "grey-soft",
-};
+const PRIMITIVE_BY_TOKEN = new Map(
+  [...chartColorData.order, ...chartColorData.fixed].map((c) => [c.token, c.primitive] as const),
+);
 
-const LOOKALIKES = new Set(lookalikePairs.flatMap(([a, b]) => [`${a}|${b}`, `${b}|${a}`]));
+const LOOKALIKES = new Set(chartColorData.lookalikes.flatMap(([a, b]) => [`${a}|${b}`, `${b}|${a}`]));
 
 /** Whether two chart colours are the same, or a pair some readers can't tell apart in either theme. */
 export function looksAlike(a: string, b: string): boolean {
   if (a === b) return true;
-  const pa = PRIMITIVES[a];
-  const pb = PRIMITIVES[b];
+  const pa = PRIMITIVE_BY_TOKEN.get(a);
+  const pb = PRIMITIVE_BY_TOKEN.get(b);
   return pa !== undefined && pb !== undefined && LOOKALIKES.has(`${pa}|${pb}`);
 }

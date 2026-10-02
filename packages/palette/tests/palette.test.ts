@@ -205,19 +205,16 @@ describe("palette parity", () => {
   });
 });
 
-describe("lookalikes.json", () => {
+describe("chart-colors.json", () => {
   it("lists exactly the chart colour pairs under ΔE 15, or under 6 for deuteranopia or protanopia, in either theme", () => {
-    const chart = [
-      "teal-graphic",
-      "violet-graphic",
-      "blue-graphic",
-      "berry-graphic",
-      "sky-graphic",
-      "indigo-graphic",
-      "pink-graphic",
-      "grey-graphic",
-      "grey-soft",
-    ];
+    const { order, fixed, lookalikes } = JSON.parse(
+      readFileSync(new URL("../chart-colors.json", import.meta.url), "utf8"),
+    ) as {
+      order: { primitive: string }[];
+      fixed: { primitive: string }[];
+      lookalikes: [string, string][];
+    };
+    const chart = [...order, ...fixed].map((c) => c.primitive);
     const themes = ["light", "dark"] as const;
     const kinds = ["deutan", "protan"] as const;
     const expected: string[] = [];
@@ -230,10 +227,6 @@ describe("lookalikes.json", () => {
         if (normal < 15 || cvd < 6) expected.push([a, b].sort().join("|"));
       }
     }
-    const listed = JSON.parse(readFileSync(new URL("../lookalikes.json", import.meta.url), "utf8")) as [
-      string,
-      string,
-    ][];
-    expect(listed.map((pair) => [...pair].sort().join("|")).sort()).toEqual(expected.sort());
+    expect(lookalikes.map((pair) => [...pair].sort().join("|")).sort()).toEqual(expected.sort());
   });
 });

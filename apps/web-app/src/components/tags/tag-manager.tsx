@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 // Tag swatches are the shared cohort palette (`chart-palette`), which excludes
-// the status hues, so a tag dot is never misread as a status and matches its
-// chart line.
+// the status hues, so a tag dot is never misread as a status. A tag's chart line
+// keeps the tag's colour unless another line on the chart already has it or one
+// like it.
 const TAG_PALETTE = CHART_SERIES_PALETTE;
 
 function nextTagColor(existing: Tag[]): string {

@@ -44,7 +44,7 @@ const ROW_PX = 36;
 
 /**
  * One horizontal bar per cohort at the latest scan, with the value at the bar's tip.
- * Rows sort by value; colour follows the cohort and is assigned before the sort. Bars
+ * Rows sort by value; colour follows the cohort. Bars
  * are at most 20px thick, rounded 4px at the tip, and grow in on load when motion is
  * allowed. Every value is labelled, so the numeric axis and gridlines are off.
  */

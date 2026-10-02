@@ -140,7 +140,8 @@ export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
       const color = n ? colors.get(n.cohortKey) : undefined;
       return color ? [color] : [];
     });
-    colors.set(c.cohortKey, CHART_ORDER.find((o) => !neighbours.some((n) => looksAlike(n, o))) ?? CHART_ORDER[0]);
+    const pick = CHART_ORDER.find((o) => !neighbours.some((n) => looksAlike(n, o))) ?? CHART_ORDER[0];
+    if (pick) colors.set(c.cohortKey, pick);
   });
   return colors;
 }
