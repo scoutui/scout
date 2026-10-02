@@ -1,7 +1,7 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import Link from "next/link";
-import { AlertTriangle, Edit2, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, CircleCheck, CircleDashed, Pencil, Plus, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
 import type {
@@ -11,13 +11,25 @@ import type {
   RecordStat,
 } from "@scoutui/web-shared";
 import { type GovernanceField, invalidGovernanceFields } from "@scoutui/web-shared/client";
-import { saveGovernance, deleteGovernance } from "@/app/governance/governance-actions";
+import { saveGovernance } from "@/app/governance/governance-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toggleVariants } from "@/components/ui/toggle";
 import { GroupedIdentityPicker, type IdentityPick } from "@/components/governance/grouped-identity-picker";
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
+import {
+  buildRecordMap,
+  countLabel,
+  type MapGroup,
+  type MapRow,
+  type MapSection,
+  progressLabel,
+  scopeLabel,
+  statusLabel,
+  type Successor,
+  successorLabel,
+} from "@/lib/governance-map";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -46,10 +58,6 @@ function dispositionLabel(d: Disposition): string {
   }
 }
 
-function sourceLabel(r: GovernanceRecord): string {
-  return r.targetExport ? `${r.targetPackage} / ${r.targetExport}` : r.targetPackage;
-}
-
 /** Client-side record filter: identity, successor, and reason are the fields a user searches by. */
 export function matchesRecordQuery(record: GovernanceRecord, query: string): boolean {
   const q = query.trim().toLowerCase();
@@ -72,12 +80,6 @@ type DispositionKind = (typeof DISPOSITION_KINDS)[number];
 const KIND_LABEL: Record<DispositionKind, string> = {
   superseded: "Superseded",
   retired: "Retired",
-};
-
-// Both dispositions are deprecation, so both dots are warn; the kind is named beside it.
-const KIND_DOT: Record<DispositionKind, string> = {
-  superseded: "bg-status-warn",
-  retired: "bg-status-warn",
 };
 
 // ---------------------------------------------------------------------------
@@ -192,42 +194,21 @@ interface GovernanceManagerProps {
   stats: Record<string, RecordStat>;
   /** Distinct scanned repos. With one repo, rows don't show a repo count. */
   repoCount: number;
+  summary: string | null;
+  notice: React.ReactNode;
 }
 
-export function GovernanceManager({ records, sources, stats, repoCount }: GovernanceManagerProps) {
+export function GovernanceManager({ records, sources, stats, repoCount, summary, notice }: GovernanceManagerProps) {
   // With no records, the form opens straight away.
   const [formOpen, setFormOpen] = useState(records.length === 0);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 
-  // The search filters every section below, not just the flat list.
+  const editingId = formOpen ? form.id : undefined;
+  const searching = query.trim() !== "";
   const visible = records.filter((r) => matchesRecordQuery(r, query));
-
-  // Records that never matched a scan go first: they are likely config mistakes.
-  const exceptions = visible.filter((r) => stats[r.id]?.status === "unseen");
-  const unseenIds = new Set(exceptions.map((r) => r.id));
-
-  // A package gets a group heading from two records up. Single-record packages
-  // render as flat rows, with their full identity, in one shared panel.
-  const byPackage = new Map<string, GovernanceRecord[]>();
-  for (const r of visible) {
-    if (unseenIds.has(r.id)) continue;
-    const rows = byPackage.get(r.targetPackage) ?? [];
-    rows.push(r);
-    byPackage.set(r.targetPackage, rows);
-  }
-  // Still-working records first, settled ones last, alpha within.
-  const rank = (r: GovernanceRecord) => (stats[r.id]?.status === "complete" ? 1 : 0);
-  for (const rows of byPackage.values()) {
-    rows.sort((a, b) => rank(a) - rank(b) || (a.targetExport ?? "").localeCompare(b.targetExport ?? ""));
-  }
-  const groups = [...byPackage.entries()]
-    .filter(([, rows]) => rows.length > 1)
-    .sort(([a], [b]) => a.localeCompare(b));
-  const singles = [...byPackage.values()]
-    .filter((rows) => rows.length === 1)
-    .flat()
-    .sort((a, b) => rank(a) - rank(b) || a.targetPackage.localeCompare(b.targetPackage));
+  const sections = buildRecordMap({ visible, all: records, stats, sources });
 
   function openNew() {
     setForm(emptyForm());
@@ -243,20 +224,32 @@ export function GovernanceManager({ records, sources, stats, repoCount }: Govern
     setFormOpen(false);
   }
 
+  function toggleGroup(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Section header row */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <p className="max-w-prose text-sm text-muted-foreground">
-            Mark packages and components as superseded or retired. Each record marks the package or component as deprecated everywhere it appears.
-          </p>
+    <div className="space-y-8">
+      <header className="space-y-3">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-3xl font-semibold tracking-tight">Governance</h1>
+            <Button size="sm" onClick={openNew} disabled={formOpen}>
+              <Plus />
+              Add record
+            </Button>
+          </div>
+          {summary ? <p className="text-xs tabular-nums text-muted-foreground">{summary}</p> : null}
         </div>
-        <Button size="sm" onClick={openNew} disabled={formOpen}>
-          <Plus />
-          Add record
-        </Button>
-      </div>
+        {notice}
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Mark packages and components as superseded or retired. Each record marks the package or component as deprecated everywhere it appears.
+        </p>
+      </header>
 
       {formOpen && (
         <RecordForm
@@ -275,7 +268,6 @@ export function GovernanceManager({ records, sources, stats, repoCount }: Govern
         <RecordSearch value={query} onChange={setQuery} count={visible.length} />
       ) : null}
 
-      {/* Records */}
       {records.length === 0 && !formOpen ? (
         <div className="space-y-1 py-4">
           <p className="text-sm text-muted-foreground">
@@ -283,80 +275,25 @@ export function GovernanceManager({ records, sources, stats, repoCount }: Govern
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {query.trim() && visible.length === 0 ? (
+        <div className="space-y-8">
+          {searching && visible.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No records match “{query.trim()}”.
             </p>
           ) : null}
 
-          {exceptions.length > 0 ? (
-            <section aria-label="Records that never matched a scan" className="space-y-2">
-              <p className="flex items-center gap-1.5 text-xs text-status-warn-text">
-                <AlertTriangle aria-hidden className="size-3.5 shrink-0" />
-                {exceptions.length === 1
-                  ? "1 record never matched a scan"
-                  : `${exceptions.length.toLocaleString()} records never matched a scan`}
-                {". Check the package and component names."}
-              </p>
-              <ul className="panel divide-y divide-border overflow-hidden">
-                {exceptions.map((r) => (
-                  <RecordRow
-                    key={r.id}
-                    record={r}
-                    standalone
-                    repoCount={repoCount}
-                    onEdit={() => openEdit(r)}
-                    {...(stats[r.id] ? { stat: stats[r.id] as RecordStat } : {})}
-                    {...(form.id !== undefined ? { editingId: form.id } : {})}
-                  />
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {groups.map(([pkg, rows]) => (
-            <section key={pkg}>
-              {/* A real heading, so screen-reader heading navigation can jump
-                  between package groups. */}
-              <div className="mb-2 flex items-baseline gap-2">
-                <h2 className="min-w-0 truncate font-mono text-xs text-foreground">{pkg}</h2>
-                <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {rows.length.toLocaleString()} records
-                </span>
-              </div>
-              <ul className="panel divide-y divide-border overflow-hidden">
-                {rows.map((r) => (
-                  <RecordRow
-                    key={r.id}
-                    record={r}
-                    repoCount={repoCount}
-                    onEdit={() => openEdit(r)}
-                    {...(stats[r.id] ? { stat: stats[r.id] as RecordStat } : {})}
-                    {...(form.id !== undefined ? { editingId: form.id } : {})}
-                  />
-                ))}
-              </ul>
-            </section>
+          {sections.map((section) => (
+            <RecordTable
+              key={section.kind}
+              section={section}
+              repoCount={repoCount}
+              editingId={editingId}
+              searching={searching}
+              expanded={expanded}
+              onToggle={toggleGroup}
+              onEdit={openEdit}
+            />
           ))}
-
-          {/* Single-record packages: rows carry their full identity, so the
-              panel has no heading. */}
-          {singles.length > 0 ? (
-            <ul className="panel divide-y divide-border overflow-hidden">
-              {singles.map((r) => (
-                <RecordRow
-                  key={r.id}
-                  record={r}
-                  standalone
-                  repoCount={repoCount}
-                  onEdit={() => openEdit(r)}
-                  {...(stats[r.id] ? { stat: stats[r.id] as RecordStat } : {})}
-                  {...(form.id !== undefined ? { editingId: form.id } : {})}
-                />
-              ))}
-            </ul>
-          ) : null}
         </div>
       )}
     </div>
@@ -364,141 +301,297 @@ export function GovernanceManager({ records, sources, stats, repoCount }: Govern
 }
 
 // ---------------------------------------------------------------------------
-// Record row
+// Records map
 // ---------------------------------------------------------------------------
 
-function RecordRow({
-  record,
-  stat,
+const MAP_ROW =
+  "grid grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)_2.5rem] items-center gap-y-0.5 md:grid-cols-[15rem_1.25rem_minmax(0,1fr)_11rem_2.5rem]";
+const CELL = "min-w-0 px-3";
+const ARROW_CELL = "flex justify-center px-0";
+const STATUS_CELL = "col-span-3 min-w-0 px-3 md:col-span-1";
+// Below md the edit button stays on the first line and the status wraps to a second.
+const EDIT_CELL = "col-start-4 row-start-1 flex justify-end pr-3 md:col-start-auto md:row-start-auto";
+
+const SECTION_TITLE: Record<MapSection["kind"], string> = { superseded: "Superseded", retired: "Retired" };
+const SECTION_COLUMN: Record<MapSection["kind"], string> = { superseded: "Superseded by", retired: "Reason" };
+
+const groupKey = (section: MapSection, group: MapGroup) =>
+  `${section.kind}:${group.kind === "package" ? `package:${group.packageName}` : "whole-packages"}`;
+
+const rowName = (r: GovernanceRecord) => r.targetExport ?? r.targetPackage;
+
+function RecordTable({
+  section,
   repoCount,
-  standalone = false,
-  onEdit,
   editingId,
+  searching,
+  expanded,
+  onToggle,
+  onEdit,
 }: {
-  record: GovernanceRecord;
-  stat?: RecordStat | undefined;
+  section: MapSection;
   repoCount: number;
-  /** Row outside a package group: identity carries the full package (and export). */
-  standalone?: boolean;
-  onEdit: () => void;
-  editingId?: string;
+  editingId: string | undefined;
+  searching: boolean;
+  /** Keys of the all-complete groups the user has opened. */
+  expanded: ReadonlySet<string>;
+  onToggle: (key: string) => void;
+  onEdit: (record: GovernanceRecord) => void;
 }) {
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const isEditing = editingId === record.id;
-  const superseded = record.disposition.kind === "superseded";
-  const retired = record.disposition.kind === "retired";
-
-  function remove() {
-    setError(null);
-    startTransition(async () => {
-      const res = await deleteGovernance(record.id);
-      if (res.ok) setConfirming(false);
-      else setError(actionErrorMessage(res.error, "delete this record", "Couldn't delete the record. Try again."));
-    });
-  }
-
+  const titleId = useId();
   return (
-    <li
+    <section>
+      <div className="mb-3 flex items-baseline gap-2">
+        <h2 id={titleId} className="text-base font-medium">
+          {SECTION_TITLE[section.kind]}
+        </h2>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {section.recordCount.toLocaleString()} {section.recordCount === 1 ? "record" : "records"}
+        </span>
+      </div>
+      <table aria-labelledby={titleId} className="panel block overflow-hidden">
+        <thead className="block">
+          <tr className={cn(MAP_ROW, "h-9 border-b border-border bg-muted")}>
+            <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground")}>
+              Package or component
+            </th>
+            <th scope="col" className={ARROW_CELL} />
+            <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground")}>
+              {SECTION_COLUMN[section.kind]}
+            </th>
+            <th scope="col" className={cn(CELL, "hidden text-left text-label text-muted-foreground md:block")}>
+              Status
+            </th>
+            <th scope="col" className={EDIT_CELL}>
+              <span className="sr-only">Edit</span>
+            </th>
+          </tr>
+        </thead>
+        {section.groups.map((group, i) => {
+          const key = groupKey(section, group);
+          const collapsible = !searching && group.rows.every((r) => r.stat?.status === "complete");
+          const open = !collapsible || expanded.has(key);
+          return (
+            <tbody key={key} className={cn("block pt-1 pb-1.5", i > 0 && "border-t border-border")}>
+              <GroupHeader
+                group={group}
+                toggle={collapsible ? { open, onToggle: () => onToggle(key) } : null}
+              />
+              {group.rows
+                .filter((row) => open || row.record.id === editingId)
+                .map((row) => (
+                  <RecordRow
+                    key={row.record.id}
+                    row={row}
+                    nested={group.kind === "package"}
+                    repoCount={repoCount}
+                    editing={row.record.id === editingId}
+                    onEdit={() => onEdit(row.record)}
+                  />
+                ))}
+            </tbody>
+          );
+        })}
+      </table>
+    </section>
+  );
+}
+
+function GroupHeader({
+  group,
+  toggle,
+}: {
+  group: MapGroup;
+  toggle: { open: boolean; onToggle: () => void } | null;
+}) {
+  const label =
+    group.kind === "package" ? (
+      <span className="min-w-0 md:flex md:items-baseline">
+        <span className="font-mono text-xs font-medium wrap-anywhere md:truncate" title={group.packageName}>
+          {group.packageName}
+        </span>
+        <span className="text-xs text-muted-foreground md:shrink-0 md:whitespace-pre"> · {countLabel(group.rows.length)}</span>
+      </span>
+    ) : (
+      <span className="text-xs font-medium text-muted-foreground">Whole packages</span>
+    );
+  return (
+    <tr className={cn(MAP_ROW, "min-h-10 py-1.5 md:py-0")}>
+      {toggle ? (
+        <th scope="row" className="min-w-0 self-stretch text-left font-normal">
+          <button
+            type="button"
+            aria-expanded={toggle.open}
+            onClick={toggle.onToggle}
+            className="group/toggle flex size-full min-w-0 cursor-pointer items-center gap-1.5 px-3 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring"
+          >
+            {label}
+            <ChevronRight
+              aria-hidden
+              strokeWidth={1.5}
+              className={cn(
+                "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ease-out group-hover/toggle:text-foreground motion-reduce:transition-none",
+                toggle.open && "rotate-90",
+              )}
+            />
+          </button>
+        </th>
+      ) : (
+        <th scope="row" className={cn(CELL, "text-left font-normal")}>
+          {label}
+        </th>
+      )}
+      <td className={ARROW_CELL} />
+      <td className={CELL} />
+      <td className={cn(STATUS_CELL, "text-xs tabular-nums text-muted-foreground")}>
+        {progressLabel(group.progress)}
+      </td>
+      <td className={EDIT_CELL} />
+    </tr>
+  );
+}
+
+function RecordRow({
+  row,
+  nested,
+  repoCount,
+  editing,
+  onEdit,
+}: {
+  row: MapRow;
+  /** A component row under its package's header, indented one step. */
+  nested: boolean;
+  repoCount: number;
+  editing: boolean;
+  onEdit: () => void;
+}) {
+  const { record, stat, componentCount, nextHop } = row;
+  const name = rowName(record);
+  const scope = record.grain === "package" ? scopeLabel(componentCount) : null;
+  return (
+    <tr
       id={`record-${record.id}`}
       tabIndex={-1}
       className={cn(
-        "flex flex-col gap-1 px-3 py-2.5 text-sm scroll-mt-24",
-        isEditing && "bg-muted/40",
+        MAP_ROW,
+        "group/row min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out hover:bg-secondary md:py-0 dark:hover:bg-accent motion-reduce:transition-none",
+        editing && "bg-muted/40",
       )}
     >
-      <div className="flex items-start gap-3">
-        {/* Identity: inside a package group the heading names the package, so the
-            row shows only the export; a standalone row shows the full identity. */}
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
-          {standalone ? (
-            <span className="min-w-0 truncate font-mono text-xs text-foreground">
-              {sourceLabel(record)}
-            </span>
-          ) : record.targetExport ? (
-            <span className="shrink-0 font-mono text-xs text-foreground">{record.targetExport}</span>
-          ) : (
-            <span className="shrink-0 text-xs text-foreground italic">entire package</span>
-          )}
-          <span className="flex min-w-0 items-center gap-1.5 text-[0.6875rem] text-muted-foreground">
+      <th scope="row" className={cn(CELL, "text-left font-normal", nested && "pl-8")}>
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 md:flex-nowrap">
+          <span className="min-w-0 font-mono text-xs wrap-anywhere md:truncate" title={name}>
+            {name}
+          </span>
+          {scope ? <span className="shrink-0 text-[0.6875rem] text-faint">{scope}</span> : null}
+        </span>
+      </th>
+      <td className={ARROW_CELL}>
+        {record.disposition.kind === "superseded" ? (
+          <>
             <span
               aria-hidden
-              className={cn("size-1.5 shrink-0 rounded-full", KIND_DOT[record.disposition.kind])}
-            />
-            {superseded && (
-              <>
-                <span>superseded</span>
-                <span aria-hidden>→</span>
-                <span className="truncate font-mono text-foreground/90">
-                  {dispositionLabel(record.disposition)}
-                </span>
-              </>
-            )}
-            {retired && <span className="truncate">retired · {dispositionLabel(record.disposition)}</span>}
-          </span>
-          {stat?.successorDeprecated ? (
-            <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] text-status-warn-text">
-              <AlertTriangle aria-hidden className="size-3 shrink-0" />
-              successor deprecated
-            </span>
-          ) : null}
-        </div>
-
-        {/* Status: active and complete rows link to their chart; a record that
-            never matched a scan shows a warning instead. */}
-        {stat ? (
-          stat.status === "unseen" ? (
-            <span className="shrink-0 text-xs font-medium text-status-warn-text">never matched a scan</span>
-          ) : stat.trackingId ? (
-            <Link
-              href={`/charts/${encodeURIComponent(stat.trackingId)}`}
-              className="shrink-0 rounded-sm text-xs tabular-nums text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
+              className="-translate-y-0.5 text-xs text-faint transition-colors duration-150 ease-out group-hover/row:text-muted-foreground motion-reduce:transition-none"
             >
-              {stat.status === "complete"
-                ? "complete"
-                : repoCount > 1
-                  ? `active in ${stat.repos.toLocaleString()} ${stat.repos === 1 ? "repo" : "repos"}`
-                  : "active"}
-            </Link>
-          ) : null
+              →
+            </span>
+            <span className="sr-only">superseded by</span>
+          </>
         ) : null}
+      </td>
+      <td className={cn(CELL, "md:pl-8")}>
+        {record.disposition.kind === "superseded" ? (
+          <SuccessorCell by={record.disposition.by} deprecated={stat?.successorDeprecated === true} nextHop={nextHop} />
+        ) : (
+          <span className="block text-[0.8125rem] wrap-anywhere md:truncate" title={record.disposition.reason}>
+            {record.disposition.reason}
+          </span>
+        )}
+      </td>
+      <td className={cn(STATUS_CELL, nested && "pl-8 md:pl-3")}>
+        <RecordStatus name={name} stat={stat} repoCount={repoCount} />
+      </td>
+      <td className={EDIT_CELL}>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={onEdit}
+          aria-label={`Edit ${name}`}
+          title="Edit"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Pencil strokeWidth={1.5} className="size-3.5" />
+        </Button>
+      </td>
+    </tr>
+  );
+}
 
-        {/* Actions: delete asks for an inline confirm. */}
-        <div className="flex shrink-0 items-center gap-1">
-          {confirming ? (
-            <>
-              <Button variant="destructive" size="xs" onClick={remove} disabled={pending}>
-                {pending ? "Deleting…" : "Confirm"}
-              </Button>
-              <Button variant="ghost" size="xs" onClick={() => setConfirming(false)} disabled={pending}>
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" size="icon-xs" onClick={onEdit} aria-label="Edit record">
-                <Edit2 />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => setConfirming(true)}
-                aria-label="Delete record"
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 />
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-      {error && (
-        <p role="alert" className="text-xs text-destructive">
-          {error}
-        </p>
+function SuccessorCell({
+  by,
+  deprecated,
+  nextHop,
+}: {
+  by: Successor;
+  deprecated: boolean;
+  nextHop: Successor | null;
+}) {
+  const successor = successorLabel(by);
+  const hop = nextHop ? successorLabel(nextHop) : null;
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 md:flex-nowrap">
+      <span
+        className="min-w-0 font-mono text-xs wrap-anywhere md:truncate"
+        title={successor.packageName ? `${successor.name} · ${successor.packageName}` : successor.name}
+      >
+        <span className="text-foreground">{successor.name}</span>
+        {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
+      </span>
+      {deprecated ? (
+        <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] text-status-warn-text">
+          <TriangleAlert aria-hidden strokeWidth={1.5} className="size-3 shrink-0" />
+          Successor deprecated
+        </span>
+      ) : null}
+      {hop ? (
+        <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere md:flex-1 md:truncate">
+          {`→ ${hop.name}${hop.packageName ? ` · ${hop.packageName}` : ""}`}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+const STATUS_LOOK: Record<RecordStat["status"], { Icon: typeof CircleDashed; tone: string }> = {
+  active: { Icon: CircleDashed, tone: "text-muted-foreground" },
+  complete: { Icon: CircleCheck, tone: "text-status-ok" },
+  unseen: { Icon: TriangleAlert, tone: "text-status-warn-text" },
+};
+
+function RecordStatus({ name, stat, repoCount }: { name: string; stat: RecordStat | undefined; repoCount: number }) {
+  const label = statusLabel(stat, repoCount);
+  if (!stat || !label) return null;
+  const { Icon, tone } = STATUS_LOOK[stat.status];
+  const content = (
+    <>
+      <Icon aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0" />
+      {label}
+    </>
+  );
+  const look = cn("inline-flex items-center gap-1.5 whitespace-nowrap text-xs tabular-nums", tone);
+  if (stat.status === "unseen" || !stat.trackingId) return <span className={look}>{content}</span>;
+  return (
+    <Link
+      href={`/charts/${encodeURIComponent(stat.trackingId)}`}
+      aria-label={`${name}: ${label.charAt(0).toLowerCase()}${label.slice(1)}`}
+      className={cn(
+        look,
+        "rounded-sm underline-offset-4 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring",
+        stat.status === "active" && "hover:text-foreground",
       )}
-    </li>
+    >
+      {content}
+    </Link>
   );
 }
 

@@ -15,7 +15,7 @@ export function RecordSearch({
   count: number;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="max-w-sm space-y-1">
       <div className="relative">
         <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -23,7 +23,7 @@ export function RecordSearch({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search records…"
-          aria-label="Search records by package, export, or successor"
+          aria-label="Search records by package, component or successor"
           className="pl-8"
         />
       </div>

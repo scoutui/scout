@@ -49,6 +49,8 @@ function governance() {
       ]}
       stats={{}}
       repoCount={0}
+      summary={null}
+      notice={null}
     />,
   );
 }
@@ -71,16 +73,9 @@ describe("forms after the session has ended", () => {
 
   it("tells the governance form to sign in again to save", async () => {
     governance();
-    fireEvent.click(screen.getByRole("button", { name: "Edit record" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this record.")).toBeInTheDocument();
-  });
-
-  it("tells governance delete to sign in again", async () => {
-    governance();
-    fireEvent.click(screen.getByRole("button", { name: "Delete record" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(await screen.findByText("Your session has ended. Sign in again to delete this record.")).toBeInTheDocument();
   });
 
   it("tells the tag editor to sign in again to save or delete", async () => {
