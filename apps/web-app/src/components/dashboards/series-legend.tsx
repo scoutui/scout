@@ -1,6 +1,6 @@
 "use client";
 import { AlertTriangle, X } from "lucide-react";
-import type { CohortSelector } from "@scoutui/web-shared";
+import type { CohortRole, CohortSelector } from "@scoutui/web-shared";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { selectorKey } from "@/components/dashboards/dashboard-builder";
@@ -18,6 +18,7 @@ export type LegendSeries = {
   selector: CohortSelector;
   label: string;
   color: string;
+  role?: CohortRole | undefined;
   unknown: boolean;
 };
 
@@ -57,7 +58,7 @@ export function SeriesLegend({
             key={selectorKey(s.selector)}
             className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-muted/40"
           >
-            <CohortSwatch cohortKey={selectorKey(s.selector)} color={s.color} />
+            <CohortSwatch cohortKey={selectorKey(s.selector)} color={s.color} role={s.role} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5" title={label || undefined}>
               <span className={cn("truncate text-xs", s.unknown ? "font-sans text-muted-foreground" : "font-mono")}>{primary}</span>
               {secondary ? (

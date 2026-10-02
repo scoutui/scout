@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useId, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Bar, BarChart, type BarShapeProps, Cell, LabelList, Rectangle, XAxis, YAxis } from "recharts";
-import type { CohortPoint } from "@scoutui/web-shared";
+import type { CohortPoint, CohortRole } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { cohortChartConfig, } from "@/lib/dashboard-chart-data";
 import { barRowLabel, formatMetric } from "@/lib/dashboard-format";
@@ -10,6 +11,9 @@ import { barRowLabel, formatMetric } from "@/lib/dashboard-format";
 // scope) muted beneath. SVG text can't truncate, so the lines take hard character
 // caps; the tooltip carries the full label.
 const ATTR_CAP = 38;
+const NAME_CHAR_PX = 6.6;
+const ICON_PX = 12;
+const ICON_GAP_PX = 4;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 function tickLines(label: string): { name: string; attribution: string } {
@@ -17,25 +21,53 @@ function tickLines(label: string): { name: string; attribution: string } {
   return { name, attribution: clip(attribution ?? "", ATTR_CAP) };
 }
 
-function BarTick({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: unknown } }) {
+type BarRow = { cohortKey: string; label: string; value: number; seriesColor: string; role?: CohortRole | undefined };
+
+function BarTick({
+  x = 0,
+  y = 0,
+  index = 0,
+  payload,
+  rows,
+}: {
+  x?: number;
+  y?: number;
+  index?: number;
+  payload?: { value?: unknown };
+  rows: BarRow[];
+}) {
   const { name, attribution } = tickLines(String(payload?.value ?? ""));
+  const row = rows[index];
+  const nameBaseline = attribution.length > 0 ? y - 2 : y + 4;
   return (
-    <text x={x} y={y} textAnchor="end" fontFamily="var(--font-mono)">
-      {attribution.length > 0 ? (
-        <>
-          <tspan x={x} dy={-2} fontSize={11} fill="var(--foreground)">
+    <g>
+      {row?.role === "deprecated" ? (
+        <AlertTriangle
+          x={x - name.length * NAME_CHAR_PX - ICON_GAP_PX - ICON_PX}
+          y={nameBaseline - 10}
+          size={ICON_PX}
+          color={row.seriesColor}
+        >
+          <title>deprecated</title>
+        </AlertTriangle>
+      ) : null}
+      <text x={x} y={y} textAnchor="end" fontFamily="var(--font-mono)">
+        {attribution.length > 0 ? (
+          <>
+            <tspan x={x} dy={-2} fontSize={11} fill="var(--foreground)">
+              {name}
+            </tspan>
+            <tspan x={x} dy={12} fontSize={10} fill="var(--muted-foreground)">
+              {attribution}
+            </tspan>
+          </>
+        ) : (
+          <tspan x={x} dy={4} fontSize={11} fill="var(--muted-foreground)">
             {name}
           </tspan>
-          <tspan x={x} dy={12} fontSize={10} fill="var(--muted-foreground)">
-            {attribution}
-          </tspan>
-        </>
-      ) : (
-        <tspan x={x} dy={4} fontSize={11} fill="var(--muted-foreground)">
-          {name}
-        </tspan>
-      )}
-    </text>
+        )}
+      </text>
+    </g>
   );
 }
 
@@ -63,15 +95,18 @@ export function CohortBarChart({
   }, []);
   const gradientId = useId();
 
-  const rows = points
-    .map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "" }))
+  const rows: BarRow[] = points
+    .map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "", role: p.role }))
     .sort((a, b) => b.value - a.value);
   const config = cohortChartConfig(points);
 
-  const lines = rows.map((r) => tickLines(r.label));
   const labelWidth = Math.min(
     240,
-    16 + Math.max(...lines.map((l) => Math.max(l.name.length * 6.6, l.attribution.length * 6))),
+    16 + Math.max(...rows.map((r) => {
+      const { name, attribution } = tickLines(r.label);
+      const mark = r.role === "deprecated" ? ICON_PX + ICON_GAP_PX : 0;
+      return Math.max(name.length * NAME_CHAR_PX + mark, attribution.length * 6);
+    })),
   );
   const valueWidth = 12 + Math.max(...rows.map((r) => formatMetric(r.value, metric).length)) * 7;
   const height = rows.length * ROW_PX + 8;
@@ -95,7 +130,7 @@ export function CohortBarChart({
           interval={0}
           tickLine={false}
           axisLine={false}
-          tick={<BarTick />}
+          tick={<BarTick rows={rows} />}
         />
         <ChartTooltip
           content={

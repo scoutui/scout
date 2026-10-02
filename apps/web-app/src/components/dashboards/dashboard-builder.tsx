@@ -236,6 +236,7 @@ export function DashboardBuilder({
         selector: sel,
         label: drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "",
         color: unknown ? "" : (colors.get(key) ?? ""),
+        role: drawn?.role,
         unknown,
       };
     });

@@ -98,7 +98,7 @@ export function CohortTable({
           <TableRow key={p.cohortKey}>
             <TableCell>
               <span className="inline-flex min-w-0 items-center gap-2">
-                <CohortSwatch cohortKey={p.cohortKey} color={p.seriesColor} />
+                <CohortSwatch cohortKey={p.cohortKey} color={p.seriesColor} role={p.role} />
                 <CohortLabelText label={p.label} />
               </span>
             </TableCell>
