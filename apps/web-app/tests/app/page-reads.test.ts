@@ -344,7 +344,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
     });
   }, 30_000);
 
-  it("shows each scan's commit date and arrival time on the Scans page, and marks scans that couldn't be prepared or can't be read", async () => {
+  it("shows each scan's commit date, arrival time and uploader on the Scans page, and marks scans that couldn't be prepared or can't be read", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const oldest = genericArtifacts()[0];
@@ -356,12 +356,21 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       await pool.query("UPDATE scans SET created_at = '2026-06-02T00:05:00Z' WHERE scan_id = 'scan-current'");
       await pool.query("UPDATE scans SET created_at = '2026-06-05T09:00:00Z' WHERE scan_id = 'scan-previous'");
       await pool.query("UPDATE scans SET created_at = '2026-05-01T00:05:00Z' WHERE scan_id = 'scan-oldest'");
+      await pool.query(`INSERT INTO "user" (id, name, email) VALUES ('named', 'Priya Raman', 'priya@example.com'), ('unnamed', NULL, 'tomas@example.com')`);
+      await pool.query("UPDATE scans SET uploaded_by_user_id = 'named' WHERE scan_id = 'scan-current'");
+      await pool.query("UPDATE scans SET uploaded_by_user_id = 'unnamed' WHERE scan_id = 'scan-previous'");
       await pool.query("DELETE FROM scan_read_models WHERE scan_id IN ('scan-current', 'scan-oldest')");
       await pool.query(`INSERT INTO scan_jobs (id, scan_id, projection_version, kind, state, error_message) VALUES
         ('current-job', 'scan-current', 1, 'scan', 'failed', 'Projection failed'), ('oldest-job', 'scan-oldest', 1, 'scan', 'failed', 'degraded: unknown_format')`);
       const history = await import("@/app/repos/[repoId]/scans/page");
       const [header, ...rows] = renderToStaticMarkup(await history.default(repoParams)).split("<tr").slice(1);
-      expect(header).toMatch(/Committed.*Branch.*Commit.*Scanned/);
+      expect(header).toMatch(/Committed.*Branch.*Commit.*Scanned<.*Scanned by<.*Scan ID/);
+      const uploaders = rows.map(row => row.split("<td")[5] ?? "");
+      expect(uploaders.map(cell => [cell.match(/title="([^"]+)"/)?.[1] ?? null, cell.replace(/^[^>]*>/, "").replace(/<[^>]+>/g, "")])).toEqual([
+        ["priya@example.com", "Priya Raman"],
+        ["tomas@example.com", "tomas@example.com"],
+        [null, "—"],
+      ]);
       expect(rows.map(row => [...row.matchAll(/title="([^"]+ UTC)"/g)].map(match => match[1]))).toEqual([
         ["2026-06-02 00:00 UTC", "2026-06-02 00:05 UTC"],
         ["2026-06-01 00:00 UTC", "2026-06-05 09:00 UTC"],

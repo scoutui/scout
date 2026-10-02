@@ -139,6 +139,8 @@ export const ScanSummarySchema = z.object({
   arrivedAt: z.string(),
   commit: z.string(),
   branch: z.string().nullable(),
+  // The signed-in user who uploaded the scan; null when none is recorded, as for an upload with the CI key.
+  uploadedBy: z.object({ name: z.string().nullable(), email: z.string() }).nullable(),
   // Whether pages can show the scan's data.
   ready: z.boolean(),
 });

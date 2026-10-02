@@ -152,12 +152,19 @@ export class PostgresDriver implements StorageDriver {
   async listScans(repoId: string) {
     const result = await this.db.execute(sql`
       SELECT scans.scan_id, scans.committed_at, scans.created_at, scans.commit_sha, scans.branch, model.projection_version, model.format_version,
-        model.state, model.build_revision, model.expected_counts, model.actual_counts, model.details_retained
-      FROM scans LEFT JOIN scan_read_models model USING (scan_id) WHERE scans.repo_id = ${repoId}
+        model.state, model.build_revision, model.expected_counts, model.actual_counts, model.details_retained,
+        uploader.name AS uploader_name, uploader.email AS uploader_email
+      FROM scans LEFT JOIN scan_read_models model USING (scan_id) LEFT JOIN "user" uploader ON uploader.id = scans.uploaded_by_user_id
+      WHERE scans.repo_id = ${repoId}
       ORDER BY ${sql.raw(newestScanFirstSql("scans"))}`);
-    return (result.rows as ({ scan_id: string; committed_at: string | Date; created_at: string | Date; commit_sha: string; branch: string | null } & ScanModelHeader)[]).map(row => ({
+    return (result.rows as ({
+      scan_id: string; committed_at: string | Date; created_at: string | Date; commit_sha: string; branch: string | null;
+      uploader_name: string | null; uploader_email: string | null;
+    } & ScanModelHeader)[]).map(row => ({
       scanId: row.scan_id, committedAt: new Date(row.committed_at).toISOString(), arrivedAt: new Date(row.created_at).toISOString(),
-      commit: row.commit_sha, branch: row.branch, ready: scanModelReady(row),
+      commit: row.commit_sha, branch: row.branch,
+      uploadedBy: row.uploader_email === null ? null : { name: row.uploader_name, email: row.uploader_email },
+      ready: scanModelReady(row),
     }));
   }
 

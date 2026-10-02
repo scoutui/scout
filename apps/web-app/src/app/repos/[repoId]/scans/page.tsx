@@ -78,6 +78,7 @@ export default async function RepoScansPage({
                 <TableHead>Branch</TableHead>
                 <TableHead>Commit</TableHead>
                 <TableHead>Scanned</TableHead>
+                <TableHead className="hidden sm:table-cell">Scanned by</TableHead>
                 <TableHead className="hidden w-full sm:table-cell">Scan ID</TableHead>
                 <TableHead className="text-right">{/* view link */}</TableHead>
               </TableRow>
@@ -117,6 +118,13 @@ export default async function RepoScansPage({
                     <TableCell className="font-mono text-xs">{s.commit.slice(0, 7)}</TableCell>
                     <TableCell>
                       <span title={formatAbsoluteUtc(s.arrivedAt)}>{relativeTime(s.arrivedAt)}</span>
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">
+                      {s.uploadedBy ? (
+                        <span title={s.uploadedBy.email} className="block max-w-48 truncate">
+                          {s.uploadedBy.name ?? s.uploadedBy.email}
+                        </span>
+                      ) : "—"}
                     </TableCell>
                     <TableCell className="hidden font-mono text-xs text-muted-foreground sm:table-cell">
                       {s.scanId}
