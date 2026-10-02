@@ -98,7 +98,7 @@ describe("listGovernanceTargets", () => {
     ]);
   });
 
-  it("takes a repo's latest scan by its place in history, not by arrival or commit date alone", () => {
+  it("takes a repo's latest scan by its place in history, not by commit date alone", () => {
     const button = component(packageExport("legacy-ds", "Button"));
     // Committed in the future but received first: it sits at its arrival, before r1:feb.
     const scans = [
