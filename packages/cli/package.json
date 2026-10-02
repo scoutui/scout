@@ -68,7 +68,7 @@
     "picomatch": "4.0.4",
     "typescript": "5.9.3",
     "ulid": "3.0.2",
-    "vitest": "4.1.5"
+    "vitest": "4.1.11"
   },
   "engines": {
     "node": ">=24"
