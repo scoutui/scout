@@ -9,7 +9,7 @@ import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 /**
  * One rendered series. `color`/`label` are resolved by the builder so the legend
- * matches the chart exactly (same `cohortColor` rotation). `deprecatedOnly` is only
+ * matches the chart exactly (both colour through `chartColors`). `deprecatedOnly` is only
  * meaningful for `package`/`tag` selectors; the toggle is hidden for `component`/`local`.
  * `label` is "" while no name is known. `unknown` marks a series the chart left out, and
  * its `color` is "".

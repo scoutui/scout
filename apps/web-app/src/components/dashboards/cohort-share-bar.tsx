@@ -1,5 +1,4 @@
 "use client";
-import { cohortColor } from "@/lib/dashboard-chart-data";
 import { formatPct } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
@@ -7,7 +6,7 @@ import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 /** The minimal cohort shape the bar needs. CohortPoint satisfies it, and the
  *  share-over-time view derives it from each series' latest point. */
-export type ShareSegment = { cohortKey: string; label: string; color: string; value: number };
+export type ShareSegment = { cohortKey: string; label: string; value: number };
 
 /**
  * A single stacked bar of each cohort's share of the in-scope total, with a labelled
@@ -18,10 +17,12 @@ export type ShareSegment = { cohortKey: string; label: string; color: string; va
  */
 export function CohortShareBar({
   points,
+  colors,
   hovered = null,
   onHover,
 }: {
   points: ShareSegment[];
+  colors: ReadonlyMap<string, string>;
   hovered?: string | null;
   onHover?: (cohortKey: string | null) => void;
 }) {
@@ -29,9 +30,9 @@ export function CohortShareBar({
   if (total <= 0) {
     return <p className="text-sm text-muted-foreground">No occurrences yet.</p>;
   }
-  const segs = points.map((p, i) => {
+  const segs = points.map((p) => {
     const share = p.value / total;
-    return { key: p.cohortKey, label: p.label, share, color: cohortColor(p, i) };
+    return { key: p.cohortKey, label: p.label, share, color: colors.get(p.cohortKey) ?? "" };
   });
 
   return (

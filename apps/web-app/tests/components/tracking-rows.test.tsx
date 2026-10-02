@@ -21,7 +21,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     name: "Migration: OldButton → new-ds",
     fromLabel: "OldButton · old-ds",
     toLabel: "new-ds/Button",
-    config: {} as never,
+    config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],
     active: true,
     remaining: 5,

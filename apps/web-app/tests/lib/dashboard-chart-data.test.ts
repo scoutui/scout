@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import type { CohortSeries } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dashSwatchSegments, dayTicks, expandRowShares, cohortColor, seriesDashes, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
-import { CHART_SERIES_PALETTE, paletteToken } from "@/lib/chart-palette";
+import type { CohortRole, CohortSelector, CohortSeries } from "@scoutui/web-shared";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, savedChartCohorts, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
   { cohortKey: "tag:web", label: "web", color: "#7c3aed", points: [{ t: "2026-01-01", value: 4 }, { t: "2026-01-02", value: 10 }] },
@@ -26,27 +26,6 @@ describe("cohortChartConfig", () => {
   });
 });
 
-describe("cohortColor", () => {
-  it("role wins over everything: deprecated → red token, successor → teal token", () => {
-    expect(cohortColor({ cohortKey: "component:c1", color: "#7c3aed", role: "deprecated" }, 0)).toBe("var(--viz-deprecated)");
-    expect(cohortColor({ cohortKey: "package:@x/next", color: "#7c3aed", role: "successor" }, 0)).toBe("var(--viz-primary)");
-  });
-  it("authored palette hexes resolve to their theme token; custom hexes stay verbatim", () => {
-    expect(cohortColor({ cohortKey: "tag:icons", color: "#009598" }, 0)).toBe("var(--viz-primary)");
-    expect(cohortColor({ cohortKey: "tag:primitives", color: "#9b6bce" }, 0)).toBe("var(--viz-cat-2)");
-    expect(cohortColor({ cohortKey: "tag:web", color: "#7c3aed" }, 0)).toBe("#7c3aed");
-  });
-  it("gives the local cohort its own lighter grey, not the grey tag colour", () => {
-    expect(cohortColor({ cohortKey: "local", color: "" }, 2)).toBe("var(--viz-local)");
-  });
-  it("rotates the identity hues for uncoloured cohorts, never the grey slot", () => {
-    expect(cohortColor({ cohortKey: "package:@x/y", color: "" }, 0)).toBe(CHART_SERIES_PALETTE[0]);
-    expect(cohortColor({ cohortKey: "package:@a/b", color: "" }, 2)).toBe(CHART_SERIES_PALETTE[2]);
-    expect(cohortColor({ cohortKey: "package:@c/d", color: "" }, 3)).toBe(CHART_SERIES_PALETTE[0]);
-    expect(cohortColor({ cohortKey: "package:@e/f", color: "" }, 4)).toBe(CHART_SERIES_PALETTE[1]);
-  });
-});
-
 describe("paletteToken", () => {
   it("maps each of the four palette hexes to its theme token", () => {
     expect(paletteToken("#009598")).toBe("var(--viz-primary)");
@@ -60,41 +39,91 @@ describe("paletteToken", () => {
   });
 });
 
-describe("seriesDashes", () => {
-  const dep = (cohortKey: string) => ({ cohortKey, color: "", role: "deprecated" as const });
+describe("chartColors", () => {
+  const tag = (id: string, color: string) => ({ cohortKey: `tag:${id}`, color });
+  const pkg = (name: string, role?: CohortRole) => ({ cohortKey: `package:${name}`, color: "", role });
+  const comp = (id: string) => ({ cohortKey: `component:${id}`, color: "" });
+  const local = { cohortKey: "local", color: "" };
 
-  it("dashes the second and third series sharing a role colour", () => {
-    expect(seriesDashes([dep("a"), dep("b"), dep("c")])).toEqual([undefined, "5 4", "2 3"]);
+  const cases: Array<[string, ChartCohort[], Record<string, string>]> = [
+    ["a tag keeps its colour", [tag("a", "#009598")], { "tag:a": "var(--viz-primary)" }],
+    [
+      "a second tag with the same colour takes the next free chart colour",
+      [tag("a", "#009598"), tag("b", "#009598")],
+      { "tag:a": "var(--viz-primary)", "tag:b": "var(--viz-cat-2)" },
+    ],
+    [
+      "a tag whose colour looks like an earlier line's loses it",
+      [local, tag("a", "#7d8088")],
+      { local: "var(--viz-local)", "tag:a": "var(--viz-primary)" },
+    ],
+    [
+      "a teal tag saved before a successor line takes violet",
+      [tag("a", "#009598"), pkg("x", "successor")],
+      { "tag:a": "var(--viz-cat-2)", "package:x": "var(--viz-primary)" },
+    ],
+    [
+      "a package never takes a colour a tag holds, whatever its position",
+      [pkg("x"), tag("a", "#009598")],
+      { "package:x": "var(--viz-cat-2)", "tag:a": "var(--viz-primary)" },
+    ],
+    [
+      "packages and components get theme tokens, and the fourth uncoloured line repeats teal",
+      [pkg("a"), pkg("b"), comp("c"), pkg("d")],
+      {
+        "package:a": "var(--viz-primary)",
+        "package:b": "var(--viz-cat-2)",
+        "component:c": "var(--viz-cat-3)",
+        "package:d": "var(--viz-primary)",
+      },
+    ],
+    ["a custom tag colour stays as written", [tag("a", "#7c3aed")], { "tag:a": "#7c3aed" }],
+    [
+      "deprecated is orange and Local is the Local grey",
+      [{ ...tag("a", "#009598"), role: "deprecated" }, local],
+      { "tag:a": "var(--viz-deprecated)", local: "var(--viz-local)" },
+    ],
+  ];
+
+  it.each(cases)("%s", (_title, cohorts, expected) => {
+    expect(Object.fromEntries(chartColors(cohorts))).toEqual(expected);
   });
 
-  it("keeps colour-distinct series solid", () => {
-    expect(
-      seriesDashes([
-        { cohortKey: "a", color: "" },
-        { cohortKey: "b", color: "" },
-        { cohortKey: "c", color: "" },
-      ]),
-    ).toEqual([undefined, undefined, undefined]);
+  it("gives every line of a nine-package chart a colour, and no two neighbours look alike", () => {
+    const cohorts = Array.from({ length: 9 }, (_, i) => pkg(`p${i}`));
+    const colors = chartColors(cohorts);
+    const drawn = cohorts.map((c) => colors.get(c.cohortKey) ?? "none");
+    expect(drawn).not.toContain("none");
+    expect(drawn.slice(1).map((color, i) => looksAlike(drawn[i] ?? "", color))).not.toContain(true);
   });
 
-  it("dashes the palette wrap: the 4th uncoloured series repeats the 3-hue rotation", () => {
-    const s = ["a", "b", "c", "d"].map((cohortKey) => ({ cohortKey, color: "" }));
-    expect(seriesDashes(s)).toEqual([undefined, undefined, undefined, "5 4"]);
+  it("keeps the turn of a saved cohort the view doesn't draw, and the colour and role of each one it does", () => {
+    const saved: CohortSelector[] = [
+      { kind: "package", packageName: "x" },
+      { kind: "component", componentId: "c" },
+      { kind: "package", packageName: "y" },
+      { kind: "tag", tagId: "t" },
+    ];
+    const colorsOf = (drawn: ChartCohort[]) => {
+      const colors = chartColors(savedChartCohorts(saved, drawn));
+      return [colors.get("package:x"), colors.get("package:y"), colors.get("tag:t")];
+    };
+    const expected = ["var(--viz-deprecated)", "var(--viz-cat-2)", "#7c3aed"];
+    expect(colorsOf([pkg("x", "deprecated"), comp("c"), pkg("y"), tag("t", "#7c3aed")])).toEqual(expected);
+    expect(colorsOf([pkg("x", "deprecated"), pkg("y"), tag("t", "#7c3aed")])).toEqual(expected);
   });
 
-  it("dashes Local drawn after a grey tag: the two greys match in dark mode", () => {
-    expect(seriesDashes([{ cohortKey: "tag:legacy", color: "#7d8088" }, { cohortKey: "local", color: "" }])).toEqual([
-      undefined,
-      "5 4",
-    ]);
-  });
-
-  it("mixes roles and rotation independently", () => {
-    expect(seriesDashes([dep("a"), { cohortKey: "b", color: "" }, dep("c")])).toEqual([
-      undefined,
-      undefined,
-      "5 4",
-    ]);
+  it("colours a drawn cohort that no saved selector names", () => {
+    const saved: CohortSelector[] = [
+      { kind: "component", componentId: "a" },
+      { kind: "package", packageName: "x", role: "successor" },
+    ];
+    const drawn: ChartCohort[] = [
+      { cohortKey: "deprecated:r", color: "", role: "deprecated" },
+      { cohortKey: "successor:r", color: "", role: "successor" },
+    ];
+    const colors = chartColors(savedChartCohorts(saved, drawn));
+    expect([colors.get("deprecated:r"), colors.get("successor:r")]).toEqual(["var(--viz-deprecated)", "var(--viz-primary)"]);
   });
 });
 
@@ -122,27 +151,6 @@ describe("seriesWashes", () => {
   it("the wash cap: at four series nobody washes", () => {
     const four = ["a", "b", "c", "d"].map((cohortKey) => ({ cohortKey, color: "" }));
     expect(seriesWashes(four)).toEqual([false, false, false, false]);
-  });
-});
-
-describe("dashSwatchSegments", () => {
-  it("scales each DASH_STEPS pattern down to a segment array distinct from the others", () => {
-    const solid = dashSwatchSegments("");
-    const step1 = dashSwatchSegments("5 4");
-    const step2 = dashSwatchSegments("2 3");
-    const step3 = dashSwatchSegments("8 3 2 3");
-    expect(solid).toEqual([]);
-    expect(step1).toEqual([3, 2]);
-    expect(step2).toEqual([1, 2]);
-    expect(step3).toEqual([4, 2, 1, 2]);
-    // Every non-solid step tiles at a different total length, so the swatch's
-    // repeating rhythm is visibly distinct step to step.
-    const totals = [step1, step2, step3].map((s) => s.reduce((a, b) => a + b, 0));
-    expect(new Set(totals).size).toBe(totals.length);
-  });
-
-  it("keeps every segment at least 1px, even for a sub-2 pattern value", () => {
-    expect(dashSwatchSegments("1 1")).toEqual([1, 1]);
   });
 });
 

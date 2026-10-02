@@ -1,5 +1,5 @@
 import type { CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { cohortColor, seriesWashes } from "@/lib/dashboard-chart-data";
+import { chartColors, drawnChartCohorts, savedChartCohorts, seriesWashes } from "@/lib/dashboard-chart-data";
 
 const W = 112;
 const H = 32;
@@ -24,14 +24,15 @@ export function DashboardSparkline({
 }) {
   if (!view) return <EmptySpark />;
   const gid = `spark-${uid.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+  const colors = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
   if (config.chartType === "trend") {
-    return view.kind === "series" ? <TrendSpark gid={gid} series={view.series} /> : <EmptySpark />;
+    return view.kind === "series" ? <TrendSpark gid={gid} series={view.series} colors={colors} /> : <EmptySpark />;
   }
   if (config.chartType === "stacked-share") {
-    return view.kind === "series" ? <ShareSpark series={view.series} /> : <EmptySpark />;
+    return view.kind === "series" ? <ShareSpark series={view.series} colors={colors} /> : <EmptySpark />;
   }
   if (view.kind === "series") return <EmptySpark />;
-  return <BarsSpark points={view.points.map((p, i) => ({ cohortKey: p.cohortKey, color: cohortColor(p, i), value: p.value }))} />;
+  return <BarsSpark points={view.points.map((p) => ({ cohortKey: p.cohortKey, color: colors.get(p.cohortKey) ?? "", value: p.value }))} />;
 }
 
 function Frame({ title, children }: { title: string; children: React.ReactNode }) {
@@ -45,7 +46,7 @@ function Frame({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function TrendSpark({ gid, series }: { gid: string; series: CohortSeries[] }) {
+function TrendSpark({ gid, series, colors }: { gid: string; series: CohortSeries[]; colors: ReadonlyMap<string, string> }) {
   const values = series.flatMap((s) => s.points.map((p) => p.value));
   if (values.length === 0) return <EmptySpark />;
   const max = Math.max(1, ...values);
@@ -58,13 +59,13 @@ function TrendSpark({ gid, series }: { gid: string; series: CohortSeries[] }) {
       <defs>
         {series.map((s, si) => (
           <linearGradient key={s.cohortKey} id={`${gid}-${si}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" style={{ stopColor: cohortColor(s, si), stopOpacity: 0.22 }} />
-            <stop offset="100%" style={{ stopColor: cohortColor(s, si), stopOpacity: 0.02 }} />
+            <stop offset="0%" style={{ stopColor: colors.get(s.cohortKey), stopOpacity: 0.22 }} />
+            <stop offset="100%" style={{ stopColor: colors.get(s.cohortKey), stopOpacity: 0.02 }} />
           </linearGradient>
         ))}
       </defs>
       {series.map((s, si) => {
-        const color = cohortColor(s, si);
+        const color = colors.get(s.cohortKey);
         const [first] = s.points;
         const last = s.points[s.points.length - 1];
         if (s.points.length === 1 && first) {
@@ -105,12 +106,11 @@ function BarsSpark({ points }: { points: SparkPoint[] }) {
 }
 
 /** 100%-stacked mini area over scans; a single-scan dashboard falls back to the flat bands. */
-function ShareSpark({ series }: { series: CohortSeries[] }) {
+function ShareSpark({ series, colors }: { series: CohortSeries[]; colors: ReadonlyMap<string, string> }) {
   const n = Math.max(0, ...series.map((s) => s.points.length));
   if (n === 0) return <EmptySpark />;
-  const colors = series.map((s, i) => cohortColor(s, i));
   if (n === 1) {
-    const segs = series.map((s, i) => ({ cohortKey: s.cohortKey, color: colors[i] ?? "", value: s.points[0]?.value ?? 0 }));
+    const segs = series.map((s) => ({ cohortKey: s.cohortKey, color: colors.get(s.cohortKey) ?? "", value: s.points[0]?.value ?? 0 }));
     return <StackedBandsSpark points={segs} />;
   }
   const xAt = (i: number) => PAD + (i / (n - 1)) * (W - 2 * PAD);
@@ -118,7 +118,7 @@ function ShareSpark({ series }: { series: CohortSeries[] }) {
   // Cumulative share per timestamp, normalised so bands always fill the frame.
   const totals = Array.from({ length: n }, (_, ti) => Math.max(1e-9, series.reduce((sum, s) => sum + (s.points[ti]?.value ?? 0), 0)));
   let lower = Array.from({ length: n }, () => 0);
-  const bands = series.map((s, si) => {
+  const bands = series.map((s) => {
     const upper = lower.map((lo, ti) => lo + (s.points[ti]?.value ?? 0) / (totals[ti] ?? 1));
     const top = upper.map((u, ti) => `${ti === 0 ? "M" : "L"}${xAt(ti).toFixed(1)},${yAt(u).toFixed(1)}`).join(" ");
     const back = [...lower.keys()]
@@ -127,7 +127,7 @@ function ShareSpark({ series }: { series: CohortSeries[] }) {
       .join(" ");
     const d = `${top} ${back} Z`;
     lower = upper;
-    return { key: s.cohortKey, d, color: colors[si] ?? "" };
+    return { key: s.cohortKey, d, color: colors.get(s.cohortKey) ?? "" };
   });
   return (
     <Frame title="library share over time">

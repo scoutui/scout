@@ -1,6 +1,6 @@
 "use client";
 import type { DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { isEmptyView } from "@/lib/dashboard-chart-data";
+import { chartColors, drawnChartCohorts, isEmptyView, savedChartCohorts } from "@/lib/dashboard-chart-data";
 import { CohortBarChart } from "./cohort-bar-chart";
 import { CohortShareOverTime } from "./cohort-share-over-time";
 import { CohortTable } from "./cohort-table";
@@ -24,21 +24,22 @@ export function DashboardChart({
   if (isEmptyView(view)) {
     return <p className="py-6 text-center text-sm text-muted-foreground">Couldn't find the components in this chart.</p>;
   }
+  const colors = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
   if (config.chartType === "trend") {
     return view.kind === "series" ? (
-      <CohortTrendChart series={view.series} metric={config.metric} showLegend={showLegend} />
+      <CohortTrendChart series={view.series} colors={colors} metric={config.metric} showLegend={showLegend} />
     ) : (
       <ChartFallback />
     );
   }
   if (config.chartType === "stacked-share") {
-    return view.kind === "series" ? <CohortShareOverTime series={view.series} showLegend={showLegend} /> : <ChartFallback />;
+    return view.kind === "series" ? <CohortShareOverTime series={view.series} colors={colors} showLegend={showLegend} /> : <ChartFallback />;
   }
   if (config.chartType === "table") {
-    return view.kind === "table" ? <CohortTable points={view.points} series={view.series} metric={config.metric} /> : <ChartFallback />;
+    return view.kind === "table" ? <CohortTable points={view.points} series={view.series} colors={colors} metric={config.metric} /> : <ChartFallback />;
   }
   if (view.kind !== "snapshot") return <ChartFallback />;
-  return config.chartType === "bars" ? <CohortBarChart points={view.points} metric={config.metric} /> : <ChartFallback />;
+  return config.chartType === "bars" ? <CohortBarChart points={view.points} colors={colors} metric={config.metric} /> : <ChartFallback />;
 }
 
 function ChartFallback() {

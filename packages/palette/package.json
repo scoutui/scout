@@ -6,10 +6,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./palette.css": "./palette.css"
+    "./palette.css": "./palette.css",
+    "./chart-colors.json": "./chart-colors.json"
   },
   "files": [
-    "palette.css"
+    "palette.css",
+    "chart-colors.json"
   ],
   "scripts": {
     "test": "vitest run",

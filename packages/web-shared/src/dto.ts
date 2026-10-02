@@ -151,8 +151,8 @@ export type ScanSummary = z.infer<typeof ScanSummarySchema>;
 // Semantic series role. `deprecated` is derived from the governance records that
 // cover the cohort at projection time (never authored); `successor` is carried on a derived config's
 // selector, because re-projecting a bare DashboardConfig can't know which cohort
-// succeeds which. web-shared never emits CSS: renderers map role → token, with
-// precedence role > authored tag colour > local grey > rotation.
+// succeeds which. web-shared never emits CSS: a renderer gives each role its own
+// fixed colour, which wins over a tag's colour.
 export const CohortRoleSchema = z.enum(["deprecated", "successor"]);
 export type CohortRole = z.infer<typeof CohortRoleSchema>;
 

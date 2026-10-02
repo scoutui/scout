@@ -3,7 +3,7 @@ import { useEffect, useId, useState } from "react";
 import { Bar, BarChart, type BarShapeProps, Cell, LabelList, Rectangle, XAxis, YAxis } from "recharts";
 import type { CohortPoint } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, cohortColor, } from "@/lib/dashboard-chart-data";
+import { cohortChartConfig, } from "@/lib/dashboard-chart-data";
 import { barRowLabel, formatMetric } from "@/lib/dashboard-format";
 
 // Each row label renders on two lines: the name, then its package (or a package's
@@ -44,21 +44,27 @@ const ROW_PX = 36;
 
 /**
  * One horizontal bar per cohort at the latest scan, with the value at the bar's tip.
- * Rows sort by value; colour follows the cohort and is assigned before the sort. Bars
+ * Rows sort by value; colour follows the cohort. Bars
  * are at most 20px thick, rounded 4px at the tip, and grow in on load when motion is
  * allowed. Every value is labelled, so the numeric axis and gridlines are off.
  */
-export function CohortBarChart({ points, metric }: { points: CohortPoint[]; metric: "count" | "share" }) {
+export function CohortBarChart({
+  points,
+  colors,
+  metric,
+}: {
+  points: CohortPoint[];
+  colors: ReadonlyMap<string, string>;
+  metric: "count" | "share";
+}) {
   const [animate, setAnimate] = useState(false);
   useEffect(() => {
     setAnimate(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   const gradientId = useId();
 
-  // Colour is assigned by cohort order before ranking by value, so a re-sort never
-  // repaints a series.
   const rows = points
-    .map((p, i) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: cohortColor(p, i) }))
+    .map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "" }))
     .sort((a, b) => b.value - a.value);
   const config = cohortChartConfig(points);
 

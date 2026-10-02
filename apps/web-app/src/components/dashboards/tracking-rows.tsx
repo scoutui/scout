@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import type { GovernanceTracking } from "@scoutui/web-shared";
 import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline";
 import { LazyCohortTrendChart } from "@/components/dashboards/lazy-cohort-trend-chart";
+import { chartColors, savedChartCohorts } from "@/lib/dashboard-chart-data";
 import { deltaDirection, formatDeltaFrom, formatPct, } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 
@@ -134,7 +135,11 @@ function RepoRow({ entry, defaultOpen }: { entry: GovernanceTracking; defaultOpe
       <div className="border-t px-4 pb-4 pt-4">
         {/* Both kinds open onto counts over time: a migration is the
             deprecated + successor pair, a retirement the lone deprecated series. */}
-        <LazyCohortTrendChart series={entry.series} metric="count" />
+        <LazyCohortTrendChart
+          series={entry.series}
+          colors={chartColors(savedChartCohorts(entry.config.cohorts, entry.series))}
+          metric="count"
+        />
       </div>
     </details>
   );

@@ -198,3 +198,29 @@ describe("palette parity", () => {
     expect([...THEMES.dark.keys()].sort()).toEqual([...THEMES.light.keys()].sort());
   });
 });
+
+describe("chart-colors.json", () => {
+  it("lists exactly the chart colour pairs under ΔE 15, or under 6 for deuteranopia or protanopia, in either theme", () => {
+    const { order, fixed, lookalikes } = JSON.parse(
+      readFileSync(new URL("../chart-colors.json", import.meta.url), "utf8"),
+    ) as {
+      order: { primitive: string }[];
+      fixed: { primitive: string }[];
+      lookalikes: [string, string][];
+    };
+    const chart = [...order, ...fixed].map((c) => c.primitive);
+    const themes = ["light", "dark"] as const;
+    const kinds = ["deutan", "protan"] as const;
+    const expected: string[] = [];
+    for (const [i, a] of chart.entries()) {
+      for (const b of chart.slice(i + 1)) {
+        const normal = Math.min(...themes.map((t) => deltaE(rgb(t, a), rgb(t, b))));
+        const cvd = Math.min(
+          ...themes.flatMap((t) => kinds.map((k) => deltaE(simulate(rgb(t, a), k), simulate(rgb(t, b), k)))),
+        );
+        if (normal < 15 || cvd < 6) expected.push([a, b].sort().join("|"));
+      }
+    }
+    expect(lookalikes.map((pair) => [...pair].sort().join("|")).sort()).toEqual(expected.sort());
+  });
+});

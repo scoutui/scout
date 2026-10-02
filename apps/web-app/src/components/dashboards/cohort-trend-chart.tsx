@@ -3,14 +3,14 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, cohortColor, dayTicks, seriesDashes, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
+import { cohortChartConfig, dayTicks, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
 import { distinctiveLabel, formatAxisCount, formatDay, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
-// From this many series the overlay becomes small multiples: the palette has 4 hues
-// (more fail the CVD floors), so an overlay would have to repeat them.
+// From this many series the overlay becomes small multiples. A line past the chart
+// order's colours repeats one, and its end label and legend entry tell it apart.
 const FACET_THRESHOLD = 5;
 
 /**
@@ -23,10 +23,12 @@ const FACET_THRESHOLD = 5;
  */
 export function CohortTrendChart({
   series,
+  colors,
   metric,
   showLegend = true,
 }: {
   series: CohortSeries[];
+  colors: ReadonlyMap<string, string>;
   metric: "count" | "share";
   showLegend?: boolean;
 }) {
@@ -49,11 +51,9 @@ export function CohortTrendChart({
     );
   }
   if (series.length >= FACET_THRESHOLD) {
-    return <TrendFacets series={series} metric={metric} animate={animate} />;
+    return <TrendFacets series={series} colors={colors} metric={metric} animate={animate} />;
   }
   const config = cohortChartConfig(series);
-  const colors = series.map((s, i) => cohortColor(s, i));
-  const dashes = seriesDashes(series);
   const lastTByKey = new Map(series.map((s) => [s.cohortKey, s.points[s.points.length - 1]?.t]));
   // Reserve just enough right margin for the longest (capped) end label.
   const rightMargin = Math.min(168, 30 + Math.max(0, ...series.map((s) => distinctiveLabel(s.label).length)) * 7);
@@ -87,8 +87,8 @@ export function CohortTrendChart({
           <defs>
             {series.map((s, i) => (
               <linearGradient key={s.cohortKey} id={`${gradientId}-${i}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" style={{ stopColor: colors[i], stopOpacity: 0.22 }} />
-                <stop offset="100%" style={{ stopColor: colors[i], stopOpacity: 0.02 }} />
+                <stop offset="0%" style={{ stopColor: colors.get(s.cohortKey), stopOpacity: 0.22 }} />
+                <stop offset="100%" style={{ stopColor: colors.get(s.cohortKey), stopOpacity: 0.02 }} />
               </linearGradient>
             ))}
           </defs>
@@ -137,7 +137,7 @@ export function CohortTrendChart({
             }
           />
           {series.map((s, i) => {
-            const color = cohortColor(s, i);
+            const color = colors.get(s.cohortKey) ?? "";
             const dimmed = hovered !== null && hovered !== s.cohortKey;
             return (
               <Area
@@ -179,7 +179,6 @@ export function CohortTrendChart({
                 isAnimationActive={animate}
                 animationDuration={400}
                 animationEasing="ease-out"
-                {...(dashes[i] ? { strokeDasharray: dashes[i] } : {})}
               />
             );
           })}
@@ -190,7 +189,7 @@ export function CohortTrendChart({
           series needs no legend: the title names it. */}
       {showLegend && series.length > 1 ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1">
-          {series.map((s, i) => (
+          {series.map((s) => (
             <button
               key={s.cohortKey}
               type="button"
@@ -204,7 +203,7 @@ export function CohortTrendChart({
                 hovered !== null && hovered !== s.cohortKey && "opacity-40",
               )}
             >
-              <CohortSwatch cohortKey={s.cohortKey} color={colors[i] ?? ""} dash={dashes[i]} role={s.role} />
+              <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
               {/* Name and package truncate separately: a merged series and its slice
                   share a name, and one truncated string would render them alike. */}
               <CohortLabelText label={s.label} className="max-w-[24rem] text-xs" />
@@ -224,10 +223,12 @@ export function CohortTrendChart({
  */
 function TrendFacets({
   series,
+  colors,
   metric,
   animate,
 }: {
   series: CohortSeries[];
+  colors: ReadonlyMap<string, string>;
   metric: "count" | "share";
   animate: boolean;
 }) {
@@ -241,7 +242,7 @@ function TrendFacets({
     <div>
       <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
         {series.map((s, i) => {
-          const color = cohortColor(s, i);
+          const color = colors.get(s.cohortKey) ?? "";
           const last = s.points[s.points.length - 1];
           const rows = s.points.map((p) => ({ t: p.t, ts: Date.parse(p.t), v: p.value }));
           return (

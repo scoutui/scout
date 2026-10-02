@@ -1,0 +1,16 @@
+{
+  "order": [
+    { "token": "var(--viz-primary)", "primitive": "teal-graphic" },
+    { "token": "var(--viz-cat-2)", "primitive": "violet-graphic" },
+    { "token": "var(--viz-cat-3)", "primitive": "blue-graphic" }
+  ],
+  "fixed": [
+    { "token": "var(--viz-legacy)", "primitive": "grey-graphic" },
+    { "token": "var(--viz-local)", "primitive": "grey-soft" }
+  ],
+  "lookalikes": [
+    ["teal-graphic", "grey-graphic"],
+    ["violet-graphic", "grey-graphic"],
+    ["grey-graphic", "grey-soft"]
+  ]
+}
