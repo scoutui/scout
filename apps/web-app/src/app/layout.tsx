@@ -1,4 +1,5 @@
 import "./globals.css";
+import "@fontsource/geologica/600.css";
 import "@fontsource/monaspace-neon/400.css";
 import "@fontsource/monaspace-neon/500.css";
 import "@fontsource/monaspace-neon/600.css";

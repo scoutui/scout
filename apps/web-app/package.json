@@ -23,6 +23,7 @@
   "dependencies": {
     "@auth/drizzle-adapter": "1.11.3",
     "@base-ui/react": "1.4.1",
+    "@fontsource/geologica": "5.3.0",
     "@fontsource/monaspace-neon": "5.2.5",
     "@scoutui/palette": "0.1.0",
     "@scoutui/scan-format": "0.1.0",

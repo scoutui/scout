@@ -21,7 +21,7 @@ export function TopTabs({ rightSlot }: { rightSlot?: React.ReactNode }) {
       <div className="mx-auto flex h-14 max-w-[1600px] items-stretch px-4 sm:px-8 lg:px-10">
         <Link
           href="/repos"
-          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2.5 text-sm font-semibold tracking-tight text-foreground transition-colors hover:text-foreground/80"
+          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
         >
           <BrandMark />
           <span className="hidden sm:inline">Scout</span>

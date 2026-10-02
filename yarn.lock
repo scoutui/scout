@@ -4365,7 +4365,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fontsource/geologica@npm:^5.3.0":
+"@fontsource/geologica@npm:5.3.0, @fontsource/geologica@npm:^5.3.0":
   version: 5.3.0
   resolution: "@fontsource/geologica@npm:5.3.0"
   checksum: 10c0/05e2f55acbba39d358d25d391a6126eb5f7c78da5fdd3493d07943c98978e3c9e43ff6e72527bf4ce6a4fbaa455430b5a5e1121632e3d774ee3a7dd1e6371119
@@ -5975,6 +5975,7 @@ __metadata:
     "@auth/drizzle-adapter": "npm:1.11.3"
     "@base-ui/react": "npm:1.4.1"
     "@biomejs/biome": "npm:1.9.4"
+    "@fontsource/geologica": "npm:5.3.0"
     "@fontsource/monaspace-neon": "npm:5.2.5"
     "@scoutui/palette": "npm:0.1.0"
     "@scoutui/scan-format": "npm:0.1.0"
