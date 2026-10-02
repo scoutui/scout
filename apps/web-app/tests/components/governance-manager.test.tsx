@@ -48,14 +48,20 @@ describe("GovernanceManager", () => {
   it("shows superseded and retired records in their own tables with the form's column headings", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
     const superseded = screen.getByRole("table", { name: "Superseded" });
-    expect(within(superseded).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(
-      expect.arrayContaining(["Package or component", "Superseded by", "Status"]),
-    );
+    expect(within(superseded).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
+      "Package or component",
+      "Superseded by",
+      "Status",
+      "Edit",
+    ]);
     expect(within(superseded).getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
     const retired = screen.getByRole("table", { name: "Retired" });
-    expect(within(retired).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(
-      expect.arrayContaining(["Package or component", "Reason", "Status"]),
-    );
+    expect(within(retired).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
+      "Package or component",
+      "Reason",
+      "Status",
+      "Edit",
+    ]);
     expect(within(retired).getByText("No replacement")).toBeInTheDocument();
   });
 
@@ -177,20 +183,22 @@ describe("GovernanceManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     const row = document.getElementById("record-r1");
     expect(row).not.toBeNull();
-    expect(within(row as HTMLElement).getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByRole("heading", { level: 3, name: "Edit record" })).toBeInTheDocument();
     expect(row?.contains(document.activeElement)).toBe(true);
     expect(within(row as HTMLElement).getByRole("button", { name: /^Package or component: Button · @acme\/old$/ })).toBeInTheDocument();
   });
 
-  it("deletes from the edit form after a confirm", async () => {
+  it("deletes from the edit form after a confirm, then focuses Add record", async () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByText("Delete this record?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete" })).toHaveAccessibleDescription("Delete this record?");
     const { deleteGovernance } = await import("@/app/governance/governance-actions");
     expect(deleteGovernance).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     await vi.waitFor(() => expect(deleteGovernance).toHaveBeenCalledWith("r1"));
+    await vi.waitFor(() => expect(screen.queryByRole("heading", { name: "Edit record" })).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Add record" })).toHaveFocus();
   });
 
   it("keeps the edited row on screen while the search hides its record", () => {
@@ -200,13 +208,22 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
   });
 
-  it("highlights the saved record once it appears", async () => {
+  it("keeps the search box while a search is set, even once one record is left", () => {
+    const { rerender } = render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "button" } });
+    rerender(<GovernanceManager records={[records[1] as GovernanceRecord]} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    expect(screen.getByRole("searchbox")).toHaveValue("button");
+  });
+
+  it("clears the search and highlights the saved record once it appears", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     vi.mocked(saveGovernance).mockResolvedValueOnce({ ok: true, id: "r1" });
     const { rerender } = render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "chip" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() => expect(screen.queryByRole("heading", { name: "Edit record" })).not.toBeInTheDocument());
+    expect(screen.getByRole("searchbox")).toHaveValue("");
     rerender(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
     await vi.waitFor(() => expect(document.getElementById("record-r1")).toHaveAttribute("aria-current", "true"));
     fireEvent.pointerDown(document.body);

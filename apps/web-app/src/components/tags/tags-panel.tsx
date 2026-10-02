@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import type { Tag } from "@scoutui/web-shared";
 import { tagMatchesPackage } from "@scoutui/web-shared/client";
@@ -11,9 +11,21 @@ import { cn } from "@/lib/utils";
 const TH = "h-9 bg-muted px-3 text-left text-label text-muted-foreground";
 const CELL = "px-3 py-2.5 align-middle";
 
+const editButtonId = (tagId: string) => `edit-tag-${tagId}`;
+
 export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNames: string[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const addTagRef = useRef<HTMLButtonElement>(null);
+  /** Set when a tag form closes: the tag whose Edit button takes focus, or undefined for Add tag. */
+  const [focusAfterClose, setFocusAfterClose] = useState<{ tagId: string | undefined } | null>(null);
+
+  useEffect(() => {
+    if (!focusAfterClose) return;
+    setFocusAfterClose(null);
+    const edit = focusAfterClose.tagId ? document.getElementById(editButtonId(focusAfterClose.tagId)) : null;
+    (edit ?? addTagRef.current)?.focus();
+  }, [focusAfterClose]);
 
   function openNew() {
     setCreating(true);
@@ -25,9 +37,10 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
     setCreating(false);
   }
 
-  function closeForm() {
+  function closeForm(focusTagId?: string) {
     setCreating(false);
     setEditingId(null);
+    setFocusAfterClose({ tagId: focusTagId });
   }
 
   return (
@@ -42,6 +55,7 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
           </span>
         ) : null}
         <Button
+          ref={addTagRef}
           variant="outline"
           size="sm"
           onClick={openNew}
@@ -82,10 +96,24 @@ export function TagsPanel({ allTags, packageNames }: { allTags: Tag[]; packageNa
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {creating ? <TagEditor allTags={allTags} packageNames={packageNames} onDone={closeForm} /> : null}
+              {creating ? (
+                <TagEditor
+                  allTags={allTags}
+                  packageNames={packageNames}
+                  onDone={() => closeForm()}
+                  onDeleted={() => closeForm()}
+                />
+              ) : null}
               {allTags.map((tag) =>
                 editingId === tag.id ? (
-                  <TagEditor key={tag.id} tag={tag} allTags={allTags} packageNames={packageNames} onDone={closeForm} />
+                  <TagEditor
+                    key={tag.id}
+                    tag={tag}
+                    allTags={allTags}
+                    packageNames={packageNames}
+                    onDone={() => closeForm(tag.id)}
+                    onDeleted={() => closeForm()}
+                  />
                 ) : (
                   <TagRow key={tag.id} tag={tag} packageNames={packageNames} onEdit={() => openEdit(tag.id)} />
                 ),
@@ -134,6 +162,7 @@ function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[
       </td>
       <td className={cn(CELL, "text-right")}>
         <Button
+          id={editButtonId(tag.id)}
           variant="ghost"
           size="icon-xs"
           onClick={onEdit}

@@ -16,7 +16,7 @@ vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 vi.mock("@/auth", () => ({ auth: async () => null }));
 
-type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown };
+type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[] };
 
 function allPropsFor(node: ReactNode, name: string, found: Props[] = []): Props[] {
   for (const child of Children.toArray(node)) {
@@ -123,6 +123,9 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(registry?.stats[unseen.id]?.status).toBe("unseen");
       expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ stats: registry?.stats, sources: registry?.sources, repoCount: registry?.repoCount })]);
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([]);
+      const packageNames = allPropsFor(tree, "TagsPanel")[0]?.packageNames;
+      expect(packageNames).toContain("@sample/core");
+      expect(packageNames).toEqual([...new Set(packageNames)].sort((a, b) => a.localeCompare(b)));
     });
   });
 

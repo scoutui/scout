@@ -70,6 +70,13 @@ describe("TagsPanel", () => {
     await vi.waitFor(() => expect(saveTag).toHaveBeenCalledWith(expect.objectContaining({ id: "t1", rule: vben.rule })));
   });
 
+  it("returns focus to the tag's Edit button when its form is cancelled", () => {
+    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit vben" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("button", { name: "Edit vben" })).toHaveFocus();
+  });
+
   it("asks before deleting a tag and says what it affects", async () => {
     render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit vben" }));

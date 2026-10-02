@@ -25,6 +25,8 @@ import {
   type MapRow,
   type MapSection,
   progressLabel,
+  recordCountLabel,
+  rowName,
   scopeLabel,
   statusLabel,
   type Successor,
@@ -47,27 +49,13 @@ export interface AutocompleteSource {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function dispositionLabel(d: Disposition): string {
-  switch (d.kind) {
-    case "superseded":
-      return d.by.exportName
-        ? `${d.by.packageName}/${d.by.exportName}`
-        : d.by.packageName;
-    case "retired":
-      return d.reason || "(no reason)";
-  }
-}
-
 /** Client-side record filter: identity, successor, and reason are the fields a user searches by. */
 export function matchesRecordQuery(record: GovernanceRecord, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   const haystack = [
-    record.targetPackage,
-    record.targetExport ?? "",
-    record.disposition.kind === "superseded"
-      ? dispositionLabel(record.disposition)
-      : record.disposition.reason,
+    pickLabel({ packageName: record.targetPackage, exportName: record.targetExport ?? undefined }),
+    record.disposition.kind === "superseded" ? pickLabel(record.disposition.by) : record.disposition.reason,
   ]
     .join(" ")
     .toLowerCase();
@@ -213,6 +201,9 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const scrolledTo = useRef<string | null>(null);
+  const addRecordRef = useRef<HTMLButtonElement>(null);
+  /** Set when Cancel or Delete closes the form: the record whose row takes focus, or undefined for Add record. */
+  const [focusAfterClose, setFocusAfterClose] = useState<{ recordId: string | undefined } | null>(null);
 
   const editingId = formOpen ? form.id : undefined;
   const searching = query.trim() !== "";
@@ -234,6 +225,13 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
     const key = groupKeyOf(sections, highlightId);
     if (key) setExpanded((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
   });
+
+  useEffect(() => {
+    if (!focusAfterClose) return;
+    setFocusAfterClose(null);
+    const row = focusAfterClose.recordId ? document.getElementById(`record-${focusAfterClose.recordId}`) : null;
+    (row ?? addRecordRef.current)?.focus();
+  }, [focusAfterClose]);
 
   useEffect(() => {
     if (!highlightId) return;
@@ -262,7 +260,19 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
     setFormOpen(false);
   }
 
+  function cancelForm() {
+    setFocusAfterClose({ recordId: form.id });
+    closeForm();
+  }
+
+  function onDeleted() {
+    setFocusAfterClose({ recordId: undefined });
+    closeForm();
+  }
+
   function showRecord(id: string) {
+    setQuery("");
+    closeForm();
     scrolledTo.current = null;
     setHighlightId(id);
   }
@@ -286,16 +296,10 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
       setForm={setForm}
       sources={sources}
       takeFocus={focusForm}
-      onDone={closeForm}
-      onSaved={(id) => {
-        closeForm();
-        showRecord(id);
-      }}
-      onJumpToRecord={(id) => {
-        setQuery("");
-        closeForm();
-        showRecord(id);
-      }}
+      onCancel={cancelForm}
+      onDeleted={onDeleted}
+      onSaved={showRecord}
+      onJumpToRecord={showRecord}
     />
   ) : null;
 
@@ -305,7 +309,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-3xl font-semibold tracking-tight">Governance</h1>
-            <Button size="sm" onClick={openNew} disabled={formOpen && !form.id}>
+            <Button ref={addRecordRef} size="sm" onClick={openNew} disabled={formOpen && !form.id}>
               <Plus />
               Add record
             </Button>
@@ -320,7 +324,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
 
       {form.id ? null : recordForm}
 
-      {records.length > 1 ? (
+      {records.length > 1 || query !== "" ? (
         <RecordSearch value={query} onChange={search} count={matches.length} />
       ) : null}
 
@@ -370,7 +374,6 @@ const STATUS_CELL = "col-span-3 min-w-0 px-3 md:col-span-1";
 // Below md the edit button stays on the first line and the status wraps to a second.
 const EDIT_CELL = "col-start-4 row-start-1 flex justify-end pr-3 md:col-start-auto md:row-start-auto";
 
-const SECTION_TITLE: Record<MapSection["kind"], string> = { superseded: "Superseded", retired: "Retired" };
 const SECTION_COLUMN: Record<MapSection["kind"], string> = { superseded: "Superseded by", retired: "Reason" };
 
 const groupKey = (section: MapSection, group: MapGroup) =>
@@ -384,8 +387,6 @@ function groupKeyOf(sections: MapSection[], id: string): string | null {
   }
   return null;
 }
-
-const rowName = (r: GovernanceRecord) => r.targetExport ?? r.targetPackage;
 
 function RecordTable({
   section,
@@ -415,10 +416,10 @@ function RecordTable({
     <section>
       <div className="mb-3 flex items-baseline gap-2">
         <h2 id={titleId} className="text-base font-medium">
-          {SECTION_TITLE[section.kind]}
+          {KIND_LABEL[section.kind]}
         </h2>
         <span className="text-xs tabular-nums text-muted-foreground">
-          {section.recordCount.toLocaleString()} {section.recordCount === 1 ? "record" : "records"}
+          {recordCountLabel(section.recordCount)}
         </span>
       </div>
       <table aria-labelledby={titleId} className="panel block overflow-hidden">
@@ -427,11 +428,11 @@ function RecordTable({
             <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground")}>
               Package or component
             </th>
-            <th scope="col" className={ARROW_CELL} />
+            <td className={ARROW_CELL} />
             <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground")}>
               {SECTION_COLUMN[section.kind]}
             </th>
-            <th scope="col" className={cn(CELL, "hidden text-left text-label text-muted-foreground md:block")}>
+            <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground max-md:sr-only")}>
               Status
             </th>
             <th scope="col" className={EDIT_CELL}>
@@ -616,12 +617,11 @@ function SuccessorCell({
   nextHop: Successor | null;
 }) {
   const successor = successorLabel(by);
-  const hop = nextHop ? successorLabel(nextHop) : null;
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 md:flex-nowrap">
       <span
         className="min-w-0 font-mono text-xs wrap-anywhere md:truncate"
-        title={successor.packageName ? `${successor.name} · ${successor.packageName}` : successor.name}
+        title={pickLabel(by)}
       >
         <span className="text-foreground">{successor.name}</span>
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
@@ -632,9 +632,9 @@ function SuccessorCell({
           Successor deprecated
         </span>
       ) : null}
-      {hop ? (
+      {nextHop ? (
         <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere md:flex-1 md:truncate">
-          {`→ ${hop.name}${hop.packageName ? ` · ${hop.packageName}` : ""}`}
+          {`→ ${pickLabel(nextHop)}`}
         </span>
       ) : null}
     </div>
@@ -723,7 +723,8 @@ function RecordForm({
   setForm,
   sources,
   takeFocus,
-  onDone,
+  onCancel,
+  onDeleted,
   onSaved,
   onJumpToRecord,
 }: {
@@ -732,7 +733,8 @@ function RecordForm({
   sources: AutocompleteSource[];
   /** Scroll the form into view and focus its first field when it opens. */
   takeFocus: boolean;
-  onDone: () => void;
+  onCancel: () => void;
+  onDeleted: () => void;
   onSaved: (id: string) => void;
   onJumpToRecord: (id: string) => void;
 }) {
@@ -744,6 +746,7 @@ function RecordForm({
   const rootRef = useRef<HTMLDivElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
   const isEdit = Boolean(form.id);
+  const Heading = isEdit ? "h3" : "h2";
 
   useEffect(() => {
     if (!takeFocus) return;
@@ -793,7 +796,7 @@ function RecordForm({
     setConflictId(null);
     startTransition(async () => {
       const res = await deleteGovernance(id);
-      if (res.ok) onDone();
+      if (res.ok) onDeleted();
       else setError(actionErrorMessage(res.error, "delete this record", "Couldn't delete the record. Try again."));
     });
   }
@@ -812,7 +815,7 @@ function RecordForm({
 
   return (
     <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
-      <h2 className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</h2>
+      <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
 
       {/* Source picker: the pick decides the grain */}
       <div className="flex flex-col gap-1.5">
@@ -925,13 +928,18 @@ function RecordForm({
       <div className="flex flex-wrap items-center justify-between gap-2">
         {isEdit ? (
           <div className="flex items-center gap-2">
-            {confirmingDelete ? <span className="text-[0.8rem]">Delete this record?</span> : null}
+            {confirmingDelete ? (
+              <span id="gov-delete-prompt" className="text-[0.8rem]">
+                Delete this record?
+              </span>
+            ) : null}
             <Button
               ref={deleteRef}
               variant={confirmingDelete ? "destructive" : "ghost"}
               size="sm"
               onClick={confirmingDelete ? remove : () => setConfirmingDelete(true)}
               disabled={pending}
+              aria-describedby={confirmingDelete ? "gov-delete-prompt" : undefined}
               className={confirmingDelete ? undefined : "text-muted-foreground hover:text-destructive"}
             >
               {confirmingDelete ? null : <Trash2 />}
@@ -953,7 +961,7 @@ function RecordForm({
           </div>
         ) : null}
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onDone} disabled={pending}>
+          <Button variant="ghost" size="sm" onClick={onCancel} disabled={pending}>
             Cancel
           </Button>
           <Button size="sm" onClick={submit} disabled={pending}>

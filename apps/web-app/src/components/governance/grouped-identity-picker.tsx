@@ -10,8 +10,7 @@ import { cn } from "@/lib/utils";
 
 export type IdentityPick = { packageName: string; exportName?: string };
 
-/** How a pick reads: `Button · @calcom/ui` for a component, `@calcom/ui` for a package. */
-export function pickLabel(pick: IdentityPick): string {
+export function pickLabel(pick: { packageName: string; exportName?: string | undefined }): string {
   return pick.exportName ? `${pick.exportName} · ${pick.packageName}` : pick.packageName;
 }
 

@@ -82,11 +82,14 @@ export function TagEditor({
   allTags,
   packageNames,
   onDone,
+  onDeleted,
 }: {
   tag?: Tag;
   allTags: Tag[];
   packageNames: string[];
+  /** After Save, Create or Cancel. */
   onDone: () => void;
+  onDeleted: () => void;
 }) {
   const [name, setName] = useState(tag?.value ?? "");
   const [color, setColor] = useState(tag?.color ?? nextTagColor(allTags));
@@ -126,7 +129,7 @@ export function TagEditor({
     setError(null);
     startTransition(async () => {
       const res = await deleteTag(tag.id);
-      if (res.ok) onDone();
+      if (res.ok) onDeleted();
       else setError(actionErrorMessage(res.error, "delete this tag", "Couldn't delete the tag. Try again."));
     });
   }

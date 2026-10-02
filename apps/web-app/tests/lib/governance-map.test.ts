@@ -4,6 +4,7 @@ import {
   buildRecordMap,
   countLabel,
   progressLabel,
+  recordCountLabel,
   scopeLabel,
   statusLabel,
   successorLabel,
@@ -110,7 +111,7 @@ describe("wording", () => {
     [stat("unseen"), 3, "Never matched a scan"],
     [stat("complete", { repos: 0 }), 3, "Complete"],
     [stat("active", { repos: 1 }), 3, "Used in 1 repo"],
-    [stat("active", { repos: 1200 }), 3, "Used in 1,200 repos"],
+    [stat("active", { repos: 12 }), 3, "Used in 12 repos"],
     [stat("active", { repos: 1 }), 1, "In use"],
   ])("statusLabel(%o, %i) is %s", (s, repoCount, expected) => {
     expect(statusLabel(s, repoCount)).toBe(expected);
@@ -127,6 +128,10 @@ describe("wording", () => {
 
   it.each([[1, "1 component"], [7, "7 components"]])("countLabel(%i) is %s", (n, expected) => {
     expect(countLabel(n)).toBe(expected);
+  });
+
+  it.each([[1, "1 record"], [7, "7 records"]])("recordCountLabel(%i) is %s", (n, expected) => {
+    expect(recordCountLabel(n)).toBe(expected);
   });
 
   it.each([[null, null], [1, "1 component"], [4, "All 4 components"]])("scopeLabel(%o) is %s", (n, expected) => {

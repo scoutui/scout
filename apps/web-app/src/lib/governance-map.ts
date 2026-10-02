@@ -18,7 +18,7 @@ export type MapSection = { kind: "superseded" | "retired"; recordCount: number; 
 
 const RANK: Record<RecordStat["status"], number> = { unseen: 0, active: 1, complete: 2 };
 
-function rowName(r: GovernanceRecord): string {
+export function rowName(r: GovernanceRecord): string {
   return r.targetExport ?? r.targetPackage;
 }
 
@@ -29,7 +29,7 @@ function nextHopOf(record: GovernanceRecord, stat: RecordStat | undefined, all: 
   return next.status === "superseded" ? next.by : null;
 }
 
-export function progressOf(rows: MapRow[]): GroupProgress {
+function progressOf(rows: MapRow[]): GroupProgress {
   const p: GroupProgress = { inProgress: 0, complete: 0, unseen: 0 };
   for (const { stat } of rows) {
     if (stat?.status === "active") p.inProgress++;
@@ -117,6 +117,10 @@ export function progressLabel(p: GroupProgress): string {
 
 export function countLabel(n: number): string {
   return plural(n, "component", "components");
+}
+
+export function recordCountLabel(n: number): string {
+  return plural(n, "record", "records");
 }
 
 export function scopeLabel(n: number | null): string | null {
