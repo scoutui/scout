@@ -6,6 +6,7 @@ describe("topHelp", () => {
     const out = topHelp();
     for (const cmd of ["scan", "init", "auth"]) expect(out).toContain(cmd);
     expect(out).toContain("  scan          Scan the repo and upload the scan to the dashboard\n");
+    expect(out).toContain("  backfill      Scan past commits on the tracked branch and upload them to the dashboard\n");
     expect(out).toMatch(/--help/);
     expect(out).toMatch(/--version/);
     expect(out).toMatch(/--debug/);
@@ -19,6 +20,9 @@ describe("commandHelp", () => {
     expect(out).toContain("  --dry-run          Scan without uploading, and write scout-scan.json next to the config\n");
     for (const removed of ["--output", "--upload", "--commit-date"]) expect(out).not.toContain(removed);
     expect(out).not.toContain("login");
+  });
+  it("returns the backfill options for backfill", () => {
+    expect(commandHelp("backfill")).toContain("  --since <date>     Earliest commit date, as YYYY-MM-DD (default: six months ago)\n");
   });
   it("returns auth subcommands for auth", () => {
     const out = commandHelp("auth");

@@ -2,6 +2,7 @@ const TOP = `scout <command> [options]
 
 Commands:
   scan          Scan the repo and upload the scan to the dashboard
+  backfill      Scan past commits on the tracked branch and upload them to the dashboard
   init          Scaffold scout.config.json
   auth          Sign in / out of a Scout host (login | logout | status)
 
@@ -27,6 +28,19 @@ Options:
   --host <url>       Override host URL (else SCOUTUI_HOST, else host in scout.config.json, else your default host)
 `;
 
+const BACKFILL = `scout backfill [options]
+
+Scan past commits on the tracked branch and upload them to the dashboard.
+
+Options:
+  --since <date>     Earliest commit date, as YYYY-MM-DD (default: six months ago)
+  --rescan           Also scan commits the dashboard already has, replacing their scans
+  --config <path>    Override config path (default: ./scout.config.json)
+  --host <url>       Override host URL (else SCOUTUI_HOST, else host in scout.config.json, else your default host)
+  --quiet            Hide the progress lines
+  --debug            Also show each scan's output and the install's output
+`;
+
 const INIT = `scout init [options]
 
 Scaffold scout.config.json. Interactive when run in a terminal.
@@ -47,7 +61,7 @@ const AUTH = `scout auth <login|logout|status> [--host <url>]
   status  Show the signed-in identity
 `;
 
-const REGISTRY: Record<string, string> = { scan: SCAN, init: INIT, auth: AUTH };
+const REGISTRY: Record<string, string> = { scan: SCAN, backfill: BACKFILL, init: INIT, auth: AUTH };
 
 /** Top-level overview: `scout`, `scout --help`. */
 export function topHelp(): string {

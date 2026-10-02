@@ -87,6 +87,12 @@ describe("cli argument handling", () => {
     expect(stderr).toBe("Error: --rescan and --dry-run can't be used together: --dry-run doesn't upload.\n");
   });
 
+  it("refuses a --since that isn't a date, with one line and exit 2", async () => {
+    const { code, stderr } = await run(["backfill", "--since", "2026-02-30"], { cwd: emptyDir() });
+    expect(stderr).toBe("Error: --since must be a date in the form YYYY-MM-DD, for example 2026-04-02.\n");
+    expect(code).toBe(2);
+  });
+
   it.each([[[]], [["--rescan"]]])(
     "uploads by default, so with no dashboard address set it says how to add one or scan without uploading, exits 1 and writes no file (flags %j)",
     async (flags) => {
