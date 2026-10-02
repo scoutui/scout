@@ -81,14 +81,31 @@ describe("GroupedIdentityPicker", () => {
     expect(onSelect).toHaveBeenCalledWith({ packageName: "@example/old-ui", exportName: "Button" });
   });
 
-  it("keeps the value when closed without a pick", () => {
+  it("keeps the value when closed without a pick, selected so the next key starts a new search", () => {
     const onSelect = vi.fn();
     render(<Field value={{ packageName: "@example/old-ui", exportName: "Card" }} onSelect={onSelect} />);
+    input().focus();
     fireEvent.click(input());
     fireEvent.change(input(), { target: { value: "but" } });
     fireEvent.keyDown(input(), { key: "Escape" });
     expect(onSelect).not.toHaveBeenCalled();
     expect(input()).toHaveValue("Card · @example/old-ui");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    const field = input() as HTMLInputElement;
+    expect([field.selectionStart, field.selectionEnd]).toEqual([0, "Card · @example/old-ui".length]);
+  });
+
+  it("lets Tab leave an untouched list, and narrows on Tab once the arrows reach a package row", () => {
+    const onScopeChange = vi.fn();
+    render(<Field onScopeChange={onScopeChange} />);
+    fireEvent.click(input());
+    expect(active().textContent).toMatch(/^@example\/old-ui/);
+    expect(fireEvent.keyDown(input(), { key: "Tab" })).toBe(true);
+    expect(onScopeChange).not.toHaveBeenCalled();
+    fireEvent.blur(input());
+    fireEvent.click(input());
+    fireEvent.keyDown(input(), { key: "ArrowDown" });
+    expect(fireEvent.keyDown(input(), { key: "Tab" })).toBe(false);
+    expect(onScopeChange).toHaveBeenLastCalledWith("@example/new-ui");
   });
 });

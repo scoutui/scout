@@ -3,7 +3,7 @@
 // lib/identity-search, and a package row narrows the search to that package, shown
 // as a chip in the box. A component pick makes a component-grain record, an
 // `All of` pick a package-grain one.
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { autoUpdate, flip, offset, size, useFloating } from "@floating-ui/react-dom";
 import { ChevronsUpDown, X } from "lucide-react";
@@ -165,6 +165,10 @@ export function GroupedIdentityPicker({
     ],
   });
 
+  useLayoutEffect(() => {
+    if (!open && document.activeElement === inputRef.current) inputRef.current?.select();
+  }, [open]);
+
   useEffect(() => {
     if (!isPositioned || activeIndex === null) return;
     document.getElementById(`${listId}-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
@@ -213,7 +217,7 @@ export function GroupedIdentityPicker({
     } else if (e.key === "Escape") {
       e.preventDefault();
       close();
-    } else if (e.key === "Tab" && active?.kind === "package") {
+    } else if (e.key === "Tab" && active?.kind === "package" && (highlight !== null || query !== "")) {
       e.preventDefault();
       narrow(active.packageName);
     }
