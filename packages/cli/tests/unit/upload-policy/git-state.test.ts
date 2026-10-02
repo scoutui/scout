@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runScan, scanExitCode } from "../../../src/commands/scan.js";
+import { uncommittedRefusal } from "../../../src/upload-policy/git-state.js";
 import { Logger } from "../../../src/util/log.js";
 import { pushToOrigin } from "../../helpers/git-origin.js";
 
@@ -152,6 +153,17 @@ describe("an upload refuses uncommitted changes, listing the files under debug",
     expect(stderr()).toBe(`Error: ${REFUSED} you have uncommitted changes. Commit or stash them and try again.\n${file}\n`);
     expect(scanExitCode(result)).toBe(1);
     expect(createAuthedUploader).not.toHaveBeenCalled();
+  });
+
+  it("a change to a tracked file, even when the edited config is ignored", async () => {
+    const dir = pushedRepo();
+    writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ ...config, exclude: ["**/*.test.tsx"] }));
+    writeFileSync(join(dir, "src", "App.tsx"), "export function App() { return <div />; }\n");
+    const refusal = await uncommittedRefusal(dir, { files: [], exempt: [], ignore: join(dir, "scout.config.json") });
+    expect(refusal).toEqual({
+      message: `${REFUSED} you have uncommitted changes. Commit or stash them and try again.`,
+      detail: "src/App.tsx",
+    });
   });
 });
 
