@@ -40,6 +40,23 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver governance", () => {
     expect((await db.driver.listGovernance()).find((r) => r.id === created.id)).toBeUndefined();
   });
 
+  it("records who created a governance record and who last changed it, and keeps the record when an author's account goes", async () => {
+    await db.pool.query(
+      `INSERT INTO "user" (id, email) VALUES ('gov-author-a', 'gov-author-a@example.com'), ('gov-author-b', 'gov-author-b@example.com') ON CONFLICT (id) DO NOTHING`,
+    );
+    const authors = async (id: string) =>
+      (await db.pool.query("SELECT created_by_user_id, updated_by_user_id FROM governance WHERE id = $1", [id])).rows;
+
+    const created = await db.driver.createGovernance(retired("Button", "css"), "gov-author-a");
+    expect(await authors(created.id)).toEqual([{ created_by_user_id: "gov-author-a", updated_by_user_id: "gov-author-a" }]);
+
+    await db.driver.updateGovernance(created.id, retired("Button", "tokens"), "gov-author-b");
+    expect(await authors(created.id)).toEqual([{ created_by_user_id: "gov-author-a", updated_by_user_id: "gov-author-b" }]);
+
+    await db.pool.query(`DELETE FROM "user" WHERE id = ANY($1)`, [["gov-author-a", "gov-author-b"]]);
+    expect(await authors(created.id)).toEqual([{ created_by_user_id: null, updated_by_user_id: null }]);
+  });
+
   it("creating on an already-governed target throws instead of overwriting", async () => {
     await db.pool.query("DELETE FROM governance");
     const first = await db.driver.createGovernance({

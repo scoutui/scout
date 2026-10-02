@@ -43,10 +43,13 @@ beforeEach(() => {
 describe("save actions", () => {
   it("store well-formed input without fields the schema doesn't know", async () => {
     await expect(saveTag(send({ ...tag, extra: "dropped" }))).resolves.toEqual({ ok: true });
-    expect(storage.upsertTag).toHaveBeenCalledWith(tag);
+    expect(storage.upsertTag).toHaveBeenCalledWith(tag, "user-1");
 
     await expect(saveGovernance(send({ ...governance, extra: "dropped" }))).resolves.toEqual({ ok: true });
-    expect(storage.createGovernance).toHaveBeenCalledWith(governance);
+    expect(storage.createGovernance).toHaveBeenCalledWith(governance, "user-1");
+
+    await expect(saveGovernance(send({ id: "gov-1", ...governance }))).resolves.toEqual({ ok: true });
+    expect(storage.updateGovernance).toHaveBeenCalledWith("gov-1", { id: "gov-1", ...governance }, "user-1");
 
     await saveDashboard(send({ ...dashboard, extra: "dropped" }));
     expect(storage.upsertDashboard).toHaveBeenCalledWith({ ...dashboard, createdByUserId: "user-1" });
@@ -62,7 +65,7 @@ describe("save actions", () => {
 
   it("quick-tags a package onto an existing tag", async () => {
     await expect(quickTagPackage("tag-1", "@example/button", true)).resolves.toEqual({ ok: true });
-    expect(storage.upsertTag).toHaveBeenCalledWith({ id: "tag-1", ...tag, rule: { ...tag.rule, exact: ["@example/button"] } });
+    expect(storage.upsertTag).toHaveBeenCalledWith({ id: "tag-1", ...tag, rule: { ...tag.rule, exact: ["@example/button"] } }, "user-1");
   });
 
   it.each([

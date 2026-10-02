@@ -11,10 +11,10 @@ import {
 import { auth } from "@/auth";
 import { getStorage } from "@/lib/storage";
 
-async function requireUser(): Promise<{ ok: true } | { ok: false; error: string }> {
+async function requireUser(): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "not_authenticated" };
-  return { ok: true };
+  return { ok: true, userId: session.user.id };
 }
 
 // Governance changes the derived `deprecated` everywhere, so revalidate the same surfaces tags do, plus /governance.
@@ -45,8 +45,8 @@ export async function saveGovernance(untrusted: GovernanceInput): Promise<SaveGo
   if (conflict) return { ok: false, error: conflictMessage(conflict), conflict };
 
   try {
-    if (input.id) await storage.updateGovernance(input.id, input);
-    else await storage.createGovernance(input);
+    if (input.id) await storage.updateGovernance(input.id, input, gate.userId);
+    else await storage.createGovernance(input, gate.userId);
   } catch (err) {
     // The database constraint is the final check: a collision here means a
     // concurrent write landed after the validation above.
