@@ -1,5 +1,6 @@
-import type { CohortRole, CohortSeries, DashboardView } from "@scoutui/web-shared";
-import { identityColor, paletteToken } from "@/lib/chart-palette";
+import type { CohortRole, CohortSelector, CohortSeries, DashboardView } from "@scoutui/web-shared";
+import { cohortKey } from "@scoutui/web-shared/client";
+import { CHART_ORDER, identityColor, looksAlike, paletteToken } from "@/lib/chart-palette";
 import type { ChartConfig } from "@/components/ui/chart";
 
 /** True when a view has no series to draw. */
@@ -100,23 +101,81 @@ export function cohortChartConfig(cohorts: Array<{ cohortKey: string; label: str
   return Object.fromEntries(cohorts.map((c) => [c.cohortKey, { label: c.label }]));
 }
 
+export type ChartCohort = { cohortKey: string; color: string; role?: CohortRole | undefined };
+
+/** The cohorts a view draws, in the view's order. */
+export function drawnChartCohorts(view: DashboardView): ChartCohort[] {
+  return view.kind === "snapshot" || view.kind === "table" ? view.points : view.series;
+}
+
 /**
- * Dash step per series: the Nth series drawing a colour already in use gets the
- * Nth dash pattern, so two cohorts with the same role, or a wrapped identity
- * rotation, stay distinguishable without changing the hue. Clamped at the last
- * step.
+ * A chart's saved cohorts in saved order, each with the colour and role of its
+ * drawn cohort. A saved cohort the view doesn't draw keeps its place with no colour.
  */
+export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohort[]): ChartCohort[] {
+  const byKey = new Map(drawn.map((c) => [c.cohortKey, c]));
+  return selectors.map((selector) => {
+    const key = cohortKey(selector);
+    return byKey.get(key) ?? { cohortKey: key, color: "" };
+  });
+}
+
+/**
+ * Each cohort's line colour, by cohortKey. Fixed meanings come first: deprecated
+ * is orange, successor teal and Local grey. Then each tag, in order, keeps its
+ * colour unless a colour already placed looks like it. Every other cohort takes
+ * the first chart colour that looks like none already placed or, when none is
+ * left, the first that looks like neither neighbour.
+ */
+export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
+  const colors = new Map<string, string>();
+  const isFree = (color: string) => ![...colors.values()].some((placed) => looksAlike(placed, color));
+  for (const c of cohorts) {
+    const fixed = fixedColor(c);
+    if (fixed) colors.set(c.cohortKey, fixed);
+  }
+  for (const c of cohorts) {
+    if (colors.has(c.cohortKey) || !c.color) continue;
+    const own = paletteToken(c.color);
+    if (isFree(own)) colors.set(c.cohortKey, own);
+  }
+  for (const c of cohorts) {
+    if (colors.has(c.cohortKey)) continue;
+    const free = CHART_ORDER.find(isFree);
+    if (free) colors.set(c.cohortKey, free);
+  }
+  cohorts.forEach((c, i) => {
+    if (colors.has(c.cohortKey)) return;
+    const neighbours = [cohorts[i - 1], cohorts[i + 1]].flatMap((n) => {
+      const color = n ? colors.get(n.cohortKey) : undefined;
+      return color ? [color] : [];
+    });
+    colors.set(c.cohortKey, CHART_ORDER.find((o) => !neighbours.some((n) => looksAlike(n, o))) ?? CHART_ORDER[0]);
+  });
+  return colors;
+}
+
+function fixedColor(c: ChartCohort): string | undefined {
+  if (c.role === "deprecated") return "var(--viz-deprecated)";
+  if (c.role === "successor") return "var(--viz-primary)";
+  if (c.cohortKey === "local") return "var(--viz-local)";
+  return undefined;
+}
+
 const DASH_STEPS = [undefined, "5 4", "2 3", "8 3 2 3"] as const;
-export function seriesDashes(
-  series: Array<{ cohortKey: string; color: string; role?: CohortRole | undefined }>,
-): Array<string | undefined> {
-  const used = new Map<string, number>();
-  return series.map((s, i) => {
-    const drawn = cohortColor(s, i);
-    // Local's grey and the grey tag colour are the same colour in dark mode.
-    const colour = drawn === "var(--viz-local)" ? "var(--viz-legacy)" : drawn;
-    const n = used.get(colour) ?? 0;
-    used.set(colour, n + 1);
+
+/**
+ * Dash step per series: the Nth series sharing a fixed meaning (two deprecated
+ * lines, two successor lines) gets the Nth dash pattern, since both must wear
+ * that meaning's colour. Every other series has a colour of its own and stays
+ * solid. Clamped at the last step.
+ */
+export function seriesDashes(series: Array<{ role?: CohortRole | undefined }>): Array<string | undefined> {
+  const used = new Map<CohortRole, number>();
+  return series.map((s) => {
+    if (!s.role) return undefined;
+    const n = used.get(s.role) ?? 0;
+    used.set(s.role, n + 1);
     return DASH_STEPS[Math.min(n, DASH_STEPS.length - 1)];
   });
 }

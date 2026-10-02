@@ -1,16 +1,17 @@
+import lookalikePairs from "@scoutui/palette/lookalikes.json";
+
 /**
  * The ordered cohort and series colour palette, used wherever a cohort or tag
  * gets a colour that no role assigns.
  *
- * Authored sRGB hex, not theme tokens (`var(--chart-*)`): a tag's colour is a
- * stable authored value, and a saved chart's lines must not shift if the tokens
- * are re-tuned. The values are the sRGB renderings of the `--viz-cat-*` hues, at
+ * A tag stores one of these sRGB hex values. `paletteToken` renders each of them
+ * through its theme token, so a palette-picked tag follows dark mode and any
+ * palette change. The values are the sRGB renderings of the `--viz-cat-*` hues, at
  * a lightness that reads on both the light and the near-black dark chart
  * surfaces.
  *
  * The status hues (red, orange, green) are left out, so a cohort dot can't be
- * misread as an error, as deprecated or as gain. A series that repeats a colour
- * already in use takes the next dash step instead (`seriesDashes`).
+ * misread as an error, as deprecated or as gain.
  *
  * Violet and blue sit at different lightness (0.62 vs 0.50), not just hue: at
  * equal lightness the pair collapses under deuteranopia (ΔE 1.9). As stepped,
@@ -52,4 +53,37 @@ const PALETTE_TOKENS: Record<string, string> = {
 
 export function paletteToken(hex: string): string {
   return PALETTE_TOKENS[hex] ?? hex;
+}
+
+/** The colours a chart gives, in order, to lines that bring no colour of their own. */
+export const CHART_ORDER = [
+  "var(--viz-primary)",
+  "var(--viz-cat-2)",
+  "var(--viz-cat-3)",
+  "var(--viz-cat-4)",
+  "var(--viz-cat-5)",
+  "var(--viz-cat-6)",
+  "var(--viz-cat-7)",
+] as const;
+
+const PRIMITIVES: Record<string, string> = {
+  "var(--viz-primary)": "teal-graphic",
+  "var(--viz-cat-2)": "violet-graphic",
+  "var(--viz-cat-3)": "blue-graphic",
+  "var(--viz-cat-4)": "berry-graphic",
+  "var(--viz-cat-5)": "sky-graphic",
+  "var(--viz-cat-6)": "indigo-graphic",
+  "var(--viz-cat-7)": "pink-graphic",
+  "var(--viz-legacy)": "grey-graphic",
+  "var(--viz-local)": "grey-soft",
+};
+
+const LOOKALIKES = new Set(lookalikePairs.flatMap(([a, b]) => [`${a}|${b}`, `${b}|${a}`]));
+
+/** Whether two chart colours are the same, or a pair some readers can't tell apart in either theme. */
+export function looksAlike(a: string, b: string): boolean {
+  if (a === b) return true;
+  const pa = PRIMITIVES[a];
+  const pb = PRIMITIVES[b];
+  return pa !== undefined && pb !== undefined && LOOKALIKES.has(`${pa}|${pb}`);
 }
