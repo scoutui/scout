@@ -15,12 +15,12 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 2. In **Package or component**, type a few words, such as `legacy button`. Every word must match the component name or its package's name. Each component is listed with its package beside it, and packages whose names match come first.
 3. Pick what the record covers:
    - the `LegacyButton` row with `@acme/ui-legacy` beside it, for that component, or
-   - the whole package: select the `@acme/ui-legacy` package row, then **All of @acme/ui-legacy**, for every component in it. The line under the field says how many components that marks.
+   - the whole package: type `legacy` instead, select the `@acme/ui-legacy` package row, then **All of @acme/ui-legacy**, for every component in it. The line under the field says how many components that marks.
 4. Leave **Type** on **Superseded**.
-5. In **Superseded by**, type `button` and pick the `Button` row with `@acme/ui` beside it. To make the whole of `@acme/ui` the replacement, select its package row, then **All of @acme/ui**.
-6. Press **Create**. The form stays open for the next record, with a line under **New record** that reads `LegacyButton superseded by Button`. **Package or component** and **Superseded by** are empty again, and **Type** stays as it was. Press **Close** when you're done.
+5. In **Superseded by**, type `button` and pick the `Button` row with `@acme/ui` beside it. To make the whole of `@acme/ui` the replacement, type `@acme/ui` instead, select its package row, then **All of @acme/ui**.
+6. Press **Create**. The form stays open for the next record, with a line under **New record** that reads `LegacyButton superseded by Button`. **Package or component** and **Superseded by** are cleared, and **Type** stays as it was. Press **Close** when you're done.
 
-Selecting a package row searches that package only, which helps when several packages have a `Button`. The package shows as a tag in the box and stays there for the next record. Press its **×**, or Backspace in the empty box, to search every package again.
+Selecting a package row searches that package only, which helps when several packages have a `Button`. The package shows as a chip at the start of the box and stays there for the next record. Press its **×**, or Backspace in the empty box, to search every package again.
 
 ![The New record form, filled in to record VxeButton from vxe-pc-ui as superseded by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
