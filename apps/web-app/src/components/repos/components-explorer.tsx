@@ -6,22 +6,23 @@ import { scanDiffRowCount } from "@scoutui/web-shared/client";
 import { ghostRow } from "@/lib/scan-diff-view";
 import { ComponentsTable } from "@/components/repos/components-table";
 import { FilterBar } from "@/components/repos/filter-bar";
-import { useQuerySyncedState } from "@/lib/use-query-synced-state";
+import { useQueryParamsState } from "@/lib/use-query-synced-state";
 import {
   emptyFacets,
+  FACET_PARAMS,
   facetOptions,
-  facetsToQuery,
+  facetsToParams,
   filterRows,
   isFiltering,
-  queryToFacets,
+  paramsToFacets,
   type FacetState,
 } from "@/lib/component-facets";
 
 /**
  * Client-side faceted explorer over the repo's full component set. The server
- * ships every row once and filtering runs here. Facet state derives from `?q=`
- * (via useQuerySyncedState) and writes back with history.replaceState, so a
- * URL stays shareable and the liqe DSL keeps working.
+ * ships every row once and filtering runs here. Facet state lives in the URL
+ * (via useQueryParamsState) and writes back with history.replaceState, so a
+ * URL stays shareable.
  */
 export function ComponentsExplorer({
   repoId,
@@ -35,9 +36,9 @@ export function ComponentsExplorer({
   /** The shown scan vs the one before; null on a first scan. */
   diff: ScanDiff | null;
 }) {
-  const [facets, setFacets] = useQuerySyncedState<FacetState>(queryToFacets, facetsToQuery);
+  const [facets, setFacets] = useQueryParamsState<FacetState>(FACET_PARAMS, paramsToFacets, facetsToParams);
 
-  // `changed:true` swaps the candidates for the marked current rows plus the
+  // `changed` swaps the candidates for the marked current rows plus the
   // previous scan's removed rows, and every other facet applies on top. On a
   // first scan or a deprecated-only move it narrows nothing, as on `/repos`.
   const changedRows = useMemo(

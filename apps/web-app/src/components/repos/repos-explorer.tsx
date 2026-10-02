@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { StatusFilterChip } from "@/components/status-filter-chip";
 import { ReposTable } from "@/components/repos/repos-table";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
-import { useQuerySyncedState } from "@/lib/use-query-synced-state";
-import { parseRepoQuery, serializeRepoQuery, type RepoQuery } from "@/lib/repo-query";
+import { useQueryParamsState } from "@/lib/use-query-synced-state";
+import { parseRepoQuery, REPO_QUERY_PARAMS, serializeRepoQuery, type RepoQuery } from "@/lib/repo-query";
 
 /**
  * The repos page's search strip: a text search plus the `since previous scan`
  * status chip. The server ships every row once and filtering runs here; the
- * query derives from `?q=` via useQuerySyncedState and writes back through
+ * query lives in the URL via useQueryParamsState and writes back through
  * history.replaceState, so a filtered view stays shareable.
  */
 export function ReposExplorer({
@@ -22,12 +22,12 @@ export function ReposExplorer({
 }: {
   rows: RepoSummary[];
 }) {
-  const [query, setQuery] = useQuerySyncedState<RepoQuery>(parseRepoQuery, serializeRepoQuery);
+  const [query, setQuery] = useQueryParamsState<RepoQuery>(REPO_QUERY_PARAMS, parseRepoQuery, serializeRepoQuery);
   const text = query.text;
   const setText = (next: string) => setQuery({ ...query, text: next });
 
   const movedCount = useMemo(() => rows.filter(moved).length, [rows]);
-  // A pasted changed:true with nothing moved narrows nothing: the chip is absent
+  // A pasted ?changed=true with nothing moved narrows nothing: the chip is absent
   // at zero, so nothing on the page could clear it (the repo page ignores the
   // token on a first scan the same way).
   const changedActive = query.changed && movedCount > 0;

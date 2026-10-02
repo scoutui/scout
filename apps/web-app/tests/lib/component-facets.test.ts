@@ -3,12 +3,13 @@ import type { ComponentRow } from "@scoutui/web-shared";
 import {
   emptyFacets,
   facetOptions,
-  facetsToQuery,
+  facetsToParams,
   filterRows,
-  queryToFacets,
+  paramsToFacets,
   writtenNameMatch,
   type FacetState,
 } from "@/lib/component-facets";
+import { queryString } from "@/lib/query-string";
 
 describe("search text", () => {
   const row: ComponentRow = {
@@ -77,7 +78,7 @@ describe("facetOptions: every count follows the other filters", () => {
     // `changed` itself never narrows the chip's own count.
     expect(facetOptions(rows, changed, { ...emptyFacets(), changed: true, tags: ["ds"] }).changedCount).toBe(1);
     expect(facetOptions(rows, null, emptyFacets()).changedCount).toBeNull();
-    // Under changed:true the counts run over the view's rows: a package only a
+    // In the changed view the counts run over the view's rows: a package only a
     // ghost had is offered, and an unmoved package is still listed, at 0.
     const inView = facetOptions(rows, changed, { ...emptyFacets(), changed: true, packages: ["@y/ui"] }).packages;
     expect(inView).toContainEqual({ value: "@x/old", count: 1 });
@@ -100,42 +101,43 @@ describe("facetOptions: every count follows the other filters", () => {
   });
 });
 
-describe("?q= round-trip", () => {
-  it("serialises and re-parses every facet losslessly, and empty facets as no query", () => {
-    const f: FacetState = {
-      text: "button",
-      origin: "external",
-      kinds: ["react", "vue"],
-      packages: ["@x/lib"],
-      tags: ["ds"],
-      deprecated: true,
-      changed: true,
-      occurrences: { op: ">=", value: 3 },
-    };
-    const q = facetsToQuery(f);
-    expect(q).toBe('name:button scope:external (kind:react OR kind:vue) package:"@x/lib" tag:ds deprecated:true occurrences:>=3 changed:true');
-    expect(queryToFacets(q)).toEqual(f);
-    expect(facetsToQuery(emptyFacets())).toBe("");
+describe("URL params", () => {
+  it.each<[string, Partial<FacetState>, string]>([
+    ["search text", { text: "date picker" }, "q=date+picker"],
+    ["origin", { origin: "local" }, "origin=local"],
+    ["one kind param per kind", { kinds: ["react", "vue"] }, "kind=react&kind=vue"],
+    ["one package param per package", { packages: ["@acme/ui", "@acme/icons"] }, "package=@acme/ui&package=@acme/icons"],
+    ["one tag param per tag", { tags: ["icons", "acme-ui"] }, "tag=icons&tag=acme-ui"],
+    ["deprecated", { deprecated: true }, "deprecated=true"],
+    ["not deprecated", { deprecated: false }, "deprecated=false"],
+    ["at least N occurrences", { occurrences: { op: ">=", value: 10 } }, "occurrences=gte:10"],
+    ["more than N occurrences", { occurrences: { op: ">", value: 10 } }, "occurrences=gt:10"],
+    ["at most N occurrences", { occurrences: { op: "<=", value: 10 } }, "occurrences=lte:10"],
+    ["fewer than N occurrences", { occurrences: { op: "<", value: 10 } }, "occurrences=lt:10"],
+    ["exactly N occurrences", { occurrences: { op: "=", value: 10 } }, "occurrences=10"],
+    ["changed since the previous scan", { changed: true }, "changed=true"],
+  ])("writes and reads %s", (_case, facets, written) => {
+    const f = { ...emptyFacets(), ...facets };
+    expect(queryString(facetsToParams(f))).toBe(written);
+    expect(paramsToFacets(new URLSearchParams(written))).toEqual(f);
   });
 
-  it("serialises the occurrence facet as the occurrences: token", () => {
-    expect(facetsToQuery({ ...emptyFacets(), occurrences: { op: ">=", value: 100 } })).toBe("occurrences:>=100");
+  it("writes no params for no filters", () => {
+    expect(facetsToParams(emptyFacets())).toEqual([]);
   });
 
-  it("parses occurrences:>=100", () => {
-    expect(queryToFacets("occurrences:>=100").occurrences).toEqual({ op: ">=", value: 100 });
+  it.each([
+    ["a param it doesn't know", "usages=gte:10"],
+    ["an origin it doesn't know", "origin=elsewhere"],
+    ["a kind it doesn't know", "kind=svelte"],
+    ["occurrences it can't read", "occurrences=>=10"],
+    ["deprecated other than true or false", "deprecated=yes"],
+    ["changed other than true", "changed=yes"],
+  ])("ignores %s", (_case, written) => {
+    expect(paramsToFacets(new URLSearchParams(written))).toEqual(emptyFacets());
   });
 
-  it("does not parse a usages: token", () => {
-    expect(queryToFacets("usages:>=100")).toEqual(emptyFacets());
-    expect(queryToFacets("name:button usages:>=100")).toEqual({ ...emptyFacets(), text: "button" });
-  });
-
-  it("parses changed:true into the changed facet and serialises it back", () => {
-    expect(queryToFacets("changed:true").changed).toBe(true);
-    expect(queryToFacets("changed:false").changed).toBe(false);
-    expect(queryToFacets("deprecated:true changed:true").deprecated).toBe(true);
-    expect(facetsToQuery({ ...emptyFacets(), changed: true })).toBe("changed:true");
-    expect(emptyFacets().changed).toBe(false);
+  it("reads a repeated value once", () => {
+    expect(paramsToFacets(new URLSearchParams("tag=icons&tag=icons")).tags).toEqual(["icons"]);
   });
 });

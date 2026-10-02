@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { parseRepoQuery, serializeRepoQuery } from "@/lib/repo-query";
+import { parseRepoQuery, serializeRepoQuery, type RepoQuery } from "@/lib/repo-query";
+import { queryString } from "@/lib/query-string";
 
-describe("repo ?q= with a leading changed:true token", () => {
-  it("round-trips text, the token, and both together, keeping trailing spaces", () => {
-    for (const q of ["", "acme", "acme ", "changed:true", "changed:true acme", "changed:true acme "]) {
-      expect(serializeRepoQuery(parseRepoQuery(q))).toBe(q);
-    }
-    expect(parseRepoQuery("changed:true")).toEqual({ text: "", changed: true });
-    expect(parseRepoQuery("changed:true acme ")).toEqual({ text: "acme ", changed: true });
-    expect(parseRepoQuery("acme")).toEqual({ text: "acme", changed: false });
+describe("repos list URL params", () => {
+  it.each<[string, RepoQuery, string]>([
+    ["search text", { text: "acme", changed: false }, "q=acme"],
+    ["search text with a trailing space", { text: "acme ", changed: false }, "q=acme+"],
+    ["changed since the previous scan", { text: "", changed: true }, "changed=true"],
+    ["both", { text: "acme", changed: true }, "q=acme&changed=true"],
+    ["neither", { text: "", changed: false }, ""],
+  ])("writes and reads %s", (_case, query, written) => {
+    expect(queryString(serializeRepoQuery(query))).toBe(written);
+    expect(parseRepoQuery(new URLSearchParams(written))).toEqual(query);
   });
 
-  it("does not treat the token mid-text as a filter", () => {
-    expect(parseRepoQuery("acme changed:true")).toEqual({ text: "acme changed:true", changed: false });
+  it("keeps search text that looks like a filter as text", () => {
+    expect(parseRepoQuery(new URLSearchParams("q=acme+changed:true"))).toEqual({ text: "acme changed:true", changed: false });
   });
 });

@@ -4,10 +4,12 @@ import {
   emptyPackageFacets,
   filterPackageRows,
   packageFacetOptions,
-  packageFacetsToQuery,
-  queryToPackageFacets,
+  packageFacetsToParams,
+  paramsToPackageFacets,
   versionsValueOf,
+  type PackageFacetState,
 } from "@/lib/package-facets";
+import { queryString } from "@/lib/query-string";
 
 const row = (over: Partial<PackageSummary>): PackageSummary => ({
   packageName: "@x/lib",
@@ -95,24 +97,28 @@ describe("packageFacetOptions: every count follows the other filters", () => {
   });
 });
 
-describe("?q= round-trip", () => {
-  it("serialises and re-parses every facet losslessly, and empty facets as no query", () => {
-    const f = {
-      text: "button",
-      tags: ["ds", "icon set"],
-      versions: "multi" as const,
-      deprecated: true,
-    };
-    const q = packageFacetsToQuery(f);
-    expect(q).toBe('name:button (tag:ds OR tag:"icon set") versions:multi deprecated:true');
-    expect(queryToPackageFacets(q)).toEqual(f);
-    expect(packageFacetsToQuery(emptyPackageFacets())).toBe("");
+describe("URL params", () => {
+  it.each<[string, Partial<PackageFacetState>, string]>([
+    ["search text", { text: "@acme/ui" }, "q=@acme/ui"],
+    ["one tag param per tag", { tags: ["ds", "icon set"] }, "tag=ds&tag=icon+set"],
+    ["versions", { versions: "multi" }, "versions=multi"],
+    ["deprecated", { deprecated: true }, "deprecated=true"],
+    ["not deprecated", { deprecated: false }, "deprecated=false"],
+  ])("writes and reads %s", (_case, facets, written) => {
+    const f = { ...emptyPackageFacets(), ...facets };
+    expect(queryString(packageFacetsToParams(f))).toBe(written);
+    expect(paramsToPackageFacets(new URLSearchParams(written))).toEqual(f);
   });
 
-  it("tolerates hand-written and unknown fields", () => {
-    const f = queryToPackageFacets("deprecated:true nonsense:zzz versions:weird tag:ds");
-    expect(f.deprecated).toBe(true);
-    expect(f.versions).toBeNull();
-    expect(f.tags).toEqual(["ds"]);
+  it("writes no params for no filters", () => {
+    expect(packageFacetsToParams(emptyPackageFacets())).toEqual([]);
+  });
+
+  it.each([
+    ["a param it doesn't know", "nonsense=zzz"],
+    ["versions it doesn't know", "versions=weird"],
+    ["deprecated other than true or false", "deprecated=yes"],
+  ])("ignores %s", (_case, written) => {
+    expect(paramsToPackageFacets(new URLSearchParams(written))).toEqual(emptyPackageFacets());
   });
 });

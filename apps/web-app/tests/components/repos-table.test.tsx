@@ -126,7 +126,7 @@ describe("ReposTable", () => {
 });
 
 describe("ReposExplorer", () => {
-  // jsdom keeps the URL between tests, so an earlier test's ?q= write would
+  // jsdom keeps the URL between tests, so an earlier test's URL write would
   // seed the next one.
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos"));
 
@@ -145,7 +145,7 @@ describe("ReposExplorer", () => {
     expect(screen.queryByText("acme-web")).toBeNull();
   });
 
-  it("seeds the search from the ?q= query in the URL", () => {
+  it("seeds the search from ?q= in the URL", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos?q=gamma");
     render(<ReposExplorer rows={rows} />);
     expect(screen.getByText("gamma-tool")).toBeInTheDocument();
@@ -297,28 +297,28 @@ describe("ReposExplorer: since previous scan chip", () => {
     const changedOnly = screen.getByRole("link", { name: "changed-only" }).closest("tr") as HTMLElement;
     expect(within(changedOnly).getAllByRole("cell").at(-1)?.querySelector(".lg\\:inline")?.textContent).toBe("18 changed");
     expect(screen.getByText(count("3 of 4"))).toBeInTheDocument();
-    expect(window.location.search).toBe("?q=changed%3Atrue");
+    expect(window.location.search).toBe("?changed=true");
     fireEvent.click(chip());
     expect(screen.getByText("quiet")).toBeInTheDocument();
     // The chip is the only control: no filter-link, no "all repos" link.
     expect(screen.queryByRole("link", { name: /changed since|all \d+ repos/ })).toBeNull();
   });
 
-  it("renders no chip when no repo moved, and a pasted changed:true narrows nothing", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos?q=changed%3Atrue");
+  it("renders no chip when no repo moved, and a pasted ?changed=true narrows nothing", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos?changed=true");
     render(<ReposExplorer rows={[mixed[2] as RepoSummary]} />); // quiet
     expect(screen.queryByRole("button", { name: /^since previous scan/ })).toBeNull();
     expect(screen.getByText("quiet")).toBeInTheDocument();
   });
 
-  it("changed:true in ?q= arrives pressed; text search narrows on top and keeps the token", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos?q=changed%3Atrue");
+  it("?changed=true arrives pressed; text search narrows on top and keeps it", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos?changed=true");
     render(<ReposExplorer rows={mixed} />);
     expect(chip()).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByText("quiet")).toBeNull();
     fireEvent.change(screen.getByPlaceholderText(/search .* repos/i), { target: { value: "moved-b" } });
     expect(screen.queryByText("moved-a")).toBeNull();
     expect(screen.getByText("moved-b")).toBeInTheDocument();
-    expect(window.location.search).toBe("?q=changed%3Atrue+moved-b");
+    expect(window.location.search).toBe("?q=moved-b&changed=true");
   });
 });

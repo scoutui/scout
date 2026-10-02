@@ -35,7 +35,7 @@ const occurrencesOf = (name: string) =>
 const sinceChip = () => screen.getByRole("button", { name: /^since previous scan/ });
 const DELTA_SORT_NAME = "Occurrences, sorts by change since previous scan";
 
-describe("ComponentsExplorer changed:true", () => {
+describe("ComponentsExplorer ?changed=true", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
 
   it("shows every row and no Δ by default", () => {
@@ -48,7 +48,7 @@ describe("ComponentsExplorer changed:true", () => {
   });
 
   it("narrows to marked rows plus the removed ghosts, with the Δ beside each count, the pressed chip and an honest count", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=changed%3Atrue");
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
     render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={diff} />);
     expect(screen.queryByText("Same")).toBeNull();
     expect(screen.getByText("Grew")).toBeInTheDocument();
@@ -72,8 +72,8 @@ describe("ComponentsExplorer changed:true", () => {
     expect(screen.queryByText("Gone")).toBeNull();
   });
 
-  it("ignores changed:true when there is no diff (first scan)", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=changed%3Atrue");
+  it("ignores ?changed=true when there is no diff (first scan)", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
     render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={null} />);
     expect(screen.getByText("Same")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
@@ -83,9 +83,9 @@ describe("ComponentsExplorer changed:true", () => {
     expect(screen.getByText(sentence("3 components"))).toBeInTheDocument();
   });
 
-  it("ignores changed:true when only the deprecated count moved: every row, no chip, no Δ", () => {
+  it("ignores ?changed=true when only the deprecated count moved: every row, no chip, no Δ", () => {
     const deprecatedOnly: ScanDiff = { ...diff, marks: {}, added: 0, removed: 0, changed: 0, removedRows: [], deprecatedPrev: 1, deprecatedNow: 0 };
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=changed%3Atrue");
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
     render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={deprecatedOnly} />);
     for (const name of ["Same", "Grew", "Fresh"]) expect(screen.getByText(name)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
@@ -120,7 +120,7 @@ describe("ComponentsExplorer changed:true", () => {
       ],
       deprecatedPrev: 0, deprecatedNow: 0,
     };
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=changed%3Atrue%20tag%3Aforms");
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true&tag=forms");
     render(<ComponentsExplorer repoId="r1" rows={tagged} deprecatedTotal={0} diff={taggedDiff} />);
     expect(screen.getByText("FormsGhost")).toBeInTheDocument();
     expect(screen.getByText("FormsNew")).toBeInTheDocument();
@@ -134,8 +134,8 @@ describe("ComponentsExplorer changed:true", () => {
   it("the deprecated chip reads its count alone in the changed view, where removed rows can take it past the status line's count", () => {
     const withDeprecated = rows.map((r) => (r.componentId === "grew" ? { ...r, deprecated: true } : r));
     const deprecatedGhost: ScanDiff = { ...diff, removedRows: diff.removedRows.map((r) => ({ ...r, deprecated: true })) };
-    // scope:external keeps every row and is another filter, so only the changed view keeps `of 1` off.
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=changed%3Atrue%20scope%3Aexternal");
+    // origin=external keeps every row and is another filter, so only the changed view keeps `of 1` off.
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true&origin=external");
     render(<ComponentsExplorer repoId="r1" rows={withDeprecated} deprecatedTotal={1} diff={deprecatedGhost} />);
     // Grew and the removed Gone.
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated2");
@@ -167,8 +167,8 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
     await screen.findByRole("button", { name: "Back to filters" });
   }
 
-  it("under deprecated:true and external, Packages offers only packages with deprecated external components, and both chips count under the same filters", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=scope%3Aexternal%20deprecated%3Atrue");
+  it("under ?deprecated=true and external, Packages offers only packages with deprecated external components, and both chips count under the same filters", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?origin=external&deprecated=true");
     render(<ComponentsExplorer repoId="r1" rows={faceted} deprecatedTotal={2} diff={facetedDiff} />);
     // Deprecated ignores its own filter but keeps external: Alpha (Beta is local), of the repo's 2.
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated1 of 2");
@@ -181,7 +181,7 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
   });
 
   it("in the changed view the base is the view's rows, ghosts included, so a package only a ghost had is offered", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=changed%3Atrue");
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
     render(<ComponentsExplorer repoId="r1" rows={faceted} deprecatedTotal={2} diff={facetedDiff} />);
     // Deprecated counts the view's rows: Alpha.
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated1");
@@ -192,7 +192,7 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
   });
 
   it("a selected package the other filters leave at 0 stays listed, and a pressed chip they empty stays pressed at 0", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?q=package%3A%22%40y%2Fui%22%20deprecated%3Atrue");
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?package=@y/ui&deprecated=true");
     render(<ComponentsExplorer repoId="r1" rows={faceted} deprecatedTotal={2} diff={facetedDiff} />);
     expect(screen.getByText("No components match these filters.")).toBeInTheDocument();
     const deprecated = screen.getByRole("button", { name: /^deprecated/ });

@@ -34,8 +34,8 @@ export default async function ReposPage() {
           action={<FirstScanCta />}
         />
       ) : (
-        /* No key needed: the explorer reads its search text from the live ?q=
-           through useQuerySyncedState. */
+        /* No key needed: the explorer reads its search from the live URL
+           through useQueryParamsState. */
         <ReposExplorer rows={rows} />
       )}
     </div>

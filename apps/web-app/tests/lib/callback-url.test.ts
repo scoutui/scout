@@ -3,7 +3,7 @@ import { safeCallbackUrl } from "@/lib/callback-url";
 
 describe("safeCallbackUrl", () => {
   it("passes through internal paths, including query strings", () => {
-    expect(safeCallbackUrl("/packages?q=deprecated%3Atrue")).toBe("/packages?q=deprecated%3Atrue");
+    expect(safeCallbackUrl("/packages?deprecated=true")).toBe("/packages?deprecated=true");
     expect(safeCallbackUrl("/login/device?code=ABCD-EFGH")).toBe("/login/device?code=ABCD-EFGH");
   });
 

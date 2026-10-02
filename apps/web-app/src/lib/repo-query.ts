@@ -1,19 +1,18 @@
-/** The launchpad's `?q=`: free text, optionally led by the one structured
- *  token the page understands. The token leads so the text after it can keep
- *  its trailing whitespace exactly: trimming would round-trip a mid-word
- *  trailing space back out of the URL and clobber it while the user is still
- *  typing (the explorer's `filterRepoRows` trims for matching). */
+import type { QueryParams } from "@/lib/query-string";
+
+/** The repos list's search text and its `since previous scan` chip. */
 export type RepoQuery = { text: string; changed: boolean };
 
-const TOKEN = "changed:true";
+export const REPO_QUERY_PARAMS = ["q", "changed"];
 
-export function parseRepoQuery(q: string): RepoQuery {
-  if (q === TOKEN) return { text: "", changed: true };
-  if (q.startsWith(`${TOKEN} `)) return { text: q.slice(TOKEN.length + 1), changed: true };
-  return { text: q, changed: false };
+export function parseRepoQuery(params: URLSearchParams): RepoQuery {
+  return { text: params.get("q") ?? "", changed: params.get("changed") === "true" };
 }
 
-export function serializeRepoQuery(s: RepoQuery): string {
-  if (!s.changed) return s.text;
-  return s.text === "" ? TOKEN : `${TOKEN} ${s.text}`;
+/** The text is kept untrimmed, so a trailing space survives while the user is still typing. */
+export function serializeRepoQuery(s: RepoQuery): QueryParams {
+  const params: [string, string][] = [];
+  if (s.text !== "") params.push(["q", s.text]);
+  if (s.changed) params.push(["changed", "true"]);
+  return params;
 }

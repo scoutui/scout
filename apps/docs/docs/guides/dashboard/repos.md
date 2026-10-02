@@ -47,23 +47,23 @@ The same name can appear on two rows when the repo imports a component through t
 
 ### Share a filtered view
 
-The tab keeps its search and filters in the page URL as `?q=`, so you can copy the address bar and share the filtered table. To write or edit a link by hand, use these tokens:
+The tab keeps its search and filters in the page URL, so you can copy the address bar and share the filtered table. To write or edit a link by hand, use these parameters:
 
-| Token | Example |
+| Parameter | Example |
 | --- | --- |
-| `name:` | `name:Button` |
-| `scope:` | `scope:external`, `scope:local` |
-| `kind:` | `kind:react`, `kind:vue`, `kind:wc`, `kind:tag` |
-| `package:` | `package:"@acme/ui"` |
-| `tag:` | `tag:acme-ui` |
-| `deprecated:` | `deprecated:true`, `deprecated:false` |
-| `occurrences:` | `occurrences:>=10` (also `>`, `<`, `<=`, `=`) |
-| `changed:` | `changed:true` |
+| `q` | `q=Button`, which searches component names |
+| `origin` | `origin=external`, `origin=local` |
+| `kind` | `kind=react`, `kind=vue`, `kind=wc`, `kind=tag` |
+| `package` | `package=@acme/ui` |
+| `tag` | `tag=acme-ui` |
+| `deprecated` | `deprecated=true`, `deprecated=false` |
+| `occurrences` | `occurrences=gte:10` for 10 or more, `occurrences=lte:10` for 10 or fewer (also `gt:`, `lt:`, or a number alone for exactly that many) |
+| `changed` | `changed=true` |
 
-Separate tokens with spaces; all of them must match. Put a value with a space, `/`, `:` or parentheses in double quotes. Text without a token is ignored, so search names with `name:`. Repeating `kind:`, `package:` or `tag:` matches any of the values. For example:
+Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. Write a space as `+`. For example:
 
 ```text
-package:"@acme/ui-legacy" deprecated:true occurrences:>=10
+/repos/acme-web?package=@acme/ui-legacy&deprecated=true&occurrences=gte:10
 ```
 
 ## Follow adoption in a repo

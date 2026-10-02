@@ -15,35 +15,23 @@ import { Input } from "@/components/ui/input";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
 import { DeprecatedMark } from "@/components/deprecated-mark";
-import { useQuerySyncedState } from "@/lib/use-query-synced-state";
-import { joinTerms, nameTerm, readTerms } from "@/lib/query-terms";
+import { useQueryParamsState } from "@/lib/use-query-synced-state";
+import {
+  PACKAGE_COMPONENT_FILTER_PARAMS,
+  packageComponentFiltersToParams,
+  paramsToPackageComponentFilters,
+  type PackageComponentFilters,
+} from "@/lib/package-facets";
 
 type SortKey = "displayName" | "consumerCount" | "totalOccurrences";
 const DESC_KEYS: ReadonlySet<SortKey> = new Set(["consumerCount", "totalOccurrences"]);
-
-/** Name search and deprecated-only, serialised to `?q=` in the shared grammar
- *  so a filtered view stays shareable. */
-export type Filters = { text: string; deprecated: boolean };
-
-export function queryToFilters(q: string): Filters {
-  const f: Filters = { text: "", deprecated: false };
-  for (const { field, value } of readTerms(q, ["name", "deprecated"])) {
-    if (field === "name") f.text = value;
-    if (field === "deprecated") f.deprecated = value === "true";
-  }
-  return f;
-}
-
-export function filtersToQuery(f: Filters): string {
-  return joinTerms([nameTerm(f.text), f.deprecated ? "deprecated:true" : ""]);
-}
 
 export function PackageComponentsTable({
   components,
 }: {
   components: PackageComponentRow[];
 }) {
-  const [filters, setFilters] = useQuerySyncedState<Filters>(queryToFilters, filtersToQuery);
+  const [filters, setFilters] = useQueryParamsState<PackageComponentFilters>(PACKAGE_COMPONENT_FILTER_PARAMS, paramsToPackageComponentFilters, packageComponentFiltersToParams);
   // Default: most-used first (matches the projection's own ordering).
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("totalOccurrences", "desc", DESC_KEYS);
 

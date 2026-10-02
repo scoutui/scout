@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { hrefFrom, parseSel, parseSort, serializeSel, serializeSort } from "@/lib/usage-url";
-import { useQuerySyncedState } from "@/lib/use-query-synced-state";
+import { useQueryParamsState, useQuerySyncedState } from "@/lib/use-query-synced-state";
 
 const parse = (q: string) => ({ text: q });
 const serialize = (s: { text: string }) => s.text;
@@ -21,17 +21,17 @@ describe("useQuerySyncedState", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/x?scan=abc"));
 
   it("derives state from the live URL, not a snapshot", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/repos/x?q=deprecated%3Atrue");
+    window.history.replaceState(null, "", "http://localhost:3000/repos/x?q=date+picker");
     const { result } = renderHook(() => useQuerySyncedState(parse, serialize));
-    expect(result.current[0]).toEqual({ text: "deprecated:true" });
+    expect(result.current[0]).toEqual({ text: "date picker" });
   });
 
   it("writes changes to the URL via replaceState, preserving other params", () => {
     const { result, rerender } = renderHook(() => useQuerySyncedState(parse, serialize));
-    act(() => result.current[1]({ text: "kind:react" }));
-    expect(window.location.search).toBe("?scan=abc&q=kind%3Areact");
+    act(() => result.current[1]({ text: "@acme/ui" }));
+    expect(window.location.search).toBe("?scan=abc&q=@acme/ui");
     rerender(); // the Next-sync re-render
-    expect(result.current[0]).toEqual({ text: "kind:react" });
+    expect(result.current[0]).toEqual({ text: "@acme/ui" });
   });
 
   it("clearing state removes q from the URL entirely", () => {
@@ -41,6 +41,39 @@ describe("useQuerySyncedState", () => {
     rerender();
     expect(window.location.search).toBe("?scan=abc");
     expect(result.current[0]).toEqual({ text: "" });
+  });
+});
+
+const NAMES = ["tag", "deprecated"];
+type Picked = { tags: string[]; deprecated: boolean };
+const readPicked = (params: URLSearchParams): Picked => ({ tags: params.getAll("tag"), deprecated: params.get("deprecated") === "true" });
+const writePicked = (p: Picked): [string, string][] => [
+  ...p.tags.map((t): [string, string] => ["tag", t]),
+  ...(p.deprecated ? [["deprecated", "true"] as [string, string]] : []),
+];
+
+describe("useQueryParamsState", () => {
+  beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/x?scan=abc"));
+
+  it("reads every value of the params it owns", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/x?tag=icons&scan=abc&tag=acme-ui&deprecated=true");
+    const { result } = renderHook(() => useQueryParamsState(NAMES, readPicked, writePicked));
+    expect(result.current[0]).toEqual({ tags: ["icons", "acme-ui"], deprecated: true });
+  });
+
+  it("writes one param per value and keeps the params it doesn't own", () => {
+    const { result, rerender } = renderHook(() => useQueryParamsState(NAMES, readPicked, writePicked));
+    act(() => result.current[1]({ tags: ["icons", "acme-ui"], deprecated: true }));
+    expect(window.location.search).toBe("?scan=abc&tag=icons&tag=acme-ui&deprecated=true");
+    rerender();
+    expect(result.current[0]).toEqual({ tags: ["icons", "acme-ui"], deprecated: true });
+  });
+
+  it("removes its params when the state is empty", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/x?scan=abc&tag=icons&deprecated=true");
+    const { result } = renderHook(() => useQueryParamsState(NAMES, readPicked, writePicked));
+    act(() => result.current[1]({ tags: [], deprecated: false }));
+    expect(window.location.search).toBe("?scan=abc");
   });
 });
 
@@ -81,6 +114,6 @@ describe("usage URL", () => {
 
   it("builds a link to the same page with params set and removed, keeping the rest", () => {
     expect(hrefFrom("/repos/shop/components/abc", "?scan=s1&sel=a~value~x&find=q", { tab: "composition", pin: "up:p1", find: null }))
-      .toBe("/repos/shop/components/abc?scan=s1&sel=a%7Evalue%7Ex&tab=composition&pin=up%3Ap1");
+      .toBe("/repos/shop/components/abc?scan=s1&sel=a~value~x&tab=composition&pin=up:p1");
   });
 });

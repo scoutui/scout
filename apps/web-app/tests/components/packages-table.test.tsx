@@ -61,6 +61,11 @@ describe("PackagesTable", () => {
     expect(link).toHaveAttribute("href", "/packages/%40x%2Flib");
   });
 
+  it("carries the deprecated filter into each package's link", () => {
+    render(<PackagesTable rows={rows} deprecatedOnly />);
+    expect(screen.getByRole("link", { name: /@x\/lib/ })).toHaveAttribute("href", "/packages/%40x%2Flib?deprecated=true");
+  });
+
   it("sorts by Package name when the header is clicked", () => {
     render(<PackagesTable rows={rows} />);
     const pkgHeader = screen.getByRole("button", { name: /^package/i });
@@ -109,7 +114,7 @@ describe("PackagesTable", () => {
 });
 
 describe("PackagesExplorer", () => {
-  // jsdom keeps the URL between tests, so an earlier test's ?q= write would
+  // jsdom keeps the URL between tests, so an earlier test's URL write would
   // seed the next one.
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/packages"));
 
@@ -122,16 +127,16 @@ describe("PackagesExplorer", () => {
     expect(screen.queryByText("lodash")).toBeNull();
   });
 
-  it("seeds facet state from the ?q= query in the URL", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/packages?q=deprecated%3Atrue");
+  it("seeds facet state from the URL", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/packages?deprecated=true");
     render(<PackagesExplorer rows={rows} />);
     expect(screen.getByText("@x/wc")).toBeInTheDocument();
     expect(screen.queryByText("@x/lib")).toBeNull();
     expect(screen.queryByText("lodash")).toBeNull();
   });
 
-  it("seeds the versions facet from ?q=versions:multi", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/packages?q=versions%3Amulti");
+  it("seeds the versions facet from ?versions=multi", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/packages?versions=multi");
     render(<PackagesExplorer rows={rows} />);
     expect(screen.getByText("@x/lib")).toBeInTheDocument();
     expect(screen.getByText("lodash")).toBeInTheDocument();
