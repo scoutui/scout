@@ -1,232 +1,337 @@
 "use client";
-// Governance identity picker, used for both source and superseded-by. Results
-// group by package; picking a package header makes a package-grain pick, an
-// export a component-grain one. Search is tokenised (lib/identity-groups).
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronsUpDown, Search } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { buildIdentityGroups, filterIdentityGroups } from "@/lib/identity-groups";
+// The governance target picker: one search box per field. Results are ranked by
+// lib/identity-search, and a package row narrows the search to that package, shown
+// as a chip in the box. A component pick makes a component-grain record, an
+// `All of` pick a package-grain one.
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { autoUpdate, flip, offset, size, useFloating } from "@floating-ui/react-dom";
+import { ChevronsUpDown, X } from "lucide-react";
+import type { GovernanceRecord } from "@scoutui/web-shared";
+import { type IdentityPick, type PickerTarget, type SearchRow, searchTargets } from "@/lib/identity-search";
 import { cn } from "@/lib/utils";
 
-export type IdentityPick = { packageName: string; exportName?: string };
+export type { IdentityPick } from "@/lib/identity-search";
 
 export function pickLabel(pick: { packageName: string; exportName?: string | undefined }): string {
   return pick.exportName ? `${pick.exportName} · ${pick.packageName}` : pick.packageName;
 }
 
-type Row =
-  | { kind: "package"; packageName: string; totalExports: number }
-  | { kind: "export"; packageName: string; exportName: string }
-  | { kind: "hidden-note"; packageName: string; hiddenExports: number };
+const keepFocus = (e: React.MouseEvent) => e.preventDefault();
+
+const components = (n: number) => `${n.toLocaleString()} component${n === 1 ? "" : "s"}`;
+
+/** The name with each matched range in bold. */
+function marked(name: string, ranges: Array<[number, number]>): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let at = 0;
+  for (const [start, end] of ranges) {
+    parts.push(
+      name.slice(at, start),
+      <b key={start} className="font-semibold">
+        {name.slice(start, end)}
+      </b>,
+    );
+    at = end;
+  }
+  parts.push(name.slice(at));
+  return parts;
+}
+
+function Refusal({ text }: { text: string | null }) {
+  return text ? <span className="shrink-0 text-[0.6875rem] text-muted-foreground">{text}</span> : null;
+}
+
+function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean; narrowed: boolean }) {
+  if (row.kind === "package") {
+    return (
+      <>
+        <span className="min-w-0 truncate font-mono text-xs">{row.packageName}</span>
+        <span className="shrink-0 text-[0.6875rem] text-muted-foreground">{components(row.components)}</span>
+        {active ? (
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-4 text-[0.6875rem] text-muted-foreground">
+            <kbd aria-hidden className="inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-sans">
+              ↵
+            </kbd>
+            to search in it
+          </span>
+        ) : null}
+      </>
+    );
+  }
+  if (row.kind === "whole") {
+    return (
+      <>
+        <span className="min-w-0 truncate text-xs">
+          <span className="text-muted-foreground">All of </span>
+          <span className="font-mono">{row.packageName}</span>
+          <span className="text-muted-foreground"> · {components(row.components)}</span>
+        </span>
+        <Refusal text={row.refusal} />
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="min-w-0 truncate font-mono text-xs">
+        {row.refusal === null ? marked(row.exportName, row.matched) : row.exportName}
+      </span>
+      {narrowed ? null : <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.packageName}</span>}
+      <Refusal text={row.refusal} />
+    </>
+  );
+}
+
+const rowKey = (row: SearchRow) => `${row.kind}:${row.packageName}:${row.kind === "component" ? row.exportName : ""}`;
 
 export function GroupedIdentityPicker({
+  id,
+  labelId,
+  mode,
+  sources,
+  records,
+  editingId,
+  exclude,
+  similarTo,
   value,
   onSelect,
-  sources,
+  scope,
+  onScopeChange,
   placeholder,
-  id,
-  disabled,
-  ariaLabel,
+  closedPlaceholder,
   ariaDescribedBy,
   invalid,
+  disabled,
 }: {
-  /** `pickLabel` of the current pick, empty if none. */
-  value: string;
+  /** The input's id; the field's `<label htmlFor>` names it. */
+  id: string;
+  /** The field label's id; it names the list. */
+  labelId: string;
+  mode: "source" | "successor";
+  sources: PickerTarget[];
+  records: GovernanceRecord[];
+  editingId?: string | undefined;
+  exclude?: IdentityPick | null | undefined;
+  similarTo?: string | null | undefined;
+  value: IdentityPick | null;
   onSelect: (pick: IdentityPick) => void;
-  sources: { packageName: string; exportName?: string }[];
-  placeholder?: string;
-  id?: string;
-  disabled?: boolean;
-  ariaLabel?: string | undefined;
+  /** The package the search is narrowed to. */
+  scope: string | null;
+  onScopeChange: (scope: string | null) => void;
+  placeholder: string;
+  /** Shown when narrowed, closed and empty. */
+  closedPlaceholder?: string | undefined;
   ariaDescribedBy?: string | undefined;
-  invalid?: boolean;
+  invalid?: boolean | undefined;
+  disabled?: boolean | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState<number | null>(null);
+  const search = `${scope ?? ""}\u0000${query}`;
+  const [searched, setSearched] = useState(search);
+  if (searched !== search) {
+    setSearched(search);
+    setHighlight(null);
+  }
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const raf = requestAnimationFrame(() => inputRef.current?.focus());
-    return () => cancelAnimationFrame(raf);
-  }, [open]);
-
-  const groups = useMemo(() => buildIdentityGroups(sources), [sources]);
-  const filtered = useMemo(() => filterIdentityGroups(groups, query), [groups, query]);
-
-  // Flat row model: keyboard highlight and rendering share one index space.
-  // `selectable()` skips the presentational hidden-note rows.
-  const rows = useMemo<Row[]>(
-    () =>
-      filtered.groups.flatMap((g): Row[] => [
-        { kind: "package", packageName: g.packageName, totalExports: g.totalExports },
-        ...g.exports.map((e): Row => ({ kind: "export", packageName: g.packageName, exportName: e })),
-        ...(g.hiddenExports > 0
-          ? [{ kind: "hidden-note", packageName: g.packageName, hiddenExports: g.hiddenExports } as Row]
-          : []),
-      ]),
-    [filtered],
+  const { rows, defaultIndex } = useMemo(
+    () => searchTargets({ mode, sources, query, scope, records, editingId, exclude, similarTo }),
+    [mode, sources, query, scope, records, editingId, exclude, similarTo],
   );
-  const selectable = (i: number) => rows[i] !== undefined && rows[i].kind !== "hidden-note";
-  // So Enter never picks a whole package by surprise, the default row is the
-  // first export, and a package header only when no exports are shown.
-  const defaultIndex = useMemo(() => {
-    const firstExport = rows.findIndex((r) => r.kind === "export");
-    if (firstExport !== -1) return firstExport;
-    const firstPackage = rows.findIndex((r) => r.kind === "package");
-    return firstPackage === -1 ? null : firstPackage;
-  }, [rows]);
-  const activeIndex = highlight ?? defaultIndex;
+  const activeIndex = highlight !== null && highlight < rows.length ? highlight : defaultIndex;
+  const active = activeIndex === null ? undefined : rows[activeIndex];
+  const listShown = open && rows.length > 0;
+  const listId = `${id}-list`;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resetting highlight when query changes is intentional
-  useEffect(() => setHighlight(null), [query]);
+  const { refs, floatingStyles, isPositioned } = useFloating({
+    open: listShown,
+    placement: "bottom-start",
+    strategy: "fixed",
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      offset(4),
+      flip({ padding: 8 }),
+      size({
+        padding: 8,
+        apply({ rects, availableHeight, elements }) {
+          Object.assign(elements.floating.style, {
+            width: `${rects.reference.width}px`,
+            maxHeight: `${Math.min(availableHeight, Math.min(384, window.innerHeight * 0.6))}px`,
+          });
+        },
+      }),
+    ],
+  });
+
   useEffect(() => {
-    if (activeIndex === null) return;
-    listRef.current
-      ?.querySelector(`[data-row-index="${activeIndex}"]`)
-      ?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex]);
+    if (!isPositioned || activeIndex === null) return;
+    document.getElementById(`${listId}-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
+  }, [isPositioned, activeIndex, listId]);
 
-  function commitRow(row: Row) {
-    if (row.kind === "hidden-note") return;
-    onSelect(row.kind === "export" ? { packageName: row.packageName, exportName: row.exportName } : { packageName: row.packageName });
+  const showValue = !open && value !== null;
+  const inputValue = open ? query : value ? pickLabel(value) : "";
+
+  function close() {
+    setOpen(false);
     setQuery("");
     setHighlight(null);
-    setOpen(false);
   }
 
-  function move(from: number | null, dir: 1 | -1): number | null {
-    if (rows.length === 0) return null;
-    let i = from === null ? (dir === 1 ? -1 : rows.length) : from;
-    for (let step = 0; step < rows.length; step++) {
-      i = (i + dir + rows.length) % rows.length;
-      if (selectable(i)) return i;
+  function narrow(packageName: string) {
+    onScopeChange(packageName);
+    setQuery("");
+  }
+
+  function choose(row: SearchRow) {
+    if (row.kind === "package") {
+      narrow(row.packageName);
+    } else if (row.refusal === null) {
+      onSelect(row.kind === "component" ? { packageName: row.packageName, exportName: row.exportName } : { packageName: row.packageName });
+      close();
     }
-    return null;
   }
 
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && inputValue === "" && scope !== null) {
+      onScopeChange(null);
+    } else if (!open) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setOpen(true);
+      }
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlight(move(activeIndex, e.key === "ArrowDown" ? 1 : -1));
+      if (rows.length === 0) return;
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      const from = activeIndex ?? (step === 1 ? -1 : rows.length);
+      setHighlight((from + step + rows.length) % rows.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const row = activeIndex !== null ? rows[activeIndex] : undefined;
-      if (row) commitRow(row);
+      if (active) choose(active);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+    } else if (e.key === "Tab" && active?.kind === "package") {
+      e.preventDefault();
+      narrow(active.packageName);
     }
   }
 
-  const listId = `${id ?? "identity-picker"}-listbox`;
-  const optionId = (i: number) => `${listId}-opt-${i}`;
-
   return (
-    <Popover
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) {
-          setQuery("");
-          setHighlight(null);
-        }
-      }}
+    <div
+      ref={refs.setReference}
+      className={cn(
+        "relative flex h-8 w-full min-w-0 items-center gap-1.5 rounded-lg border bg-transparent px-2.5 text-sm transition-colors focus-within:ring-3 dark:bg-input/30",
+        invalid
+          ? "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
+          : "border-input focus-within:border-ring focus-within:ring-ring/50",
+        scope !== null && !showValue && "pl-1",
+        disabled && "cursor-not-allowed opacity-50",
+      )}
     >
-      <PopoverTrigger
-        id={id}
-        disabled={disabled}
-        aria-label={ariaLabel}
-        aria-describedby={ariaDescribedBy}
-        aria-invalid={invalid || undefined}
-        className="flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-expanded:border-ring aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
-      >
-        <span className={cn("min-w-0 truncate", value ? "font-mono text-xs" : "text-muted-foreground")}>
-          {value || placeholder}
+      {scope !== null && !showValue ? (
+        <span className="inline-flex h-[22px] max-w-[60%] shrink-0 items-center gap-1 rounded-md border bg-muted px-1.5 font-mono text-xs">
+          <span className="truncate">{scope}</span>
+          <button
+            type="button"
+            aria-label="Search all packages"
+            disabled={disabled}
+            onMouseDown={keepFocus}
+            onClick={() => {
+              onScopeChange(null);
+              inputRef.current?.focus();
+            }}
+            className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none after:absolute after:-inset-1 hover:bg-accent hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <X aria-hidden className="size-3" strokeWidth={1.5} />
+          </button>
         </span>
-        <ChevronsUpDown aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-[min(30rem,calc(100vw-2rem))] min-w-(--anchor-width) gap-0 p-0">
-        <div className="flex items-center gap-2 border-b px-2.5 py-2">
-          <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onKeyDown}
-            role="combobox"
-            aria-expanded="true"
-            aria-controls={listId}
-            aria-activedescendant={activeIndex !== null ? optionId(activeIndex) : undefined}
-            placeholder="Search packages and components…"
-            aria-label="Search packages and components"
-            className="w-full bg-transparent font-mono text-xs outline-none placeholder:font-sans placeholder:text-muted-foreground"
-          />
-        </div>
-        {/* biome-ignore lint/a11y/useSemanticElements: custom listbox pattern with divs allows flexible styling */}
-        <div ref={listRef} id={listId} role="listbox" tabIndex={-1} className="max-h-72 overflow-y-auto py-1">
-          {rows.map((row, i) =>
-            row.kind === "hidden-note" ? (
-              <div key={`note-${row.packageName}`} role="presentation" data-row-index={i} className="px-2.5 py-1 pl-7 text-[0.6875rem] text-muted-foreground">
-                …{row.hiddenExports} more in <span className="font-mono text-xs">{row.packageName}</span>. Type more to narrow.
-              </div>
-            ) : row.kind === "package" ? (
-              // biome-ignore lint/a11y/useSemanticElements: custom option pattern with divs allows flexible styling
-              <div key={row.packageName} role="option" id={optionId(i)} aria-selected={pickLabel(row) === value} data-row-index={i} tabIndex={-1}>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => commitRow(row)}
-                  onMouseEnter={() => setHighlight(i)}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors",
-                    i === activeIndex ? "bg-muted/50" : "hover:bg-muted/50",
-                    pickLabel(row) === value && "bg-muted/40",
-                  )}
-                >
-                  <span className="truncate font-mono text-xs font-medium">{row.packageName}</span>
-                  <span className="shrink-0 text-[0.6875rem] text-muted-foreground">
-                    whole package{row.totalExports > 0 ? ` · ${row.totalExports}` : ""}
-                  </span>
-                </button>
-              </div>
+      ) : null}
+      <input
+        ref={inputRef}
+        id={id}
+        role="combobox"
+        aria-expanded={listShown}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={listShown && activeIndex !== null ? `${listId}-${activeIndex}` : undefined}
+        aria-invalid={invalid || undefined}
+        aria-describedby={ariaDescribedBy}
+        autoComplete="off"
+        spellCheck={false}
+        disabled={disabled}
+        value={inputValue}
+        placeholder={scope === null ? placeholder : open ? `Search in ${scope}` : (closedPlaceholder ?? `Search in ${scope}`)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onClick={() => setOpen(true)}
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={close}
+        onKeyDown={onKeyDown}
+        className={cn(
+          "h-full min-w-0 flex-1 bg-transparent font-mono text-xs outline-none placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed",
+          showValue && "text-transparent caret-foreground",
+        )}
+      />
+      {showValue && value ? (
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-8 left-2.5 flex items-center font-mono text-xs">
+          <span className="truncate">
+            {value.exportName ? (
+              <>
+                {value.exportName}
+                <span className="text-muted-foreground"> · {value.packageName}</span>
+              </>
             ) : (
-              <div
-                key={`${row.packageName}/${row.exportName}`}
-                // biome-ignore lint/a11y/useSemanticElements: custom option pattern with divs allows flexible styling
-                role="option"
-                id={optionId(i)}
-                aria-selected={pickLabel(row) === value}
-                data-row-index={i}
-                tabIndex={-1}
-              >
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => commitRow(row)}
-                  onMouseEnter={() => setHighlight(i)}
-                  className={cn(
-                    "flex w-full items-center px-2.5 py-1 pl-7 text-left transition-colors",
-                    i === activeIndex ? "bg-muted/50" : "hover:bg-muted/50",
-                    pickLabel(row) === value && "bg-muted/40",
-                  )}
-                >
-                  <span className="truncate font-mono text-xs">{row.exportName}</span>
-                </button>
-              </div>
-            ),
-          )}
-          {rows.length === 0 ? (
-            <div className="px-2.5 py-2 text-xs text-muted-foreground">
-              {sources.length === 0 ? "Nothing scanned yet." : "No matching packages or components."}
-            </div>
-          ) : null}
-        </div>
-        {filtered.hiddenGroups > 0 ? (
-          <div className="border-t px-2.5 py-1.5 text-[0.6875rem] text-muted-foreground">
-            {filtered.hiddenGroups} more package{filtered.hiddenGroups === 1 ? "" : "s"} match. Type more to narrow.
-          </div>
-        ) : null}
-      </PopoverContent>
-    </Popover>
+              value.packageName
+            )}
+          </span>
+        </span>
+      ) : null}
+      <ChevronsUpDown aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+      {listShown
+        ? createPortal(
+            <div
+              ref={refs.setFloating}
+              id={listId}
+              // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox list of rich rows
+              role="listbox"
+              aria-labelledby={labelId}
+              tabIndex={-1}
+              style={floatingStyles}
+              onMouseDown={keepFocus}
+              className="z-50 overflow-y-auto rounded-lg bg-popover py-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            >
+              {rows.map((row, i) => {
+                const refused = row.kind !== "package" && row.refusal !== null;
+                return (
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: the combobox input handles the keys for every option
+                  <div
+                    key={rowKey(row)}
+                    id={`${listId}-${i}`}
+                    // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox option of rich content
+                    role="option"
+                    aria-selected={i === activeIndex}
+                    aria-disabled={refused || undefined}
+                    tabIndex={-1}
+                    onClick={() => choose(row)}
+                    className={cn(
+                      "flex cursor-default items-baseline gap-2 px-2.5 py-1.5",
+                      i === activeIndex ? "bg-muted" : "hover:bg-muted/60",
+                      refused && "text-muted-foreground",
+                    )}
+                  >
+                    <RowContent row={row} active={i === activeIndex} narrowed={scope !== null} />
+                  </div>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
   );
 }
