@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, CircleCheck, CircleDashed, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronRight, CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
 import type {
@@ -19,18 +19,20 @@ import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/component
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
 import {
-  buildRecordMap,
   countLabel,
-  type MapGroup,
+  groupRecords,
+  type Left,
+  leftOf,
+  leftText,
   type MapRow,
-  type MapSection,
-  progressLabel,
+  type PackageGroup,
+  type RecordMap,
   recordCountLabel,
+  recordHref,
   rowName,
-  scopeLabel,
-  statusLabel,
   type Successor,
   successorLabel,
+  wholePackageLabel,
 } from "@/lib/governance-map";
 import { cn } from "@/lib/utils";
 
@@ -198,9 +200,13 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   // Only a form the user opens takes focus, not the one that opens on its own.
   const [focusForm, setFocusForm] = useState(false);
   const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  /** Packages the user folded; a search shows its matches open without changing this. */
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+  const [completeOpen, setCompleteOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const scrolledTo = useRef<string | null>(null);
+  /** The record to scroll to and focus once its row is on the page. */
+  const revealId = useRef<string | null>(null);
+  const recordsRef = useRef(records);
   const addRecordRef = useRef<HTMLButtonElement>(null);
   /** Set when Cancel or Delete closes the form: the record whose row takes focus, or undefined for Add record. */
   const [focusAfterClose, setFocusAfterClose] = useState<{ recordId: string | undefined } | null>(null);
@@ -209,22 +215,48 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   const searching = query.trim() !== "";
   const matches = records.filter((r) => matchesRecordQuery(r, query));
   const visible = records.filter((r) => r.id === editingId || matchesRecordQuery(r, query));
-  const sections = buildRecordMap({ visible, all: records, stats, sources });
+  const map = groupRecords({ visible, all: records, stats, sources });
 
-  // Scrolls to the highlighted record once its row is on the page, opening its group first if it's folded.
+  // Scrolls to the record and focuses its name once its row is on the page, opening what hides it first.
   useEffect(() => {
-    if (!highlightId || scrolledTo.current === highlightId) return;
-    const row = document.getElementById(`record-${highlightId}`);
+    const id = revealId.current;
+    if (!id) return;
+    const row = document.getElementById(`record-${id}`);
     if (row) {
-      scrolledTo.current = highlightId;
+      revealId.current = null;
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      row.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
-      row.focus({ preventScroll: true });
+      row.scrollIntoView({ block: "center", behavior: reduceMotion ? "instant" : "smooth" });
+      (row.querySelector<HTMLElement>("th a") ?? row).focus({ preventScroll: true });
       return;
     }
-    const key = groupKeyOf(sections, highlightId);
-    if (key) setExpanded((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    const complete = map.complete.find((g) => rowsOf(g).some((r) => r.record.id === id));
+    const group = complete ?? map.groups.find((g) => rowsOf(g).some((r) => r.record.id === id));
+    if (!group) return;
+    if (complete) setCompleteOpen(true);
+    setFolded((prev) => {
+      if (!prev.has(group.packageName)) return prev;
+      const next = new Set(prev);
+      next.delete(group.packageName);
+      return next;
+    });
   });
+
+  useEffect(() => {
+    recordsRef.current = records;
+  });
+
+  useEffect(() => {
+    function arrive() {
+      const id = /^#record-(.+)$/.exec(window.location.hash)?.[1];
+      if (!id || !recordsRef.current.some((r) => r.id === id)) return;
+      setQuery("");
+      revealId.current = id;
+      setHighlightId(id);
+    }
+    arrive();
+    window.addEventListener("hashchange", arrive);
+    return () => window.removeEventListener("hashchange", arrive);
+  }, []);
 
   useEffect(() => {
     if (!focusAfterClose) return;
@@ -273,7 +305,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   function showRecord(id: string) {
     setQuery("");
     closeForm();
-    scrolledTo.current = null;
+    revealId.current = id;
     setHighlightId(id);
   }
 
@@ -282,10 +314,10 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
     setHighlightId(null);
   }
 
-  function toggleGroup(key: string) {
-    setExpanded((prev) => {
+  function toggleFold(packageName: string) {
+    setFolded((prev) => {
       const next = new Set(prev);
-      if (!next.delete(key)) next.add(key);
+      if (!next.delete(packageName)) next.add(packageName);
       return next;
     });
   }
@@ -342,20 +374,21 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
             </p>
           ) : null}
 
-          {sections.map((section) => (
+          {map.groups.length > 0 || map.complete.length > 0 ? (
             <RecordTable
-              key={section.kind}
-              section={section}
+              map={map}
+              recordCount={records.length}
               repoCount={repoCount}
               editingId={editingId}
               editForm={recordForm}
               highlightId={highlightId}
-              searching={searching}
-              expanded={expanded}
-              onToggle={toggleGroup}
+              isOpen={(packageName) => searching || !folded.has(packageName)}
+              completeShown={searching || completeOpen}
+              onFold={toggleFold}
+              onToggleComplete={() => setCompleteOpen((open) => !open)}
               onEdit={openEdit}
             />
-          ))}
+          ) : null}
         </div>
       )}
     </div>
@@ -363,114 +396,138 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
 }
 
 // ---------------------------------------------------------------------------
-// Records map
+// Records table
 // ---------------------------------------------------------------------------
 
-const MAP_ROW =
-  "grid grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)_2.5rem] items-center gap-y-0.5 md:grid-cols-[15rem_1.25rem_minmax(0,1fr)_11rem_2.5rem]";
-const CELL = "min-w-0 px-3";
-const ARROW_CELL = "flex justify-center px-0";
-const STATUS_CELL = "col-span-3 min-w-0 px-3 md:col-span-1";
-// Below md the edit button stays on the first line and the status wraps to a second.
-const EDIT_CELL = "col-start-4 row-start-1 flex justify-end pr-3 md:col-start-auto md:row-start-auto";
+// Below sm the header hides and each row stacks: name and edit, then the decision, then the count.
+const ROW = "grid grid-cols-[minmax(0,1fr)_3rem] items-center sm:grid-cols-[16rem_6.5rem_minmax(0,1fr)_11rem_3rem]";
+const OCC_CELL = "flex min-w-0 items-center pl-3";
+const EDIT_CELL = "flex min-w-0 justify-end pr-3";
+const LINK =
+  "rounded-sm underline-offset-4 outline-none hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring";
+const CHEVRON = "size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ease-out motion-reduce:transition-none";
 
-const SECTION_COLUMN: Record<MapSection["kind"], string> = { superseded: "Superseded by", retired: "Reason" };
-
-const groupKey = (section: MapSection, group: MapGroup) =>
-  `${section.kind}:${group.kind === "package" ? `package:${group.packageName}` : "whole-packages"}`;
-
-function groupKeyOf(sections: MapSection[], id: string): string | null {
-  for (const section of sections) {
-    for (const group of section.groups) {
-      if (group.rows.some((row) => row.record.id === id)) return groupKey(section, group);
-    }
-  }
-  return null;
-}
+const rowsOf = (group: PackageGroup) => (group.kind === "whole" ? [group.row] : group.rows);
 
 function RecordTable({
-  section,
+  map,
+  recordCount,
   repoCount,
   editingId,
   editForm,
   highlightId,
-  searching,
-  expanded,
-  onToggle,
+  isOpen,
+  completeShown,
+  onFold,
+  onToggleComplete,
   onEdit,
 }: {
-  section: MapSection;
+  map: RecordMap;
+  recordCount: number;
   repoCount: number;
   editingId: string | undefined;
   /** Shown in place of the row being edited. */
   editForm: React.ReactNode;
   highlightId: string | null;
-  searching: boolean;
-  /** Keys of the all-complete groups the user has opened. */
-  expanded: ReadonlySet<string>;
-  onToggle: (key: string) => void;
+  isOpen: (packageName: string) => boolean;
+  completeShown: boolean;
+  onFold: (packageName: string) => void;
+  onToggleComplete: () => void;
   onEdit: (record: GovernanceRecord) => void;
 }) {
   const titleId = useId();
+
+  const recordRow = (row: MapRow, standalone: boolean) =>
+    row.record.id === editingId ? (
+      <tr key={row.record.id} id={`record-${row.record.id}`} className={ROW}>
+        <td className="col-span-full bg-muted/40 p-4">{editForm}</td>
+      </tr>
+    ) : (
+      <RecordRow
+        key={row.record.id}
+        row={row}
+        standalone={standalone}
+        repoCount={repoCount}
+        highlighted={row.record.id === highlightId}
+        onEdit={() => onEdit(row.record)}
+      />
+    );
+
+  const groupBody = (group: PackageGroup) => {
+    if (group.kind === "whole") {
+      return (
+        <tbody key={group.packageName} className="block">
+          {recordRow(group.row, true)}
+        </tbody>
+      );
+    }
+    const open = isOpen(group.packageName);
+    return (
+      <tbody key={group.packageName} className="block pt-1 pb-1.5">
+        <GroupHeader group={group} open={open} repoCount={repoCount} onFold={() => onFold(group.packageName)} />
+        {group.rows.filter((row) => open || row.record.id === editingId).map((row) => recordRow(row, false))}
+      </tbody>
+    );
+  };
+
+  const hiddenEdit = completeShown ? undefined : map.complete.flatMap(rowsOf).find((row) => row.record.id === editingId);
+
   return (
     <section>
       <div className="mb-3 flex items-baseline gap-2">
         <h2 id={titleId} className="text-base font-medium">
-          {KIND_LABEL[section.kind]}
+          Records
         </h2>
         <span className="text-xs tabular-nums text-muted-foreground">
-          {recordCountLabel(section.recordCount)}
+          {recordCountLabel(recordCount)} · counts from each repo's latest scan
         </span>
       </div>
-      <table aria-labelledby={titleId} className="panel block overflow-hidden">
-        <thead className="block">
-          <tr className={cn(MAP_ROW, "h-9 border-b border-border bg-muted")}>
-            <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground")}>
-              Package or component
+      <table aria-labelledby={titleId} className="panel block overflow-hidden [&>tbody+tbody]:border-t">
+        <thead className="block max-sm:sr-only">
+          <tr className={cn(ROW, "h-9 border-b border-border bg-muted")}>
+            <th scope="col" className="min-w-0 pr-3 pl-8 text-left text-label text-muted-foreground">
+              Name
             </th>
-            <td className={ARROW_CELL} />
-            <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground")}>
-              {SECTION_COLUMN[section.kind]}
+            <td />
+            <th scope="col" className="min-w-0 px-3 text-left text-label text-muted-foreground">
+              Replacement or reason
             </th>
-            <th scope="col" className={cn(CELL, "text-left text-label text-muted-foreground max-md:sr-only")}>
-              Status
+            <th scope="col" className={cn(OCC_CELL, "text-left text-label text-muted-foreground")}>
+              Occurrences left
             </th>
             <th scope="col" className={EDIT_CELL}>
               <span className="sr-only">Edit</span>
             </th>
           </tr>
         </thead>
-        {section.groups.map((group, i) => {
-          const key = groupKey(section, group);
-          const collapsible = !searching && group.rows.every((r) => r.stat?.status === "complete");
-          const open = !collapsible || expanded.has(key);
-          return (
-            <tbody key={key} className={cn("block pt-1 pb-1.5", i > 0 && "border-t border-border")}>
-              <GroupHeader
-                group={group}
-                toggle={collapsible ? { open, onToggle: () => onToggle(key) } : null}
-              />
-              {group.rows
-                .filter((row) => open || row.record.id === editingId)
-                .map((row) =>
-                  row.record.id === editingId ? (
-                    <tr key={row.record.id} id={`record-${row.record.id}`} className={MAP_ROW}>
-                      <td className="col-span-full bg-muted/40 p-4">{editForm}</td>
-                    </tr>
-                  ) : (
-                    <RecordRow
-                      key={row.record.id}
-                      row={row}
-                      nested={group.kind === "package"}
-                      repoCount={repoCount}
-                      highlighted={row.record.id === highlightId}
-                      onEdit={() => onEdit(row.record)}
-                    />
-                  ),
-                )}
-            </tbody>
-          );
-        })}
+        {map.groups.map(groupBody)}
+        {map.complete.length > 0 ? (
+          <tbody className="block pt-1 pb-1.5">
+            <tr className={cn(ROW, "min-h-10")}>
+              <th scope="row" className="col-span-full self-stretch text-left font-normal">
+                <button
+                  type="button"
+                  aria-expanded={completeShown}
+                  onClick={onToggleComplete}
+                  className="group/toggle flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring"
+                >
+                  <ChevronRight
+                    aria-hidden
+                    strokeWidth={1.5}
+                    className={cn(CHEVRON, "group-hover/toggle:text-foreground", completeShown && "rotate-90")}
+                  />
+                  <span className="text-xs font-medium text-muted-foreground group-hover/toggle:text-foreground">
+                    {completeShown
+                      ? `${map.completeRecords.toLocaleString()} complete`
+                      : `Show ${map.completeRecords.toLocaleString()} complete`}
+                  </span>
+                </button>
+              </th>
+            </tr>
+          </tbody>
+        ) : null}
+        {completeShown ? map.complete.map(groupBody) : null}
+        {hiddenEdit ? <tbody className="block">{recordRow(hiddenEdit, true)}</tbody> : null}
       </table>
     </section>
   );
@@ -478,121 +535,133 @@ function RecordTable({
 
 function GroupHeader({
   group,
-  toggle,
+  open,
+  repoCount,
+  onFold,
 }: {
-  group: MapGroup;
-  toggle: { open: boolean; onToggle: () => void } | null;
+  group: Extract<PackageGroup, { kind: "components" }>;
+  open: boolean;
+  repoCount: number;
+  onFold: () => void;
 }) {
-  const label =
-    group.kind === "package" ? (
-      <span className="min-w-0 md:flex md:items-baseline">
-        <span className="font-mono text-xs font-medium wrap-anywhere md:truncate" title={group.packageName}>
-          {group.packageName}
-        </span>
-        <wbr />
-        <span className="text-xs whitespace-nowrap text-muted-foreground md:shrink-0 md:whitespace-pre"> · {countLabel(group.rows.length)}</span>
-      </span>
-    ) : (
-      <span className="text-xs font-medium text-muted-foreground">Whole packages</span>
-    );
+  const name = "min-w-0 font-mono text-xs font-medium wrap-anywhere sm:truncate";
   return (
-    <tr className={cn(MAP_ROW, "min-h-10 py-1.5 md:py-0")}>
-      {toggle ? (
-        <th scope="row" className="min-w-0 self-stretch text-left font-normal">
+    <tr className={cn(ROW, "min-h-10 max-sm:py-1")}>
+      <th scope="row" className="min-w-0 self-stretch text-left font-normal max-sm:col-span-full max-sm:h-8">
+        <div className="flex h-full min-w-0 items-center pl-[0.4375rem]">
           <button
             type="button"
-            aria-expanded={toggle.open}
-            onClick={toggle.onToggle}
-            className="group/toggle flex size-full min-w-0 cursor-pointer items-center gap-1.5 px-3 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring"
+            aria-expanded={open}
+            aria-label={`Records in ${group.packageName}`}
+            onClick={onFold}
+            className="group/fold mr-px inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
           >
-            {label}
             <ChevronRight
               aria-hidden
               strokeWidth={1.5}
-              className={cn(
-                "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ease-out group-hover/toggle:text-foreground motion-reduce:transition-none",
-                toggle.open && "rotate-90",
-              )}
+              className={cn(CHEVRON, "group-hover/fold:text-foreground", open && "rotate-90")}
             />
           </button>
-        </th>
-      ) : (
-        <th scope="row" className={cn(CELL, "text-left font-normal")}>
-          {label}
-        </th>
-      )}
-      <td className={ARROW_CELL} />
-      <td className={CELL} />
-      <td className={cn(STATUS_CELL, "text-xs tabular-nums text-muted-foreground")}>
-        {progressLabel(group.progress)}
+          <span className="flex min-w-0 items-baseline">
+            {group.href ? (
+              <Link href={group.href} title={group.packageName} className={cn(name, LINK)}>
+                {group.packageName}
+              </Link>
+            ) : (
+              <span title={group.packageName} className={name}>
+                {group.packageName}
+              </span>
+            )}
+            <span className="shrink-0 text-xs whitespace-pre text-muted-foreground"> · {countLabel(group.recordCount)}</span>
+          </span>
+        </div>
+      </th>
+      <td className="max-sm:hidden" />
+      <td className="max-sm:hidden" />
+      <td className={cn(OCC_CELL, "max-sm:col-span-full max-sm:pr-3 max-sm:pl-8")}>
+        <Occurrences left={group.left} repoCount={repoCount} trend={null} selected={false} />
       </td>
-      <td className={EDIT_CELL} />
+      <td className="max-sm:hidden" />
     </tr>
   );
 }
 
 function RecordRow({
   row,
-  nested,
+  standalone,
   repoCount,
   highlighted,
   onEdit,
 }: {
   row: MapRow;
-  /** A component row under its package's header, indented one step. */
-  nested: boolean;
+  /** A whole-package record, alone in its group. */
+  standalone: boolean;
   repoCount: number;
   highlighted: boolean;
   onEdit: () => void;
 }) {
   const { record, stat, componentCount, nextHop } = row;
   const name = rowName(record);
-  const scope = record.grain === "package" ? scopeLabel(componentCount) : null;
+  const href = recordHref(record, stat);
+  const nameClass = "inline-block max-w-full align-top font-mono text-xs wrap-anywhere sm:truncate";
+  const nameEl = href ? (
+    <Link href={href} title={name} className={cn(nameClass, LINK)}>
+      {name}
+    </Link>
+  ) : (
+    <span title={name} className={nameClass}>
+      {name}
+    </span>
+  );
   return (
     <tr
       id={`record-${record.id}`}
       tabIndex={-1}
       aria-current={highlighted ? "true" : undefined}
       className={cn(
-        MAP_ROW,
-        "group/row min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out outline-none hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring md:py-0 dark:hover:bg-accent motion-reduce:transition-none",
-        highlighted && "selected",
+        ROW,
+        "group/row min-h-9 scroll-mt-24 py-1.5 outline-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring motion-reduce:transition-none max-sm:gap-y-1 max-sm:py-2",
+        standalone && "py-[0.6875rem] max-sm:py-3",
+        highlighted
+          ? "selected shadow-[inset_0_1px_0_var(--selected-edge),inset_0_-1px_0_var(--selected-edge)]"
+          : "hover:bg-secondary dark:hover:bg-accent",
       )}
     >
-      <th scope="row" className={cn(CELL, "text-left font-normal", nested && "pl-8")}>
-        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 md:flex-nowrap">
-          <span className="min-w-0 font-mono text-xs wrap-anywhere md:truncate" title={name}>
-            {name}
+      <th scope="row" className="min-w-0 pr-3 pl-8 text-left font-normal max-sm:col-start-1 max-sm:row-start-1">
+        {record.grain === "package" ? (
+          <span className="flex min-w-0 flex-col items-start max-sm:gap-y-1">
+            {nameEl}
+            <span className="text-xs whitespace-nowrap text-muted-foreground">{wholePackageLabel(componentCount)}</span>
           </span>
-          {scope ? <span className="shrink-0 text-[0.6875rem] text-faint">{scope}</span> : null}
-        </span>
+        ) : (
+          nameEl
+        )}
       </th>
-      <td className={ARROW_CELL}>
-        {record.disposition.kind === "superseded" ? (
-          <>
-            <span
-              aria-hidden
-              className="-translate-y-0.5 text-xs text-faint transition-colors duration-150 ease-out group-hover/row:text-muted-foreground motion-reduce:transition-none"
-            >
-              →
-            </span>
-            <span className="sr-only">superseded by</span>
-          </>
-        ) : null}
+      <td className="min-w-0 pl-3 text-xs whitespace-nowrap text-muted-foreground max-sm:hidden">
+        {record.disposition.kind === "superseded" ? "Superseded by" : "Retired"}
       </td>
-      <td className={cn(CELL, "md:pl-8")}>
+      <td className="min-w-0 px-3 max-sm:col-span-full max-sm:row-start-2 max-sm:pl-8">
         {record.disposition.kind === "superseded" ? (
           <SuccessorCell by={record.disposition.by} deprecated={stat?.successorDeprecated === true} nextHop={nextHop} />
         ) : (
-          <span className="block text-[0.8125rem] wrap-anywhere md:truncate" title={record.disposition.reason}>
+          <span
+            title={record.disposition.reason}
+            className="block text-sm/normal wrap-anywhere sm:line-clamp-2 sm:group-focus-within/row:line-clamp-none sm:group-hover/row:line-clamp-none"
+          >
+            <span className="text-xs text-muted-foreground sm:hidden">Retired · </span>
             {record.disposition.reason}
           </span>
         )}
       </td>
-      <td className={cn(STATUS_CELL, nested && "pl-8 md:pl-3")}>
-        <RecordStatus name={name} stat={stat} repoCount={repoCount} />
+      <td className={cn(OCC_CELL, "max-sm:col-span-full max-sm:row-start-3 max-sm:pr-3 max-sm:pl-8")}>
+        <Occurrences
+          left={leftOf(stat)}
+          repoCount={repoCount}
+          trend={stat?.trackingId ? { href: `/charts/${encodeURIComponent(stat.trackingId)}`, name } : null}
+          selected={highlighted}
+        />
       </td>
-      <td className={EDIT_CELL}>
+      <td className={cn(EDIT_CELL, "max-sm:col-start-2 max-sm:row-start-1 max-sm:self-start")}>
         <Button
           variant="ghost"
           size="icon-xs"
@@ -619,11 +688,12 @@ function SuccessorCell({
 }) {
   const successor = successorLabel(by);
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 md:flex-nowrap">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 sm:flex-nowrap">
       <span
-        className="min-w-0 font-mono text-xs wrap-anywhere md:truncate"
+        className="min-w-0 font-mono text-xs wrap-anywhere sm:truncate"
         title={pickLabel(by)}
       >
+        <span className="font-sans text-muted-foreground sm:hidden">Superseded by </span>
         <span className="text-foreground">{successor.name}</span>
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
       </span>
@@ -634,7 +704,7 @@ function SuccessorCell({
         </span>
       ) : null}
       {nextHop ? (
-        <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere md:flex-1 md:truncate">
+        <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere sm:flex-1 sm:truncate">
           {`→ ${pickLabel(nextHop)}`}
         </span>
       ) : null}
@@ -642,32 +712,69 @@ function SuccessorCell({
   );
 }
 
-const STATUS_LOOK: Record<RecordStat["status"], { Icon: typeof CircleDashed; tone: string }> = {
-  active: { Icon: CircleDashed, tone: "text-muted-foreground" },
-  complete: { Icon: CircleCheck, tone: "text-status-ok" },
-  unseen: { Icon: TriangleAlert, tone: "text-status-warn-text" },
-};
-
-function RecordStatus({ name, stat, repoCount }: { name: string; stat: RecordStat | undefined; repoCount: number }) {
-  const label = statusLabel(stat, repoCount);
-  if (!stat || !label) return null;
-  const { Icon, tone } = STATUS_LOOK[stat.status];
-  const content = (
-    <>
-      <Icon aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0" />
-      {label}
-    </>
-  );
-  const look = cn("inline-flex items-center gap-1.5 whitespace-nowrap text-xs tabular-nums", tone);
-  if (stat.status === "unseen" || !stat.trackingId) return <span className={look}>{content}</span>;
+/** The number right-aligned in its slot, then the words; a record's count links to its trend. */
+function Occurrences({
+  left,
+  repoCount,
+  trend,
+  selected,
+}: {
+  left: Left;
+  repoCount: number;
+  trend: { href: string; name: string } | null;
+  /** On the selected fill, None left mixes in some ink. */
+  selected: boolean;
+}) {
+  const t = leftText(left, repoCount);
+  const ok = selected ? "text-[color-mix(in_oklab,var(--status-ok)_85%,var(--foreground))]" : "text-status-ok";
+  const slot = "flex justify-end max-sm:justify-start max-sm:empty:hidden";
+  const look =
+    "inline-grid grid-cols-[2.25rem_auto] items-center gap-x-1.5 text-sm whitespace-nowrap tabular-nums max-sm:grid-cols-[auto_auto] max-sm:gap-x-1";
+  let content: React.ReactNode;
+  if (t.kind === "count") {
+    content = (
+      <>
+        <span className={slot}>{t.n}</span>
+        {t.where === null ? (
+          <span className="sm:hidden">left</span>
+        ) : (
+          <span>
+            <span className="sm:hidden">left </span>
+            in{" "}
+            {left.kind === "count" && left.repos.length === 1 ? (
+              <span className="font-mono text-xs">{t.where}</span>
+            ) : (
+              t.where
+            )}
+          </span>
+        )}
+      </>
+    );
+  } else if (t.kind === "none") {
+    content = (
+      <>
+        <span className={cn(slot, ok)}>
+          <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5" />
+        </span>
+        <span className={ok}>{t.text}</span>
+      </>
+    );
+  } else {
+    content = (
+      <>
+        <span className={slot} />
+        <span className={t.kind === "unseen" ? "text-status-warn-text" : "text-muted-foreground"}>{t.text}</span>
+      </>
+    );
+  }
+  if (!trend || (t.kind !== "count" && t.kind !== "none")) return <span className={look}>{content}</span>;
   return (
     <Link
-      href={`/charts/${encodeURIComponent(stat.trackingId)}`}
-      aria-label={`${name}: ${label.charAt(0).toLowerCase()}${label.slice(1)}`}
+      href={trend.href}
+      aria-label={`${t.text}, trend for ${trend.name}`}
       className={cn(
         look,
-        "rounded-sm underline-offset-4 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring",
-        stat.status === "active" && "hover:text-foreground",
+        "rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring [&:focus-visible>*]:underline [&:hover>*]:underline",
       )}
     >
       {content}

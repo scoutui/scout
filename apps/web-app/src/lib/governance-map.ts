@@ -13,10 +13,6 @@ export type MapRow = {
   nextHop: Successor | null;
 };
 export type GroupProgress = { inProgress: number; complete: number; unseen: number };
-export type MapGroup =
-  | { kind: "package"; packageName: string; rows: MapRow[]; progress: GroupProgress }
-  | { kind: "whole-packages"; rows: MapRow[]; progress: GroupProgress };
-export type MapSection = { kind: "superseded" | "retired"; recordCount: number; groups: MapGroup[] };
 /** What's left of a record or a package. */
 export type Left = { kind: "no-data" } | { kind: "unseen" } | { kind: "count"; n: number; repos: string[] };
 export type PackageGroup =
@@ -33,8 +29,6 @@ type MapInput = {
   stats: Record<string, RecordStat>;
   sources: { packageName: string; exportName?: string }[];
 };
-
-const RANK: Record<RecordStat["status"], number> = { unseen: 0, active: 1, complete: 2 };
 
 export function rowName(r: GovernanceRecord): string {
   return r.targetExport ?? r.targetPackage;
@@ -64,52 +58,6 @@ function rowMaker(input: MapInput): (record: GovernanceRecord) => MapRow {
       nextHop: nextHopOf(record, stat, input.all),
     };
   };
-}
-
-function progressOf(rows: MapRow[]): GroupProgress {
-  const p: GroupProgress = { inProgress: 0, complete: 0, unseen: 0 };
-  for (const { stat } of rows) {
-    if (stat?.status === "active") p.inProgress++;
-    else if (stat?.status === "complete") p.complete++;
-    else if (stat?.status === "unseen") p.unseen++;
-  }
-  return p;
-}
-
-export function buildRecordMap(input: MapInput): MapSection[] {
-  const toRow = rowMaker(input);
-  const order = (a: MapRow, b: MapRow) =>
-    (a.stat ? RANK[a.stat.status] : 3) - (b.stat ? RANK[b.stat.status] : 3) ||
-    rowName(a.record).localeCompare(rowName(b.record));
-
-  const sections: MapSection[] = [];
-  for (const kind of ["superseded", "retired"] as const) {
-    const records = input.visible.filter((r) => r.disposition.kind === kind);
-    if (records.length === 0) continue;
-    const byPackage = new Map<string, MapRow[]>();
-    const whole: MapRow[] = [];
-    for (const r of records) {
-      if (r.grain === "package") {
-        whole.push(toRow(r));
-        continue;
-      }
-      const rows = byPackage.get(r.targetPackage) ?? [];
-      rows.push(toRow(r));
-      byPackage.set(r.targetPackage, rows);
-    }
-    const groups: MapGroup[] = [...byPackage.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([packageName, rows]) => {
-        rows.sort(order);
-        return { kind: "package", packageName, rows, progress: progressOf(rows) };
-      });
-    if (whole.length > 0) {
-      whole.sort(order);
-      groups.push({ kind: "whole-packages", rows: whole, progress: progressOf(whole) });
-    }
-    sections.push({ kind, recordCount: records.length, groups });
-  }
-  return sections;
 }
 
 export function leftOf(stat: RecordStat | undefined): Left {
@@ -160,8 +108,9 @@ export function groupRecords(input: MapInput): RecordMap {
   const complete: PackageGroup[] = [];
   let completeRecords = 0;
   for (const [packageName, rows] of byPackage) {
-    if (!rows.some((r) => visible.has(r.record.id))) continue;
     rows.sort(byLeft);
+    const shown = rows.filter((r) => visible.has(r.record.id));
+    if (shown.length === 0) continue;
     const left = totalOf(rows);
     const [only] = rows;
     const group: PackageGroup =
@@ -170,14 +119,14 @@ export function groupRecords(input: MapInput): RecordMap {
         : {
             kind: "components",
             packageName,
-            rows: rows.filter((r) => visible.has(r.record.id)),
+            rows: shown,
             recordCount: rows.length,
             left,
-            href: rows.some((r) => (r.stat?.componentIds.length ?? 0) > 0) ? packagePath(packageName) : null,
+            href: rows.some((r) => recordHref(r.record, r.stat) !== null) ? packagePath(packageName) : null,
           };
     if (rows.every((r) => r.stat?.status === "complete")) {
       complete.push(group);
-      completeRecords += rows.length;
+      completeRecords += shown.length;
     } else {
       groups.push(group);
     }
@@ -189,13 +138,6 @@ export function groupRecords(input: MapInput): RecordMap {
 }
 
 const plural = (n: number, one: string, many: string) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
-
-export function statusLabel(stat: RecordStat | undefined, repoCount: number): string | null {
-  if (!stat) return null;
-  if (stat.status === "unseen") return "Never matched a scan";
-  if (stat.status === "complete") return "Complete";
-  return repoCount > 1 ? `Used in ${plural(stat.leftIn.length, "repo", "repos")}` : "In use";
-}
 
 export function leftText(left: Left, repoCount: number): LeftText {
   if (left.kind === "no-data") return { kind: "no-data", text: "No data" };
@@ -231,11 +173,6 @@ export function recordCountLabel(n: number): string {
 
 export function wholePackageLabel(componentCount: number | null): string {
   return componentCount === null ? "Whole package" : `Whole package · ${countLabel(componentCount)}`;
-}
-
-export function scopeLabel(n: number | null): string | null {
-  if (n === null) return null;
-  return n === 1 ? "1 component" : `All ${n.toLocaleString()} components`;
 }
 
 export function successorLabel(s: Successor): { name: string; packageName: string | null } {

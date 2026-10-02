@@ -36,7 +36,7 @@ export default async function GovernancePage() {
         notice={notice ? <ChartResultsState notice={notice} besideNumbers={registry !== null} /> : null}
       />
 
-      <section aria-labelledby="tags-title">
+      <section id="tags" aria-labelledby="tags-title" className="scroll-mt-24">
         <TagsPanel allTags={tags} packageNames={packageNames} />
       </section>
     </div>

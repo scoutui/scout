@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GovernanceRecord, RecordStat } from "@scoutui/web-shared";
 import {
-  buildRecordMap,
   countLabel,
   groupRecords,
   leftOf,
@@ -9,8 +8,6 @@ import {
   progressLabel,
   recordCountLabel,
   recordHref,
-  scopeLabel,
-  statusLabel,
   successorLabel,
   wholePackageLabel,
   type Left,
@@ -68,40 +65,6 @@ const complete = stat("complete", { left: 0, leftIn: [] });
 const unseen = stat("unseen", { left: 0, leftIn: [] });
 
 const rowsOf = (g: PackageGroup | undefined): MapRow[] => (g === undefined ? [] : g.kind === "whole" ? [g.row] : g.rows);
-
-describe("buildRecordMap", () => {
-  it("puts superseded records before retired ones, component records under their source package and package records last", () => {
-    const map = buildRecordMap({ visible: all, all, stats: {}, sources });
-    expect(map.map((s) => [s.kind, s.recordCount])).toEqual([["superseded", 5], ["retired", 2]]);
-    const [sup, ret] = map;
-    expect(sup?.groups.map((g) => (g.kind === "package" ? g.packageName : g.kind))).toEqual(["@acme/old", "whole-packages"]);
-    expect(ret?.groups.map((g) => (g.kind === "package" ? g.packageName : g.kind))).toEqual(["@acme/old", "whole-packages"]);
-  });
-
-  it("gives a source package its own group even with a single record", () => {
-    const map = buildRecordMap({ visible: [toast], all, stats: {}, sources });
-    expect(map).toHaveLength(1);
-    expect(map[0]?.groups[0]).toMatchObject({ kind: "package", packageName: "@acme/old" });
-    expect(map[0]?.groups[0]?.rows.map((r) => r.record.id)).toEqual(["t"]);
-  });
-
-  it("leaves out a section with no visible records", () => {
-    expect(buildRecordMap({ visible: [button], all, stats: {}, sources }).map((s) => s.kind)).toEqual(["superseded"]);
-  });
-
-  it("orders rows never matched, then in progress, then complete, then no status, by name within each", () => {
-    const stats = { b: stat("complete"), g: stat("active"), f: stat("unseen"), i: stat("active") };
-    const extra = rec("z", "@acme/old", "Avatar", by("@acme/new", "Avatar"));
-    const map = buildRecordMap({ visible: [button, badge, field, input, extra], all, stats, sources });
-    expect(map[0]?.groups[0]?.rows.map((r) => r.record.targetExport)).toEqual(["TextField", "Badge", "Input", "Button", "Avatar"]);
-  });
-
-  it("counts a group's progress from its rows' stats, ignoring rows with none", () => {
-    const stats = { b: stat("complete"), g: stat("active"), f: stat("unseen") };
-    const group = buildRecordMap({ visible: all, all, stats, sources })[0]?.groups[0];
-    expect(group?.progress).toEqual({ inProgress: 1, complete: 1, unseen: 1 });
-  });
-});
 
 describe("groupRecords", () => {
   it("makes a whole-package record its package's only row and groups component records by source package", () => {
@@ -200,6 +163,13 @@ describe("groupRecords", () => {
     }).toEqual({ groups: ["@acme/old", "old-icons"], complete: ["old-kit", "old-select"], completeRecords: 3 });
   });
 
+  it("counts only the complete records a search shows", () => {
+    const records = [select, card, tabs];
+    const stats = { s: complete, c: complete, x: complete };
+    const map = groupRecords({ visible: [card], all: records, stats, sources });
+    expect([map.complete.map((g) => g.packageName), map.completeRecords]).toEqual([["old-kit"], 1]);
+  });
+
   it("counts a package record's scanned components, de-duplicated, or null when no scan has any", () => {
     const { groups } = groupRecords({ visible: [icons, select], all, stats: {}, sources });
     expect(groups.map((g) => [g.packageName, rowsOf(g)[0]?.componentCount])).toEqual([
@@ -234,6 +204,7 @@ describe("groupRecords", () => {
 describe("leftText", () => {
   it.each<[Left, number, LeftText]>([
     [{ kind: "count", n: 17, repos: ["vue-app"] }, 3, { kind: "count", n: "17", where: "vue-app", text: "17 in vue-app" }],
+    [{ kind: "count", n: 17, repos: ["vue-app"] }, 2, { kind: "count", n: "17", where: "vue-app", text: "17 in vue-app" }],
     [{ kind: "count", n: 20, repos: ["a", "b"] }, 3, { kind: "count", n: "20", where: "2 repos", text: "20 in 2 repos" }],
     [{ kind: "count", n: 1200, repos: ["a"] }, 1, { kind: "count", n: "1,200", where: null, text: "1,200" }],
     [{ kind: "count", n: 0, repos: [] }, 3, { kind: "none", text: "None left" }],
@@ -258,17 +229,6 @@ describe("recordHref", () => {
 
 describe("wording", () => {
   it.each([
-    [undefined, 3, null],
-    [stat("unseen"), 3, "Never matched a scan"],
-    [stat("complete", { left: 0, leftIn: [] }), 3, "Complete"],
-    [stat("active", { leftIn: ["repo-a"] }), 3, "Used in 1 repo"],
-    [stat("active", { leftIn: Array.from({ length: 12 }, (_, i) => `repo-${i}`) }), 3, "Used in 12 repos"],
-    [stat("active", { leftIn: ["repo-a"] }), 1, "In use"],
-  ])("statusLabel(%o, %i) is %s", (s, repoCount, expected) => {
-    expect(statusLabel(s, repoCount)).toBe(expected);
-  });
-
-  it.each([
     [{ inProgress: 5, complete: 1, unseen: 0 }, "5 in progress · 1 complete"],
     [{ inProgress: 0, complete: 6, unseen: 0 }, "6 complete"],
     [{ inProgress: 1, complete: 0, unseen: 2 }, "1 in progress · 2 never matched a scan"],
@@ -283,10 +243,6 @@ describe("wording", () => {
 
   it.each([[1, "1 record"], [7, "7 records"]])("recordCountLabel(%i) is %s", (n, expected) => {
     expect(recordCountLabel(n)).toBe(expected);
-  });
-
-  it.each([[null, null], [1, "1 component"], [4, "All 4 components"]])("scopeLabel(%o) is %s", (n, expected) => {
-    expect(scopeLabel(n)).toBe(expected);
   });
 
   it.each([[7, "Whole package · 7 components"], [1, "Whole package · 1 component"], [null, "Whole package"]])(

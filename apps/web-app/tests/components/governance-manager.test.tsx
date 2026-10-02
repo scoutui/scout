@@ -11,101 +11,201 @@ vi.mock("@/app/governance/governance-actions", () => ({
 
 Element.prototype.scrollIntoView = vi.fn();
 
+function rec(
+  id: string,
+  targetPackage: string,
+  targetExport: string | null,
+  disposition: GovernanceRecord["disposition"],
+): GovernanceRecord {
+  return {
+    id,
+    grain: targetExport === null ? "package" : "component",
+    targetPackage,
+    targetExport,
+    disposition,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  };
+}
+
 const records: GovernanceRecord[] = [
-  {
-    id: "r1",
-    grain: "component",
-    targetPackage: "@acme/old",
-    targetExport: "Button",
-    disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } },
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  },
-  {
-    id: "r2",
-    grain: "component",
-    targetPackage: "@acme/old",
-    targetExport: "Chip",
-    disposition: { kind: "retired", reason: "No replacement" },
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  },
+  rec("r1", "@acme/old", "Button", { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }),
+  rec("r2", "@acme/old", "Chip", { kind: "retired", reason: "No replacement" }),
+  rec("r3", "@acme/forms", "Field", { kind: "superseded", by: { packageName: "@acme/new", exportName: "Input" } }),
+  rec("r4", "@acme/forms", "Select", { kind: "retired", reason: "Use a native select" }),
+  rec("r-icons", "old-icons", null, { kind: "superseded", by: { packageName: "new-icons" } }),
+  rec("r-done", "@legacy/ui", "OldThing", { kind: "retired", reason: "Gone" }),
 ];
 
 const sources = [
   { packageName: "@acme/old", exportName: "Button" },
   { packageName: "@acme/new", exportName: "Button" },
+  { packageName: "old-icons", exportName: "Star" },
+  { packageName: "old-icons", exportName: "Heart" },
 ];
 
 const stats = {
-  r1: { status: "active", left: 4, leftIn: ["repo-a", "repo-b"], componentIds: [], trackingId: "migration:r1", successorDeprecated: false },
-  r2: { status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: false },
+  r1: { status: "active", left: 20, leftIn: ["repo-a", "repo-b"], componentIds: ["c-button"], trackingId: "migration:r1", successorDeprecated: false },
+  r2: { status: "active", left: 3, leftIn: ["repo-a"], componentIds: ["c-chip"], trackingId: "retirement:r2", successorDeprecated: false },
+  r3: { status: "active", left: 17, leftIn: ["repo-a"], componentIds: ["c-field"], trackingId: "migration:r3", successorDeprecated: false },
+  r4: { status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: false },
+  "r-icons": { status: "active", left: 5, leftIn: ["repo-b"], componentIds: ["c-star", "c-heart"], trackingId: "migration:r-icons", successorDeprecated: false },
+  "r-done": { status: "complete", left: 0, leftIn: [], componentIds: ["c-old"], trackingId: "retirement:r-done", successorDeprecated: false },
 } satisfies Record<string, RecordStat>;
 
+const row = (id: string) => document.getElementById(`record-${id}`) as HTMLElement;
+const groupHeader = (packageName: string) =>
+  screen.getByRole("button", { name: `Records in ${packageName}` }).closest("tr") as HTMLElement;
+const occurrences = (tr: HTMLElement) => tr.children[3] as HTMLElement;
+
 describe("GovernanceManager", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.location.hash = "";
+  });
 
-  it("shows superseded and retired records in their own tables with the form's column headings", () => {
+  it("shows one Records table with the name, replacement or reason, and occurrences left columns", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
-    const superseded = screen.getByRole("table", { name: "Superseded" });
-    expect(within(superseded).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
-      "Package or component",
-      "Superseded by",
-      "Status",
+    expect(screen.getByText("6 records · counts from each repo's latest scan")).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "Records" });
+    expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
+      "Name",
+      "Replacement or reason",
+      "Occurrences left",
       "Edit",
     ]);
-    expect(within(superseded).getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
-    const retired = screen.getByRole("table", { name: "Retired" });
-    expect(within(retired).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
-      "Package or component",
-      "Reason",
-      "Status",
-      "Edit",
-    ]);
-    expect(within(retired).getByText("No replacement")).toBeInTheDocument();
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+    expect(within(table).getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
   });
 
-  it("heads a group with its source package and record count and no arrow, while record rows carry one", () => {
+  it("says on every row whether the record is superseded or retired", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
-    const superseded = screen.getByRole("table", { name: "Superseded" });
-    const group = within(superseded).getAllByRole("rowgroup")[1] as HTMLElement;
-    const [header, row] = within(group).getAllByRole("row");
-    expect(header?.textContent).toContain("@acme/old · 1 component");
-    expect(header?.textContent).not.toContain("→");
-    expect(header?.textContent).not.toContain("superseded by");
-    expect(row?.textContent).toContain("superseded by");
-    expect(row?.textContent).toContain("Button · @acme/new");
+    const button = row("r1");
+    expect(button.children[1]?.textContent).toBe("Superseded by");
+    expect(button.children[2]?.textContent).toContain("Button · @acme/new");
+    const chip = row("r2");
+    expect(chip.children[1]?.textContent).toBe("Retired");
+    expect(within(chip).getByTitle("No replacement")).toBeInTheDocument();
   });
 
-  it("names each status link and edit button for its record", () => {
+  it("links each count to the record's trend, named for the record", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
-    expect(screen.getByRole("link", { name: "Button: used in 2 repos" })).toHaveAttribute("href", "/charts/migration%3Ar1");
-    expect(screen.getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
-    expect(screen.getByText("Never matched a scan")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "20 in 2 repos, trend for Button" })).toHaveAttribute("href", "/charts/migration%3Ar1");
+    expect(screen.getByRole("link", { name: "17 in repo-a, trend for Field" })).toHaveAttribute("href", "/charts/migration%3Ar3");
+    expect(occurrences(row("r4")).textContent).toBe("Not in any scan");
+    expect(within(row("r4")).queryByRole("link", { name: /trend for/ })).toBeNull();
   });
 
-  it("collapses a group whose records are all complete, and the search opens it", () => {
-    const done = { ...stats, r1: { ...stats.r1, status: "complete" } as RecordStat };
-    render(<GovernanceManager records={records} sources={sources} stats={done} repoCount={3} summary={null} notice={null} />);
-    const toggle = screen.getByRole("button", { name: /@acme\/old/ });
+  it("drops the repo from counts when fewer than two repos are scanned", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={1} summary={null} notice={null} />);
+    expect(screen.getByRole("link", { name: "17, trend for Field" })).toBeInTheDocument();
+    expect(occurrences(row("r3")).textContent).not.toContain("repo-a");
+  });
+
+  it("shows each package's total as plain text in its header", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    const header = groupHeader("@acme/old");
+    expect(header.textContent).toContain("@acme/old · 2 components");
+    expect(occurrences(header).textContent).toContain("23");
+    expect(occurrences(header).textContent).toContain("in 2 repos");
+    expect(occurrences(header).querySelector("a")).toBeNull();
+    expect(occurrences(groupHeader("@acme/forms")).textContent).toContain("in repo-a");
+  });
+
+  it("links a name to its component page, or its package page for a whole package, and leaves it plain when nothing is left to show", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    expect(within(row("r1")).getByRole("link", { name: "Button" })).toHaveAttribute("href", "/components/c-button");
+    expect(within(row("r-icons")).getByRole("link", { name: "old-icons" })).toHaveAttribute("href", "/packages/old-icons");
+    expect(row("r-icons").textContent).toContain("Whole package · 2 components");
+    expect(within(row("r4")).getByText("Select")).toBeInTheDocument();
+    expect(within(row("r4")).queryByRole("link", { name: "Select" })).toBeNull();
+    expect(within(groupHeader("@acme/old")).getByRole("link", { name: "@acme/old" })).toHaveAttribute("href", "/packages/%40acme%2Fold");
+  });
+
+  it("leaves a package name plain when none of its records covers a component", () => {
+    const plain = { ...stats, r1: { ...stats.r1, componentIds: [] }, r2: { ...stats.r2, componentIds: [] } };
+    render(<GovernanceManager records={records} sources={sources} stats={plain} repoCount={3} summary={null} notice={null} />);
+    expect(within(groupHeader("@acme/old")).getByText("@acme/old")).toBeInTheDocument();
+    expect(within(groupHeader("@acme/old")).queryByRole("link", { name: "@acme/old" })).toBeNull();
+  });
+
+  it("shows no data in every count and total while results are rebuilding", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    const table = screen.getByRole("table", { name: "Records" });
+    const rows = [...table.querySelectorAll<HTMLElement>("tbody > tr")];
+    expect(rows).toHaveLength(9);
+    expect(rows.map((tr) => occurrences(tr).textContent)).toEqual(Array(9).fill("No data"));
+    expect(within(table).queryByText("None left")).toBeNull();
+    expect(within(table).queryAllByRole("link", { name: /trend for/ })).toEqual([]);
+  });
+
+  it("shows no data for a record saved since the last rebuild, and for its package's total, keeping the other counts", () => {
+    const { r2: _saved, ...rest } = stats;
+    render(<GovernanceManager records={records} sources={sources} stats={rest} repoCount={3} summary={null} notice={null} />);
+    expect(occurrences(row("r2")).textContent).toBe("No data");
+    expect(occurrences(groupHeader("@acme/old")).textContent).toBe("No data");
+    expect(screen.getByRole("link", { name: "20 in 2 repos, trend for Button" })).toBeInTheDocument();
+    expect(occurrences(groupHeader("@acme/forms")).textContent).toContain("17");
+  });
+
+  it("folds finished packages behind Show N complete", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    const toggle = screen.getByRole("button", { name: "Show 1 complete" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("button", { name: "Edit Button" })).not.toBeInTheDocument();
+    expect(row("r-done")).toBeNull();
     fireEvent.click(toggle);
-    expect(screen.getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
-    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+    expect(within(row("r-done")).getByRole("link", { name: "None left, trend for OldThing" })).toHaveAttribute(
+      "href",
+      "/charts/retirement%3Ar-done",
+    );
+  });
+
+  it("folds and unfolds a package from its own button, and a search shows matches in a folded package until it's cleared", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    const fold = screen.getByRole("button", { name: "Records in @acme/old" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(fold);
+    expect(fold).toHaveAttribute("aria-expanded", "false");
+    expect(row("r1")).toBeNull();
+    expect(groupHeader("@acme/old").textContent).toContain("23");
+
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "button" } });
-    expect(screen.getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
+    expect(row("r1")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Records in @acme/old" })).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
+    expect(row("r1")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Records in @acme/old" }));
+    expect(row("r1")).not.toBeNull();
   });
 
-  it("keeps the record being edited on screen when its group collapses", () => {
-    const done = { ...stats, r1: { ...stats.r1, status: "complete" } as RecordStat };
-    render(<GovernanceManager records={records} sources={sources} stats={done} repoCount={3} summary={null} notice={null} />);
-    const toggle = screen.getByRole("button", { name: /@acme\/old/ });
-    fireEvent.click(toggle);
-    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  it("opens the complete section while a search matches a finished package", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "oldthing" } });
+    expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+    expect(row("r-done")).not.toBeNull();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
+    expect(screen.getByRole("button", { name: "Show 1 complete" })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("marks, scrolls to and focuses a record linked from another page, opening the complete section", () => {
+    window.location.hash = "#record-r-done";
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    const done = row("r-done");
+    expect(done).toHaveAttribute("aria-current", "true");
+    expect(done).toHaveClass("selected");
+    expect(done.scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: "center" }));
+    expect(document.activeElement).toBe(within(done).getByRole("link", { name: "OldThing" }));
+    expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("keeps the record being edited on screen when the complete section folds", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Show 1 complete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit OldThing" }));
+    fireEvent.click(screen.getByRole("button", { name: "1 complete" }));
+    expect(screen.getByRole("button", { name: "Show 1 complete" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
   });
 
@@ -251,14 +351,14 @@ describe("GovernanceManager", () => {
     expect(link).toHaveAttribute("href", "#record-r1");
   });
 
-  it("opens a folded group to show the existing record the conflict link goes to", async () => {
+  it("opens the complete section to show the existing record the conflict link goes to", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     vi.mocked(saveGovernance).mockResolvedValueOnce({
       ok: false,
       error: "Already governed.",
       conflict: { kind: "target_governed", existingId: "r1" },
     });
-    const done = { ...stats, r1: { ...stats.r1, status: "complete" } as RecordStat };
+    const done = { r1: { ...stats.r1, status: "complete", left: 0, leftIn: [] } as RecordStat };
     render(<GovernanceManager records={[records[0] as GovernanceRecord]} sources={sources} stats={done} repoCount={3} summary={null} notice={null} />);
     expect(document.getElementById("record-r1")).toBeNull();
 
@@ -272,7 +372,8 @@ describe("GovernanceManager", () => {
     fireEvent.click(await screen.findByRole("link", { name: /go to the existing record/i }));
 
     await vi.waitFor(() => expect(document.getElementById("record-r1")).not.toBeNull());
-    expect(screen.getByRole("button", { name: /@acme\/old/ })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+    expect(document.getElementById("record-r1")).toHaveAttribute("aria-current", "true");
   });
 
   it("renders no jump link on a component_grain_overlap conflict (plural existingIds)", async () => {
