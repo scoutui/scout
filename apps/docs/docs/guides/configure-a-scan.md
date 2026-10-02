@@ -46,8 +46,6 @@ For a repo that keeps its code in `app/` and `components/`, list both folders:
 }
 ```
 
-If you pick only Vue, in the questions or with `--framework vue`, `init` writes `src/**/*.{vue}`, which matches no files. Set `include` to `src/**/*.vue`.
-
 ## Leave out files you don't want counted
 
 The `exclude` patterns from `init` skip test, spec and story files, and `node_modules`. Add a pattern to `exclude` for anything else you don't want counted, such as `**/__mocks__/**` for mocks or `src/generated/**` for generated code.
