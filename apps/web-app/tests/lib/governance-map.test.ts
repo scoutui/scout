@@ -31,7 +31,9 @@ const by = (packageName: string, exportName?: string) =>
 const retired = (reason: string) => ({ kind: "retired", reason }) as const;
 const stat = (status: RecordStat["status"], extra: Partial<RecordStat> = {}): RecordStat => ({
   status,
-  repos: 1,
+  left: 1,
+  leftIn: ["repo-a"],
+  componentIds: [],
   trackingId: status === "unseen" ? null : "migration:x",
   successorDeprecated: false,
   ...extra,
@@ -109,10 +111,10 @@ describe("wording", () => {
   it.each([
     [undefined, 3, null],
     [stat("unseen"), 3, "Never matched a scan"],
-    [stat("complete", { repos: 0 }), 3, "Complete"],
-    [stat("active", { repos: 1 }), 3, "Used in 1 repo"],
-    [stat("active", { repos: 12 }), 3, "Used in 12 repos"],
-    [stat("active", { repos: 1 }), 1, "In use"],
+    [stat("complete", { left: 0, leftIn: [] }), 3, "Complete"],
+    [stat("active", { leftIn: ["repo-a"] }), 3, "Used in 1 repo"],
+    [stat("active", { leftIn: Array.from({ length: 12 }, (_, i) => `repo-${i}`) }), 3, "Used in 12 repos"],
+    [stat("active", { leftIn: ["repo-a"] }), 1, "In use"],
   ])("statusLabel(%o, %i) is %s", (s, repoCount, expected) => {
     expect(statusLabel(s, repoCount)).toBe(expected);
   });

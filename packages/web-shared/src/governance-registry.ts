@@ -2,16 +2,23 @@ import type { GovernanceRecord } from "./dto.js";
 import type { DigestScan } from "./digest.js";
 import { deriveGovernanceTracking } from "./governance-tracking.js";
 import { successorDeprecated } from "./governance-integrity.js";
+import { governedComponentIds } from "./governance.js";
+import { latestScanPerRepo } from "./scan-order.js";
 
 /**
  * A record's state on the registry: whether it matches any scan, whether it is
- * still doing work, and where its numbers live. Percentages, deltas and series
- * belong on the tracking page `trackingId` links to.
+ * still doing work, how much of what it covers is left and where, which
+ * components it covers, and where its numbers live. Percentages, deltas and
+ * series belong on the tracking page `trackingId` links to.
  */
 export type RecordStat = {
   status: "active" | "complete" | "unseen";
-  /** Repos whose latest scan still shows the deprecated side. */
-  repos: number;
+  /** Occurrences of what the record covers, summed over each repo's latest scan. */
+  left: number;
+  /** Repos whose latest scan still has some, by repo id, sorted. */
+  leftIn: string[];
+  /** Components the record covers in each repo's latest scan, by id, sorted. */
+  componentIds: string[];
   /** Derived tracking id (`migration:<id>` / `retirement:<id>`); null when the record never matched a scan. */
   trackingId: string | null;
   /** The successor is itself governed (a chain). */
@@ -26,9 +33,10 @@ export type RegistryStats = {
 
 /**
  * Per-record registry state. The estate-scoped tracking derivation gives
- * lifecycle status and the tracking edge; per-repo derivations give coverage;
- * a record the estate derivation skips has never matched a scan (often a typo).
- * Every record gets an entry, unseen ones included.
+ * lifecycle status, the occurrences left and the tracking edge; per-repo
+ * derivations give the repos still using it; each repo's latest scan gives the
+ * components it covers. A record the estate derivation skips has never matched
+ * a scan (often a typo). Every record gets an entry, unseen ones included.
  */
 export function deriveRecordStats(
   records: GovernanceRecord[],
@@ -39,24 +47,28 @@ export function deriveRecordStats(
   );
 
   const repoIds = [...new Set(scans.map((d) => d.meta.repo.id))];
-  const activeRepos = new Map<string, number>();
+  const leftIn = new Map<string, string[]>();
   for (const repoId of repoIds) {
     for (const e of deriveGovernanceTracking(records, scans, { kind: "repo", repoId })) {
-      if (e.active) activeRepos.set(e.record.id, (activeRepos.get(e.record.id) ?? 0) + 1);
+      if (e.active) leftIn.set(e.record.id, [...(leftIn.get(e.record.id) ?? []), repoId]);
     }
   }
+  const latest = latestScanPerRepo(scans);
 
   const stats: Record<string, RecordStat> = {};
   for (const r of records) {
     const entry = estate.get(r.id);
+    const chained = successorDeprecated(r, records);
     stats[r.id] = entry
       ? {
           status: entry.active ? "active" : "complete",
-          repos: activeRepos.get(r.id) ?? 0,
+          left: entry.remaining,
+          leftIn: [...(leftIn.get(r.id) ?? [])].sort(),
+          componentIds: [...new Set(latest.flatMap((scan) => [...governedComponentIds(r, scan, records)]))].sort(),
           trackingId: entry.id,
-          successorDeprecated: successorDeprecated(r, records),
+          successorDeprecated: chained,
         }
-      : { status: "unseen", repos: 0, trackingId: null, successorDeprecated: successorDeprecated(r, records) };
+      : { status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: chained };
   }
 
   return { stats, repoCount: repoIds.length };

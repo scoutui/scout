@@ -102,7 +102,7 @@ export function statusLabel(stat: RecordStat | undefined, repoCount: number): st
   if (!stat) return null;
   if (stat.status === "unseen") return "Never matched a scan";
   if (stat.status === "complete") return "Complete";
-  return repoCount > 1 ? `Used in ${plural(stat.repos, "repo", "repos")}` : "In use";
+  return repoCount > 1 ? `Used in ${plural(stat.leftIn.length, "repo", "repos")}` : "In use";
 }
 
 export function progressLabel(p: GroupProgress): string {

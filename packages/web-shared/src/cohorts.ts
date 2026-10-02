@@ -5,7 +5,7 @@ import { resolveTags } from "./tags.js";
 import { componentDeprecated } from "./governance.js";
 import { presentIdentity } from "./present-identity.js";
 import { representativeUsage } from "./representative.js";
-import { newestScanFirst, scanOrderTime } from "./scan-order.js";
+import { latestScanPerRepo, newestScanFirst, scanOrderTime } from "./scan-order.js";
 import { isUsed, usedComponentKey } from "./usage.js";
 
 // `usedKeys` (not a raw count): callers union the set across repos and scans, so a
@@ -154,11 +154,7 @@ export function projectCohortSnapshot(
   governance: GovernanceRecord[] = [],
   names: DigestScan[] = [],
 ): CohortPoint[] {
-  const latestByRepo = new Map<string, DigestScan>();
-  for (const a of [...artifacts].sort((x, y) => newestScanFirst(y.meta, x.meta))) {
-    latestByRepo.set(a.meta.repo.id, a);
-  }
-  const latest = [...latestByRepo.values()];
+  const latest = latestScanPerRepo(artifacts);
 
   const raw = drawnCohorts(cohorts, [...artifacts, ...names], tags, governance).map(({ selector, ...meta }) => {
     let occurrences = 0;

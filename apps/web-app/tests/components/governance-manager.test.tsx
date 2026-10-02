@@ -38,8 +38,8 @@ const sources = [
 ];
 
 const stats = {
-  r1: { status: "active", repos: 2, trackingId: "migration:r1", successorDeprecated: false },
-  r2: { status: "unseen", repos: 0, trackingId: null, successorDeprecated: false },
+  r1: { status: "active", left: 4, leftIn: ["repo-a", "repo-b"], componentIds: [], trackingId: "migration:r1", successorDeprecated: false },
+  r2: { status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: false },
 } satisfies Record<string, RecordStat>;
 
 describe("GovernanceManager", () => {
@@ -114,7 +114,7 @@ describe("GovernanceManager", () => {
       { ...(records[0] as GovernanceRecord), id: "a", targetExport: "TextField", disposition: { kind: "superseded", by: { packageName: "@acme/old", exportName: "Input" } } },
       { ...(records[0] as GovernanceRecord), id: "b", targetExport: "Input", disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Input" } } },
     ];
-    const chainStats = { a: { status: "active", repos: 1, trackingId: "migration:a", successorDeprecated: true } as RecordStat };
+    const chainStats = { a: { status: "active", left: 1, leftIn: ["repo-a"], componentIds: [], trackingId: "migration:a", successorDeprecated: true } as RecordStat };
     render(<GovernanceManager records={chain} sources={sources} stats={chainStats} repoCount={3} summary={null} notice={null} />);
     expect(screen.getByText("Successor deprecated")).toBeInTheDocument();
     expect(screen.getByText("→ Input · @acme/new")).toBeInTheDocument();
