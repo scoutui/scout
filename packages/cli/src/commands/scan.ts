@@ -19,7 +19,7 @@ import { emitReact } from "@scoutui/parser-react";
 import { emitVueTemplate } from "@scoutui/parser-vue";
 import { writeJson } from "../reporter/json.js";
 import { printSummary } from "../reporter/stdout.js";
-import { readCheckout, readCliPackage, stampMeta } from "../scan/meta.js";
+import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../scan/meta.js";
 import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload-policy/git-state.js";
 import { installedVersionReader } from "../scan/stamp-version.js";
 import { buildCemIndex } from "../scan/cem-index.js";
@@ -52,12 +52,13 @@ import {
   createDeclaredDependencyTest,
   isFirstPartyPath,
   resetFindOwningPackageCache,
+  type WorkspaceGraph,
 } from "../workspace/index.js";
 import { createBoundedDefinitionResolver } from "../walker/bounded-definition-resolver.js";
 import { isInstalledPackage } from "../walker/installed-package.js";
 import { loadGlobalComponents, detectAutoImportFramework } from "../scan/global-components.js";
 import { type DiagnosticCollector, createDiagnosticCollector } from "../diagnostic.js";
-import { buildScanStats } from "../artifact/scan-stats.js";
+import { buildScanStats, type ScanStats } from "../artifact/scan-stats.js";
 import { validateArtifact, type AttributionTarget, type DeclaredPropApi, type ScanArtifact } from "@scoutui/scan-format";
 import type { ResolvedConfig } from "../types.js";
 
@@ -117,16 +118,8 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     opts.configPath ??
     resolve(opts.cwd ?? process.cwd(), "scout.config.json");
 
-  let cfg: ResolvedConfig;
-  try {
-    cfg = await loadConfig(configPath);
-  } catch (err) {
-    if (err instanceof ConfigError) {
-      log.error(err.message);
-      return { output: null, upload: "skipped" };
-    }
-    throw err;
-  }
+  const cfg = await loadScanConfig(configPath, log);
+  if (cfg === null) return { output: null, upload: "skipped" };
 
   if (isPnpProject(cfg.configDir)) {
     log.error(
@@ -159,27 +152,12 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     ...(tracked !== undefined ? { tracked } : {}),
   });
 
-  // Root for artefact paths: `repoRoot` if given, else the git toplevel if it
-  // contains configDir (otherwise every path would start with `..`), else configDir.
-  const gitToplevel = await readGitToplevel(cfg.configDir);
-  const outputRoot = opts.repoRoot
-    ? (isAbsolute(opts.repoRoot)
-        ? opts.repoRoot
-        : resolve(opts.cwd ?? process.cwd(), opts.repoRoot))
-    : (gitToplevel && !relative(gitToplevel, cfg.configDir).startsWith("..")
-        ? gitToplevel
-        : cfg.configDir);
+  const outputRoot = await scanOutputRoot(cfg.configDir, opts);
 
   if (opts.repoRoot && !statSync(outputRoot, { throwIfNoEntry: false })?.isDirectory()) {
     log.error(`Repository root ${outputRoot} is not a directory. Pass an existing directory to --repo-root.`);
     return { output: null, upload: "skipped" };
   }
-
-  // Re-base a scanRoot-relative POSIX path into outputRoot-relative POSIX.
-  const rebase = (scanRel: string): string =>
-    outputRoot === cfg.configDir
-      ? scanRel
-      : posixPath(relative(outputRoot, resolve(cfg.configDir, scanRel)));
 
   // Where a dry run writes the scan file.
   const outputPath = join(cfg.configDir, "scout-scan.json");
@@ -190,34 +168,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     return { output: null, upload: "skipped" };
   }
 
-  const writer = quiet ? () => {} : (s: string) => process.stderr.write(s);
-  // Warnings about how the scan reads the repo, hidden by --quiet like progress.
-  const scanWarning = (msg: string) => {
-    if (!quiet) log.warn(msg);
-  };
-  const reportSyntaxErrors = (path: string, messages: string[]) =>
-    log.warn(syntaxErrorWarning(path, messages), messages.join("\n"));
-
-  // The nearest workspace root above configDir (bounded by outputRoot), so a
-  // scan of a monorepo subfolder resolves against the hoisted node_modules and tsconfig.
-  const workspaceRoot = findWorkspaceRoot(cfg.configDir, outputRoot) ?? cfg.configDir;
-  if (workspaceRoot !== cfg.configDir) {
-    writer(`[scan] workspace root: ${workspaceRoot}\n`);
-  }
-
-  // Clear caches from an earlier scan in the same process, in case the filesystem changed.
-  resetFindOwningPackageCache();
-  const workspaceGraph = buildWorkspaceGraph(workspaceRoot);
-
-  const files = await walkFiles({
-    root: cfg.configDir,
-    include: cfg.include,
-    exclude: cfg.exclude,
-    gitignore: cfg.gitignore,
-  });
-  if (files.length === 0) {
-    log.warn(`No files matched include globs: ${cfg.include.join(", ")}`);
-  }
+  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
 
   if (opts.upload) {
     // An untracked config or scan output file doesn't count as an uncommitted change.
@@ -262,6 +213,136 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     log.error(setupRefused);
     return { output: null, upload: "failed" };
   }
+
+  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt: t0 });
+
+  // A dry run writes the scan file; an upload doesn't.
+  if (uploader === undefined) await writeJson(artifact, outputPath);
+
+  if (!quiet) {
+    printSummary(artifact, stats);
+  }
+
+  if (uploader === undefined) {
+    log.result(`Wrote ${relative(await realpath(opts.cwd ?? process.cwd()), outputPath)} (not uploaded).`);
+    return { output: artifact, upload: "skipped" };
+  }
+
+  let upload: UploadOutcome = "skipped";
+  const refusal = emptyScanRefusal(stats, { configPath });
+  if (refusal !== null) {
+    upload = "failed";
+    log.error(refusal);
+  } else {
+    try {
+      const result = await uploader.upload(JSON.stringify(artifact), { rescan: opts.rescan === true });
+      upload = result.status === "inserted" ? "ok" : "exists";
+      const scanUrl = new URL(result.url, uploader.base).href;
+      const commit = artifact.meta.repo.commit;
+      log.result(
+        result.status === "exists"
+          ? alreadyOnDashboard(commit, scanUrl)
+          : result.replaced
+            ? `Uploaded scan for ${commit.slice(0, 7)} → ${scanUrl}, replacing the earlier scan of this commit`
+            : `Uploaded scan ${result.scanId} → ${scanUrl}`,
+      );
+    } catch (err) {
+      upload = "failed";
+      const { message, detail } = describeUploadError(err, uploader.base);
+      log.error(message, detail);
+    }
+  }
+
+  return { output: artifact, upload };
+}
+
+/** The config at `configPath`, or null after printing why it can't be loaded. */
+export async function loadScanConfig(configPath: string, log: Logger): Promise<ResolvedConfig | null> {
+  try {
+    return await loadConfig(configPath);
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      log.error(err.message);
+      return null;
+    }
+    throw err;
+  }
+}
+
+/** The directory the scan file's paths are relative to. */
+export async function scanOutputRoot(configDir: string, opts: { repoRoot?: string; cwd?: string }): Promise<string> {
+  // Root for artefact paths: `repoRoot` if given, else the git toplevel if it
+  // contains configDir (otherwise every path would start with `..`), else configDir.
+  const gitToplevel = await readGitToplevel(configDir);
+  return opts.repoRoot
+    ? (isAbsolute(opts.repoRoot)
+        ? opts.repoRoot
+        : resolve(opts.cwd ?? process.cwd(), opts.repoRoot))
+    : (gitToplevel && !relative(gitToplevel, configDir).startsWith("..")
+        ? gitToplevel
+        : configDir);
+}
+
+/** The workspace root, its package graph and the files the config includes. */
+export async function readWorkspace(
+  cfg: ResolvedConfig,
+  outputRoot: string,
+  log: Logger,
+): Promise<{ workspaceRoot: string; workspaceGraph: WorkspaceGraph; files: string[] }> {
+  const writer = log.quiet ? () => {} : (s: string) => process.stderr.write(s);
+
+  // The nearest workspace root above configDir (bounded by outputRoot), so a
+  // scan of a monorepo subfolder resolves against the hoisted node_modules and tsconfig.
+  const workspaceRoot = findWorkspaceRoot(cfg.configDir, outputRoot) ?? cfg.configDir;
+  if (workspaceRoot !== cfg.configDir) {
+    writer(`[scan] workspace root: ${workspaceRoot}\n`);
+  }
+
+  // Clear caches from an earlier scan in the same process, in case the filesystem changed.
+  resetFindOwningPackageCache();
+  const workspaceGraph = buildWorkspaceGraph(workspaceRoot);
+
+  const files = await walkFiles({
+    root: cfg.configDir,
+    include: cfg.include,
+    exclude: cfg.exclude,
+    gitignore: cfg.gitignore,
+  });
+  if (files.length === 0) {
+    log.warn(`No files matched include globs: ${cfg.include.join(", ")}`);
+  }
+
+  return { workspaceRoot, workspaceGraph, files };
+}
+
+/** The scan file built from the workspace's files, checked against its format, and its stats. */
+export async function scanRepository(input: {
+  cfg: ResolvedConfig;
+  outputRoot: string;
+  workspaceRoot: string;
+  workspaceGraph: WorkspaceGraph;
+  files: string[];
+  meta: StampedMeta;
+  log: Logger;
+  /** performance.now() when the scan started. */
+  startedAt: number;
+}): Promise<{ artifact: ScanArtifact; stats: ScanStats }> {
+  const { cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt } = input;
+  const { quiet } = log;
+
+  // Re-base a scanRoot-relative POSIX path into outputRoot-relative POSIX.
+  const rebase = (scanRel: string): string =>
+    outputRoot === cfg.configDir
+      ? scanRel
+      : posixPath(relative(outputRoot, resolve(cfg.configDir, scanRel)));
+
+  const writer = quiet ? () => {} : (s: string) => process.stderr.write(s);
+  // Warnings about how the scan reads the repo, hidden by --quiet like progress.
+  const scanWarning = (msg: string) => {
+    if (!quiet) log.warn(msg);
+  };
+  const reportSyntaxErrors = (path: string, messages: string[]) =>
+    log.warn(syntaxErrorWarning(path, messages), messages.join("\n"));
 
   const resolveImportOpts: Parameters<typeof createImportResolver>[0] = {
     repoRoot: workspaceRoot,
@@ -614,51 +695,14 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     );
   }
 
-  // A dry run writes the scan file; an upload doesn't.
-  if (uploader === undefined) await writeJson(artifact, outputPath);
-
   const stats = buildScanStats({
     filesScanned: files.length,
-    scanDurationMs: Math.round(t1 - t0),
+    scanDurationMs: Math.round(t1 - startedAt),
     components: artifact.components,
     occurrences: artifact.occurrences,
   });
 
-  if (!quiet) {
-    printSummary(artifact, stats);
-  }
-
-  if (uploader === undefined) {
-    log.result(`Wrote ${relative(await realpath(opts.cwd ?? process.cwd()), outputPath)} (not uploaded).`);
-    return { output: artifact, upload: "skipped" };
-  }
-
-  let upload: UploadOutcome = "skipped";
-  const refusal = emptyScanRefusal(stats, { configPath });
-  if (refusal !== null) {
-    upload = "failed";
-    log.error(refusal);
-  } else {
-    try {
-      const result = await uploader.upload(JSON.stringify(artifact), { rescan: opts.rescan === true });
-      upload = result.status === "inserted" ? "ok" : "exists";
-      const scanUrl = new URL(result.url, uploader.base).href;
-      const commit = artifact.meta.repo.commit;
-      log.result(
-        result.status === "exists"
-          ? alreadyOnDashboard(commit, scanUrl)
-          : result.replaced
-            ? `Uploaded scan for ${commit.slice(0, 7)} → ${scanUrl}, replacing the earlier scan of this commit`
-            : `Uploaded scan ${result.scanId} → ${scanUrl}`,
-      );
-    } catch (err) {
-      upload = "failed";
-      const { message, detail } = describeUploadError(err, uploader.base);
-      log.error(message, detail);
-    }
-  }
-
-  return { output: artifact, upload };
+  return { artifact, stats };
 }
 
 /**
