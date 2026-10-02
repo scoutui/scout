@@ -52,8 +52,8 @@ export default async function PackagesPage() {
           action={<FirstScanCta />}
         />
       ) : (
-        /* No key needed: the explorer reads its facets from the live ?q=
-           through useQuerySyncedState. */
+        /* No key needed: the explorer reads its facets from the live URL
+           through useQueryParamsState. */
         <PackagesExplorer rows={decorated} />
       )}
     </div>

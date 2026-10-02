@@ -4,27 +4,28 @@ import { useMemo } from "react";
 import type { PackageSummary } from "@scoutui/web-shared";
 import { PackageFilterBar } from "@/components/packages/package-filter-bar";
 import { PackagesTable } from "@/components/packages/packages-table";
-import { useQuerySyncedState } from "@/lib/use-query-synced-state";
+import { useQueryParamsState } from "@/lib/use-query-synced-state";
 import {
   emptyPackageFacets,
   filterPackageRows,
+  PACKAGE_FACET_PARAMS,
   packageFacetOptions,
-  packageFacetsToQuery,
-  queryToPackageFacets,
+  packageFacetsToParams,
+  paramsToPackageFacets,
   type PackageFacetState,
 } from "@/lib/package-facets";
 
 /**
  * Client-side faceted explorer over the full package list. The server ships
- * every row once and filtering runs here; facet state derives from `?q=` via
- * useQuerySyncedState and writes back through history.replaceState.
+ * every row once and filtering runs here; facet state lives in the URL via
+ * useQueryParamsState and writes back through history.replaceState.
  */
 export function PackagesExplorer({
   rows,
 }: {
   rows: PackageSummary[];
 }) {
-  const [facets, setFacets] = useQuerySyncedState<PackageFacetState>(queryToPackageFacets, packageFacetsToQuery);
+  const [facets, setFacets] = useQueryParamsState<PackageFacetState>(PACKAGE_FACET_PARAMS, paramsToPackageFacets, packageFacetsToParams);
 
   // Counted under every other active filter, as on the repo page.
   const options = useMemo(() => packageFacetOptions(rows, facets), [rows, facets]);

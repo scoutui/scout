@@ -104,7 +104,7 @@ describe("PackageConsumersTable", () => {
     const rows = screen.getAllByRole("row");
     expect(rows).toHaveLength(4); // header + 3 cells
     const r2Link = screen.getAllByRole("link", { name: /r2/ })[0];
-    expect(r2Link).toHaveAttribute("href", '/repos/r2?q=package%3A%22%40x%2Flib%22');
+    expect(r2Link).toHaveAttribute("href", "/repos/r2?package=@x/lib");
   });
 
   it("keeps the same table shape for a single consumer (no collapsed summary)", () => {
@@ -157,7 +157,7 @@ describe("PackageConsumersTable", () => {
 });
 
 describe("PackageComponentsTable", () => {
-  // jsdom keeps the URL between tests, so an earlier test's ?q= write would
+  // jsdom keeps the URL between tests, so an earlier test's URL write would
   // seed the next one.
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/packages/x"));
 
@@ -182,8 +182,8 @@ describe("PackageComponentsTable", () => {
     expect(screen.getByRole("link", { name: "Address" })).toHaveAttribute("title", "Address");
   });
 
-  it("filters to deprecated rows via the toggle, seeded from ?q=", () => {
-    window.history.replaceState(null, "", "http://localhost:3000/packages/x?q=deprecated%3Atrue");
+  it("filters to deprecated rows via the toggle, seeded from ?deprecated=true", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/packages/x?deprecated=true");
     render(<PackageComponentsTable components={baseDetail.components} />);
     expect(screen.queryByRole("link", { name: "Address" })).toBeNull();
     expect(screen.getByRole("link", { name: /Button deprecated/ })).toBeInTheDocument();

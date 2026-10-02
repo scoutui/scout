@@ -62,22 +62,22 @@ A tag shown ticked, greyed out and marked **via rule** applies through one of it
 
 ## Share a filtered list
 
-The packages list keeps its search and filters in the page URL as `?q=`, so you can copy the address bar and share the filtered list. To write or edit a link by hand, use these tokens:
+The packages list keeps its search and filters in the page URL, so you can copy the address bar and share the filtered list. To write or edit a link by hand, use these parameters:
 
-| Token | Example |
+| Parameter | Example |
 | --- | --- |
-| `name:` | `name:acme` |
-| `tag:` | `tag:acme-ui` |
-| `versions:` | `versions:multi`, `versions:single`, `versions:unversioned` |
-| `deprecated:` | `deprecated:true`, `deprecated:false` |
+| `q` | `q=acme`, which searches package names |
+| `tag` | `tag=acme-ui` |
+| `versions` | `versions=multi`, `versions=single`, `versions=unversioned` |
+| `deprecated` | `deprecated=true`, `deprecated=false` |
 
-Separate tokens with spaces; different tokens must all match, and repeating `tag:` matches any of the tags. Put a value with a space, `/`, `:` or parentheses in double quotes, as in `name:"@acme/ui"`. Text without a token is ignored, so search names with `name:`. For example:
+Different parameters must all match, and repeating `tag` matches any of the tags. Write a space as `+`. For example:
 
 ```text
-tag:acme-ui versions:multi deprecated:true
+/packages?tag=acme-ui&versions=multi&deprecated=true
 ```
 
-A package page's **Components** table keeps its search and **deprecated** chip in the URL the same way, using `name:` and `deprecated:true`.
+A package page's **Components** table keeps its search and **deprecated** chip in the URL the same way, using `q` and `deprecated=true`.
 
 ## Good to know
 

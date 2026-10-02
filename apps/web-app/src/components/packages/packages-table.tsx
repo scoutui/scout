@@ -6,6 +6,7 @@ import {
   Table, TableBody, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { CellLink } from "@/components/ui/cell-link";
+import { deprecatedComponentsHref } from "@/lib/package-facets";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { TagChips } from "@/components/tags/tag-chip";
 
@@ -64,9 +65,7 @@ export function PackagesTable({
       </TableHeader>
       <TableBody>
         {visible.map(p => {
-          const href = `/packages/${encodeURIComponent(p.packageName)}${
-            deprecatedOnly ? `?q=${encodeURIComponent("deprecated:true")}` : ""
-          }`;
+          const href = deprecatedOnly ? deprecatedComponentsHref(p.packageName) : `/packages/${encodeURIComponent(p.packageName)}`;
           return (
             <TableRow key={p.packageName} className="cursor-pointer hover:bg-muted/50">
               <CellLink href={href} cellClassName="w-full max-w-0" title={p.packageName}>

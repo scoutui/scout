@@ -12,18 +12,12 @@ import {
 } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { computeVersionShare, latestVersion } from "@/components/viz/version-composition";
-import { packageFilterQuery } from "@/lib/component-facets";
+import { packageFilterHref } from "@/lib/component-facets";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import { relativeTime } from "@/lib/relative-time";
 
 type SortKey = "repoId" | "version" | "occurrenceCount" | "committedAt";
 const DESC_KEYS: ReadonlySet<SortKey> = new Set(["occurrenceCount", "committedAt"]);
-
-// Deep link into a repo's components table, pre-filtered to this package via
-// the repo explorer's `?q=` grammar.
-function repoFilterHref(repoId: string, packageName: string): string {
-  return `/repos/${encodeURIComponent(repoId)}?q=${encodeURIComponent(packageFilterQuery(packageName))}`;
-}
 
 /** Who consumes this package: one row per (repo, version) cell, the same shape
  *  at one consumer or fifty. The version dot ties each row to the masthead
@@ -72,7 +66,7 @@ export function PackageConsumersTable({
         </TableHeader>
         <TableBody>
           {sorted.map(c => {
-            const href = repoFilterHref(c.repoId, packageName);
+            const href = packageFilterHref(c.repoId, packageName);
             return (
               <TableRow key={`${c.repoId}\0${c.version ?? ""}`} className="cursor-pointer hover:bg-muted/50">
                 <CellLink href={href} cellClassName="w-full max-w-0" className="truncate text-code" title={c.repoId}>

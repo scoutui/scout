@@ -1,10 +1,10 @@
 // Client-side faceted filtering for the packages list, on the same model as
 // `component-facets.ts`: the server sends every row once, filtering runs locally,
-// and state serialises to a `?q=` liqe grammar so URLs stay shareable. AND across
-// facets, OR within.
+// and state is kept in the page URL so it stays shareable. AND across facets, OR
+// within.
 
 import type { PackageSummary } from "@scoutui/web-shared";
-import { joinTerms, nameTerm, orGroup, readTerms } from "@/lib/query-terms";
+import { hrefWithQuery, type QueryParams } from "@/lib/query-string";
 
 export type VersionsValue = "multi" | "single" | "unversioned";
 
@@ -100,39 +100,49 @@ export function packageFacetOptions(rows: readonly PackageSummary[], f: PackageF
   };
 }
 
-// --- URL (?q=) round-trip -----------------------------------------------------
+// --- URL params ---------------------------------------------------------------
 
-/** Serialise facets to a liqe query string for the URL. */
-export function packageFacetsToQuery(f: PackageFacetState): string {
-  return joinTerms([
-    nameTerm(f.text),
-    orGroup("tag", f.tags),
-    f.versions !== null ? `versions:${f.versions}` : "",
-    f.deprecated !== null ? `deprecated:${f.deprecated}` : "",
-  ]);
+/** The params the packages list keeps its facets in. */
+export const PACKAGE_FACET_PARAMS = ["q", "tag", "versions", "deprecated"];
+
+export function packageFacetsToParams(f: PackageFacetState): QueryParams {
+  const params: [string, string][] = [];
+  if (f.text.trim() !== "") params.push(["q", f.text]);
+  for (const tag of f.tags) params.push(["tag", tag]);
+  if (f.versions !== null) params.push(["versions", f.versions]);
+  if (f.deprecated !== null) params.push(["deprecated", String(f.deprecated)]);
+  return params;
 }
 
-const FIELDS = ["name", "tag", "versions", "deprecated"];
-
-/** Best-effort parse of a `?q=` string back into facet state. Lossless inverse
- *  of `packageFacetsToQuery`; tolerant reader of hand-written simple queries. */
-export function queryToPackageFacets(q: string): PackageFacetState {
+/** Facet state from the URL. Values it doesn't know are skipped. */
+export function paramsToPackageFacets(params: URLSearchParams): PackageFacetState {
   const f = emptyPackageFacets();
-  for (const { field, value: raw } of readTerms(q, FIELDS)) {
-    switch (field) {
-      case "name":
-        f.text = raw;
-        break;
-      case "tag":
-        if (!f.tags.includes(raw)) f.tags.push(raw);
-        break;
-      case "versions":
-        if (raw === "multi" || raw === "single" || raw === "unversioned") f.versions = raw;
-        break;
-      case "deprecated":
-        f.deprecated = raw === "true";
-        break;
-    }
-  }
+  f.text = params.get("q") ?? "";
+  f.tags = [...new Set(params.getAll("tag"))].filter(Boolean);
+  const versions = params.get("versions");
+  if (versions === "multi" || versions === "single" || versions === "unversioned") f.versions = versions;
+  const deprecated = params.get("deprecated");
+  if (deprecated === "true" || deprecated === "false") f.deprecated = deprecated === "true";
   return f;
+}
+
+/** A package page's components table: name search and deprecated-only. */
+export type PackageComponentFilters = { text: string; deprecated: boolean };
+
+export const PACKAGE_COMPONENT_FILTER_PARAMS = ["q", "deprecated"];
+
+export function packageComponentFiltersToParams(f: PackageComponentFilters): QueryParams {
+  const params: [string, string][] = [];
+  if (f.text.trim() !== "") params.push(["q", f.text]);
+  if (f.deprecated) params.push(["deprecated", "true"]);
+  return params;
+}
+
+export function paramsToPackageComponentFilters(params: URLSearchParams): PackageComponentFilters {
+  return { text: params.get("q") ?? "", deprecated: params.get("deprecated") === "true" };
+}
+
+/** A link to a package's page showing only its deprecated components. */
+export function deprecatedComponentsHref(packageName: string): string {
+  return hrefWithQuery(`/packages/${encodeURIComponent(packageName)}`, packageComponentFiltersToParams({ text: "", deprecated: true }));
 }

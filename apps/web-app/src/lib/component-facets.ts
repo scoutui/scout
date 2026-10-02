@@ -1,15 +1,12 @@
 // Client-side faceted filtering for the repo-detail components table. The repo
 // page sends every row to the browser on first load, so filtering runs locally.
 //
-// `FacetState` serialises to the `?q=` liqe grammar the server understands
-// (`packages/web-shared/src/query.ts`), with one client-only token:
-// `changed:true` needs the scan diff, which only the repo page's DTO carries, so
-// an API `?q=changed:true` narrows to nothing, as any unknown field does. Facets
-// combine with AND, and the values within a facet with OR.
+// `FacetState` is kept in the page URL, one param per value (`FACET_PARAMS`).
+// Facets combine with AND, and the values within a facet with OR.
 
 import type { ComponentRow } from "@scoutui/web-shared";
 import { friendlyKind, type QueryView } from "@scoutui/web-shared/client";
-import { joinTerms, nameTerm, orGroup, readTerms, term } from "@/lib/query-terms";
+import { hrefWithQuery, type QueryParams } from "@/lib/query-string";
 
 export type OriginValue = "external" | "local";
 export type KindValue = QueryView["kind"];
@@ -125,7 +122,7 @@ export type FacetOptions = {
  *
  * `all` is every live row. `changed` is the changed view's candidates (marked
  * rows plus the removed ghosts), null when there is no changed view. Counts run
- * over `changed` under `changed:true`, otherwise over `all`. The chip counts
+ * over `changed` when the changed view is on, otherwise over `all`. The chip counts
  * `changed` under every other filter, since the explorer applies `changed`
  * itself.
  */
@@ -189,66 +186,50 @@ export function facetOptions(
   };
 }
 
-// --- URL (?q=) round-trip -----------------------------------------------------
+// --- URL params ---------------------------------------------------------------
 
-/** A `?q=` value that filters a repo's components table to one package. The
- *  canonical builder for cross-page deep links (e.g. package detail → repo). */
-export function packageFilterQuery(packageName: string): string {
-  return term("package", packageName);
+/** The params the components table keeps its facets in. */
+export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "occurrences", "changed"];
+
+const KINDS: readonly KindValue[] = ["react", "vue", "wc", "tag"];
+const OCCURRENCE_WORDS: Record<OccurrenceOp, string> = { ">=": "gte:", ">": "gt:", "<=": "lte:", "<": "lt:", "=": "" };
+const OCCURRENCE_RE = /^(gte:|gt:|lte:|lt:)?(\d+)$/;
+
+/** A link to a repo's components table filtered to one package. */
+export function packageFilterHref(repoId: string, packageName: string): string {
+  return hrefWithQuery(`/repos/${encodeURIComponent(repoId)}`, facetsToParams({ ...emptyFacets(), packages: [packageName] }));
 }
 
-/** Serialise facets to a liqe query string for the URL: AND across facets, OR
- *  within a multi-value facet, the shape `parseQuery` and liqe evaluate. */
-export function facetsToQuery(f: FacetState): string {
-  return joinTerms([
-    nameTerm(f.text),
-    f.origin ? `scope:${f.origin}` : "",
-    orGroup("kind", f.kinds),
-    orGroup("package", f.packages),
-    orGroup("tag", f.tags),
-    f.deprecated !== null ? `deprecated:${f.deprecated}` : "",
-    f.occurrences ? `occurrences:${f.occurrences.op}${f.occurrences.value}` : "",
-    f.changed ? "changed:true" : "",
-  ]);
+export function facetsToParams(f: FacetState): QueryParams {
+  const params: [string, string][] = [];
+  // Untrimmed, so a trailing space survives while the user is still typing; matching trims.
+  if (f.text.trim() !== "") params.push(["q", f.text]);
+  if (f.origin) params.push(["origin", f.origin]);
+  for (const kind of f.kinds) params.push(["kind", kind]);
+  for (const pkg of f.packages) params.push(["package", pkg]);
+  for (const tag of f.tags) params.push(["tag", tag]);
+  if (f.deprecated !== null) params.push(["deprecated", String(f.deprecated)]);
+  if (f.occurrences) params.push(["occurrences", `${OCCURRENCE_WORDS[f.occurrences.op]}${f.occurrences.value}`]);
+  if (f.changed) params.push(["changed", "true"]);
+  return params;
 }
 
-const FIELDS = ["name", "scope", "kind", "package", "tag", "deprecated", "occurrences", "changed"];
-const OCCURRENCE_RE = /^(>=|<=|>|<|=)(\d+)$/;
-
-/** Best-effort parse of a `?q=` string back into facet state. Flattens OR groups
- *  and ANDed tokens into facet lists: a lossless inverse of `facetsToQuery`, and
- *  a tolerant reader of hand-written simple queries. */
-export function queryToFacets(q: string): FacetState {
+/** Facet state from the URL. Values it doesn't know are skipped, so a hand-edited link reads as far as it can. */
+export function paramsToFacets(params: URLSearchParams): FacetState {
   const f = emptyFacets();
-  for (const { field, value: raw } of readTerms(q, FIELDS)) {
-    switch (field) {
-      case "name":
-        f.text = raw;
-        break;
-      case "scope":
-        if (raw === "external" || raw === "local") f.origin = raw;
-        break;
-      case "kind":
-        if ((raw === "react" || raw === "vue" || raw === "wc" || raw === "tag") && !f.kinds.includes(raw)) f.kinds.push(raw);
-        break;
-      case "package":
-        if (!f.packages.includes(raw)) f.packages.push(raw);
-        break;
-      case "tag":
-        if (!f.tags.includes(raw)) f.tags.push(raw);
-        break;
-      case "deprecated":
-        f.deprecated = raw === "true";
-        break;
-      case "changed":
-        f.changed = raw === "true";
-        break;
-      case "occurrences": {
-        const om = OCCURRENCE_RE.exec(raw);
-        if (om) f.occurrences = { op: om[1] as OccurrenceOp, value: Number(om[2]) };
-        break;
-      }
-    }
+  f.text = params.get("q") ?? "";
+  const origin = params.get("origin");
+  if (origin === "external" || origin === "local") f.origin = origin;
+  f.kinds = [...new Set(params.getAll("kind"))].filter((k): k is KindValue => KINDS.includes(k as KindValue));
+  f.packages = [...new Set(params.getAll("package"))].filter(Boolean);
+  f.tags = [...new Set(params.getAll("tag"))].filter(Boolean);
+  const deprecated = params.get("deprecated");
+  if (deprecated === "true" || deprecated === "false") f.deprecated = deprecated === "true";
+  f.changed = params.get("changed") === "true";
+  const om = OCCURRENCE_RE.exec(params.get("occurrences") ?? "");
+  if (om) {
+    const op = (Object.keys(OCCURRENCE_WORDS) as OccurrenceOp[]).find((k) => OCCURRENCE_WORDS[k] === (om[1] ?? ""));
+    if (op) f.occurrences = { op, value: Number(om[2]) };
   }
   return f;
 }

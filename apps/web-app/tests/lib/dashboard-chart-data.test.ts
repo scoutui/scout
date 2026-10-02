@@ -32,7 +32,7 @@ describe("cohortColor", () => {
     expect(cohortColor({ cohortKey: "package:@x/next", color: "#7c3aed", role: "successor" }, 0)).toBe("var(--viz-primary)");
   });
   it("authored palette hexes resolve to their theme token; custom hexes stay verbatim", () => {
-    expect(cohortColor({ cohortKey: "tag:pie", color: "#009598" }, 0)).toBe("var(--viz-primary)");
+    expect(cohortColor({ cohortKey: "tag:icons", color: "#009598" }, 0)).toBe("var(--viz-primary)");
     expect(cohortColor({ cohortKey: "tag:primitives", color: "#9b6bce" }, 0)).toBe("var(--viz-cat-2)");
     expect(cohortColor({ cohortKey: "tag:web", color: "#7c3aed" }, 0)).toBe("#7c3aed");
   });

@@ -9,6 +9,7 @@ import {
   type UsageSort,
   type UsageSortKey,
 } from "@scoutui/web-shared/client";
+import { hrefWithQuery } from "@/lib/query-string";
 import { useQuerySyncedState } from "@/lib/use-query-synced-state";
 
 /** The kinds a `sel` pick can name, and the kind each reads as: a variable (`ref`) reads as `{…}`. */
@@ -80,8 +81,7 @@ export function hrefFrom(pathname: string, search: string, params: Record<string
     if (value === null) query.delete(name);
     else query.set(name, value);
   }
-  const qs = query.toString();
-  return qs ? `${pathname}?${qs}` : pathname;
+  return hrefWithQuery(pathname, [...query]);
 }
 
 /** hrefFrom over the current `usePathname()` and `useSearchParams()`; safe during a server render. */

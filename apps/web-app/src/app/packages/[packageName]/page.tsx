@@ -56,8 +56,8 @@ export default async function PackageDetailPage({
         <PackageConsumersTable cells={detail.cells} packageName={detail.packageName} />
       </Section>
       <Section title="Components">
-        {/* No key needed: the table reads its filters from the live ?q= through
-            useQuerySyncedState. */}
+        {/* No key needed: the table reads its filters from the live URL through
+            useQueryParamsState. */}
         <PackageComponentsTable components={detail.components} />
       </Section>
     </div>
