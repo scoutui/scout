@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "vue-app",
+  "include": [
+    "src/**/*.{ts,vue}"
+  ],
+  "exclude": [
+    "**/*.{test,spec,stories}.*",
+    "**/node_modules/**"
+  ]
+}

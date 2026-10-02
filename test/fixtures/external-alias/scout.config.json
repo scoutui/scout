@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "external-alias",
+  "include": [
+    "src/**/*.{ts,tsx}"
+  ],
+  "exclude": [
+    "**/*.{test,spec,stories}.*",
+    "**/node_modules/**"
+  ]
+}

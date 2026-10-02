@@ -1,0 +1,103 @@
+/* The web app's tracking rows. Below 1280px a row stacks: what is tracked, then its numbers. */
+
+.heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--landing-muted);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 1rem;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--landing-ink);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  min-width: 0;
+}
+
+/* The successor: quieter than what it replaces, the row's subject. */
+.to {
+  color: var(--landing-muted);
+}
+
+.toWord {
+  font-size: 0.75rem;
+}
+
+.numbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.75rem;
+}
+
+.readout {
+  flex: none;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--landing-muted);
+}
+
+.value {
+  font-weight: 500;
+}
+
+.ink {
+  color: var(--landing-ink);
+}
+
+.delta {
+  flex: none;
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (min-width: 1280px) {
+  .row {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .label {
+    flex: 1;
+  }
+
+  .numbers {
+    flex: none;
+    flex-wrap: nowrap;
+    gap: 1rem;
+  }
+
+  /* Fixed width and right-aligned, so the readouts of stacked rows share an edge. */
+  .value {
+    display: inline-block;
+    width: 4rem;
+    text-align: right;
+  }
+
+  .delta {
+    width: 10rem;
+    margin-left: 0;
+  }
+}

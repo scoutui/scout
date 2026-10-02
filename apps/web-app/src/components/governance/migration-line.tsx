@@ -1,0 +1,41 @@
+import Link from "next/link";
+import type { MigrationStatus } from "@scoutui/web-shared";
+
+/**
+ * The lifecycle line on a detail page. When the governing record is known, the
+ * whole line links to it on /governance.
+ */
+export function MigrationLine({
+  status,
+  recordId,
+}: {
+  status: MigrationStatus;
+  recordId?: string | null;
+}) {
+  if (status.status === "active") return null;
+
+  const body =
+    status.status === "superseded" ? (
+      <>
+        Superseded by →{" "}
+        <span className="font-mono text-foreground/90">
+          {status.by.exportName ? `${status.by.packageName}/${status.by.exportName}` : status.by.packageName}
+        </span>
+      </>
+    ) : (
+      <>Retired · {status.reason}</>
+    );
+
+  if (!recordId) return <p className="text-xs text-muted-foreground">{body}</p>;
+
+  return (
+    <p className="text-xs text-muted-foreground">
+      <Link
+        href={`/governance#record-${recordId}`}
+        className="rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
+      >
+        {body}
+      </Link>
+    </p>
+  );
+}

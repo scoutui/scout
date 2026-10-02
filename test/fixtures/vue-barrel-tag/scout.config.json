@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "vue-barrel-tag",
+  "include": ["**/*.vue"],
+  "exclude": ["**/node_modules/**"]
+}

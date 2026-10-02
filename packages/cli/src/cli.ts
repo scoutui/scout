@@ -1,0 +1,120 @@
+#!/usr/bin/env node
+import { runScan, scanExitCode, type ScanOptions } from "./commands/scan.js";
+import { runInit } from "./commands/init.js";
+import { Logger, debugRequested } from "./util/log.js";
+import { readVersion } from "./util/version.js";
+import { readCliPackage } from "./scan/meta.js";
+import { topHelp, commandHelp } from "./cli/help.js";
+import { parseCommand, KNOWN_COMMANDS, unknownCommandMessage, CliError } from "./cli/parse.js";
+import { reportError } from "./cli/report.js";
+import { resolve } from "node:path";
+import { isInteractive } from "./util/interactive.js";
+import { clackAdapter, PromptCancelledError } from "./prompts/adapter.js";
+import type { Framework, InitOptions } from "./commands/init.js";
+
+function isKnownCommand(cmd: string): cmd is (typeof KNOWN_COMMANDS)[number] {
+  return (KNOWN_COMMANDS as readonly string[]).includes(cmd);
+}
+
+function wantsHelp(args: string[]): boolean {
+  return args.includes("--help") || args.includes("-h");
+}
+
+async function main(argv: string[], log: Logger): Promise<number> {
+  if (argv[0] === undefined) {
+    process.stdout.write(topHelp());
+    return 0;
+  }
+  if (argv.includes("--version") || argv.includes("-v")) {
+    process.stdout.write(`${readVersion()}\n`);
+    return 0;
+  }
+
+  const [cmd, ...rest] = argv;
+  if (cmd === undefined || cmd === "--help" || cmd === "-h") {
+    process.stdout.write(topHelp());
+    return 0;
+  }
+
+  if (!isKnownCommand(cmd)) {
+    log.error(unknownCommandMessage(cmd));
+    return 2;
+  }
+
+  if (wantsHelp(rest)) {
+    process.stdout.write(commandHelp(cmd));
+    return 0;
+  }
+
+  switch (cmd) {
+    case "scan":
+      return await runScanCommand(rest, log);
+    case "init":
+      return await runInitCommand(rest, log);
+    case "auth": {
+      const { runAuth } = await import("./commands/auth.js");
+      const interactive = isInteractive();
+      return await runAuth(rest, { log, ...(interactive ? { interactive, prompts: clackAdapter } : {}) });
+    }
+  }
+  return 2; // isKnownCommand makes the switch exhaustive; satisfies the type checker.
+}
+
+async function runScanCommand(rest: string[], log: Logger): Promise<number> {
+  const { values } = parseCommand("scan", rest);
+  const { config, quiet, "dry-run": dryRun, "repo-id": repoId, "repo-root": repoRoot, rescan, host } = values;
+  if (dryRun && rescan) throw new CliError("--rescan and --dry-run can't be used together: --dry-run doesn't upload.");
+  const scanOpts: ScanOptions = {
+    configPath: typeof config === "string" ? config : "./scout.config.json",
+    log: new Logger({ quiet: Boolean(quiet), debug: log.debug }),
+    upload: !dryRun,
+  };
+  if (typeof repoId === "string") scanOpts.repoId = repoId;
+  if (typeof repoRoot === "string") scanOpts.repoRoot = repoRoot;
+  if (rescan) scanOpts.rescan = true;
+  if (typeof host === "string") scanOpts.hostOverride = host;
+  return scanExitCode(await runScan(scanOpts));
+}
+
+async function runInitCommand(rest: string[], log: Logger): Promise<number> {
+  const { values } = parseCommand("init", rest);
+  const { yes, output, "repo-id": repoId, host, branch, framework } = values;
+  const interactive = isInteractive({ yes: Boolean(yes) });
+  const initOpts: InitOptions = { cwd: process.cwd(), interactive, log };
+  if (interactive) initOpts.prompts = clackAdapter;
+  if (typeof output === "string") initOpts.outputPath = resolve(process.cwd(), output);
+  if (typeof repoId === "string") initOpts.repoId = repoId;
+  if (typeof host === "string") initOpts.host = host;
+  if (typeof branch === "string") initOpts.branch = branch;
+  const frameworks = parseFrameworks(framework);
+  if (frameworks) initOpts.frameworks = frameworks;
+  try {
+    await runInit(initOpts);
+    return 0;
+  } catch (err) {
+    if (err instanceof PromptCancelledError) {
+      process.stderr.write("Cancelled.\n");
+      return 130;
+    }
+    throw err;
+  }
+}
+
+const VALID_FRAMEWORKS: Framework[] = ["react", "vue"];
+
+function parseFrameworks(raw: string | boolean | string[] | undefined): Framework[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: Framework[] = [];
+  for (const r of raw) {
+    if ((VALID_FRAMEWORKS as string[]).includes(r)) out.push(r as Framework);
+    else throw new CliError(`Unknown --framework '${r}'. Valid: ${VALID_FRAMEWORKS.join(", ")}.`);
+  }
+  return out;
+}
+
+const argv = process.argv.slice(2);
+const log = new Logger({ debug: debugRequested(argv) });
+main(argv.filter((arg) => arg !== "--debug"), log).then(
+  (code) => process.exit(code),
+  (err: unknown) => process.exit(reportError(err, log, readCliPackage().bugs)),
+);

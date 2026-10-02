@@ -1,0 +1,4 @@
+{
+  "repoId": "packed-cli",
+  "include": ["src/**/*.{tsx,ts,vue}"]
+}

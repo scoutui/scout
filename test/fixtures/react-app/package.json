@@ -1,0 +1,14 @@
+{
+  "name": "react-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/web-button": "1.13.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

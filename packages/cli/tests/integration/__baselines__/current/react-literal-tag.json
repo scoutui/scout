@@ -1,0 +1,415 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "react-literal-tag",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "807ef2087b018965",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-literal-tag",
+        "filePath": "app/dynamic-page/page.tsx",
+        "exportName": "DynamicPage"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "root",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 15
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "2be238a45c4d2e55": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4d6d9d59c3b0db27",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-literal-tag",
+        "filePath": "app/page.tsx",
+        "exportName": "Page"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "root",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 15
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1,
+          "4b9fa6b03427ee56": 1,
+          "fa902f4e2fbcb80c": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4b9fa6b03427ee56",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-literal-tag",
+        "filePath": "components/submit-button.tsx",
+        "exportName": "SubmitButton"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "variant": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "secondary",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "2be238a45c4d2e55": 1
+        },
+        "renderedByCount": {
+          "4d6d9d59c3b0db27": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "2be238a45c4d2e55",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/web-button",
+        "publicEntry": "dist/react",
+        "exportName": "WebButton"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {
+        "variant": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "variant",
+              "count": 1
+            }
+          ],
+          "dynamic": 1,
+          "omitted": 0
+        },
+        "disabled": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": true,
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 1
+        }
+      },
+      "version": "1.13.4",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "807ef2087b018965": 1,
+          "4b9fa6b03427ee56": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "292f9cb89f29bd3a",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "variant": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "outlined",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "color": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "primary",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4d6d9d59c3b0db27": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "fa902f4e2fbcb80c",
+      "identity": {
+        "kind": "tag",
+        "tagName": "web-button"
+      },
+      "attribution": {
+        "status": "resolved",
+        "target": {
+          "kind": "package",
+          "packageName": "@example/web-button"
+        },
+        "confidence": "declared",
+        "evidence": [
+          {
+            "source": "cem",
+            "strength": "declared",
+            "locator": {
+              "packageName": "@example/web-button",
+              "version": "1.13.4"
+            },
+            "target": {
+              "kind": "package",
+              "packageName": "@example/web-button"
+            },
+            "disposition": "supports"
+          }
+        ]
+      },
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "variant": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "primary",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "1.13.4",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4d6d9d59c3b0db27": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "f75df65c5ac28241",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "2be238a45c4d2e55"
+      },
+      "filePath": "app/dynamic-page/page.tsx",
+      "line": 8,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/web-button/dist/react.js",
+          "name": "WebButton"
+        }
+      ],
+      "props": {
+        "variant": {
+          "tier": "reference",
+          "ref": "variant"
+        },
+        "disabled": {
+          "tier": "written",
+          "value": true
+        }
+      },
+      "ownerComponentId": "807ef2087b018965"
+    },
+    {
+      "occurrenceId": "7751517581577c0b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "app/page.tsx",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "outlined"
+        },
+        "color": {
+          "tier": "written",
+          "value": "primary"
+        }
+      },
+      "ownerComponentId": "4d6d9d59c3b0db27"
+    },
+    {
+      "occurrenceId": "545964b83397965a",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "4b9fa6b03427ee56"
+      },
+      "filePath": "app/page.tsx",
+      "line": 8,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "../components/submit-button.js",
+          "name": "SubmitButton"
+        }
+      ],
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "secondary"
+        }
+      },
+      "ownerComponentId": "4d6d9d59c3b0db27"
+    },
+    {
+      "occurrenceId": "1ca1458061795f0c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fa902f4e2fbcb80c"
+      },
+      "filePath": "app/page.tsx",
+      "line": 9,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "primary"
+        }
+      },
+      "ownerComponentId": "4d6d9d59c3b0db27"
+    },
+    {
+      "occurrenceId": "702c340c1a394a0e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "2be238a45c4d2e55"
+      },
+      "filePath": "components/submit-button.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/web-button/dist/react.js",
+          "name": "WebButton"
+        }
+      ],
+      "props": {
+        "variant": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "4b9fa6b03427ee56"
+    }
+  ],
+  "diagnostics": []
+}

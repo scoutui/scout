@@ -1,0 +1,72 @@
+suite: Network policies
+release:
+  name: cc
+  namespace: default
+values:
+  - ../ci/test-values.yaml
+templates:
+  - networkpolicy.yaml
+tests:
+  - it: renders no network policies by default
+    asserts:
+      - hasDocuments: { count: 0 }
+
+  - it: admits traffic only to the web port, the worker health port and, from the app pods, PostgreSQL
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - hasDocuments: { count: 3 }
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: scout
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: web-app
+        documentIndex: 0
+      - equal:
+          path: spec.ingress
+          value: [{ ports: [{ port: http, protocol: TCP }] }]
+        documentIndex: 0
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: scout-worker
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: worker
+        documentIndex: 1
+      - equal:
+          path: spec.ingress
+          value: [{ ports: [{ port: health, protocol: TCP }] }]
+        documentIndex: 1
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: scout-postgresql
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: postgresql
+        documentIndex: 2
+      - equal:
+          path: spec.ingress
+          value:
+            - from:
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: scout
+                      app.kubernetes.io/instance: cc
+                      app.kubernetes.io/component: web-app
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: scout-worker
+                      app.kubernetes.io/instance: cc
+                      app.kubernetes.io/component: worker
+              ports: [{ port: postgresql, protocol: TCP }]
+        documentIndex: 2
+
+  - it: leaves the PostgreSQL policy out when the database is external
+    set:
+      networkPolicy.enabled: true
+      postgresql.enabled: false
+      database.host: external-postgres
+      database.passwordSecretRef.name: external-db
+    asserts:
+      - hasDocuments: { count: 2 }

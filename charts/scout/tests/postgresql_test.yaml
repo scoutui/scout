@@ -1,0 +1,356 @@
+suite: Vendored PostgreSQL
+release:
+  name: cc
+  namespace: default
+set:
+  auth.url: https://scout.example.com
+  auth.oidc.issuerUrl: https://auth.example.com/application/o/scout/
+  auth.oidc.clientId: scout
+  auth.sessionSecretRef.name: app-session
+  auth.oidc.clientSecretRef.name: oidc-secret
+  database.passwordSecretRef.name: external-db
+templates:
+  - configmap.yaml
+  - service.yaml
+  - postgresql-secret.yaml
+  - postgresql-service.yaml
+  - postgresql-headless-service.yaml
+  - postgresql-statefulset.yaml
+  - deployment.yaml
+  - worker-deployment.yaml
+kubernetesProvider:
+  scheme:
+    "v1/Secret":
+      gvr:
+        version: v1
+        resource: secrets
+      namespaced: true
+tests:
+  - it: omits all bundled resources by default
+    set: { database.host: external-postgres }
+    asserts:
+      - hasDocuments: { count: 0 }
+        template: postgresql-secret.yaml
+      - hasDocuments: { count: 0 }
+        template: postgresql-service.yaml
+      - hasDocuments: { count: 0 }
+        template: postgresql-headless-service.yaml
+      - hasDocuments: { count: 0 }
+        template: postgresql-statefulset.yaml
+
+  - it: renders one database and wires its generated credentials into both applications
+    set: { postgresql.enabled: true }
+    asserts:
+      - isKind: { of: Secret }
+        template: postgresql-secret.yaml
+      - equal: { path: metadata.name, value: cc-scout-postgresql }
+        template: postgresql-secret.yaml
+      - isNotNullOrEmpty: { path: data.POSTGRES_PASSWORD }
+        template: postgresql-secret.yaml
+      - isKind: { of: Service }
+        template: postgresql-service.yaml
+      - equal: { path: metadata.name, value: cc-scout-postgresql }
+        template: postgresql-service.yaml
+      - equal: { path: spec.type, value: ClusterIP }
+        template: postgresql-service.yaml
+      - equal: { path: 'spec.selector["app.kubernetes.io/component"]', value: postgresql }
+        template: postgresql-service.yaml
+      - isKind: { of: Service }
+        template: postgresql-headless-service.yaml
+      - equal: { path: metadata.name, value: cc-scout-postgresql-hl }
+        template: postgresql-headless-service.yaml
+      - equal: { path: spec.clusterIP, value: None }
+        template: postgresql-headless-service.yaml
+      - isKind: { of: StatefulSet }
+        template: postgresql-statefulset.yaml
+      - equal: { path: metadata.name, value: cc-scout-postgresql }
+        template: postgresql-statefulset.yaml
+      - equal: { path: spec.serviceName, value: cc-scout-postgresql-hl }
+        template: postgresql-statefulset.yaml
+      - equal: { path: spec.replicas, value: 1 }
+        template: postgresql-statefulset.yaml
+      - matchRegex: { path: 'spec.template.spec.containers[0].image', pattern: '^docker\.io/postgres@sha256:[0-9a-f]{64}$' }
+        template: postgresql-statefulset.yaml
+      - matchRegex: { path: 'spec.template.spec.initContainers[0].image', pattern: '^docker\.io/postgres@sha256:[0-9a-f]{64}$' }
+        template: postgresql-statefulset.yaml
+      - equal:
+          path: spec.template.spec.volumes[0].secret
+          value: { secretName: cc-scout-postgresql, items: [{ key: POSTGRES_PASSWORD, path: POSTGRES_PASSWORD }] }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_PASSWORD_FILE, value: /run/secrets/postgresql/POSTGRES_PASSWORD }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_USER, value: scout }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_DB, value: scout }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: cc-scout-postgresql, key: POSTGRES_PASSWORD } } }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: DATABASE_URL, value: "postgres://scout:$(POSTGRES_PASSWORD)@cc-scout-postgresql:5432/scout" }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: cc-scout-postgresql, key: POSTGRES_PASSWORD } } }
+        template: worker-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: DATABASE_URL, value: "postgres://scout:$(POSTGRES_PASSWORD)@cc-scout-postgresql:5432/scout" }
+        template: worker-deployment.yaml
+      # DATABASE_URL expands $(POSTGRES_PASSWORD) only from an earlier env entry.
+      - equal: { path: 'spec.template.spec.containers[0].env[0].name', value: POSTGRES_PASSWORD }
+        template: deployment.yaml
+      - equal: { path: 'spec.template.spec.containers[0].env[0].name', value: POSTGRES_PASSWORD }
+        template: worker-deployment.yaml
+
+  - it: ignores external connection settings for the bundled database
+    set:
+      postgresql.enabled: true
+      database.port: 6432
+      database.sslMode: verify-full
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: DATABASE_URL, value: "postgres://scout:$(POSTGRES_PASSWORD)@cc-scout-postgresql:5432/scout" }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: DATABASE_URL, value: "postgres://scout:$(POSTGRES_PASSWORD)@cc-scout-postgresql:5432/scout" }
+        template: worker-deployment.yaml
+
+  - it: keeps the database process non-root and writable paths mounted
+    set: { postgresql.enabled: true }
+    asserts:
+      - equal: { path: spec.template.spec.automountServiceAccountToken, value: false }
+        template: postgresql-statefulset.yaml
+      - equal: { path: spec.template.spec.securityContext.fsGroup, value: 999 }
+        template: postgresql-statefulset.yaml
+      - equal: { path: spec.template.spec.securityContext.seccompProfile.type, value: RuntimeDefault }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.containers[0].securityContext.runAsNonRoot', value: true }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.containers[0].securityContext.runAsUser', value: 999 }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem', value: true }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.initContainers[0].securityContext.runAsUser', value: 0 }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.initContainers[0].securityContext.capabilities.add', value: [CHOWN, FOWNER] }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.initContainers[0].securityContext.readOnlyRootFilesystem', value: true }
+        template: postgresql-statefulset.yaml
+      - matchRegex: { path: 'spec.template.spec.initContainers[0].command[2]', pattern: 'chown 999:999' }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: runtime, mountPath: /var/run/postgresql }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: tmp, mountPath: /tmp }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: runtime, emptyDir: {} }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: tmp, emptyDir: {} }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: shm, mountPath: /dev/shm }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: shm, emptyDir: { medium: Memory } }
+        template: postgresql-statefulset.yaml
+
+  - it: checks database readiness at startup and during operation
+    set: { postgresql.enabled: true }
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].startupProbe.exec.command[2]', value: 'pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.containers[0].livenessProbe.exec.command[2]', value: 'pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.containers[0].readinessProbe.exec.command[2]', value: 'pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' }
+        template: postgresql-statefulset.yaml
+
+  - it: provisions the requested durable volume
+    set:
+      postgresql.enabled: true
+      postgresql.persistence.size: 5Gi
+      postgresql.persistence.storageClass: fast
+    asserts:
+      - equal: { path: 'spec.volumeClaimTemplates[0].metadata.name', value: data }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.volumeClaimTemplates[0].spec.accessModes', value: [ReadWriteOnce] }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.volumeClaimTemplates[0].spec.resources.requests.storage', value: 5Gi }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.volumeClaimTemplates[0].spec.storageClassName', value: fast }
+        template: postgresql-statefulset.yaml
+
+  - it: keeps the data volume and generated password when the release is uninstalled
+    set: { postgresql.enabled: true }
+    asserts:
+      - equal:
+          path: spec.persistentVolumeClaimRetentionPolicy
+          value: { whenDeleted: Retain, whenScaled: Retain }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'metadata.annotations["helm.sh/resource-policy"]', value: keep }
+        template: postgresql-secret.yaml
+
+  - it: uses ephemeral data storage when persistence is disabled
+    set:
+      postgresql.enabled: true
+      postgresql.persistence.enabled: false
+    asserts:
+      - notExists: { path: spec.volumeClaimTemplates }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: data, emptyDir: {} }
+        template: postgresql-statefulset.yaml
+
+  - it: reuses the caller's Secret and selected key throughout the chart
+    set:
+      postgresql.enabled: true
+      postgresql.auth.existingSecret: supplied-db
+      postgresql.auth.passwordKey: db-password
+      postgresql.auth.username: appuser
+      postgresql.auth.database: appdata
+    asserts:
+      - hasDocuments: { count: 0 }
+        template: postgresql-secret.yaml
+      - equal:
+          path: spec.template.spec.volumes[0].secret
+          value: { secretName: supplied-db, items: [{ key: db-password, path: db-password }] }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_PASSWORD_FILE, value: /run/secrets/postgresql/db-password }
+        template: postgresql-statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: supplied-db, key: db-password } } }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: POSTGRES_PASSWORD, valueFrom: { secretKeyRef: { name: supplied-db, key: db-password } } }
+        template: worker-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: DATABASE_URL, value: "postgres://appuser:$(POSTGRES_PASSWORD)@cc-scout-postgresql:5432/appdata" }
+        template: deployment.yaml
+
+  - it: preserves an existing generated password on upgrade
+    set: { postgresql.enabled: true }
+    kubernetesProvider:
+      objects:
+        - apiVersion: v1
+          kind: Secret
+          metadata: { name: cc-scout-postgresql, namespace: default }
+          data: { POSTGRES_PASSWORD: cHJlc2VydmVkLXBhc3N3b3Jk }
+    asserts:
+      - equal: { path: data.POSTGRES_PASSWORD, value: cHJlc2VydmVkLXBhc3N3b3Jk }
+        template: postgresql-secret.yaml
+
+  - it: uses an overridable tag when no digest is configured
+    set:
+      postgresql.enabled: true
+      postgresql.image.registry: registry.example.test
+      postgresql.image.repository: db/postgres
+      postgresql.image.tag: 17-custom
+      postgresql.image.digest: ""
+      postgresql.image.pullPolicy: Always
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].image', value: 'registry.example.test/db/postgres:17-custom' }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.initContainers[0].image', value: 'registry.example.test/db/postgres:17-custom' }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.containers[0].imagePullPolicy', value: Always }
+        template: postgresql-statefulset.yaml
+
+  - it: forwards registry credentials to the database pod
+    set:
+      postgresql.enabled: true
+      imagePullSecrets: [{ name: registry-credentials }]
+    asserts:
+      - equal: { path: spec.template.spec.imagePullSecrets, value: [{ name: registry-credentials }] }
+        template: postgresql-statefulset.yaml
+
+  - it: keeps database pods outside the web Deployment's selector
+    set: { postgresql.enabled: true }
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: scout
+            app.kubernetes.io/instance: cc
+        template: deployment.yaml
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: scout-postgresql
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: postgresql
+        template: postgresql-statefulset.yaml
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: scout-postgresql
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: postgresql
+        template: postgresql-statefulset.yaml
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: scout-postgresql
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: postgresql
+        template: postgresql-service.yaml
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: scout-postgresql
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: postgresql
+        template: postgresql-headless-service.yaml
+
+  - it: keeps database names and pod labels separate from application names that end in -postgresql
+    set:
+      postgresql.enabled: true
+      nameOverride: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-postgresql
+      fullnameOverride: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-postgresql
+    asserts:
+      - equal: { path: metadata.name, value: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-postgresql }
+        template: service.yaml
+      - equal: { path: metadata.name, value: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-p-database }
+        template: postgresql-service.yaml
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-postgresql
+            app.kubernetes.io/instance: cc
+        template: deployment.yaml
+      - equal:
+          path: 'spec.template.metadata.labels["app.kubernetes.io/name"]'
+          value: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-p-database
+        template: postgresql-statefulset.yaml
+
+  - it: keeps the StatefulSet name within the 52 characters its pods can carry
+    set:
+      postgresql.enabled: true
+      fullnameOverride: abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk
+    asserts:
+      - equal: { path: metadata.name, value: abcdefghijklmnopqrstuvwxyzabcdefghijklmno-postgresql }
+        template: postgresql-statefulset.yaml

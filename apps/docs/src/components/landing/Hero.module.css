@@ -1,0 +1,768 @@
+/* The first screen: headline, subline, actions, then partner-portal's repo page with the legacy Button lifted
+   out of it into a card. The life line starts from a dot on that card's lower edge. */
+
+.hero {
+  padding-top: clamp(2.75rem, 1.5rem + 4vw, 5.25rem);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--ifm-font-family-base);
+  font-size: clamp(2.25rem, 5.4vw - 0.25rem, 3.875rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.034em;
+  color: var(--landing-ink);
+  text-wrap: balance;
+}
+
+.lede {
+  max-width: 48rem;
+  margin: 1.25rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--landing-muted);
+  text-wrap: pretty;
+}
+
+@media (min-width: 997px) {
+  .lede {
+    margin-top: 1.625rem;
+    font-size: 1.125rem;
+  }
+}
+
+.actions {
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 997px) {
+  .actions {
+    margin-top: 1.875rem;
+  }
+}
+
+/* Each sentence of the subline starts its own line once there is room for it. */
+@media (min-width: 768px) {
+  .sentence {
+    display: block;
+  }
+}
+
+/* From 1280px the subline and the actions sit beside the headline, level with its last line, so the repo page
+   rises into the first screen. */
+@media (min-width: 1280px) {
+  .intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 28.5rem);
+    column-gap: 4rem;
+    align-items: end;
+  }
+
+  .lede {
+    margin-top: 0;
+  }
+
+  .sentence {
+    text-wrap: balance;
+  }
+}
+
+/* ---- The product view ------------------------------------------------------------ */
+
+.view {
+  /* A table row's height, the window's space under the table, and the card's inline padding. */
+  --row-h: 2.3125rem;
+  --window-pb: 2rem;
+  --card-pad: 1.25rem;
+
+  margin: 2.5rem 0 0;
+  min-width: 0;
+}
+
+@media (min-width: 997px) {
+  .view {
+    margin-top: 3.5rem;
+  }
+}
+
+.shot {
+  position: relative;
+}
+
+/* The repo page, drawn as the web app draws it. On the dark ground each of its surfaces is one step lighter than
+   the web app's. */
+.window {
+  --shot-ground: var(--pal-neutral-canvas);
+  --shot-panel: var(--pal-neutral-panel);
+  --shot-band: var(--pal-neutral-band);
+  --shot-selected: var(--pal-neutral-hover);
+
+  padding: 1.125rem 1rem var(--window-pb);
+  border: 1px solid var(--landing-hairline);
+  border-radius: 0.875rem;
+  background: var(--shot-ground);
+  color: var(--landing-muted);
+}
+
+html[data-theme="dark"] .window {
+  --shot-ground: var(--pal-neutral-panel);
+  --shot-panel: var(--pal-neutral-band);
+  --shot-band: var(--pal-neutral-mist);
+  --shot-selected: var(--pal-neutral-hairline);
+}
+
+@media (min-width: 997px) {
+  .window {
+    padding: 1.75rem 2rem var(--window-pb);
+  }
+}
+
+.window code {
+  font-size: 0.75rem;
+}
+
+.sep {
+  color: color-mix(in oklch, var(--landing-muted) 70%, transparent);
+}
+
+/* ---- Masthead ---------------------------------------------------------------------- */
+
+.masthead {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.back {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.repoId {
+  margin: 0;
+  line-height: 2rem;
+}
+
+.window .repoId code {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--landing-ink);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+/* ---- Status row: the deprecated alarm, then what moved --------------- */
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.status b {
+  font-weight: 500;
+}
+
+.alarm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--pal-orange-text);
+}
+
+.statusGlyph {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.diffText b {
+  color: var(--landing-ink);
+}
+
+/* ---- Tabs ------------------------------------------------------------------------------ */
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  height: 2rem;
+  margin-top: 1.5rem;
+  padding: 3px;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  color: var(--landing-muted);
+}
+
+.tabActive {
+  color: var(--landing-ink);
+}
+
+.tabActive::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -5px;
+  left: 0;
+  height: 2px;
+  background: var(--landing-ink);
+}
+
+/* ---- The components panel: filter bar, then the table ------------------------------------ */
+
+.panel {
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--landing-hairline);
+  border-radius: 0.625rem;
+  background: var(--shot-panel);
+  box-shadow: var(--landing-shadow);
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--landing-hairline);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+/* The pressed "since previous scan" chip: the changed view is on. */
+.statusChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 2rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--landing-edge);
+  border-radius: 0.625rem;
+  background: var(--pal-neutral-hover);
+  white-space: nowrap;
+  color: var(--landing-ink);
+}
+
+.count {
+  flex: 1 1 100%;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .count {
+    flex: none;
+    margin-left: auto;
+  }
+}
+
+/* ---- The table: columns from 640px, stacked tiers below ------------------------------------ */
+
+.table {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  border-bottom: 1px solid var(--landing-hairline);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+/* Phones draw no header row. `.row.headRow`, not `.headRow`: the build merges `display` rules into one early block. */
+.row.headRow {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .row {
+    grid-template-columns:
+      minmax(0, 40fr) minmax(0, 23fr) minmax(0, 11fr) minmax(0, 9fr)
+      minmax(0, 17fr);
+    box-sizing: border-box;
+    height: var(--row-h);
+  }
+
+  .row.headRow {
+    display: grid;
+    height: 2.25rem;
+    background: var(--shot-band);
+  }
+}
+
+@media (min-width: 1280px) {
+  .row {
+    grid-template-columns:
+      minmax(0, 40fr) minmax(0, 29fr) minmax(0, 11fr) minmax(0, 9fr)
+      minmax(0, 11fr);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.headNum {
+  justify-content: flex-end;
+}
+
+/* The selected row: a filled row. */
+.selected {
+  background: var(--shot-selected);
+}
+
+.cell {
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pkgCell,
+.versionCell,
+.numCell {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .pkgCell,
+  .versionCell,
+  .numCell {
+    display: block;
+  }
+}
+
+.versionCell code {
+  font-variant-numeric: tabular-nums;
+}
+
+.numCell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The change beside a count reads in medium ink inside a slot of one width, so the brackets share an edge. */
+.slot {
+  display: inline-block;
+  width: 4.5ch;
+  text-align: left;
+}
+
+.deltaValue {
+  font-weight: 500;
+  color: var(--landing-ink);
+}
+
+.faint {
+  color: var(--landing-faint);
+}
+
+.ink {
+  font-weight: 500;
+  color: var(--landing-ink);
+}
+
+.nameLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.5rem;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .nameLine {
+    flex-wrap: nowrap;
+  }
+}
+
+.window .rowName {
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  color: var(--landing-ink);
+}
+
+.window .ghost .rowName {
+  color: var(--landing-muted);
+}
+
+.rowWarn {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--pal-orange-graphic);
+}
+
+/* The changed view's `added` and `removed` marker: an outline badge that stays quieter than the name. */
+.markBadge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 1.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--landing-muted) 70%, transparent);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.tier {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.375rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: normal;
+}
+
+.tier + .tier {
+  margin-top: 0.125rem;
+}
+
+@media (min-width: 640px) {
+  .tier {
+    display: none;
+  }
+}
+
+/* ---- The card lifting out of the selected row -------------------------------------------- */
+
+.lift {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 33rem);
+  margin: -1rem 0 0;
+  padding: 1rem var(--card-pad) 1rem;
+  border: 1px solid var(--landing-edge);
+  border-radius: 0.875rem;
+  background: var(--pal-neutral-panel);
+  box-shadow:
+    0 1px 2px oklch(0.2 0.01 265 / 0.06),
+    0 14px 32px -12px oklch(0.2 0.01 265 / 0.22);
+  color: var(--landing-muted);
+}
+
+/* The card keeps to the inline-start edge, where the life line runs, in either direction. */
+.hero:dir(rtl) .lift {
+  margin-left: auto;
+}
+
+html[data-theme="dark"] .lift {
+  background: var(--pal-neutral-hover);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.3),
+    0 18px 40px -12px oklch(0 0 0 / 0.72);
+}
+
+/* Below 997px the life line runs just inside the card's inline-start edge, so that lower corner is squared
+   for the line's start dot to sit on. */
+@media (max-width: 996px) {
+  .lift {
+    border-bottom-left-radius: 0.25rem;
+  }
+
+  .hero:dir(rtl) .lift {
+    border-bottom-right-radius: 0.25rem;
+    border-bottom-left-radius: 0.875rem;
+  }
+}
+
+/* The card sits in the window's bottom padding, below the table, and starts where the life line runs. A hairline
+   connector, clear of the rows' text, runs up to a pin in the middle of the selected row. */
+@media (min-width: 997px) {
+  .lift {
+    /* How far the card reaches over the table; negative leaves a gap under its last row. */
+    --card-over: -1rem;
+    --connector-at: 7.5rem;
+    --connector-h: calc(5.5 * var(--row-h) - var(--card-over) + 1px);
+    --pin: 0.4375rem;
+
+    margin: calc(-1 * (var(--window-pb) + 2px + var(--card-over))) 0 0 calc(var(--line-x) - var(--card-pad));
+  }
+
+  .hero:dir(rtl) .lift {
+    margin-right: calc(var(--line-x) - var(--card-pad));
+    margin-left: auto;
+  }
+
+  .lift::before,
+  .lift::after {
+    content: "";
+    position: absolute;
+  }
+
+  .lift::before {
+    bottom: 100%;
+    left: var(--connector-at);
+    width: 1px;
+    height: var(--connector-h);
+    background: var(--line-color);
+  }
+
+  .lift::after {
+    top: calc(-1 * var(--connector-h) - var(--pin) / 2);
+    left: calc(var(--connector-at) + 0.5px - var(--pin) / 2);
+    width: var(--pin);
+    height: var(--pin);
+    border-radius: 50%;
+    background: var(--landing-ink);
+  }
+
+  .hero:dir(rtl) .lift::before {
+    right: var(--connector-at);
+    left: auto;
+  }
+
+  .hero:dir(rtl) .lift::after {
+    right: calc(var(--connector-at) + 0.5px - var(--pin) / 2);
+    left: auto;
+  }
+}
+
+/* The card draws the component page's header as the web app does: the back link to the repo, the name with its
+   scope and kind badges, the package and version, then the page's tab rail. */
+.lift code {
+  font-size: 1em;
+}
+
+.liftBack {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.liftIdentity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+.lift .liftName {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 2rem;
+  letter-spacing: -0.025em;
+  color: var(--landing-ink);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--landing-ink);
+}
+
+.badgeSecondary {
+  background: var(--pal-neutral-mist);
+}
+
+.badgeOutline {
+  border-color: var(--landing-hairline);
+}
+
+/* The dark card sits a step lighter than the web app's page, so the quiet badge fill and the hairlines step up
+   with it to stay visible. */
+html[data-theme="dark"] .badgeSecondary {
+  background: color-mix(in oklch, var(--pal-neutral-edge) 50%, var(--pal-neutral-hover));
+}
+
+html[data-theme="dark"] .badgeOutline {
+  border-color: var(--landing-edge);
+}
+
+.liftMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.liftSep {
+  color: color-mix(in oklch, var(--landing-muted) 60%, transparent);
+}
+
+/* The page's tab rail: a hairline under the tabs, the active tab's ink underline sitting on it. */
+.liftTabs {
+  display: flex;
+  gap: 1rem;
+  margin: 0.75rem 0 0;
+  border-bottom: 1px solid var(--landing-hairline);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+html[data-theme="dark"] .liftTabs {
+  border-bottom-color: var(--landing-edge);
+}
+
+@media (min-width: 640px) {
+  .liftTabs {
+    gap: 1.25rem;
+  }
+}
+
+.liftTab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  margin-bottom: -1px;
+  padding: 0.75rem 0;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  color: var(--landing-muted);
+}
+
+.liftTabActive {
+  border-bottom-color: var(--landing-ink);
+  color: var(--landing-ink);
+}
+
+.liftTabLabel {
+  font-weight: 500;
+}
+
+.liftTabCount {
+  font-size: 0.75rem;
+  color: var(--landing-muted);
+}
+
+/* ---- Where the life line starts: a dot on the card's lower edge ---------------------------- */
+
+.origin {
+  --dot: 0.75rem;
+  --line-at: calc(var(--landing-gutter) + var(--line-x) - var(--line-width) / 2);
+  --dot-at: calc(var(--landing-gutter) + var(--line-x) - var(--dot) / 2);
+}
+
+.originFrame {
+  padding-bottom: 3.5rem;
+}
+
+@media (min-width: 997px) {
+  .originFrame {
+    padding-bottom: 5rem;
+  }
+}
+
+.originFrame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--line-at);
+  width: var(--line-width);
+  background: var(--line-color);
+}
+
+.originFrame:dir(rtl)::before {
+  right: var(--line-at);
+  left: auto;
+}
+
+.start {
+  position: absolute;
+  z-index: 2;
+  top: calc(var(--dot) / -2);
+  left: var(--dot-at);
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--landing-ink);
+}
+
+.originFrame:dir(rtl) > .start {
+  right: var(--dot-at);
+  left: auto;
+}
+
+/* Where scroll-driven animations exist, the line fills in ink down to the middle of the screen. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .origin {
+      view-timeline-name: --origin;
+      view-timeline-axis: block;
+    }
+
+    .originFrame::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--line-at);
+      width: var(--line-width);
+      background: var(--landing-ink);
+      clip-path: inset(0 0 100% 0);
+      animation-name: origin-fill;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --origin;
+      animation-range: cover 50vh cover calc(100% - 50vh);
+    }
+
+    .originFrame:dir(rtl)::after {
+      right: var(--line-at);
+      left: auto;
+    }
+  }
+}
+
+@keyframes origin-fill {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}

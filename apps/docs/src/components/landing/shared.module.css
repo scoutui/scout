@@ -1,0 +1,370 @@
+/* Landing page primitives: page tokens, container, life-line geometry, type, panels, actions.
+   The docs build rewrites logical properties as left-to-right physical ones, so every inline-axis rule
+   on the landing page is written physically with a :dir(rtl) twin beside it. */
+
+.page {
+  --landing-gutter: 1rem;
+  --landing-max: 76rem;
+  --landing-ink: var(--ifm-font-color-base);
+  --landing-muted: var(--ifm-color-content-secondary);
+  --landing-faint: var(--pal-neutral-faint);
+  --landing-hairline: var(--ifm-color-emphasis-300);
+  --landing-edge: var(--pal-neutral-edge);
+  --landing-surface: var(--pal-neutral-panel);
+  --landing-band: var(--pal-neutral-band);
+  --landing-stripe: var(--pal-neutral-mist);
+  --landing-ground: var(--pal-neutral-canvas);
+  --landing-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --landing-shadow: 0 1px 1px oklch(0.2 0.01 265 / 0.03);
+
+  /* The life line: its offset from the container's inline-start content edge, the content column's offset, its stroke. */
+  --line-x: 0.375rem;
+  --col-x: 2rem;
+  --line-width: 2px;
+  --line-color: var(--ifm-color-emphasis-500);
+
+  overflow-x: clip;
+  background: var(--landing-ground);
+  color: var(--landing-ink);
+  font-family: var(--ifm-font-family-base);
+}
+
+html[data-theme="dark"] .page {
+  --landing-stripe: var(--pal-neutral-band);
+  --landing-shadow: 0 1px 1px oklch(0 0 0 / 0.2);
+}
+
+.page ::selection {
+  background: var(--pal-neutral-edge);
+  color: var(--pal-neutral-ink);
+}
+
+@media (min-width: 768px) {
+  .page {
+    --landing-gutter: 2rem;
+  }
+}
+
+@media (min-width: 997px) {
+  .page {
+    --line-x: 10.5rem;
+    --col-x: 13.5rem;
+  }
+}
+
+.container {
+  position: relative;
+  width: 100%;
+  max-width: calc(var(--landing-max) + 2 * var(--landing-gutter));
+  margin-inline: auto;
+  padding-inline: var(--landing-gutter);
+}
+
+.col {
+  margin-left: var(--col-x);
+  min-width: 0;
+}
+
+.col:dir(rtl) {
+  margin-right: var(--col-x);
+  margin-left: 0;
+}
+
+/* ---- Type ----------------------------------------------------------------- */
+
+.heading {
+  margin: 0;
+  max-width: 21em;
+  font-family: var(--ifm-font-family-base);
+  font-size: 1.5625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
+  color: var(--landing-ink);
+  text-wrap: balance;
+}
+
+@media (min-width: 997px) {
+  .heading {
+    font-size: 1.875rem;
+  }
+}
+
+.body {
+  margin: 0;
+  max-width: 38rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--landing-muted);
+  text-wrap: pretty;
+}
+
+@media (min-width: 997px) {
+  .body {
+    font-size: 1.0625rem;
+  }
+}
+
+.label {
+  font-family: var(--ifm-font-family-base);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-feature-settings: "liga" 0;
+  color: var(--landing-muted);
+}
+
+/* Identifiers: mono, ligatures off, no Infima code chip, isolated so a path never flips in right-to-left text. */
+.code {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.875em;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+  color: inherit;
+  vertical-align: baseline;
+  unicode-bidi: isolate;
+}
+
+/* Which repo and component a figure shows (Where.tsx). */
+.where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.625rem;
+  margin: 0 0 1rem;
+}
+
+.whereQuiet {
+  font-size: 0.875rem;
+  color: var(--landing-muted);
+}
+
+.whereSlash {
+  color: var(--landing-faint);
+}
+
+.whereName {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--landing-ink);
+}
+
+/* An identifier inside muted prose reads in ink. */
+.body .code {
+  color: var(--landing-ink);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Status and swatches ---------------------------------------------------- */
+
+.gain {
+  color: var(--pal-green-graphic);
+}
+
+.warnGlyph {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--pal-orange-graphic);
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+}
+
+.swatchSuccessor {
+  background: var(--pal-teal-graphic);
+}
+
+/* ---- Panels ----------------------------------------------------------------- */
+
+/* Every figure panel takes the web app's panel colour, in both themes. */
+.panel {
+  margin: 0;
+  min-width: 0;
+  background: var(--pal-neutral-panel);
+  border: 1px solid var(--landing-hairline);
+  border-radius: 0.875rem;
+  box-shadow: var(--landing-shadow);
+  color: var(--landing-ink);
+}
+
+/* ---- Actions ---------------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  font-family: var(--ifm-font-family-base);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 150ms var(--landing-ease-out),
+    border-color 150ms var(--landing-ease-out),
+    color 150ms var(--landing-ease-out);
+}
+
+.button:hover {
+  text-decoration: none;
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.primary {
+  background: var(--pal-neutral-ink);
+  color: var(--pal-neutral-ink-inverse);
+}
+
+.primary:hover {
+  background: var(--ifm-color-emphasis-800);
+  color: var(--pal-neutral-ink-inverse);
+}
+
+.outline {
+  border-color: var(--landing-edge);
+  color: var(--landing-ink);
+}
+
+.outline:hover {
+  background: var(--pal-neutral-hover);
+  color: var(--landing-ink);
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  color: var(--landing-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--landing-edge);
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color 150ms var(--landing-ease-out);
+}
+
+.textLink:hover {
+  color: var(--landing-ink);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+.textLink svg {
+  width: 1em;
+  height: 1em;
+}
+
+/* The repository link after a pair of buttons: a text link, set a little apart from them. */
+.github {
+  margin-left: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.github:dir(rtl) {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* The forward arrow points the way the text reads. */
+.textLink:dir(rtl) svg {
+  transform: scaleX(-1);
+}
+
+.button:focus-visible,
+.textLink:focus-visible {
+  outline: 2px solid var(--pal-neutral-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .textLink {
+    transition: none;
+  }
+
+  .button:active {
+    transform: none;
+  }
+}
+
+/* ---- Charts drawing in (useDrawOnView) ---------------------------------------------------- */
+
+/* The series wipe in left to right, easing into the latest scans, and the end labels fade in as the lines
+   arrive. The clip reaches past the box so a series' end dot, which straddles the right edge, isn't cut. */
+[data-draw="armed"] .drawn {
+  clip-path: inset(-0.5rem 100% -0.5rem 0);
+}
+
+[data-draw="run"] .drawn {
+  animation: draw 1000ms cubic-bezier(0.33, 0.1, 0.25, 1);
+}
+
+[data-draw="armed"] .afterDraw {
+  opacity: 0;
+}
+
+[data-draw="run"] .afterDraw {
+  animation: after-draw 300ms ease-out 800ms backwards;
+}
+
+@keyframes draw {
+  from {
+    clip-path: inset(-0.5rem 100% -0.5rem 0);
+  }
+
+  to {
+    clip-path: inset(-0.5rem);
+  }
+}
+
+@keyframes after-draw {
+  from {
+    opacity: 0;
+  }
+}

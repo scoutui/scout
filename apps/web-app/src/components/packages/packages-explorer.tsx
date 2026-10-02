@@ -1,0 +1,52 @@
+"use client";
+
+import { useMemo } from "react";
+import type { PackageSummary } from "@scoutui/web-shared";
+import { PackageFilterBar } from "@/components/packages/package-filter-bar";
+import { PackagesTable } from "@/components/packages/packages-table";
+import { useQuerySyncedState } from "@/lib/use-query-synced-state";
+import {
+  emptyPackageFacets,
+  filterPackageRows,
+  packageFacetOptions,
+  packageFacetsToQuery,
+  queryToPackageFacets,
+  type PackageFacetState,
+} from "@/lib/package-facets";
+
+/**
+ * Client-side faceted explorer over the full package list. The server ships
+ * every row once and filtering runs here; facet state derives from `?q=` via
+ * useQuerySyncedState and writes back through history.replaceState.
+ */
+export function PackagesExplorer({
+  rows,
+}: {
+  rows: PackageSummary[];
+}) {
+  const [facets, setFacets] = useQuerySyncedState<PackageFacetState>(queryToPackageFacets, packageFacetsToQuery);
+
+  // Counted under every other active filter, as on the repo page.
+  const options = useMemo(() => packageFacetOptions(rows, facets), [rows, facets]);
+  const filtered = useMemo(() => filterPackageRows(rows, facets), [rows, facets]);
+
+  return (
+    <div className="panel overflow-hidden">
+      <PackageFilterBar facets={facets} onChange={setFacets} options={options} resultCount={filtered.length} />
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 px-3 py-12 text-center">
+          <p className="text-sm text-muted-foreground">No packages match these filters.</p>
+          <button
+            type="button"
+            onClick={() => setFacets(emptyPackageFacets())}
+            className="inline-flex h-7 items-center rounded-md px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Clear filters
+          </button>
+        </div>
+      ) : (
+        <PackagesTable rows={filtered} deprecatedOnly={facets.deprecated === true} />
+      )}
+    </div>
+  );
+}

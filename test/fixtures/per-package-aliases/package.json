@@ -1,0 +1,5 @@
+{
+  "name": "per-package-aliases",
+  "private": true,
+  "workspaces": ["apps/*"]
+}

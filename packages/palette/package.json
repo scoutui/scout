@@ -1,0 +1,25 @@
+{
+  "name": "@scoutui/palette",
+  "version": "0.1.0",
+  "description": "Colours shared by the Scout dashboard and documentation site.",
+  "homepage": "https://scoutui.dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./palette.css": "./palette.css"
+  },
+  "files": [
+    "palette.css"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "lint": "biome lint tests",
+    "clean": "rm -rf .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.5"
+  }
+}

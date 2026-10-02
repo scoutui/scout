@@ -1,0 +1,34 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/packages/cli/package.json"],
+      "outputs": [".next/**", "dist/**"]
+    },
+    "worker:build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "worker:start": {
+      "dependsOn": ["worker:build"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": ["DATABASE_URL", "MIGRATE_ON_START", "SCOUTUI_MIGRATIONS_DIR", "SCOUTUI_MAX_DECODED_ARTIFACT_BYTES", "WORKER_*"]
+    },
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/packages/cli/tests/integration/__baselines__/current/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

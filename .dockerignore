@@ -1,0 +1,28 @@
+# Build outputs
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/.tsbuildinfo
+**/tsconfig.tsbuildinfo
+
+# Env files never go into the image.
+**/.env
+**/.env.*
+
+# VCS
+.git
+.github
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+
+# Repo-internal docs / scratch
+.worktrees
+.changeset
+docs/superpowers
+
+# Logs
+*.log

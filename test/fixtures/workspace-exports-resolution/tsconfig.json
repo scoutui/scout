@@ -1,0 +1,16 @@
+// Fixture for workspace `package.json#exports` resolution.
+// Intentionally has no `compilerOptions.paths` — the resolver must reach
+// for the workspace-exports layer (not the tsconfig-paths shortcut) to
+// resolve `@example/icons/icons/IcDemo`. Adding a `paths` alias here would
+// silently invalidate the fixture's regression value. For the same reason
+// the `exports` pattern maps `./icons/*` into `src/icons/`: a file at
+// `icons/IcDemo.tsx` would also resolve through the workspace's
+// `<package>/*` source fallback.
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "target": "esnext"
+  }
+}

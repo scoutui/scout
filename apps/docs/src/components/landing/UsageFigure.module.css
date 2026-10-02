@@ -1,0 +1,250 @@
+/* One component's Usage tab in one repo: the props rail and the call sites that pass the selected value,
+   sharing one frame as the web app lays them out. The frame is always left to right. */
+
+.figure {
+  max-width: 54rem;
+  margin: 2.5rem 0 0;
+  min-width: 0;
+}
+
+.frame {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .frame {
+    flex-direction: row;
+  }
+}
+
+.small {
+  flex: none;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  color: var(--landing-muted);
+}
+
+/* The header band each pane opens with. */
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  min-height: 1.875rem;
+  margin: 0;
+  padding: 0.375rem 0.75rem;
+  border-bottom: 1px solid var(--landing-hairline);
+  background: var(--landing-band);
+}
+
+/* ---- Props and values ------------------------------------------------------ */
+
+.values {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  border-bottom: 1px solid var(--landing-hairline);
+}
+
+@media (min-width: 768px) {
+  .values {
+    width: 18.75rem;
+    border-right: 1px solid var(--landing-hairline);
+    border-bottom: 0;
+  }
+}
+
+.facet {
+  padding: 0.375rem 0;
+}
+
+.facetHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0 0.75rem 0.25rem;
+}
+
+.facetName {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--landing-ink);
+}
+
+.valueList {
+  margin: 0;
+  padding: 0 0.375rem;
+  list-style: none;
+}
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.5rem;
+  line-height: 1rem;
+}
+
+/* The selected value: a filled row, the value in ink at medium weight. */
+.selected {
+  background: var(--pal-neutral-hover);
+}
+
+.valueLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--landing-ink);
+}
+
+.selected .valueLabel {
+  font-weight: 500;
+}
+
+.track {
+  display: block;
+  flex: none;
+  width: 2.75rem;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--landing-band);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--landing-muted);
+}
+
+.valueCount {
+  flex: none;
+  min-width: 1.4rem;
+  font-size: 0.75rem;
+  text-align: right;
+  color: var(--landing-muted);
+}
+
+.selected .valueCount {
+  color: var(--landing-ink);
+}
+
+/* ---- Call sites ------------------------------------------------------------ */
+
+.sites {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.selection {
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--landing-ink);
+}
+
+.files {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file {
+  margin: 0;
+  border-bottom: 1px solid var(--landing-hairline);
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.path {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.dir {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--landing-muted);
+}
+
+.base {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--landing-ink);
+}
+
+.calls {
+  margin: 0;
+  padding: 0 0 0.375rem;
+  list-style: none;
+}
+
+.call {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.25rem 0.75rem 0.25rem 1.5rem;
+}
+
+/* One width for every line number, so the values after them share an edge. */
+.lineNo {
+  flex: none;
+  min-width: 4ch;
+  margin-top: 1px;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--landing-muted);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  color: var(--landing-ink);
+}
+
+.chipName {
+  color: var(--landing-faint);
+}
+
+.chipHit {
+  font-weight: 600;
+}
+

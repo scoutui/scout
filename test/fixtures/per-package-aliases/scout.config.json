@@ -1,0 +1,4 @@
+{
+  "repoId": "per-package-aliases",
+  "include": ["apps/*/src/**/*.tsx"]
+}

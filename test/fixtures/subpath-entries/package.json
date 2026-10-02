@@ -1,0 +1,9 @@
+{
+  "name": "subpath-entries",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/shoelace": "1.0.0"
+  }
+}

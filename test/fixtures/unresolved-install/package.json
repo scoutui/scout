@@ -1,0 +1,8 @@
+{
+  "name": "unresolved-install",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@example/ui": "1.0.0"
+  }
+}

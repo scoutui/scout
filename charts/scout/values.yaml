@@ -1,0 +1,217 @@
+# Default values for the Scout chart.
+
+image:
+  repository: ghcr.io/scoutui/scout-web-app
+  # Runner image tag. Defaults to .Chart.AppVersion. May be pinned by digest
+  # (e.g. "main@sha256:…") for GitOps deploys decoupled from the chart version.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+# NetworkPolicies that admit traffic only to the web port, the worker's health
+# port and, from web and worker pods, the bundled PostgreSQL. Outbound traffic
+# is not restricted. Needs a network plugin that enforces NetworkPolicy.
+networkPolicy:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+# Node.js old-space heap cap (MB). Empty → derive ~80% of resources.limits.memory.
+# Without it, Node sizes the heap to about 55% of the container limit.
+# Set a number to pin explicitly.
+nodeMaxOldSpaceSizeMb: ""
+
+# Extra env entries for the web container: a value, or valueFrom a
+# secretKeyRef or configMapKeyRef.
+extraEnv: []
+# Extra envFrom sources (secretRef or configMapRef) for the web container.
+extraEnvFrom: []
+# Extra volumes for the web pod, and where the web container mounts them.
+extraVolumes: []
+extraVolumeMounts: []
+
+# Scheduling for web pods.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Worker settings are independent of the web settings above; the worker
+# inherits none of them.
+worker:
+  replicaCount: 1
+  databasePoolMax: 3
+  nodeMaxOldSpaceSizeMb: ""
+  extraEnv: []
+  extraEnvFrom: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  terminationGracePeriodSeconds: 60
+  shutdownTimeoutMs: 30000
+  livenessProbe:
+    httpGet:
+      path: /live
+      port: health
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: health
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startupProbe:
+    httpGet:
+      path: /live
+      port: health
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 60
+
+# Auth via OIDC for browser sign-in.
+auth:
+  # Required. The dashboard's full external address, such as
+  # https://scout.example.com (used as AUTH_URL).
+  url: ""
+  # Required. The web pods load every key of this Secret as an environment
+  # variable, so the session signing key must be stored under AUTH_SECRET.
+  sessionSecretRef:
+    name: ""
+    key: AUTH_SECRET
+  oidc:
+    # Required. The issuer URL and client ID of the dashboard's application in
+    # your identity provider.
+    issuerUrl: ""
+    clientId: ""
+    # Required. Loaded the same way as sessionSecretRef, so the client secret
+    # must be stored under OIDC_CLIENT_SECRET.
+    clientSecretRef:
+      name: ""
+      key: OIDC_CLIENT_SECRET
+    # Optional comma-separated allow-list of email domains.
+    allowedDomains: ""
+  # Optional IdP group gate (SCOUTUI_REQUIRED_GROUP), checked at browser sign-in.
+  # Empty = no group gate. Existing CLI sessions are not rechecked.
+  requiredGroup: ""
+
+# Database connection.
+# When postgresql.enabled is true, host, port, user, name and the password
+# Secret come from the bundled database instead.
+database:
+  host: ""
+  port: 5432
+  # TLS mode for an external database, added to DATABASE_URL as ?sslmode=.
+  # See the deploy guide for the values that work.
+  sslMode: ""
+  user: scout
+  name: scout
+  # Apply pending migrations when a pod starts. Set false only to boot
+  # without touching the schema, for example during a restore.
+  migrateOnStart: true
+  # Connection budget: web replicas × poolMax + worker replicas ×
+  # worker.databasePoolMax, plus migration connections and operational headroom.
+  poolMax: 10
+  passwordSecretRef:
+    name: ""
+    key: POSTGRES_PASSWORD
+
+# Optional bundled PostgreSQL StatefulSet.
+postgresql:
+  enabled: false
+  image:
+    registry: docker.io
+    repository: postgres
+    # Used only when digest is empty.
+    tag: 17.10-bookworm
+    digest: sha256:9b18b78397054fce88a9552e9d5a3ad5bb7fd258c5b3cc1c5028e46373d6ea8f
+    pullPolicy: IfNotPresent
+  auth:
+    username: scout
+    database: scout
+    # Set to the name of a pre-existing secret with the password key below.
+    # Otherwise the chart generates a password and reads it back from the
+    # cluster on upgrade, so set this when rendering without cluster access
+    # (helm template, Argo CD).
+    existingSecret: ""
+    passwordKey: POSTGRES_PASSWORD
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+  podSecurityContext:
+    fsGroup: 999
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsGroup: 999
+    runAsNonRoot: true
+    runAsUser: 999
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

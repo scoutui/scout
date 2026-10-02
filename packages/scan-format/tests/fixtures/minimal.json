@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerVersion": "0.1.24",
+    "scanId": "01J8Z6Q4X7K2M9N3P5R8T1V4W6",
+    "scannedAt": "2026-09-25T10:00:00.000Z",
+    "repo": {
+      "id": "example-app",
+      "gitRemote": "https://github.com/example/example-app.git",
+      "commit": "3f2a9c1e7b4d6058a1c2e3f4a5b6c7d8e9f01234",
+      "committedAt": "2026-09-25T09:30:00.000Z",
+      "initialCommit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901234567",
+      "branch": "main"
+    }
+  },
+  "components": [
+    {
+      "id": "65385e93190ff80f",
+      "identity": { "kind": "package-export", "packageName": "@example/button", "publicEntry": "", "exportName": "Button" },
+      "framework": "react",
+      "stats": { "occurrenceCount": 1, "fileCount": 1 },
+      "usage": "direct",
+      "props": {},
+      "composition": { "rendersByCount": {}, "renderedByCount": {}, "isRootCount": 1, "isLeafCount": 1 },
+      "version": "1.2.0"
+    },
+    {
+      "id": "5ad433a7f1d3b424",
+      "identity": { "kind": "tag", "tagName": "example-badge" },
+      "attribution": {
+        "status": "resolved",
+        "target": { "kind": "package", "packageName": "@example/badge" },
+        "confidence": "declared",
+        "evidence": [
+          {
+            "source": "cem",
+            "strength": "declared",
+            "locator": { "packageName": "@example/badge", "version": "0.4.1" },
+            "target": { "kind": "package", "packageName": "@example/badge" },
+            "disposition": "supports"
+          }
+        ]
+      },
+      "stats": { "occurrenceCount": 1, "fileCount": 1 },
+      "usage": "direct",
+      "props": {
+        "variant": { "values": [{ "provenance": "written", "value": "info", "count": 1 }], "dynamic": 0, "omitted": 0 }
+      },
+      "composition": { "rendersByCount": {}, "renderedByCount": {}, "isRootCount": 1, "isLeafCount": 1 },
+      "version": "0.4.1"
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "9c1f2e3d4b5a6978",
+      "resolution": { "status": "resolved", "componentId": "5ad433a7f1d3b424" },
+      "filePath": "src/App.tsx",
+      "line": 5,
+      "column": 7,
+      "credit": { "kind": "render" },
+      "trace": [{ "kind": "tag", "written": "example-badge" }],
+      "props": { "variant": { "tier": "written", "value": "info" } }
+    },
+    {
+      "occurrenceId": "4e7a8b9c0d1e2f30",
+      "resolution": { "status": "resolved", "componentId": "65385e93190ff80f" },
+      "filePath": "src/routes.tsx",
+      "line": 3,
+      "column": 30,
+      "credit": { "kind": "argument", "callee": "withTracking", "index": 0 },
+      "trace": [{ "kind": "import", "specifier": "@example/button", "name": "Button" }],
+      "props": {}
+    },
+    {
+      "occurrenceId": "b2c3d4e5f6a70819",
+      "resolution": { "status": "unresolved", "reason": { "kind": "package-not-installed", "packageName": "@example/card" } },
+      "filePath": "src/App.tsx",
+      "line": 8,
+      "column": 7,
+      "credit": { "kind": "render" },
+      "trace": [{ "kind": "import", "specifier": "@example/card", "name": "Card" }],
+      "props": {}
+    }
+  ],
+  "diagnostics": []
+}

@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "design-system-upgrade",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "54c950a563ffe4b1",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "design-system-upgrade",
+        "filePath": "src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "47f6f60bda4c4cec": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "5d2455d032b3e3d0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "design-system-upgrade",
+        "filePath": "src/Direct.tsx",
+        "exportName": "Direct"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "47f6f60bda4c4cec": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f4ea884852f7842c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "design-system-upgrade",
+        "filePath": "src/Layered.tsx",
+        "exportName": "Layered"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "eec4f01b2713ec4e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "2a6f1677559a9288",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "design-system-upgrade",
+        "filePath": "src/Loop.tsx",
+        "exportName": "Loop"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "47f6f60bda4c4cec",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/leaf-kit",
+        "publicEntry": "",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "54c950a563ffe4b1": 1,
+          "5d2455d032b3e3d0": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "eec4f01b2713ec4e",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/leaf-kit",
+        "publicEntry": "react",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "f4ea884852f7842c": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "c00dc4a8547f28e7",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "47f6f60bda4c4cec"
+      },
+      "filePath": "src/App.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/agg-kit",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "54c950a563ffe4b1"
+    },
+    {
+      "occurrenceId": "c8eabb68545a918e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "47f6f60bda4c4cec"
+      },
+      "filePath": "src/Direct.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/leaf-kit",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5d2455d032b3e3d0"
+    },
+    {
+      "occurrenceId": "dc3bbb9e3bf5a9c9",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "eec4f01b2713ec4e"
+      },
+      "filePath": "src/Layered.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/agg-kit/deep",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "f4ea884852f7842c"
+    },
+    {
+      "occurrenceId": "5e4d831136001f3b",
+      "resolution": {
+        "status": "unresolved",
+        "reason": {
+          "kind": "chain-bailed",
+          "code": "cycle-detected"
+        }
+      },
+      "filePath": "src/Loop.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/loop-kit",
+          "name": "Widget"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "2a6f1677559a9288"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "cycle-detected",
+      "severity": "warning",
+      "filePath": "node_modules/@example/loop-kit/index.js",
+      "exportName": "Widget",
+      "packageName": "@example/loop-kit"
+    }
+  ]
+}

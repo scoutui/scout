@@ -1,0 +1,8 @@
+{
+  "name": "@workspace-exports/consumer",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@example/icons": "0.0.0"
+  }
+}

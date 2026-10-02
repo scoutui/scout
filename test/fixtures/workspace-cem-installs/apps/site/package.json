@@ -1,0 +1,6 @@
+{
+  "name": "workspace-cem-installs-site",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": { "@example/x-button": "0.0.0" }
+}

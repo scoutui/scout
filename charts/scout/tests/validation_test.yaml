@@ -1,0 +1,40 @@
+suite: Database configuration validation
+set:
+  auth.url: https://scout.example.com
+  auth.oidc.issuerUrl: https://auth.example.com/application/o/scout/
+  auth.oidc.clientId: scout
+  auth.sessionSecretRef.name: app-session
+  auth.oidc.clientSecretRef.name: oidc-secret
+tests:
+  - it: asks for a database when none is set
+    asserts:
+      - failedTemplate:
+          errorMessage: "Choose a database: set postgresql.enabled=true to run the bundled PostgreSQL, or set database.host to use your own. Neither is set."
+
+  - it: asks for one database when both are set
+    set:
+      postgresql.enabled: true
+      database.host: postgres.example.test
+    asserts:
+      - failedTemplate:
+          errorMessage: "Choose one database: set postgresql.enabled=true to run the bundled PostgreSQL, or set database.host to use your own. Both are set."
+
+  - it: accepts the bundled database
+    set: { postgresql.enabled: true }
+    asserts:
+      - isKind: { of: Deployment }
+        template: deployment.yaml
+
+  - it: accepts an external database
+    set:
+      database.host: postgres.example.test
+      database.passwordSecretRef.name: external-secret
+    asserts:
+      - isKind: { of: Deployment }
+        template: deployment.yaml
+
+  - it: asks for the password Secret of an external database
+    set: { database.host: postgres.example.test }
+    asserts:
+      - failedTemplate:
+          errorMessage: Set database.passwordSecretRef.name to the Secret that holds your database password.

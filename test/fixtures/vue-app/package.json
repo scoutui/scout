@@ -1,0 +1,15 @@
+{
+  "name": "vue-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/vue-ds": "0.0.0",
+    "@example/web-button": "1.13.4",
+    "@example/x-button": "0.0.0",
+    "vue": "3.5.33"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

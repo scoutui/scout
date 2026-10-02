@@ -1,0 +1,5 @@
+{
+  "repoId": "unresolved-install",
+  "include": ["src/**/*.tsx"],
+  "exclude": ["**/node_modules/**"]
+}

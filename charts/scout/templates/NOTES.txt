@@ -1,0 +1,44 @@
+Scout deployed.
+
+{{- if .Values.ingress.enabled }}
+URL:
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}
+{{- end }}
+{{- else }}
+Ingress is disabled; port-forward to access:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "scout.fullname" . }} 3000:{{ .Values.service.port }}
+  open http://localhost:3000
+{{- end }}
+
+Before first use, configure OIDC in your identity provider (one-time):
+
+1. Create an OAuth2/OIDC application.
+2. Client type: Confidential.
+3. Redirect URI: {{ .Values.auth.url }}/api/auth/callback/oidc
+4. Scopes: openid, email, profile.
+5. Note the issuer URL, client ID, and client secret.
+6. Store the secrets under these exact key names. The web pods load each Secret
+   whole, as environment variables, so a key with any other name isn't read:
+     Secret {{ .Values.auth.oidc.clientSecretRef.name }}, key OIDC_CLIENT_SECRET = <client secret>
+     Secret {{ .Values.auth.sessionSecretRef.name }}, key AUTH_SECRET = <output of: openssl rand -hex 32>
+
+Migrations apply when a pod starts, before it serves traffic. Watch a rollout:
+  kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/instance={{ .Release.Name }} --prefix --tail=-1 | grep '\[startup\]'
+
+To upload scans, sign in from a repository with the CLI installed, then scan:
+  yarn scout auth login --host {{ .Values.auth.url }}
+  yarn scout scan --host {{ .Values.auth.url }}
+
+The worker has a separate Deployment: {{ include "scout.workerName" . }}.
+Portable platform contract (including platforms using another chart):
+  Same image: {{ include "scout.runnerImage" . }}
+  Command from /app: node apps/web-app/worker.cjs
+  Independent replicas, resources and heap via worker.* values.
+  Pod-only health port 3001: /live and /ready; no public worker Service.
+  Database password: {{ include "scout.databasePasswordSecretName" . }} / {{ include "scout.databasePasswordSecretKey" . }}.
+  No session or OIDC secrets required by the worker.
+  Keep /tmp at 64Mi and budget both pools plus migration/rollout connections.
+Verify the internal platform chart supports this second Deployment before rollout.
+See the chart README for local commands, probes, shutdown and queue inspection.
+Scans rebuild automatically; for an explicit pass see "Rebuilding scan data" in the chart README.

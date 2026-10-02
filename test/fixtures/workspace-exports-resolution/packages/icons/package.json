@@ -1,0 +1,9 @@
+{
+  "name": "@example/icons",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./types": "./types.ts",
+    "./icons/*": "./src/icons/*.tsx"
+  }
+}

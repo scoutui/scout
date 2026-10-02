@@ -1,0 +1,17 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "scout.postgresqlHeadlessServiceName" . }}
+  labels:
+    {{- include "scout.postgresqlSelectorLabels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+      protocol: TCP
+  selector:
+    {{- include "scout.postgresqlSelectorLabels" . | nindent 4 }}
+{{- end }}

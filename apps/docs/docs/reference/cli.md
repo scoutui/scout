@@ -1,0 +1,216 @@
+---
+description: "Every command, flag, default, exit code and environment variable the Scout CLI accepts."
+sidebar_label: "CLI"
+---
+
+# CLI reference
+
+```
+scout <command> [options]
+```
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| [`scan`](#scan) | Scans the repo and uploads the scan to the dashboard. With `--dry-run`, writes the [artifact](/docs/reference/glossary#artifact) to `scout-scan.json` instead. |
+| [`init`](#init) | Writes a starter `scout.config.json`. |
+| [`auth`](#auth) | Signs in to a dashboard, signs out, or shows who you are signed in as. Takes a subcommand: `login`, `logout` or `status`. |
+
+## Global flags
+
+| Flag | Behavior |
+| --- | --- |
+| `--help`, `-h` | Prints help and exits `0`. After a command, prints that command's help. |
+| `--version`, `-v` | Prints the CLI version and exits `0`. |
+| `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and the counts of usages a scan couldn't match. Works before or after the command. |
+
+Every error prints one line starting `Error:`, and every warning one line starting `Warning:`, both on stderr. An error that isn't one of the expected ones prints `Error: Scout stopped unexpectedly (<reason>).` and asks you to run the command again with `--debug` and report the output.
+
+An unknown flag, a value on an on/off flag (`--quiet=true`), or an extra word after `scan` or `init` is an error that exits `2`. For a misspelled flag, the message suggests the closest one.
+
+## Prompts
+
+`init` and `auth` can ask questions in the terminal. *Prompts are on* when all of these hold:
+
+- stdin and stdout are both terminals.
+- `CI` is unset, empty, `false` or `0`.
+- For `init`, `--yes` is not passed.
+
+With prompts off, a command never waits for input. It uses its flags and defaults, or exits with an error.
+
+## `scan`
+
+```
+scout scan [options]
+```
+
+Most runs need no flags: `scout scan` reads `scout.config.json` in the current directory, [checks that the dashboard can take the scan](#upload-flags), scans, uploads the scan and waits for the dashboard to publish it. It writes no file. To scan without uploading, run `scout scan --dry-run`.
+
+| Flag | Value | Default | Behavior |
+| --- | --- | --- | --- |
+| `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
+| `--dry-run` | none | off | Scans without uploading, and writes the artifact to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
+| `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
+
+The config file must be inside a git repository with at least one commit. Otherwise `scan` exits `1` with `Error: Couldn't scan: <folder> isn't inside a git repository. Run scout scan from a git checkout.`, or `Error: Couldn't scan: this repository has no commits yet. Commit your files and try again.` In a shallow clone, a dry run warns `Warning: This checkout doesn't have the full history. Run git fetch --unshallow and scan again.` and records no [`initialCommit`](/docs/reference/artifact#meta). An upload refuses a shallow clone instead (see [Upload flags](#upload-flags)).
+
+`scan` needs the repo's dependencies installed. Components from a declared package that isn't installed aren't found: each place that uses one is recorded as an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans; a dry run scans anyway. One listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with its occurrences unresolved.
+
+### Upload flags
+
+These change where and how `scan` uploads. See [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads) and [Run a scan and upload in CI](/docs/guides/run-in-ci).
+
+| Flag | Value | Default | Behavior |
+| --- | --- | --- | --- |
+| `--rescan` | none | off | Replaces the dashboard's scan of this commit if it has one. With `--dry-run`, exits `2` with `Error: --rescan and --dry-run can't be used together: --dry-run doesn't upload.` |
+| `--host <url>` | URL | see [Host resolution](#host-resolution) | Dashboard to upload to. Ignored with `--dry-run`. |
+
+Before it scans, `scan` checks these, in this order, and stops at the first that fails. It prints the message and exits `1` without scanning. A dry run skips them all:
+
+| Problem | Message |
+| --- | --- |
+| The checkout has no remote | `Error: Couldn't upload the scan: this checkout has no remote, so Scout can't tell which repository it is. Add one with git remote add origin <url> and try again.` |
+| The checkout has several remotes, none of them `origin` or `upstream`, and none chosen with `git config scout.remote` | `Error: Couldn't upload the scan: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote <first remote>.` |
+| The checkout is a shallow clone | `Error: Couldn't upload the scan: this checkout doesn't have the full history. Run git fetch --unshallow and try again.` |
+| The config sets no `branch`, and the clone has no `<remote>/HEAD` recorded, or it names a branch the clone doesn't have | `Error: Couldn't upload the scan: couldn't tell which branch the dashboard tracks. Run git remote set-head <remote> --auto and try again.` |
+| The config's `branch` isn't on the remote | `Error: Couldn't upload the scan: there's no <branch> on <remote>. If the branch was renamed, update "branch" in scout.config.json.` |
+| You're on the tracked branch, and the commit isn't pushed | `Error: Couldn't upload the scan: this commit isn't on <remote>/<branch> yet. Push it and try again.` |
+| You're on another branch, and the commit isn't on the tracked branch | `Error: Couldn't upload the scan: you're on <checked-out branch>, and the dashboard tracks <branch>. Switch to <branch> and try again.` |
+| On a detached HEAD, the commit isn't on the tracked branch | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>. Check out <branch> and try again.` |
+| A tracked file has uncommitted changes, or a file the scan reads isn't committed. `--debug` lists the files. | `Error: Couldn't upload the scan: you have uncommitted changes. Commit or stash them and try again.` |
+| No upload host is set, or you aren't signed in to it | `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json, or run scout scan --dry-run to scan without uploading.` or `Error: Not signed in to <host>.`, followed by what to run. See [Host resolution](#host-resolution). |
+| The dashboard refuses the scan: this CLI's version, the repository name, or a `--rescan` from an older CLI | The dashboard's own line, such as `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI (<version>). Upgrade the CLI to <version> or newer, or run npx @scoutui/cli@<version> scan --rescan.` |
+| A package in `dependencies` or `devDependencies` isn't installed | `Error: Couldn't upload the scan: some dependencies aren't installed. Install them and try again.` |
+| The scanned folder is a Nuxt app that hasn't been prepared | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.` |
+
+`<remote>` is the remote the scan follows (see [`repo.gitRemote`](/docs/reference/artifact#meta)) and `<branch>` the branch the dashboard tracks: `branch` in the config, else the remote's default branch as your clone recorded it. A commit passes when it's on that branch's first-parent history, whatever is checked out.
+
+When a check before the scan fails, nothing is uploaded and no file is written.
+
+After the scan, `scan` refuses a scan that found no components: `Error: Couldn't upload the scan: no components were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
+
+If the dashboard already has a scan of this commit, `scan` prints `Commit <commit> is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and exits `0` without scanning, unless the dashboard couldn't prepare that scan: then the upload replaces it. Some error lines end with `See <url>`: the page that explains that problem.
+
+### Rarely needed flags
+
+| Flag | Value | Default | Behavior |
+| --- | --- | --- | --- |
+| `--repo-id <value>` | string | the config's `repoId`, else derived from the git remote (see [Repo identity](/docs/reference/config#repo-identity)) | [Repo id](/docs/reference/glossary#repo-id) written into the artifact. Replaces the config's `repoId`. |
+| `--repo-root <dir>` | path | the top of the git repository that holds the config file | Folder that file paths in the artifact are relative to. Relative to the current directory. |
+
+## `init`
+
+```
+scout init [options]
+```
+
+Writes a config file with `$schema`, `repoId`, `include` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. `init` never overwrites: if the file already exists, it exits `1`. When it's done, it prints `Wrote <path>. Run scout scan to scan the repo and upload the scan.`
+
+| Flag | Value | Default | Behavior |
+| --- | --- | --- | --- |
+| `--output <path>` | path | `./scout.config.json` | Where to write the config file. Relative to the current directory. |
+| `--repo-id <name>` | string | the owner and name from the git remote, such as `acme/checkout`, else the current directory's name | Value written to `repoId`. |
+| `--host <url>` | URL | none | Dashboard address written to `host`, with `https://` added when it has no scheme. It must use `https://`, apart from `http://` on `localhost`, `127.0.0.1` and `[::1]`; any other `http://` address exits `2`. |
+| `--branch <name>` | string | the remote's default branch | Branch the dashboard tracks. Written to `branch`. |
+| `--framework <name>` | `react` or `vue` | none | Sets which file extensions `include` matches. Repeat the flag for both. Only used without prompts; with prompts, you pick frameworks in the prompt. |
+| `-y`, `--yes` | none | off | Runs without prompts. |
+
+### With and without prompts
+
+See [Prompts](#prompts) for when prompts are on.
+
+| | With prompts | Without prompts |
+| --- | --- | --- |
+| `host` | Asks `Dashboard address (optional)`. Leave it empty to write no `host`. | Taken from `--host`, else not written. |
+| `repoId` | Asks `Repository name on the dashboard`, filled in with the `--repo-id` default. | Taken from `--repo-id`, else its default. |
+| `branch` | Asks `Branch the dashboard tracks`, filled in with the remote's default branch, else the checked-out branch. | Taken from `--branch`, else the same default without asking. |
+| Frameworks | Asks `Which frameworks does this repo use?`, pre-selecting whichever of `react` and `vue` your `package.json` depends on (`react` if neither). | Taken from `--framework`. |
+| `include` | `src/**/*.{…}`, with the extensions of the chosen frameworks | `src/**/*.{…}`, with the extensions of the `--framework` values. With no `--framework`: `src/**/*.{ts,tsx,jsx,js,vue}`. |
+
+A flag you pass skips its question. The remote `init` reads is the one `git config scout.remote` names, else `upstream` when there is one, else the only remote, else `origin`. With several remotes and none of them called `origin` or `upstream`:
+
+- With prompts on, `init` asks `Which remote does the dashboard follow?` and saves your answer in this checkout's git config as `scout.remote`. It isn't in `scout.config.json`, because remote names can differ from one clone to the next.
+- With prompts off, it warns `Warning: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote github.` and uses the directory's name.
+
+Extensions each framework adds to `include`:
+
+| Framework | Extensions |
+| --- | --- |
+| `react` | `ts`, `tsx`, `js`, `jsx` |
+| `vue` | `vue` |
+
+## `auth`
+
+```
+scout auth <login|logout|status> [--host <url>]
+```
+
+| Subcommand | Behavior | Exit code |
+| --- | --- | --- |
+| `login` | Signs in with a code you approve in the browser, and saves the session. It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
+| `status` | Checks the session with the dashboard and prints `Signed in as <email> to <host> (session saved in the system keychain).` When the session is saved in `hosts.json`, the line ends with that file's path instead, for example `(session saved in ~/.config/scoutui/hosts.json).` | `0` signed in. `1` not signed in to that host, the session is no longer valid, or the dashboard can't check it. |
+| `logout` | Ends the session on the dashboard, then deletes it from this computer. If that host was your default, you have no default until you next sign in. | `0`, including when you weren't signed in. `1` the dashboard couldn't end the session, so it stays saved. |
+
+| Flag | Value | Behavior |
+| --- | --- | --- |
+| `--host <url>` | URL | Host to act on. Without it, see [Host resolution](#host-resolution). |
+
+For the full sign-in steps, see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
+
+### Where the session is saved
+
+`auth login` saves the session in the system keychain: the macOS Keychain, or on Linux the Secret Service through `secret-tool`. When there is no keychain it can use, such as on Windows or on Linux without `secret-tool` or a Secret Service, it saves the session in `hosts.json` instead and prints a warning.
+
+`hosts.json` also lists the hosts you are signed in to, your default host and the email for each. It's at `~/.config/scoutui/hosts.json`, or `$XDG_CONFIG_HOME/scoutui/hosts.json` when `XDG_CONFIG_HOME` is set.
+
+Sessions don't expire. You stay signed in until you run `auth logout`.
+
+## Host resolution
+
+The CLI takes the host from the first of these that is set:
+
+1. `--host`
+2. `SCOUTUI_HOST`
+3. `host` in the config file. The `auth` commands read `scout.config.json` in the current directory.
+4. Your default host
+
+Your *default host* is the first host you signed in to with `auth login`. Signing in to another host doesn't change it.
+
+When none is set:
+
+- `scan` fails with `Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json, or run scout scan --dry-run to scan without uploading.` and exits `1`. A dry run needs no host.
+- `auth login` asks for a `Dashboard address` when prompts are on. Otherwise it exits `2`.
+- `auth status` and `auth logout` ask `Which dashboard?` when prompts are on and you are signed in to more than one host. Otherwise they treat you as not signed in.
+
+If `scout.config.json` in the current directory can't be read, the `auth` commands print the config's error and exit `2`.
+
+A host without a scheme gets `https://`. A host must use `https://`; plain `http://` works only for `localhost`, `127.0.0.1` and `[::1]`. Any other `http://` host fails with `<host> doesn't use https://, so your sign-in would be sent unencrypted.`: `scan` exits `1`, and the `auth` commands exit `2`.
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Success, including `auth logout` when you weren't signed in. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
+| `1` | The command ran but failed: `scan` [refused the scan](#upload-flags), the upload failed or didn't finish in time, the config for `scan` isn't in a git repository with a commit or git can't read that repository, `init` found an existing config, `auth login` or `auth status` failed, or `auth logout` couldn't end the session on the dashboard. Also any unexpected error. |
+| `2` | Usage or config error: unknown command, flag or `auth` subcommand, a malformed flag, an extra argument, `--rescan` with `--dry-run`, an unknown `--framework` value, a missing or invalid config file, a config field Scout doesn't use, a `--repo-root` that isn't a folder, Yarn Plug'n'Play detected, `auth login` with no host and prompts off, or an `auth` or `init --host` address that isn't `https://`. On a dry run, also a `scout-scan.json` that links to a file outside the config's folder: `Error: scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
+| `130` | You cancelled a prompt in `init` or `auth`. |
+
+[Run a scan and upload in CI](/docs/guides/run-in-ci#fix-a-failed-upload) lists the upload errors behind exit code `1`.
+
+## Environment variables
+
+| Variable | Behavior |
+| --- | --- |
+| `SCOUTUI_HOST` | Host for uploads and `auth`. Its place in the order is under [Host resolution](#host-resolution). |
+| `SCOUTUI_DEBUG` | Any value other than empty or `0` works like [`--debug`](#global-flags). |
+| `SCOUTUI_TOKEN` | When set and not empty, `scan` uploads with this token instead of your saved session. It must match the dashboard's `SCOUTUI_CI_UPLOAD_TOKEN`. Used by CI; see [Run a scan and upload in CI](/docs/guides/run-in-ci). |
+
+Rarely needed:
+
+| Variable | Behavior |
+| --- | --- |
+| `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`. |
+| `NO_COLOR` | Any non-empty value turns off colored output, even when `FORCE_COLOR` is set. |
+| `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal. |
+| `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |

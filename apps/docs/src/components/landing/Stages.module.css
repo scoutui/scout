@@ -1,0 +1,55 @@
+/* Layout inside the capability stages: the lead paragraph and the impact row. */
+
+.lead {
+  margin-top: 1rem;
+}
+
+/* ---- Impact ------------------------------------------------------------------ */
+
+.impactRow {
+  display: grid;
+  margin-left: var(--line-x);
+}
+
+.impactRow:dir(rtl) {
+  margin-right: var(--line-x);
+  margin-left: 0;
+}
+
+.impactText {
+  margin-left: calc(var(--col-x) - var(--line-x));
+  min-width: 0;
+}
+
+.impactRow:dir(rtl) > .impactText {
+  margin-right: calc(var(--col-x) - var(--line-x));
+  margin-left: 0;
+}
+
+.impactFigure {
+  margin-top: 2.5rem;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .impactRow {
+    grid-template-columns: minmax(0, 38.75rem) minmax(17.5rem, 1fr);
+    column-gap: 4.5rem;
+  }
+
+  .impactText {
+    grid-column: 2;
+    grid-row: 1;
+    margin-left: 0;
+  }
+
+  .impactRow:dir(rtl) > .impactText {
+    margin-right: 0;
+  }
+
+  .impactFigure {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 0;
+  }
+}

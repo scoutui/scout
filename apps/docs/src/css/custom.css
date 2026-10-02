@@ -1,0 +1,341 @@
+/**
+ * Scout docs theme: maps Infima's variables onto the shared palette
+ * (@scoutui/palette, loaded before this file through `customCss`) so the docs
+ * match the web app. Every shared or chromatic value reads var(--pal-*); the
+ * literals are docs-only neutral shades the web app never uses.
+ */
+
+/* Self-hosted fonts (offline, no CDN, no layout shift), matching the web app. */
+@import "@fontsource/mona-sans/400.css";
+@import "@fontsource/mona-sans/500.css";
+@import "@fontsource/mona-sans/600.css";
+@import "@fontsource/mona-sans/700.css";
+@import "@fontsource/monaspace-neon/400.css";
+@import "@fontsource/monaspace-neon/500.css";
+@import "@fontsource/monaspace-neon/600.css";
+
+/* ============================================================ *
+ * Shared by both themes. Selected on `:root, html[data-theme="dark"]`
+ * to match the specificity of Infima's own dark rule (0,1,1): a bare
+ * :root or [data-theme="dark"] loses to Infima's dark defaults.
+ * var(--pal-*) re-tunes itself under dark; dark-only overrides sit
+ * in the next block, which wins by coming later in the file.
+ * ============================================================ */
+:root,
+html[data-theme="dark"] {
+  /* Type */
+  --ifm-font-family-base: "Mona Sans", system-ui, sans-serif;
+  --ifm-heading-font-family: "Mona Sans", system-ui, sans-serif;
+  --ifm-font-family-monospace: "Monaspace Neon", ui-monospace, SFMono-Regular,
+    Menlo, monospace;
+  --ifm-heading-font-weight: 600;
+  --ifm-font-weight-semibold: 600;
+
+  /* Primary = near-ink; full shade set (no orphaned Infima blue). Docs-only shades. */
+  --ifm-color-primary: oklch(0.24 0.006 265);
+  --ifm-color-primary-dark: oklch(0.216 0.006 265);
+  --ifm-color-primary-darker: oklch(0.204 0.006 265);
+  --ifm-color-primary-darkest: oklch(0.168 0.006 265);
+  --ifm-color-primary-light: oklch(0.3 0.006 265);
+  --ifm-color-primary-lighter: oklch(0.34 0.006 265);
+  --ifm-color-primary-lightest: oklch(0.42 0.006 265);
+  --ifm-color-primary-contrast-background: var(--pal-neutral-hover);
+  --ifm-color-primary-contrast-foreground: var(--pal-neutral-ink-inverse);
+
+  /* Surfaces */
+  --ifm-background-color: var(--pal-neutral-panel); /* panel white */
+  --ifm-background-surface-color: var(--pal-neutral-canvas);
+  --ifm-font-color-base: var(--pal-neutral-ink);
+  --ifm-font-color-secondary: var(--pal-neutral-muted);
+  --ifm-heading-color: var(--pal-neutral-ink);
+  --ifm-color-content-secondary: var(--pal-neutral-muted);
+
+  /* Emphasis ramp */
+  --ifm-color-emphasis-0: var(--pal-neutral-panel);
+  --ifm-color-emphasis-100: var(--pal-neutral-band);
+  --ifm-color-emphasis-200: var(--pal-neutral-mist);
+  --ifm-color-emphasis-300: var(--pal-neutral-hairline); /* hairline */
+  --ifm-color-emphasis-400: var(--pal-neutral-edge);
+  --ifm-color-emphasis-500: oklch(0.7 0.006 265);
+  --ifm-color-emphasis-600: oklch(0.58 0.005 265); /* faint */
+  --ifm-color-emphasis-700: var(--pal-neutral-muted); /* muted */
+  --ifm-color-emphasis-800: oklch(0.36 0.006 265);
+  --ifm-color-emphasis-900: oklch(0.28 0.006 265);
+  --ifm-color-emphasis-1000: var(--pal-neutral-ink); /* ink */
+
+  /* Chrome */
+  --ifm-navbar-background-color: var(--pal-neutral-band);
+  --ifm-toc-border-color: var(--pal-neutral-hairline);
+  --ifm-hr-background-color: var(--pal-neutral-hairline);
+
+  /* Links: monochrome ink; the underline (scoped below) marks them. */
+  --ifm-link-color: oklch(0.24 0.006 265);
+  --ifm-link-hover-color: oklch(0.36 0.006 265);
+  --ifm-link-decoration: none;
+
+  /* Sidebar menu: the active item takes the web app's neutral selected fill. */
+  --ifm-menu-color: var(--pal-neutral-muted);
+  --ifm-menu-color-active: var(--pal-neutral-ink);
+  --ifm-menu-color-background-active: var(--pal-neutral-hover);
+  --ifm-menu-color-background-hover: var(--pal-neutral-band);
+
+  /* Code */
+  --ifm-code-background: var(--pal-neutral-mist); /* inline code */
+  --ifm-code-font-size: 88%;
+  --docusaurus-highlighted-code-line-bg: var(--pal-neutral-hover);
+
+  /* Tables */
+  --ifm-table-border-color: var(--pal-neutral-hairline);
+  --ifm-table-head-background: var(--pal-neutral-band);
+  --ifm-table-stripe-background: var(--pal-neutral-band);
+
+  /* Blockquote */
+  --ifm-blockquote-color: var(--pal-neutral-muted);
+  --ifm-blockquote-border-color: var(--pal-neutral-hairline);
+
+  /* Status and admonitions: ok, warn and error, as the web app; no blue "info" hue. */
+  --ifm-color-success: var(--pal-green-graphic);
+  --ifm-color-warning: var(--pal-orange-graphic);
+  --ifm-color-danger: var(--pal-red-graphic);
+  --ifm-color-info: var(--pal-neutral-muted);
+
+  --ifm-color-success-contrast-background: var(--pal-green-tint);
+  --ifm-color-success-contrast-foreground: var(--pal-neutral-ink);
+  --ifm-color-success-dark: var(--pal-green-graphic);
+  --ifm-color-warning-contrast-background: var(--pal-orange-tint);
+  --ifm-color-warning-contrast-foreground: var(--pal-neutral-ink);
+  --ifm-color-warning-dark: var(--pal-orange-graphic);
+  --ifm-color-danger-contrast-background: var(--pal-red-tint);
+  --ifm-color-danger-contrast-foreground: var(--pal-neutral-ink);
+  --ifm-color-danger-dark: var(--pal-red-graphic);
+  --ifm-color-info-contrast-background: var(--pal-neutral-mist);
+  --ifm-color-info-contrast-foreground: var(--pal-neutral-ink);
+  --ifm-color-info-dark: var(--pal-neutral-muted);
+
+  --ifm-toc-link-color: var(--pal-neutral-muted);
+}
+
+/* ============================================================ *
+ * Dark: only what differs from the shared mapping. Surfaces invert
+ * (the page is the near-black canvas, surfaces step up to the panel),
+ * plus the docs-only shades.
+ * ============================================================ */
+html[data-theme="dark"] {
+  /* Primary = inverted near-white. Docs-only shades. */
+  --ifm-color-primary: oklch(0.95 0.005 265);
+  --ifm-color-primary-dark: oklch(0.88 0.006 265);
+  --ifm-color-primary-darker: oklch(0.84 0.006 265);
+  --ifm-color-primary-darkest: oklch(0.74 0.007 265);
+  --ifm-color-primary-light: oklch(0.97 0.004 265);
+  --ifm-color-primary-lighter: oklch(0.985 0.003 265);
+  --ifm-color-primary-lightest: oklch(1 0 265);
+  --ifm-color-primary-contrast-background: oklch(0.3 0.007 265);
+
+  --ifm-background-color: var(--pal-neutral-canvas); /* near-black canvas */
+  --ifm-background-surface-color: var(--pal-neutral-panel);
+
+  --ifm-color-emphasis-0: var(--pal-neutral-canvas);
+  --ifm-color-emphasis-100: var(--pal-neutral-panel);
+  --ifm-color-emphasis-400: oklch(0.33 0.008 265);
+  --ifm-color-emphasis-500: oklch(0.46 0.008 265);
+  --ifm-color-emphasis-600: oklch(0.575 0.008 265); /* faint */
+  --ifm-color-emphasis-800: oklch(0.8 0.007 265);
+  --ifm-color-emphasis-900: oklch(0.88 0.006 265);
+
+  --ifm-navbar-background-color: var(--pal-neutral-panel);
+
+  --ifm-link-color: oklch(0.95 0.005 265);
+  --ifm-link-hover-color: oklch(0.8 0.007 265);
+}
+
+/* ============================================================ *
+ * Rules
+ * ============================================================ */
+
+/* Identifiers don't ligate: Monaspace's programming ligatures (==>, !=, <=)
+   are off wherever the mono face renders code. */
+code,
+kbd,
+pre,
+.prism-code,
+[class*="codeBlock"] {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+/* Content links are monochrome, so the underline marks them. Only in prose
+   (.markdown): navbar, sidebar, TOC, card and pagination links stay undecorated. */
+.markdown a:not(.card) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+.markdown a:not(.card):hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Admonitions: a full hairline border, a background tint and a leading icon,
+   instead of Infima's thick coloured left stripe. The type hue stays on the
+   icon and the tint. */
+.theme-admonition {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-left-width: 1px;
+}
+
+/* Code blocks read as a stepped panel (hairline + subtle radius), not a slab. */
+.theme-code-block,
+div[class*="codeBlockContainer"] {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  box-shadow: none;
+}
+
+/* Balance headings; reduce prose orphans. */
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  text-wrap: balance;
+  letter-spacing: -0.015em;
+}
+.markdown p,
+.markdown li {
+  text-wrap: pretty;
+}
+
+/* Navbar: a hairline under the bar instead of Infima's shadow. The phone
+   menu's header takes the same hairline. */
+.navbar {
+  --ifm-navbar-shadow: none;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+.navbar-sidebar__brand {
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+/* On the landing page the bar shares the page's container: its gutters and
+   the 76rem width in the landing's shared.module.css. Docs pages keep the
+   full-width bar over their sidebar. */
+html.plugin-pages .navbar {
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+html.plugin-pages .navbar__inner {
+  max-width: 76rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+@media (min-width: 768px) {
+  html.plugin-pages .navbar {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}
+
+/* The scout mark, then the name. The build writes inline-axis rules as
+   left-to-right physical ones, so each has a :dir(rtl) twin. */
+.navbar__logo {
+  height: 1.5rem;
+  margin-right: 0.625rem;
+}
+.navbar__logo:dir(rtl) {
+  margin-right: 0;
+  margin-left: 0.625rem;
+}
+.navbar__brand:dir(rtl) {
+  margin-right: 0;
+  margin-left: 1rem;
+}
+.navbar__toggle:dir(rtl) {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+.navbar__title {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* GitHub: the mark alone in the bar, muted until hovered. */
+.navbar__link.navbar-github {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  color: var(--ifm-color-content-secondary);
+  transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.navbar__link.navbar-github:hover {
+  color: var(--ifm-font-color-base);
+}
+.navbar-github__mark {
+  display: block;
+}
+.navbar__link.navbar-github .navbar-github__label {
+  display: none;
+}
+/* In the phone menu the mark sits beside its label. */
+.menu__link.navbar-github {
+  gap: 0.5rem;
+}
+.menu__link.navbar-github .navbar-github__mark {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* "Get started": the landing page's primary button, compact. */
+.navbar__link.navbar-cta {
+  margin: 0 0.5rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: var(--pal-neutral-ink-inverse);
+  background: var(--pal-neutral-ink);
+  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.navbar__link.navbar-cta:hover {
+  color: var(--pal-neutral-ink-inverse);
+  background: var(--ifm-color-emphasis-800);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar__link.navbar-github,
+  .navbar__link.navbar-cta {
+    transition: none;
+  }
+}
+
+/* Every control in the bar and the phone menu shows the page's focus ring.
+   The phone menu clips sideways, so its ring sits inside the link. */
+.navbar a:focus-visible,
+.navbar button:focus-visible {
+  outline: 2px solid var(--pal-neutral-ink);
+  outline-offset: 2px;
+}
+.navbar-sidebar .menu__link:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Footer: monochrome chrome, a step off the page in both themes, with a
+   hairline top border. */
+.footer {
+  --ifm-footer-background-color: var(--ifm-color-emphasis-100);
+  --ifm-footer-color: var(--ifm-color-content-secondary);
+  --ifm-footer-link-color: var(--ifm-color-content-secondary);
+  --ifm-footer-link-hover-color: var(--ifm-font-color-base);
+  --ifm-footer-title-color: var(--ifm-heading-color);
+  border-top: 1px solid var(--ifm-color-emphasis-300);
+}
+.footer__title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-600);
+}
+.footer__link-item:hover {
+  text-decoration: none;
+  color: var(--ifm-font-color-base);
+}
+.footer__copyright {
+  margin-top: 1.25rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.85rem;
+}

@@ -1,0 +1,316 @@
+name: Snapshot release
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  snapit:
+    name: Publish snapshot
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/snapit') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: snapit-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+    steps:
+      - name: React to comment
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes',
+            });
+
+      - name: Resolve PR head
+        id: pr
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            const repo = `${context.repo.owner}/${context.repo.repo}`;
+            if (pr.data.head.repo?.full_name !== repo) {
+              core.setFailed(`/snapit only publishes pull requests from branches in ${repo}, not from forks.`);
+              return;
+            }
+            core.setOutput('sha', pr.data.head.sha);
+            core.setOutput('ref', pr.data.head.ref);
+
+      - name: Compute snapshot tag
+        id: tag
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          custom=$(printf '%s\n' "$COMMENT_BODY" | awk 'NR == 1 { sub(/\r$/, ""); print $2 }')
+          short_sha=$(echo "$HEAD_SHA" | cut -c1-7)
+          if [ -n "$custom" ]; then
+            tag="$custom"
+          else
+            tag="pr-${PR_NUMBER}-${short_sha}"
+          fi
+          # The tag becomes an npm dist-tag, part of a semver prerelease and an
+          # image tag.
+          if [[ ! "$tag" =~ ^[a-z][a-z0-9-]{0,63}$ || "$tag" == latest ]]; then
+            echo "::error::The snapshot tag must match ^[a-z][a-z0-9-]{0,63}\$ and must not be latest"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.0
+
+      - run: corepack enable
+
+      - run: yarn install --immutable
+
+      - run: yarn turbo run build
+
+      - name: Install yq
+        run: |
+          wget -q https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_amd64 \
+            -O "$RUNNER_TEMP/yq"
+          echo "c7a1278e6bbc4924f41b56db838086c39d13ee25dcb22089e7fbf16ac901f0d4  $RUNNER_TEMP/yq" \
+            | sha256sum -c -
+          cp "$RUNNER_TEMP/yq" /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+
+      - name: Detect pending artifacts
+        id: detect
+        run: |
+          image=$(grep -rlE '^"@scoutui/web-app":' .changeset/*.md 2>/dev/null | wc -l | tr -d ' ')
+          [ "$image" != "0" ] && echo "image=true"  >> "$GITHUB_OUTPUT" || echo "image=false" >> "$GITHUB_OUTPUT"
+          # The pull request releases a chart when it raises Chart.yaml's version.
+          base=$(git merge-base origin/main HEAD)
+          base_chart=$(git show "$base:charts/scout/Chart.yaml" | yq '.version')
+          [ "$base_chart" != "$(yq '.version' charts/scout/Chart.yaml)" ] && echo "chart=true"  >> "$GITHUB_OUTPUT" || echo "chart=false" >> "$GITHUB_OUTPUT"
+
+      - name: Version snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          yarn run changeset version --snapshot "$TAG"
+          yarn run version:sync-chart
+          # Reconcile yarn.lock with the bumped snapshot versions. A changeset to a
+          # workspace package others depend on (web-shared, for example) rewrites
+          # their dependency range, and the image build's `yarn install --immutable`
+          # would then fail with YN0028.
+          yarn install --mode=update-lockfile
+
+      # The npm token is written only for this step and removed after it, so
+      # the install and build steps above never see it.
+      - name: Publish snapshot
+        id: publish
+        shell: bash
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          trap 'rm -f "$HOME/.npmrc"' EXIT
+          printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+          yarn run changeset publish --tag "$TAG" --no-git-tag | tee publish.log
+
+      - name: Login to GHCR
+        if: steps.detect.outputs.image == 'true' || steps.detect.outputs.chart == 'true'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        if: steps.detect.outputs.image == 'true'
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build + push snapshot image
+        if: steps.detect.outputs.image == 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: apps/web-app/Dockerfile
+          target: runner
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/scoutui/scout-web-app:${{ steps.tag.outputs.tag }}
+
+      - name: Set up Helm
+        if: steps.detect.outputs.chart == 'true'
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.20.0
+
+      - name: Build + push snapshot chart
+        if: steps.detect.outputs.chart == 'true'
+        id: chart_publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          IMAGE_PUBLISHED: ${{ steps.detect.outputs.image }}
+        run: |
+          # Pin image.tag so the snapshot chart runs the snapshot image, when this run published one.
+          if [ "$IMAGE_PUBLISHED" = "true" ]; then
+            yq -i '.image.tag = strenv(TAG)' charts/scout/values.yaml
+          fi
+          CHART_VERSION="$(yq '.version' charts/scout/Chart.yaml)-$TAG"
+          helm lint charts/scout
+          helm package charts/scout --version "$CHART_VERSION"
+          echo "$GITHUB_TOKEN" \
+            | helm registry login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          helm push "scout-${CHART_VERSION}.tgz" oci://ghcr.io/scoutui/charts
+          echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment with install instructions
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          SHORT_SHA: ${{ steps.tag.outputs.short_sha }}
+          IMAGE_PUBLISHED: ${{ steps.detect.outputs.image }}
+          CHART_PUBLISHED: ${{ steps.detect.outputs.chart }}
+          CHART_VERSION: ${{ steps.chart_publish.outputs.chart_version }}
+          TRIGGERED_BY: ${{ github.event.comment.user.login }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const tag = process.env.TAG;
+            const sha = process.env.SHORT_SHA;
+
+            const log = fs.readFileSync('publish.log', 'utf8')
+              // strip ANSI escape codes
+              .replace(/\x1B\[[0-9;]*m/g, '');
+            const seen = new Map();
+            for (const line of log.split('\n')) {
+              // matches both `Publishing "<name>" at "<version>"` and
+              // the bare `🦋  <name>@<version>` summary lines
+              const m =
+                line.match(/Publishing\s+"(@scoutui\/[a-z-]+)"\s+at\s+"([^"]+)"/) ??
+                line.match(/(@scoutui\/[a-z-]+)@(\S+)/);
+              if (m && !seen.has(m[1])) seen.set(m[1], m[2]);
+            }
+            const published = [...seen.entries()]
+              .map(([name, version]) => ({ name, version }))
+              .sort((a, b) => a.name.localeCompare(b.name));
+
+            const imagePublished = process.env.IMAGE_PUBLISHED === 'true';
+            const chartPublished = process.env.CHART_PUBLISHED === 'true';
+            const chartVersion = process.env.CHART_VERSION;
+
+            if (published.length === 0 && !imagePublished && !chartPublished) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ \`/snapit\` ran but published nothing. Add a changeset (\`yarn changeset\`) or raise the chart's version in \`charts/scout/Chart.yaml\` on this branch and try again.`,
+              });
+              return;
+            }
+
+            let packageBlock = [];
+            if (published.length > 0) {
+              const installs = published.map((p) => `yarn add ${p.name}@${tag}`).join('\n');
+              const versions = published.map((p) => `${p.name}@${p.version}`).join('\n');
+              packageBlock = [
+                '',
+                'Install any of these in a consumer repo:',
+                '',
+                '```bash',
+                installs,
+                '```',
+                '',
+                '<details><summary>Exact versions</summary>',
+                '',
+                '```',
+                versions,
+                '```',
+                '',
+                '</details>',
+                '',
+                'Each commit gets its own immutable dist-tag, so these installs resolve to this exact commit even if newer snapshots are published later.',
+              ];
+            }
+
+            let deployBlock = '';
+            if (imagePublished || chartPublished) {
+              const lines = [
+                '',
+                '### 🐳 Web-app snapshot',
+                '',
+              ];
+              if (imagePublished) {
+                lines.push('Image:');
+                lines.push('```');
+                lines.push(`ghcr.io/scoutui/scout-web-app:${tag}`);
+                lines.push('```');
+                lines.push('');
+              }
+              if (chartPublished) {
+                lines.push(`Chart: \`oci://ghcr.io/scoutui/charts/scout:${chartVersion}\``);
+                lines.push('');
+                lines.push('Apply this overlay in a test cluster on a throwaway branch to preview:');
+                lines.push('```yaml');
+                lines.push('# your OCIRepository (patch)');
+                lines.push('spec:');
+                lines.push(`  ref:`);
+                lines.push(`    tag: ${chartVersion}`);
+                lines.push('```');
+                lines.push('');
+              }
+              deployBlock = lines.join('\n');
+            }
+
+            const body = [
+              `### 📦 Snapshot published \`${tag}\``,
+              '',
+              `From commit \`${sha}\`. ${published.length} package(s) published.`,
+              ...packageBlock,
+              deployBlock,
+              '',
+              `Triggered by @${process.env.TRIGGERED_BY}.`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Failure comment
+        if: failure()
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `❌ Snapshot release failed. See [run logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
+            });

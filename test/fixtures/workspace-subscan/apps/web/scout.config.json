@@ -1,0 +1,4 @@
+{
+  "repoId": "workspace-subscan",
+  "include": ["src/**/*.tsx"]
+}

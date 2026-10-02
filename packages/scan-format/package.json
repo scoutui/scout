@@ -1,0 +1,54 @@
+{
+  "name": "@scoutui/scan-format",
+  "version": "0.1.0",
+  "description": "The scan file format: its types, schema and checks, shared by the Scout CLI and dashboard.",
+  "homepage": "https://scoutui.dev",
+  "private": true,
+  "keywords": [
+    "design-system",
+    "scan"
+  ],
+  "license": "MIT",
+  "bugs": "https://github.com/scoutui/scout/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scoutui/scout.git",
+    "directory": "packages/scan-format"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./git-remote": {
+      "types": "./dist/git-remote.d.ts",
+      "import": "./dist/git-remote.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "biome lint src tests",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "clean": "rm -rf dist .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.5",
+    "zod-to-json-schema": "3.25.2"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "zod": "3.25.76"
+  }
+}

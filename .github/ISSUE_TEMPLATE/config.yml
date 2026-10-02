@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/scoutui/scout/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions.
+  - name: Documentation
+    url: https://scoutui.dev/docs
+    about: Guides and reference for the CLI and the dashboard.

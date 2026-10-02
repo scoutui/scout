@@ -1,0 +1,165 @@
+suite: Pod scheduling and extra configuration
+release:
+  name: cc
+  namespace: default
+values:
+  - ../ci/test-values.yaml
+templates:
+  - configmap.yaml
+  - deployment.yaml
+  - worker-deployment.yaml
+  - postgresql-statefulset.yaml
+tests:
+  - it: leaves scheduling and extra configuration out by default
+    asserts:
+      - notExists: { path: spec.template.spec.nodeSelector }
+        template: deployment.yaml
+      - notExists: { path: spec.template.spec.tolerations }
+        template: deployment.yaml
+      - notExists: { path: spec.template.spec.affinity }
+        template: deployment.yaml
+      - notExists: { path: spec.template.spec.nodeSelector }
+        template: worker-deployment.yaml
+      - notExists: { path: spec.template.spec.tolerations }
+        template: worker-deployment.yaml
+      - notExists: { path: spec.template.spec.affinity }
+        template: worker-deployment.yaml
+      - notExists: { path: spec.template.spec.nodeSelector }
+        template: postgresql-statefulset.yaml
+      - notExists: { path: spec.template.spec.tolerations }
+        template: postgresql-statefulset.yaml
+      - notExists: { path: spec.template.spec.affinity }
+        template: postgresql-statefulset.yaml
+
+  - it: schedules each workload from its own values
+    set:
+      nodeSelector: { pool: web }
+      tolerations: [{ key: web, operator: Exists, effect: NoSchedule }]
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector: { matchLabels: { app.kubernetes.io/component: web-app } }
+      worker:
+        nodeSelector: { pool: batch }
+        tolerations: [{ key: batch, operator: Exists, effect: NoSchedule }]
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions: [{ key: pool, operator: In, values: [batch] }]
+      postgresql:
+        nodeSelector: { pool: storage }
+        tolerations: [{ key: storage, operator: Exists, effect: NoSchedule }]
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions: [{ key: pool, operator: In, values: [storage] }]
+    asserts:
+      - equal: { path: spec.template.spec.nodeSelector, value: { pool: web } }
+        template: deployment.yaml
+      - equal: { path: spec.template.spec.tolerations, value: [{ key: web, operator: Exists, effect: NoSchedule }] }
+        template: deployment.yaml
+      - equal: { path: 'spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight', value: 100 }
+        template: deployment.yaml
+      - equal: { path: spec.template.spec.nodeSelector, value: { pool: batch } }
+        template: worker-deployment.yaml
+      - equal: { path: spec.template.spec.tolerations, value: [{ key: batch, operator: Exists, effect: NoSchedule }] }
+        template: worker-deployment.yaml
+      - equal: { path: 'spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values', value: [batch] }
+        template: worker-deployment.yaml
+      - equal: { path: spec.template.spec.nodeSelector, value: { pool: storage } }
+        template: postgresql-statefulset.yaml
+      - equal: { path: spec.template.spec.tolerations, value: [{ key: storage, operator: Exists, effect: NoSchedule }] }
+        template: postgresql-statefulset.yaml
+      - equal: { path: 'spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values', value: [storage] }
+        template: postgresql-statefulset.yaml
+
+  - it: keeps web scheduling off the worker and the database
+    set:
+      nodeSelector: { pool: web }
+    asserts:
+      - notExists: { path: spec.template.spec.nodeSelector }
+        template: worker-deployment.yaml
+      - notExists: { path: spec.template.spec.nodeSelector }
+        template: postgresql-statefulset.yaml
+
+  - it: adds extra environment and volumes to the web and worker containers after the chart's own
+    set:
+      extraEnv:
+        - { name: NODE_EXTRA_CA_CERTS, value: /etc/db-ca/ca.pem }
+        - { name: WEB_TOKEN, valueFrom: { secretKeyRef: { name: web-extra, key: token } } }
+      extraEnvFrom:
+        - configMapRef: { name: web-settings }
+      extraVolumes:
+        - { name: db-ca, configMap: { name: db-ca } }
+      extraVolumeMounts:
+        - { name: db-ca, mountPath: /etc/db-ca, readOnly: true }
+      worker:
+        extraEnv:
+          - { name: NODE_EXTRA_CA_CERTS, value: /etc/worker-ca/ca.pem }
+          - { name: WORKER_FLAG, valueFrom: { configMapKeyRef: { name: worker-settings, key: flag } } }
+        extraEnvFrom:
+          - secretRef: { name: worker-extra }
+        extraVolumes:
+          - { name: worker-ca, secret: { secretName: worker-ca } }
+        extraVolumeMounts:
+          - { name: worker-ca, mountPath: /etc/worker-ca, readOnly: true }
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: NODE_EXTRA_CA_CERTS, value: /etc/db-ca/ca.pem }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: WEB_TOKEN, valueFrom: { secretKeyRef: { name: web-extra, key: token } } }
+        template: deployment.yaml
+      - equal: { path: 'spec.template.spec.containers[0].env[0].name', value: POSTGRES_PASSWORD }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content: { configMapRef: { name: web-settings } }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: db-ca, configMap: { name: db-ca } }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: db-ca, mountPath: /etc/db-ca, readOnly: true }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: tmp, mountPath: /tmp }
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: NODE_EXTRA_CA_CERTS, value: /etc/worker-ca/ca.pem }
+        template: worker-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: WORKER_FLAG, valueFrom: { configMapKeyRef: { name: worker-settings, key: flag } } }
+        template: worker-deployment.yaml
+      - equal: { path: 'spec.template.spec.containers[0].env[0].name', value: POSTGRES_PASSWORD }
+        template: worker-deployment.yaml
+      - equal: { path: 'spec.template.spec.containers[0].envFrom', value: [{ secretRef: { name: worker-extra } }] }
+        template: worker-deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: worker-ca, secret: { secretName: worker-ca } }
+        template: worker-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: worker-ca, mountPath: /etc/worker-ca, readOnly: true }
+        template: worker-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: { name: tmp, mountPath: /tmp }
+        template: worker-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content: { name: NODE_EXTRA_CA_CERTS, value: /etc/db-ca/ca.pem }
+        template: worker-deployment.yaml

@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "workspace-exports-resolution",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "744883b021ba9fe8",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-exports-resolution",
+        "filePath": "packages/consumer/src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 13
+      },
+      "owningPackage": "@workspace-exports/consumer",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9948bbe70d0f421e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "9948bbe70d0f421e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-exports-resolution",
+        "filePath": "packages/icons/src/icons/IcDemo.tsx",
+        "exportName": "IcDemo"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "size": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "props.size",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 2,
+        "column": 13
+      },
+      "owningPackage": "@example/icons",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "744883b021ba9fe8": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "1460e732fb34aee5",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9948bbe70d0f421e"
+      },
+      "filePath": "packages/consumer/src/App.tsx",
+      "line": 4,
+      "column": 41,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/icons/icons/IcDemo",
+          "name": "IcDemo"
+        }
+      ],
+      "props": {
+        "size": {
+          "tier": "reference",
+          "ref": "props.size"
+        }
+      },
+      "ownerComponentId": "744883b021ba9fe8"
+    }
+  ],
+  "diagnostics": []
+}

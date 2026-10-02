@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    # The database suites run against this Postgres; without it they skip.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scout
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scout"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Job-scoped so both the migrate step and the turbo task see it. Throwaway
+    # credentials for a throwaway container: the suites create and drop their
+    # own databases on this server.
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/scout
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.0
+      - run: corepack enable
+      - run: yarn install --immutable
+      # Runs on every pull request, not only --affected ones: a migration can
+      # stop applying without a web app change.
+      - name: Migrate the test database
+        run: yarn workspace @scoutui/web-app db:migrate
+      - run: yarn turbo run lint typecheck test build smoke --affected
+
+  # Runs the chart's helm-unittest suites.
+  chart-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.20.0
+      - name: Install helm-unittest
+        run: |
+          wget -q https://github.com/helm-unittest/helm-unittest/releases/download/v0.8.2/helm-unittest-linux-amd64-0.8.2.tgz \
+            -O "$RUNNER_TEMP/helm-unittest.tgz"
+          echo "56ab3091e6fa52a7c92ee951def9bed957f295d9ce98483aed404e748d7b3a94  $RUNNER_TEMP/helm-unittest.tgz" \
+            | sha256sum -c -
+          plugin_dir="$(helm env HELM_PLUGINS)/helm-unittest"
+          mkdir -p "$plugin_dir"
+          tar xzf "$RUNNER_TEMP/helm-unittest.tgz" -C "$plugin_dir"
+      - name: Set up chart-testing
+        if: github.event_name == 'pull_request'
+        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+      - name: Check the chart version was bumped
+        # The chart only publishes when Chart.yaml's version changes, so chart
+        # content merged without a bump publishes nothing. ct lint fails
+        # a pull request that changes the chart without raising its version.
+        # Files .helmignore leaves out of the package (tests/, ci/) don't count.
+        if: github.event_name == 'pull_request'
+        run: ct lint --config .github/chart-testing.yaml
+      - name: Lint chart
+        # Rendered against ci/test-values.yaml. A bare
+        # `helm lint charts/scout` reports every unsatisfied `required` call
+        # as [INFO] and still exits 0, so it cannot fail on a chart that does
+        # not render. The dummy values make the render real.
+        run: helm lint charts/scout --values charts/scout/ci/test-values.yaml
+      - name: Unit-test chart
+        run: helm unittest charts/scout

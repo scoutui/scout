@@ -1,0 +1,24 @@
+suite: Values schema
+values:
+  - ../ci/test-values.yaml
+templates:
+  - deployment.yaml
+tests:
+  - it: rejects a setting the chart doesn't have
+    set:
+      postgresql.primary.resources.limits.memory: 1Gi
+    asserts:
+      - failedTemplate:
+          errorPattern: "postgresql.*primary"
+
+  - it: rejects a value of the wrong type
+    set: { replicaCount: two }
+    asserts:
+      - failedTemplate:
+          errorPattern: "replicaCount.*integer"
+
+  - it: rejects a worker pool below the minimum the worker accepts
+    set: { worker.databasePoolMax: 2 }
+    asserts:
+      - failedTemplate:
+          errorPattern: "databasePoolMax.*3"

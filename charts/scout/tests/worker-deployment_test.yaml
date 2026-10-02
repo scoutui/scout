@@ -1,0 +1,116 @@
+suite: Independent worker
+release:
+  name: cc
+  namespace: default
+values:
+  - ../ci/test-values.yaml
+templates:
+  - worker-deployment.yaml
+tests:
+  - it: runs one worker from the application image with independent resources
+    asserts:
+      - equal:
+          path: metadata.name
+          value: cc-scout-worker
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: [node, apps/web-app/worker.cjs]
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 256Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 1Gi
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: NODE_OPTIONS, value: "--max-old-space-size=819" }
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: scout-worker
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: worker
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: scout-worker
+            app.kubernetes.io/instance: cc
+            app.kubernetes.io/component: worker
+      - equal:
+          path: spec.template.spec.volumes[0].emptyDir.sizeLimit
+          value: 64Mi
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+  - it: reads only the database password key without importing auth secrets
+    set:
+      postgresql.enabled: false
+      database.host: external-postgres
+      database.passwordSecretRef: { name: database-secret, key: password }
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef: { name: database-secret, key: password }
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: WORKER_DATABASE_POOL_MAX, value: "3" }
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: DATABASE_URL, value: "postgres://scout:$(POSTGRES_PASSWORD)@external-postgres:5432/scout" }
+  - it: derives heap and pool limits independently from the web deployment
+    set:
+      resources.limits.memory: 4Gi
+      nodeMaxOldSpaceSizeMb: 3000
+      database.poolMax: 20
+      worker.resources.limits.memory: 512Mi
+      worker.databasePoolMax: 4
+      worker.replicaCount: 2
+      image.tag: worker-test
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/scoutui/scout-web-app:worker-test
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: NODE_OPTIONS, value: "--max-old-space-size=409" }
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: WORKER_DATABASE_POOL_MAX, value: "4" }
+  - it: supports an explicit worker heap cap
+    set:
+      worker.nodeMaxOldSpaceSizeMb: 700
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: { name: NODE_OPTIONS, value: "--max-old-space-size=700" }
+  - it: probes worker health with time for an unyielding parse unit and graceful shutdown
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+          value: { path: /live, port: health }
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+          value: { path: /ready, port: health }
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet
+          value: { path: /live, port: health }
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.failureThreshold
+          value: 6
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60

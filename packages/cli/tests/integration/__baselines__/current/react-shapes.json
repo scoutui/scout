@@ -1,0 +1,8020 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "react-shapes",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    }
+  },
+  "components": [
+    {
+      "id": "b64fbf93a0f63717",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/composition-edge/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 9,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 2,
+          "7a9e3882aea97b9f": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4dbf4086291c7cef",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/compound-roots/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "241ce30acd03d4f4": 1,
+          "a2bc25b06a4938a2": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "10f9e9957af1bca0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/compound-roots/App.tsx",
+        "exportName": "Sidebar"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 13,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "1f67fe506dc184eb",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/context/Theme.tsx",
+        "exportName": "ThemeProvider"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {
+          "children": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 8,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "7424d7f6d833dde9": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "7424d7f6d833dde9",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/context/Theme.tsx",
+        "exportName": "ThemedPage"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 21,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "1f67fe506dc184eb": 1,
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "ab5778a2fc707da2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/deep-compound/Menus.tsx",
+        "exportName": "Menus"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 7,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "fd96bd677271c81d": 1,
+          "89da3b7de8dcded9": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "096a0f80a23ef93e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/default-rewrap-barrel/App.jsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "f5c4f566b7ca1140": 1,
+          "8f8642469ed5a18d": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f5c4f566b7ca1140",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/default-rewrap-barrel/seo/seo.jsx",
+        "exportName": "Seo"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 15
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "096a0f80a23ef93e": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "8f8642469ed5a18d",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/default-rewrap-barrel/widget/widget.jsx",
+        "exportName": "Widget"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "096a0f80a23ef93e": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "2ac9f3cfad98d914",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/dynamic-map-via-getter/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {
+          "k": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "08815f6aaad73dd9": 1,
+          "b18e5761114750c8": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "08815f6aaad73dd9",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/dynamic-map-via-getter/components.tsx",
+        "exportName": "Foo"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "C"
+      ],
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "2ac9f3cfad98d914": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "b18e5761114750c8",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/dynamic-map-via-getter/components.tsx",
+        "exportName": "Bar"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "C"
+      ],
+      "definition": {
+        "line": 5,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "2ac9f3cfad98d914": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "9dc5a316c135ffd6",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/dynamic-map/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {
+          "type": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 9,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1,
+          "7a9e3882aea97b9f": 1,
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "1f0c9b3151abde37",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/esm-js-specifiers/A.tsx",
+        "exportName": "A"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "95d78649f63dc64e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f690c03d9808b2f3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/esm-js-specifiers/B.tsx",
+        "exportName": "B"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "5f7a652efc5954b8": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "95d78649f63dc64e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/esm-js-specifiers/Leaf.tsx",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "1f0c9b3151abde37": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "5f7a652efc5954b8",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/esm-js-specifiers/index.tsx",
+        "exportName": "Idx"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "f690c03d9808b2f3": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "216a9de617ec9640",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-chain-three-hops/Inner.tsx",
+        "exportName": "Inner"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "55a84bdaf85ae40c": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "55a84bdaf85ae40c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-chain-three-hops/View.tsx",
+        "exportName": "View"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "216a9de617ec9640": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "805bf9c1788a69f1",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-cross-file-import/Leaf.tsx",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "28253e1ee796a113": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "28253e1ee796a113",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-cross-file-import/View.tsx",
+        "exportName": "View"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "805bf9c1788a69f1": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b0ba472edc17a66f",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-cycle/cycle.tsx",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "f1a929d41ee643b4": 1
+        },
+        "isRootCount": 1,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "f1a929d41ee643b4",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-cycle/cycle.tsx",
+        "exportName": "View"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 11,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "b0ba472edc17a66f": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "552ee5a6c2ea895c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-fanout-data-factory/Leaf.tsx",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "39a76fb7597cc943": 1,
+          "4a88af7ca95c244d": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "39a76fb7597cc943",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-fanout-data-factory/ViewA.tsx",
+        "exportName": "ViewA"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "552ee5a6c2ea895c": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4a88af7ca95c244d",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-fanout-data-factory/ViewB.tsx",
+        "exportName": "ViewB"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "552ee5a6c2ea895c": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "fd7b1a788c84a77d",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-fanout-hook/Cta.tsx",
+        "exportName": "Cta"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "eea1d2a4f3b5c821": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "eea1d2a4f3b5c821",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-fanout-hook/Panel.tsx",
+        "exportName": "Panel"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "fd7b1a788c84a77d": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "fd0d615bee77a79a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-jsx-call-of-helper/Item.tsx",
+        "exportName": "Item"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "key": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "it.id",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "54ec8e63a4f4af48": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "54ec8e63a4f4af48",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-jsx-call-of-helper/List.tsx",
+        "exportName": "List"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "items": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "data",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "items": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 7,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "fd0d615bee77a79a": 1
+        },
+        "renderedByCount": {
+          "73e92c22fadf5aa6": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "73e92c22fadf5aa6",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-jsx-call-of-helper/Page.tsx",
+        "exportName": "Page"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "54ec8e63a4f4af48": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "e7514cd3a6670c2b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-multi-caller-mixed/Leaf.tsx",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b419c74e43c3bdc5": 1,
+          "c893c5d3187acb5e": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "b419c74e43c3bdc5",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-multi-caller-mixed/Views.tsx",
+        "exportName": "ViewA"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e7514cd3a6670c2b": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "c893c5d3187acb5e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-multi-caller-mixed/Views.tsx",
+        "exportName": "ViewB"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 11,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e7514cd3a6670c2b": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "ce0d80dc8dab463b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-orphan-no-caller/Leaf.tsx",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {},
+        "isRootCount": 1,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "07e020d8579e4499",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-prop-forward-interaction/Consumer.tsx",
+        "exportName": "Consumer"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 8,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "a9628e156cc7f5a6": 1,
+          "0ce46491f5012472": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "a9628e156cc7f5a6",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-prop-forward-interaction/Notification.tsx",
+        "exportName": "Notification"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "07e020d8579e4499": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "0ce46491f5012472",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/helper-prop-forward-interaction/Page.tsx",
+        "exportName": "Page"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "slot": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "slot",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "slot": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 3,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "07e020d8579e4499": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "33a8935a8c4f85aa",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-composition/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 23,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 2,
+          "7a9e3882aea97b9f": 2,
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "50bc8b7ebc2113ca",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-cross-module/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e104551094019ddf": 1,
+          "ef523900b14f3ff0": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "e104551094019ddf",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-cross-module/components.tsx",
+        "exportName": "Foo"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "50bc8b7ebc2113ca": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "ef523900b14f3ff0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-cross-module/components.tsx",
+        "exportName": "Bar"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "50bc8b7ebc2113ca": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "8c3bc6b751a9fe73",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/app.jsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 9,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "61766288291e73f3": 1,
+          "1fb22edb32101842": 1,
+          "43a3ae8470a6c7d1": 1,
+          "b5ac13290bf085c3": 1,
+          "d4e9003a492ce170": 1,
+          "8ddf61f36f3fe62c": 1,
+          "0422918d9df11348": 1,
+          "4dd3209d10445e07": 1,
+          "fc33efb1407a71df": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "61766288291e73f3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/dropdown-control.js",
+        "exportName": "Dropdown"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "name": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "a",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "definition": {
+        "line": 3,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "7ae2fc44942d201c": 1
+        },
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "d4e9003a492ce170",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/junk.jsx",
+        "exportName": "Junk"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "0422918d9df11348",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/marquee.jsx",
+        "exportName": "MarqueeView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Marquee"
+      ],
+      "definition": {
+        "line": 4,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "428a00add371503a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/mosaic.jsx",
+        "exportName": "Mosaic"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "8c877f2453fc7ff5": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "8c877f2453fc7ff5",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/mosaic.jsx",
+        "exportName": "Tessera"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "inner": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "x",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "outer": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 4,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "428a00add371503a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "8ddf61f36f3fe62c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/pennant.jsx",
+        "exportName": "PennantView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "label": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "p",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "writtenNames": [
+        "Pennant"
+      ],
+      "declared": {
+        "props": {
+          "label": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 4,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "0a06fd2f53190e24",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/products.jsx",
+        "exportName": "FooView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "43a3ae8470a6c7d1": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "f705f77b4e15ad67",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/products.jsx",
+        "exportName": "BarView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b5ac13290bf085c3": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "43a3ae8470a6c7d1",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/products.jsx",
+        "exportName": "Foo"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "0a06fd2f53190e24": 1
+        },
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b5ac13290bf085c3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/products.jsx",
+        "exportName": "Bar"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "f705f77b4e15ad67": 1
+        },
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "c2005f7ff20e8c71",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/signup-form.jsx",
+        "exportName": "SignupForm"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {
+          "title": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 3,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "1fb22edb32101842": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "1fb22edb32101842",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/signup-form.jsx",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "title": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "t",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "writtenNames": [
+        "SignupForm"
+      ],
+      "definition": {
+        "line": 4,
+        "column": 15
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "c2005f7ff20e8c71": 1
+        },
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4dd3209d10445e07",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/swatch.jsx",
+        "exportName": "Gallery"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "32ad8651b2e71ce0": 1
+        },
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "32ad8651b2e71ce0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/swatch.jsx",
+        "exportName": "Swatch"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 34
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4dd3209d10445e07": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "fc33efb1407a71df",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-factory-products/swatch.jsx",
+        "exportName": "SwatchImpl"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Swatch"
+      ],
+      "definition": {
+        "line": 4,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8c3bc6b751a9fe73": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "549968f95f71ac07",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-rescue/Slot.tsx",
+        "exportName": "Quiet"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Held"
+      ],
+      "definition": {
+        "line": 5,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8bbada0f2b7bb601": 1,
+          "45af52ecd859b1b7": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "45af52ecd859b1b7",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-rescue/Slot.tsx",
+        "exportName": "Slot"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 10,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "549968f95f71ac07": 1
+        },
+        "renderedByCount": {
+          "8bbada0f2b7bb601": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "8bbada0f2b7bb601",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/hoc-rescue/Slot.tsx",
+        "exportName": "SlotPage"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 12,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "45af52ecd859b1b7": 1,
+          "549968f95f71ac07": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "9b9a0f19a20ae2f4",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/lazy-barrel-reexport/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 11,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e88bd58a2b227472": 2,
+          "9430c190f758606f": 2
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "e88bd58a2b227472",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/lazy-barrel-reexport/pages/home-inner.tsx",
+        "exportName": "Home"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "HomeLazy",
+        "HomeStatic"
+      ],
+      "definition": {
+        "line": 1,
+        "column": 15
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "9b9a0f19a20ae2f4": 2
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "9430c190f758606f",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/lazy-barrel-reexport/pages/settings-inner.tsx",
+        "exportName": "Settings"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "SettingsLazy",
+        "SettingsStatic"
+      ],
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "9b9a0f19a20ae2f4": 2
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "9f2e8025da07a739",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/lazy-import/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 9,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1,
+          "2c077f356eeea974": 1,
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "8c608a9d9c1244b3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/nesting/Panel.tsx",
+        "exportName": "Panel"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1,
+          "292f9cb89f29bd3a": 1,
+          "7a9e3882aea97b9f": 2
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "fa2394095d2836da",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/owner-edges/Page.tsx",
+        "exportName": "Page"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 4,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "04594959d71ddf3e": 1,
+          "69042778575c48d0": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "c7ba00c9bf2bddc7",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/owner-edges/Page.tsx",
+        "exportName": "Footer"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 12,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "69042778575c48d0": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f5308786ab1f1459",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/owner-edges/Page.tsx",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 14,
+        "column": 0
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "69042778575c48d0": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "1d6a9aa61e64f28a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/pass-through/Wrapped.tsx",
+        "exportName": "Wrapped"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 13,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "d82620d7e37366aa",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-hoc-owner/Badges.tsx",
+        "exportName": "MemoBadge"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 8,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "e6709688858f00fa",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-hoc-owner/Badges.tsx",
+        "exportName": "RefBadge"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 9,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "5a84906082b1dfe4",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-repeat-read/A.tsx",
+        "exportName": "A"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "x": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "icon",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "x": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8bac87fb9c605654": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "f7951575d677dbe1",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-repeat-read/B.tsx",
+        "exportName": "B"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "y": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "icon",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "y": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8bac87fb9c605654": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "8bac87fb9c605654",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-repeat-read/C.tsx",
+        "exportName": "C"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "17f2e5f7df3717cb": 1,
+          "5a84906082b1dfe4": 1,
+          "f7951575d677dbe1": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "17f2e5f7df3717cb",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-repeat-read/Icon.tsx",
+        "exportName": "Icon"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "8bac87fb9c605654": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "3fc21cf7b34593c3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/prop-forward-shadowed/Tiles.tsx",
+        "exportName": "Toolbar"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "fd6259d1f2f0728a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-builtin-wrappers/App.tsx",
+        "exportName": "FancyButton"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "e7baf388c1acc98b": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b55cde9102973908",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-builtin-wrappers/App.tsx",
+        "exportName": "Nested"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 14,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "e7baf388c1acc98b": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "c1d5a889a7d1bf82",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-builtin-wrappers/App.tsx",
+        "exportName": "Plain"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Local"
+      ],
+      "definition": {
+        "line": 17,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "c22e0bf98ee16112": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "e7baf388c1acc98b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-builtin-wrappers/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 20,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "fd6259d1f2f0728a": 1,
+          "7a9e3882aea97b9f": 1,
+          "9a25a3b8cbee157e": 1,
+          "b55cde9102973908": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "c22e0bf98ee16112",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-builtin-wrappers/Page.tsx",
+        "exportName": "Page"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "c1d5a889a7d1bf82": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "064df5a1eff7c8f0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/AnonDefault.tsx",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "AnonDefault"
+      ],
+      "definition": {
+        "line": 12,
+        "column": 15
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e28ec6f006c865d3": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "64b443e583542e9a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 20,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "d9d69aed8cd96426": 1,
+          "dc23d2e9eb165b57": 1,
+          "d6fca0c5db154302": 1,
+          "728faa835c78e609": 1,
+          "65c276a56ee7b2a9": 1,
+          "a0eee53f4106a4e7": 1,
+          "dbeb5885e6ea1a02": 1,
+          "064df5a1eff7c8f0": 1,
+          "fff241709284e9a5": 1,
+          "cb6bd00fc6c63620": 1,
+          "cb82f12b5948544e": 1,
+          "372b66ea16b788d2": 1,
+          "eaafa8bfc6a7f773": 1,
+          "c70d1eafd35b1dcb": 1,
+          "41d5717d013520c3": 1,
+          "f7b2fc532b92e897": 1,
+          "d2516f5e1b01daf0": 1,
+          "735376cbbaa69071": 1,
+          "f2445d7c0d92b91c": 1,
+          "f4da01f81d6c583d": 1,
+          "d7f69252a87c118f": 1,
+          "b06eed7b5a0a6eaf": 1,
+          "4e5a4a4439a99bfe": 1,
+          "df11a583682bb0d7": 1,
+          "9accaa1908b42f29": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4e5a4a4439a99bfe",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Compound.tsx",
+        "exportName": "ExternalCompound"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 7,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "fd96bd677271c81d": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "df11a583682bb0d7",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Compound.tsx",
+        "exportName": "LocalCompound"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 15,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "1684a018d379a817": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "c8aba73ebf4d7d91",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/HookSeeding.tsx",
+        "exportName": "ConfirmModal"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e28ec6f006c865d3": 1
+        },
+        "renderedByCount": {
+          "9accaa1908b42f29": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "9accaa1908b42f29",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/HookSeeding.tsx",
+        "exportName": "HookPage"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 13,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "c8aba73ebf4d7d91": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "cb6bd00fc6c63620",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "HookLeaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 8,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "cb82f12b5948544e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "DirectList"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 3,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {
+        "rows": {
+          "values": [],
+          "dynamic": 3,
+          "omitted": 0
+        }
+      },
+      "writtenNames": [
+        "C"
+      ],
+      "declared": {
+        "props": {
+          "rows": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 14,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1,
+          "eaafa8bfc6a7f773": 1,
+          "c70d1eafd35b1dcb": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "372b66ea16b788d2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "MemoList"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "rows": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "rows": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 17,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "7a9e3882aea97b9f": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "eaafa8bfc6a7f773",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "ViaMap"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "k": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "list",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "k": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 21,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "cb82f12b5948544e": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "3761162c9cc24f17",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "Alt"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "rows": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
+      "writtenNames": [
+        "C"
+      ],
+      "definition": {
+        "line": 27,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "c70d1eafd35b1dcb": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "c70d1eafd35b1dcb",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "ViaTernary"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "c": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": true,
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "c": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 28,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "cb82f12b5948544e": 1,
+          "3761162c9cc24f17": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "41d5717d013520c3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "ChildrenWrapper"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {
+          "children": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 38,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f7b2fc532b92e897",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Iteration.tsx",
+        "exportName": "ExternalArrayList"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 46,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "7a9e3882aea97b9f": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f4da01f81d6c583d",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/MapControls.tsx",
+        "exportName": "ImportValuedMap"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "t": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "button",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "t": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 7,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1,
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "ddce0b72f99eaf2e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/MapControls.tsx",
+        "exportName": "Leafy"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "C"
+      ],
+      "definition": {
+        "line": 14,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "7a9e3882aea97b9f": 1
+        },
+        "renderedByCount": {
+          "d7f69252a87c118f": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "d7f69252a87c118f",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/MapControls.tsx",
+        "exportName": "PlainBodiedMap"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "k": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "leafy",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "k": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 16,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "ddce0b72f99eaf2e": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "69472733d7233d45",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/MapControls.tsx",
+        "exportName": "PlainA"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "C"
+      ],
+      "definition": {
+        "line": 23,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "b06eed7b5a0a6eaf": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "532ca52b571f9c30",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/MapControls.tsx",
+        "exportName": "PlainB"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "C"
+      ],
+      "definition": {
+        "line": 24,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {
+          "b06eed7b5a0a6eaf": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b06eed7b5a0a6eaf",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/MapControls.tsx",
+        "exportName": "PlainTernary"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "c": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": true,
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "c": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 25,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "69472733d7233d45": 1,
+          "532ca52b571f9c30": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "fff241709284e9a5",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/NamedDefault.tsx",
+        "exportName": "NamedView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "NamedDefault"
+      ],
+      "definition": {
+        "line": 6,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "d2516f5e1b01daf0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/NamespaceDefault.tsx",
+        "exportName": "CrossFileNamespace"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "12b5ef07f34ce270": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "735376cbbaa69071",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/NamespaceDefault.tsx",
+        "exportName": "SameFileNamespace"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 19,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "618e3d6d2a760a59": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "f2445d7c0d92b91c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Styled.tsx",
+        "exportName": "Styled"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 12,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "d9d69aed8cd96426",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Wrappers.tsx",
+        "exportName": "BoundJsx"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "dc23d2e9eb165b57",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Wrappers.tsx",
+        "exportName": "FactoryButton"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 15,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "7a9e3882aea97b9f": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "d6fca0c5db154302",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Wrappers.tsx",
+        "exportName": "Conditional"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {
+          "x": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 20,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1,
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "65c276a56ee7b2a9",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Wrappers.tsx",
+        "exportName": "NsForwarded"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 29,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "a0eee53f4106a4e7",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Wrappers.tsx",
+        "exportName": "NsMemoView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "NsMemo"
+      ],
+      "definition": {
+        "line": 32,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "7a9e3882aea97b9f": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "dbeb5885e6ea1a02",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Wrappers.tsx",
+        "exportName": "DefaultView"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "MemoisedDefault"
+      ],
+      "definition": {
+        "line": 36,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "292f9cb89f29bd3a": 1
+        },
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "292f9cb89f29bd3a",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 21,
+        "fileCount": 13
+      },
+      "usage": "direct",
+      "props": {
+        "...rest": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 20
+        },
+        "key": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "r",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 20
+        }
+      },
+      "writtenNames": [
+        "Comp",
+        "C",
+        "ComposeButton",
+        "ConnectedButton",
+        "MemoButton",
+        "Page"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b64fbf93a0f63717": 2,
+          "9dc5a316c135ffd6": 1,
+          "95d78649f63dc64e": 1,
+          "5f7a652efc5954b8": 1,
+          "33a8935a8c4f85aa": 2,
+          "9f2e8025da07a739": 1,
+          "8c608a9d9c1244b3": 1,
+          "d82620d7e37366aa": 1,
+          "3fc21cf7b34593c3": 1,
+          "fd6259d1f2f0728a": 1,
+          "cb6bd00fc6c63620": 1,
+          "cb82f12b5948544e": 1,
+          "3761162c9cc24f17": 1,
+          "41d5717d013520c3": 1,
+          "f4da01f81d6c583d": 1,
+          "69472733d7233d45": 1,
+          "d9d69aed8cd96426": 1,
+          "d6fca0c5db154302": 1,
+          "dbeb5885e6ea1a02": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 21
+      }
+    },
+    {
+      "id": "7a9e3882aea97b9f",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "TextInput"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 13,
+        "fileCount": 8
+      },
+      "usage": "direct",
+      "props": {
+        "...rest": {
+          "values": [],
+          "dynamic": 2,
+          "omitted": 11
+        },
+        "key": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "r",
+              "count": 1
+            },
+            {
+              "provenance": "reference",
+              "ref": "i",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 11
+        },
+        "ref": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "ref",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 12
+        }
+      },
+      "writtenNames": [
+        "ChainedTextInput",
+        "Comp",
+        "ConnectedInput",
+        "MemoInput",
+        "WithRouterTextInput"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b64fbf93a0f63717": 1,
+          "9dc5a316c135ffd6": 1,
+          "33a8935a8c4f85aa": 2,
+          "8c608a9d9c1244b3": 2,
+          "e7baf388c1acc98b": 1,
+          "372b66ea16b788d2": 1,
+          "f7b2fc532b92e897": 1,
+          "ddce0b72f99eaf2e": 1,
+          "dc23d2e9eb165b57": 1,
+          "a0eee53f4106a4e7": 1
+        },
+        "isRootCount": 1,
+        "isLeafCount": 13
+      }
+    },
+    {
+      "id": "241ce30acd03d4f4",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Tabs.Root"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4dbf4086291c7cef": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "a2bc25b06a4938a2",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Tabs.Trigger"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "value": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "a",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4dbf4086291c7cef": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "9a25a3b8cbee157e",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Card"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 13,
+        "fileCount": 11
+      },
+      "usage": "direct",
+      "props": {
+        "...rest": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 12
+        }
+      },
+      "writtenNames": [
+        "AliasCard",
+        "C",
+        "Comp",
+        "FlowCard",
+        "MemoCard",
+        "Modal"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "7424d7f6d833dde9": 1,
+          "9dc5a316c135ffd6": 1,
+          "33a8935a8c4f85aa": 1,
+          "9f2e8025da07a739": 1,
+          "8c608a9d9c1244b3": 1,
+          "1d6a9aa61e64f28a": 1,
+          "e6709688858f00fa": 1,
+          "e7baf388c1acc98b": 1,
+          "f4da01f81d6c583d": 1,
+          "532ca52b571f9c30": 1,
+          "fff241709284e9a5": 1,
+          "d6fca0c5db154302": 1,
+          "65c276a56ee7b2a9": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 13
+      }
+    },
+    {
+      "id": "fd96bd677271c81d",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Toast.Title"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Kit.Toast.Title"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "ab5778a2fc707da2": 1,
+          "4e5a4a4439a99bfe": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "89da3b7de8dcded9",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/deep-compound/Menus.tsx",
+        "exportName": "Nav.Menu.Item"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 5,
+        "column": 6
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "ab5778a2fc707da2": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "2c077f356eeea974",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Sidebar"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "9f2e8025da07a739": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "04594959d71ddf3e",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/owner-edges",
+        "publicEntry": "",
+        "exportName": "Card"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "fa2394095d2836da": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "69042778575c48d0",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/owner-edges",
+        "publicEntry": "",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 3,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "variant": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "primary",
+              "count": 1
+            },
+            {
+              "provenance": "written",
+              "value": "ghost",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 1
+        }
+      },
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "fa2394095d2836da": 1,
+          "c7ba00c9bf2bddc7": 1,
+          "f5308786ab1f1459": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 3
+      }
+    },
+    {
+      "id": "e28ec6f006c865d3",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Banner"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "064df5a1eff7c8f0": 1,
+          "c8aba73ebf4d7d91": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "728faa835c78e609",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "RadioArea"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Item"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "64b443e583542e9a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "1684a018d379a817",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/react-engine-shapes/Compound.tsx",
+        "exportName": "LocalInline.Note"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 14,
+        "column": 13
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "df11a583682bb0d7": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "12b5ef07f34ce270",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Root"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "CrossFileNS.Root"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "d2516f5e1b01daf0": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "618e3d6d2a760a59",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/react-ds",
+        "publicEntry": "",
+        "exportName": "Leaf"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "LocalNS.Leaf"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "735376cbbaa69071": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "7ae2fc44942d201c",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/design-system",
+        "publicEntry": "",
+        "exportName": "Dropdown"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "61766288291e73f3": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "893b3e4f41d500ad",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/composition-edge/App.tsx",
+      "line": 13,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "writtenName": "MemoButton",
+      "props": {},
+      "ownerComponentId": "b64fbf93a0f63717"
+    },
+    {
+      "occurrenceId": "8822bff257ffca6c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/composition-edge/App.tsx",
+      "line": 14,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "connect"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "writtenName": "ConnectedInput",
+      "props": {},
+      "ownerComponentId": "b64fbf93a0f63717"
+    },
+    {
+      "occurrenceId": "d4c08747051f315e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/composition-edge/App.tsx",
+      "line": 15,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "writtenName": "Comp",
+      "props": {},
+      "ownerComponentId": "b64fbf93a0f63717"
+    },
+    {
+      "occurrenceId": "d20a72d55237af89",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "241ce30acd03d4f4"
+      },
+      "filePath": "src/compound-roots/App.tsx",
+      "line": 5,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Tabs"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "4dbf4086291c7cef"
+    },
+    {
+      "occurrenceId": "52a2d090c266f863",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a2bc25b06a4938a2"
+      },
+      "filePath": "src/compound-roots/App.tsx",
+      "line": 6,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Tabs"
+        }
+      ],
+      "props": {
+        "value": {
+          "tier": "written",
+          "value": "a"
+        }
+      },
+      "ownerComponentId": "4dbf4086291c7cef"
+    },
+    {
+      "occurrenceId": "d97970a27224dfdf",
+      "resolution": {
+        "status": "unresolved",
+        "reason": {
+          "kind": "unbound-name",
+          "name": "Disclosure"
+        }
+      },
+      "filePath": "src/compound-roots/App.tsx",
+      "line": 15,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "10f9e9957af1bca0"
+    },
+    {
+      "occurrenceId": "8ba3ce84718a44f9",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "1f67fe506dc184eb"
+      },
+      "filePath": "src/context/Theme.tsx",
+      "line": 23,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "7424d7f6d833dde9"
+    },
+    {
+      "occurrenceId": "a6fb79397944464f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/context/Theme.tsx",
+      "line": 24,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "7424d7f6d833dde9"
+    },
+    {
+      "occurrenceId": "14483607674c0dec",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fd96bd677271c81d"
+      },
+      "filePath": "src/deep-compound/Menus.tsx",
+      "line": 10,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "*"
+        }
+      ],
+      "writtenName": "Kit.Toast.Title",
+      "props": {},
+      "ownerComponentId": "ab5778a2fc707da2"
+    },
+    {
+      "occurrenceId": "2a74e787c0131477",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "89da3b7de8dcded9"
+      },
+      "filePath": "src/deep-compound/Menus.tsx",
+      "line": 11,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "ab5778a2fc707da2"
+    },
+    {
+      "occurrenceId": "9eb5568244e36bfd",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "f5c4f566b7ca1140"
+      },
+      "filePath": "src/default-rewrap-barrel/App.jsx",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./seo",
+          "name": "default"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "096a0f80a23ef93e"
+    },
+    {
+      "occurrenceId": "53f0764f6f17212d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "8f8642469ed5a18d"
+      },
+      "filePath": "src/default-rewrap-barrel/App.jsx",
+      "line": 8,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./widget",
+          "name": "Widget"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "096a0f80a23ef93e"
+    },
+    {
+      "occurrenceId": "414cfb89867481c1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "08815f6aaad73dd9"
+      },
+      "filePath": "src/dynamic-map-via-getter/App.tsx",
+      "line": 5,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "MAP",
+          "mapLoc": {
+            "file": "src/dynamic-map-via-getter/mappings.tsx",
+            "line": 3,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "2ac9f3cfad98d914"
+    },
+    {
+      "occurrenceId": "2b1245c0d1a70707",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b18e5761114750c8"
+      },
+      "filePath": "src/dynamic-map-via-getter/App.tsx",
+      "line": 5,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "MAP",
+          "mapLoc": {
+            "file": "src/dynamic-map-via-getter/mappings.tsx",
+            "line": 3,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "2ac9f3cfad98d914"
+    },
+    {
+      "occurrenceId": "33867917eb31e8e3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/dynamic-map/App.tsx",
+      "line": 11,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "COMPONENT_MAP",
+          "mapLoc": {
+            "file": "src/dynamic-map/App.tsx",
+            "line": 3,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "Comp",
+      "props": {},
+      "ownerComponentId": "9dc5a316c135ffd6"
+    },
+    {
+      "occurrenceId": "fd198f308e894fb4",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/dynamic-map/App.tsx",
+      "line": 11,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "COMPONENT_MAP",
+          "mapLoc": {
+            "file": "src/dynamic-map/App.tsx",
+            "line": 3,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "Comp",
+      "props": {},
+      "ownerComponentId": "9dc5a316c135ffd6"
+    },
+    {
+      "occurrenceId": "eaca6bb5f0252b16",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/dynamic-map/App.tsx",
+      "line": 11,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "COMPONENT_MAP",
+          "mapLoc": {
+            "file": "src/dynamic-map/App.tsx",
+            "line": 3,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "Comp",
+      "props": {},
+      "ownerComponentId": "9dc5a316c135ffd6"
+    },
+    {
+      "occurrenceId": "fe2f2a0e90995b81",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "95d78649f63dc64e"
+      },
+      "filePath": "src/esm-js-specifiers/A.tsx",
+      "line": 5,
+      "column": 23,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Leaf.js",
+          "name": "Leaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "1f0c9b3151abde37"
+    },
+    {
+      "occurrenceId": "9fc5380b2548baab",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "5f7a652efc5954b8"
+      },
+      "filePath": "src/esm-js-specifiers/B.tsx",
+      "line": 4,
+      "column": 23,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./index.js",
+          "name": "Idx"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "f690c03d9808b2f3"
+    },
+    {
+      "occurrenceId": "1a16c1ba69c78802",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/esm-js-specifiers/Leaf.tsx",
+      "line": 3,
+      "column": 26,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "95d78649f63dc64e"
+    },
+    {
+      "occurrenceId": "4fb23907da304882",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/esm-js-specifiers/index.tsx",
+      "line": 3,
+      "column": 25,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5f7a652efc5954b8"
+    },
+    {
+      "occurrenceId": "b4fbf653e8747f62",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "216a9de617ec9640"
+      },
+      "filePath": "src/helper-chain-three-hops/helpers.tsx",
+      "line": 3,
+      "column": 45,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "helperC",
+          "calleeFile": "src/helper-chain-three-hops/helpers.tsx"
+        },
+        {
+          "kind": "helper-call",
+          "callee": "helperB",
+          "calleeFile": "src/helper-chain-three-hops/helpers.tsx"
+        },
+        {
+          "kind": "helper-call",
+          "callee": "helperA",
+          "calleeFile": "src/helper-chain-three-hops/helpers.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Inner",
+          "name": "Inner"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "55a84bdaf85ae40c"
+    },
+    {
+      "occurrenceId": "0ec35c092a3367b1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "805bf9c1788a69f1"
+      },
+      "filePath": "src/helper-cross-file-import/utils.tsx",
+      "line": 3,
+      "column": 45,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "getRows",
+          "calleeFile": "src/helper-cross-file-import/utils.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Leaf",
+          "name": "Leaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "28253e1ee796a113"
+    },
+    {
+      "occurrenceId": "020cf91d91306597",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b0ba472edc17a66f"
+      },
+      "filePath": "src/helper-cycle/cycle.tsx",
+      "line": 6,
+      "column": 38,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "helperA",
+          "calleeFile": "src/helper-cycle/cycle.tsx"
+        },
+        {
+          "kind": "helper-call",
+          "callee": "helperB",
+          "calleeFile": "src/helper-cycle/cycle.tsx"
+        },
+        {
+          "kind": "helper-call",
+          "callee": "helperA",
+          "calleeFile": "src/helper-cycle/cycle.tsx"
+        }
+      ],
+      "props": {}
+    },
+    {
+      "occurrenceId": "e23408b59118798b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b0ba472edc17a66f"
+      },
+      "filePath": "src/helper-cycle/cycle.tsx",
+      "line": 11,
+      "column": 31,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "f1a929d41ee643b4"
+    },
+    {
+      "occurrenceId": "f294e3296fc5e762",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "552ee5a6c2ea895c"
+      },
+      "filePath": "src/helper-fanout-data-factory/config.tsx",
+      "line": 6,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "getRows",
+          "calleeFile": "src/helper-fanout-data-factory/config.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Leaf",
+          "name": "Leaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "39a76fb7597cc943"
+    },
+    {
+      "occurrenceId": "b3e0902578542e7d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "552ee5a6c2ea895c"
+      },
+      "filePath": "src/helper-fanout-data-factory/config.tsx",
+      "line": 6,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "getRows",
+          "calleeFile": "src/helper-fanout-data-factory/config.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Leaf",
+          "name": "Leaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "4a88af7ca95c244d"
+    },
+    {
+      "occurrenceId": "90c43fc56eaa1d4d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fd7b1a788c84a77d"
+      },
+      "filePath": "src/helper-fanout-hook/useOptions.tsx",
+      "line": 6,
+      "column": 16,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "useOptions",
+          "calleeFile": "src/helper-fanout-hook/useOptions.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Cta",
+          "name": "Cta"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "eea1d2a4f3b5c821"
+    },
+    {
+      "occurrenceId": "c7061aa3b74e5d32",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fd0d615bee77a79a"
+      },
+      "filePath": "src/helper-jsx-call-of-helper/List.tsx",
+      "line": 8,
+      "column": 20,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Item",
+          "name": "Item"
+        }
+      ],
+      "props": {
+        "key": {
+          "tier": "reference",
+          "ref": "it.id"
+        }
+      },
+      "ownerComponentId": "54ec8e63a4f4af48"
+    },
+    {
+      "occurrenceId": "d53b66ecf842ec19",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "54ec8e63a4f4af48"
+      },
+      "filePath": "src/helper-jsx-call-of-helper/Page.tsx",
+      "line": 5,
+      "column": 26,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./List",
+          "name": "List"
+        }
+      ],
+      "props": {
+        "items": {
+          "tier": "reference",
+          "ref": "data"
+        }
+      },
+      "ownerComponentId": "73e92c22fadf5aa6"
+    },
+    {
+      "occurrenceId": "d123720cce3a8ef3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e7514cd3a6670c2b"
+      },
+      "filePath": "src/helper-multi-caller-mixed/build.tsx",
+      "line": 4,
+      "column": 43,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "build",
+          "calleeFile": "src/helper-multi-caller-mixed/build.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Leaf",
+          "name": "Leaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "b419c74e43c3bdc5"
+    },
+    {
+      "occurrenceId": "e5653c23643d10aa",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e7514cd3a6670c2b"
+      },
+      "filePath": "src/helper-multi-caller-mixed/build.tsx",
+      "line": 4,
+      "column": 43,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "build",
+          "calleeFile": "src/helper-multi-caller-mixed/build.tsx"
+        },
+        {
+          "kind": "helper-call",
+          "callee": "wrap",
+          "calleeFile": "src/helper-multi-caller-mixed/wrap.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Leaf",
+          "name": "Leaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "c893c5d3187acb5e"
+    },
+    {
+      "occurrenceId": "6dbe6c14c41ac0f8",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "ce0d80dc8dab463b"
+      },
+      "filePath": "src/helper-orphan-no-caller/unused.tsx",
+      "line": 4,
+      "column": 47,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "buildRows",
+          "calleeFile": "src/helper-orphan-no-caller/unused.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "./Leaf",
+          "name": "Leaf"
+        }
+      ],
+      "props": {}
+    },
+    {
+      "occurrenceId": "4ae1ffd3a25ee127",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a9628e156cc7f5a6"
+      },
+      "filePath": "src/helper-prop-forward-interaction/Consumer.tsx",
+      "line": 6,
+      "column": 13,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "prop-forward",
+          "bindingName": "slot",
+          "constructionSite": {
+            "file": "src/helper-prop-forward-interaction/Consumer.tsx",
+            "line": 6,
+            "column": 6
+          }
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "07e020d8579e4499"
+    },
+    {
+      "occurrenceId": "000f241f98270bae",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "0ce46491f5012472"
+      },
+      "filePath": "src/helper-prop-forward-interaction/Consumer.tsx",
+      "line": 8,
+      "column": 30,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Page",
+          "name": "Page"
+        }
+      ],
+      "props": {
+        "slot": {
+          "tier": "reference",
+          "ref": "slot"
+        }
+      },
+      "ownerComponentId": "07e020d8579e4499"
+    },
+    {
+      "occurrenceId": "6139383302dc9d01",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/hoc-composition/App.tsx",
+      "line": 26,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "connect"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "writtenName": "ConnectedButton",
+      "props": {},
+      "ownerComponentId": "33a8935a8c4f85aa"
+    },
+    {
+      "occurrenceId": "5c7634524668adae",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/hoc-composition/App.tsx",
+      "line": 27,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "withRouter"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "writtenName": "WithRouterTextInput",
+      "props": {},
+      "ownerComponentId": "33a8935a8c4f85aa"
+    },
+    {
+      "occurrenceId": "b692c545ca717f93",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/hoc-composition/App.tsx",
+      "line": 28,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "flow"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "writtenName": "FlowCard",
+      "props": {},
+      "ownerComponentId": "33a8935a8c4f85aa"
+    },
+    {
+      "occurrenceId": "5dad98c59a1ba8c2",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/hoc-composition/App.tsx",
+      "line": 29,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "compose"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "writtenName": "ComposeButton",
+      "props": {},
+      "ownerComponentId": "33a8935a8c4f85aa"
+    },
+    {
+      "occurrenceId": "1f039c8044fa86d0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/hoc-composition/App.tsx",
+      "line": 30,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "withA"
+        },
+        {
+          "kind": "hoc",
+          "callee": "withB"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "writtenName": "ChainedTextInput",
+      "props": {},
+      "ownerComponentId": "33a8935a8c4f85aa"
+    },
+    {
+      "occurrenceId": "535e60f9c5946ea4",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e104551094019ddf"
+      },
+      "filePath": "src/hoc-cross-module/App.tsx",
+      "line": 6,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./index.js",
+          "name": "Foo"
+        },
+        {
+          "kind": "hoc",
+          "callee": "flow"
+        },
+        {
+          "kind": "import",
+          "specifier": "./components.tsx",
+          "name": "Foo"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "50bc8b7ebc2113ca"
+    },
+    {
+      "occurrenceId": "d40e63e4e202ae2d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "ef523900b14f3ff0"
+      },
+      "filePath": "src/hoc-cross-module/App.tsx",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./index.js",
+          "name": "Bar"
+        },
+        {
+          "kind": "hoc",
+          "callee": "connect"
+        },
+        {
+          "kind": "import",
+          "specifier": "./components.tsx",
+          "name": "Bar"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "50bc8b7ebc2113ca"
+    },
+    {
+      "occurrenceId": "9fb94ef9afba0330",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "61766288291e73f3"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 23,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./dropdown-control.js",
+          "name": "Dropdown"
+        }
+      ],
+      "props": {
+        "name": {
+          "tier": "written",
+          "value": "a"
+        }
+      },
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "822cc96fd57db979",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "1fb22edb32101842"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 44,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./signup-form.jsx",
+          "name": "default"
+        }
+      ],
+      "writtenName": "SignupForm",
+      "props": {
+        "title": {
+          "tier": "written",
+          "value": "t"
+        }
+      },
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "36913fc9b053f8e2",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "43a3ae8470a6c7d1"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 68,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./products.jsx",
+          "name": "Foo"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "91ba137e1539b095",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b5ac13290bf085c3"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 75,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./products.jsx",
+          "name": "Bar"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "9124a392a5226a7b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "d4e9003a492ce170"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 82,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./junk.jsx",
+          "name": "Junk"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "756899e055b5f55a",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "8ddf61f36f3fe62c"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 90,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./pennant.jsx",
+          "name": "Pennant"
+        },
+        {
+          "kind": "hoc",
+          "callee": "forwardRef"
+        }
+      ],
+      "writtenName": "Pennant",
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "p"
+        }
+      },
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "030efabfb0d0e887",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "0422918d9df11348"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 111,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./marquee.jsx",
+          "name": "Marquee"
+        }
+      ],
+      "writtenName": "Marquee",
+      "props": {},
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "88a80fe5348412fc",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "4dd3209d10445e07"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 122,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./swatch.jsx",
+          "name": "Gallery"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "00d2a02416a234bb",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fc33efb1407a71df"
+      },
+      "filePath": "src/hoc-factory-products/app.jsx",
+      "line": 9,
+      "column": 133,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./swatch.jsx",
+          "name": "Swatch"
+        }
+      ],
+      "writtenName": "Swatch",
+      "props": {},
+      "ownerComponentId": "8c3bc6b751a9fe73"
+    },
+    {
+      "occurrenceId": "e9b1d60a2fb5efd0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "8c877f2453fc7ff5"
+      },
+      "filePath": "src/hoc-factory-products/mosaic.jsx",
+      "line": 3,
+      "column": 81,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {
+        "inner": {
+          "tier": "written",
+          "value": "x"
+        }
+      },
+      "ownerComponentId": "428a00add371503a"
+    },
+    {
+      "occurrenceId": "49bc081f386e2884",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "32ad8651b2e71ce0"
+      },
+      "filePath": "src/hoc-factory-products/swatch.jsx",
+      "line": 3,
+      "column": 63,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "4dd3209d10445e07"
+    },
+    {
+      "occurrenceId": "64adc55b7e6a2892",
+      "resolution": {
+        "status": "unresolved",
+        "reason": {
+          "kind": "module-not-found"
+        }
+      },
+      "filePath": "src/hoc-factory-products/with-loading.jsx",
+      "line": 3,
+      "column": 62,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "withLoading",
+          "calleeFile": "src/hoc-factory-products/with-loading.jsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "ds-icons",
+          "name": "Spinner"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "43a3ae8470a6c7d1"
+    },
+    {
+      "occurrenceId": "e8479b1a5eeb409f",
+      "resolution": {
+        "status": "unresolved",
+        "reason": {
+          "kind": "module-not-found"
+        }
+      },
+      "filePath": "src/hoc-factory-products/with-loading.jsx",
+      "line": 3,
+      "column": 62,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "withLoading",
+          "calleeFile": "src/hoc-factory-products/with-loading.jsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "ds-icons",
+          "name": "Spinner"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "b5ac13290bf085c3"
+    },
+    {
+      "occurrenceId": "2568ae83136ddf63",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "45af52ecd859b1b7"
+      },
+      "filePath": "src/hoc-rescue/Slot.tsx",
+      "line": 15,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "8bbada0f2b7bb601"
+    },
+    {
+      "occurrenceId": "bfa21a761b9c4124",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "549968f95f71ac07"
+      },
+      "filePath": "src/hoc-rescue/Slot.tsx",
+      "line": 16,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "writtenName": "Held",
+      "props": {},
+      "ownerComponentId": "8bbada0f2b7bb601"
+    },
+    {
+      "occurrenceId": "461db223dffc7f04",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e88bd58a2b227472"
+      },
+      "filePath": "src/lazy-barrel-reexport/App.tsx",
+      "line": 14,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./pages/home",
+          "name": "default"
+        }
+      ],
+      "writtenName": "HomeStatic",
+      "props": {},
+      "ownerComponentId": "9b9a0f19a20ae2f4"
+    },
+    {
+      "occurrenceId": "7728189193d2665b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9430c190f758606f"
+      },
+      "filePath": "src/lazy-barrel-reexport/App.tsx",
+      "line": 15,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./pages/home",
+          "name": "Settings"
+        }
+      ],
+      "writtenName": "SettingsStatic",
+      "props": {},
+      "ownerComponentId": "9b9a0f19a20ae2f4"
+    },
+    {
+      "occurrenceId": "2d62f71f35be0e93",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e88bd58a2b227472"
+      },
+      "filePath": "src/lazy-barrel-reexport/App.tsx",
+      "line": 16,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "lazy",
+          "callee": "lazy"
+        },
+        {
+          "kind": "import",
+          "specifier": "./pages/home",
+          "name": "default"
+        }
+      ],
+      "writtenName": "HomeLazy",
+      "props": {},
+      "ownerComponentId": "9b9a0f19a20ae2f4"
+    },
+    {
+      "occurrenceId": "c43122886c549d7c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9430c190f758606f"
+      },
+      "filePath": "src/lazy-barrel-reexport/App.tsx",
+      "line": 17,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "lazy",
+          "callee": "lazy"
+        },
+        {
+          "kind": "import",
+          "specifier": "./pages/home",
+          "name": "Settings"
+        }
+      ],
+      "writtenName": "SettingsLazy",
+      "props": {},
+      "ownerComponentId": "9b9a0f19a20ae2f4"
+    },
+    {
+      "occurrenceId": "4d50f666b4e2da61",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/lazy-import/App.tsx",
+      "line": 12,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "lazy",
+          "callee": "lazy"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "writtenName": "Page",
+      "props": {},
+      "ownerComponentId": "9f2e8025da07a739"
+    },
+    {
+      "occurrenceId": "22da6259fbd689ce",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "2c077f356eeea974"
+      },
+      "filePath": "src/lazy-import/App.tsx",
+      "line": 13,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "lazy",
+          "callee": "dynamic"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "default"
+        }
+      ],
+      "writtenName": "Sidebar",
+      "props": {},
+      "ownerComponentId": "9f2e8025da07a739"
+    },
+    {
+      "occurrenceId": "40f2f12ef9c5625e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/lazy-import/App.tsx",
+      "line": 14,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "lazy",
+          "callee": "loadable"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "writtenName": "Modal",
+      "props": {},
+      "ownerComponentId": "9f2e8025da07a739"
+    },
+    {
+      "occurrenceId": "ce261164546cde21",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/nesting/Panel.tsx",
+      "line": 6,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c608a9d9c1244b3"
+    },
+    {
+      "occurrenceId": "3bbd044457954a99",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/nesting/Panel.tsx",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c608a9d9c1244b3"
+    },
+    {
+      "occurrenceId": "4bfb286b78030b27",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/nesting/Panel.tsx",
+      "line": 8,
+      "column": 8,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c608a9d9c1244b3"
+    },
+    {
+      "occurrenceId": "06fd07baa11000fb",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/nesting/Panel.tsx",
+      "line": 10,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8c608a9d9c1244b3"
+    },
+    {
+      "occurrenceId": "143c61c574721106",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "04594959d71ddf3e"
+      },
+      "filePath": "src/owner-edges/Page.tsx",
+      "line": 6,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/owner-edges",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "fa2394095d2836da"
+    },
+    {
+      "occurrenceId": "6407db8b41157d10",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "69042778575c48d0"
+      },
+      "filePath": "src/owner-edges/Page.tsx",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/owner-edges",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "primary"
+        }
+      },
+      "ownerComponentId": "fa2394095d2836da"
+    },
+    {
+      "occurrenceId": "c47ddc9896d4d2d3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "69042778575c48d0"
+      },
+      "filePath": "src/owner-edges/Page.tsx",
+      "line": 12,
+      "column": 33,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/owner-edges",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "variant": {
+          "tier": "written",
+          "value": "ghost"
+        }
+      },
+      "ownerComponentId": "c7ba00c9bf2bddc7"
+    },
+    {
+      "occurrenceId": "f67191be49b40437",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "69042778575c48d0"
+      },
+      "filePath": "src/owner-edges/Page.tsx",
+      "line": 15,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/owner-edges",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "f5308786ab1f1459"
+    },
+    {
+      "occurrenceId": "95e47ec79e98bf2b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/pass-through/Wrapped.tsx",
+      "line": 14,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "withAlias"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "writtenName": "AliasCard",
+      "props": {},
+      "ownerComponentId": "1d6a9aa61e64f28a"
+    },
+    {
+      "occurrenceId": "cddd0412c79a08d2",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/prop-forward-hoc-owner/Badges.tsx",
+      "line": 4,
+      "column": 15,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "prop-forward",
+          "bindingName": "action",
+          "constructionSite": {
+            "file": "src/prop-forward-hoc-owner/Badges.tsx",
+            "line": 4,
+            "column": 6
+          }
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "d82620d7e37366aa"
+    },
+    {
+      "occurrenceId": "0630717ef020d39e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/prop-forward-hoc-owner/Badges.tsx",
+      "line": 5,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "prop-forward",
+          "bindingName": "frame",
+          "constructionSite": {
+            "file": "src/prop-forward-hoc-owner/Badges.tsx",
+            "line": 5,
+            "column": 6
+          }
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "e6709688858f00fa"
+    },
+    {
+      "occurrenceId": "70fda2d44ca36cee",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "17f2e5f7df3717cb"
+      },
+      "filePath": "src/prop-forward-repeat-read/C.tsx",
+      "line": 5,
+      "column": 13,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "prop-forward",
+          "bindingName": "icon",
+          "constructionSite": {
+            "file": "src/prop-forward-repeat-read/C.tsx",
+            "line": 5,
+            "column": 6
+          }
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "8bac87fb9c605654"
+    },
+    {
+      "occurrenceId": "7ebc440a52091e81",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "5a84906082b1dfe4"
+      },
+      "filePath": "src/prop-forward-repeat-read/C.tsx",
+      "line": 8,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./A",
+          "name": "A"
+        }
+      ],
+      "props": {
+        "x": {
+          "tier": "reference",
+          "ref": "icon"
+        }
+      },
+      "ownerComponentId": "8bac87fb9c605654"
+    },
+    {
+      "occurrenceId": "fbfb1d42ba3c079c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "f7951575d677dbe1"
+      },
+      "filePath": "src/prop-forward-repeat-read/C.tsx",
+      "line": 9,
+      "column": 4,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./B",
+          "name": "B"
+        }
+      ],
+      "props": {
+        "y": {
+          "tier": "reference",
+          "ref": "icon"
+        }
+      },
+      "ownerComponentId": "8bac87fb9c605654"
+    },
+    {
+      "occurrenceId": "e0e1cfa3a256e15c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/prop-forward-shadowed/Tiles.tsx",
+      "line": 3,
+      "column": 13,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "prop-forward",
+          "bindingName": "icon",
+          "constructionSite": {
+            "file": "src/prop-forward-shadowed/Tiles.tsx",
+            "line": 3,
+            "column": 6
+          }
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "3fc21cf7b34593c3"
+    },
+    {
+      "occurrenceId": "3e8550b681500469",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-builtin-wrappers/App.tsx",
+      "line": 5,
+      "column": 65,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "...rest": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "fd6259d1f2f0728a"
+    },
+    {
+      "occurrenceId": "84b7597fe30c79f3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-builtin-wrappers/App.tsx",
+      "line": 14,
+      "column": 65,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {
+        "...rest": {
+          "tier": "dynamic"
+        }
+      }
+    },
+    {
+      "occurrenceId": "4616c1090d7a4722",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fd6259d1f2f0728a"
+      },
+      "filePath": "src/react-builtin-wrappers/App.tsx",
+      "line": 23,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "forwardRef"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "e7baf388c1acc98b"
+    },
+    {
+      "occurrenceId": "c6288d093d64b879",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-builtin-wrappers/App.tsx",
+      "line": 24,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "writtenName": "MemoInput",
+      "props": {},
+      "ownerComponentId": "e7baf388c1acc98b"
+    },
+    {
+      "occurrenceId": "063e5d725cd29552",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/react-builtin-wrappers/App.tsx",
+      "line": 25,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "writtenName": "MemoCard",
+      "props": {},
+      "ownerComponentId": "e7baf388c1acc98b"
+    },
+    {
+      "occurrenceId": "c4b9966f2ad5b674",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b55cde9102973908"
+      },
+      "filePath": "src/react-builtin-wrappers/App.tsx",
+      "line": 26,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        },
+        {
+          "kind": "import",
+          "specifier": "react",
+          "name": "forwardRef"
+        },
+        {
+          "kind": "hoc",
+          "callee": "forwardRef"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "e7baf388c1acc98b"
+    },
+    {
+      "occurrenceId": "6dd7e735ebbe9cf7",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "c1d5a889a7d1bf82"
+      },
+      "filePath": "src/react-builtin-wrappers/Page.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./App",
+          "name": "default"
+        },
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "writtenName": "Local",
+      "props": {},
+      "ownerComponentId": "c22e0bf98ee16112"
+    },
+    {
+      "occurrenceId": "84717cc33999b1f1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e28ec6f006c865d3"
+      },
+      "filePath": "src/react-engine-shapes/AnonDefault.tsx",
+      "line": 12,
+      "column": 21,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Banner"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "064df5a1eff7c8f0"
+    },
+    {
+      "occurrenceId": "60bed6fd30820777",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "d9d69aed8cd96426"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 23,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "BoundJsx"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "50a45050eb09b801",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "dc23d2e9eb165b57"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 24,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "FactoryButton"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "610f9094d1264b03",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "d6fca0c5db154302"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 25,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "Conditional"
+        },
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "d5658a456f1a27ac",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "728faa835c78e609"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 26,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "Item"
+        }
+      ],
+      "writtenName": "Item",
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "d5b689ab6e44ca64",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "65c276a56ee7b2a9"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 27,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "NsForwarded"
+        },
+        {
+          "kind": "hoc",
+          "callee": "forwardRef"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "195cc9edd402238b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "a0eee53f4106a4e7"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 28,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "NsMemo"
+        },
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "writtenName": "NsMemo",
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "c331e3b97e05e63b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "dbeb5885e6ea1a02"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 29,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Wrappers",
+          "name": "default"
+        },
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "writtenName": "MemoisedDefault",
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "d51155538e9819b6",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "064df5a1eff7c8f0"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 30,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./AnonDefault",
+          "name": "default"
+        }
+      ],
+      "writtenName": "AnonDefault",
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "0755e2f1dc9855a5",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fff241709284e9a5"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 31,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./NamedDefault",
+          "name": "default"
+        }
+      ],
+      "writtenName": "NamedDefault",
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "2a03dcb2c500c0d8",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "cb6bd00fc6c63620"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 32,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "HookLeaf"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "e4739daee3c764b0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "cb82f12b5948544e"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 33,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "DirectList"
+        }
+      ],
+      "props": {
+        "rows": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "2d6d672596fa5221",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "372b66ea16b788d2"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 34,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "MemoList"
+        },
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "props": {
+        "rows": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "5d7e7198bd0151cd",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "eaafa8bfc6a7f773"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 35,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "ViaMap"
+        }
+      ],
+      "props": {
+        "k": {
+          "tier": "written",
+          "value": "list"
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "a1492481c22db130",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "c70d1eafd35b1dcb"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 36,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "ViaTernary"
+        }
+      ],
+      "props": {
+        "c": {
+          "tier": "written",
+          "value": true
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "05f9bc2a23f08931",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "41d5717d013520c3"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 37,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "ChildrenWrapper"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "92e2086a999b5c5f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "f7b2fc532b92e897"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 38,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Iteration",
+          "name": "ExternalArrayList"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "73df4258922ddb93",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "d2516f5e1b01daf0"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 39,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./NamespaceDefault",
+          "name": "CrossFileNamespace"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "3267db057906e0c4",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "735376cbbaa69071"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 40,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./NamespaceDefault",
+          "name": "SameFileNamespace"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "93dea88a9703fc26",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "f2445d7c0d92b91c"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 41,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Styled",
+          "name": "Styled"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "a18cbbe2a83becd0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "f4da01f81d6c583d"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 42,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./MapControls",
+          "name": "ImportValuedMap"
+        }
+      ],
+      "props": {
+        "t": {
+          "tier": "written",
+          "value": "button"
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "74cb67b194b64ca3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "d7f69252a87c118f"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 43,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./MapControls",
+          "name": "PlainBodiedMap"
+        }
+      ],
+      "props": {
+        "k": {
+          "tier": "written",
+          "value": "leafy"
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "404ef99d9cb5d769",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b06eed7b5a0a6eaf"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 44,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./MapControls",
+          "name": "PlainTernary"
+        }
+      ],
+      "props": {
+        "c": {
+          "tier": "written",
+          "value": true
+        }
+      },
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "93c7f05d5c439239",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "4e5a4a4439a99bfe"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 45,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Compound",
+          "name": "ExternalCompound"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "c74911cf5c0b813f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "df11a583682bb0d7"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 46,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Compound",
+          "name": "LocalCompound"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "d2c9ee925dfc8457",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9accaa1908b42f29"
+      },
+      "filePath": "src/react-engine-shapes/App.tsx",
+      "line": 47,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./HookSeeding",
+          "name": "HookPage"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "64b443e583542e9a"
+    },
+    {
+      "occurrenceId": "f974e12f97f2ec7f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "fd96bd677271c81d"
+      },
+      "filePath": "src/react-engine-shapes/Compound.tsx",
+      "line": 8,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Toast"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "4e5a4a4439a99bfe"
+    },
+    {
+      "occurrenceId": "f5525d4468290a01",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "1684a018d379a817"
+      },
+      "filePath": "src/react-engine-shapes/Compound.tsx",
+      "line": 16,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "df11a583682bb0d7"
+    },
+    {
+      "occurrenceId": "e230ffc703296268",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e28ec6f006c865d3"
+      },
+      "filePath": "src/react-engine-shapes/HookSeeding.tsx",
+      "line": 6,
+      "column": 27,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Banner"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "c8aba73ebf4d7d91"
+    },
+    {
+      "occurrenceId": "e55b7a2ce53ed772",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 6,
+      "column": 19,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "useModals",
+          "calleeFile": "src/react-engine-shapes/Iteration.tsx"
+        },
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "cb6bd00fc6c63620"
+    },
+    {
+      "occurrenceId": "266228b6e6a7f3f1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 14,
+      "column": 69,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "key": {
+          "tier": "reference",
+          "ref": "r"
+        }
+      },
+      "ownerComponentId": "cb82f12b5948544e"
+    },
+    {
+      "occurrenceId": "78fecdb1c4b99473",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 17,
+      "column": 72,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {
+        "key": {
+          "tier": "reference",
+          "ref": "r"
+        }
+      },
+      "ownerComponentId": "372b66ea16b788d2"
+    },
+    {
+      "occurrenceId": "73ac96b33897ec1d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "cb82f12b5948544e"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 23,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "MAP",
+          "mapLoc": {
+            "file": "src/react-engine-shapes/Iteration.tsx",
+            "line": 20,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "C",
+      "props": {
+        "rows": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "eaafa8bfc6a7f773"
+    },
+    {
+      "occurrenceId": "f7a6bf2cbb8a241c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 27,
+      "column": 18,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "3761162c9cc24f17"
+    },
+    {
+      "occurrenceId": "f338cfa910e7109f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "cb82f12b5948544e"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 30,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "C",
+      "props": {
+        "rows": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "c70d1eafd35b1dcb"
+    },
+    {
+      "occurrenceId": "a150f6d65d9cce6c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "3761162c9cc24f17"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 30,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "C",
+      "props": {
+        "rows": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "c70d1eafd35b1dcb"
+    },
+    {
+      "occurrenceId": "a0ef6fb279cf5166",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 39,
+      "column": 41,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "41d5717d013520c3"
+    },
+    {
+      "occurrenceId": "8f4c2080e48be367",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-engine-shapes/Iteration.tsx",
+      "line": 46,
+      "column": 64,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {
+        "key": {
+          "tier": "reference",
+          "ref": "i"
+        }
+      },
+      "ownerComponentId": "f7b2fc532b92e897"
+    },
+    {
+      "occurrenceId": "7ed1df1820c25136",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 9,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "IMPORT_MAP",
+          "mapLoc": {
+            "file": "src/react-engine-shapes/MapControls.tsx",
+            "line": 6,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "f4da01f81d6c583d"
+    },
+    {
+      "occurrenceId": "f913476c0dceb2ad",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 9,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "IMPORT_MAP",
+          "mapLoc": {
+            "file": "src/react-engine-shapes/MapControls.tsx",
+            "line": 6,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "f4da01f81d6c583d"
+    },
+    {
+      "occurrenceId": "8d5ee634df35fb11",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 14,
+      "column": 20,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "ddce0b72f99eaf2e"
+    },
+    {
+      "occurrenceId": "a7d0b1d01f41fc71",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "ddce0b72f99eaf2e"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 18,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "dynamic-map",
+          "mapName": "LOCAL_MAP",
+          "mapLoc": {
+            "file": "src/react-engine-shapes/MapControls.tsx",
+            "line": 15,
+            "column": 6
+          }
+        }
+      ],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "d7f69252a87c118f"
+    },
+    {
+      "occurrenceId": "9f193b655dcfdb9e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 23,
+      "column": 21,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "69472733d7233d45"
+    },
+    {
+      "occurrenceId": "28f7c0603574dad5",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 24,
+      "column": 21,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "532ca52b571f9c30"
+    },
+    {
+      "occurrenceId": "7c47697f9ea24388",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "69472733d7233d45"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 27,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "b06eed7b5a0a6eaf"
+    },
+    {
+      "occurrenceId": "43f3ff83bc703892",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "532ca52b571f9c30"
+      },
+      "filePath": "src/react-engine-shapes/MapControls.tsx",
+      "line": 27,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "C",
+      "props": {},
+      "ownerComponentId": "b06eed7b5a0a6eaf"
+    },
+    {
+      "occurrenceId": "2f3e6ab0a6373b31",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/react-engine-shapes/NamedDefault.tsx",
+      "line": 6,
+      "column": 24,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "fff241709284e9a5"
+    },
+    {
+      "occurrenceId": "534c66475b77f1a8",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "12b5ef07f34ce270"
+      },
+      "filePath": "src/react-engine-shapes/NamespaceDefault.tsx",
+      "line": 6,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./ns",
+          "name": "NS"
+        }
+      ],
+      "writtenName": "CrossFileNS.Root",
+      "props": {},
+      "ownerComponentId": "d2516f5e1b01daf0"
+    },
+    {
+      "occurrenceId": "c43ad1516838c7f3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "618e3d6d2a760a59"
+      },
+      "filePath": "src/react-engine-shapes/NamespaceDefault.tsx",
+      "line": 20,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "LocalNS.Leaf",
+      "props": {},
+      "ownerComponentId": "735376cbbaa69071"
+    },
+    {
+      "occurrenceId": "a402f4e4dc7360d2",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 7,
+      "column": 13,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "d9d69aed8cd96426"
+    },
+    {
+      "occurrenceId": "34c8ba9175bf1840",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 16,
+      "column": 2,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {
+        "...rest": {
+          "tier": "dynamic"
+        },
+        "ref": {
+          "tier": "reference",
+          "ref": "ref"
+        }
+      },
+      "ownerComponentId": "dc23d2e9eb165b57"
+    },
+    {
+      "occurrenceId": "2551f747504c6aff",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 21,
+      "column": 16,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "d6fca0c5db154302"
+    },
+    {
+      "occurrenceId": "d7ba7dcd44c7bf87",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 22,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "d6fca0c5db154302"
+    },
+    {
+      "occurrenceId": "ec195c00cdb3fa0a",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 29,
+      "column": 67,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Card"
+        }
+      ],
+      "props": {
+        "...rest": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "65c276a56ee7b2a9"
+    },
+    {
+      "occurrenceId": "647d913498f03549",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7a9e3882aea97b9f"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 32,
+      "column": 25,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "TextInput"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "a0eee53f4106a4e7"
+    },
+    {
+      "occurrenceId": "5f2c49343ce4f747",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "292f9cb89f29bd3a"
+      },
+      "filePath": "src/react-engine-shapes/Wrappers.tsx",
+      "line": 36,
+      "column": 26,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/react-ds",
+          "name": "Button"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "dbeb5885e6ea1a02"
+    },
+    {
+      "occurrenceId": "f3da8f618bb97ce4",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "7ae2fc44942d201c"
+      },
+      "filePath": "src/hoc-factory-products/dropdown-control.js",
+      "line": 3,
+      "column": 29,
+      "credit": {
+        "kind": "argument",
+        "callee": "makeControl",
+        "index": 0
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/design-system",
+          "name": "Dropdown"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "61766288291e73f3"
+    },
+    {
+      "occurrenceId": "ec5bbe1a10577ec4",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "0a06fd2f53190e24"
+      },
+      "filePath": "src/hoc-factory-products/products.jsx",
+      "line": 5,
+      "column": 31,
+      "credit": {
+        "kind": "argument",
+        "callee": "withLoading",
+        "index": 0
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "43a3ae8470a6c7d1"
+    },
+    {
+      "occurrenceId": "6e612b59922f0d83",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "f705f77b4e15ad67"
+      },
+      "filePath": "src/hoc-factory-products/products.jsx",
+      "line": 6,
+      "column": 31,
+      "credit": {
+        "kind": "argument",
+        "callee": "withLoading",
+        "index": 0
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "b5ac13290bf085c3"
+    },
+    {
+      "occurrenceId": "b59855aed716cf70",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "c2005f7ff20e8c71"
+      },
+      "filePath": "src/hoc-factory-products/signup-form.jsx",
+      "line": 4,
+      "column": 47,
+      "credit": {
+        "kind": "argument",
+        "callee": "withErrorBoundary",
+        "index": 0
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "1fb22edb32101842"
+    },
+    {
+      "occurrenceId": "48cd43cb5ed2afb9",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "549968f95f71ac07"
+      },
+      "filePath": "src/hoc-rescue/Slot.tsx",
+      "line": 10,
+      "column": 31,
+      "credit": {
+        "kind": "argument",
+        "callee": "createSlot",
+        "index": 0
+      },
+      "trace": [
+        {
+          "kind": "hoc",
+          "callee": "memo"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "45af52ecd859b1b7"
+    },
+    {
+      "occurrenceId": "bbf77aafbb837e80",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "c8aba73ebf4d7d91"
+      },
+      "filePath": "src/react-engine-shapes/HookSeeding.tsx",
+      "line": 9,
+      "column": 44,
+      "credit": {
+        "kind": "argument",
+        "callee": "useModalHolder",
+        "index": 0
+      },
+      "trace": [
+        {
+          "kind": "helper-call",
+          "callee": "useConfirmModal",
+          "calleeFile": "src/react-engine-shapes/HookSeeding.tsx"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "9accaa1908b42f29"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "late-bound-render",
+      "severity": "info",
+      "filePath": "src/context/Theme.tsx",
+      "line": 18,
+      "column": 49,
+      "symbol": "Theme",
+      "memberChain": []
+    },
+    {
+      "code": "unresolved-reference",
+      "severity": "info",
+      "filePath": "src/data-method/Picker.tsx",
+      "line": 8,
+      "column": 9,
+      "symbol": "Shown",
+      "memberChain": []
+    },
+    {
+      "code": "late-bound-render",
+      "severity": "info",
+      "filePath": "src/hoc-factory-products/make-control.jsx",
+      "line": 4,
+      "column": 9,
+      "symbol": "Component",
+      "memberChain": []
+    },
+    {
+      "code": "late-bound-render",
+      "severity": "info",
+      "filePath": "src/hoc-factory-products/with-error-boundary.jsx",
+      "line": 3,
+      "column": 36,
+      "symbol": "Child",
+      "memberChain": []
+    },
+    {
+      "code": "late-bound-render",
+      "severity": "info",
+      "filePath": "src/hoc-factory-products/with-loading.jsx",
+      "line": 3,
+      "column": 76,
+      "symbol": "C",
+      "memberChain": []
+    },
+    {
+      "code": "late-bound-render",
+      "severity": "info",
+      "filePath": "src/hoc-rescue/Slot.tsx",
+      "line": 8,
+      "column": 15,
+      "symbol": "C",
+      "memberChain": []
+    },
+    {
+      "code": "unresolved-reference",
+      "severity": "info",
+      "filePath": "src/react-engine-shapes/Styled.tsx",
+      "line": 13,
+      "column": 9,
+      "symbol": "StyledButton",
+      "memberChain": []
+    }
+  ]
+}
