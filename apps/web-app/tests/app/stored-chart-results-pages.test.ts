@@ -148,7 +148,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const stored = (await driver.getStoredTracking({ kind: "all" }))?.find(entry => entry.id === `retirement:${retired.id}`);
       expect(stored).toBeDefined();
       const tree = await page(trackingParams(`retirement:${retired.id}`));
-      expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series } })]);
+      expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
       expect(allPropsFor(await page(trackingParams(`retirement:${added.id}`)), "ReadModelState")).toEqual([preparing]);
       expect(digests).not.toHaveBeenCalled();
       await expect(page(trackingParams(`retirement:${unseen.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
@@ -251,7 +251,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const { default: page } = await import("@/app/charts/[dashboardId]/page");
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([{ notice: failed, besideNumbers: true }]);
-      expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series } })]);
+      expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
     });
   });
 

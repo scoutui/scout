@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import type { CohortSeries } from "@scoutui/web-shared";
+import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, dayTicks, expandRowShares, seriesToRows, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
-import { formatDayTick, formatPct, formatScanStamp } from "@/lib/dashboard-format";
+import { cohortChartConfig, dayTicks, expandRowShares, seriesToRows } from "@/lib/dashboard-chart-data";
+import { formatDayTick, formatPct } from "@/lib/dashboard-format";
 import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
+import { scanTooltipLabel } from "./cohort-trend-chart";
 
 /**
  * Share over time: a 100%-stacked area over scans, where each band is a cohort's
@@ -17,10 +18,12 @@ import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
  */
 export function CohortShareOverTime({
   series,
+  coverage,
   colors,
   showLegend = true,
 }: {
   series: CohortSeries[];
+  coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
   showLegend?: boolean;
 }) {
@@ -80,10 +83,7 @@ export function CohortShareOverTime({
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             content={
               <ChartTooltipContent
-                labelFormatter={(_, payload) => {
-                  const ts = tooltipRowTimestamp(payload);
-                  return ts === null ? "" : formatScanStamp(ts);
-                }}
+                labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
                 formatter={(value, name, item) => (
                   <>
                     <span

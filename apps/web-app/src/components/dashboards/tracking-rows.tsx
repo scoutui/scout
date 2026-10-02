@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import type { GovernanceTracking } from "@scoutui/web-shared";
 import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline";
 import { LazyCohortTrendChart } from "@/components/dashboards/lazy-cohort-trend-chart";
-import { chartColors, savedChartCohorts } from "@/lib/dashboard-chart-data";
+import { chartColors, repoAddedAtLatest, savedChartCohorts } from "@/lib/dashboard-chart-data";
 import { deltaDirection, formatDeltaFrom, formatPct, } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,9 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
   const migration = entry.kind === "migration";
   // Archived rows never show movement. Their numbers (remaining 0, progress 1)
   // already give direction "none", but the guard doesn't rely on that.
-  const direction = archived ? "none" : deltaDirection(entry.kind, entry.delta);
+  const moved = deltaDirection(entry.kind, entry.delta);
+  const repoAdded = !archived && moved !== "none" && repoAddedAtLatest(entry.coverage);
+  const direction = archived || repoAdded ? "none" : moved;
   // Green marks a gain, so it follows the value, not the row kind: a stalled
   // migration and an archived row are plain ink, an unknown one is muted.
   const tone = archived
@@ -93,10 +95,12 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
         >
           {archived
             ? "complete"
-            : formatDeltaFrom(entry.kind, migration ? entry.progress : entry.remaining, entry.delta)}
+            : repoAdded
+              ? "repo added"
+              : formatDeltaFrom(entry.kind, migration ? entry.progress : entry.remaining, entry.delta)}
         </span>
         <span className="hidden xl:block">
-          <DashboardSparkline uid={uid} config={entry.config} view={{ kind: "series", series: entry.series }} />
+          <DashboardSparkline uid={uid} config={entry.config} view={{ kind: "series", series: entry.series, coverage: entry.coverage }} />
         </span>
       </div>
     </div>
@@ -137,6 +141,7 @@ function RepoRow({ entry, defaultOpen }: { entry: GovernanceTracking; defaultOpe
             deprecated + successor pair, a retirement the lone deprecated series. */}
         <LazyCohortTrendChart
           series={entry.series}
+          coverage={entry.coverage}
           colors={chartColors(savedChartCohorts(entry.config.cohorts, entry.series))}
           metric="count"
         />

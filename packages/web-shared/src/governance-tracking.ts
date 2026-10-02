@@ -6,7 +6,7 @@ import type {
   GovernanceRecord,
 } from "./dto.js";
 import type { DigestScan } from "./digest.js";
-import { projectSeries, type SeriesCohort } from "./cohorts.js";
+import { projectRepoCoverage, projectSeries, type RepoCoverage, type SeriesCohort } from "./cohorts.js";
 import { governanceHash, governedComponentIds, type GovernanceRule } from "./governance.js";
 
 /**
@@ -37,6 +37,7 @@ export type GovernanceTracking = {
   toLabel: string | null;
   config: DashboardConfig;
   series: CohortSeries[];
+  coverage: RepoCoverage;
   active: boolean;
   remaining: number;
   progress: number | null;
@@ -120,7 +121,7 @@ function deriveOne(
 
   if (record.disposition.kind === "retired") {
     const config: DashboardConfig = { scope, cohorts: from.cohorts, chartType: "trend", metric: "count" };
-    const counts = clipToObservation(projectSeries(scans, [deprecated], "count"));
+    const { series: counts, coverage } = clipToObservation(projectSeries(scans, [deprecated], "count"), projectRepoCoverage(scans));
     const dep = counts[0];
     const remaining = at(dep, 1);
     const prev = lastPointCount(dep) >= 2 ? at(dep, 2) : null;
@@ -133,6 +134,7 @@ function deriveOne(
       toLabel: null,
       config,
       series: counts,
+      coverage,
       active: remaining > 0,
       remaining,
       progress: null,
@@ -156,7 +158,7 @@ function deriveOne(
   // snapshot carried by the row readout.
   const config: DashboardConfig = { scope, cohorts: [...from.cohorts, ...to.cohorts], chartType: "trend", metric: "count" };
   // Counts are both the display series and the maths (progress = successor ÷ pair).
-  const counts = clipToObservation(projectSeries(scans, [deprecated, successor], "count"));
+  const { series: counts, coverage } = clipToObservation(projectSeries(scans, [deprecated, successor], "count"), projectRepoCoverage(scans));
   const [dep, succ] = counts;
   const remaining = at(dep, 1);
   const progress = pairShare(at(dep, 1), at(succ, 1));
@@ -170,6 +172,7 @@ function deriveOne(
     toLabel,
     config,
     series: counts,
+    coverage,
     active: remaining > 0,
     remaining,
     progress,
@@ -177,12 +180,15 @@ function deriveOne(
   };
 }
 
-/** Observation-window rule: drop leading timestamps where the deprecated series is 0. */
-function clipToObservation(series: CohortSeries[]): CohortSeries[] {
+/** Observation-window rule: drop leading timestamps where the deprecated series is 0, from the series and their coverage. */
+function clipToObservation(series: CohortSeries[], coverage: RepoCoverage): { series: CohortSeries[]; coverage: RepoCoverage } {
   const deprecated = series.find((s) => s.role === "deprecated") ?? series[0];
   const firstObserved = deprecated?.points.findIndex((p) => p.value > 0) ?? 0;
-  if (firstObserved <= 0) return series;
-  return series.map((s) => ({ ...s, points: s.points.slice(firstObserved) }));
+  if (firstObserved <= 0) return { series, coverage };
+  return {
+    series: series.map((s) => ({ ...s, points: s.points.slice(firstObserved) })),
+    coverage: { ...coverage, points: coverage.points.slice(firstObserved) },
+  };
 }
 
 function at(series: CohortSeries | undefined, back: number): number {

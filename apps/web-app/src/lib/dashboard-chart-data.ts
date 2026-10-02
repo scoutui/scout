@@ -1,4 +1,4 @@
-import type { CohortRole, CohortSelector, CohortSeries, DashboardView } from "@scoutui/web-shared";
+import type { CohortRole, CohortSelector, CohortSeries, DashboardView, RepoCoverage } from "@scoutui/web-shared";
 import { cohortKey } from "@scoutui/web-shared/client";
 import { CHART_ORDER, looksAlike, paletteToken } from "@/lib/chart-palette";
 import type { ChartConfig } from "@/components/ui/chart";
@@ -54,6 +54,19 @@ export function tooltipRowTimestamp(payload: ReadonlyArray<{ payload?: unknown }
   // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
   const ts = Number(row?.["ts"]);
   return Number.isFinite(ts) ? ts : null;
+}
+
+/** "3 of 4 repos": how many repos the point at `ts` covers, or null when the chart covers one repo. */
+export function repoCoverageAt(coverage: RepoCoverage, ts: number): string | null {
+  if (coverage.total <= 1) return null;
+  const point = coverage.points.find((p) => Date.parse(p.t) === ts);
+  return point ? `${point.repos} of ${coverage.total} repos` : null;
+}
+
+/** True when the latest point is a repo's first scan, so the change since the point before is that repo arriving. */
+export function repoAddedAtLatest(coverage: RepoCoverage): boolean {
+  const [previous, latest] = coverage.points.slice(-2);
+  return previous !== undefined && latest !== undefined && latest.repos > previous.repos;
 }
 
 /**

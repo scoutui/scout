@@ -150,6 +150,7 @@ describe("governance per scan on the scan-file identity", () => {
       kind: "table",
       points: [{ cohortKey: `component:${button.id}`, label: "Button · @example/ui", color: "", value: 2, componentCount: 1 }],
       series: [{ cohortKey: `component:${button.id}`, label: "Button · @example/ui", color: "", points: [{ t: t1, value: 2 }] }],
+      coverage: { total: 2, points: [{ t: t1, repos: 2 }] },
     });
   });
 });

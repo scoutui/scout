@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CohortRole, CohortSelector, CohortSeries } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, savedChartCohorts, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, repoCoverageAt, savedChartCohorts, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -197,6 +197,18 @@ describe("tooltipRowTimestamp", () => {
   it("returns null for an empty or missing payload", () => {
     expect(tooltipRowTimestamp([])).toBeNull();
     expect(tooltipRowTimestamp(undefined)).toBeNull();
+  });
+});
+
+describe("repoCoverageAt", () => {
+  const estate = { total: 4, points: [{ t: "2026-06-01T00:00:00Z", repos: 3 }, { t: "2026-09-01T00:00:00Z", repos: 4 }] };
+  const oneRepo = { total: 1, points: [{ t: "2026-06-01T00:00:00Z", repos: 1 }] };
+  it.each([
+    ["a point some of the repos have reached", estate, "2026-06-01T00:00:00Z", "3 of 4 repos"],
+    ["a point every repo has reached", estate, "2026-09-01T00:00:00Z", "4 of 4 repos"],
+    ["a chart of one repo", oneRepo, "2026-06-01T00:00:00Z", null],
+  ])("labels %s", (_, coverage, t, label) => {
+    expect(repoCoverageAt(coverage, Date.parse(t))).toBe(label);
   });
 });
 

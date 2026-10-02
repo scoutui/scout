@@ -104,6 +104,7 @@ describe("deriveChartResults", () => {
         { cohortKey: "tag:core", label: "core", color: "#123456", points: [{ t: DAY1, value: 3 }, { t: DAY2, value: 8 }] },
         { cohortKey: "local", label: "Local", color: "", points: [{ t: DAY1, value: 1 }, { t: DAY2, value: 2 }] },
       ],
+      coverage: { total: 3, points: [{ t: DAY1, repos: 1 }, { t: DAY2, repos: 3 }] },
     });
 
     const repoView = results.previews[repoDashboard.id]?.view;

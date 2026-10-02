@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useId, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import type { CohortSeries } from "@scoutui/web-shared";
+import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, dayTicks, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
+import { cohortChartConfig, dayTicks, repoCoverageAt, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
 import { distinctiveLabel, formatAxisCount, formatDay, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
@@ -23,11 +23,13 @@ const FACET_THRESHOLD = 5;
  */
 export function CohortTrendChart({
   series,
+  coverage,
   colors,
   metric,
   showLegend = true,
 }: {
   series: CohortSeries[];
+  coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
   metric: "count" | "share";
   showLegend?: boolean;
@@ -51,7 +53,7 @@ export function CohortTrendChart({
     );
   }
   if (series.length >= FACET_THRESHOLD) {
-    return <TrendFacets series={series} colors={colors} metric={metric} animate={animate} />;
+    return <TrendFacets series={series} coverage={coverage} colors={colors} metric={metric} animate={animate} />;
   }
   const config = cohortChartConfig(series);
   const lastTByKey = new Map(series.map((s) => [s.cohortKey, s.points[s.points.length - 1]?.t]));
@@ -115,10 +117,7 @@ export function CohortTrendChart({
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             content={
               <ChartTooltipContent
-                labelFormatter={(_, payload) => {
-                  const ts = tooltipRowTimestamp(payload);
-                  return ts === null ? "" : formatScanStamp(ts);
-                }}
+                labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
                 formatter={(value, name, item) => (
                   <>
                     <span
@@ -215,6 +214,19 @@ export function CohortTrendChart({
   );
 }
 
+/** A tooltip's heading: the scan time, and beneath it how many repos the point covers when the chart covers more than one. */
+export function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage): ReactNode {
+  const ts = tooltipRowTimestamp(payload);
+  if (ts === null) return "";
+  const repos = repoCoverageAt(coverage, ts);
+  return (
+    <>
+      {formatScanStamp(ts)}
+      {repos ? <span className="block font-normal text-muted-foreground">{repos}</span> : null}
+    </>
+  );
+}
+
 /**
  * Small multiples: one small area panel per cohort in a grid, each titled with its
  * series and drawn with its full wash. All panels share the y domain, stated in the
@@ -223,11 +235,13 @@ export function CohortTrendChart({
  */
 function TrendFacets({
   series,
+  coverage,
   colors,
   metric,
   animate,
 }: {
   series: CohortSeries[];
+  coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
   metric: "count" | "share";
   animate: boolean;
@@ -269,10 +283,7 @@ function TrendFacets({
                     cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
                     content={
                       <ChartTooltipContent
-                        labelFormatter={(_, payload) => {
-                          const ts = tooltipRowTimestamp(payload);
-                          return ts === null ? "" : formatScanStamp(ts);
-                        }}
+                        labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
                         formatter={(value) => (
                           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
                             <span className="font-mono text-muted-foreground">{distinctiveLabel(s.label)}</span>

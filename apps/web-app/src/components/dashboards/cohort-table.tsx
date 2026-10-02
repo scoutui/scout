@@ -1,20 +1,26 @@
 "use client";
-import type { CohortPoint, CohortSeries } from "@scoutui/web-shared";
+import type { CohortPoint, CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { formatMetric } from "@/lib/dashboard-format";
+import { repoAddedAtLatest } from "@/lib/dashboard-chart-data";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 type Key = "label" | "value" | "delta" | "componentCount";
 const NUMERIC: ReadonlySet<Key> = new Set(["value", "delta", "componentCount"]);
 
+/** True when a change reads as "0": none at all, or a share under 0.05 points. */
+function isNoChange(delta: number, metric: "count" | "share"): boolean {
+  return delta === 0 || (metric === "share" && Math.abs(delta) * 100 < 0.05);
+}
+
 /** Δ since the previous scan event, formatted per metric: counts as a signed number,
  *  shares as signed percentage points, "0" under 0.05 points. Null when there is no previous scan. */
 function formatDelta(delta: number | null, metric: "count" | "share"): string {
   if (delta === null) return "—";
   const abs = Math.abs(delta);
-  if (delta === 0 || (metric === "share" && abs * 100 < 0.05)) return "0";
+  if (isNoChange(delta, metric)) return "0";
   const sign = delta > 0 ? "+" : "−";
   return metric === "share" ? `${sign}${(abs * 100).toFixed(1)} pts` : `${sign}${abs.toLocaleString()}`;
 }
@@ -29,11 +35,13 @@ function formatDelta(delta: number | null, metric: "count" | "share"): string {
 export function CohortTable({
   points,
   series,
+  coverage,
   colors,
   metric,
 }: {
   points: CohortPoint[];
   series: CohortSeries[];
+  coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
   metric: "count" | "share";
 }) {
@@ -43,11 +51,13 @@ export function CohortTable({
     series.map((s) => [s.cohortKey, s.points.length >= 2 ? (s.points[s.points.length - 2]?.value ?? null) : null]),
   );
   const maxValue = Math.max(1, ...points.map((p) => p.value));
+  const repoAdded = repoAddedAtLatest(coverage);
   const withDelta = points.map((p) => {
     const prev = prevByKey.get(p.cohortKey) ?? null;
-    return { ...p, seriesColor: colors.get(p.cohortKey) ?? "", delta: prev === null ? null : p.value - prev };
+    const delta = prev === null ? null : p.value - prev;
+    return { ...p, seriesColor: colors.get(p.cohortKey) ?? "", delta, repoAdded: repoAdded && delta !== null && !isNoChange(delta, metric) };
   });
-  const rows = sortRows(withDelta, sortKey, sortDir, (p, k) => (k === "delta" ? (p.delta ?? Number.NEGATIVE_INFINITY) : p[k]));
+  const rows = sortRows(withDelta, sortKey, sortDir, (p, k) => (k === "delta" ? (p.repoAdded ? Number.NEGATIVE_INFINITY : (p.delta ?? Number.NEGATIVE_INFINITY)) : p[k]));
   const hasDelta = withDelta.some((p) => p.delta !== null);
 
   return (
@@ -113,7 +123,7 @@ export function CohortTable({
             <TableCell className="text-right tabular-nums">{formatMetric(p.value, metric)}</TableCell>
             {hasDelta ? (
               <TableCell className="text-right tabular-nums text-muted-foreground">
-                {formatDelta(p.delta, metric)}
+                {p.repoAdded ? "repo added" : formatDelta(p.delta, metric)}
               </TableCell>
             ) : null}
             <TableCell className="text-right tabular-nums">{p.componentCount.toLocaleString()}</TableCell>
