@@ -58,9 +58,9 @@ describe("chartColors", () => {
       { local: "var(--viz-local)", "tag:a": "var(--viz-primary)" },
     ],
     [
-      "a teal tag beside a successor line takes violet",
-      [pkg("x", "successor"), tag("a", "#009598")],
-      { "package:x": "var(--viz-primary)", "tag:a": "var(--viz-cat-2)" },
+      "a teal tag saved before a successor line takes violet",
+      [tag("a", "#009598"), pkg("x", "successor")],
+      { "tag:a": "var(--viz-cat-2)", "package:x": "var(--viz-primary)" },
     ],
     [
       "a package never takes a colour a tag holds, whatever its position",
