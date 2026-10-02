@@ -4365,6 +4365,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource/geologica@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource/geologica@npm:5.3.0"
+  checksum: 10c0/05e2f55acbba39d358d25d391a6126eb5f7c78da5fdd3493d07943c98978e3c9e43ff6e72527bf4ce6a4fbaa455430b5a5e1121632e3d774ee3a7dd1e6371119
+  languageName: node
+  linkType: hard
+
 "@fontsource/mona-sans@npm:^5.2.8":
   version: 5.2.8
   resolution: "@fontsource/mona-sans@npm:5.2.8"
@@ -5883,6 +5890,7 @@ __metadata:
     "@docusaurus/preset-classic": "npm:3.9.2"
     "@docusaurus/tsconfig": "npm:3.9.2"
     "@docusaurus/types": "npm:3.9.2"
+    "@fontsource/geologica": "npm:^5.3.0"
     "@fontsource/mona-sans": "npm:^5.2.8"
     "@fontsource/monaspace-neon": "npm:^5.2.5"
     "@mdx-js/react": "npm:^3.1.0"
