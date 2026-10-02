@@ -5,7 +5,7 @@ import { Logger, debugRequested } from "./util/log.js";
 import { readVersion } from "./util/version.js";
 import { readCliPackage } from "./scan/meta.js";
 import { topHelp, commandHelp } from "./cli/help.js";
-import { parseCommand, KNOWN_COMMANDS, unknownCommandMessage, CliError } from "./cli/parse.js";
+import { parseCommand, KNOWN_COMMANDS, INTERNAL_COMMIT_SCAN, unknownCommandMessage, CliError } from "./cli/parse.js";
 import { reportError } from "./cli/report.js";
 import { resolve } from "node:path";
 import { isInteractive } from "./util/interactive.js";
@@ -34,6 +34,11 @@ async function main(argv: string[], log: Logger): Promise<number> {
   if (cmd === undefined || cmd === "--help" || cmd === "-h") {
     process.stdout.write(topHelp());
     return 0;
+  }
+
+  if (cmd === INTERNAL_COMMIT_SCAN) {
+    const { runCommitScan } = await import("./backfill/scan-commit.js");
+    return await runCommitScan(rest, log);
   }
 
   if (!isKnownCommand(cmd)) {

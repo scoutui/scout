@@ -22,6 +22,9 @@ export class CliError extends Error {
 
 export const KNOWN_COMMANDS = ["scan", "init", "auth"] as const;
 
+/** The hidden command backfill runs in a child process to scan one commit. */
+export const INTERNAL_COMMIT_SCAN = "__backfill-scan";
+
 const SCAN_OPTIONS = {
   config: { type: "string" },
   quiet: { type: "boolean" },
