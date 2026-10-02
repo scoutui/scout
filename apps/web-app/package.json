@@ -58,7 +58,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "drizzle-kit": "0.31.10",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "jsdom": "25.0.1",
     "shadcn": "4.7.0",
     "tailwindcss": "4.3.0",
