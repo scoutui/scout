@@ -27,7 +27,7 @@ export type RecordStat = {
 
 export type RegistryStats = {
   stats: Record<string, RecordStat>;
-  /** Distinct repos in the estate. Below 2, the registry leaves out its coverage copy. */
+  /** Distinct repos in the estate. Below 2, the page leaves the repo out of its counts. */
   repoCount: number;
 };
 
