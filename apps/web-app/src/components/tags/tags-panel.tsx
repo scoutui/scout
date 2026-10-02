@@ -5,10 +5,11 @@ import type { Tag } from "@scoutui/web-shared";
 import { tagMatchesPackage } from "@scoutui/web-shared/client";
 import { packageCount, TAG_COLUMN_ID, TagEditor, TagSwatch, TagTableColumns } from "./tag-manager";
 import { Button } from "@/components/ui/button";
+import { tagColourName } from "@/lib/chart-palette";
 import { cn } from "@/lib/utils";
 
 const TH = "h-9 bg-muted px-3 text-left text-label text-muted-foreground";
-const CELL = "px-3 py-2.5 align-middle";
+const CELL = "px-3 py-2.5 align-middle max-md:py-0";
 
 const editButtonId = (tagId: string) => `edit-tag-${tagId}`;
 
@@ -80,9 +81,9 @@ export function TagsPanel({
         <p className="text-sm text-muted-foreground">No tags yet.</p>
       ) : (
         <div className="panel overflow-hidden">
-          <table aria-labelledby="tags-title" className="w-full table-fixed text-sm">
+          <table aria-labelledby="tags-title" className="w-full table-fixed text-sm max-md:block">
             <TagTableColumns />
-            <thead>
+            <thead className="max-md:sr-only">
               <tr className="border-b border-border">
                 <th scope="col" id={TAG_COLUMN_ID.name} className={TH}>
                   Name
@@ -90,15 +91,15 @@ export function TagsPanel({
                 <th scope="col" id={TAG_COLUMN_ID.packages} className={TH}>
                   Packages
                 </th>
-                <th scope="col" className={cn(TH, "px-0 md:px-3")}>
-                  <span className="sr-only md:not-sr-only">Matches</span>
+                <th scope="col" className={TH}>
+                  Matches
                 </th>
                 <th scope="col" className={TH}>
                   <span className="sr-only">Edit</span>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border max-md:block">
               {creating ? (
                 <TagEditor
                   allTags={allTags}
@@ -141,23 +142,20 @@ function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[
     <span className="text-muted-foreground">No scanned package</span>
   );
   return (
-    <tr className="transition-colors duration-150 ease-out hover:bg-secondary dark:hover:bg-accent motion-reduce:transition-none">
-      <td className={CELL}>
+    <tr className="transition-colors duration-150 ease-out hover:bg-secondary max-md:grid max-md:grid-cols-[minmax(0,1fr)_3rem] max-md:items-center max-md:gap-y-1 max-md:py-2.5 dark:hover:bg-accent motion-reduce:transition-none">
+      <td className={cn(CELL, "max-md:col-start-1 max-md:row-start-1")}>
         <span className="flex items-center gap-2">
-          <TagSwatch color={tag.color} />
+          <TagSwatch color={tag.color} label={tagColourName(tag.color)} />
           <span className="min-w-0 font-mono text-xs wrap-anywhere">{tag.value}</span>
         </span>
       </td>
-      <td className={CELL}>
+      <td className={cn(CELL, "max-md:col-span-full max-md:row-start-2")}>
         <TagPackages tag={tag} />
-        <span aria-hidden className="mt-1 block text-[0.8125rem] md:hidden">
-          {matchText}
-        </span>
       </td>
-      <td className={cn(CELL, "px-0 text-[0.8125rem] md:px-3")}>
-        <span className="sr-only md:not-sr-only">{matchText}</span>
+      <td className={cn(CELL, "text-[0.8125rem] max-md:col-span-full max-md:row-start-3 max-md:text-muted-foreground")}>
+        {matchText}
       </td>
-      <td className={cn(CELL, "text-right")}>
+      <td className={cn(CELL, "text-right max-md:col-start-2 max-md:row-start-1")}>
         <Button
           id={editButtonId(tag.id)}
           variant="ghost"

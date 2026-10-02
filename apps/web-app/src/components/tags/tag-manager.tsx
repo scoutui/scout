@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, useTransition } from "react";
+import { Fragment, useRef, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
@@ -51,10 +51,10 @@ export const TAG_COLUMN_ID = {
 /** The tag table's columns. From md up, the form row lays its fields out on the same widths. */
 export function TagTableColumns() {
   return (
-    <colgroup>
-      <col className="w-28 md:w-40" />
+    <colgroup className="max-md:hidden">
+      <col className="w-40" />
       <col />
-      <col className="w-0 md:w-44" />
+      <col className="w-44" />
       <col className="w-12" />
     </colgroup>
   );
@@ -62,10 +62,13 @@ export function TagTableColumns() {
 
 const FORM_GRID = "md:grid md:grid-cols-[10rem_minmax(0,1fr)_11rem_3rem]";
 
-export function TagSwatch({ color, className }: { color: string; className?: string }) {
+export function TagSwatch({ color, label, className }: { color: string; label?: string; className?: string }) {
   return (
     <span
-      aria-hidden
+      role={label ? "img" : undefined}
+      aria-label={label}
+      title={label}
+      aria-hidden={label ? undefined : true}
       className={cn("inline-block size-2.5 shrink-0 rounded-full", className)}
       style={{ backgroundColor: paletteToken(color) }}
     />
@@ -102,6 +105,7 @@ export function TagEditor({
   const rule = splitPatterns(packages);
   const draft: Tag = { id: tag?.id ?? "", value: name.trim(), category: "library", color, rule };
   const matches = packageNames?.filter((n) => tagMatchesPackage(draft, n));
+  const shown = matches?.slice(0, 4) ?? [];
 
   function submit() {
     const value = name.trim();
@@ -134,8 +138,8 @@ export function TagEditor({
   }
 
   return (
-    <tr>
-      <td colSpan={4} className="p-0">
+    <tr className="max-md:block">
+      <td colSpan={4} className="p-0 max-md:block">
         <div className={cn("flex flex-col gap-4 p-3 md:items-start md:gap-x-0 md:gap-y-3 md:px-0", FORM_GRID)}>
           <div className={FIELD}>
             <label htmlFor="tag-name" className={SMALL_LABEL}>
@@ -209,11 +213,16 @@ export function TagEditor({
                 "Matches no scanned package"
               ) : (
                 <>
-                  {`Matches ${packageCount(matches.length)}: `}
-                  <span className="font-mono text-xs wrap-anywhere text-muted-foreground">
-                    {matches.slice(0, 4).join(", ")}
-                  </span>
-                  {matches.length > 4 ? ", …" : null}
+                  {`Matches ${packageCount(matches.length)}:`}
+                  {shown.map((match, i) => (
+                    <Fragment key={match}>
+                      {" "}
+                      <span className="inline-block max-w-full font-mono text-xs wrap-anywhere text-muted-foreground">
+                        {match}
+                        {i < shown.length - 1 ? "," : matches.length > shown.length ? ", …" : null}
+                      </span>
+                    </Fragment>
+                  ))}
                 </>
               )}
             </p>

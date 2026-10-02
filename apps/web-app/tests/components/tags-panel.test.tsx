@@ -31,19 +31,25 @@ describe("TagsPanel", () => {
     expect(matches).toHaveAttribute("title", "@vben/icons, @vben/layouts, legacy-kit");
   });
 
-  it("puts each tag's swatch before its name, with no Colour column", () => {
-    render(<TagsPanel allTags={[vben]} packageNames={packageNames} />);
+  it("puts each tag's swatch before its name, named by its colour, with no Colour column", () => {
+    const custom: Tag = { ...vben, id: "t2", value: "house", color: "#123456", rule: { glob: [], exact: ["house-kit"] } };
+    render(<TagsPanel allTags={[vben, custom]} packageNames={packageNames} />);
     expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
       "Name",
       "Packages",
       "Matches",
       "Edit",
     ]);
-    const [nameCell] = within(screen.getByRole("row", { name: /vben/ })).getAllByRole("cell");
-    const swatch = nameCell?.querySelector("[aria-hidden]");
-    expect(swatch).not.toBeNull();
-    const name = within(nameCell as HTMLElement).getByText("vben");
-    expect(swatch?.compareDocumentPosition(name)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    for (const [tagName, colour] of [
+      ["vben", "Grey"],
+      ["house", "#123456"],
+    ] as const) {
+      const [nameCell] = within(screen.getByRole("row", { name: new RegExp(tagName) })).getAllByRole("cell");
+      const swatch = within(nameCell as HTMLElement).getByRole("img", { name: colour });
+      expect(swatch).toHaveAttribute("title", colour);
+      const name = within(nameCell as HTMLElement).getByText(tagName);
+      expect(swatch.compareDocumentPosition(name)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    }
   });
 
   it("shows four of six or more packages and toggles the rest", () => {
