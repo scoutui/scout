@@ -1,11 +1,11 @@
 import type { CohortPoint, CohortSelector, CohortSeries, DashboardConfig, GovernanceRecord, Tag } from "./dto.js";
 import type { DigestScan } from "./digest.js";
-import { cohortKey, projectCohortSnapshot, projectCohortSeries } from "./cohorts.js";
+import { cohortKey, projectCohortSnapshot, projectCohortSeries, projectRepoCoverage, type RepoCoverage } from "./cohorts.js";
 
 export type DashboardView =
   | { kind: "snapshot"; points: CohortPoint[] }
-  | { kind: "series"; series: CohortSeries[] }
-  | { kind: "table"; points: CohortPoint[]; series: CohortSeries[] };
+  | { kind: "series"; series: CohortSeries[]; coverage: RepoCoverage }
+  | { kind: "table"; points: CohortPoint[]; series: CohortSeries[]; coverage: RepoCoverage };
 
 // Chart kinds that read history, not just the latest scan per repo. `table` joins
 // the snapshot with the series so it can show Δ since the previous scan.
@@ -21,17 +21,18 @@ export function isSeriesChart(config: DashboardConfig): boolean {
  */
 export function renderDashboard(config: DashboardConfig, scans: DigestScan[], tags: Tag[], governance: GovernanceRecord[] = [], names: DigestScan[] = []): DashboardView {
   if (config.chartType === "trend") {
-    return { kind: "series", series: projectCohortSeries(scans, tags, config.cohorts, config.metric, governance, names) };
+    return { kind: "series", series: projectCohortSeries(scans, tags, config.cohorts, config.metric, governance, names), coverage: projectRepoCoverage(scans) };
   }
   if (config.chartType === "stacked-share") {
     // Always shares, whatever the config's metric.
-    return { kind: "series", series: projectCohortSeries(scans, tags, config.cohorts, "share", governance, names) };
+    return { kind: "series", series: projectCohortSeries(scans, tags, config.cohorts, "share", governance, names), coverage: projectRepoCoverage(scans) };
   }
   if (config.chartType === "table") {
     return {
       kind: "table",
       points: projectCohortSnapshot(scans, tags, config.cohorts, config.metric, governance, names),
       series: projectCohortSeries(scans, tags, config.cohorts, config.metric, governance, names),
+      coverage: projectRepoCoverage(scans),
     };
   }
   return { kind: "snapshot", points: projectCohortSnapshot(scans, tags, config.cohorts, config.metric, governance, names) };

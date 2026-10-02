@@ -23,6 +23,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     toLabel: "new-ds/Button",
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],
+    coverage: { total: 1, points: [] },
     active: true,
     remaining: 5,
     progress: 0.5,
@@ -30,6 +31,26 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     ...over,
   };
 }
+
+describe("TrackingSection change since the last scan", () => {
+  it.each(["migration", "retirement"] as const)("a %s row reads 'repo added' instead of the change when the latest scan is a repo's first", kind => {
+    const joined = { total: 2, points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, { t: "2026-10-01T00:00:00Z", repos: 2 }] };
+    render(
+      <TrackingSection
+        kind={kind}
+        surface="estate"
+        entries={[
+          entry({ id: `${kind}:joined`, kind, coverage: joined }),
+          entry({ id: `${kind}:joined-unchanged`, kind, coverage: joined, delta: 0 }),
+          entry({ id: `${kind}:steady`, kind }),
+        ]}
+      />,
+    );
+    expect(screen.getAllByText("repo added")).toHaveLength(1);
+    expect(screen.getByText("±0 since last scan")).toBeInTheDocument();
+    expect(screen.getAllByText(/^(up|down) from .* last scan$/)).toHaveLength(1);
+  });
+});
 
 describe("TrackingSection complete ledger", () => {
   it("renders active rows plus a 'Show N complete' band; archived row reads plain 'complete'", () => {

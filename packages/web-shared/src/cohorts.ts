@@ -203,6 +203,29 @@ export function projectCohortSeries(
   );
 }
 
+/** How many repos have a scan at each of a series' timestamps, out of the `total` repos in scope. */
+export type RepoCoverage = { total: number; points: Array<{ t: string; repos: number }> };
+
+/** The timestamps a series projection draws a point at: each scan's `scanOrderTime`, oldest first. */
+function seriesTimestamps(artifacts: DigestScan[]): string[] {
+  return [...new Set(artifacts.map((a) => scanOrderTime(a.meta)))].sort((x, y) => x.localeCompare(y));
+}
+
+/** The repo coverage behind `projectSeries` over the same scans: a repo counts from its first scan on. */
+export function projectRepoCoverage(artifacts: DigestScan[]): RepoCoverage {
+  const firstByRepo = new Map<string, string>();
+  for (const a of artifacts) {
+    const t = scanOrderTime(a.meta);
+    const first = firstByRepo.get(a.meta.repo.id);
+    if (first === undefined || t.localeCompare(first) < 0) firstByRepo.set(a.meta.repo.id, t);
+  }
+  const firsts = [...firstByRepo.values()];
+  return {
+    total: firsts.length,
+    points: seriesTimestamps(artifacts).map((t) => ({ t, repos: firsts.filter((first) => first.localeCompare(t) <= 0).length })),
+  };
+}
+
 /** A series cohort: its display fields, and how many occurrences it has in one scan. */
 export type SeriesCohort = { key: string; label: string; color: string; role?: CohortRole; occurrences: (scan: DigestScan) => number };
 
@@ -219,7 +242,7 @@ export function projectSeries(artifacts: DigestScan[], cohorts: SeriesCohort[], 
   }
   for (const arr of byRepo.values()) arr.sort((x, y) => newestScanFirst(y.meta, x.meta));
 
-  const timestamps = [...new Set(artifacts.map((a) => scanOrderTime(a.meta)))].sort((x, y) => x.localeCompare(y));
+  const timestamps = seriesTimestamps(artifacts);
 
   // Consecutive timestamps share nearly the same as-of set (advancing one changes
   // at most the repo that produced it), so memoise per (scan, cohort index): within

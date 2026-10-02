@@ -15,10 +15,12 @@ const series: CohortSeries[] = [
   { ...newButton, points: [{ t: "2026-09-01T00:00:00Z", value: 60 }, { t: "2026-09-02T00:00:00Z", value: 70 }] },
 ];
 
+const coverage = { total: 1, points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, { t: "2026-09-02T00:00:00Z", repos: 1 }] };
+
 const charts: Array<[DashboardConfig["chartType"], DashboardView]> = [
-  ["trend", { kind: "series", series }],
-  ["stacked-share", { kind: "series", series }],
-  ["table", { kind: "table", points, series }],
+  ["trend", { kind: "series", series, coverage }],
+  ["stacked-share", { kind: "series", series, coverage }],
+  ["table", { kind: "table", points, series, coverage }],
   ["bars", { kind: "snapshot", points }],
 ];
 

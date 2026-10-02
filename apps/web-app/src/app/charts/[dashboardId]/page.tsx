@@ -96,7 +96,7 @@ export default async function DashboardViewPage({
       createdAt: "1970-01-01T00:00:00.000Z",
       updatedAt: "1970-01-01T00:00:00.000Z",
     };
-    view = { kind: "series", series: entry.series };
+    view = { kind: "series", series: entry.series, coverage: entry.coverage };
   } else {
     const { digests, names, tags, governance } = page.value;
     missingRepo = page.value.missingRepo;

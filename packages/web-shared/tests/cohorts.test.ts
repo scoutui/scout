@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Component, TagAttribution } from "@scoutui/scan-format";
 import type { Tag, GovernanceRecord } from "../src/dto.js";
-import { resolveCohort, projectCohortSnapshot, projectCohortSeries } from "../src/cohorts.js";
+import { resolveCohort, projectCohortSnapshot, projectCohortSeries, projectRepoCoverage } from "../src/cohorts.js";
 import { artifact, component, packageExport, received, repoDeclaration, resolvedAt, tag } from "./helpers/builders.js";
 
 /** One scan of `repoId` in which each component has the given number of occurrences. */
@@ -120,6 +120,11 @@ describe("projectCohortSeries", () => {
     const web = series.find((s) => s.cohortKey === "tag:web")!;
     // t1: only r1a (4). t2: r1b (10) + r2a (3) = 13.
     expect(web.points).toEqual([{ t: t1, value: 4 }, { t: t2, value: 13 }]);
+  });
+
+  it("counts each repo from its first scan, at the series' timestamps", () => {
+    // t1: only r1 has a scan. t2: r2's first scan joins it.
+    expect(projectRepoCoverage([r1a, r1b, r2a])).toEqual({ total: 2, points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }] });
   });
 
   it("share divides by the cohort total at each time-point", () => {

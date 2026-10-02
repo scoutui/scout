@@ -20,6 +20,8 @@ Two places read more than the latest scan:
 - A repo page opened on an older scan shows that scan.
 - Charts over time, including the charts on a repo page's **Adoption** tab, read the whole history. Each point in time uses every repo's most recent ready scan as of that moment.
 
+A repo joins a chart over time at its first scan, so a line can jump when a repo is scanned for the first time, though no code changed. A chart across several repos says in its tooltip how many of them each point covers, for example **3 of 4 repos**. When the latest change comes from a repo's first scan, a table chart and the migration and retirement rows read **repo added** instead of the change.
+
 ## Components, occurrences and files
 
 These three counts answer different questions about the same code:
