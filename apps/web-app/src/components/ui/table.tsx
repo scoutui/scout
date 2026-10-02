@@ -87,7 +87,6 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        // Sort buttons keep the header's capitals.
         "h-9 px-3 text-left align-middle text-label whitespace-nowrap text-muted-foreground [&_button]:uppercase [&:has([role=checkbox])]:pr-0",
         className
       )}
