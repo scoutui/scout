@@ -9,7 +9,7 @@ function shareTable(previous: number, latest: number) {
   const series: CohortSeries[] = [
     { cohortKey: "local", label: "Local", color: "", points: [{ t: "2026-09-01T00:00:00Z", value: previous }, { t: "2026-09-02T00:00:00Z", value: latest }] },
   ];
-  return render(<CohortTable points={points} series={series} metric="share" />);
+  return render(<CohortTable points={points} series={series} colors={new Map()} metric="share" />);
 }
 
 describe("CohortTable share change", () => {

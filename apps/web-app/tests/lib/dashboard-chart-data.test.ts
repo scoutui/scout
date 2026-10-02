@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CohortRole, CohortSelector, CohortSeries } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dashSwatchSegments, dayTicks, expandRowShares, chartColors, cohortColor, savedChartCohorts, seriesDashes, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
-import { CHART_SERIES_PALETTE, looksAlike, paletteToken } from "@/lib/chart-palette";
+import { seriesToRows, cohortChartConfig, dashSwatchSegments, dayTicks, expandRowShares, chartColors, savedChartCohorts, seriesDashes, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
   { cohortKey: "tag:web", label: "web", color: "#7c3aed", points: [{ t: "2026-01-01", value: 4 }, { t: "2026-01-02", value: 10 }] },
@@ -23,27 +23,6 @@ describe("cohortChartConfig", () => {
     expect(cfg["tag:web"]).toEqual({ label: "web" });
     // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
     expect(cfg["local"]).toEqual({ label: "local" });
-  });
-});
-
-describe("cohortColor", () => {
-  it("role wins over everything: deprecated → red token, successor → teal token", () => {
-    expect(cohortColor({ cohortKey: "component:c1", color: "#7c3aed", role: "deprecated" }, 0)).toBe("var(--viz-deprecated)");
-    expect(cohortColor({ cohortKey: "package:@x/next", color: "#7c3aed", role: "successor" }, 0)).toBe("var(--viz-primary)");
-  });
-  it("authored palette hexes resolve to their theme token; custom hexes stay verbatim", () => {
-    expect(cohortColor({ cohortKey: "tag:icons", color: "#009598" }, 0)).toBe("var(--viz-primary)");
-    expect(cohortColor({ cohortKey: "tag:primitives", color: "#9b6bce" }, 0)).toBe("var(--viz-cat-2)");
-    expect(cohortColor({ cohortKey: "tag:web", color: "#7c3aed" }, 0)).toBe("#7c3aed");
-  });
-  it("gives the local cohort its own lighter grey, not the grey tag colour", () => {
-    expect(cohortColor({ cohortKey: "local", color: "" }, 2)).toBe("var(--viz-local)");
-  });
-  it("rotates the identity hues for uncoloured cohorts, never the grey slot", () => {
-    expect(cohortColor({ cohortKey: "package:@x/y", color: "" }, 0)).toBe(CHART_SERIES_PALETTE[0]);
-    expect(cohortColor({ cohortKey: "package:@a/b", color: "" }, 2)).toBe(CHART_SERIES_PALETTE[2]);
-    expect(cohortColor({ cohortKey: "package:@c/d", color: "" }, 3)).toBe(CHART_SERIES_PALETTE[0]);
-    expect(cohortColor({ cohortKey: "package:@e/f", color: "" }, 4)).toBe(CHART_SERIES_PALETTE[1]);
   });
 });
 
@@ -118,19 +97,33 @@ describe("chartColors", () => {
     expect(drawn.slice(1).map((color, i) => looksAlike(drawn[i] ?? "", color))).not.toContain(true);
   });
 
-  it("keeps the turn of a saved cohort the view doesn't draw", () => {
+  it("keeps the turn of a saved cohort the view doesn't draw, and the colour and role of each one it does", () => {
     const saved: CohortSelector[] = [
       { kind: "package", packageName: "x" },
       { kind: "component", componentId: "c" },
       { kind: "package", packageName: "y" },
+      { kind: "tag", tagId: "t" },
     ];
-    const colorsOfXY = (drawn: ChartCohort[]) => {
+    const colorsOf = (drawn: ChartCohort[]) => {
       const colors = chartColors(savedChartCohorts(saved, drawn));
-      return [colors.get("package:x"), colors.get("package:y")];
+      return [colors.get("package:x"), colors.get("package:y"), colors.get("tag:t")];
     };
-    const expected = ["var(--viz-primary)", "var(--viz-cat-3)"];
-    expect(colorsOfXY([pkg("x"), comp("c"), pkg("y")])).toEqual(expected);
-    expect(colorsOfXY([pkg("x"), pkg("y")])).toEqual(expected);
+    const expected = ["var(--viz-deprecated)", "var(--viz-cat-2)", "#7c3aed"];
+    expect(colorsOf([pkg("x", "deprecated"), comp("c"), pkg("y"), tag("t", "#7c3aed")])).toEqual(expected);
+    expect(colorsOf([pkg("x", "deprecated"), pkg("y"), tag("t", "#7c3aed")])).toEqual(expected);
+  });
+
+  it("colours a drawn cohort that no saved selector names", () => {
+    const saved: CohortSelector[] = [
+      { kind: "component", componentId: "a" },
+      { kind: "package", packageName: "x", role: "successor" },
+    ];
+    const drawn: ChartCohort[] = [
+      { cohortKey: "deprecated:r", color: "", role: "deprecated" },
+      { cohortKey: "successor:r", color: "", role: "successor" },
+    ];
+    const colors = chartColors(savedChartCohorts(saved, drawn));
+    expect([colors.get("deprecated:r"), colors.get("successor:r")]).toEqual(["var(--viz-deprecated)", "var(--viz-primary)"]);
   });
 });
 

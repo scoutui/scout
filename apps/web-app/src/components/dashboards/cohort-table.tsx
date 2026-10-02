@@ -2,7 +2,6 @@
 import type { CohortPoint, CohortSeries } from "@scoutui/web-shared";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
-import { cohortColor } from "@/lib/dashboard-chart-data";
 import { formatMetric } from "@/lib/dashboard-format";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
@@ -30,10 +29,12 @@ function formatDelta(delta: number | null, metric: "count" | "share"): string {
 export function CohortTable({
   points,
   series,
+  colors,
   metric,
 }: {
   points: CohortPoint[];
   series: CohortSeries[];
+  colors: ReadonlyMap<string, string>;
   metric: "count" | "share";
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<Key>("value", "desc", NUMERIC);
@@ -42,9 +43,9 @@ export function CohortTable({
     series.map((s) => [s.cohortKey, s.points.length >= 2 ? (s.points[s.points.length - 2]?.value ?? null) : null]),
   );
   const maxValue = Math.max(1, ...points.map((p) => p.value));
-  const withDelta = points.map((p, i) => {
+  const withDelta = points.map((p) => {
     const prev = prevByKey.get(p.cohortKey) ?? null;
-    return { ...p, seriesColor: cohortColor(p, i), delta: prev === null ? null : p.value - prev };
+    return { ...p, seriesColor: colors.get(p.cohortKey) ?? "", delta: prev === null ? null : p.value - prev };
   });
   const rows = sortRows(withDelta, sortKey, sortDir, (p, k) => (k === "delta" ? (p.delta ?? Number.NEGATIVE_INFINITY) : p[k]));
   const hasDelta = withDelta.some((p) => p.delta !== null);

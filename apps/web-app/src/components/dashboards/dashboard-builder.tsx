@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleX } from "lucide-react";
-import type { ChartType, CohortRole, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
-import { unknownCohortKeys } from "@scoutui/web-shared/client";
+import type { ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
+import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { seriesCanOverlap } from "@/lib/cohort-overlap";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
-import { cohortColor } from "@/lib/dashboard-chart-data";
+import { type ChartCohort, chartColors, drawnChartCohorts } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
 import { SeriesPicker, type PickableComponent } from "@/components/dashboards/series-picker";
 import { SeriesLegend, type LegendSeries } from "@/components/dashboards/series-legend";
@@ -93,19 +93,13 @@ function cohortLabel(
   }
 }
 
-type ProjectedCohort = { cohortKey: string; label: string; color: string; role?: CohortRole | undefined };
-
-function projectedCohorts(view: DashboardView): ProjectedCohort[] {
-  return view.kind === "snapshot" || view.kind === "table" ? view.points : view.series;
-}
-
-/** The view's `nth` projected cohort with a key, and its index in the view: it carries the
- *  server-stamped label, role and colour the client can't derive (it has no governance). */
-function previewCohort(view: DashboardView, cohortKey: string, nth: number): { cohort: ProjectedCohort; index: number } | undefined {
+/** The view's `nth` drawn cohort with a key: it carries the server-stamped label, role
+ *  and colour the client can't derive (it has no governance). */
+function previewCohort(view: DashboardView, key: string, nth: number): (ChartCohort & { label: string }) | undefined {
   let seen = 0;
-  for (const [index, cohort] of projectedCohorts(view).entries()) {
-    if (cohort.cohortKey !== cohortKey) continue;
-    if (seen === nth) return { cohort, index };
+  for (const cohort of drawnChartCohorts(view)) {
+    if (cohort.cohortKey !== key) continue;
+    if (seen === nth) return cohort;
     seen += 1;
   }
   return undefined;
@@ -113,16 +107,7 @@ function previewCohort(view: DashboardView, cohortKey: string, nth: number): { c
 
 /** Identity used to drop duplicate adds of the exact same selector. Also used as a stable React key. */
 export function selectorKey(sel: CohortSelector): string {
-  switch (sel.kind) {
-    case "local":
-      return "local";
-    case "package":
-      return `package:${sel.packageName}`;
-    case "component":
-      return `component:${sel.componentId}`;
-    case "tag":
-      return `tag:${sel.tagId}`;
-  }
+  return cohortKey(sel);
 }
 
 export function DashboardBuilder({
@@ -227,24 +212,32 @@ export function DashboardBuilder({
     [scopeRepoId, cohorts, chartType, effectiveMetric],
   );
 
-  // A series in the last landed view takes its label and colour from there. An unknown
-  // series reads by any name the lists or the saved chart hold, and takes no colour. Any
-  // other series takes the colour of the position it will have in the view.
+  // A series in the last landed view takes its label, colour and role from there; any
+  // other tag series brings its tag's colour. `chartColors` colours them all in saved
+  // order, as the chart does. An unknown series reads by any name the lists or the
+  // saved chart hold, and shows no colour.
   const legend = useMemo<LegendSeries[]>(() => {
     const seen = new Map<string, number>();
-    let position = 0;
-    return cohorts.map((sel) => {
+    const rows = cohorts.map((sel) => {
       const key = selectorKey(sel);
       const nth = seen.get(key) ?? 0;
       seen.set(key, nth + 1);
-      const unknown = landed?.unknown.has(key) ?? false;
       const drawn = landed ? previewCohort(landed.view, key, nth) : undefined;
-      const color = drawn
-        ? cohortColor(drawn.cohort, drawn.index)
-        : unknown ? "" : cohortColor({ cohortKey: key, color: sel.kind === "tag" ? (libraryTags.find((t) => t.id === sel.tagId)?.color ?? "") : "" }, position);
-      if (!unknown) position += 1;
+      const cohort: ChartCohort = drawn ?? {
+        cohortKey: key,
+        color: sel.kind === "tag" ? (libraryTags.find((t) => t.id === sel.tagId)?.color ?? "") : "",
+      };
+      return { sel, key, drawn, cohort, unknown: landed?.unknown.has(key) ?? false };
+    });
+    const colors = chartColors(rows.map((r) => r.cohort));
+    return rows.map(({ sel, key, drawn, unknown }) => {
       const saved = unknown && sel.kind === "component" ? sel.label : undefined;
-      return { selector: sel, label: drawn?.cohort.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "", color, unknown };
+      return {
+        selector: sel,
+        label: drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "",
+        color: unknown ? "" : (colors.get(key) ?? ""),
+        unknown,
+      };
     });
   }, [cohorts, components, libraryTags, landed]);
 

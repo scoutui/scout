@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, cohortColor, dayTicks, expandRowShares, seriesToRows, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
+import { cohortChartConfig, dayTicks, expandRowShares, seriesToRows, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
 import { formatDayTick, formatPct, formatScanStamp } from "@/lib/dashboard-format";
 import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
 
@@ -15,7 +15,15 @@ import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
  * timestamp itself rather than using Recharts' `stackOffset="expand"` (see its doc),
  * so overlapping series that double-count still fill exactly 100%.
  */
-export function CohortShareOverTime({ series, showLegend = true }: { series: CohortSeries[]; showLegend?: boolean }) {
+export function CohortShareOverTime({
+  series,
+  colors,
+  showLegend = true,
+}: {
+  series: CohortSeries[];
+  colors: ReadonlyMap<string, string>;
+  showLegend?: boolean;
+}) {
   const [animate, setAnimate] = useState(false);
   useEffect(() => {
     setAnimate(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -29,22 +37,20 @@ export function CohortShareOverTime({ series, showLegend = true }: { series: Coh
   );
   const ticks = useMemo(() => dayTicks(rows), [rows]);
 
-  const colors = series.map((s, i) => cohortColor(s, i));
-  const latest: ShareSegment[] = series.map((s, i) => ({
+  const latest: ShareSegment[] = series.map((s) => ({
     cohortKey: s.cohortKey,
     label: s.label,
-    color: colors[i] ?? "",
     value: s.points[s.points.length - 1]?.value ?? 0,
   }));
 
   if (rows.length < 2) {
-    return <CohortShareBar points={latest} />;
+    return <CohortShareBar points={latest} colors={colors} />;
   }
   const config = cohortChartConfig(series);
 
   return (
     <div className="space-y-4">
-      <CohortShareBar points={latest} hovered={hovered} {...(showLegend ? { onHover: setHovered } : {})} />
+      <CohortShareBar points={latest} colors={colors} hovered={hovered} {...(showLegend ? { onHover: setHovered } : {})} />
 
       <ChartContainer config={config} className="h-[240px] w-full">
         <AreaChart data={shareRows} margin={{ left: 8, right: 8, top: 6, bottom: 4 }}>
@@ -92,8 +98,8 @@ export function CohortShareOverTime({ series, showLegend = true }: { series: Coh
               />
             }
           />
-          {series.map((s, i) => {
-            const color = colors[i] ?? "";
+          {series.map((s) => {
+            const color = colors.get(s.cohortKey) ?? "";
             const dimmed = hovered !== null && hovered !== s.cohortKey;
             return (
               <Area

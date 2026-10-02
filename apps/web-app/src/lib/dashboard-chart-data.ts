@@ -1,6 +1,6 @@
 import type { CohortRole, CohortSelector, CohortSeries, DashboardView } from "@scoutui/web-shared";
 import { cohortKey } from "@scoutui/web-shared/client";
-import { CHART_ORDER, identityColor, looksAlike, paletteToken } from "@/lib/chart-palette";
+import { CHART_ORDER, looksAlike, paletteToken } from "@/lib/chart-palette";
 import type { ChartConfig } from "@/components/ui/chart";
 
 /** True when a view has no series to draw. */
@@ -79,24 +79,10 @@ export function expandRowShares(
 }
 
 /**
- * The literal stroke and fill colour for a cohort. Recharts gets the colour
- * directly, not through `var(--color-<key>)`, because cohort keys contain `:` and
- * `/`, which break generated CSS custom properties.
- *
- * A governance role (from web-shared) wins, then an authored tag colour, then
- * a lighter grey for `local` (the off-system cohort), then the identity
- * rotation. Green is kept for the progress readout and never colours a series:
- * red next to green is the classic colour-blindness trap.
+ * ChartConfig keyed by cohortKey, labels only. Charts set each stroke and fill to
+ * its `chartColors` value directly, not through `var(--color-<key>)`, because
+ * cohort keys contain `:` and `/`, which break generated CSS custom properties.
  */
-export function cohortColor(cohort: { cohortKey: string; color: string; role?: CohortRole | undefined }, index: number): string {
-  if (cohort.role === "deprecated") return "var(--viz-deprecated)";
-  if (cohort.role === "successor") return "var(--viz-primary)";
-  if (cohort.color) return paletteToken(cohort.color);
-  if (cohort.cohortKey === "local") return "var(--viz-local)";
-  return identityColor(index);
-}
-
-/** ChartConfig keyed by cohortKey, labels only. Colour is applied to stroke/fill via cohortColor. */
 export function cohortChartConfig(cohorts: Array<{ cohortKey: string; label: string }>): ChartConfig {
   return Object.fromEntries(cohorts.map((c) => [c.cohortKey, { label: c.label }]));
 }
@@ -104,20 +90,24 @@ export function cohortChartConfig(cohorts: Array<{ cohortKey: string; label: str
 export type ChartCohort = { cohortKey: string; color: string; role?: CohortRole | undefined };
 
 /** The cohorts a view draws, in the view's order. */
-export function drawnChartCohorts(view: DashboardView): ChartCohort[] {
-  return view.kind === "snapshot" || view.kind === "table" ? view.points : view.series;
+export function drawnChartCohorts(view: DashboardView): Array<ChartCohort & { label: string }> {
+  return view.kind === "series" ? view.series : view.points;
 }
 
 /**
  * A chart's saved cohorts in saved order, each with the colour and role of its
  * drawn cohort. A saved cohort the view doesn't draw keeps its place with no colour.
+ * Drawn cohorts that no selector names, such as a governance chart's deprecated
+ * and successor series, follow in drawn order.
  */
 export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohort[]): ChartCohort[] {
   const byKey = new Map(drawn.map((c) => [c.cohortKey, c]));
-  return selectors.map((selector) => {
+  const saved = selectors.map((selector) => {
     const key = cohortKey(selector);
     return byKey.get(key) ?? { cohortKey: key, color: "" };
   });
+  const named = new Set(saved.map((c) => c.cohortKey));
+  return [...saved, ...drawn.filter((c) => !named.has(c.cohortKey))];
 }
 
 /**
