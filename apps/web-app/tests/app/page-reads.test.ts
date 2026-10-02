@@ -366,7 +366,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const [header, ...rows] = renderToStaticMarkup(await history.default(repoParams)).split("<tr").slice(1);
       expect(header).toMatch(/Committed.*Branch.*Commit.*Scanned<.*Scanned by<.*Scan ID/);
       const uploaders = rows.map(row => row.split("<td")[5] ?? "");
-      expect(uploaders.map(cell => [cell.match(/title="([^"]+)"/)?.[1] ?? null, cell.replace(/^[^>]*>/, "").replace(/<[^>]+>/g, "")])).toEqual([
+      expect(uploaders.map(cell => [cell.match(/title="([^"]+)"/)?.[1] ?? null, [...cell.matchAll(/>([^<]+)</g)].map(match => match[1]).join("")])).toEqual([
         ["priya@example.com", "Priya Raman"],
         ["tomas@example.com", "tomas@example.com"],
         [null, "—"],

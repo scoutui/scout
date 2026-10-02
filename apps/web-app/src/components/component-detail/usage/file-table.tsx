@@ -4,6 +4,7 @@ import { Fragment, useLayoutEffect, useRef } from "react";
 import type { OccurrencePropChip } from "@scoutui/web-shared";
 import { callJsx, cellTitle, plural, type UsageCallLine, type UsageCell, type UsageFile, type UsageLineCell, type UsageOwner, type UsageSection, type UsageSortKey, type UsageValueColumn, type UsageView } from "@scoutui/web-shared/client";
 import { ariaSort, SortButton } from "@/components/ui/sortable";
+import { TableHead } from "@/components/ui/table";
 import { type SourceRef, sourceFileUrl } from "@/lib/source-link";
 import { pushQuery, useHrefWith, useKeepPlace, useKept } from "@/lib/usage-url";
 import { cn } from "@/lib/utils";
@@ -95,9 +96,9 @@ export function FileTable({
               <ChevronsUpDown aria-hidden className="size-3.5" />
             </button>
           </th>
-          <th scope="col" aria-sort={ariaSort("file", sortKey, dir)} className={cn(th, "text-label", SORT_TH)} style={headTop}>
+          <TableHead scope="col" aria-sort={ariaSort("file", sortKey, dir)} className={cn(th, SORT_TH)} style={headTop}>
             <SortButton label="File" sortKey="file" current={sortKey} dir={dir} onClick={onSort} />
-          </th>
+          </TableHead>
           {columns.map((c) => {
             const key: UsageSortKey = `prop:${c.prop}`;
             return (
@@ -106,9 +107,9 @@ export function FileTable({
               </th>
             );
           })}
-          <th scope="col" aria-sort={ariaSort("calls", sortKey, dir)} className={cn(th, "pl-3 pr-4 text-right text-label", SORT_TH)} style={headTop}>
+          <TableHead scope="col" aria-sort={ariaSort("calls", sortKey, dir)} className={cn(th, "pl-3 pr-4 text-right", SORT_TH)} style={headTop}>
             <SortButton label="Calls" sortKey="calls" current={sortKey} dir={dir} onClick={onSort} align="right" />
-          </th>
+          </TableHead>
         </tr>
       </thead>
       {view.sections.map((section, i) => (
