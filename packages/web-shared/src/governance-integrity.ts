@@ -44,6 +44,46 @@ export function invalidGovernanceFields(input: GovernanceInput): GovernanceField
   return fields;
 }
 
+/** The kinds of conflict a target alone causes, whatever replaces it. */
+export type TargetConflict = Extract<
+  GovernanceConflict,
+  { kind: "target_governed" | "package_grain_overlap" | "component_grain_overlap" }
+>;
+
+/**
+ * Whether a target can take a record: not when a record has the same target, nor
+ * when a record at the other grain covers its package. The record being edited
+ * (`editingId`) doesn't count.
+ */
+export function targetConflict(
+  target: Pick<GovernanceInput, "grain" | "targetPackage" | "targetExport">,
+  existing: GovernanceRecord[],
+  editingId?: string,
+): TargetConflict | null {
+  const others = existing.filter((r) => r.id !== editingId);
+  const self = targetKey(target.targetPackage, target.targetExport);
+
+  const duplicate = others.find((r) => targetKey(r.targetPackage, r.targetExport) === self);
+  if (duplicate) return { kind: "target_governed", existingId: duplicate.id };
+
+  if (target.grain === "component") {
+    const pkg = others.find((r) => r.grain === "package" && r.targetPackage === target.targetPackage);
+    return pkg
+      ? { kind: "package_grain_overlap", existingId: pkg.id, packageName: target.targetPackage }
+      : null;
+  }
+  const components = others.filter(
+    (r) => r.grain === "component" && r.targetPackage === target.targetPackage,
+  );
+  return components.length > 0
+    ? {
+        kind: "component_grain_overlap",
+        existingIds: components.map((r) => r.id),
+        packageName: target.targetPackage,
+      }
+    : null;
+}
+
 export function validateGovernanceInput(
   input: GovernanceInput,
   existing: GovernanceRecord[],
@@ -51,39 +91,18 @@ export function validateGovernanceInput(
   const [field] = invalidGovernanceFields(input);
   if (field) return { kind: "invalid_field", field };
 
-  // A record editing itself is not its own conflict.
-  const others = existing.filter((r) => r.id !== input.id);
-  const self = targetKey(input.targetPackage, input.targetExport);
-
-  const duplicate = others.find((r) => targetKey(r.targetPackage, r.targetExport) === self);
-  if (duplicate) return { kind: "target_governed", existingId: duplicate.id };
+  const target = targetConflict(input, existing, input.id);
+  if (target?.kind === "target_governed") return target;
 
   const successor = successorKey(input.disposition);
   if (successor !== null) {
+    const self = targetKey(input.targetPackage, input.targetExport);
     if (successor === self) return { kind: "self_supersession" };
-    const cycle = findCycle(self, successor, others);
+    const cycle = findCycle(self, successor, existing.filter((r) => r.id !== input.id));
     if (cycle) return { kind: "cycle", via: displayKey(cycle) };
   }
 
-  if (input.grain === "component") {
-    const pkg = others.find((r) => r.grain === "package" && r.targetPackage === input.targetPackage);
-    if (pkg) {
-      return { kind: "package_grain_overlap", existingId: pkg.id, packageName: input.targetPackage };
-    }
-  } else {
-    const components = others.filter(
-      (r) => r.grain === "component" && r.targetPackage === input.targetPackage,
-    );
-    if (components.length > 0) {
-      return {
-        kind: "component_grain_overlap",
-        existingIds: components.map((r) => r.id),
-        packageName: input.targetPackage,
-      };
-    }
-  }
-
-  return null;
+  return target;
 }
 
 /**

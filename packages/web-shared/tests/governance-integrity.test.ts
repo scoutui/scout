@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   validateGovernanceInput,
+  targetConflict,
   conflictMessage,
   successorDeprecated,
 } from "../src/governance-integrity.js";
@@ -118,6 +119,31 @@ describe("validateGovernanceInput", () => {
   it("grain overlap ignores other packages", () => {
     const elsewhere = rec({ id: "x", grain: "package", targetPackage: "@other/ui", targetExport: null });
     expect(validateGovernanceInput(input({}), [elsewhere])).toBeNull();
+  });
+
+  it("reports a cycle ahead of a grain overlap", () => {
+    const a = rec({
+      id: "a", targetPackage: "@example/ui", targetExport: "Button",
+      disposition: { kind: "superseded", by: { packageName: "@example/next", exportName: "Card" } },
+    });
+    const b = rec({
+      id: "b", grain: "package", targetPackage: "@example/next", targetExport: null,
+      disposition: { kind: "retired", reason: "gone" },
+    });
+    const save = input({
+      targetPackage: "@example/next", targetExport: "Card",
+      disposition: { kind: "superseded", by: { packageName: "@example/ui", exportName: "Button" } },
+    });
+    expect(validateGovernanceInput(save, [a, b])).toEqual({ kind: "cycle", via: "@example/ui/Button" });
+  });
+});
+
+describe("targetConflict", () => {
+  it("leaves out the record being edited", () => {
+    const a = rec({ id: "a", targetPackage: "@example/ui", targetExport: "Button" });
+    const target = { grain: "component", targetPackage: "@example/ui", targetExport: "Button" } as const;
+    expect(targetConflict(target, [a], "a")).toBeNull();
+    expect(targetConflict(target, [a])).toEqual({ kind: "target_governed", existingId: "a" });
   });
 });
 
