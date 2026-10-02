@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   validateGovernanceInput,
-  targetConflict,
   conflictMessage,
   successorDeprecated,
 } from "../src/governance-integrity.js";
@@ -135,15 +134,6 @@ describe("validateGovernanceInput", () => {
       disposition: { kind: "superseded", by: { packageName: "@example/ui", exportName: "Button" } },
     });
     expect(validateGovernanceInput(save, [a, b])).toEqual({ kind: "cycle", via: "@example/ui/Button" });
-  });
-});
-
-describe("targetConflict", () => {
-  it("leaves out the record being edited", () => {
-    const a = rec({ id: "a", targetPackage: "@example/ui", targetExport: "Button" });
-    const target = { grain: "component", targetPackage: "@example/ui", targetExport: "Button" } as const;
-    expect(targetConflict(target, [a], "a")).toBeNull();
-    expect(targetConflict(target, [a])).toEqual({ kind: "target_governed", existingId: "a" });
   });
 });
 

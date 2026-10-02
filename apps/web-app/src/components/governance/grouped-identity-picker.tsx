@@ -7,8 +7,8 @@ import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState }
 import { createPortal } from "react-dom";
 import { autoUpdate, flip, offset, size, useFloating } from "@floating-ui/react-dom";
 import { ChevronsUpDown, X } from "lucide-react";
-import type { GovernanceRecord } from "@scoutui/web-shared";
-import { type IdentityPick, type PickerTarget, type SearchRow, searchTargets } from "@/lib/identity-search";
+import type { GovernanceRecord, GovernanceTarget } from "@scoutui/web-shared";
+import { type IdentityPick, type SearchRow, searchTargets } from "@/lib/identity-search";
 import { cn } from "@/lib/utils";
 
 export type { IdentityPick } from "@/lib/identity-search";
@@ -113,7 +113,7 @@ export function GroupedIdentityPicker({
   /** The field label's id; it names the list. */
   labelId: string;
   mode: "source" | "successor";
-  sources: PickerTarget[];
+  sources: GovernanceTarget[];
   records: GovernanceRecord[];
   editingId?: string | undefined;
   exclude?: IdentityPick | null | undefined;
@@ -149,6 +149,7 @@ export function GroupedIdentityPicker({
   const active = activeIndex === null ? undefined : rows[activeIndex];
   const listShown = open && rows.length > 0;
   const listId = `${id}-list`;
+  const scopeId = `${id}-scope`;
 
   const { refs, floatingStyles, isPositioned } = useFloating({
     open: listShown,
@@ -248,7 +249,9 @@ export function GroupedIdentityPicker({
     >
       {scope !== null && !showValue ? (
         <span className="inline-flex h-[22px] max-w-[60%] shrink-0 items-center gap-1 rounded-md border bg-muted px-1.5 font-mono text-xs">
-          <span className="truncate">{scope}</span>
+          <span id={scopeId} className="truncate">
+            {scope}
+          </span>
           <button
             type="button"
             aria-label="Search all packages"
@@ -273,7 +276,7 @@ export function GroupedIdentityPicker({
         aria-autocomplete="list"
         aria-activedescendant={listShown && active ? optionId(listId, active) : undefined}
         aria-invalid={invalid || undefined}
-        aria-describedby={ariaDescribedBy}
+        aria-describedby={[ariaDescribedBy, scope !== null && !showValue ? scopeId : null].filter(Boolean).join(" ") || undefined}
         autoComplete="off"
         spellCheck={false}
         disabled={disabled}

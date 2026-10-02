@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ChevronRight, CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
@@ -8,6 +8,7 @@ import type {
   Disposition,
   GovernanceInput,
   GovernanceRecord,
+  GovernanceTarget,
   RecordAuthors,
   RecordStat,
 } from "@scoutui/web-shared";
@@ -38,19 +39,6 @@ import {
   wholePackageLabel,
 } from "@/lib/governance-map";
 import { cn } from "@/lib/utils";
-
-// ---------------------------------------------------------------------------
-// Autocomplete source types
-// ---------------------------------------------------------------------------
-
-export interface AutocompleteSource {
-  /** packageName for package-grain picks; also the prefix for component picks. */
-  packageName: string;
-  /** exportName for component-grain picks; absent for package-only entries. */
-  exportName?: string;
-  /** Occurrences in each repo's latest scan. */
-  occurrences: number;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -190,7 +178,7 @@ function FieldError({ id, message }: { id: string; message: string | undefined }
 
 interface GovernanceManagerProps {
   records: GovernanceRecord[];
-  sources: AutocompleteSource[];
+  sources: GovernanceTarget[];
   stats: Record<string, RecordStat>;
   /** Distinct scanned repos. With one repo, rows don't show a repo count. */
   repoCount: number;
@@ -877,10 +865,12 @@ function reachLine(packageName: string, components: number): string {
   return `Marks all ${components.toLocaleString()} components in ${packageName} as deprecated.`;
 }
 
-type Created = { name: string; by: string | null };
+/** The record Create last added, and the number of Creates so far, which keys the success line. */
+type Created = { name: string; by: string | null; n: number };
 
-function createdOf(f: FormState): Created {
+function createdOf(f: FormState, n: number): Created {
   return {
+    n,
     name: (f.grain === "component" && f.targetExport) || f.targetPackage,
     by: f.dispositionKind === "superseded" ? f.supersededByExport || f.supersededByPackage : null,
   };
@@ -901,7 +891,7 @@ function RecordForm({
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
-  sources: AutocompleteSource[];
+  sources: GovernanceTarget[];
   records: GovernanceRecord[];
   /** Who added and last changed the record being edited. */
   byline: string | null;
@@ -962,7 +952,7 @@ function RecordForm({
           onSaved(res.id);
           return;
         }
-        setCreated(createdOf(form));
+        setCreated((prev) => createdOf(form, (prev?.n ?? 0) + 1));
         setForm({ ...emptyForm(), dispositionKind: form.dispositionKind });
         onCreated(res.id);
         document.getElementById("gov-source")?.focus();
@@ -1012,25 +1002,29 @@ function RecordForm({
 
   return (
     <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
-      <div className="space-y-1">
+      <div>
         <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
-        {byline ? <p className="text-xs text-muted-foreground">{byline}</p> : null}
-        {created ? (
-          <output className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0 text-status-ok" />
-            <span className="min-w-0 truncate">
-              <span className="font-mono text-foreground">{created.name}</span>
-              {created.by === null ? (
-                " retired"
-              ) : (
-                <>
-                  {" superseded by "}
-                  <span className="font-mono text-foreground">{created.by}</span>
-                </>
-              )}
-            </span>
+        {byline ? <p className="mt-1 text-xs text-muted-foreground">{byline}</p> : null}
+        {isEdit ? null : (
+          <output className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground empty:mt-0">
+            {created ? (
+              <Fragment key={created.n}>
+                <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0 text-status-ok" />
+                <span className="min-w-0 truncate">
+                  <span className="font-mono text-foreground">{created.name}</span>
+                  {created.by === null ? (
+                    " retired"
+                  ) : (
+                    <>
+                      {" superseded by "}
+                      <span className="font-mono text-foreground">{created.by}</span>
+                    </>
+                  )}
+                </span>
+              </Fragment>
+            ) : null}
           </output>
-        ) : null}
+        )}
       </div>
 
       {/* Source picker: the pick decides the grain */}

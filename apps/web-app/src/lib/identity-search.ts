@@ -1,8 +1,6 @@
 import type { GovernanceRecord, GovernanceTarget } from "@scoutui/web-shared";
 import { targetConflict } from "@scoutui/web-shared/client";
 
-/** A package or component the picker offers, with its occurrences in each repo's latest scan. */
-export type PickerTarget = GovernanceTarget;
 export type IdentityPick = { packageName: string; exportName?: string };
 
 export type SearchRow =
@@ -12,7 +10,7 @@ export type SearchRow =
 
 export type SearchInput = {
   mode: "source" | "successor";
-  sources: PickerTarget[];
+  sources: GovernanceTarget[];
   query: string;
   /** The package the search is narrowed to. */
   scope: string | null;
@@ -160,7 +158,7 @@ function sharesWord(a: string, b: string): boolean {
 }
 
 /** How many components each package has among the targets. */
-export function componentCounts(sources: PickerTarget[]): Map<string, number> {
+export function componentCounts(sources: GovernanceTarget[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const s of sources) {
     if (s.exportName !== undefined) counts.set(s.packageName, (counts.get(s.packageName) ?? 0) + 1);

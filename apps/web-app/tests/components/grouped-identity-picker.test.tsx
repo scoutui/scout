@@ -4,9 +4,9 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { GovernanceRecord } from "@scoutui/web-shared";
 import { GroupedIdentityPicker, type IdentityPick } from "@/components/governance/grouped-identity-picker";
-import type { PickerTarget } from "@/lib/identity-search";
+import type { GovernanceTarget } from "@scoutui/web-shared";
 
-const sources: PickerTarget[] = [
+const sources: GovernanceTarget[] = [
   { packageName: "@example/old-ui", occurrences: 70 },
   { packageName: "@example/old-ui", exportName: "Button", occurrences: 60 },
   { packageName: "@example/old-ui", exportName: "Card", occurrences: 10 },

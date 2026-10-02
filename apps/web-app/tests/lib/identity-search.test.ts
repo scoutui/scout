@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { GovernanceRecord } from "@scoutui/web-shared";
-import { MAX_COMPONENT_ROWS, type PickerTarget, type SearchInput, type SearchRow, searchTargets } from "@/lib/identity-search";
+import type { GovernanceTarget } from "@scoutui/web-shared";
+import { MAX_COMPONENT_ROWS, type SearchInput, type SearchRow, searchTargets } from "@/lib/identity-search";
 
-const target = (packageName: string, exportName: string, occurrences: number): PickerTarget => ({ packageName, exportName, occurrences });
-const pkg = (packageName: string, occurrences: number): PickerTarget => ({ packageName, occurrences });
+const target = (packageName: string, exportName: string, occurrences: number): GovernanceTarget => ({ packageName, exportName, occurrences });
+const pkg = (packageName: string, occurrences: number): GovernanceTarget => ({ packageName, occurrences });
 
 const record = (id: string, targetPackage: string, targetExport: string | null): GovernanceRecord => ({
   id, grain: targetExport === null ? "package" : "component", targetPackage, targetExport,
