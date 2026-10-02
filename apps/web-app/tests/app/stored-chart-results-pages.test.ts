@@ -30,6 +30,15 @@ function allPropsFor(node: ReactNode, name: string, found: Props[] = []): Props[
   return found;
 }
 
+function hrefsIn(node: ReactNode, found: string[] = []): string[] {
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<{ children?: ReactNode; href?: unknown }>(child)) continue;
+    if (typeof child.props.href === "string") found.push(child.props.href);
+    hrefsIn(child.props.children, found);
+  }
+  return found;
+}
+
 const preparing = { state: "preparing", scans: [], retryable: true };
 
 type Seeded = { retired: GovernanceRecord; unseen: GovernanceRecord; saved: Dashboard };
@@ -153,6 +162,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(stored).toBeDefined();
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
+      expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(allPropsFor(await page(trackingParams(`retirement:${added.id}`)), "ReadModelState")).toEqual([preparing]);
       expect(digests).not.toHaveBeenCalled();
       await expect(page(trackingParams(`retirement:${unseen.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
