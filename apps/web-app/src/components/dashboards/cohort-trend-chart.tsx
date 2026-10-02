@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, dayTicks, seriesDashes, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
+import { cohortChartConfig, dayTicks, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
 import { distinctiveLabel, formatAxisCount, formatDay, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
@@ -54,7 +54,6 @@ export function CohortTrendChart({
     return <TrendFacets series={series} colors={colors} metric={metric} animate={animate} />;
   }
   const config = cohortChartConfig(series);
-  const dashes = seriesDashes(series);
   const lastTByKey = new Map(series.map((s) => [s.cohortKey, s.points[s.points.length - 1]?.t]));
   // Reserve just enough right margin for the longest (capped) end label.
   const rightMargin = Math.min(168, 30 + Math.max(0, ...series.map((s) => distinctiveLabel(s.label).length)) * 7);
@@ -180,7 +179,6 @@ export function CohortTrendChart({
                 isAnimationActive={animate}
                 animationDuration={400}
                 animationEasing="ease-out"
-                {...(dashes[i] ? { strokeDasharray: dashes[i] } : {})}
               />
             );
           })}
@@ -191,7 +189,7 @@ export function CohortTrendChart({
           series needs no legend: the title names it. */}
       {showLegend && series.length > 1 ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1">
-          {series.map((s, i) => (
+          {series.map((s) => (
             <button
               key={s.cohortKey}
               type="button"
@@ -205,7 +203,7 @@ export function CohortTrendChart({
                 hovered !== null && hovered !== s.cohortKey && "opacity-40",
               )}
             >
-              <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} dash={dashes[i]} role={s.role} />
+              <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
               {/* Name and package truncate separately: a merged series and its slice
                   share a name, and one truncated string would render them alike. */}
               <CohortLabelText label={s.label} className="max-w-[24rem] text-xs" />

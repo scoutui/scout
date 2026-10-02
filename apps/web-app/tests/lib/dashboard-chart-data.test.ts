@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CohortRole, CohortSelector, CohortSeries } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dashSwatchSegments, dayTicks, expandRowShares, chartColors, savedChartCohorts, seriesDashes, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, savedChartCohorts, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -127,23 +127,6 @@ describe("chartColors", () => {
   });
 });
 
-describe("seriesDashes", () => {
-  const dep = (cohortKey: string) => ({ cohortKey, color: "", role: "deprecated" as const });
-  const succ = (cohortKey: string) => ({ cohortKey, color: "", role: "successor" as const });
-
-  it("dashes the second and third series sharing a role colour", () => {
-    expect(seriesDashes([dep("a"), dep("b"), dep("c")])).toEqual([undefined, "5 4", "2 3"]);
-  });
-
-  it("dashes the second successor line too, counting each role on its own", () => {
-    expect(seriesDashes([dep("a"), succ("b"), dep("c"), succ("d")])).toEqual([undefined, undefined, "5 4", "5 4"]);
-  });
-
-  it("keeps every series without a role solid, however many there are", () => {
-    expect(seriesDashes([{}, {}, {}, {}])).toEqual([undefined, undefined, undefined, undefined]);
-  });
-});
-
 describe("seriesWashes", () => {
   const dep = { cohortKey: "a", color: "", role: "deprecated" as const };
   const succ = { cohortKey: "b", color: "", role: "successor" as const };
@@ -168,27 +151,6 @@ describe("seriesWashes", () => {
   it("the wash cap: at four series nobody washes", () => {
     const four = ["a", "b", "c", "d"].map((cohortKey) => ({ cohortKey, color: "" }));
     expect(seriesWashes(four)).toEqual([false, false, false, false]);
-  });
-});
-
-describe("dashSwatchSegments", () => {
-  it("scales each DASH_STEPS pattern down to a segment array distinct from the others", () => {
-    const solid = dashSwatchSegments("");
-    const step1 = dashSwatchSegments("5 4");
-    const step2 = dashSwatchSegments("2 3");
-    const step3 = dashSwatchSegments("8 3 2 3");
-    expect(solid).toEqual([]);
-    expect(step1).toEqual([3, 2]);
-    expect(step2).toEqual([1, 2]);
-    expect(step3).toEqual([4, 2, 1, 2]);
-    // Every non-solid step tiles at a different total length, so the swatch's
-    // repeating rhythm is visibly distinct step to step.
-    const totals = [step1, step2, step3].map((s) => s.reduce((a, b) => a + b, 0));
-    expect(new Set(totals).size).toBe(totals.length);
-  });
-
-  it("keeps every segment at least 1px, even for a sub-2 pattern value", () => {
-    expect(dashSwatchSegments("1 1")).toEqual([1, 1]);
   });
 });
 

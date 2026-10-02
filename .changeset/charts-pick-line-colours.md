@@ -2,4 +2,4 @@
 "@scoutui/web-app": patch
 ---
 
-Every line and band on a chart now has its own colour. A tag keeps its colour unless an earlier line on the same chart has it or one like it, packages and components never borrow a tag's colour, and every line follows dark mode. Lines no longer dash to tell repeated colours apart; dashes stay only where two lines share a meaning, such as two deprecated lines.
+Charts now pick each line's colour, and every line follows dark mode. A tag keeps its colour unless a deprecated, successor or Local line, or a tag earlier on the chart, already has it or one like it. Other lines take the next chart colour that looks unlike those already drawn, and once those run out, neighbouring bands still differ. Lines no longer dash: their colour, end label and legend entry tell them apart.

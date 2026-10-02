@@ -153,24 +153,6 @@ function fixedColor(c: ChartCohort): string | undefined {
   return undefined;
 }
 
-const DASH_STEPS = [undefined, "5 4", "2 3", "8 3 2 3"] as const;
-
-/**
- * Dash step per series: the Nth series sharing a fixed meaning (two deprecated
- * lines, two successor lines) gets the Nth dash pattern, since both must wear
- * that meaning's colour. Every other series has a colour of its own and stays
- * solid. Clamped at the last step.
- */
-export function seriesDashes(series: Array<{ role?: CohortRole | undefined }>): Array<string | undefined> {
-  const used = new Map<CohortRole, number>();
-  return series.map((s) => {
-    if (!s.role) return undefined;
-    const n = used.get(s.role) ?? 0;
-    used.set(s.role, n + 1);
-    return DASH_STEPS[Math.min(n, DASH_STEPS.length - 1)];
-  });
-}
-
 /**
  * Which series get the gradient wash under their trend line, in both the overlay
  * chart and the row mini chart. A lone series always does. At 4 or more series
@@ -184,19 +166,4 @@ export function seriesWashes(
   if (series.length === 1) return [true];
   if (series.length >= 4) return series.map(() => false);
   return series.map((s) => s.role !== "deprecated");
-}
-
-/**
- * Scales a trend-chart dash pattern (an SVG `stroke-dasharray` such as "5 4")
- * down to legend-swatch size, keeping its segment count and proportions so the
- * dash steps look different across a ~16px swatch. The swatch doesn't match the
- * chart line's geometry. An empty or invalid pattern (solid) returns no segments.
- */
-export function dashSwatchSegments(pattern: string): number[] {
-  const numbers = pattern
-    .trim()
-    .split(/\s+/)
-    .map(Number)
-    .filter((n) => Number.isFinite(n) && n > 0);
-  return numbers.map((n) => Math.max(1, Math.round(n / 2)));
 }
