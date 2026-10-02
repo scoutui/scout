@@ -12,6 +12,8 @@ export type DashboardPreview = { view: DashboardView; missing: boolean };
 /** A stored preview, and when the snapshot it was derived from was read. */
 export type StoredPreview = DashboardPreview & { snapshotAt: string };
 export type RegistryResult = RegistryStats & { sources: GovernanceTarget[] };
+/** The stored registry, and when the snapshot it was derived from was read. */
+export type StoredRegistry = RegistryResult & { snapshotAt: string };
 export type ChartResultsInput = { digests: DigestScan[]; tags: Tag[]; governance: GovernanceRecord[]; dashboards: Dashboard[] };
 export type ChartResults = {
   tracking: GovernanceTracking[];

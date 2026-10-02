@@ -51,7 +51,7 @@ The **governance** page lists every record in one **Records** table, grouped by 
 - A count, such as `17 in acme/storefront` when one repo still uses it, or `20 in 2 repos` when several do. When only one repo has been scanned, it reads just the number, such as `17`.
 - **None left**: it has been used before, and no repo's latest scan uses it now. See [When a record reads None left](#when-a-record-reads-none-left).
 - **Not in any scan**: see [Not in any scan](#not-in-any-scan).
-- **No data**: the dashboard hasn't counted it yet. A new record reads **No data** for a moment after you save, and so can every record for a few minutes after the dashboard is upgraded. Reload the page to see the count.
+- **No data**: the dashboard hasn't counted it yet. A new or changed record reads **No data** for a moment after you save, and so can every record for a few minutes after the dashboard is upgraded. Reload the page to see the count.
 
 Packages with the most occurrences left come first, and so do the records inside each package.
 

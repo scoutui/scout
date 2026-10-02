@@ -21,7 +21,7 @@ import type {
 } from "./dto.js";
 import type { GovernanceTracking } from "./governance-tracking.js";
 import type { RecordAuthors } from "./governance.js";
-import type { RegistryResult, StoredPreview } from "./chart-results.js";
+import type { StoredPreview, StoredRegistry } from "./chart-results.js";
 
 /**
  * A write that would collide with another record's target. The DB constraint
@@ -170,7 +170,7 @@ export interface StorageDriver {
   // ---- Stored chart results (null when no row has the current format) ----
 
   getStoredTracking(scope: DashboardScope): Promise<GovernanceTracking[] | null>;
-  getStoredRegistry(): Promise<RegistryResult | null>;
+  getStoredRegistry(): Promise<StoredRegistry | null>;
   /** Current-format previews keyed by dashboard id. */
   getStoredPreviews(): Promise<Record<string, StoredPreview>>;
   /** When the dashboard last received a scan, as an ISO string, or null when there are no scans. */

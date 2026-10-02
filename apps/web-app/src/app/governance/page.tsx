@@ -16,7 +16,11 @@ export default async function GovernancePage() {
     tags: await snapshot.listTags(),
     registry: await snapshot.getStoredRegistry(),
   }));
-  const { stats, sources, repoCount } = registry ?? { stats: {}, sources: [], repoCount: 0 };
+  const { sources, repoCount } = registry ?? { sources: [], repoCount: 0 };
+  const editedSinceResults = new Set(
+    registry ? records.filter((r) => new Date(r.updatedAt) > new Date(registry.snapshotAt)).map((r) => r.id) : [],
+  );
+  const stats = Object.fromEntries(Object.entries(registry?.stats ?? {}).filter(([id]) => !editedSinceResults.has(id)));
   const notice = await chartResultsNotice(getPool(), registry !== null);
 
   const countOf = (s: "active" | "complete" | "unseen") =>

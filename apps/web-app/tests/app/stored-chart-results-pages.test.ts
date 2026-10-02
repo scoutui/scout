@@ -1,6 +1,7 @@
 import type { Pool } from "pg";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { enqueueChartResults, PostgresDriver, PROJECTION_VERSION, type Dashboard, type GovernanceRecord, type StorageDriver } from "@scoutui/web-shared";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { processChartResultsJob } from "../../src/lib/chart-results-job.ts";
@@ -135,6 +136,29 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const packageNames = allPropsFor(tree, "TagsPanel")[0]?.packageNames;
       expect(packageNames).toContain("@sample/core");
       expect(packageNames).toEqual([...new Set(packageNames)].sort((a, b) => a.localeCompare(b)));
+    });
+  });
+
+  it("shows no data for a record changed since the registry was stored, and for its package's total, keeping other packages' counts", async () => {
+    await withReadModelDatabase(async pool => {
+      for (const artifact of genericArtifacts()) await publishScan(pool, artifact, { uploadedByUserId: null });
+      await pool.query("UPDATE scans SET artifact = '{}'::json");
+      driver = new PostgresDriver(pool);
+      database = pool;
+      const button = { grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "retired", reason: "Retired" } } as const;
+      const changed = await driver.createGovernance(button);
+      const kept = await driver.createGovernance({ ...button, targetPackage: "@sample/mixed", targetExport: "Field" });
+      await storeResults(pool);
+      await driver.updateGovernance(changed.id, { ...button, disposition: { kind: "retired", reason: "Use the new button" } });
+      const { default: page } = await import("@/app/governance/page");
+      const tree = await page();
+      const rows = renderToStaticMarkup(tree).split("<tr").slice(1).map(tr => tr.slice(0, tr.indexOf("</tr>")));
+      const count = (tr: string | undefined) => tr?.split("<td").at(-2)?.replace(/^[^>]*>|<[^>]+>/g, "").trim();
+      expect(count(rows.find(tr => tr.includes(`id="record-${changed.id}"`)))).toBe("No data");
+      expect(count(rows.find(tr => tr.includes('aria-label="Records in @sample/core"')))).toBe("No data");
+      expect(count(rows.find(tr => tr.includes(`id="record-${kept.id}"`)))).toBe("2 left in 2 repos, trend for Field");
+      expect(count(rows.find(tr => tr.includes('aria-label="Records in @sample/mixed"')))).toBe("2 left in 2 repos");
+      expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ summary: "1 in progress" })]);
     });
   });
 

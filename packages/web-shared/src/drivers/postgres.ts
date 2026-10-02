@@ -8,7 +8,7 @@ import type {
   GovernanceRecord, GovernanceInput, Disposition,
 } from "../dto.js";
 import {
-  CHART_RESULTS_FORMAT_VERSION, chartResultKey, enqueueChartResults, type DashboardPreview, type RegistryResult, type StoredPreview,
+  CHART_RESULTS_FORMAT_VERSION, chartResultKey, enqueueChartResults, type DashboardPreview, type RegistryResult, type StoredPreview, type StoredRegistry,
 } from "../chart-results.js";
 import type { GovernanceTracking } from "../governance-tracking.js";
 import type { RecordAuthors } from "../governance.js";
@@ -390,19 +390,22 @@ export class PostgresDriver implements StorageDriver {
 
   // ---- Stored chart results ----
 
-  private async storedResult<T>(key: string): Promise<T | null> {
+  private async storedResult<T>(key: string): Promise<{ payload: T; snapshotAt: string } | null> {
     const result = await this.db.execute(sql`
-      SELECT payload FROM chart_results WHERE key = ${key} AND format_version = ${CHART_RESULTS_FORMAT_VERSION}`);
-    const row = (result.rows as { payload: T }[])[0];
-    return row ? row.payload : null;
+      SELECT payload, snapshot_at FROM chart_results WHERE key = ${key} AND format_version = ${CHART_RESULTS_FORMAT_VERSION}`);
+    const row = (result.rows as { payload: T; snapshot_at: string | Date }[])[0];
+    return row ? { payload: row.payload, snapshotAt: new Date(row.snapshot_at).toISOString() } : null;
   }
 
   async getStoredTracking(scope: DashboardScope): Promise<GovernanceTracking[] | null> {
-    return this.storedResult(scope.kind === "all" ? chartResultKey.tracking : chartResultKey.repoTracking(scope.repoId));
+    const stored = await this.storedResult<GovernanceTracking[]>(
+      scope.kind === "all" ? chartResultKey.tracking : chartResultKey.repoTracking(scope.repoId));
+    return stored ? stored.payload : null;
   }
 
-  async getStoredRegistry(): Promise<RegistryResult | null> {
-    return this.storedResult(chartResultKey.registry);
+  async getStoredRegistry(): Promise<StoredRegistry | null> {
+    const stored = await this.storedResult<RegistryResult>(chartResultKey.registry);
+    return stored ? { ...stored.payload, snapshotAt: stored.snapshotAt } : null;
   }
 
   async getStoredPreviews(): Promise<Record<string, StoredPreview>> {
