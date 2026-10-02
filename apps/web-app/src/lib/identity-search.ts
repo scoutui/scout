@@ -172,9 +172,10 @@ const sameTarget = (a: IdentityPick, b: IdentityPick) =>
 /**
  * The rows the picker shows for a search, and the row Enter takes by default: the
  * first component that can be picked or, when no row is a component, the first
- * package row; otherwise none. Never a whole package.
+ * package row; otherwise none. Never a whole package. `total` is how many components
+ * match when the list stops at `MAX_COMPONENT_ROWS`, otherwise null.
  */
-export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultIndex: number | null } {
+export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultIndex: number | null; total: number | null } {
   const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const refuse = (pick: IdentityPick) => (input.mode === "source" ? refusal(pick, input.records, input.editingId) : null);
   const offered = (pick: IdentityPick) => !(input.mode === "successor" && input.exclude && sameTarget(pick, input.exclude));
@@ -202,6 +203,7 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
     }).sort(byRank);
 
   const rows: SearchRow[] = [];
+  let total: number | null = null;
   if (input.scope === null) {
     if (terms.length === 0) {
       rows.push(...[...packages.keys()].sort(byOccurrences).map(packageRow));
@@ -212,7 +214,9 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
       });
       matching.sort((a, b) => a.tier - b.tier || byOccurrences(a.name, b.name));
       rows.push(...matching.slice(0, MAX_PACKAGE_ROWS).map((p) => packageRow(p.name)));
-      rows.push(...refusedLast(rank(null, false)).slice(0, MAX_COMPONENT_ROWS).map((r) => r.row));
+      const ranked = refusedLast(rank(null, false));
+      if (ranked.length > MAX_COMPONENT_ROWS) total = ranked.length;
+      rows.push(...ranked.slice(0, MAX_COMPONENT_ROWS).map((r) => r.row));
     }
   } else {
     const scope = input.scope;
@@ -235,5 +239,5 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
   const defaultIndex = firstPick >= 0
     ? firstPick
     : !rows.some((r) => r.kind === "component") && rows[0]?.kind === "package" ? 0 : null;
-  return { rows, defaultIndex };
+  return { rows, defaultIndex, total };
 }

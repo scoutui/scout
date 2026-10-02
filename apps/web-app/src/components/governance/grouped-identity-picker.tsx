@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { autoUpdate, flip, offset, size, useFloating } from "@floating-ui/react-dom";
 import { ChevronsUpDown, X } from "lucide-react";
 import type { GovernanceRecord, GovernanceTarget } from "@scoutui/web-shared";
-import { type IdentityPick, type SearchRow, searchTargets } from "@/lib/identity-search";
+import { type IdentityPick, MAX_COMPONENT_ROWS, type SearchRow, searchTargets } from "@/lib/identity-search";
 import { cn } from "@/lib/utils";
 
 export type { IdentityPick } from "@/lib/identity-search";
@@ -104,6 +104,7 @@ export function GroupedIdentityPicker({
   onScopeChange,
   placeholder,
   closedPlaceholder,
+  emptyText,
   ariaDescribedBy,
   invalid,
   disabled,
@@ -126,6 +127,8 @@ export function GroupedIdentityPicker({
   placeholder: string;
   /** Shown when narrowed, closed and empty. */
   closedPlaceholder?: string | undefined;
+  /** Shown in the list when there is nothing to search. */
+  emptyText: string;
   ariaDescribedBy?: string | undefined;
   invalid?: boolean | undefined;
   disabled?: boolean | undefined;
@@ -141,13 +144,23 @@ export function GroupedIdentityPicker({
   }
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { rows, defaultIndex } = useMemo(
+  const { rows, defaultIndex, total } = useMemo(
     () => searchTargets({ mode, sources, query, scope, records, editingId, exclude, similarTo }),
     [mode, sources, query, scope, records, editingId, exclude, similarTo],
   );
   const activeIndex = highlight !== null && highlight < rows.length ? highlight : defaultIndex;
   const active = activeIndex === null ? undefined : rows[activeIndex];
-  const listShown = open && rows.length > 0;
+  const hasRows = rows.length > 0;
+  const message = !open
+    ? null
+    : sources.length === 0
+      ? emptyText
+      : !hasRows
+        ? "No matches"
+        : total !== null
+          ? `Showing ${MAX_COMPONENT_ROWS} of ${total.toLocaleString()}. Type to narrow the list.`
+          : null;
+  const listShown = open && (hasRows || message !== null);
   const listId = `${id}-list`;
   const scopeId = `${id}-scope`;
 
@@ -271,10 +284,10 @@ export function GroupedIdentityPicker({
         ref={inputRef}
         id={id}
         role="combobox"
-        aria-expanded={listShown}
+        aria-expanded={open && hasRows}
         aria-controls={listId}
         aria-autocomplete="list"
-        aria-activedescendant={listShown && active ? optionId(listId, active) : undefined}
+        aria-activedescendant={open && hasRows && active ? optionId(listId, active) : undefined}
         aria-invalid={invalid || undefined}
         aria-describedby={[ariaDescribedBy, scope !== null && !showValue ? scopeId : null].filter(Boolean).join(" ") || undefined}
         autoComplete="off"
@@ -310,19 +323,18 @@ export function GroupedIdentityPicker({
         </span>
       ) : null}
       <ChevronsUpDown aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+      <output className="sr-only">{message}</output>
       {listShown
         ? createPortal(
             <div
               ref={refs.setFloating}
-              id={listId}
-              // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox list of rich rows
-              role="listbox"
-              aria-labelledby={labelId}
-              tabIndex={-1}
               style={floatingStyles}
               onMouseDown={keepFocus}
               className="z-50 overflow-y-auto rounded-lg bg-popover py-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
             >
+              {hasRows ? (
+                // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox list of rich rows
+                <div id={listId} role="listbox" aria-labelledby={labelId} tabIndex={-1}>
               {rows.map((row, i) => {
                 const refused = row.kind !== "package" && row.refusal !== null;
                 return (
@@ -346,6 +358,13 @@ export function GroupedIdentityPicker({
                   </div>
                 );
               })}
+                </div>
+              ) : null}
+              {message ? (
+                <p aria-hidden className="px-2.5 py-1.5 text-xs text-muted-foreground">
+                  {message}
+                </p>
+              ) : null}
             </div>,
             document.body,
           )

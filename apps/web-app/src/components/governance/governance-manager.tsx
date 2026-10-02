@@ -21,6 +21,7 @@ import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/component
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
 import { componentCounts } from "@/lib/identity-search";
+import { readModelTitle, type SkippedState } from "@/lib/read-model-state";
 import {
   authorLine,
   countLabel,
@@ -185,9 +186,11 @@ interface GovernanceManagerProps {
   summary: string | null;
   authors: Record<string, RecordAuthors>;
   notice: React.ReactNode;
+  /** The stored results' state while there are none to read `sources` from. */
+  sourcesUnavailable?: SkippedState | null | undefined;
 }
 
-export function GovernanceManager({ records, sources, stats, repoCount, summary, authors, notice }: GovernanceManagerProps) {
+export function GovernanceManager({ records, sources, stats, repoCount, summary, authors, notice, sourcesUnavailable }: GovernanceManagerProps) {
   // With no records, the form opens straight away.
   const [formOpen, setFormOpen] = useState(records.length === 0);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -324,6 +327,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
       form={form}
       setForm={setForm}
       sources={sources}
+      emptyText={sourcesUnavailable ? readModelTitle(sourcesUnavailable) : "Nothing scanned yet"}
       records={records}
       byline={editing ? authorLine(editing, authors[editing.id]) : null}
       takeFocus={focusForm}
@@ -880,6 +884,7 @@ function RecordForm({
   form,
   setForm,
   sources,
+  emptyText,
   records,
   byline,
   takeFocus,
@@ -892,6 +897,8 @@ function RecordForm({
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   sources: GovernanceTarget[];
+  /** What the pickers say when `sources` is empty. */
+  emptyText: string;
   records: GovernanceRecord[];
   /** Who added and last changed the record being edited. */
   byline: string | null;
@@ -1044,6 +1051,7 @@ function RecordForm({
           scope={sourceScope}
           onScopeChange={setSourceScope}
           placeholder="Search packages and components"
+          emptyText={emptyText}
           ariaDescribedBy={fieldErrors.source ? "gov-source-error" : undefined}
           invalid={Boolean(fieldErrors.source)}
         />
@@ -1093,6 +1101,7 @@ function RecordForm({
               onScopeChange={setByScope}
               placeholder="Search for a replacement"
               closedPlaceholder="Choose a replacement"
+              emptyText={emptyText}
               ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
               invalid={Boolean(fieldErrors.supersededBy)}
             />

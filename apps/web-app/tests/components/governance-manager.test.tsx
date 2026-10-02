@@ -44,6 +44,8 @@ const sources = [
   { packageName: "old-icons", exportName: "Heart", occurrences: 2 },
 ];
 
+const statuses = () => screen.getAllByRole("status").map((s) => s.textContent);
+
 /** Types into a search box and presses Enter, which picks the first component it can. */
 function pick(field: string, query: string) {
   const box = screen.getByRole("combobox", { name: field });
@@ -278,6 +280,15 @@ describe("GovernanceManager", () => {
     expect(saveGovernance).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [null, "Nothing scanned yet"],
+    ["preparing", "Preparing scan data"],
+  ] as const)("says why there is nothing to search when the stored results are %s", (state, text) => {
+    render(<GovernanceManager records={[]} sources={[]} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} sourcesUnavailable={state} />);
+    fireEvent.click(screen.getByRole("combobox", { name: "Package or component" }));
+    expect(statuses()).toContain(text);
+  });
+
   it("labels the form's fields in plain words, with hints", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(screen.getByRole("heading", { name: "New record" })).toBeInTheDocument();
@@ -412,7 +423,7 @@ describe("GovernanceManager", () => {
     fireEvent.keyDown(by, { key: "Enter" });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
-    await vi.waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Star superseded by Button"));
+    await vi.waitFor(() => expect(statuses()).toContain("Star superseded by Button"));
     expect(saveGovernance).toHaveBeenCalledWith({
       grain: "component",
       targetPackage: "old-icons",
@@ -434,7 +445,7 @@ describe("GovernanceManager", () => {
     pick("Package or component", "heart");
     fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Gone" } });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
-    await vi.waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Heart retired"));
+    await vi.waitFor(() => expect(statuses()).toContain("Heart retired"));
     expect(screen.getByRole("radio", { name: "Retired" })).toBeChecked();
     expect(screen.getByLabelText("Reason")).toHaveValue("");
   });
