@@ -111,11 +111,18 @@ describe("loadConfig", () => {
       exclude: ["**/*.test.ts"],
       tsconfigPath: "tsconfig.json",
       aliases: { "@/*": ["src/*"] },
+      install: "npm ci",
     });
     const cfg = await loadConfig(path);
     expect(cfg.repoId).toBe("my-repo");
     expect(cfg.tsconfigPath).toBe("tsconfig.json");
     expect(cfg.aliases).toEqual({ "@/*": ["src/*"] });
+    expect(cfg.install).toBe("npm ci");
+  });
+
+  it("rejects an empty install", async () => {
+    const path = writeConfig(tmp(), { include: ["src/**/*.ts"], install: "" });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `Invalid config at ${realpathSync(path)}: /install: must NOT have fewer than 1 characters` });
   });
 
   describe("legacy manifests field migration", () => {
