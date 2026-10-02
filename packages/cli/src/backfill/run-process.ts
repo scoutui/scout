@@ -8,7 +8,8 @@ export type RunningProcess = { pid: number | undefined; done: Promise<ProcessRes
 /**
  * Starts `command` in its own process group with stdin closed, collecting stdout and stderr into one `output` in the
  * order they arrive. The environment is `process.env` without `SCOUTUI_TOKEN`, with Corepack's download prompt off.
- * With `shell`, `command` is run through `/bin/sh`. After `timeoutMs` the whole group is killed.
+ * With `shell`, `command` is run through `/bin/sh`. After `timeoutMs` it kills the whole group and stops reading the
+ * output.
  */
 export function runProcess(
   command: string,
@@ -37,6 +38,8 @@ export function runProcess(
         : setTimeout(() => {
             timedOut = true;
             if (child.pid !== undefined) killProcessGroup(child.pid);
+            child.stdout.destroy();
+            child.stderr.destroy();
           }, opts.timeoutMs);
     child.on("error", (error) => {
       clearTimeout(timer);
