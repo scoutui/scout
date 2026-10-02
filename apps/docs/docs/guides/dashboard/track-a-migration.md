@@ -22,7 +22,7 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 5. Open **Superseded by** and pick the `Button` row under `@acme/ui`. If you pick the package row instead, the whole of `@acme/ui` counts as the replacement.
 6. Press **Create**.
 
-![The New record form with ChevronDown from lucide-vue-next as the source, Superseded selected, and ChevronDown from @lucide/vue as the replacement](/img/dashboard/governance-record-form.png)
+![The New record form, filled in to record VxeButton from vxe-pc-ui as superseded by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first. Components [defined in the repo](/docs/reference/glossary#defined-in-the-repo) are never offered.
 
@@ -44,24 +44,20 @@ Retire a component when it is being removed with no replacement, for example `Mo
 
 As soon as you save, every component the record covers shows as deprecated in every repo: warning icons, **deprecated** chips and the **Deprecated** columns. That includes scans already uploaded, so no rescan is needed. A record on `Card` covers it from every import path, such as `@acme/ui` and `@acme/ui/card`, and its parts, such as `Card.Header`.
 
-The **governance** page lists every record in one **Records** table, grouped by the package each record comes from. Records on single components sit under a row with their package's name and total. A record on a whole package is a row of its own, with **Whole package · N components** under its name. Each row says what was decided: **Superseded by** and the replacement, or **Retired** and the reason.
+The **governance** page then shows how much of each record's package or component is still in use, and where. Each record's **Occurrences left** reads one of these:
 
-**Occurrences left** counts how many [occurrences](/docs/reference/glossary#occurrence) of the record's package or component are still in each repo's latest scan. It reads one of these:
-
-- A count, such as `17 in acme/storefront` when one repo still uses it, or `20 in 2 repos` when several do. When only one repo has been scanned, it reads just the number, such as `17`.
-- **None left**: it has been used before, and no repo's latest scan uses it now. See [When a record reads None left](#when-a-record-reads-none-left).
+- A count of [occurrences](/docs/reference/glossary#occurrence) across every repo's latest scan, such as `17 in acme/storefront`, or `20 in 2 repos` when several repos use it. With only one repo scanned, it's just the number.
+- **None left**: it has been used before, and no repo's latest scan uses it now.
 - **Not in any scan**: see [Not in any scan](#not-in-any-scan).
-- **No data**: the dashboard hasn't counted it yet. A new or changed record reads **No data** for a moment after you save, and so can every record for a few minutes after the dashboard is upgraded. Reload the page to see the count.
+- **No data**: it hasn't been counted yet, usually because you've just added or changed the record. Reload the page after a moment to see its count.
 
-Packages with the most occurrences left come first, and so do the records inside each package.
-
-![The governance page's Records table: element-plus's component records under a row with the package's total, then whole-package records, each with its replacement or reason and its occurrences left, most first](/img/dashboard/governance-records.png)
+![The governance page listing records by package, each with its replacement or reason and its occurrences left](/img/dashboard/governance-records.png)
 
 ## Follow progress
 
-On the **governance** page, select a record's count under **Occurrences left** to open its chart: occurrences over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
+On the **governance** page, select a record's count to open its chart: occurrences over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
 
-To see where a record's package or component is still used, select its name. A record on a component opens that component's page, or its package's page filtered to it when the record covers more than one component, such as `Card` and `Card.Header`. A record on a whole package, and a package's name on its row, open the package's page. A name isn't a link when nothing it covers is in any repo's latest scan.
+To see where a record's component or package is still used, select the record's name.
 
 The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N remaining**, the occurrences still in use. See [Charts](/docs/guides/dashboard/charts).
 
@@ -73,10 +69,10 @@ To follow one repo, open it from **repos** and go to its **Adoption** tab. **Mig
 
 No button marks a record complete. It reads **None left** once no repo's latest scan uses `LegacyButton`, so finishing a migration means:
 
-1. Remove the last uses of `LegacyButton` from each repo. To find them, select `LegacyButton` on the **governance** page to open its page, and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
-2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record from reading **None left**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
+1. Remove the last uses of `LegacyButton` from each repo. To find them, open `LegacyButton` from its package page and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
+2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` still counts its old uses. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
 
-On the **governance** page, once every record in a package reads **None left**, the package moves behind **Show N complete** at the end of the table; press it to show them. On the **charts** page, complete records move behind **Show N complete** too. If a later scan uses `LegacyButton` again, the record counts it again. Keep the record once it is complete: it still marks any new use as deprecated.
+Once every record in a package reads **None left**, the **governance** page moves them behind **Show N complete**. The **charts** page does the same for each complete record. If a later scan uses `LegacyButton` again, the record counts it again. Keep the record once it is complete: it still marks any new use as deprecated.
 
 ## Not in any scan
 
@@ -84,11 +80,9 @@ A record reads **Not in any scan**, and has no chart, when none of the scans in 
 
 ## Edit or delete a record
 
-To reach a record from a component or package page, select its **Superseded by** or **Retired** line. From a record's chart, select **Manage records**. The **governance** page opens with the record's row marked.
+To change a record, press its **Edit** button, change the form and press **Save**.
 
-To change a record, press **Edit** (the pencil) on its row. The form opens in place of the row and says who added the record and who last changed it, such as `Added by Ana on 2 Oct · changed by Sam on 3 Oct`. Change it and press **Save**.
-
-To delete a record, press **Edit** on its row, then **Delete** in the form. The form asks before it deletes: press **Delete** again to confirm.
+To delete a record, press **Delete** in the same form, then **Delete** again to confirm.
 
 :::warning
 Deleting a record removes its deprecated mark straight away, so a new use of `LegacyButton` shows as an ordinary component. Its chart and its rows on the **charts** page and on each repo's **Adoption** tab go too, once the dashboard has recalculated.

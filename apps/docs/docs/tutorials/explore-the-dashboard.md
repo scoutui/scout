@@ -112,14 +112,14 @@ A [tag](/docs/reference/glossary#tag) groups packages under one name, so the das
 
 We select **governance** in the top navigation. A **New record** form is already open at the top; we'll use it in step 6. For now we scroll down to the **Tags** section.
 
-1. We press **Add tag**. A form opens as the first row of the tags table.
+1. We press **Add tag**.
 2. We type `acme-ui` into **Name** and keep the colour it offers.
-3. In **Packages**, we enter `@acme/ui`. Beside the box, under **Matches**, a line reads `Matches 1 package: @acme/ui`.
+3. In **Packages**, we enter `@acme/ui`. The form shows `Matches 1 package: @acme/ui`.
 4. We press **Create**.
 
-The **Tags** table shows `acme-ui` with `1 package` under **Matches**. We repeat the steps for `acme-ui-legacy`, with `@acme/ui-legacy` in **Packages**.
+The tag list shows `acme-ui` with `1 package`. We repeat the steps for `acme-ui-legacy`, with the exact name `@acme/ui-legacy`.
 
-We enter exact package names so each tag matches one package. A pattern such as `@acme/ui*` would match `@acme/ui-legacy` too, and the old library would count in both tags. [Tags](/docs/guides/dashboard/tag-your-libraries#match-packages-with-a-pattern) covers patterns.
+We use exact names so each tag matches one package. A glob pattern such as `@acme/ui*` would match `@acme/ui-legacy` too, and the old library would count in both tags. [Tags](/docs/guides/dashboard/tag-your-libraries#match-packages-with-a-glob-pattern) covers glob patterns.
 
 To see the tags at work, we select **packages** in the top navigation. `@acme/ui` now has an `acme-ui` chip beside its name, and `@acme/ui-legacy` has an `acme-ui-legacy` chip. From here on we can filter by library and compare the two libraries in a chart.
 
@@ -134,7 +134,7 @@ We select **governance** again. In the **New record** form:
 3. We click **Superseded by**, type `button`, and pick the `Button` row under `@acme/ui`.
 4. We press **Create**.
 
-The record appears in the **Records** table, under a `@acme/ui-legacy · 1 component` row: `LegacyButton`, then `Superseded by` and `Button · @acme/ui`. The dashboard counts what's left in the background, so **Occurrences left** reads `No data` at first, and we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Occurrences left** reads `1`: the one use of `LegacyButton` in `acme/storefront`. If it still reads `No data`, we wait a moment and reload again.
+Under **Records**, `LegacyButton` now reads **Superseded by** `Button · @acme/ui`. Its count is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Occurrences left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
 
 We select **repos** and open `acme/storefront`:
 

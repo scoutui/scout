@@ -58,7 +58,7 @@ Select a component to open its page across repos. See [Find where a component is
 
 Press the tag button beside the package name to open **Tag this package**, then tick a tag to add the package to it or untick to remove it. The tag chips beside the name update straight away.
 
-A tag shown ticked, greyed out and marked **via rule** applies through one of its patterns, and you change it on the **governance** page. The tag button appears once at least one tag exists. To create tags and cover a whole library at once, see [Tags](/docs/guides/dashboard/tag-your-libraries).
+A tag shown ticked, greyed out and marked **via rule** applies through one of its glob patterns, and you change it on the **governance** page. The tag button appears once at least one tag exists. To create tags and cover a whole library at once, see [Tags](/docs/guides/dashboard/tag-your-libraries).
 
 ## Share a filtered list
 

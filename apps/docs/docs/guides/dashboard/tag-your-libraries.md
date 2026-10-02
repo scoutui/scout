@@ -19,27 +19,25 @@ Tags apply to every scan already uploaded, including older ones, so you don't ne
 ## Create a tag
 
 1. Select **governance** in the top navigation and scroll to the **Tags** section at the bottom of the page.
-2. Press **Add tag**. The form opens as the first row of the tags table.
+2. Press **Add tag**.
 3. Type the tag's name, `acme-ui`, into **Name**. The name labels the tag's chips, its **Tag** filter value and its line in charts.
-4. Pick a colour (**Teal**, **Violet**, **Blue** or **Grey**), or keep the one offered.
-5. In **Packages**, enter `@acme/ui`. **Packages** takes one package name or pattern per line, and `*` matches anything. Beside the box, under **Matches**, a line shows which scanned packages the tag matches as you type, such as `Matches 1 package: @acme/ui`.
-6. Press **Create**. The tag appears in the table with its colour before its name, and the number of scanned packages it matches under **Matches**.
+4. Pick a colour, or keep the one offered.
+5. In **Packages**, enter `@acme/ui`. It takes one package name or [glob pattern](#match-packages-with-a-glob-pattern) per line, or entries separated by commas.
+6. Press **Create**. The tag appears in the list with the number of scanned packages it matches.
 
-Repeat for `acme-ui-legacy` with `@acme/ui-legacy` in **Packages**.
+Repeat for `acme-ui-legacy` with the exact name `@acme/ui-legacy`.
 
-A tag with six or more entries in **Packages** lists four of them in the table, then a **+N more** button that shows the rest.
+![The Tags section of the governance page, with a new form-libs tag being added and the three packages it matches](/img/dashboard/governance-tags.png)
 
-![The Tags section of the governance page, with the tag form open for a form-libs tag that matches three packages, and seven tags listed below](/img/dashboard/governance-tags.png)
+To change a tag later, press its **Edit** button, then **Save**. **Delete** in the same form removes the tag, and every chart that uses it loses its line.
 
-To change a tag later, press **Edit** (the pencil) on its row. The form opens in place of the row; change it and press **Save**. **Delete** in the same form asks before it removes the tag. Every chart that uses the tag then loses its line.
+## Match packages with a glob pattern
 
-## Match packages with a pattern
-
-A pattern saves listing every package when a library spans several packages whose names share a start. `*` matches any run of characters, so `@acme/icons*` matches `@acme/icons` and any package added later whose name starts the same way.
+A glob pattern saves listing every package when a library spans several packages whose names share a start. `*` matches any run of characters, so `@acme/icons*` matches `@acme/icons` and any package added later whose name starts the same way.
 
 A pattern must match the whole package name, case included, and `*` is the only wildcard: braces, `?` and square brackets match only themselves.
 
-Check what else a pattern catches: the line beside **Packages** lists what it matches before you save. Here `@acme/ui*` looks right for `acme-ui`, but the line reads `Matches 2 packages: @acme/ui, @acme/ui-legacy`:
+Check what else a pattern catches: before you save, the form shows how many scanned packages it matches and names the first few. Here `@acme/ui*` looks right for `acme-ui`, but it also matches `@acme/ui-legacy`:
 
 ```text title="Wrong: acme-ui, Packages"
 @acme/ui*
@@ -55,7 +53,7 @@ A package that matches two tags counts under both. See [Why shares can overlap](
 
 ## Add a package from its page
 
-To add one package to a tag without going to the **governance** page, open the package from the **packages** list and press the tag button beside its name. Tick a tag to add the package to that tag's **Packages**; untick it to remove it. See [Tag a package from its page](/docs/guides/dashboard/packages#tag-a-package-from-its-page).
+To add one package to a tag without going to the **governance** page, open the package from the **packages** list and press the tag button beside its name. Tick a tag to add the package to that tag; untick it to remove it. See [Tag a package from its page](/docs/guides/dashboard/packages#tag-a-package-from-its-page).
 
 ## Check it worked
 
