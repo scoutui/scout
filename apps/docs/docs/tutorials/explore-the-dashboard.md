@@ -134,7 +134,7 @@ We select **governance** again. In the **New record** form:
 3. We click **Superseded by**, type `button`, and pick the `Button` row under `@acme/ui`.
 4. We press **Create**.
 
-The record appears in the **Superseded** table, under a `@acme/ui-legacy · 1 component` row: `LegacyButton`, an arrow, then `Button · @acme/ui`. Its status is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`, and the record's **Status** reads `In use`, because `acme/storefront` still uses `LegacyButton`. If the record has no status yet, we wait a moment and reload again.
+The record appears in the **Records** table, under a `@acme/ui-legacy · 1 component` row: `LegacyButton`, then `Superseded by` and `Button · @acme/ui`. The dashboard counts what's left in the background, so **Occurrences left** reads `No data` at first, and we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Occurrences left** reads `1`: the one use of `LegacyButton` in `acme/storefront`. If it still reads `No data`, we wait a moment and reload again.
 
 We select **repos** and open `acme/storefront`:
 

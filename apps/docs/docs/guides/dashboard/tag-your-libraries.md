@@ -21,11 +21,13 @@ Tags apply to every scan already uploaded, including older ones, so you don't ne
 1. Select **governance** in the top navigation and scroll to the **Tags** section at the bottom of the page.
 2. Press **Add tag**. The form opens as the first row of the tags table.
 3. Type the tag's name, `acme-ui`, into **Name**. The name labels the tag's chips, its **Tag** filter value and its line in charts.
-4. Pick a colour, or keep the one offered.
+4. Pick a colour (**Teal**, **Violet**, **Blue** or **Grey**), or keep the one offered.
 5. In **Packages**, enter `@acme/ui`. **Packages** takes one package name or pattern per line, and `*` matches anything. Beside the box, under **Matches**, a line shows which scanned packages the tag matches as you type, such as `Matches 1 package: @acme/ui`.
-6. Press **Create**. The tag appears in the table, with the number of scanned packages it matches under **Matches**.
+6. Press **Create**. The tag appears in the table with its colour before its name, and the number of scanned packages it matches under **Matches**.
 
 Repeat for `acme-ui-legacy` with `@acme/ui-legacy` in **Packages**.
+
+A tag with six or more entries in **Packages** lists four of them in the table, then a **+N more** button that shows the rest.
 
 ![The Tags section of the governance page, with the tag form open for a radix tag with the pattern @radix-ui/* and six tags listed below](/img/dashboard/governance-tags.png)
 

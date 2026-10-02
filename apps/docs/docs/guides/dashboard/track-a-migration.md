@@ -44,19 +44,24 @@ Retire a component when it is being removed with no replacement, for example `Mo
 
 As soon as you save, every component the record covers shows as deprecated in every repo: warning icons, **deprecated** chips and the **Deprecated** columns. That includes scans already uploaded, so no rescan is needed. A record on `Card` covers it from every import path, such as `@acme/ui` and `@acme/ui/card`, and its parts, such as `Card.Header`.
 
-The **governance** page lists records in a **Superseded** table and a **Retired** table, grouped by the package they come from. Records on a whole package sit together under **Whole packages**.
+The **governance** page lists every record in one **Records** table, grouped by the package each record comes from. Records on single components sit under a row with their package's name and total. A record on a whole package is a row of its own, with **Whole package · N components** under its name. Each row says what was decided: **Superseded by** and the replacement, or **Retired** and the reason.
 
-The record's status and progress follow a moment later, once the dashboard has recalculated. If a new record has no status yet, reload the page. Each record then shows one of these:
+**Occurrences left** counts how many [occurrences](/docs/reference/glossary#occurrence) of the record's package or component are still in each repo's latest scan. It reads one of these:
 
-- **Used in N repos**: N repos' latest scans still use the deprecated component (just **In use** when only one repo has been scanned).
-- **Complete**: it has been used before, and no repo's latest scan uses it now.
-- **Never matched a scan**: see [Never matched a scan](#never-matched-a-scan).
+- A count, such as `17 in acme/storefront` when one repo still uses it, or `20 in 2 repos` when several do. When only one repo has been scanned, it reads just the number, such as `17`.
+- **None left**: it has been used before, and no repo's latest scan uses it now. See [When a record reads None left](#when-a-record-reads-none-left).
+- **Not in any scan**: see [Not in any scan](#not-in-any-scan).
+- **No data**: the dashboard hasn't counted it yet. A new record reads **No data** for a moment after you save, and so can every record for a few minutes after the dashboard is upgraded. Reload the page to see the count.
+
+Packages with the most occurrences left come first, and so do the records inside each package.
 
 ![The governance page listing lifecycle records, each with its replacement or reason and its status](/img/dashboard/governance-records.png)
 
 ## Follow progress
 
-On the **governance** page, select a record's status to open its chart: occurrences over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
+On the **governance** page, select a record's count under **Occurrences left** to open its chart: occurrences over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
+
+To see where a record's package or component is still used, select its name. A record on a component opens that component's page, or its package's page filtered to it when the record covers more than one component, such as `Card` and `Card.Header`. A record on a whole package, and a package's name on its row, open the package's page. A name isn't a link when nothing it covers is in any repo's latest scan.
 
 The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N remaining**, the occurrences still in use. See [Charts](/docs/guides/dashboard/charts).
 
@@ -64,22 +69,24 @@ To follow one repo, open it from **repos** and go to its **Adoption** tab. **Mig
 
 [How a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted) explains the percentage.
 
-## When a record reads complete
+## When a record reads None left
 
-No button marks a record complete. It reads **Complete** once no repo's latest scan uses `LegacyButton`, so finishing a migration means:
+No button marks a record complete. It reads **None left** once no repo's latest scan uses `LegacyButton`, so finishing a migration means:
 
-1. Remove the last uses of `LegacyButton` from each repo. To find them, open `LegacyButton` from its package page and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
-2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record from reading **Complete**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
+1. Remove the last uses of `LegacyButton` from each repo. To find them, select `LegacyButton` on the **governance** page to open its page, and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
+2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record from reading **None left**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
 
-On the **governance** page, a group whose records are all complete folds to its heading row; select the package name on that row, or **Whole packages**, to show them. On the **charts** page, complete records move behind **Show N complete**. If a later scan uses `LegacyButton` again, the record is in use again. Keep the record once it is complete: it still marks any new use as deprecated.
+On the **governance** page, once every record in a package reads **None left**, the package moves behind **Show N complete** at the end of the table; press it to show them. On the **charts** page, complete records move behind **Show N complete** too. If a later scan uses `LegacyButton` again, the record counts it again. Keep the record once it is complete: it still marks any new use as deprecated.
 
-## Never matched a scan
+## Not in any scan
 
-A record reads **Never matched a scan**, and has no chart, when none of the scans in the dashboard contain the package or component it names. The pickers only offer what scans contain, so this happens when the scans that used it have since been removed from the dashboard. Upload a scan of a repo that still uses it and the status comes back, with no edit needed. If no repo uses it any more, the status stays, and the record still marks any new use as deprecated.
+A record reads **Not in any scan**, and has no chart, when none of the scans in the dashboard contain the package or component it names. The pickers only offer what scans contain, so this happens when the scans that used it have since been removed from the dashboard. Upload a scan of a repo that still uses it and the count comes back, with no edit needed. If no repo uses it any more, it keeps reading **Not in any scan**, and the record still marks any new use as deprecated.
 
 ## Edit or delete a record
 
-To change a record, press **Edit** (the pencil) on its row. The form opens in place of the row; change it and press **Save**.
+To reach a record from a component or package page, select its **Superseded by** or **Retired** line. From a record's chart, select **Manage records**. The **governance** page opens with the record's row marked.
+
+To change a record, press **Edit** (the pencil) on its row. The form opens in place of the row and says who added the record and who last changed it, such as `Added by Ana on 2 Oct · changed by Sam on 3 Oct`. Change it and press **Save**.
 
 To delete a record, press **Edit** on its row, then **Delete** in the form. The form asks before it deletes: press **Delete** again to confirm.
 
