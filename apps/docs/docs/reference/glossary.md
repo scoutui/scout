@@ -77,7 +77,7 @@ See [Link web components to your package](/docs/guides/link-web-components-to-yo
 
 ## Tag
 
-A name you give a set of packages in the dashboard, such as `acme-ui` for `@acme/ui` and `acme-ui-legacy` for `@acme/ui-legacy`. It matches package names by exact names, or by glob patterns such as `@acme/icons*`. Tags let you filter by library and compare libraries in charts. They are not the same as the **Tag** value of the **Framework** filter, which marks a [web component](#web-component) that nothing defines.
+A name you give a set of packages in the dashboard, such as `acme-ui` for `@acme/ui` and `acme-ui-legacy` for `@acme/ui-legacy`. It matches package names by exact name, or by a pattern such as `@acme/icons*`, where `*` matches anything. Tags let you filter by library and compare libraries in charts. They are not the same as the **Tag** value of the **Framework** filter, which marks a [web component](#web-component) that nothing defines.
 
 You create tags in the **Tags** section of the **governance** page. See [Tags](/docs/guides/dashboard/tag-your-libraries).
 
@@ -101,6 +101,6 @@ You see migrations under **Migrations** on the **charts** page and under **Migra
 
 ## Retirement
 
-The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the occurrences still in use. Its record reads **complete** on the **governance** page once no repo's latest scan uses it.
+The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the occurrences still in use. Its record reads **Complete** on the **governance** page once no repo's latest scan uses it.
 
 You see retirements under **Retirements** on the **charts** page and under **Retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration#record-a-retirement).

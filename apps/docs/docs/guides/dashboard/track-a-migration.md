@@ -12,17 +12,17 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 ## Record a migration
 
 1. Select **governance** in the top navigation and press **Add record**. With no records yet, the form is already open.
-2. Open **Source** and type a few words, such as `legacy button`. Every word must match the package name or the component name.
+2. Open **Package or component** and type a few words, such as `legacy button`. Every word must match the package name or the component name.
 3. Pick what the record covers:
    - the `LegacyButton` row under `@acme/ui-legacy`, for that component, or
    - the **whole package** row for `@acme/ui-legacy`, for every component in it.
 
    The hint under the field confirms which one you picked.
-4. Leave **Disposition** on **Superseded**.
+4. Leave **Type** on **Superseded**.
 5. Open **Superseded by** and pick the `Button` row under `@acme/ui`. If you pick the package row instead, the whole of `@acme/ui` counts as the replacement.
 6. Press **Create**.
 
-![The New lifecycle record form with react-date-picker as the source, Superseded selected, and react-datepicker as the replacement](/img/dashboard/governance-record-form.png)
+![The New record form with react-date-picker as the source, Superseded selected, and react-datepicker as the replacement](/img/dashboard/governance-record-form.png)
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first. Components [defined in the repo](/docs/reference/glossary#defined-in-the-repo) are never offered.
 
@@ -35,8 +35,8 @@ Each package or component can have one record, and a package has either one whol
 Retire a component when it is being removed with no replacement, for example `Modal` from `@acme/ui-legacy`.
 
 1. On the **governance** page, press **Add record**.
-2. In **Source**, pick the `Modal` row under `@acme/ui-legacy`, or the package's **whole package** row.
-3. Set **Disposition** to **Retired**.
+2. In **Package or component**, pick the `Modal` row under `@acme/ui-legacy`, or the package's **whole package** row.
+3. Set **Type** to **Retired**.
 4. In **Reason**, say why it is going, for example `Removed in @acme/ui-legacy 4.0; no replacement.`
 5. Press **Create**.
 
@@ -44,13 +44,15 @@ Retire a component when it is being removed with no replacement, for example `Mo
 
 As soon as you save, every component the record covers shows as deprecated in every repo: warning icons, **deprecated** chips and the **Deprecated** columns. That includes scans already uploaded, so no rescan is needed. A record on `Card` covers it from every import path, such as `@acme/ui` and `@acme/ui/card`, and its parts, such as `Card.Header`.
 
+The **governance** page lists records in a **Superseded** table and a **Retired** table, grouped by the package they come from. Records on a whole package sit together under **Whole packages**.
+
 The record's status and progress follow a moment later, once the dashboard has recalculated. If a new record has no status yet, reload the page. Each record then shows one of these:
 
-- **active in N repos**: N repos' latest scans still use the deprecated component (just **active** when only one repo has been scanned).
-- **complete**: it has been used before, and no repo's latest scan uses it now.
-- **never matched a scan**: see [Never matched a scan](#never-matched-a-scan).
+- **Used in N repos**: N repos' latest scans still use the deprecated component (just **In use** when only one repo has been scanned).
+- **Complete**: it has been used before, and no repo's latest scan uses it now.
+- **Never matched a scan**: see [Never matched a scan](#never-matched-a-scan).
 
-![The governance page listing lifecycle records, each with its disposition and status](/img/dashboard/governance-records.png)
+![The governance page listing lifecycle records, each with its replacement or reason and its status](/img/dashboard/governance-records.png)
 
 ## Follow progress
 
@@ -64,22 +66,22 @@ To follow one repo, open it from **repos** and go to its **Adoption** tab. **Mig
 
 ## When a record reads complete
 
-No button marks a record complete. It reads **complete** once no repo's latest scan uses `LegacyButton`, so finishing a migration means:
+No button marks a record complete. It reads **Complete** once no repo's latest scan uses `LegacyButton`, so finishing a migration means:
 
 1. Remove the last uses of `LegacyButton` from each repo. To find them, open `LegacyButton` from its package page and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
-2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record **active**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
+2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record **in use**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
 
-On the **charts** page, complete records move behind **Show N complete**. If a later scan uses `LegacyButton` again, the record goes back to **active**. Keep the record once it is complete: it still marks any new use as deprecated.
+On the **governance** page, a group whose records are all complete folds to its heading row; select the row to show them. On the **charts** page, complete records move behind **Show N complete**. If a later scan uses `LegacyButton` again, the record goes back to **in use**. Keep the record once it is complete: it still marks any new use as deprecated.
 
 ## Never matched a scan
 
-A record reads **never matched a scan**, and has no chart, when none of the scans in the dashboard contain the package or component it names. The pickers only offer what scans contain, so this happens when the scans that used it have since been removed from the dashboard. Upload a scan of a repo that still uses it and the status comes back, with no edit needed. If no repo uses it any more, the status stays, and the record still marks any new use as deprecated.
+A record reads **Never matched a scan**, and has no chart, when none of the scans in the dashboard contain the package or component it names. The pickers only offer what scans contain, so this happens when the scans that used it have since been removed from the dashboard. Upload a scan of a repo that still uses it and the status comes back, with no edit needed. If no repo uses it any more, the status stays, and the record still marks any new use as deprecated.
 
 ## Edit or delete a record
 
-To change a record, press the pencil button on its row, change the form and press **Save changes**.
+To change a record, press **Edit** (the pencil) on its row. The form opens in place of the row; change it and press **Save**.
 
-To delete a record, press the bin button on its row, then **Confirm**.
+To delete a record, press **Edit** on its row, then **Delete** in the form. The form asks before it deletes: press **Delete** again to confirm.
 
 :::warning
 Deleting a record removes its deprecated mark straight away, so a new use of `LegacyButton` shows as an ordinary component. Its chart and its rows on the **charts** page and on each repo's **Adoption** tab go too, once the dashboard has recalculated.
