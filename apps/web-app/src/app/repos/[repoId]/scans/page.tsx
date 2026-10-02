@@ -8,6 +8,7 @@ import { readModelPage } from "@/lib/read-model-page";
 import { getReadModelProgress, skippedState } from "@/lib/read-model-progress";
 import { fallbackStates, ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
 import { relativeTime } from "@/lib/relative-time";
+import { shortScanId } from "@/lib/scan-id";
 import {
   Table,
   TableBody,
@@ -126,8 +127,8 @@ export default async function RepoScansPage({
                         </span>
                       ) : "—"}
                     </TableCell>
-                    <TableCell className="hidden font-mono text-xs text-muted-foreground sm:table-cell">
-                      {s.scanId}
+                    <TableCell className="hidden font-mono text-xs text-muted-foreground sm:table-cell" title={s.scanId}>
+                      {shortScanId(s.scanId)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Link

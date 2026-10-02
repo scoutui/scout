@@ -349,19 +349,19 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       await seed(pool);
       const oldest = genericArtifacts()[0];
       if (!oldest) throw new Error("Missing scan fixture");
-      oldest.meta.scanId = "scan-oldest";
+      oldest.meta.scanId = "01K6HZQ4M8R2VXJ3T5N7P9B0CD";
       oldest.meta.repo.commit = "oldest";
       oldest.meta.repo.committedAt = "2026-05-01T00:00:00Z";
       await publishScan(pool, oldest, { uploadedByUserId: null });
       await pool.query("UPDATE scans SET created_at = '2026-06-02T00:05:00Z' WHERE scan_id = 'scan-current'");
       await pool.query("UPDATE scans SET created_at = '2026-06-05T09:00:00Z' WHERE scan_id = 'scan-previous'");
-      await pool.query("UPDATE scans SET created_at = '2026-05-01T00:05:00Z' WHERE scan_id = 'scan-oldest'");
+      await pool.query("UPDATE scans SET created_at = '2026-05-01T00:05:00Z' WHERE scan_id = '01K6HZQ4M8R2VXJ3T5N7P9B0CD'");
       await pool.query(`INSERT INTO "user" (id, name, email) VALUES ('named', 'Priya Raman', 'priya@example.com'), ('unnamed', NULL, 'tomas@example.com')`);
       await pool.query("UPDATE scans SET uploaded_by_user_id = 'named' WHERE scan_id = 'scan-current'");
       await pool.query("UPDATE scans SET uploaded_by_user_id = 'unnamed' WHERE scan_id = 'scan-previous'");
-      await pool.query("DELETE FROM scan_read_models WHERE scan_id IN ('scan-current', 'scan-oldest')");
+      await pool.query("DELETE FROM scan_read_models WHERE scan_id IN ('scan-current', '01K6HZQ4M8R2VXJ3T5N7P9B0CD')");
       await pool.query(`INSERT INTO scan_jobs (id, scan_id, projection_version, kind, state, error_message) VALUES
-        ('current-job', 'scan-current', 1, 'scan', 'failed', 'Projection failed'), ('oldest-job', 'scan-oldest', 1, 'scan', 'failed', 'degraded: unknown_format')`);
+        ('current-job', 'scan-current', 1, 'scan', 'failed', 'Projection failed'), ('oldest-job', '01K6HZQ4M8R2VXJ3T5N7P9B0CD', 1, 'scan', 'failed', 'degraded: unknown_format')`);
       const history = await import("@/app/repos/[repoId]/scans/page");
       const [header, ...rows] = renderToStaticMarkup(await history.default(repoParams)).split("<tr").slice(1);
       expect(header).toMatch(/Committed.*Branch.*Commit.*Scanned<.*Scanned by<.*Scan ID/);
@@ -370,6 +370,14 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
         ["priya@example.com", "Priya Raman"],
         ["tomas@example.com", "tomas@example.com"],
         [null, "—"],
+      ]);
+      expect(rows.map(row => {
+        const cell = row.split("<td")[6] ?? "";
+        return [cell.match(/title="([^"]+)"/)?.[1], cell.match(/>([^<]+)</)?.[1]];
+      })).toEqual([
+        ["scan-current", "scan-current"],
+        ["scan-previous", "scan-previou"],
+        ["01K6HZQ4M8R2VXJ3T5N7P9B0CD", "01K6HZQ4M8R2"],
       ]);
       expect(rows.map(row => [...row.matchAll(/title="([^"]+ UTC)"/g)].map(match => match[1]))).toEqual([
         ["2026-06-02 00:00 UTC", "2026-06-02 00:05 UTC"],
