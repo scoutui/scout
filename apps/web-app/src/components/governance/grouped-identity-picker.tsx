@@ -162,7 +162,7 @@ export function GroupedIdentityPicker({
         apply({ rects, availableHeight, elements }) {
           Object.assign(elements.floating.style, {
             width: `${rects.reference.width}px`,
-            maxHeight: `${Math.max(200, Math.min(availableHeight, 384, window.innerHeight * 0.6))}px`,
+            maxHeight: `${Math.max(200, Math.min(Math.floor(availableHeight), 384, window.innerHeight * 0.6))}px`,
           });
         },
       }),
