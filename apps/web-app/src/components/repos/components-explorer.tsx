@@ -27,15 +27,19 @@ import {
 export function ComponentsExplorer({
   repoId,
   rows,
+  notInLatest,
   deprecatedTotal,
   diff,
 }: {
   repoId: string;
   rows: ComponentRow[];
+  /** Ids of the shown scan's components that the latest scan doesn't have. */
+  notInLatest?: string[] | undefined;
   deprecatedTotal: number;
   /** The shown scan vs the one before; null on a first scan. */
   diff: ScanDiff | null;
 }) {
+  const notInLatestIds = useMemo(() => new Set(notInLatest), [notInLatest]);
   const [facets, setFacets] = useQueryParamsState<FacetState>(FACET_PARAMS, paramsToFacets, facetsToParams);
 
   // `changed` swaps the candidates for the marked current rows plus the
@@ -94,6 +98,7 @@ export function ComponentsExplorer({
           repoId={repoId}
           rows={filtered}
           marks={changedActive && diff !== null ? diff.marks : undefined}
+          notInLatest={notInLatestIds}
           search={facets.text}
         />
       )}

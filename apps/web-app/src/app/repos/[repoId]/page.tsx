@@ -20,9 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ repoId: s
   const decoded = decodeURIComponent(repoId);
   const page = await readModelPage(getStorage(), snapshot => snapshot.getRepoHead(decoded));
   if (page.state !== "ready") return { title: decoded };
-  // notFound() here, before the loading.tsx boundary flushes the shell, is
-  // what makes the response status a real 404; the page's own check
-  // only swaps UI after a 200 has streamed.
+  // The loading skeleton has already streamed with a 200, so this shows the
+  // not-found page without changing the status.
   if (!page.value) notFound();
   return { title: decoded };
 }
@@ -49,13 +48,17 @@ export default async function RepoDetailPage({
     if (!detail) return null;
     const recentScans = await snapshot.listScans(repoId);
     const rows = await snapshot.listComponentsForRepo(repoId, "", scanId);
+    const latestIds = isOlderScan(scanId, recentScans[0]?.scanId, detail.scanId)
+      ? new Set((await snapshot.listComponentsForRepo(repoId, "")).map(row => row.componentId))
+      : null;
+    const notInLatest = latestIds ? rows.filter(row => !latestIds.has(row.componentId)).map(row => row.componentId) : [];
     const governance = await snapshot.listGovernance();
     const tracking = await snapshot.getStoredTracking({ kind: "repo", repoId });
-    return { detail, recentScans, rows, governance, tracking };
+    return { detail, recentScans, rows, notInLatest, governance, tracking };
   });
   if (page.state !== "ready") return <ReadModelState {...page} heading={{ title: repoId, code: true, back: { href: "/repos", label: "Repos" } }} />;
   if (!page.value) notFound();
-  const { detail, recentScans, rows, governance, tracking } = page.value;
+  const { detail, recentScans, rows, notInLatest, governance, tracking } = page.value;
   if (!detail) notFound();
 
   // listScans puts the latest scan first.
@@ -77,7 +80,7 @@ export default async function RepoDetailPage({
                 title="No components found"
                 description="This scan found no components. Check the include patterns in scout.config.json, then scan again."
               />
-            ) : <ComponentsExplorer repoId={repoId} rows={rows} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} />}
+            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} />}
           </div>
         }
         adoption={
