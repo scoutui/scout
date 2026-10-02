@@ -91,28 +91,16 @@ describe("buildRecordMap", () => {
     expect(whole(1)).toBeNull();
   });
 
-  it("gives a chained row the next hop when its successor is itself superseded", () => {
-    const stats = { f: stat("active", { successorDeprecated: true }) };
-    const row = buildRecordMap({ visible: [field], all, stats, sources })[0]?.groups[0]?.rows[0];
-    expect(row?.nextHop).toEqual({ packageName: "@acme/new", exportName: "Input" });
-  });
-
-  it("gives no next hop when the successor's record retires it", () => {
-    const retiredInput = rec("i", "@acme/old", "Input", retired("Gone."));
-    const stats = { f: stat("active", { successorDeprecated: true }) };
-    const row = buildRecordMap({ visible: [field], all: [field, retiredInput], stats, sources })[0]?.groups[0]?.rows[0];
-    expect(row?.nextHop).toBeNull();
-  });
-
-  it("gives no next hop when the successor isn't flagged as deprecated", () => {
-    const row = buildRecordMap({ visible: [field], all, stats: { f: stat("active") }, sources })[0]?.groups[0]?.rows[0];
-    expect(row?.nextHop).toBeNull();
-  });
-
-  it("reads the next hop from the whole visible-or-not record list", () => {
-    const stats = { f: stat("active", { successorDeprecated: true }) };
-    const row = buildRecordMap({ visible: [field], all: [field, input], stats, sources })[0]?.groups[0]?.rows[0];
-    expect(row?.nextHop).toEqual({ packageName: "@acme/new", exportName: "Input" });
+  const flagged = (id: string) => ({ [id]: stat("active", { successorDeprecated: true }) });
+  it.each([
+    ["the successor component is itself superseded", field, all, flagged("f"), { packageName: "@acme/new", exportName: "Input" }],
+    ["the successor component is retired", field, [field, rec("i", "@acme/old", "Input", retired("Gone."))], flagged("f"), null],
+    ["the successor isn't flagged as deprecated", field, all, { f: stat("active") }, null],
+    ["the successor package is itself superseded", icons, [icons, rec("n", "new-icons", null, by("newer-icons"))], flagged("p"), { packageName: "newer-icons" }],
+    ["the successor package is retired", icons, [icons, rec("n", "new-icons", null, retired("Gone."))], flagged("p"), null],
+  ])("nextHop when %s", (_, record, records, stats, expected) => {
+    const row = buildRecordMap({ visible: [record], all: records, stats, sources })[0]?.groups[0]?.rows[0];
+    expect(row?.nextHop).toEqual(expected);
   });
 });
 
