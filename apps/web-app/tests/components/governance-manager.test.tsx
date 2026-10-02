@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { GovernanceRecord, RecordStat } from "@scoutui/web-shared";
 import { GovernanceManager } from "@/components/governance/governance-manager";
 
 vi.mock("@/app/governance/governance-actions", () => ({
-  saveGovernance: vi.fn(async () => ({ ok: true })),
+  saveGovernance: vi.fn(async () => ({ ok: true, id: "new" })),
   deleteGovernance: vi.fn(async () => ({ ok: true })),
 }));
+
+Element.prototype.scrollIntoView = vi.fn();
 
 const records: GovernanceRecord[] = [
   {
@@ -41,6 +43,8 @@ const stats = {
 } satisfies Record<string, RecordStat>;
 
 describe("GovernanceManager", () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it("shows superseded and retired records in their own tables with the form's column headings", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} notice={null} />);
     const superseded = screen.getByRole("table", { name: "Superseded" });
@@ -96,7 +100,7 @@ describe("GovernanceManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.getByRole("button", { name: "Edit Button" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
   });
 
   it("shows where a deprecated successor goes next", () => {
@@ -122,38 +126,91 @@ describe("GovernanceManager", () => {
     expect(saveGovernance).not.toHaveBeenCalled();
   });
 
-  it("exposes disposition as a radiogroup whose choice swaps the dependent field", async () => {
+  it("labels the form's fields in plain words, with hints", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
-    const group = screen.getByRole("radiogroup", { name: /disposition/i });
-    const radios = screen.getAllByRole("radio");
-    expect(group).toBeInTheDocument();
-    expect(radios).toHaveLength(2);
-    fireEvent.click(screen.getByRole("radio", { name: /retired/i }));
-    expect(await screen.findByLabelText(/reason/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "New record" })).toBeInTheDocument();
+    expect(screen.getByText("Package or component")).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Type" })).toBeInTheDocument();
+    expect(screen.getByText("Superseded: something replaces it.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
+    expect(screen.getByText("Retired: it goes with no replacement.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Reason")).not.toHaveAttribute("placeholder");
+    expect(screen.getByText("Shown on the record, for example why there's no replacement.")).toBeInTheDocument();
+  });
+
+  it("marks both empty pickers invalid on Create", async () => {
+    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    await screen.findAllByRole("alert");
+    expect(screen.getByRole("button", { name: /^Package or component:/ })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: /^Superseded by:/ })).toHaveAttribute("aria-invalid", "true");
   });
 
   it("names the source picker with its current selection state", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
-    expect(screen.getByRole("button", { name: /source: none selected/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Package or component: none selected" })).toBeInTheDocument();
   });
 
-  it("opens the form via Add record for a non-empty registry", () => {
+  it("opens the form via Add record for a non-empty registry, closing an open edit form", () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
-    expect(screen.queryByRole("heading", { level: 2, name: "New lifecycle record" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "New record" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: /add record/i }));
-    expect(screen.getByRole("heading", { level: 2, name: "New lifecycle record" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "New record" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Edit record" })).not.toBeInTheDocument();
   });
 
   it("opens the form automatically on an empty registry, and Cancel reveals the teaching copy which Add record can reopen from", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
-    expect(screen.getByRole("heading", { level: 2, name: "New lifecycle record" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "New record" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
-    expect(screen.queryByRole("heading", { level: 2, name: "New lifecycle record" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "New record" })).not.toBeInTheDocument();
     expect(screen.getByText("No lifecycle records yet.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /add record/i }));
-    expect(screen.getByRole("heading", { level: 2, name: "New lifecycle record" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "New record" })).toBeInTheDocument();
+  });
+
+  it("opens Edit in the record's row and moves focus into the form", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    const row = document.getElementById("record-r1");
+    expect(row).not.toBeNull();
+    expect(within(row as HTMLElement).getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
+    expect(row?.contains(document.activeElement)).toBe(true);
+    expect(within(row as HTMLElement).getByRole("button", { name: /^Package or component: Button · @acme\/old$/ })).toBeInTheDocument();
+  });
+
+  it("deletes from the edit form after a confirm", async () => {
+    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Delete this record?")).toBeInTheDocument();
+    const { deleteGovernance } = await import("@/app/governance/governance-actions");
+    expect(deleteGovernance).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await vi.waitFor(() => expect(deleteGovernance).toHaveBeenCalledWith("r1"));
+  });
+
+  it("keeps the edited row on screen while the search hides its record", () => {
+    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "chip" } });
+    expect(screen.getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
+  });
+
+  it("highlights the saved record once it appears", async () => {
+    const { saveGovernance } = await import("@/app/governance/governance-actions");
+    vi.mocked(saveGovernance).mockResolvedValueOnce({ ok: true, id: "r1" });
+    const { rerender } = render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() => expect(screen.queryByRole("heading", { name: "Edit record" })).not.toBeInTheDocument());
+    rerender(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} notice={null} />);
+    await vi.waitFor(() => expect(document.getElementById("record-r1")).toHaveAttribute("aria-current", "true"));
+    fireEvent.pointerDown(document.body);
+    expect(document.getElementById("record-r1")).not.toHaveAttribute("aria-current");
   });
 
   it("renders the jump link to the existing record on a target_governed conflict", async () => {
@@ -165,7 +222,7 @@ describe("GovernanceManager", () => {
     });
 
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
-    fireEvent.click(screen.getByRole("button", { name: /source: none selected/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Package or component: none selected" }));
     const option = await screen.findByRole("option", { name: /^@acme\/old/ });
     fireEvent.click(option.querySelector("button") as HTMLButtonElement);
 
@@ -177,6 +234,30 @@ describe("GovernanceManager", () => {
     expect(link).toHaveAttribute("href", "#record-r1");
   });
 
+  it("opens a folded group to show the existing record the conflict link goes to", async () => {
+    const { saveGovernance } = await import("@/app/governance/governance-actions");
+    vi.mocked(saveGovernance).mockResolvedValueOnce({
+      ok: false,
+      error: "Already governed.",
+      conflict: { kind: "target_governed", existingId: "r1" },
+    });
+    const done = { ...stats, r1: { ...stats.r1, status: "complete" } as RecordStat };
+    render(<GovernanceManager records={[records[0] as GovernanceRecord]} sources={sources} stats={done} repoCount={3} summary={null} notice={null} />);
+    expect(document.getElementById("record-r1")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /add record/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Package or component: none selected" }));
+    const option = await screen.findByRole("option", { name: /^@acme\/old/ });
+    fireEvent.click(option.querySelector("button") as HTMLButtonElement);
+    fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
+    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "gone" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    fireEvent.click(await screen.findByRole("link", { name: /go to the existing record/i }));
+
+    await vi.waitFor(() => expect(document.getElementById("record-r1")).not.toBeNull());
+    expect(screen.getByRole("button", { name: /@acme\/old/ })).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("renders no jump link on a component_grain_overlap conflict (plural existingIds)", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     vi.mocked(saveGovernance).mockResolvedValueOnce({
@@ -186,7 +267,7 @@ describe("GovernanceManager", () => {
     });
 
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} notice={null} />);
-    fireEvent.click(screen.getByRole("button", { name: /source: none selected/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Package or component: none selected" }));
     const option = await screen.findByRole("option", { name: /^@acme\/old/ });
     fireEvent.click(option.querySelector("button") as HTMLButtonElement);
 

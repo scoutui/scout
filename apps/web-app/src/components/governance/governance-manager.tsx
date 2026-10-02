@@ -1,7 +1,7 @@
 "use client";
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, CircleCheck, CircleDashed, Pencil, Plus, TriangleAlert } from "lucide-react";
+import { ChevronRight, CircleCheck, CircleDashed, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
 import type {
@@ -11,11 +11,11 @@ import type {
   RecordStat,
 } from "@scoutui/web-shared";
 import { type GovernanceField, invalidGovernanceFields } from "@scoutui/web-shared/client";
-import { saveGovernance } from "@/app/governance/governance-actions";
+import { deleteGovernance, saveGovernance } from "@/app/governance/governance-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toggleVariants } from "@/components/ui/toggle";
-import { GroupedIdentityPicker, type IdentityPick } from "@/components/governance/grouped-identity-picker";
+import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/components/governance/grouped-identity-picker";
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
 import {
@@ -80,6 +80,11 @@ type DispositionKind = (typeof DISPOSITION_KINDS)[number];
 const KIND_LABEL: Record<DispositionKind, string> = {
   superseded: "Superseded",
   retired: "Retired",
+};
+
+const KIND_HINT: Record<DispositionKind, string> = {
+  superseded: "Superseded: something replaces it.",
+  retired: "Retired: it goes with no replacement.",
 };
 
 // ---------------------------------------------------------------------------
@@ -202,26 +207,69 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   // With no records, the form opens straight away.
   const [formOpen, setFormOpen] = useState(records.length === 0);
   const [form, setForm] = useState<FormState>(emptyForm());
+  // Only a form the user opens takes focus, not the one that opens on its own.
+  const [focusForm, setFocusForm] = useState(false);
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const scrolledTo = useRef<string | null>(null);
 
   const editingId = formOpen ? form.id : undefined;
   const searching = query.trim() !== "";
-  const visible = records.filter((r) => matchesRecordQuery(r, query));
+  const matches = records.filter((r) => matchesRecordQuery(r, query));
+  const visible = records.filter((r) => r.id === editingId || matchesRecordQuery(r, query));
   const sections = buildRecordMap({ visible, all: records, stats, sources });
+
+  // Scrolls to the highlighted record once its row is on the page, opening its group first if it's folded.
+  useEffect(() => {
+    if (!highlightId || scrolledTo.current === highlightId) return;
+    const row = document.getElementById(`record-${highlightId}`);
+    if (row) {
+      scrolledTo.current = highlightId;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      row.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+      row.focus({ preventScroll: true });
+      return;
+    }
+    const key = groupKeyOf(sections, highlightId);
+    if (key) setExpanded((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+  });
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const clear = () => setHighlightId(null);
+    document.addEventListener("pointerdown", clear);
+    document.addEventListener("keydown", clear);
+    return () => {
+      document.removeEventListener("pointerdown", clear);
+      document.removeEventListener("keydown", clear);
+    };
+  }, [highlightId]);
 
   function openNew() {
     setForm(emptyForm());
     setFormOpen(true);
+    setFocusForm(true);
   }
 
   function openEdit(r: GovernanceRecord) {
     setForm(recordToForm(r));
     setFormOpen(true);
+    setFocusForm(true);
   }
 
   function closeForm() {
     setFormOpen(false);
+  }
+
+  function showRecord(id: string) {
+    scrolledTo.current = null;
+    setHighlightId(id);
+  }
+
+  function search(value: string) {
+    setQuery(value);
+    setHighlightId(null);
   }
 
   function toggleGroup(key: string) {
@@ -232,13 +280,32 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
     });
   }
 
+  const recordForm = formOpen ? (
+    <RecordForm
+      form={form}
+      setForm={setForm}
+      sources={sources}
+      takeFocus={focusForm}
+      onDone={closeForm}
+      onSaved={(id) => {
+        closeForm();
+        showRecord(id);
+      }}
+      onJumpToRecord={(id) => {
+        setQuery("");
+        closeForm();
+        showRecord(id);
+      }}
+    />
+  ) : null;
+
   return (
     <div className="space-y-8">
       <header className="space-y-3">
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-3xl font-semibold tracking-tight">Governance</h1>
-            <Button size="sm" onClick={openNew} disabled={formOpen}>
+            <Button size="sm" onClick={openNew} disabled={formOpen && !form.id}>
               <Plus />
               Add record
             </Button>
@@ -251,21 +318,10 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
         </p>
       </header>
 
-      {formOpen && (
-        <RecordForm
-          form={form}
-          setForm={setForm}
-          sources={sources}
-          onDone={closeForm}
-          onJumpToRecord={() => {
-            setQuery("");
-            closeForm();
-          }}
-        />
-      )}
+      {form.id ? null : recordForm}
 
       {records.length > 1 ? (
-        <RecordSearch value={query} onChange={setQuery} count={visible.length} />
+        <RecordSearch value={query} onChange={search} count={matches.length} />
       ) : null}
 
       {records.length === 0 && !formOpen ? (
@@ -276,7 +332,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
         </div>
       ) : (
         <div className="space-y-8">
-          {searching && visible.length === 0 ? (
+          {searching && matches.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No records match “{query.trim()}”.
             </p>
@@ -288,6 +344,8 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
               section={section}
               repoCount={repoCount}
               editingId={editingId}
+              editForm={recordForm}
+              highlightId={highlightId}
               searching={searching}
               expanded={expanded}
               onToggle={toggleGroup}
@@ -318,12 +376,23 @@ const SECTION_COLUMN: Record<MapSection["kind"], string> = { superseded: "Supers
 const groupKey = (section: MapSection, group: MapGroup) =>
   `${section.kind}:${group.kind === "package" ? `package:${group.packageName}` : "whole-packages"}`;
 
+function groupKeyOf(sections: MapSection[], id: string): string | null {
+  for (const section of sections) {
+    for (const group of section.groups) {
+      if (group.rows.some((row) => row.record.id === id)) return groupKey(section, group);
+    }
+  }
+  return null;
+}
+
 const rowName = (r: GovernanceRecord) => r.targetExport ?? r.targetPackage;
 
 function RecordTable({
   section,
   repoCount,
   editingId,
+  editForm,
+  highlightId,
   searching,
   expanded,
   onToggle,
@@ -332,6 +401,9 @@ function RecordTable({
   section: MapSection;
   repoCount: number;
   editingId: string | undefined;
+  /** Shown in place of the row being edited. */
+  editForm: React.ReactNode;
+  highlightId: string | null;
   searching: boolean;
   /** Keys of the all-complete groups the user has opened. */
   expanded: ReadonlySet<string>;
@@ -379,16 +451,22 @@ function RecordTable({
               />
               {group.rows
                 .filter((row) => open || row.record.id === editingId)
-                .map((row) => (
-                  <RecordRow
-                    key={row.record.id}
-                    row={row}
-                    nested={group.kind === "package"}
-                    repoCount={repoCount}
-                    editing={row.record.id === editingId}
-                    onEdit={() => onEdit(row.record)}
-                  />
-                ))}
+                .map((row) =>
+                  row.record.id === editingId ? (
+                    <tr key={row.record.id} id={`record-${row.record.id}`} className={MAP_ROW}>
+                      <td className="col-span-full bg-muted/40 p-4">{editForm}</td>
+                    </tr>
+                  ) : (
+                    <RecordRow
+                      key={row.record.id}
+                      row={row}
+                      nested={group.kind === "package"}
+                      repoCount={repoCount}
+                      highlighted={row.record.id === highlightId}
+                      onEdit={() => onEdit(row.record)}
+                    />
+                  ),
+                )}
             </tbody>
           );
         })}
@@ -455,14 +533,14 @@ function RecordRow({
   row,
   nested,
   repoCount,
-  editing,
+  highlighted,
   onEdit,
 }: {
   row: MapRow;
   /** A component row under its package's header, indented one step. */
   nested: boolean;
   repoCount: number;
-  editing: boolean;
+  highlighted: boolean;
   onEdit: () => void;
 }) {
   const { record, stat, componentCount, nextHop } = row;
@@ -472,10 +550,11 @@ function RecordRow({
     <tr
       id={`record-${record.id}`}
       tabIndex={-1}
+      aria-current={highlighted ? "true" : undefined}
       className={cn(
         MAP_ROW,
-        "group/row min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out hover:bg-secondary md:py-0 dark:hover:bg-accent motion-reduce:transition-none",
-        editing && "bg-muted/40",
+        "group/row min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out outline-none hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring md:py-0 dark:hover:bg-accent motion-reduce:transition-none",
+        highlighted && "selected",
       )}
     >
       <th scope="row" className={cn(CELL, "text-left font-normal", nested && "pl-8")}>
@@ -603,16 +682,19 @@ function DispositionRadioGroup({
   value,
   onChange,
   labelledBy,
+  describedBy,
 }: {
   value: DispositionKind;
   onChange: (kind: DispositionKind) => void;
   labelledBy: string;
+  describedBy: string;
 }) {
   return (
     <RadioGroup
       value={value}
       onValueChange={(v) => onChange(v as DispositionKind)}
       aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
       className="flex w-fit flex-row items-center"
     >
       {DISPOSITION_KINDS.map((k) => (
@@ -621,7 +703,7 @@ function DispositionRadioGroup({
           value={k}
           className={cn(
             toggleVariants({ variant: "outline", size: "sm" }),
-            "rounded-none px-2 first:rounded-l-lg last:rounded-r-lg [&:not(:first-child)]:border-l-0",
+            "h-8 rounded-none px-3 text-sm first-of-type:rounded-l-lg last-of-type:rounded-r-lg [&:not(:first-child)]:border-l-0",
             "data-[checked]:selected",
           )}
         >
@@ -640,20 +722,34 @@ function RecordForm({
   form,
   setForm,
   sources,
+  takeFocus,
   onDone,
+  onSaved,
   onJumpToRecord,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   sources: AutocompleteSource[];
+  /** Scroll the form into view and focus its first field when it opens. */
+  takeFocus: boolean;
   onDone: () => void;
-  onJumpToRecord: () => void;
+  onSaved: (id: string) => void;
+  onJumpToRecord: (id: string) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [pending, startTransition] = useTransition();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const deleteRef = useRef<HTMLButtonElement>(null);
   const isEdit = Boolean(form.id);
+
+  useEffect(() => {
+    if (!takeFocus) return;
+    rootRef.current?.scrollIntoView({ block: "nearest" });
+    document.getElementById("gov-source")?.focus({ preventScroll: true });
+  }, [takeFocus]);
 
   function patch(update: Partial<FormState>) {
     setForm((prev) => ({ ...prev, ...update }));
@@ -679,7 +775,7 @@ function RecordForm({
     startTransition(async () => {
       const res = await saveGovernance(formToInput(form));
       if (res.ok) {
-        onDone();
+        onSaved(res.id);
         return;
       }
       setError(actionErrorMessage(res.error, "save this record", "Couldn't save the record. Try again."));
@@ -690,27 +786,38 @@ function RecordForm({
     });
   }
 
-  const sourceComponentValue =
-    form.grain === "component" && form.targetExport
-      ? `${form.targetPackage}/${form.targetExport}`
-      : form.targetPackage;
+  function remove() {
+    const id = form.id;
+    if (!id) return;
+    setError(null);
+    setConflictId(null);
+    startTransition(async () => {
+      const res = await deleteGovernance(id);
+      if (res.ok) onDone();
+      else setError(actionErrorMessage(res.error, "delete this record", "Couldn't delete the record. Try again."));
+    });
+  }
 
-  const supersededByValue = form.supersededByPackage
-    ? form.supersededByExport
-      ? `${form.supersededByPackage}/${form.supersededByExport}`
-      : form.supersededByPackage
-    : "";
+  const sourceComponentValue = pickLabel(
+    form.grain === "component" && form.targetExport
+      ? { packageName: form.targetPackage, exportName: form.targetExport }
+      : { packageName: form.targetPackage },
+  );
+
+  const supersededByValue = pickLabel(
+    form.supersededByExport
+      ? { packageName: form.supersededByPackage, exportName: form.supersededByExport }
+      : { packageName: form.supersededByPackage },
+  );
 
   return (
-    <div className="panel space-y-4 p-4">
-      <h2 className="text-sm font-medium">
-        {isEdit ? "Edit record" : "New lifecycle record"}
-      </h2>
+    <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
+      <h2 className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</h2>
 
       {/* Source picker: the pick decides the grain */}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="gov-source" className="text-label text-muted-foreground">
-          Source
+          Package or component
         </label>
         <GroupedIdentityPicker
           id="gov-source"
@@ -718,8 +825,9 @@ function RecordForm({
           value={sourceComponentValue}
           onSelect={handleSourcePick}
           placeholder="Select a scanned package or component…"
-          ariaLabel={sourceComponentValue ? `Source: ${sourceComponentValue}` : "Source: none selected"}
+          ariaLabel={`Package or component: ${sourceComponentValue || "none selected"}`}
           ariaDescribedBy={fieldErrors.source ? "gov-source-error" : undefined}
+          invalid={Boolean(fieldErrors.source)}
         />
         <FieldError id="gov-source-error" message={fieldErrors.source} />
         {form.targetPackage ? (
@@ -731,64 +839,69 @@ function RecordForm({
         ) : null}
       </div>
 
-      {/* Disposition selector */}
-      <div className="space-y-1.5">
-        <span id="gov-disposition-label" className="block text-label text-muted-foreground">
-          Disposition
-        </span>
-        <DispositionRadioGroup
-          value={form.dispositionKind}
-          onChange={(k) => patch({ dispositionKind: k })}
-          labelledBy="gov-disposition-label"
-        />
-      </div>
-
-      {/* Disposition-specific fields */}
-      {form.dispositionKind === "superseded" && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="gov-by" className="text-label text-muted-foreground">
-            Superseded by
-          </label>
-          <GroupedIdentityPicker
-            id="gov-by"
-            sources={sources}
-            value={supersededByValue}
-            onSelect={(pick) => {
-              patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
-              setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
-            }}
-            placeholder="Select the replacement package or component…"
-            ariaLabel={supersededByValue ? `Superseded by: ${supersededByValue}` : "Superseded by: none selected"}
-            ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
+      <div className="space-y-4 sm:grid sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-6 sm:space-y-0">
+        <div className="space-y-1.5 sm:w-min">
+          <span id="gov-type-label" className="block text-label text-muted-foreground">
+            Type
+          </span>
+          <DispositionRadioGroup
+            value={form.dispositionKind}
+            onChange={(k) => patch({ dispositionKind: k })}
+            labelledBy="gov-type-label"
+            describedBy="gov-type-hint"
           />
-          <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
-          {form.supersededByPackage && !form.supersededByExport ? (
-            <p className="text-[0.6875rem] text-muted-foreground">
-              The whole package is the replacement.
+          <p id="gov-type-hint" className="text-[0.6875rem] text-muted-foreground">
+            {KIND_HINT[form.dispositionKind]}
+          </p>
+        </div>
+
+        {form.dispositionKind === "superseded" ? (
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label htmlFor="gov-by" className="text-label text-muted-foreground">
+              Superseded by
+            </label>
+            <GroupedIdentityPicker
+              id="gov-by"
+              sources={sources}
+              value={supersededByValue}
+              onSelect={(pick) => {
+                patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
+                setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
+              }}
+              placeholder="Select the replacement package or component…"
+              ariaLabel={`Superseded by: ${supersededByValue || "none selected"}`}
+              ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
+              invalid={Boolean(fieldErrors.supersededBy)}
+            />
+            <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
+            {form.supersededByPackage && !form.supersededByExport ? (
+              <p className="text-[0.6875rem] text-muted-foreground">
+                The whole package is the replacement.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label htmlFor="gov-reason" className="text-label text-muted-foreground">
+              Reason
+            </label>
+            <Input
+              id="gov-reason"
+              value={form.retiredReason}
+              onChange={(e) => {
+                patch({ retiredReason: e.target.value });
+                setFieldErrors((err) => ({ ...err, reason: undefined }));
+              }}
+              aria-describedby={fieldErrors.reason ? "gov-reason-error gov-reason-hint" : "gov-reason-hint"}
+              aria-invalid={fieldErrors.reason ? true : undefined}
+            />
+            <FieldError id="gov-reason-error" message={fieldErrors.reason} />
+            <p id="gov-reason-hint" className="text-[0.6875rem] text-muted-foreground">
+              Shown on the record, for example why there's no replacement.
             </p>
-          ) : null}
-        </div>
-      )}
-
-      {form.dispositionKind === "retired" && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="gov-reason" className="text-label text-muted-foreground">
-            Reason
-          </label>
-          <Input
-            id="gov-reason"
-            value={form.retiredReason}
-            onChange={(e) => {
-              patch({ retiredReason: e.target.value });
-              setFieldErrors((err) => ({ ...err, reason: undefined }));
-            }}
-            placeholder="Removed in v3; no replacement."
-            aria-describedby={fieldErrors.reason ? "gov-reason-error" : undefined}
-            aria-invalid={fieldErrors.reason ? true : undefined}
-          />
-          <FieldError id="gov-reason-error" message={fieldErrors.reason} />
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Server errors only; field errors render next to their fields. */}
       {error && (
@@ -797,7 +910,10 @@ function RecordForm({
           {conflictId ? (
             <a
               href={`#record-${conflictId}`}
-              onClick={onJumpToRecord}
+              onClick={(e) => {
+                e.preventDefault();
+                onJumpToRecord(conflictId);
+              }}
               className="inline-block rounded-sm underline underline-offset-4 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
             >
               Go to the existing record
@@ -806,14 +922,44 @@ function RecordForm({
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="xs" onClick={onDone} disabled={pending}>
-          Cancel
-        </Button>
-        <Button size="xs" onClick={submit} disabled={pending}>
-          {isEdit ? "Save changes" : "Create"}
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {isEdit ? (
+          <div className="flex items-center gap-2">
+            {confirmingDelete ? <span className="text-[0.8rem]">Delete this record?</span> : null}
+            <Button
+              ref={deleteRef}
+              variant={confirmingDelete ? "destructive" : "ghost"}
+              size="sm"
+              onClick={confirmingDelete ? remove : () => setConfirmingDelete(true)}
+              disabled={pending}
+              className={confirmingDelete ? undefined : "text-muted-foreground hover:text-destructive"}
+            >
+              {confirmingDelete ? null : <Trash2 />}
+              Delete
+            </Button>
+            {confirmingDelete ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  deleteRef.current?.focus();
+                }}
+                disabled={pending}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onDone} disabled={pending}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={submit} disabled={pending}>
+            {isEdit ? "Save" : "Create"}
+          </Button>
+        </div>
       </div>
     </div>
   );

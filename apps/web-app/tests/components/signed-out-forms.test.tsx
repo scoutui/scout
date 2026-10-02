@@ -21,6 +21,8 @@ vi.mock("@/app/charts/dashboard-actions", async (importOriginal) => ({
   pickableForRepo: async () => ({ state: "ready", value: { components: [], packages: [] } }),
 }));
 
+Element.prototype.scrollIntoView = vi.fn();
+
 const tag: Tag = {
   id: "t1",
   value: "core",
@@ -74,8 +76,16 @@ describe("forms after the session has ended", () => {
   it("tells the governance form to sign in again to save", async () => {
     governance();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this record.")).toBeInTheDocument();
+  });
+
+  it("tells governance delete to sign in again", async () => {
+    governance();
+    fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(await screen.findByText("Your session has ended. Sign in again to delete this record.")).toBeInTheDocument();
   });
 
   it("tells the tag editor to sign in again to save or delete", async () => {

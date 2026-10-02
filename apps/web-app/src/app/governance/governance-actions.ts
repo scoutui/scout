@@ -4,6 +4,7 @@ import {
   type GovernanceConflict,
   type GovernanceInput,
   GovernanceInputSchema,
+  type GovernanceRecord,
   GovernanceTargetConflictError,
   conflictMessage,
   validateGovernanceInput,
@@ -29,7 +30,7 @@ function revalidateAll() {
 }
 
 export type SaveGovernanceResult =
-  | { ok: true }
+  | { ok: true; id: string }
   | { ok: false; error: string; conflict?: GovernanceConflict };
 
 export async function saveGovernance(untrusted: GovernanceInput): Promise<SaveGovernanceResult> {
@@ -44,9 +45,11 @@ export async function saveGovernance(untrusted: GovernanceInput): Promise<SaveGo
   const conflict = validateGovernanceInput(input, existing);
   if (conflict) return { ok: false, error: conflictMessage(conflict), conflict };
 
+  let saved: GovernanceRecord;
   try {
-    if (input.id) await storage.updateGovernance(input.id, input, gate.userId);
-    else await storage.createGovernance(input, gate.userId);
+    saved = input.id
+      ? await storage.updateGovernance(input.id, input, gate.userId)
+      : await storage.createGovernance(input, gate.userId);
   } catch (err) {
     // The database constraint is the final check: a collision here means a
     // concurrent write landed after the validation above.
@@ -57,7 +60,7 @@ export async function saveGovernance(untrusted: GovernanceInput): Promise<SaveGo
   }
 
   revalidateAll();
-  return { ok: true };
+  return { ok: true, id: saved.id };
 }
 
 export async function deleteGovernance(id: string): Promise<{ ok: boolean; error?: string }> {
