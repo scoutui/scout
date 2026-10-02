@@ -1,6 +1,6 @@
 {
   "name": "@scoutui/web-app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Scout dashboard: design-system adoption across your repos and over time.",
   "homepage": "https://scoutui.dev",
   "private": true,
