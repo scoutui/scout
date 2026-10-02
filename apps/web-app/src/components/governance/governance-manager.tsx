@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ChevronRight, CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
@@ -19,6 +19,7 @@ import { toggleVariants } from "@/components/ui/toggle";
 import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/components/governance/grouped-identity-picker";
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
+import { componentCounts } from "@/lib/identity-search";
 import {
   authorLine,
   countLabel,
@@ -47,6 +48,8 @@ export interface AutocompleteSource {
   packageName: string;
   /** exportName for component-grain picks; absent for package-only entries. */
   exportName?: string;
+  /** Occurrences in each repo's latest scan. */
+  occurrences: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -329,14 +332,17 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
 
   const recordForm = formOpen ? (
     <RecordForm
+      key={form.id ?? "new"}
       form={form}
       setForm={setForm}
       sources={sources}
+      records={records}
       byline={editing ? authorLine(editing, authors[editing.id]) : null}
       takeFocus={focusForm}
       onCancel={cancelForm}
       onDeleted={onDeleted}
       onSaved={showRecord}
+      onCreated={setHighlightId}
       onJumpToRecord={showRecord}
     />
   ) : null;
@@ -864,33 +870,58 @@ function DispositionRadioGroup({
 // Add / Edit form
 // ---------------------------------------------------------------------------
 
+/** What the reach line under Source says for a whole-package record. */
+function reachLine(packageName: string, components: number): string {
+  if (components === 0) return `Marks every component in ${packageName} as deprecated.`;
+  if (components === 1) return `Marks the only component in ${packageName} as deprecated.`;
+  return `Marks all ${components.toLocaleString()} components in ${packageName} as deprecated.`;
+}
+
+type Created = { name: string; by: string | null };
+
+function createdOf(f: FormState): Created {
+  return {
+    name: (f.grain === "component" && f.targetExport) || f.targetPackage,
+    by: f.dispositionKind === "superseded" ? f.supersededByExport || f.supersededByPackage : null,
+  };
+}
+
 function RecordForm({
   form,
   setForm,
   sources,
+  records,
   byline,
   takeFocus,
   onCancel,
   onDeleted,
   onSaved,
+  onCreated,
   onJumpToRecord,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   sources: AutocompleteSource[];
+  records: GovernanceRecord[];
   /** Who added and last changed the record being edited. */
   byline: string | null;
   /** Scroll the form into view and focus its first field when it opens. */
   takeFocus: boolean;
   onCancel: () => void;
   onDeleted: () => void;
+  /** An edit was saved; the form closes. */
   onSaved: (id: string) => void;
+  /** A new record was created; the form stays open for the next one. */
+  onCreated: (id: string) => void;
   onJumpToRecord: (id: string) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [created, setCreated] = useState<Created | null>(null);
+  const [sourceScope, setSourceScope] = useState<string | null>(null);
+  const [byScope, setByScope] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
@@ -927,7 +958,14 @@ function RecordForm({
     startTransition(async () => {
       const res = await saveGovernance(formToInput(form));
       if (res.ok) {
-        onSaved(res.id);
+        if (isEdit) {
+          onSaved(res.id);
+          return;
+        }
+        setCreated(createdOf(form));
+        setForm({ ...emptyForm(), dispositionKind: form.dispositionKind });
+        onCreated(res.id);
+        document.getElementById("gov-source")?.focus();
         return;
       }
       setError(actionErrorMessage(res.error, "save this record", "Couldn't save the record. Try again."));
@@ -950,16 +988,26 @@ function RecordForm({
     });
   }
 
-  const sourceComponentValue = pickLabel(
-    form.grain === "component" && form.targetExport
-      ? { packageName: form.targetPackage, exportName: form.targetExport }
-      : { packageName: form.targetPackage },
+  const sourcePick = useMemo<IdentityPick | null>(
+    () =>
+      form.targetPackage
+        ? {
+            packageName: form.targetPackage,
+            ...(form.grain === "component" && form.targetExport ? { exportName: form.targetExport } : {}),
+          }
+        : null,
+    [form.grain, form.targetPackage, form.targetExport],
   );
 
-  const supersededByValue = pickLabel(
-    form.supersededByExport
-      ? { packageName: form.supersededByPackage, exportName: form.supersededByExport }
-      : { packageName: form.supersededByPackage },
+  const supersededByPick = useMemo<IdentityPick | null>(
+    () =>
+      form.supersededByPackage
+        ? {
+            packageName: form.supersededByPackage,
+            ...(form.supersededByExport ? { exportName: form.supersededByExport } : {}),
+          }
+        : null,
+    [form.supersededByPackage, form.supersededByExport],
   );
 
   return (
@@ -967,29 +1015,48 @@ function RecordForm({
       <div className="space-y-1">
         <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
         {byline ? <p className="text-xs text-muted-foreground">{byline}</p> : null}
+        {created ? (
+          <output className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0 text-status-ok" />
+            <span className="min-w-0 truncate">
+              <span className="font-mono text-foreground">{created.name}</span>
+              {created.by === null ? (
+                " retired"
+              ) : (
+                <>
+                  {" superseded by "}
+                  <span className="font-mono text-foreground">{created.by}</span>
+                </>
+              )}
+            </span>
+          </output>
+        ) : null}
       </div>
 
       {/* Source picker: the pick decides the grain */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="gov-source" className="text-label text-muted-foreground">
+        <label id="gov-source-label" htmlFor="gov-source" className="text-label text-muted-foreground">
           Package or component
         </label>
         <GroupedIdentityPicker
           id="gov-source"
+          labelId="gov-source-label"
+          mode="source"
           sources={sources}
-          value={sourceComponentValue}
+          records={records}
+          editingId={form.id}
+          value={sourcePick}
           onSelect={handleSourcePick}
-          placeholder="Select a scanned package or component…"
-          ariaLabel={`Package or component: ${sourceComponentValue || "none selected"}`}
+          scope={sourceScope}
+          onScopeChange={setSourceScope}
+          placeholder="Search packages and components"
           ariaDescribedBy={fieldErrors.source ? "gov-source-error" : undefined}
           invalid={Boolean(fieldErrors.source)}
         />
         <FieldError id="gov-source-error" message={fieldErrors.source} />
-        {form.targetPackage ? (
+        {form.grain === "package" && form.targetPackage ? (
           <p className="text-[0.6875rem] text-muted-foreground">
-            {form.grain === "component"
-              ? "Marks this component only."
-              : "Marks every component in the package."}
+            {reachLine(form.targetPackage, componentCounts(sources).get(form.targetPackage) ?? 0)}
           </p>
         ) : null}
       </div>
@@ -1012,19 +1079,26 @@ function RecordForm({
 
         {form.dispositionKind === "superseded" ? (
           <div className="flex min-w-0 flex-col gap-1.5">
-            <label htmlFor="gov-by" className="text-label text-muted-foreground">
+            <label id="gov-by-label" htmlFor="gov-by" className="text-label text-muted-foreground">
               Superseded by
             </label>
             <GroupedIdentityPicker
               id="gov-by"
+              labelId="gov-by-label"
+              mode="successor"
               sources={sources}
-              value={supersededByValue}
+              records={records}
+              exclude={sourcePick}
+              similarTo={form.grain === "component" ? form.targetExport || null : null}
+              value={supersededByPick}
               onSelect={(pick) => {
                 patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
                 setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
               }}
-              placeholder="Select the replacement package or component…"
-              ariaLabel={`Superseded by: ${supersededByValue || "none selected"}`}
+              scope={byScope}
+              onScopeChange={setByScope}
+              placeholder="Search for a replacement"
+              closedPlaceholder="Choose a replacement"
               ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
               invalid={Boolean(fieldErrors.supersededBy)}
             />
@@ -1114,7 +1188,7 @@ function RecordForm({
         ) : null}
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={pending}>
-            Cancel
+            {created ? "Close" : "Cancel"}
           </Button>
           <Button size="sm" onClick={submit} disabled={pending}>
             {isEdit ? "Save" : "Create"}

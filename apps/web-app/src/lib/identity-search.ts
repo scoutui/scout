@@ -159,6 +159,15 @@ function sharesWord(a: string, b: string): boolean {
   return words(a).some((w) => other.has(w.text));
 }
 
+/** How many components each package has among the targets. */
+export function componentCounts(sources: PickerTarget[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const s of sources) {
+    if (s.exportName !== undefined) counts.set(s.packageName, (counts.get(s.packageName) ?? 0) + 1);
+  }
+  return counts;
+}
+
 const sameTarget = (a: IdentityPick, b: IdentityPick) =>
   a.packageName === b.packageName && (a.exportName ?? null) === (b.exportName ?? null);
 
@@ -172,18 +181,17 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
   const refuse = (pick: IdentityPick) => (input.mode === "source" ? refusal(pick, input.records, input.editingId) : null);
   const offered = (pick: IdentityPick) => !(input.mode === "successor" && input.exclude && sameTarget(pick, input.exclude));
 
-  const packages = new Map<string, { occurrences: number; components: number }>();
+  const components = componentCounts(input.sources);
+  const packages = new Map<string, number>();
   for (const s of input.sources) {
-    const p = packages.get(s.packageName) ?? { occurrences: 0, components: 0 };
-    if (s.exportName === undefined) p.occurrences = s.occurrences;
-    else p.components += 1;
-    packages.set(s.packageName, p);
+    if (s.exportName === undefined) packages.set(s.packageName, s.occurrences);
+    else if (!packages.has(s.packageName)) packages.set(s.packageName, 0);
   }
   const packageRow = (packageName: string): SearchRow => ({
-    kind: "package", packageName, components: packages.get(packageName)?.components ?? 0,
+    kind: "package", packageName, components: components.get(packageName) ?? 0,
   });
   const byOccurrences = (a: string, b: string) =>
-    (packages.get(b)?.occurrences ?? 0) - (packages.get(a)?.occurrences ?? 0) || a.localeCompare(b);
+    (packages.get(b) ?? 0) - (packages.get(a) ?? 0) || a.localeCompare(b);
 
   const rank = (packageName: string | null, scoped: boolean): Ranked[] =>
     input.sources.flatMap((s): Ranked[] => {
@@ -212,7 +220,7 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
     const scope = input.scope;
     const whole = { packageName: scope };
     if (packages.has(scope) && offered(whole) && terms.every((t) => scope.toLowerCase().includes(t))) {
-      rows.push({ kind: "whole", packageName: scope, components: packages.get(scope)?.components ?? 0, refusal: refuse(whole) });
+      rows.push({ kind: "whole", packageName: scope, components: components.get(scope) ?? 0, refusal: refuse(whole) });
     }
     const ranked = rank(scope, true);
     const similarTo = input.mode === "successor" && terms.length === 0 ? input.similarTo : null;
