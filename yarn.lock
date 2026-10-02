@@ -5732,6 +5732,7 @@ __metadata:
     "@types/picomatch": "npm:4.0.3"
     "@vue/compiler-sfc": "npm:3.5.33"
     ajv: "npm:8.20.0"
+    corepack: "npm:0.36.0"
     esbuild: "npm:0.28.1"
     globby: "npm:16.2.0"
     js-yaml: "npm:5.4.1"
@@ -8844,6 +8845,22 @@ __metadata:
   version: 1.0.3
   resolution: "core-util-is@npm:1.0.3"
   checksum: 10c0/90a0e40abbddfd7618f8ccd63a74d88deea94e77d0e8dbbea059fa7ebebb8fbb4e2909667fe26f3a467073de1a542ebe6ae4c73a73745ac5833786759cd906c9
+  languageName: node
+  linkType: hard
+
+"corepack@npm:0.36.0":
+  version: 0.36.0
+  resolution: "corepack@npm:0.36.0"
+  dependenciesMeta:
+    esbuild:
+      built: true
+  bin:
+    corepack: ./dist/corepack.js
+    pnpm: ./dist/pnpm.js
+    pnpx: ./dist/pnpx.js
+    yarn: ./dist/yarn.js
+    yarnpkg: ./dist/yarnpkg.js
+  checksum: 10c0/e5ff3a427082b98c409f641eea0bbc28cd51883089fd82fad7014d463753bc24f94213a171080af008380a141e9afda7bb747bc00aef7ec384732509fea76a8d
   languageName: node
   linkType: hard
 

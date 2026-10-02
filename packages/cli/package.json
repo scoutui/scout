@@ -44,6 +44,7 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
+    "corepack": "0.36.0",
     "oxc-parser": "0.130.0"
   },
   "devDependencies": {
