@@ -22,7 +22,7 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 5. Open **Superseded by** and pick the `Button` row under `@acme/ui`. If you pick the package row instead, the whole of `@acme/ui` counts as the replacement.
 6. Press **Create**.
 
-![The New record form with react-date-picker as the source, Superseded selected, and react-datepicker as the replacement](/img/dashboard/governance-record-form.png)
+![The New record form with ChevronDown from lucide-vue-next as the source, Superseded selected, and ChevronDown from @lucide/vue as the replacement](/img/dashboard/governance-record-form.png)
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first. Components [defined in the repo](/docs/reference/glossary#defined-in-the-repo) are never offered.
 
@@ -55,7 +55,7 @@ The **governance** page lists every record in one **Records** table, grouped by 
 
 Packages with the most occurrences left come first, and so do the records inside each package.
 
-![The governance page listing lifecycle records, each with its replacement or reason and its status](/img/dashboard/governance-records.png)
+![The governance page's Records table: element-plus's component records under a row with the package's total, then whole-package records, each with its replacement or reason and its occurrences left, most first](/img/dashboard/governance-records.png)
 
 ## Follow progress
 

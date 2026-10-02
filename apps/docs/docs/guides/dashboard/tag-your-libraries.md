@@ -29,7 +29,7 @@ Repeat for `acme-ui-legacy` with `@acme/ui-legacy` in **Packages**.
 
 A tag with six or more entries in **Packages** lists four of them in the table, then a **+N more** button that shows the rest.
 
-![The Tags section of the governance page, with the tag form open for a radix tag with the pattern @radix-ui/* and six tags listed below](/img/dashboard/governance-tags.png)
+![The Tags section of the governance page, with the tag form open for a form-libs tag that matches three packages, and seven tags listed below](/img/dashboard/governance-tags.png)
 
 To change a tag later, press **Edit** (the pencil) on its row. The form opens in place of the row; change it and press **Save**. **Delete** in the same form asks before it removes the tag. Every chart that uses the tag then loses its line.
 
