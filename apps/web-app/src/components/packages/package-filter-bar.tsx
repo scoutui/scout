@@ -61,21 +61,26 @@ export function PackageFilterBar({
         placeholder: `Search ${options.total.toLocaleString()} packages by name…`,
       }}
       chips={
-        <DeprecatedFilterChip
-          count={options.deprecatedCount}
-          maxCount={options.deprecatedMax}
-          active={facets.deprecated === true}
-          onToggle={() => onChange({ ...facets, deprecated: facets.deprecated === true ? null : true })}
-        />
+        options.deprecatedMax > 0 || facets.deprecated === true ? (
+          <DeprecatedFilterChip
+            count={options.deprecatedCount}
+            maxCount={options.deprecatedMax}
+            total={isFilteringPackages({ ...facets, deprecated: null }) ? options.deprecatedMax : undefined}
+            active={facets.deprecated === true}
+            onToggle={() => onChange({ ...facets, deprecated: facets.deprecated === true ? null : true })}
+          />
+        ) : null
       }
       facets={facetList}
       count={
         isFilteringPackages(facets) ? (
           <>
-            <span className="font-medium text-foreground">{resultCount.toLocaleString()}</span> of {options.total.toLocaleString()}
+            <span className="font-medium text-foreground">{resultCount.toLocaleString()}</span> of {options.total.toLocaleString()} packages
           </>
         ) : (
-          <>{options.total.toLocaleString()} total</>
+          <>
+            {options.total.toLocaleString()} {options.total === 1 ? "package" : "packages"}
+          </>
         )
       }
       pills={pills}

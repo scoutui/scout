@@ -26,10 +26,12 @@ import {
 export function ComponentsExplorer({
   repoId,
   rows,
+  deprecatedTotal,
   diff,
 }: {
   repoId: string;
   rows: ComponentRow[];
+  deprecatedTotal: number;
   /** The shown scan vs the one before; null on a first scan. */
   diff: ScanDiff | null;
 }) {
@@ -70,6 +72,7 @@ export function ComponentsExplorer({
         options={options}
         resultCount={filtered.length}
         total={rows.length}
+        deprecatedTotal={deprecatedTotal}
         diffShown={diffShown}
         filtering={isFiltering({ ...facets, changed: false })}
       />

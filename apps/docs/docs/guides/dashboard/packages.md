@@ -21,7 +21,7 @@ Two lines under the title answer the common questions. Each shows only when its 
 To narrow the list:
 
 - Type part of a package name into the search box.
-- Press the **deprecated** chip to show only packages with deprecated components in use.
+- Press the **deprecated** chip to show only packages with deprecated components in use. While other filters are on, it reads, for example, **deprecated 1 of 3**: 1 of the 3 packages with deprecated components in use matches the other filters.
 - Press **Filter** to choose by [**Tag**](/docs/reference/glossary#tag) or by **Versions**: **Multiple versions**, **Single version** or **Unversioned**. Picking two tags shows packages that carry either; filters in different facets must all match.
 
 **Versions** shows only when your other filters leave packages in more than one of those groups.

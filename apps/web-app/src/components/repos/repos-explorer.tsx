@@ -64,14 +64,16 @@ export function ReposExplorer({
           ) : null}
         </div>
         {/* Counts repos that moved; pressing it again clears it. */}
-        <StatusFilterChip
-          icon={GitCompareArrows}
-          tone="neutral"
-          label="since previous scan"
-          count={movedCount}
-          active={changedActive}
-          onToggle={() => setQuery({ ...query, changed: !changedActive })}
-        />
+        {movedCount > 0 ? (
+          <StatusFilterChip
+            icon={GitCompareArrows}
+            tone="neutral"
+            label="since previous scan"
+            count={movedCount}
+            active={changedActive}
+            onToggle={() => setQuery({ ...query, changed: !changedActive })}
+          />
+        ) : null}
         {/* Only a narrowed count shows here: the total is in the page meta
             and the placeholder. */}
         {filtering ? (

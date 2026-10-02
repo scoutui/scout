@@ -13,14 +13,14 @@ const PRESSED = {
 /**
  * A status toggle (deprecated in use, moved since the last scan) beside a
  * table's `+ Filter` trigger: icon, word and count, with `aria-pressed`.
- * Renders nothing at zero unless pressed: counts follow the other filters, and
- * a pressed chip they bring to 0 must stay so it can be unpressed.
+ * The owner decides whether the chip exists; the chip itself always renders.
  */
 export function StatusFilterChip({
   icon: Icon,
   tone,
   label,
   count,
+  total,
   maxCount,
   active,
   onToggle,
@@ -30,21 +30,22 @@ export function StatusFilterChip({
   tone: "warn" | "neutral";
   label: string;
   count: number;
-  /** The largest count this chip can show. The count reserves that many
-   *  characters, so a filter change never changes the chip's width. */
+  total?: number | undefined;
+  /** The largest count the chip can show; the count text is padded to its width. */
   maxCount?: number | undefined;
   active: boolean;
   onToggle: () => void;
   className?: string | undefined;
 }) {
-  if (count <= 0 && !active) return null;
+  const shown = count.toLocaleString();
   return (
     <button
       type="button"
       aria-pressed={active}
+      disabled={count <= 0 && !active}
       onClick={onToggle}
       className={cn(
-        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
         active ? PRESSED[tone] : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
         className,
       )}
@@ -53,9 +54,10 @@ export function StatusFilterChip({
       {label}
       <span
         className="tabular-nums"
-        style={maxCount === undefined ? undefined : { minWidth: `${maxCount.toLocaleString().length}ch` }}
+        style={maxCount === undefined ? undefined : { paddingRight: `${maxCount.toLocaleString().length - shown.length}ch` }}
       >
-        {count.toLocaleString()}
+        {shown}
+        {total !== undefined ? ` of ${total.toLocaleString()}` : null}
       </span>
     </button>
   );

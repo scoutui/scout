@@ -10,6 +10,7 @@ import { StatusFilterChip } from "@/components/status-filter-chip";
 import { cn } from "@/lib/utils";
 import {
   emptyFacets,
+  isFiltering,
   KIND_LABEL,
   ORIGIN_LABEL,
   type FacetOptions,
@@ -25,6 +26,7 @@ export function FilterBar({
   options,
   resultCount,
   total,
+  deprecatedTotal,
   diffShown,
   filtering,
 }: {
@@ -33,6 +35,7 @@ export function FilterBar({
   options: FacetOptions;
   resultCount: number;
   total: number;
+  deprecatedTotal: number;
   /** While the changed view is active: its unfiltered size (`total`) and the
    *  shown rows' breakdown; null outside it. Unfiltered the count reads
    *  `29 moved`; narrowed by any other filter, `12 of 29 moved · 2 removed ·
@@ -47,6 +50,7 @@ export function FilterBar({
   const diffParts = diffShown === null ? [] : movementParts(diffShown);
   const inkCount = (n: number) => <span className="font-medium text-foreground">{n.toLocaleString()}</span>;
   const setTags = (tags: string[]) => onChange({ ...facets, tags });
+  const othersOn = diffShown === null && isFiltering({ ...facets, deprecated: null, changed: false });
 
   // Deprecation and "since previous scan" are statuses, not facets: each is a
   // StatusFilterChip beside the Filter menu.
@@ -98,7 +102,7 @@ export function FilterBar({
     })),
     ...facets.packages.map((p) => ({
       key: `pkg:${p}`,
-      field: "pkg",
+      field: "package",
       value: p,
       mono: true,
       onRemove: () => onChange({ ...facets, packages: facets.packages.filter((x) => x !== p) }),
@@ -133,12 +137,15 @@ export function FilterBar({
       }}
       chips={
         <>
-          <DeprecatedFilterChip
-            count={options.deprecatedCount}
-            maxCount={options.deprecatedMax}
-            active={facets.deprecated === true}
-            onToggle={() => onChange({ ...facets, deprecated: facets.deprecated === true ? null : true })}
-          />
+          {options.deprecatedMax > 0 || facets.deprecated === true ? (
+            <DeprecatedFilterChip
+              count={options.deprecatedCount}
+              maxCount={options.deprecatedMax}
+              total={othersOn ? deprecatedTotal : undefined}
+              active={facets.deprecated === true}
+              onToggle={() => onChange({ ...facets, deprecated: facets.deprecated === true ? null : true })}
+            />
+          ) : null}
           {/* Labelled "since previous scan", not "changed": its count is every
               row the changed view shows, while the masthead's "N changed" counts
               only occurrence moves. */}
