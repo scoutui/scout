@@ -199,6 +199,8 @@ export const tags = pgTable("tags", {
   category: text("category"), // "library", or null for a plain label
   color: text("color").notNull(),
   rule: jsonb("rule").$type<{ glob: string[]; exact: string[] }>().notNull(),
+  createdByUserId: text("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  updatedByUserId: text("updated_by_user_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -229,6 +231,8 @@ export const governance = pgTable(
     targetPackage: text("target_package").notNull(),
     targetExport: text("target_export"), // null = whole-package grain
     disposition: jsonb("disposition").$type<Disposition>().notNull(),
+    createdByUserId: text("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    updatedByUserId: text("updated_by_user_id").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

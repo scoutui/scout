@@ -238,15 +238,17 @@ export class PostgresDriver implements StorageDriver {
     }[]).map((r) => ({ id: r.id, value: r.value, category: r.category, color: r.color, rule: r.rule }));
   }
 
-  async upsertTag(input: TagInput): Promise<Tag> {
+  async upsertTag(input: TagInput, userId?: string): Promise<Tag> {
     const id = input.id ?? randomUUID();
     const ruleJson = JSON.stringify(input.rule);
+    const author = userId ?? null;
     await this.writeWithResults(db => db.execute(sql`
-      INSERT INTO tags (id, value, category, color, rule, updated_at)
-      VALUES (${id}, ${input.value}, ${input.category}, ${input.color}, ${ruleJson}::jsonb, now())
+      INSERT INTO tags (id, value, category, color, rule, created_by_user_id, updated_by_user_id, updated_at)
+      VALUES (${id}, ${input.value}, ${input.category}, ${input.color}, ${ruleJson}::jsonb, ${author}, ${author}, now())
       ON CONFLICT (id) DO UPDATE SET
         value = EXCLUDED.value, category = EXCLUDED.category,
-        color = EXCLUDED.color, rule = EXCLUDED.rule, updated_at = now()
+        color = EXCLUDED.color, rule = EXCLUDED.rule,
+        updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()
     `));
     return { id, value: input.value, category: input.category, color: input.color, rule: input.rule };
   }
@@ -274,13 +276,14 @@ export class PostgresDriver implements StorageDriver {
     }));
   }
 
-  async createGovernance(input: GovernanceInput): Promise<GovernanceRecord> {
+  async createGovernance(input: GovernanceInput, userId?: string): Promise<GovernanceRecord> {
     const id = randomUUID();
     const dispJson = JSON.stringify(input.disposition);
+    const author = userId ?? null;
     return this.writeWithResults(async (db, client) => {
       const result = await db.execute(sql`
-        INSERT INTO governance (id, grain, target_package, target_export, disposition, updated_at)
-        VALUES (${id}, ${input.grain}, ${input.targetPackage}, ${input.targetExport}, ${dispJson}::jsonb, now())
+        INSERT INTO governance (id, grain, target_package, target_export, disposition, created_by_user_id, updated_by_user_id, updated_at)
+        VALUES (${id}, ${input.grain}, ${input.targetPackage}, ${input.targetExport}, ${dispJson}::jsonb, ${author}, ${author}, now())
         ON CONFLICT (target_package, target_export) DO NOTHING
         RETURNING id
       `);
@@ -291,7 +294,7 @@ export class PostgresDriver implements StorageDriver {
     });
   }
 
-  async updateGovernance(id: string, input: GovernanceInput): Promise<GovernanceRecord> {
+  async updateGovernance(id: string, input: GovernanceInput, userId?: string): Promise<GovernanceRecord> {
     const dispJson = JSON.stringify(input.disposition);
     return this.writeWithResults(async (db, client) => {
       const result = await db
@@ -301,6 +304,7 @@ export class PostgresDriver implements StorageDriver {
             target_package = ${input.targetPackage},
             target_export = ${input.targetExport},
             disposition = ${dispJson}::jsonb,
+            updated_by_user_id = ${userId ?? null},
             updated_at = now()
           WHERE id = ${id}
           RETURNING id

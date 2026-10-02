@@ -120,8 +120,11 @@ export interface StorageDriver {
   /** All tags, sorted by value. */
   listTags(): Promise<Tag[]>;
 
-  /** Create (no id) or update (matching id) a tag. Returns the stored tag. */
-  upsertTag(input: TagInput): Promise<Tag>;
+  /**
+   * Create (no id) or update (matching id) a tag. Returns the stored tag.
+   * `userId` is recorded as the tag's creator on create and as its last editor.
+   */
+  upsertTag(input: TagInput, userId?: string): Promise<Tag>;
 
   /** Delete a tag by id. No-op if absent. */
   deleteTag(id: string): Promise<void>;
@@ -131,11 +134,17 @@ export interface StorageDriver {
   /** All governance records. */
   listGovernance(): Promise<GovernanceRecord[]>;
 
-  /** Create a record. Throws `GovernanceTargetConflictError` if the target is already governed. */
-  createGovernance(input: GovernanceInput): Promise<GovernanceRecord>;
+  /**
+   * Create a record, recording `userId` as its creator and last editor.
+   * Throws `GovernanceTargetConflictError` if the target is already governed.
+   */
+  createGovernance(input: GovernanceInput, userId?: string): Promise<GovernanceRecord>;
 
-  /** Update the record with `id`. Throws `GovernanceTargetConflictError` if retargeted onto another record's target. */
-  updateGovernance(id: string, input: GovernanceInput): Promise<GovernanceRecord>;
+  /**
+   * Update the record with `id`, recording `userId` as its last editor.
+   * Throws `GovernanceTargetConflictError` if retargeted onto another record's target.
+   */
+  updateGovernance(id: string, input: GovernanceInput, userId?: string): Promise<GovernanceRecord>;
 
   /** Delete a record by id. No-op if absent. */
   deleteGovernance(id: string): Promise<void>;
