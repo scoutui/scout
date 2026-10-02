@@ -78,7 +78,7 @@ export function FileTable({
         {columns.map((c) => (
           <col key={c.prop} style={{ width: c.width }} />
         ))}
-        <col className="w-12 md:w-20" />
+        <col className="w-12 md:w-24" />
       </colgroup>
       <thead ref={headRef} className="hidden md:table-header-group">
         <tr>
