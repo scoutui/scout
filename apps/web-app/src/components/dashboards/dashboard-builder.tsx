@@ -5,7 +5,7 @@ import type { ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMe
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { seriesCanOverlap } from "@/lib/cohort-overlap";
-import type { LibraryTag } from "@/lib/chart-builder-series";
+import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
 import { type ChartCohort, chartColors, drawnChartCohorts } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
@@ -67,10 +67,10 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; glyph: React.ReactNo
 
 /**
  * Chart builder. A controls strip holds the name, scope, chart type, metric and Save; a
- * series rail beside the chart lists the current series (remove, or toggle
- * `deprecatedOnly` on a package or tag series) above an always-open picker. Controls
- * build a DashboardConfig, and the preview re-projects it through previewDashboard,
- * keeping only the latest request's result.
+ * series rail beside the chart lists the current series (remove, or narrow a package
+ * or tag series to its deprecated components from the row menu) above an always-open
+ * picker. Controls build a DashboardConfig, and the preview re-projects it through
+ * previewDashboard, keeping only the latest request's result.
  */
 
 /** A selector's name from the estate and picker lists, mirroring the engine's cohortIdentity; undefined when they don't hold it. */
@@ -168,18 +168,19 @@ export function DashboardBuilder({
       });
     return () => { scopeRequest.current = null; };
   }, [scopeRepoId, pickerRetry]);
+  const pickable = scopedPickable?.components ?? components;
 
   // stacked-share is inherently a share view; force the metric so preview + save agree.
   const effectiveMetric: DashboardMetric = chartType === "stacked-share" ? "share" : metric;
 
-  // The picker's Groups section holds the library tags plus a synthetic entry that adds
-  // the `local` series.
+  // The picker's Groups section holds the library tags, only those the repo's components
+  // use under a repo scope, plus a synthetic entry that adds the `local` series.
   const pickerGroups = useMemo(
     () => [
-      ...libraryTags.map((t) => ({ id: t.id, label: t.label })),
+      ...(scopedPickable ? tagsInUse(libraryTags, scopedPickable.components) : libraryTags).map((t) => ({ id: t.id, label: t.label })),
       { id: "__local", label: "Local components", selector: { kind: "local" as const } },
     ],
-    [libraryTags],
+    [libraryTags, scopedPickable],
   );
 
   // The picker toggles: picking an already-added selector removes it (the picker
@@ -233,15 +234,24 @@ export function DashboardBuilder({
     const colors = chartColors(rows.map((r) => r.cohort));
     return rows.map(({ sel, key, drawn, unknown }) => {
       const saved = unknown && sel.kind === "component" ? sel.label : undefined;
+      const label = drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "";
+      let deprecatedOnly: LegendSeries["deprecatedOnly"] = null;
+      if (sel.kind === "package" || sel.kind === "tag") {
+        const share = deprecatedShare(sel, pickable, libraryTags);
+        if (offersDeprecatedOnly(sel, share)) {
+          deprecatedOnly = { on: sel.deprecatedOnly === true, text: deprecatedShareText(share, label) };
+        }
+      }
       return {
         selector: sel,
-        label: drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "",
+        label,
         color: unknown ? "" : (colors.get(key) ?? ""),
         role: drawn?.role,
         unknown,
+        deprecatedOnly,
       };
     });
-  }, [cohorts, components, libraryTags, landed]);
+  }, [cohorts, components, libraryTags, landed, pickable]);
 
   useEffect(() => {
     const request = { config, retry: previewRetry };
@@ -312,7 +322,7 @@ export function DashboardBuilder({
   const showShareCaption =
     effectiveMetric === "share" &&
     seriesCanOverlap(cohorts, {
-      components: scopedPickable?.components ?? components,
+      components: pickable,
       packages: scopedPickable?.packages ?? packages,
       tags: libraryTags,
     });
@@ -420,7 +430,7 @@ export function DashboardBuilder({
           ) : scopeRepoId && !scopedPickable ? (
             <output className="text-sm text-muted-foreground">Loading…</output>
           ) : <SeriesPicker
-            components={scopedPickable?.components ?? components}
+            components={pickable}
             packages={scopedPickable?.packages ?? packages}
             groups={pickerGroups}
             selectedKeys={selectedKeys}

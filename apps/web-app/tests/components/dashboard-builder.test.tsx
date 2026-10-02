@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CohortSelector } from "@scoutui/web-shared";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
 
 const actions = vi.hoisted(() => ({ preview: vi.fn(), picker: vi.fn(), save: vi.fn() }));
@@ -164,3 +165,52 @@ describe("editing a saved chart", () => {
   });
 });
 
+const vueKits = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: [], exact: ["ant-design-vue", "naive-ui"] } };
+const reactKits = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
+const kitComponents = [
+  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", deprecated: true },
+  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", deprecated: false },
+  { componentId: "c", displayName: "NButton", packageName: "naive-ui", deprecated: false },
+];
+const savedWith = (cohorts: CohortSelector[]) => ({
+  id: "chart-1", name: "Old kits", description: null,
+  config: { scope: { kind: "all" as const }, cohorts, chartType: "trend" as const, metric: "count" as const },
+});
+
+describe("series options", () => {
+  it("narrows a library to its deprecated components from the row menu", async () => {
+    render(<DashboardBuilder libraryTags={[vueKits]} repos={[]} components={kitComponents} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-vue" }])} />);
+    fireEvent.click(screen.getByRole("button", { name: "Options for vue-ui-kits" }));
+    const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
+    expect(item).toHaveTextContent("1 of 3 components in vue-ui-kits is deprecated");
+    fireEvent.click(item);
+    expect(await screen.findByText("· deprecated")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(expect.objectContaining({
+      config: expect.objectContaining({ cohorts: [{ kind: "tag", tagId: "t-vue", deprecatedOnly: true }] }),
+    })));
+  });
+
+  it("offers no menu for a library with nothing deprecated", () => {
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", deprecated: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
+    expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
+  });
+
+  it("keeps the menu on a saved deprecated-only series so it can be switched off", async () => {
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    fireEvent.click(screen.getByRole("button", { name: "Options for react-ui-kits" }));
+    expect(await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("offers only the libraries the chosen repo uses, and all of them again for All repos", async () => {
+    actions.picker.mockResolvedValue({ state: "ready", value: { components: [kitComponents[2]], packages: ["naive-ui"] } });
+    render(<DashboardBuilder libraryTags={[reactKits, vueKits]} repos={["repo-a"]} components={kitComponents} packages={[]} />);
+    expect(screen.getByRole("button", { name: "react-ui-kits" })).toBeInTheDocument();
+    selectRepo("repo-a");
+    expect(await screen.findByRole("button", { name: "vue-ui-kits" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "react-ui-kits" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Local components" })).toBeInTheDocument();
+    selectRepo("");
+    expect(await screen.findByRole("button", { name: "react-ui-kits" })).toBeInTheDocument();
+  });
+});
