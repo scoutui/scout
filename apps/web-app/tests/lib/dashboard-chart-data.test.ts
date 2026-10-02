@@ -68,13 +68,13 @@ describe("chartColors", () => {
       { "package:x": "var(--viz-cat-2)", "tag:a": "var(--viz-primary)" },
     ],
     [
-      "packages and components get theme tokens, so they follow dark mode",
+      "packages and components get theme tokens, and the fourth uncoloured line repeats teal",
       [pkg("a"), pkg("b"), comp("c"), pkg("d")],
       {
         "package:a": "var(--viz-primary)",
         "package:b": "var(--viz-cat-2)",
         "component:c": "var(--viz-cat-3)",
-        "package:d": "var(--viz-cat-4)",
+        "package:d": "var(--viz-primary)",
       },
     ],
     ["a custom tag colour stays as written", [tag("a", "#7c3aed")], { "tag:a": "#7c3aed" }],

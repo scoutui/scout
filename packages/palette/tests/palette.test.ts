@@ -171,12 +171,6 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
     }
   });
 
-  it("sets the chart colours at ≥ 3:1 on the panel", () => {
-    for (const name of ["berry-graphic", "sky-graphic", "indigo-graphic", "pink-graphic"]) {
-      expect(contrast(rgb(theme, name), rgb(theme, "neutral-panel")), name).toBeGreaterThanOrEqual(3);
-    }
-  });
-
   it("steps the selected fill clear of the hover band and the panel", () => {
     const [selected] = token(theme, "neutral-hover");
     const [band] = token(theme, "neutral-band");

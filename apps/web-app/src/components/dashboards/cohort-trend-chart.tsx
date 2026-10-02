@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
-// From this many series the overlay becomes small multiples: of the 7 colours in the
-// chart order, at most 4 look unlike each other, so a fifth line would look like another.
+// From this many series the overlay becomes small multiples. A line past the chart
+// order's colours repeats one, and its end label and legend entry tell it apart.
 const FACET_THRESHOLD = 5;
 
 /**

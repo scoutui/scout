@@ -30,10 +30,6 @@
   --pal-teal-graphic: oklch(0.6 0.1 196);
   --pal-violet-graphic: oklch(0.62 0.15 305);
   --pal-blue-graphic: oklch(0.5 0.13 255);
-  --pal-berry-graphic: oklch(0.46 0.17 345);
-  --pal-sky-graphic: oklch(0.66 0.127 234);
-  --pal-indigo-graphic: oklch(0.4 0.17 280);
-  --pal-pink-graphic: oklch(0.64 0.17 355);
   --pal-grey-graphic: oklch(0.66 0.01 265);
   --pal-grey-soft: oklch(0.75 0.01 265);
 }
@@ -64,10 +60,6 @@
   --pal-teal-graphic: oklch(0.76 0.124 190);
   --pal-violet-graphic: oklch(0.72 0.15 305);
   --pal-blue-graphic: oklch(0.58 0.14 258);
-  --pal-berry-graphic: oklch(0.58 0.17 345);
-  --pal-sky-graphic: oklch(0.72 0.13 234);
-  --pal-indigo-graphic: oklch(0.62 0.17 285);
-  --pal-pink-graphic: oklch(0.8 0.119 355);
   --pal-grey-graphic: oklch(0.48 0.012 265);
   --pal-grey-soft: oklch(0.48 0.012 265);
 }

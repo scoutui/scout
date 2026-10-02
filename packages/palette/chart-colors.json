@@ -2,28 +2,15 @@
   "order": [
     { "token": "var(--viz-primary)", "primitive": "teal-graphic" },
     { "token": "var(--viz-cat-2)", "primitive": "violet-graphic" },
-    { "token": "var(--viz-cat-3)", "primitive": "blue-graphic" },
-    { "token": "var(--viz-cat-4)", "primitive": "berry-graphic" },
-    { "token": "var(--viz-cat-5)", "primitive": "sky-graphic" },
-    { "token": "var(--viz-cat-6)", "primitive": "indigo-graphic" },
-    { "token": "var(--viz-cat-7)", "primitive": "pink-graphic" }
+    { "token": "var(--viz-cat-3)", "primitive": "blue-graphic" }
   ],
   "fixed": [
     { "token": "var(--viz-legacy)", "primitive": "grey-graphic" },
     { "token": "var(--viz-local)", "primitive": "grey-soft" }
   ],
   "lookalikes": [
-    ["teal-graphic", "sky-graphic"],
-    ["teal-graphic", "pink-graphic"],
     ["teal-graphic", "grey-graphic"],
-    ["violet-graphic", "sky-graphic"],
-    ["violet-graphic", "indigo-graphic"],
-    ["violet-graphic", "pink-graphic"],
     ["violet-graphic", "grey-graphic"],
-    ["blue-graphic", "indigo-graphic"],
-    ["sky-graphic", "grey-graphic"],
-    ["sky-graphic", "grey-soft"],
-    ["pink-graphic", "grey-graphic"],
     ["grey-graphic", "grey-soft"]
   ]
 }
