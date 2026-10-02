@@ -117,7 +117,7 @@ We select **governance** in the top navigation. A **New record** form is already
 3. In **Packages**, we enter `@acme/ui`. Beside the box, under **Matches**, a line reads `Matches 1 package: @acme/ui`.
 4. We press **Create**.
 
-The **Tags** table shows `acme-ui` with `1 package` under **Matches**. If it reads `No scanned package` instead, the dashboard hasn't finished with our scan yet; we carry on, and a reload later shows the match. We repeat the steps for `acme-ui-legacy`, with `@acme/ui-legacy` in **Packages**.
+The **Tags** table shows `acme-ui` with `1 package` under **Matches**. We repeat the steps for `acme-ui-legacy`, with `@acme/ui-legacy` in **Packages**.
 
 We enter exact package names so each tag matches one package. A pattern such as `@acme/ui*` would match `@acme/ui-legacy` too, and the old library would count in both tags. [Tags](/docs/guides/dashboard/tag-your-libraries#match-packages-with-a-pattern) covers patterns.
 

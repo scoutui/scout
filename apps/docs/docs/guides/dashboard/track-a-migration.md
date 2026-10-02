@@ -69,9 +69,9 @@ To follow one repo, open it from **repos** and go to its **Adoption** tab. **Mig
 No button marks a record complete. It reads **Complete** once no repo's latest scan uses `LegacyButton`, so finishing a migration means:
 
 1. Remove the last uses of `LegacyButton` from each repo. To find them, open `LegacyButton` from its package page and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
-2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record **in use**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
+2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` keeps the record from reading **Complete**. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
 
-On the **governance** page, a group whose records are all complete folds to its heading row; select the row to show them. On the **charts** page, complete records move behind **Show N complete**. If a later scan uses `LegacyButton` again, the record goes back to **in use**. Keep the record once it is complete: it still marks any new use as deprecated.
+On the **governance** page, a group whose records are all complete folds to its heading row; select the package name on that row, or **Whole packages**, to show them. On the **charts** page, complete records move behind **Show N complete**. If a later scan uses `LegacyButton` again, the record is in use again. Keep the record once it is complete: it still marks any new use as deprecated.
 
 ## Never matched a scan
 
