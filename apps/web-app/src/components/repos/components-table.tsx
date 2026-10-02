@@ -111,11 +111,11 @@ export function ComponentsTable({
           <TableHead className="w-[40%]" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
             <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          {/* Below xl, Occurrences takes 6 points from Package: at 11% the
+          {/* Below xl, Occurrences takes 5 points from Package: at 11% the
               changed view's `475 (−9)` overflowed at 640 and the header
               truncated at 1024. Both views share the widths, so toggling
               reflows nothing. */}
-          <TableHead className="w-[23%] xl:w-[29%]" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
+          <TableHead className="w-[23%] xl:w-[28%]" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
             <SortButton label="Package" sortKey="packageName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           <TableHead className="w-[11%]" aria-sort={ariaSort("version", sortKey, sortDir)}>
@@ -124,7 +124,7 @@ export function ComponentsTable({
           <TableHead className="w-[9%] text-right" aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
             <SortButton label="Files" sortKey="fileCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="w-[17%] text-right pr-3 xl:w-[11%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
+          <TableHead className="w-[17%] text-right pr-3 xl:w-[12%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
             {/* The visible label stays `Occurrences`; in the changed view the
                 title and accessible name say the sort key is the Δ, so
                 "ascending" is never announced over counts that aren't. */}

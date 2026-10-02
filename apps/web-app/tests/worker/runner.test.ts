@@ -203,7 +203,7 @@ describe.skipIf(!databaseUrl)("scan job processing", { timeout: 30_000 }, () => 
       for (let job = await claimScanJob(pool, "worker-test"); job; job = await claimScanJob(pool, "worker-test")) {
         await processScanJob(pool, job, new AbortController().signal);
       }
-      expect(await new PostgresDriver(pool).listScans("repo-a")).toEqual([{ scanId: "scan-a", committedAt: "2026-09-01T00:00:00.000Z", arrivedAt: "2026-09-19T00:05:00.000Z", commit: "abc", branch: "main", ready: true }]);
+      expect(await new PostgresDriver(pool).listScans("repo-a")).toEqual([{ scanId: "scan-a", committedAt: "2026-09-01T00:00:00.000Z", arrivedAt: "2026-09-19T00:05:00.000Z", commit: "abc", branch: "main", uploadedBy: null, ready: true }]);
       expect((await pool.query("SELECT branch_position FROM scans")).rows).toEqual([{ branch_position: 42 }]);
     });
   });

@@ -17,8 +17,8 @@ function makeDetail(overrides?: Partial<RepoDetail>): RepoDetail {
 }
 
 const scans: ScanSummary[] = [
-  { scanId: "S1", committedAt: "2026-05-15T12:00:00Z", arrivedAt: "2026-05-15T12:05:00Z", commit: "abcdef1234", branch: "main", ready: true },
-  { scanId: "S0", committedAt: "2026-05-13T12:00:00Z", arrivedAt: "2026-05-13T12:05:00Z", commit: "0123456789", branch: "main", ready: true },
+  { scanId: "S1", committedAt: "2026-05-15T12:00:00Z", arrivedAt: "2026-05-15T12:05:00Z", commit: "abcdef1234", branch: "main", uploadedBy: null, ready: true },
+  { scanId: "S0", committedAt: "2026-05-13T12:00:00Z", arrivedAt: "2026-05-13T12:05:00Z", commit: "0123456789", branch: "main", uploadedBy: null, ready: true },
 ];
 
 describe("RepoDetailHeader forge links", () => {
