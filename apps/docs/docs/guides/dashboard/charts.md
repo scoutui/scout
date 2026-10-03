@@ -39,7 +39,7 @@ A *series* is one line, bar or row on the chart. Over time, a chart gains a poin
 To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [Tags](/docs/guides/dashboard/tag-your-libraries) shows how to create `acme-ui` and `acme-ui-legacy`, the two used here. Package and component series need no tag.
 
 1. On the charts page, press **New chart**.
-2. Type a name into **Name**, for example `acme-ui vs acme-ui-legacy`. You can't save a chart without one. You can also add a **Description**, which shows under the chart's name on its page.
+2. Type a name into **Name**, for example `acme-ui vs acme-ui-legacy`. You can also add a **Description**, which shows under the chart's name on its page.
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
 5. Under **Metric**, keep **Count** to chart occurrences, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **Share** when you pick it.
@@ -64,7 +64,7 @@ With one repo picked under **Repos**, the **Tags**, **Packages** and **Component
 
 To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, open the options of a tag or package series in the list at the top of the **Series** panel and choose **Only deprecated components**. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as superseded or retired. If no record covers any of them, the series drops to zero.
 
-The option is offered only when some, but not all, of the series' components are deprecated. Once it's on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
+A series has these options only when some, but not all, of its components are deprecated. Once it's on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
 
 ## Change or delete a chart
 

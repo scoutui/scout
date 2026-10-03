@@ -2,4 +2,11 @@
 "@scoutui/web-app": minor
 ---
 
-The chart builder is easier to use and its charts say what they show. **Only deprecated components** moves from a chip on every series into each series' options, offered only when it changes the series, with how many of its components are deprecated. A deprecated-only series now reads **deprecated only** on the chart, in its tooltip and on the saved chart. Charts can have a **Description**, the builder has **Cancel**, **Metric** stays on screen when **Stacked** is chosen, **Save chart** needs a name first, the **Tags** list for one repo shows only the libraries it uses, and the note that series share components shows only when they can.
+**Only deprecated components** replaces **deprecated only** in the chart builder. It's in the options of a tag or package series, and only when some, but not all, of the series' components are deprecated. It says how many are. A series with it on reads **deprecated only** on every chart type and in its tooltip.
+
+Also:
+- A chart can have a **Description**, shown under its name on its page.
+- The chart builder has **Cancel**, and says the chart needs a name before you press **Save chart**.
+- **Metric** shows **Share** while **Stacked** is picked, instead of disappearing.
+- With one repo picked, the **Tags** tab lists only the libraries that repo uses.
+- The note that series share components shows only when they can.
