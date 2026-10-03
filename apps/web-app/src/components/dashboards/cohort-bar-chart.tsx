@@ -4,24 +4,27 @@ import { AlertTriangle } from "lucide-react";
 import { Bar, BarChart, type BarShapeProps, Cell, LabelList, Rectangle, XAxis, YAxis } from "recharts";
 import type { CohortPoint, CohortRole } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, } from "@/lib/dashboard-chart-data";
-import { barRowLabel, formatMetric } from "@/lib/dashboard-format";
+import { NO_KEYS, cohortChartConfig, } from "@/lib/dashboard-chart-data";
+import { DEPRECATED_ONLY, barRowLabel, formatMetric } from "@/lib/dashboard-format";
+import { TooltipSeriesName } from "./cohort-label";
 
 // Each row label renders on two lines: the name, then its package (or a package's
-// scope) muted beneath. SVG text can't truncate, so the lines take hard character
-// caps; the tooltip carries the full label.
+// scope) and "deprecated only" muted beneath. SVG text can't truncate, so the lines
+// take hard character caps; the tooltip carries the full label.
 const ATTR_CAP = 38;
 const NAME_CHAR_PX = 6.6;
 const ICON_PX = 12;
 const ICON_GAP_PX = 4;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-function tickLines(label: string): { name: string; attribution: string } {
+function tickLines(label: string, deprecatedOnly: boolean): { name: string; attribution: string; qualifier: string } {
   const { name, attribution } = barRowLabel(label);
-  return { name, attribution: clip(attribution ?? "", ATTR_CAP) };
+  const qualifier = deprecatedOnly ? DEPRECATED_ONLY : "";
+  const room = ATTR_CAP - (qualifier ? ` · ${qualifier}`.length : 0);
+  return { name, attribution: clip(attribution ?? "", room), qualifier };
 }
 
-type BarRow = { cohortKey: string; label: string; value: number; seriesColor: string; role?: CohortRole | undefined };
+type BarRow = { cohortKey: string; label: string; value: number; seriesColor: string; role?: CohortRole | undefined; deprecatedOnly: boolean };
 
 function BarTick({
   x = 0,
@@ -36,9 +39,10 @@ function BarTick({
   payload?: { value?: unknown };
   rows: BarRow[];
 }) {
-  const { name, attribution } = tickLines(String(payload?.value ?? ""));
   const row = rows[index];
-  const nameBaseline = attribution.length > 0 ? y - 2 : y + 4;
+  const { name, attribution, qualifier } = tickLines(String(payload?.value ?? ""), row?.deprecatedOnly === true);
+  const twoLines = attribution.length > 0 || qualifier.length > 0;
+  const nameBaseline = twoLines ? y - 2 : y + 4;
   return (
     <g>
       {row?.role === "deprecated" ? (
@@ -52,13 +56,15 @@ function BarTick({
         </AlertTriangle>
       ) : null}
       <text x={x} y={y} textAnchor="end" fontFamily="var(--font-mono)">
-        {attribution.length > 0 ? (
+        {twoLines ? (
           <>
             <tspan x={x} dy={-2} fontSize={11} fill="var(--foreground)">
               {name}
             </tspan>
             <tspan x={x} dy={12} fontSize={10} fill="var(--muted-foreground)">
               {attribution}
+              {attribution && qualifier ? " · " : null}
+              {qualifier ? <tspan fontFamily="var(--font-sans)">{qualifier}</tspan> : null}
             </tspan>
           </>
         ) : (
@@ -83,10 +89,12 @@ const ROW_PX = 36;
 export function CohortBarChart({
   points,
   colors,
+  deprecatedOnly = NO_KEYS,
   metric,
 }: {
   points: CohortPoint[];
   colors: ReadonlyMap<string, string>;
+  deprecatedOnly?: ReadonlySet<string>;
   metric: "count" | "share";
 }) {
   const [animate, setAnimate] = useState(false);
@@ -96,16 +104,17 @@ export function CohortBarChart({
   const gradientId = useId();
 
   const rows: BarRow[] = points
-    .map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "", role: p.role }))
+    .map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "", role: p.role, deprecatedOnly: deprecatedOnly.has(p.cohortKey) }))
     .sort((a, b) => b.value - a.value);
   const config = cohortChartConfig(points);
 
   const labelWidth = Math.min(
     240,
     16 + Math.max(...rows.map((r) => {
-      const { name, attribution } = tickLines(r.label);
+      const { name, attribution, qualifier } = tickLines(r.label, r.deprecatedOnly);
       const mark = r.role === "deprecated" ? ICON_PX + ICON_GAP_PX : 0;
-      return Math.max(name.length * NAME_CHAR_PX + mark, attribution.length * 6);
+      const secondLine = [attribution, qualifier].filter(Boolean).join(" · ");
+      return Math.max(name.length * NAME_CHAR_PX + mark, secondLine.length * 6);
     })),
   );
   const valueWidth = 12 + Math.max(...rows.map((r) => formatMetric(r.value, metric).length)) * 7;
@@ -143,7 +152,7 @@ export function CohortBarChart({
                     style={{ backgroundColor: item?.payload?.seriesColor ?? item?.color }}
                   />
                   <div className="flex flex-1 items-center justify-between gap-3 leading-none">
-                    <span className="font-mono text-muted-foreground">{item?.payload?.label ?? name}</span>
+                    <TooltipSeriesName name={item?.payload?.label ?? name} deprecatedOnly={item?.payload?.deprecatedOnly === true} />
                     <span className="font-medium tabular-nums text-foreground">
                       {formatMetric(Number(value), metric)}
                     </span>

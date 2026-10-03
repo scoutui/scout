@@ -3,7 +3,7 @@ import type { CohortPoint, CohortSeries, RepoCoverage } from "@scoutui/web-share
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { formatMetric } from "@/lib/dashboard-format";
-import { repoAddedAtLatest } from "@/lib/dashboard-chart-data";
+import { NO_KEYS, repoAddedAtLatest } from "@/lib/dashboard-chart-data";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
@@ -37,12 +37,14 @@ export function CohortTable({
   series,
   coverage,
   colors,
+  deprecatedOnly = NO_KEYS,
   metric,
 }: {
   points: CohortPoint[];
   series: CohortSeries[];
   coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
+  deprecatedOnly?: ReadonlySet<string>;
   metric: "count" | "share";
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<Key>("value", "desc", NUMERIC);
@@ -109,7 +111,7 @@ export function CohortTable({
             <TableCell>
               <span className="inline-flex min-w-0 items-center gap-2">
                 <CohortSwatch cohortKey={p.cohortKey} color={p.seriesColor} role={p.role} />
-                <CohortLabelText label={p.label} />
+                <CohortLabelText label={p.label} deprecatedOnly={deprecatedOnly.has(p.cohortKey)} />
               </span>
             </TableCell>
             <TableCell>

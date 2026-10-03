@@ -1,6 +1,6 @@
 "use client";
 import type { DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { chartColors, drawnChartCohorts, isEmptyView, savedChartCohorts } from "@/lib/dashboard-chart-data";
+import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, savedChartCohorts } from "@/lib/dashboard-chart-data";
 import { CohortBarChart } from "./cohort-bar-chart";
 import { CohortShareOverTime } from "./cohort-share-over-time";
 import { CohortTable } from "./cohort-table";
@@ -25,21 +25,22 @@ export function DashboardChart({
     return <p className="py-6 text-center text-sm text-muted-foreground">Couldn't find the components in this chart.</p>;
   }
   const colors = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
+  const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   if (config.chartType === "trend") {
     return view.kind === "series" ? (
-      <CohortTrendChart series={view.series} coverage={view.coverage} colors={colors} metric={config.metric} showLegend={showLegend} />
+      <CohortTrendChart series={view.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} />
     ) : (
       <ChartFallback />
     );
   }
   if (config.chartType === "stacked-share") {
-    return view.kind === "series" ? <CohortShareOverTime series={view.series} coverage={view.coverage} colors={colors} showLegend={showLegend} /> : <ChartFallback />;
+    return view.kind === "series" ? <CohortShareOverTime series={view.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} /> : <ChartFallback />;
   }
   if (config.chartType === "table") {
-    return view.kind === "table" ? <CohortTable points={view.points} series={view.series} coverage={view.coverage} colors={colors} metric={config.metric} /> : <ChartFallback />;
+    return view.kind === "table" ? <CohortTable points={view.points} series={view.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
   }
   if (view.kind !== "snapshot") return <ChartFallback />;
-  return config.chartType === "bars" ? <CohortBarChart points={view.points} colors={colors} metric={config.metric} /> : <ChartFallback />;
+  return config.chartType === "bars" ? <CohortBarChart points={view.points} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
 }
 
 function ChartFallback() {

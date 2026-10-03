@@ -7,7 +7,7 @@ import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 /** The minimal cohort shape the bar needs. CohortPoint satisfies it, and the
  *  share-over-time view derives it from each series' latest point. */
-export type ShareSegment = { cohortKey: string; label: string; value: number; role?: CohortRole | undefined };
+export type ShareSegment = { cohortKey: string; label: string; value: number; role?: CohortRole | undefined; deprecatedOnly?: boolean };
 
 /**
  * A single stacked bar of each cohort's share of the in-scope total, with a labelled
@@ -33,7 +33,7 @@ export function CohortShareBar({
   }
   const segs = points.map((p) => {
     const share = p.value / total;
-    return { key: p.cohortKey, label: p.label, share, color: colors.get(p.cohortKey) ?? "", role: p.role };
+    return { key: p.cohortKey, label: p.label, share, color: colors.get(p.cohortKey) ?? "", role: p.role, deprecatedOnly: p.deprecatedOnly === true };
   });
 
   return (
@@ -76,13 +76,13 @@ export function CohortShareBar({
               )}
             >
               <CohortSwatch cohortKey={s.key} color={s.color} role={s.role} className="inline-block" />
-              <CohortLabelText label={s.label} />
+              <CohortLabelText label={s.label} deprecatedOnly={s.deprecatedOnly} />
               <span className="font-medium tabular-nums text-foreground">{formatPct(s.share)}</span>
             </button>
           ) : (
             <span key={s.key} className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <CohortSwatch cohortKey={s.key} color={s.color} role={s.role} className="inline-block" />
-              <CohortLabelText label={s.label} />
+              <CohortLabelText label={s.label} deprecatedOnly={s.deprecatedOnly} />
               <span className="font-medium tabular-nums text-foreground">{formatPct(s.share)}</span>
             </span>
           ),
