@@ -122,7 +122,7 @@ npx scout scan --dry-run
 When it finishes, we see:
 
 ```
-scout 0.2.0 · acme/storefront at 1a2b3c4
+scout 0.1.0 · acme/storefront at 8676019
 
 Path aliases: tsconfig.json
 
