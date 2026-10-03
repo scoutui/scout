@@ -119,6 +119,17 @@ describe("cli argument handling", () => {
     expect(JSON.parse(readFileSync(join(dir, "apps/web/scout-scan.json"), "utf8")).meta.repo.id).toBe("cli-scan");
   });
 
+  it("writes no colour, wordmark or symbols when its output is piped, even outside CI", async () => {
+    const dir = pushedRepo(".");
+    const { CI: _ci, NO_COLOR: _noColor, FORCE_COLOR: _forceColor, ...env } = withoutDashboard();
+    const scan = await run(["scan", "--dry-run"], { cwd: dir, env });
+    const help = await run(["--help"], { cwd: dir, env });
+    expect(`${scan.stdout}${scan.stderr}${help.stdout}${help.stderr}`).not.toContain("\x1b");
+    expect(scan.stdout.startsWith("Scanned ")).toBe(true);
+    expect(scan.stdout.endsWith("\nWrote scout-scan.json (not uploaded).\n")).toBe(true);
+    expect(help.stdout.startsWith("scout <command> [options]\n")).toBe(true);
+  });
+
   it("suggests the nearest command for an unknown command", async () => {
     const { code, stderr } = await run(["scn"]);
     expect(code).toBe(2);
