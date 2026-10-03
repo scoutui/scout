@@ -13,30 +13,28 @@ import { loadTsconfigChain, type AliasEntry } from "./tsconfig-loader.js";
 
 export type PackageAliasLayer = { pkgRealPath: string; entries: AliasEntry[]; baseUrlDir: string | undefined };
 
+/** The alias layers of the members whose tsconfig declares aliases or `baseUrl`, and how many members have a tsconfig at all. */
 export function buildPackageAliasLayers(
   graph: WorkspaceGraph,
   onWarning?: (message: string) => void,
-): PackageAliasLayer[] {
+): { layers: PackageAliasLayer[]; tsconfigCount: number } {
   const layers: PackageAliasLayer[] = [];
-  const warned = new Set<string>();
+  let tsconfigCount = 0;
   for (const pkg of graph.packages) {
     const tsconfigPath = resolveTsconfigPath({
       configDir: pkg.absolutePath,
       repoRoot: pkg.absolutePath,
     });
     if (!tsconfigPath) continue;
+    tsconfigCount += 1;
     const { entries, baseUrlDir, warnings } = loadTsconfigChain(tsconfigPath, graph.rootPath);
-    for (const w of warnings) {
-      if (warned.has(w)) continue;
-      warned.add(w);
-      onWarning?.(w);
-    }
+    if (onWarning) for (const w of warnings) onWarning(w);
     if (entries.length === 0 && baseUrlDir === undefined) continue;
     layers.push({ pkgRealPath: safeRealpath(pkg.absolutePath), entries, baseUrlDir });
   }
   // Longest path first → nested packages beat their ancestors.
   layers.sort((a, b) => b.pkgRealPath.length - a.pkgRealPath.length);
-  return layers;
+  return { layers, tsconfigCount };
 }
 
 function safeRealpath(p: string): string {

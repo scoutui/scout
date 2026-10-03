@@ -165,21 +165,41 @@ describe("runScan warnings about files it reads", () => {
     );
   });
 
+  const withAliases = { compilerOptions: { paths: { "@/*": ["./src/*"] } } };
   it.each([
-    [["one", "two"], "Path aliases: tsconfig files in 2 workspace packages"],
-    [["one"], "Path aliases: a tsconfig file in 1 workspace package"],
-  ])("at a monorepo root with no tsconfig of its own, says the aliases come from the packages' tsconfigs (%j)", async (apps, line) => {
+    [["one", "two"], withAliases, "Path aliases: tsconfig files in 2 workspace packages"],
+    [["one"], withAliases, "Path aliases: a tsconfig file in 1 workspace package"],
+    [["one"], { compilerOptions: {} }, "Path aliases: a tsconfig file in 1 workspace package"],
+  ])("at a monorepo root with no tsconfig of its own, says the aliases come from the packages' tsconfigs (%j, %j)", async (apps, tsconfig, line) => {
     const dir = setupConsumer();
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "root", private: true, workspaces: ["apps/*"] }));
     for (const app of apps) {
       mkdirSync(join(dir, "apps", app), { recursive: true });
       writeFileSync(join(dir, "apps", app, "package.json"), JSON.stringify({ name: app }));
-      writeFileSync(join(dir, "apps", app, "tsconfig.json"), JSON.stringify({ compilerOptions: { paths: { "@/*": ["./src/*"] } } }));
+      writeFileSync(join(dir, "apps", app, "tsconfig.json"), JSON.stringify(tsconfig));
     }
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     await runScan({ configPath: join(dir, "scout.config.json") });
     const lines = stderrOf(stderr).split("\n");
     expect(lines.filter((l) => l.startsWith("Path aliases:"))).toEqual([line]);
+  });
+
+  it("warns once about a missing file that the root's and two packages' tsconfigs all reach", async () => {
+    const dir = setupConsumer();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "root", private: true, workspaces: ["apps/*"] }));
+    writeFileSync(join(dir, "tsconfig.base.json"), JSON.stringify({ extends: "./.generated/tsconfig.json" }));
+    writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ extends: "./tsconfig.base.json" }));
+    for (const app of ["one", "two"]) {
+      mkdirSync(join(dir, "apps", app), { recursive: true });
+      writeFileSync(join(dir, "apps", app, "package.json"), JSON.stringify({ name: app }));
+      writeFileSync(join(dir, "apps", app, "tsconfig.json"), JSON.stringify({ extends: "../../tsconfig.base.json" }));
+    }
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json") });
+    const lines = stderrOf(stderr).split("\n");
+    expect(lines.filter((line) => line.startsWith("Warning:"))).toEqual([
+      "Warning: tsconfig.base.json points to .generated/tsconfig.json, which doesn't exist, so its path aliases aren't followed. Fix the path and scan again.",
+    ]);
   });
 
   it("names the monorepo root relative to the config's folder when the config is in a workspace package", async () => {

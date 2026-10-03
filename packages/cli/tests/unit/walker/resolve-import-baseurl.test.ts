@@ -52,7 +52,7 @@ describe("createImportResolver: tsconfig baseUrl", () => {
       repoRoot: stage,
       tsconfigPath: join(stage, "tsconfig.json"),
       workspaceGraph: graph,
-      packageAliasLayers: buildPackageAliasLayers(graph),
+      packageAliasLayers: buildPackageAliasLayers(graph).layers,
     });
 
     expect(resolveImport(join(stage, "apps/web/src/Page.tsx"), "app/Banner")).toBe(

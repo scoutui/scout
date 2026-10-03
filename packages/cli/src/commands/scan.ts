@@ -337,9 +337,12 @@ export async function scanRepository(input: {
       : posixPath(relative(outputRoot, resolve(cfg.configDir, scanRel)));
 
   const writer = quiet ? () => {} : (s: string) => process.stderr.write(s);
-  // Warnings about how the scan reads the repo, hidden by --quiet like progress.
+  // Warnings about how the scan reads the repo, each printed once, hidden by --quiet like progress.
+  const warned = new Set<string>();
   const scanWarning = (msg: string) => {
-    if (!quiet) log.warn(msg);
+    if (quiet || warned.has(msg)) return;
+    warned.add(msg);
+    log.warn(msg);
   };
   const reportSyntaxErrors = (path: string, messages: string[]) =>
     log.warn(syntaxErrorWarning(path, messages), messages.join("\n"));
@@ -350,10 +353,8 @@ export async function scanRepository(input: {
     onWarning: (msg: string) => scanWarning(msg),
   };
   if (cfg.aliases) resolveImportOpts.aliases = cfg.aliases;
-  resolveImportOpts.packageAliasLayers = buildPackageAliasLayers(
-    workspaceGraph,
-    (msg) => scanWarning(msg),
-  );
+  const packageAliases = buildPackageAliasLayers(workspaceGraph, (msg) => scanWarning(msg));
+  resolveImportOpts.packageAliasLayers = packageAliases.layers;
   const tsconfigPath = resolveTsconfigPath({
     configDir: cfg.configDir,
     repoRoot: workspaceRoot,
@@ -378,13 +379,13 @@ export async function scanRepository(input: {
   const cemIndex = await buildCemIndex({ root: outputRoot, configDir: cfg.configDir });
 
 
-  const packageLayers = resolveImportOpts.packageAliasLayers.length;
+  const packageTsconfigs = packageAliases.tsconfigCount;
   if (tsconfigPath) {
     writer(`Path aliases: ${posixPath(relative(cfg.configDir, tsconfigPath))}\n`);
-  } else if (packageLayers > 0) {
-    writer(packageLayers === 1
+  } else if (packageTsconfigs > 0) {
+    writer(packageTsconfigs === 1
       ? "Path aliases: a tsconfig file in 1 workspace package\n"
-      : `Path aliases: tsconfig files in ${packageLayers} workspace packages\n`);
+      : `Path aliases: tsconfig files in ${packageTsconfigs} workspace packages\n`);
   } else {
     writer('Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.\n');
   }

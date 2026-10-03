@@ -30,26 +30,9 @@ describe("per-package tsconfig alias layers", () => {
 
   afterAll(() => rmSync(stage, { recursive: true, force: true }));
 
-  it("warns once, with workspace-relative paths, about a missing file two packages' tsconfigs both reach", () => {
-    const root = realpathSync(mkdtempSync(join(tmpdir(), "cc-pkg-alias-missing-")));
-    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "root", workspaces: ["apps/*"] }));
-    writeFileSync(join(root, "tsconfig.base.json"), JSON.stringify({ extends: "./.generated/tsconfig.json" }));
-    for (const app of ["one", "two"]) {
-      mkdirSync(join(root, "apps", app), { recursive: true });
-      writeFileSync(join(root, "apps", app, "package.json"), JSON.stringify({ name: `@f/${app}` }));
-      writeFileSync(join(root, "apps", app, "tsconfig.json"), JSON.stringify({ extends: "../../tsconfig.base.json" }));
-    }
-    const warnings: string[] = [];
-    buildPackageAliasLayers(buildWorkspaceGraph(root), (w) => warnings.push(w));
-    rmSync(root, { recursive: true, force: true });
-    expect(warnings).toEqual([
-      "tsconfig.base.json points to .generated/tsconfig.json, which doesn't exist, so its path aliases aren't followed. Fix the path, or for Nuxt run npx nuxt prepare, and scan again.",
-    ]);
-  });
-
   it("resolves the same alias to per-app targets keyed by the importing file's package", () => {
     const graph = buildWorkspaceGraph(stage);
-    const layers = buildPackageAliasLayers(graph);
+    const layers = buildPackageAliasLayers(graph).layers;
     expect(layers).toHaveLength(2);
     const resolve = createImportResolver({ repoRoot: stage, workspaceGraph: graph, packageAliasLayers: layers });
     expect(resolve(join(stage, "apps", "one", "src", "App.tsx"), "@/components/card"))

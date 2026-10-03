@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, isAbsolute, join, relative, resolve as pathResolve, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve as pathResolve } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
 import { parse as parseJsonc, type ParseError } from "jsonc-parser";
 
 /** Compiled alias record consumed by `createImportResolver`. */
@@ -109,7 +110,7 @@ type MergedPaths = {
 function shownPath(path: string, root: string | undefined): string {
   if (root === undefined) return path;
   const rel = relative(root, path);
-  return rel === "" || rel.startsWith("..") || isAbsolute(rel) ? path : rel.split(sep).join("/");
+  return rel === "" || rel.startsWith("..") || isAbsolute(rel) ? path : posixPath(rel);
 }
 
 /** The merged paths of `absPath` and its `extends` chain. `from` is the tsconfig that extends `absPath`, if any. */
@@ -120,10 +121,6 @@ function loadChainInner(
   warnings: string[],
   show: (path: string) => string,
 ): MergedPaths | null {
-  if (seen.has(absPath)) {
-    warnings.push(`"extends" loops back to ${show(absPath)}, so path aliases past it aren't followed. Fix "extends" and scan again.`);
-    return null;
-  }
   seen.add(absPath);
 
   const parsed = readAndParse(absPath, from, warnings, show);
@@ -136,6 +133,12 @@ function loadChainInner(
     for (const ext of parents) {
       const parentAbs = resolveExtends(absPath, ext, warnings, show);
       if (!parentAbs) continue;
+      if (seen.has(parentAbs)) {
+        warnings.push(
+          `${show(absPath)} extends ${show(parentAbs)}, which loops back to it, so path aliases past it aren't followed. Fix "extends" in ${show(absPath)} and scan again.`,
+        );
+        continue;
+      }
       const parentResult = loadChainInner(parentAbs, absPath, seen, warnings, show);
       if (!parentResult) continue;
       inherited = mergeOverride(inherited, parentResult);
@@ -164,9 +167,9 @@ function readAndParse(
     const code = (err as NodeJS.ErrnoException).code;
     warnings.push(
       code !== "ENOENT"
-        ? `Couldn't read ${show(absPath)} (${code ?? (err as Error).message}), so its path aliases aren't followed. Check the file and scan again.`
+        ? `Couldn't read ${show(absPath)}, so its path aliases aren't followed. Check that it's a readable file and scan again.`
         : from !== undefined
-          ? `${show(from)} points to ${show(absPath)}, which doesn't exist, so its path aliases aren't followed. Fix the path, or for Nuxt run npx nuxt prepare, and scan again.`
+          ? `${show(from)} points to ${show(absPath)}, which doesn't exist, so its path aliases aren't followed. ${posixPath(absPath).includes("/.nuxt/") ? "Fix the path, or for Nuxt run npx nuxt prepare, and scan again." : "Fix the path and scan again."}`
           : `${show(absPath)} doesn't exist, so its path aliases aren't followed. Check "tsconfigPath" in scout.config.json and scan again.`,
     );
     return null;
