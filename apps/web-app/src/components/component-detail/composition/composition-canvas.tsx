@@ -221,7 +221,7 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** Which marks the drawn render tree uses, so the legend explains only those. */
+/** Which marks the drawn render tree uses, and so which the legend lists. */
 type Legend = { external: boolean; local: boolean; deprecated: boolean; edges: boolean };
 
 /** Fit the whole graph, or reset to the default frame. Shared by the edge pills

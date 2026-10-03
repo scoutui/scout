@@ -365,7 +365,7 @@ describe("edgePillCopy: the visible label is always the directional count, toolt
 });
 
 describe("hiddenComponentCount: what an edge pill counts", () => {
-  // Columns at x = -1, 0, 1 (in chip pitches): two parents and a "+3 more"
+  // Columns at x = -1, 0 and 1: two parents and a "+3 more"
   // chip on the left, the focus, one child on the right.
   const items = [
     { x: -1, y: 0 }, { x: -1, y: 1 }, { x: -1, y: 2, nodes: [{}, {}, {}] },
