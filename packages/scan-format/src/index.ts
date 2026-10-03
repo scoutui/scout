@@ -25,6 +25,7 @@ export type {
   UnresolvedReason,
 } from "./schema.js";
 export { isKind } from "./schema.js";
+export { compareCliVersions, isSnapshotVersion } from "./cli-version.js";
 export { componentKey } from "./component-key.js";
 export { sameComponentName } from "./component-name.js";
 export { displayNameOf } from "./display-name.js";
