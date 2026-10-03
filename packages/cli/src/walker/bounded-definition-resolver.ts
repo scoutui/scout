@@ -30,6 +30,7 @@ import {
 import type { Graph, ResolveImport } from "@scoutui/reference-graph";
 import { emitReact } from "@scoutui/parser-react";
 import { parseByExt, type ParsedFile, type SyntaxErrorReporter } from "../parse-by-ext.js";
+import { emitVueFile } from "../emit-vue-file.js";
 
 export type BoundedDefinitionResolver = {
   /** The graph's `resolveLocalDefinition` hook: the definition file and
@@ -76,10 +77,14 @@ export function createBoundedDefinitionResolver(opts: {
     } catch {
       return false;
     }
-    if (file.kind !== "babel") return false; // react-engine path only; Vue SFC barrels fall back
+    if (file.kind === "unsupported") return false;
     try {
-      const fb = builder.beginFile(absFile);
-      emitReact({ file: absFile, source, ast: file.ast, fileBuilder: fb });
+      if (file.kind === "vue") {
+        emitVueFile({ graphBuilder: builder, graphKey: absFile, definitionPath: absFile, parsed: file });
+      } else {
+        const fb = builder.beginFile(absFile);
+        emitReact({ file: absFile, source, ast: file.ast, fileBuilder: fb });
+      }
     } catch {
       return false;
     }

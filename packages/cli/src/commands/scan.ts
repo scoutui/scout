@@ -10,13 +10,13 @@ import { detectVueComponents } from "../local-index/detect-vue.js";
 import { detectWebComponents } from "../local-index/detect-wc.js";
 import type { LocalDefinition } from "../local-index/types.js";
 import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
+import { emitVueFile } from "../emit-vue-file.js";
 import { createProgress, startPhase } from "../util/progress.js";
 import { walkFiles } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
 import { resolveTsconfigPath } from "../walker/tsconfig-discovery.js";
 import { buildPackageAliasLayers } from "../walker/package-alias-layers.js";
 import { emitReact } from "@scoutui/parser-react";
-import { emitVueTemplate } from "@scoutui/parser-vue";
 import { writeJson } from "../reporter/json.js";
 import { printSummary } from "../reporter/stdout.js";
 import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../scan/meta.js";
@@ -499,28 +499,16 @@ export async function scanRepository(input: {
         log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some occurrences in it may be missing.`, errorStack(err));
       }
     } else if (parsed.kind === "vue") {
-      const wrapper = parsed.scriptAst !== undefined
-        ? {
-            descriptor: parsed.descriptor,
-            scriptProgram: parsed.scriptAst,
-            ...(parsed.plainScriptAst !== undefined ? { plainScriptProgram: parsed.plainScriptAst } : {}),
-          }
-        : { descriptor: parsed.descriptor };
-      const sfcDefs = detectVueComponents({ kind: "sfc", wrapper }, outRel);
-      localDefs.push(...sfcDefs);
-
       try {
-        const fileBuilder = graphBuilder.beginFile(relPath, "vue");
-        emitVueTemplate({
-          file: relPath,
-          wrapper,
-          fileBuilder,
-          // Reuse detectVueComponents' resolved symbol so the SFC's local-index
-          // seed and the engine's owner ComponentId hash to the same id.
-          // Otherwise the SFC seed is pruned as an unreachable local.
-          ...(sfcDefs[0]?.exportName !== undefined ? { sfcSymbol: sfcDefs[0].exportName } : {}),
-          ...(autoImports !== null ? { resolveAutoImport: autoImports.lookup } : {}),
-        });
+        localDefs.push(
+          ...emitVueFile({
+            graphBuilder,
+            graphKey: relPath,
+            definitionPath: outRel,
+            parsed,
+            ...(autoImports !== null ? { resolveAutoImport: autoImports.lookup } : {}),
+          }),
+        );
       } catch (err) {
         log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some occurrences in it may be missing.`, errorStack(err));
       }
