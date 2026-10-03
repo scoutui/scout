@@ -9,16 +9,16 @@
  * For a named re-export, `followReExportChain` returns the hop target when
  * that file is absent from the graph: the file to parse next.
  * For `export *` it returns null when the intermediate barrel isn't parsed
- * yet, so a stalled walk parses one more star target (read from the graph's
- * `exports`) and retries. Files parsed here are never walked for occurrences,
- * props or composition: they only pin identity and answer `declarationOf` for
- * the definition pinned.
+ * yet, so a stalled walk parses one more first-party star target (read from
+ * the graph's `exports`) and retries. Files parsed here are never walked for
+ * occurrences, props or composition: they only pin identity and answer
+ * `declarationOf` for the definition pinned.
  *
  * The shadow graph is built with no `repoRoot`, so it has no
  * `resolveToGraphKey`; `followReExportChain` hops therefore stay absolute,
  * matching the `moduleResolver` output and the shadow-graph file keys. It
  * carries the host's `firstParty`, so a chain that leaves first-party code
- * through a package import ends at that package export.
+ * through a package import or `export *` ends at that package export.
  */
 import { readFileSync } from "node:fs";
 import {
@@ -87,19 +87,19 @@ export function createBoundedDefinitionResolver(opts: {
     return true;
   };
 
-  // Parse one not-yet-parsed `export *` target reachable from an already-parsed
-  // file. `followReExportChain` recurses into star sources internally and
-  // returns null (rather than a hop target) when the source file is absent from
-  // the graph, so a stalled named walk needs this to advance the star frontier.
-  // Returns true when it parsed a new file. Star `from` specifiers resolve from
-  // the parsed file's own absolute key.
+  // Parse one not-yet-parsed first-party `export *` target reachable from an
+  // already-parsed file. `followReExportChain` recurses into star sources
+  // internally and returns null (rather than a hop target) when the source file
+  // is absent from the graph, so a stalled named walk needs this to advance the
+  // star frontier. Returns true when it parsed a new file. Star `from`
+  // specifiers resolve from the parsed file's own absolute key.
   const expandStarFrontier = (): boolean => {
     const graph = shadowGraph();
     for (const [fileKey, fileGraph] of graph.files) {
       for (const exp of fileGraph.exports) {
         if (exp.kind !== "star") continue;
         const targetAbs = opts.moduleResolver(fileKey, exp.from);
-        if (!targetAbs || parsed.has(targetAbs)) continue;
+        if (!targetAbs || parsed.has(targetAbs) || !opts.firstParty(targetAbs)) continue;
         if (tryParse(targetAbs)) return true;
       }
     }

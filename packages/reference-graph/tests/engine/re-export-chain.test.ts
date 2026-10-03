@@ -109,6 +109,38 @@ describe("followReExportChain: named + star resolution", () => {
     });
     expect(followReExportChain(graph, "barrel.ts", "X", [])).toBeNull();
   });
+
+  /** barrel.ts and a.ts with the given `export *` entries. `@example/one` and
+   *  `@example/two` resolve under node_modules, which is not first-party. */
+  const starGraph = (barrel: Array<{ kind: "star"; from: string }>, a: Array<{ kind: "star"; from: string }> = []) => {
+    const targets: Record<string, string> = {
+      "./a.ts": "a.ts",
+      "@example/one": "node_modules/@example/one/index.js",
+      "@example/two": "node_modules/@example/two/index.js",
+    };
+    const gb = createGraphBuilder({ moduleResolver: (_i, s) => targets[s] ?? null });
+    const barrelFile = gb.beginFile("barrel.ts");
+    for (const exp of barrel) barrelFile.addExport(exp);
+    const aFile = gb.beginFile("a.ts");
+    for (const exp of a) aFile.addExport(exp);
+    return gb.build({ firstParty: (abs) => !abs.startsWith("node_modules/") });
+  };
+
+  it("returns null when `export *` of two packages could hold the name, one of them in a star source", () => {
+    const graph = starGraph(
+      [
+        { kind: "star", from: "./a.ts" },
+        { kind: "star", from: "@example/two" },
+      ],
+      [{ kind: "star", from: "@example/one" }],
+    );
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toBeNull();
+  });
+
+  it("returns null for `default` through a package's `export *`, which doesn't re-export it", () => {
+    const graph = starGraph([{ kind: "star", from: "@example/one" }]);
+    expect(followReExportChain(graph, "barrel.ts", "default", [])).toBeNull();
+  });
 });
 
 describe("followReExportChain: barrel re-wrap of an imported local", () => {

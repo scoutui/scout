@@ -2,7 +2,7 @@ import { Button, Card } from "../ui";
 import { UiKit } from "../ui/ns";
 import { UiParts } from "../ui/ns-star";
 import { Badge } from "../ui/rewrap";
-import { Tooltip } from "../ui/star";
+import { Spinner, Tooltip } from "../ui/star";
 
 export function ThroughBarrels() {
   return (
@@ -12,6 +12,7 @@ export function ThroughBarrels() {
       <Button>Save</Button>
       <UiKit.Avatar />
       <UiParts.Banner />
+      <Spinner />
     </Card>
   );
 }

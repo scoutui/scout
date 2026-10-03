@@ -18,8 +18,11 @@ import { packageNameFromSpecifier } from "./specifier.js";
  * Resolution priority at each hop:
  *  1. Named export of `imported` (re-export hop or local terminal).
  *  2. If absent, iterate `{kind: "star", from}` entries in source order;
- *     recurse into each source with the same `imported` name; first
- *     non-null result wins.
+ *     recurse into each parsed source with the same `imported` name; first
+ *     non-null result wins. If none does, the result is the package exit of
+ *     an `export *`, when that is the only star target the search could not
+ *     follow into a parsed file and `imported` is not `default` (the rule
+ *     `starExport` in `binding.ts` applies).
  *
  * A namespace hop (`import * as NS; export { NS }`, or `export * as NS from`)
  * continues into NS's module with the first segment of `path` as the name
@@ -33,7 +36,9 @@ import { packageNameFromSpecifier } from "./specifier.js";
  * `exportName` the name imported from it.
  *
  * Returns null when:
- *  - The export can't be found among named exports and no star branch resolves it.
+ *  - The export can't be found among named exports, no star branch resolves
+ *    it and no single package exit through `export *` stands in for it (a
+ *    star target not yet parsed blocks one, so a lazy caller parses it first).
  *  - A re-export hop's `from` specifier doesn't resolve (caller falls back).
  *  - A cycle is detected (same `${file}::${imported}` revisited).
  *
@@ -62,6 +67,7 @@ function walk(
   imported: string,
   path: readonly string[],
   seen: Set<string>,
+  outside?: StarOutside,
 ): ReExportLeaf | null {
   const seenKey = `${file}::${imported}`;
   // Cycle guard: revisiting the same (file, imported) means this branch has
@@ -130,21 +136,33 @@ function walk(
 
   // Step 2: star fallback. When `imported` is not among the file's
   // named exports, iterate {kind: "star"} entries in source order and try each
-  // source for the same imported name. First branch that resolves wins. This
-  // matches JS module semantics, where ambiguous wildcards are a runtime error,
-  // so well-formed code has at most one resolving branch.
+  // parsed source for the same imported name. First branch that resolves wins.
+  // This matches JS module semantics, where ambiguous wildcards are a runtime
+  // error, so well-formed code has at most one resolving branch. The star
+  // targets not followed, here and in the star sources searched, are collected.
+  // When no branch resolves, the file the search began on exits through a
+  // package only when that is the one target collected and the name is not
+  // `default`, which `export *` never re-exports.
+  const collected = outside ?? { exits: [], unfollowed: 0 };
   for (const starExp of target.exports) {
     if (starExp.kind !== "star") continue;
     const nextAbs = graph.moduleResolver(file, starExp.from);
-    if (!nextAbs) continue;
-    const nextKey = graphKeyFor(graph, nextAbs);
-    if (!nextKey) continue;
-    const result = walk(graph, nextKey, imported, path, seen);
-    if (result) return result;
+    const exit = nextAbs ? packageExit(graph, file, nextAbs, starExp.from, imported, path) : null;
+    const nextKey = nextAbs && !exit ? graphKeyFor(graph, nextAbs) : null;
+    if (nextKey && graph.files.has(nextKey)) {
+      const result = walk(graph, nextKey, imported, path, seen, collected);
+      if (result) return result;
+    } else if (exit) collected.exits.push(exit);
+    else collected.unfollowed++;
   }
-
-  return null;
+  if (outside || imported === "default") return null;
+  return collected.exits.length === 1 && collected.unfollowed === 0 ? (collected.exits[0] ?? null) : null;
 }
+
+/** The `export *` targets a search for a name met and could not follow into
+ *  a parsed file: the package exits among them, and how many others (a
+ *  target that doesn't resolve or isn't in the graph) there were. */
+type StarOutside = { exits: ReExportLeaf[]; unfollowed: number };
 
 /** The package exit of a hop from `file` whose `specifier` resolves to
  *  `targetAbs`, with the member `path` left to read on `exportName`: the hop,

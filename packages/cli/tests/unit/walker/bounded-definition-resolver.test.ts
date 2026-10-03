@@ -96,6 +96,27 @@ describe("createBoundedDefinitionResolver", () => {
     ]);
   });
 
+  it("doesn't parse a package an `export *` names, so a repository `export *` after it is reached within the file cap", () => {
+    const pkg = join(stage, "frontier", "node_modules", "@example", "ui");
+    mkdirSync(pkg, { recursive: true });
+    writeFileSync(join(stage, "frontier", "barrel.ts"), `export * from "@example/ui";\nexport * from "./local";\n`);
+    writeFileSync(join(stage, "frontier", "local.tsx"), "export function Spinner() { return null; }\n");
+    writeFileSync(join(pkg, "index.js"), "export function Tooltip() { return null; }\n");
+    const targets: Record<string, string> = {
+      "@example/ui": join(pkg, "index.js"),
+      "./local": join(stage, "frontier", "local.tsx"),
+    };
+    const resolveDef = createBoundedDefinitionResolver({
+      moduleResolver: (_from, spec) => targets[spec] ?? null,
+      firstParty: (abs) => abs.startsWith(stage) && !abs.includes("/node_modules/"),
+      maxFiles: 2,
+    }).resolveDefinition;
+    expect(resolveDef(join(stage, "frontier", "barrel.ts"), "Spinner", [])).toMatchObject({
+      absFile: join(stage, "frontier", "local.tsx"),
+      exportName: "Spinner",
+    });
+  });
+
   it("emits the same diagnostic and pins to the hop when the next file can't be read", () => {
     mkdirSync(join(stage, "gone"), { recursive: true });
     writeFileSync(join(stage, "gone", "entry.ts"), `export { Widget } from "./missing";\n`);
