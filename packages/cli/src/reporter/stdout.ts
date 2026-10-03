@@ -56,12 +56,12 @@ function counted(n: number, noun: string): string {
 }
 
 /** The component's name as the dashboard shows it, and a tag's name in angle brackets. */
-function nameOf(c: Component): string {
+export function nameOf(c: Component): string {
   return c.identity.kind === "tag" ? `<${c.identity.tagName}>` : displayNameOf(c);
 }
 
 /** Where the component comes from: its package, or the file that declares it. Empty for a tag. */
-function sourceOf(c: Component): string {
+export function sourceOf(c: Component): string {
   if (c.identity.kind === "package-export") return c.identity.packageName;
   if (c.identity.kind === "repository-declaration") return c.identity.filePath;
   return "";

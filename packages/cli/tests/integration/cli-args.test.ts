@@ -80,6 +80,16 @@ describe("cli argument handling", () => {
     expect(stderr).toBe(`Error: Unknown option '${flag}' for \`scout scan\`.\n`);
   });
 
+  it("writes every component the scan found to the --csv file, most used first, and says so under --quiet", async () => {
+    const dir = pushedRepo(".");
+    const { code, stdout } = await run(["scan", "--dry-run", "--quiet", "--csv", "out/components.csv"], { cwd: dir, env: withoutDashboard() });
+    expect(code).toBe(0);
+    expect(stdout).toBe("Wrote out/components.csv (2 components).\nWrote scout-scan.json (not uploaded).\n");
+    expect(readFileSync(join(dir, "out", "components.csv"), "utf8")).toBe(
+      "component,source,version,occurrences,files\nBox,src/App.tsx,,1,1\nApp,src/App.tsx,,0,0\n",
+    );
+  });
+
   it("refuses --rescan with --dry-run, with one line and exit 2", async () => {
     const { code, stdout, stderr } = await run(["scan", "--rescan", "--dry-run"], { cwd: emptyDir() });
     expect(code).toBe(2);

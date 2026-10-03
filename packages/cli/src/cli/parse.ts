@@ -33,6 +33,7 @@ const SCAN_OPTIONS = {
   "dry-run": { type: "boolean" },
   rescan: { type: "boolean" },
   host: { type: "string" },
+  csv: { type: "string" },
 } satisfies OptionsConfig;
 
 const BACKFILL_OPTIONS = {

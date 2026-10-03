@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { lstat, readFile, realpath } from "node:fs/promises";
+import { lstat, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { loadConfig, ConfigError } from "../config/loader.js";
 import { createLazyResolver } from "../barrels/lazy-resolver.js";
@@ -19,6 +19,7 @@ import { emitReact } from "@scoutui/parser-react";
 import { emitVueTemplate } from "@scoutui/parser-vue";
 import { writeJson } from "../reporter/json.js";
 import { printSummary } from "../reporter/stdout.js";
+import { componentsCsv } from "../reporter/csv.js";
 import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../scan/meta.js";
 import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload-policy/git-state.js";
 import { installedVersionReader } from "../scan/stamp-version.js";
@@ -87,6 +88,8 @@ export type ScanOptions = {
   /** Upload even if the dashboard already has this commit, replacing its scan. Needs `upload`. */
   rescan?: boolean;
   hostOverride?: string;
+  /** Also write every component the scan found to this CSV file, relative to `cwd`. */
+  csvPath?: string;
 };
 
 export type UploadOutcome = "ok" | "exists" | "skipped" | "failed";
@@ -220,6 +223,19 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
 
   if (!quiet) {
     printSummary(artifact, stats);
+  }
+
+  if (opts.csvPath !== undefined) {
+    const cwd = opts.cwd ?? process.cwd();
+    const csvPath = resolve(cwd, opts.csvPath);
+    try {
+      await mkdir(dirname(csvPath), { recursive: true });
+      await writeFile(csvPath, componentsCsv(artifact));
+    } catch (err) {
+      throw new CliError(`Couldn't write ${opts.csvPath}. Check that you can write to that folder and try again.`, 1, { cause: err });
+    }
+    const n = artifact.components.length;
+    log.result(`Wrote ${relative(cwd, csvPath)} (${n} ${n === 1 ? "component" : "components"}).`);
   }
 
   if (uploader === undefined) {

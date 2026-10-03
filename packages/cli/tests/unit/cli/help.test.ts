@@ -18,6 +18,7 @@ describe("commandHelp", () => {
     const out = commandHelp("scan");
     expect(out).toContain("Scan the repo and upload the scan to the dashboard.\n");
     expect(out).toContain("  --dry-run          Scan without uploading, and write scout-scan.json next to the config\n");
+    expect(out).toContain("  --csv <path>       Also write every component the scan found to a CSV file\n");
     for (const removed of ["--output", "--upload", "--commit-date"]) expect(out).not.toContain(removed);
     expect(out).not.toContain("login");
   });

@@ -25,6 +25,7 @@ Options:
   --repo-root <dir>  Directory to treat as the repository root for artefact paths (default: git toplevel)
   --dry-run          Scan without uploading, and write scout-scan.json next to the config
   --rescan           Upload even if the dashboard already has this commit, replacing its scan
+  --csv <path>       Also write every component the scan found to a CSV file
   --host <url>       Override host URL (else SCOUTUI_HOST, else host in scout.config.json, else your default host)
 `;
 
