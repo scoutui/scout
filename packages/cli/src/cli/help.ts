@@ -6,7 +6,7 @@ Commands:
   scan          Scan the repo and upload the scan to the dashboard
   backfill      Scan one commit a week of the tracked branch's history and upload each scan
   init          Create scout.config.json for this repo
-  auth          Sign in to a dashboard, see who you're signed in as, or sign out (login | status | logout)
+  auth          Sign in, see who you're signed in as, or sign out (login | status | logout)
 
 Run \`scout <command> --help\` for command-specific options.
 

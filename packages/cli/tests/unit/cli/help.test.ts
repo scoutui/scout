@@ -15,7 +15,7 @@ describe("topHelp", () => {
   it("says what each command is for in the user's words, how to start, and where the docs are", () => {
     const out = topHelp();
     expect(out).toContain("  init          Create scout.config.json for this repo\n");
-    expect(out).toContain("  auth          Sign in to a dashboard, see who you're signed in as, or sign out (login | status | logout)\n");
+    expect(out).toContain("  auth          Sign in, see who you're signed in as, or sign out (login | status | logout)\n");
     expect(out.endsWith("\nGet started: scout init, then scout scan --dry-run.\nDocs: https://scoutui.dev/docs\n")).toBe(true);
   });
 });
