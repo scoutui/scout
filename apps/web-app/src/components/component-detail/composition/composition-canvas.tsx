@@ -220,6 +220,9 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** Which marks the drawn render tree uses, so the legend explains only those. */
+type Legend = { external: boolean; local: boolean; deprecated: boolean; edges: boolean };
+
 /** Fit the whole graph, or reset to the default frame. Shared by the edge pills
  *  and the header's Reset view button, so both clear stale `hiddenCols`
  *  pills. */
@@ -234,6 +237,7 @@ function CanvasInner({
   colorMode,
   onRelease,
   actionsRef,
+  onLegendChange,
 }: {
   model: GraphModel;
   focusId: string;
@@ -243,6 +247,7 @@ function CanvasInner({
   colorMode: "light" | "dark";
   onRelease: () => void;
   actionsRef: CanvasActionsRef;
+  onLegendChange: (legend: Legend) => void;
 }) {
   const { fitView, setCenter, getViewport } = useReactFlow();
   const [store] = useState(() => new HighlightStore());
@@ -281,6 +286,17 @@ function CanvasInner({
   );
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
+
+  const legend = useMemo<Legend>(() => {
+    const chips = layout.items.flatMap((i) => (i.kind === "chip" ? [i.node] : []));
+    return {
+      external: chips.some((n) => n.scope === "external"),
+      local: chips.some((n) => n.scope === "local"),
+      deprecated: chips.some((n) => n.deprecated),
+      edges: layout.edges.length > 0,
+    };
+  }, [layout]);
+  useEffect(() => onLegendChange(legend), [legend, onLegendChange]);
 
   const traceDisplayId = useCallback(
     (id: string) => store.setOverride(deriveHighlight(layoutRef.current, { kind: "chip", displayId: id })),
@@ -748,6 +764,7 @@ export function CompositionCanvas(props: {
   // Hands CanvasInner's fitAll/resetView to its sibling CanvasControls. No-ops
   // until the canvas mounts.
   const actionsRef: CanvasActionsRef = useRef({ fitAll: () => {}, resetView: () => {} });
+  const [legend, setLegend] = useState<Legend | null>(null);
 
   const lastPinned = pinned && pinned.length > 0 ? pinned[pinned.length - 1] : null;
   const isPinned = lastPinned !== null;
@@ -790,7 +807,7 @@ export function CompositionCanvas(props: {
             </button>
           ) : null}
           {mounted ? (
-            <CanvasInner {...props} colorMode={resolvedTheme} actionsRef={actionsRef} />
+            <CanvasInner {...props} colorMode={resolvedTheme} actionsRef={actionsRef} onLegendChange={setLegend} />
           ) : null}
         </div>
         <span aria-live="polite" className="sr-only">
@@ -800,25 +817,33 @@ export function CompositionCanvas(props: {
               ? "Path cleared"
               : ""}
         </span>
-        <footer className="flex shrink-0 items-center gap-4 border-t bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <ScopeGlyph scope="external" />
-            external
-          </span>
-          <span className="flex items-center gap-1.5">
-            <ScopeGlyph scope="local" />
-            local
-          </span>
-          <span className="flex items-center gap-1.5">
-            <AlertTriangle aria-hidden className="size-3.5 shrink-0 text-status-warn" />
-            deprecated
-          </span>
-          <span className="flex items-center gap-1.5">
-            <svg aria-hidden="true" width="16" height="2" className="shrink-0">
-              <line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-            renders directly
-          </span>
+        <footer className="flex min-h-7 shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+          {legend?.external ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <ScopeGlyph scope="external" />
+              external
+            </span>
+          ) : null}
+          {legend?.local ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <ScopeGlyph scope="local" />
+              local
+            </span>
+          ) : null}
+          {legend?.deprecated ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <AlertTriangle aria-hidden className="size-3.5 shrink-0 text-status-warn" />
+              deprecated
+            </span>
+          ) : null}
+          {legend?.edges ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <svg aria-hidden="true" width="16" height="2" className="shrink-0">
+                <line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+              renders directly
+            </span>
+          ) : null}
         </footer>
       <div id="after-composition-canvas" tabIndex={-1} />
     </section>
