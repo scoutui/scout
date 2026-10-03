@@ -12,6 +12,26 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "packages/**/*.{ts,tsx}"
+      ],
+      "exclude": [
+        "**/node_modules/**",
+        "**/dist/**"
+      ],
+      "packages": [
+        {
+          "name": "@example/consumer",
+          "folder": "packages/consumer"
+        },
+        {
+          "name": "@example/ds",
+          "folder": "packages/ds"
+        }
+      ]
     }
   },
   "components": [
@@ -96,6 +116,7 @@
         "componentId": "3edb5e677e184e2d"
       },
       "filePath": "packages/consumer/src/App.tsx",
+      "usedIn": "@example/consumer",
       "line": 3,
       "column": 25,
       "credit": {

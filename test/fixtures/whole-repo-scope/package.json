@@ -1,0 +1,5 @@
+{
+  "name": "whole-repo-scope",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"]
+}
