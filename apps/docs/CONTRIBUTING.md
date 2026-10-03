@@ -162,11 +162,11 @@ to read, and they apply to every page.
   advanced or rarely needed material towards the end, not mixed in with the
   basics.
 - **Define terms on first use.** A term the tool coins or uses in its own way
-  (*origin*, *grain*, *occurrence*, *owner edge*, *enrichment*) gets a short
+  (*origin*, *grain*, *use*, *owner edge*, *enrichment*) gets a short
   definition in italics the first time it appears on a page. Link to the
   explanation page for the full discussion instead of teaching it again. A
   term the glossary defines links to its entry
-  (`/docs/reference/glossary#occurrence`) instead of being defined again.
+  (`/docs/reference/glossary#use`) instead of being defined again.
 - **Show complete, labelled examples.** An example the reader should
   understand as a whole appears in full, labelled with its file
   (```` ```json title="..." ````) or the exact command, and with the expected

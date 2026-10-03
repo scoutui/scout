@@ -12,7 +12,7 @@ const TITLE = `${PRODUCT_NAME}: design-system usage analytics for React and Vue`
 export default function Home(): React.ReactElement {
   return (
     <Layout
-      description={`${PRODUCT_NAME} scans React and Vue repos, web components included, for every component, prop value and call site, and a dashboard you host tracks migrations across every repo.`}
+      description={`${PRODUCT_NAME} scans React and Vue repos, web components included, for every component, every use and every prop value, and a dashboard you host tracks migrations across every repo.`}
     >
       <Head>
         <title>{TITLE}</title>

@@ -105,5 +105,5 @@ The output ends with a link to your repo's page in the dashboard:
 
 ## Next
 
-- [Explore the dashboard](/docs/tutorials/explore-the-dashboard) walks through the repo page, a component's calls, tags and a migration, starting from this setup.
+- [Explore the dashboard](/docs/tutorials/explore-the-dashboard) walks through the repo page, a component's uses, tags and a migration, starting from this setup.
 - [Deploy the dashboard](/docs/guides/deploy-the-dashboard) runs a shared dashboard for your team.

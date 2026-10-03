@@ -5,7 +5,7 @@ sidebar_label: "Resolve monorepo imports"
 
 # Resolve imports in a monorepo
 
-Make the scan follow your path aliases and workspace package imports. When it can't follow an import, the use becomes an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence) with the reason `module-not-found`, and the component it imports is missing from the results and the dashboard.
+Make the scan follow your path aliases and workspace package imports. When it can't follow an import, it records the use as [unmatched](/docs/reference/glossary#unmatched-use), with the reason `module-not-found`, and the component it imports is missing from the results and the dashboard.
 
 This guide assumes the repo already has a working `scout.config.json`. If it doesn't, see [Configure a scan](/docs/guides/configure-a-scan).
 

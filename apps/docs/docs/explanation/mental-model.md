@@ -39,25 +39,25 @@ Each kind is matched across repos in its own way:
 
 To tell which component an import names, the scan follows the import into the installed package, and reads the package's version from there too. So install your dependencies before you scan.
 
-When a package your `package.json` declares isn't installed, the scan can't tie its uses to a component. Each use becomes an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence), and none of that package's components get an entry. The scan's summary says so:
+When a package your `package.json` declares isn't installed, the scan can't tie its uses to a component. They are recorded as [unmatched uses](/docs/reference/glossary#unmatched-use), and none of that package's components get an entry. The scan's summary says so:
 
 ```text
-Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
+Scout couldn't match 4 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
 4 of them are from packages that aren't installed.
 ```
 
 Until the packages in `dependencies` and `devDependencies` are installed, `scout scan` stops before it scans. A dry run (`scout scan --dry-run`) scans anyway and prints the summary above.
 
-Unresolved occurrences stay in the JSON with the reason for each, but the dashboard leaves them out of every count. An import of a file that doesn't exist, or a component name that nothing imports, is unresolved too. When a component you expect is missing, see [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan).
+Unmatched uses stay in the JSON with the reason for each, but the dashboard leaves them out of every count. A use is unmatched too when its import points at a file that doesn't exist, or when nothing imports its name. When a component you expect is missing, see [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan).
 
 ## One entry per component, one per place it is used
 
 A scan records usage at two levels of detail:
 
 - **One entry per component**, with the totals: how many places use it, in how many files, and which values each prop was given.
-- **One entry per [occurrence](/docs/reference/glossary#occurrence)**, the place in the code where the component is used: the file, the line, and the props written there.
+- **One entry per [use](/docs/reference/glossary#use)**, the place in the code where the component is used: the file, the line, and the props written there.
 
-The totals answer "how much is this used, and how?". The occurrences answer "where do I go to change it?". A component's page in the dashboard shows both: the totals, and the files and calls. In the JSON they are the `components` and `occurrences` arrays; the [artifact reference](/docs/reference/artifact) lists their fields.
+The totals answer "how much is this used, and how?". The uses answer "where do I go to change it?". A component's page in the dashboard shows both: the totals, and each use, file by file and line by line. In the JSON they are the `components` and `occurrences` arrays; the [artifact reference](/docs/reference/artifact) lists their fields.
 
 A compound component such as `<Dialog.Popup>` gets its own entry, named `Dialog.Popup`, separate from `Dialog`. When `Dialog` is defined in your repo and `Popup` points at a component declared elsewhere in your code, such as `Popup: DialogPopup`, the entry is `DialogPopup` instead.
 

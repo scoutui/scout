@@ -1,5 +1,5 @@
 ---
-description: "What the words Scout uses mean, in the dashboard and in the scan's JSON: component, occurrence, scan, tag, lifecycle record and more."
+description: "What the words Scout uses mean, in the dashboard and in the scan's JSON: component, use, scan, tag, lifecycle record and more."
 sidebar_label: Glossary
 ---
 
@@ -13,17 +13,17 @@ One distinct thing your code uses: a component [from a package](#from-a-package)
 
 You see components in the **Components** table on each repo page and package page, and in the `components` array of the JSON. See [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
 
-## Occurrence
+## Use {#use}
 
-One place in the code that uses a component, usually one tag such as `<Button>`. If the `storefront` repo uses `Button` in 40 places across 12 files, that is 1 component, 40 occurrences and 12 files.
+One place in the code where a component appears, usually one tag such as `<Button>`. If the `storefront` repo uses `Button` in 40 places across 12 files, that is 1 component, 40 uses and 12 files.
 
-Most tables sort by **Occurrences**, and every chart counts them. A component's page lists them as calls, file by file, each with its line. In the JSON they are the `occurrences` array. See [Reading the numbers](/docs/explanation/dashboard/reading-the-numbers#components-occurrences-and-files).
+Most tables sort by **Uses**, and every chart counts them. A component's page lists them file by file, each with its line. The JSON calls them occurrences and keeps them in its `occurrences` array. See [Reading the numbers](/docs/explanation/dashboard/reading-the-numbers#components-uses-and-files).
 
-## Unresolved occurrence
+## Unmatched use {#unmatched-use}
 
-A place where the scan saw a component used but couldn't tell which component it is. The usual cause is a package that is declared in `package.json` but not installed. An import that points at a file that doesn't exist is unresolved too, and so is a component name that nothing imports, such as `<Widget />` on its own.
+A place where the scan saw a component used but couldn't tell which component it is. The usual cause is a package that is declared in `package.json` but not installed. A use is unmatched too when its import points at a file that doesn't exist, or when nothing imports its name, such as `<Widget />` on its own.
 
-The scan's summary counts them, as in `Scout couldn't match 4 more occurrences to a component.`, and the JSON keeps each one with its reason. The dashboard leaves them out of every count. See [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan).
+The scan's summary counts them, as in `Scout couldn't match 4 more uses to a component.`, and the JSON keeps each one with its reason and the status `"unresolved"`. The dashboard leaves them out of every count. See [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan).
 
 ## Scan
 
@@ -95,12 +95,12 @@ Deprecated components carry a warning icon, and the **deprecated** chip and **De
 
 ## Migration
 
-The move from a superseded package or component to its successor, tracked by a lifecycle record. Its progress reads **N% migrated**: the successor's occurrences as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**.
+The move from a superseded package or component to its successor, tracked by a lifecycle record. Its progress reads **N% migrated**: the successor's uses as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**.
 
 You see migrations under **Migrations** on the **charts** page and under **Migrations in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## Retirement
 
-The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the occurrences still in use. Its record reads **None left** on the **governance** page once no repo's latest scan uses it.
+The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the uses that remain. Its record reads **None left** on the **governance** page once no repo's latest scan uses it.
 
 You see retirements under **Retirements** on the **charts** page and under **Retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration#record-a-retirement).

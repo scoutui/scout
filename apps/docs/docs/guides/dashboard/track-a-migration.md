@@ -44,22 +44,22 @@ Retire a component when it is being removed with no replacement, for example `Mo
 
 As soon as you save, every component the record covers shows as deprecated in every repo: warning icons, **deprecated** chips and the **Deprecated** columns. That includes scans already uploaded, so no rescan is needed. A record on `Card` covers it from every import path, such as `@acme/ui` and `@acme/ui/card`, and its parts, such as `Card.Header`.
 
-The **governance** page then shows how much of each record's package or component is still in use, and where. Each record's **Occurrences left** reads one of these:
+The **governance** page then shows how much of each record's package or component is still in use, and where. Each record's **Uses left** reads one of these:
 
-- A count of [occurrences](/docs/reference/glossary#occurrence) across every repo's latest scan, such as `17 in acme/storefront`, or `20 in 2 repos` when several repos use it. With only one repo scanned, it's just the number.
+- A count of [uses](/docs/reference/glossary#use) across every repo's latest scan, such as `17 in acme/storefront`, or `20 in 2 repos` when several repos use it. With only one repo scanned, it's just the number.
 - **None left**: it has been used before, and no repo's latest scan uses it now.
 - **Not in any scan**: see [Not in any scan](#not-in-any-scan).
 - **No data**: it hasn't been counted yet, usually because you've just added or changed the record. Reload the page after a moment to see its count.
 
-![The governance page listing records by package, each with its replacement or reason and its occurrences left](/img/dashboard/governance-records.png)
+![The governance page listing records by package, each with its replacement or reason and its uses left](/img/dashboard/governance-records.png)
 
 ## Follow progress
 
-On the **governance** page, select a record's count to open its chart: occurrences over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
+On the **governance** page, select a record's count to open its chart: uses over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
 
 To see where a record's component or package is still used, select the record's name.
 
-The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N remaining**, the occurrences still in use. See [Charts](/docs/guides/dashboard/charts).
+The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N remaining**, the uses that remain. See [Charts](/docs/guides/dashboard/charts).
 
 To follow one repo, open it from **repos** and go to its **Adoption** tab. **Migrations in this repo** and **Retirements in this repo** count that repo alone, so their numbers can differ from the charts page. A repo that never used `LegacyButton` has no row for it. See [Follow adoption in a repo](/docs/guides/dashboard/repos#follow-adoption-in-a-repo).
 

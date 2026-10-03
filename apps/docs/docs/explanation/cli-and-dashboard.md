@@ -15,7 +15,7 @@ The CLI is a collector. Point it at a repo and it makes one scan: a snapshot of 
 
 The dashboard keeps the scans it receives from every repo in one place for the whole team, with at most one scan per commit of each repo. Uploading a scan of a commit the dashboard already has changes nothing, unless you scan with `--rescan`, which replaces that commit's scan. Either way, a chart never counts one commit twice. The CLI calls a running dashboard its *host*: the address it uploads to, given with `--host` or the config file's `host` field.
 
-The artifact is useful on its own. You can read it with `jq`, feed it to your own scripts, or keep it as a build output. It also keeps [unresolved occurrences](/docs/reference/glossary#unresolved-occurrence), which the dashboard leaves out of every number. The scan's summary leaves them out of its totals too, and counts them on a line of their own: `Scout couldn't match … more occurrences to a component.`
+The artifact is useful on its own. You can read it with `jq`, feed it to your own scripts, or keep it as a build output. It also keeps the [uses the scan couldn't match](/docs/reference/glossary#unmatched-use) to a component, which the dashboard leaves out of every number. The scan's summary leaves them out of its totals too, and counts them on a line of their own: `Scout couldn't match … more uses to a component.`
 
 What one file can't answer are questions that span repos or time, and those are the dashboard's job:
 
@@ -80,7 +80,7 @@ The dashboard doesn't reread the raw artifact every time you open a page. When i
 
 Most pages read only each repo's latest scans, so they come back first. A chart over time needs every scan in its range, so it comes back last.
 
-Some numbers are worked out by the worker ahead of time rather than when you open the page: the occurrences left on the **governance** page, the migration and retirement charts, the rows on a repo's **Adoption** tab, and chart previews on the **charts** page. The worker updates them after each new scan and after each change to a record, tag or chart, so they catch up a moment later and a reload shows the new numbers. Until the worker has worked them out for the first time, for example straight after an upgrade, they show **Preparing scan data**.
+Some numbers are worked out by the worker ahead of time rather than when you open the page: the uses left on the **governance** page, the migration and retirement charts, the rows on a repo's **Adoption** tab, and chart previews on the **charts** page. The worker updates them after each new scan and after each change to a record, tag or chart, so they catch up a moment later and a reload shows the new numbers. Until the worker has worked them out for the first time, for example straight after an upgrade, they show **Preparing scan data**.
 
 When a repo's latest scan couldn't be prepared or can't be read, they use its newest ready scan and name the repo above the numbers. **Numbers may be out of date** means the worker couldn't work them out again; ask your dashboard administrator to retry it.
 

@@ -38,9 +38,9 @@ The scan skips code inside a submodule or another clone below the config's folde
 
 A line such as `Warning: /home/dev/storefront/src/Broken.tsx has syntax errors (Unexpected token), so the scan read what it could.` means the scan couldn't fully parse that file. It carries on, but components defined or used in that file can be missing from the results. Fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.
 
-## Components are missing: Scout couldn't match some occurrences {#unresolved-occurrences}
+## Components are missing: Scout couldn't match some uses {#unresolved-occurrences}
 
-When the scan sees a component used but can't tell which one it is, it records an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). The component gets no entry for that use, and the dashboard leaves it out. The summary counts them in a line such as `Scout couldn't match 3 more occurrences to a component.`, which links to this section.
+When the scan sees a component used but can't tell which one it is, it records an [unmatched use](/docs/reference/glossary#unmatched-use). The component gets no entry for that use, and the dashboard leaves it out. The summary counts them in a line such as `Scout couldn't match 3 more uses to a component.`, which links to this section.
 
 List them with the reason, the file and line, and the import or name that failed. The command reads `scout-scan.json`, so run `npx scout scan --dry-run` first to write it:
 
@@ -66,7 +66,7 @@ Fix each reason as follows. The [artifact reference](/docs/reference/artifact#un
 ## Dependencies aren't installed
 
 ```text
-Warning: @acme/ui is listed in package.json but isn't installed, so 3 occurrences of it aren't matched to a component. Install your dependencies and scan again.
+Warning: @acme/ui is listed in package.json but isn't installed, so 3 uses of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
 The summary also reads `3 of them are from a package that isn't installed.` The scan finds a package's components only in the installed package, so every use of `@acme/ui` is unresolved and none of its components are listed. Run your package manager's install in the scanned checkout, then scan again. In CI, install before the scan step.
