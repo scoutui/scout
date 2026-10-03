@@ -9,6 +9,7 @@ import { lstat, readdir, readFile, readlink, realpath } from "node:fs/promises";
 import { existsSync, type Dirent } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { canonicalTagName } from "@scoutui/reference-graph";
+import { isNestedRepository } from "../walker/files.js";
 
 /** One package's claim on a tag in `CemIndex.byTag`, with the installed version. */
 export type CemIndexEntry = { packageName: string; version: string | null };
@@ -61,8 +62,7 @@ type Install = { path: string; isLink: boolean };
  * entry are its dependencies, each a store entry itself, so they are skipped.
  *
  * Outside `node_modules` the whole tree is walked, except `.git` and any
- * nested repository (a directory below `root` holding a `.git` entry: a clone,
- * a worktree, a submodule) that does not contain `configDir`. Inside it, only
+ * nested repository (see `isNestedRepository`). Inside it, only
  * a package directory's own nested `node_modules` is walked. A symlink is
  * listed but never descended into.
  */
@@ -70,8 +70,7 @@ async function installsUnder(root: string, configDir: string): Promise<Install[]
   const installs: Install[] = [];
   const walkTree = async (dir: string): Promise<void> => {
     const entries = await entriesOf(dir);
-    const nestedRepository = dir !== root && entries.some((entry) => entry.name === ".git");
-    if (nestedRepository && configDir !== dir && !configDir.startsWith(dir + sep)) return;
+    if (isNestedRepository(dir, entries, root, configDir)) return;
     await Promise.all(
       entries.map((entry) => {
         if (!entry.isDirectory() || entry.name === ".git") return undefined;

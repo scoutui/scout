@@ -118,3 +118,29 @@ describe("walkFiles: gitignore / dot / exclude semantics", () => {
     }
   });
 });
+
+describe("walkFiles: nested repositories", () => {
+  let repo: string;
+  beforeEach(() => {
+    repo = mkdtempSync(join(tmpdir(), "cc-walker-nested-"));
+    mkdirSync(join(repo, "src"), { recursive: true });
+    mkdirSync(join(repo, "vendor/lib/src"), { recursive: true });
+    writeFileSync(join(repo, "src/App.tsx"), "");
+    writeFileSync(join(repo, "vendor/lib/.git"), "gitdir: ../../.git/modules/lib\n");
+    writeFileSync(join(repo, "vendor/lib/src/Widget.tsx"), "");
+  });
+  afterEach(() => {
+    rmSync(repo, { recursive: true, force: true });
+  });
+
+  it("skips a folder below the root that holds its own .git", async () => {
+    const files = await walkFiles({ root: repo, include: ["**/*.tsx"], exclude: [], gitignore: true });
+    expect(files).toEqual([join(repo, "src/App.tsx")]);
+  });
+
+  it("lists a nested repository's files when the walk starts inside it", async () => {
+    const lib = join(repo, "vendor/lib");
+    const files = await walkFiles({ root: lib, include: ["**/*.tsx"], exclude: [], gitignore: true });
+    expect(files).toEqual([join(lib, "src/Widget.tsx")]);
+  });
+});
