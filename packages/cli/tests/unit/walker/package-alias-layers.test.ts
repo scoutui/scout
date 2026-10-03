@@ -31,7 +31,7 @@ describe("per-package tsconfig alias layers", () => {
   afterAll(() => rmSync(stage, { recursive: true, force: true }));
 
   it("resolves the same alias to per-app targets keyed by the importing file's package", () => {
-    const graph = buildWorkspaceGraph(stage);
+    const graph = buildWorkspaceGraph(stage, "example-repo");
     const layers = buildPackageAliasLayers(graph).layers;
     expect(layers).toHaveLength(2);
     const resolve = createImportResolver({ repoRoot: stage, workspaceGraph: graph, packageAliasLayers: layers });

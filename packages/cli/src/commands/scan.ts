@@ -177,7 +177,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     return { output: null, upload: "skipped" };
   }
 
-  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
+  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log, meta.repo.id);
   if (files.length === 0) {
     log.error(noFilesMessage(configPath, cfg, await nestedRepositoriesMatched(walkOptions(cfg))));
     return { output: null, upload: "skipped" };
@@ -304,11 +304,12 @@ export async function scanOutputRoot(configDir: string, opts: { repoRoot?: strin
         : configDir);
 }
 
-/** The workspace root, its package graph and the files the config includes. */
+/** The workspace root, its package graph (its root package named `repoName` when the root `package.json` has no name) and the files the config includes. */
 export async function readWorkspace(
   cfg: ResolvedConfig,
   outputRoot: string,
   log: Logger,
+  repoName: string,
 ): Promise<{ workspaceRoot: string; workspaceGraph: WorkspaceGraph; files: string[] }> {
   const writer = log.quiet ? () => {} : (s: string) => process.stderr.write(s);
 
@@ -321,7 +322,7 @@ export async function readWorkspace(
 
   // Clear caches from an earlier scan in the same process, in case the filesystem changed.
   resetFindOwningPackageCache();
-  const workspaceGraph = buildWorkspaceGraph(workspaceRoot);
+  const workspaceGraph = buildWorkspaceGraph(workspaceRoot, repoName);
 
   const files = await walkFiles(walkOptions(cfg));
 

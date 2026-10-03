@@ -34,6 +34,7 @@
         "line": 6,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -63,6 +64,7 @@
         "line": 6,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -92,6 +94,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -124,6 +127,7 @@
         "line": 1,
         "column": 0
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -153,6 +157,7 @@
         "line": 9,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -183,6 +188,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -213,6 +219,7 @@
         "line": 13,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -246,6 +253,7 @@
         "line": 8,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -275,6 +283,7 @@
         "line": 21,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -305,6 +314,7 @@
         "line": 7,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -335,6 +345,7 @@
         "line": 4,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -365,6 +376,7 @@
         "line": 1,
         "column": 15
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -394,6 +406,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -429,6 +442,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -462,6 +476,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -494,6 +509,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -529,6 +545,7 @@
         "line": 9,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -560,6 +577,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -589,6 +607,7 @@
         "line": 4,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -618,6 +637,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -649,6 +669,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -680,6 +701,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -709,6 +731,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -738,6 +761,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -767,6 +791,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -796,6 +821,7 @@
         "line": 1,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -825,6 +851,7 @@
         "line": 11,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -854,6 +881,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -884,6 +912,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -913,6 +942,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -942,6 +972,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -971,6 +1002,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1012,6 +1044,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1059,6 +1092,7 @@
         "line": 7,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1090,6 +1124,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1119,6 +1154,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1149,6 +1185,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1178,6 +1215,7 @@
         "line": 11,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1207,6 +1245,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1234,6 +1273,7 @@
         "line": 8,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1264,6 +1304,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1311,6 +1352,7 @@
         "line": 3,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1340,6 +1382,7 @@
         "line": 23,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1371,6 +1414,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1401,6 +1445,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1430,6 +1475,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1459,6 +1505,7 @@
         "line": 9,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1508,6 +1555,7 @@
         "line": 3,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1539,6 +1587,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1571,6 +1620,7 @@
         "line": 4,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1600,6 +1650,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1647,6 +1698,7 @@
         "line": 4,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1697,6 +1749,7 @@
         "line": 4,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1726,6 +1779,7 @@
         "line": 3,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1755,6 +1809,7 @@
         "line": 4,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1784,6 +1839,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1815,6 +1871,7 @@
         "line": 6,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1852,6 +1909,7 @@
         "line": 3,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1896,6 +1954,7 @@
         "line": 4,
         "column": 15
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1927,6 +1986,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -1958,6 +2018,7 @@
         "line": 3,
         "column": 34
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -1990,6 +2051,7 @@
         "line": 4,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2022,6 +2084,7 @@
         "line": 5,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2052,6 +2115,7 @@
         "line": 10,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2083,6 +2147,7 @@
         "line": 12,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2113,6 +2178,7 @@
         "line": 11,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2147,6 +2213,7 @@
         "line": 1,
         "column": 15
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2180,6 +2247,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2209,6 +2277,7 @@
         "line": 9,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2240,6 +2309,7 @@
         "line": 4,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2271,6 +2341,7 @@
         "line": 4,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2301,6 +2372,7 @@
         "line": 12,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2330,6 +2402,7 @@
         "line": 14,
         "column": 0
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2359,6 +2432,7 @@
         "line": 13,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2388,6 +2462,7 @@
         "line": 8,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2417,6 +2492,7 @@
         "line": 9,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2464,6 +2540,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2511,6 +2588,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2540,6 +2618,7 @@
         "line": 6,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2571,6 +2650,7 @@
         "line": 1,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2600,6 +2680,7 @@
         "line": 6,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2629,6 +2710,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2660,6 +2742,7 @@
         "line": 14,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2692,6 +2775,7 @@
         "line": 17,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -2721,6 +2805,7 @@
         "line": 20,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2753,6 +2838,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2785,6 +2871,7 @@
         "line": 12,
         "column": 15
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2816,6 +2903,7 @@
         "line": 20,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2869,6 +2957,7 @@
         "line": 7,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2900,6 +2989,7 @@
         "line": 15,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2931,6 +3021,7 @@
         "line": 6,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2962,6 +3053,7 @@
         "line": 13,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -2993,6 +3085,7 @@
         "line": 8,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3039,6 +3132,7 @@
         "line": 14,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3084,6 +3178,7 @@
         "line": 17,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3133,6 +3228,7 @@
         "line": 21,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3173,6 +3269,7 @@
         "line": 27,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3222,6 +3319,7 @@
         "line": 28,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3260,6 +3358,7 @@
         "line": 38,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3291,6 +3390,7 @@
         "line": 46,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3340,6 +3440,7 @@
         "line": 7,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3375,6 +3476,7 @@
         "line": 14,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3424,6 +3526,7 @@
         "line": 16,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3458,6 +3561,7 @@
         "line": 23,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3492,6 +3596,7 @@
         "line": 24,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3541,6 +3646,7 @@
         "line": 25,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3576,6 +3682,7 @@
         "line": 6,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3607,6 +3714,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3638,6 +3746,7 @@
         "line": 19,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3669,6 +3778,7 @@
         "line": 12,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -3698,6 +3808,7 @@
         "line": 6,
         "column": 7
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3729,6 +3840,7 @@
         "line": 15,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3766,6 +3878,7 @@
         "line": 20,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3798,6 +3911,7 @@
         "line": 29,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3832,6 +3946,7 @@
         "line": 32,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -3866,6 +3981,7 @@
         "line": 36,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -4211,6 +4327,7 @@
         "line": 5,
         "column": 6
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -4391,6 +4508,7 @@
         "line": 14,
         "column": 13
       },
+      "owningPackage": "react-shapes",
       "version": null,
       "composition": {
         "rendersByCount": {},

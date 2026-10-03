@@ -34,6 +34,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "baseurl-imports",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -63,6 +64,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "baseurl-imports",
       "version": null,
       "composition": {
         "rendersByCount": {

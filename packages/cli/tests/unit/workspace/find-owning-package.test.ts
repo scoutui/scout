@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { findOwningPackage, isFirstPartyPath } from "../../../src/workspace/find-owning-package.js";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { buildWorkspaceGraph } from "../../../src/workspace/build-graph.js";
+import { findOwningPackage, findPackageOrRoot, isFirstPartyPath } from "../../../src/workspace/find-owning-package.js";
 import type { WorkspaceGraph } from "../../../src/workspace/types.js";
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -126,5 +127,53 @@ describe("isFirstPartyPath", () => {
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
+  });
+});
+
+describe("findPackageOrRoot", () => {
+  let base: string;
+  let dir: string;
+  let graph: WorkspaceGraph;
+
+  beforeAll(() => {
+    base = mkdtempSync(join(tmpdir(), "cc-package-or-root-"));
+    dir = join(base, "repo");
+    const files: Record<string, string> = {
+      "package.json": JSON.stringify({ workspaces: ["packages/*"] }),
+      "packages/ui/package.json": JSON.stringify({ name: "@example/ui" }),
+      "packages/ui/src/a.tsx": "",
+      "packages/nameless/package.json": JSON.stringify({}),
+      "packages/nameless/src/c.tsx": "",
+      "scripts/b.tsx": "",
+      "node_modules/x/d.js": "",
+    };
+    for (const [rel, content] of Object.entries(files)) {
+      mkdirSync(join(dir, rel, ".."), { recursive: true });
+      writeFileSync(join(dir, rel), content);
+    }
+    mkdirSync(join(base, "elsewhere"), { recursive: true });
+    writeFileSync(join(base, "elsewhere/e.tsx"), "");
+    graph = buildWorkspaceGraph(dir, "example-repo");
+  });
+
+  afterAll(() => rmSync(base, { recursive: true, force: true }));
+
+  it("credits a workspace package's file to that package", () => {
+    expect(findPackageOrRoot(graph, join(dir, "packages/ui/src/a.tsx"))).toMatchObject({
+      name: "@example/ui",
+      absolutePath: join(dir, "packages/ui"),
+    });
+  });
+
+  it.each(["scripts/b.tsx", "packages/nameless/src/c.tsx"])("credits %s to the root package", (rel) => {
+    expect(findPackageOrRoot(graph, join(dir, rel))).toEqual({ name: "example-repo", absolutePath: dir });
+  });
+
+  it("is null under node_modules", () => {
+    expect(findPackageOrRoot(graph, join(dir, "node_modules/x/d.js"))).toBeNull();
+  });
+
+  it("is null outside the root", () => {
+    expect(findPackageOrRoot(graph, join(base, "elsewhere/e.tsx"))).toBeNull();
   });
 });

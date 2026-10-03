@@ -30,6 +30,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -60,6 +61,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -89,6 +91,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -118,6 +121,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -147,6 +151,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -176,6 +181,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -206,6 +212,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -238,6 +245,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "package-reexports",
       "version": null,
       "composition": {
         "rendersByCount": {

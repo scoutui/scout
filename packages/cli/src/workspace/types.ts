@@ -39,7 +39,7 @@ export type WorkspaceGraph = {
   packageManager: PackageManager;
   /** Absolute path to the discovered workspace root. */
   rootPath: string;
-  /** Root package name; "<unnamed>" if missing. */
+  /** The root `package.json` name, else the repository name passed to `buildWorkspaceGraph`. */
   rootPackageName: string;
   /**
    * Detected workspace packages from pnpm-workspace.yaml or

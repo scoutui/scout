@@ -12,7 +12,7 @@ import { componentKey, type DeclaredPropApi } from "@scoutui/scan-format";
 import { frameworkOf, scanIdOf, toIdentity } from "./artifact/identity.js";
 import type { LocalDefinitionIndex } from "./local-index/types.js";
 import type { ComponentRow } from "./rollup.js";
-import { findOwningPackage } from "./workspace/find-owning-package.js";
+import { findPackageOrRoot } from "./workspace/find-owning-package.js";
 import type { WorkspaceGraph } from "./workspace/types.js";
 
 /** One observed component, named as the scan file names it, before a tag's attribution is added. */
@@ -34,7 +34,7 @@ export type SeedContext = {
 /**
  * The seed constructor: `componentId`'s scan-file identity (`toIdentity`), keyed by
  * `componentKey`. Only a repository declaration keeps its declared props, its
- * declaration position and the workspace package that owns its file.
+ * declaration position and the package its file belongs to.
  */
 export function seedFor(componentId: ComponentId, ctx: SeedContext): ComponentSeed {
   const identity = toIdentity(componentId, ctx.repoId);
@@ -42,7 +42,7 @@ export function seedFor(componentId: ComponentId, ctx: SeedContext): ComponentSe
   const local = identity.kind === "repository-declaration";
   const owningPackage =
     local && ctx.workspaceGraph !== undefined
-      ? findOwningPackage(ctx.workspaceGraph, join(ctx.outputRoot ?? ctx.workspaceGraph.rootPath, identity.filePath))?.name
+      ? findPackageOrRoot(ctx.workspaceGraph, join(ctx.outputRoot ?? ctx.workspaceGraph.rootPath, identity.filePath))?.name
       : undefined;
   return {
     id: componentKey(identity),
