@@ -12,7 +12,7 @@ import type { LocalDefinition } from "../local-index/types.js";
 import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
 import { emitVueFile } from "../emit-vue-file.js";
 import { createProgress, startPhase } from "../util/progress.js";
-import { nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
+import { excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
 import { resolveTsconfigPath } from "../walker/tsconfig-discovery.js";
 import { buildPackageAliasLayers } from "../walker/package-alias-layers.js";
@@ -157,6 +157,9 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   });
 
   log.heading(`${meta.repo.id} at ${shortCommit(meta.repo.commit)}`);
+  for (const entry of excludeEntriesMatchingNothing(cfg.configDir, cfg.exclude)) {
+    log.warn(`"${entry}" in exclude matches nothing. Update or remove it in ${configPath}.`);
+  }
 
   const outputRoot = await scanOutputRoot(cfg.configDir, opts);
 

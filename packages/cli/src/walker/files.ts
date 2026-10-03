@@ -1,6 +1,6 @@
-import type { Dirent } from "node:fs";
+import { existsSync, type Dirent } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { convertPathToPattern, globby } from "globby";
 
 export type WalkOptions = {
@@ -77,6 +77,14 @@ export async function nestedRepositoriesMatched(opts: WalkOptions): Promise<stri
     .filter((dir) => files.some((file) => inside(dir, file)))
     .map((dir) => relative(opts.root, dir))
     .sort();
+}
+
+/**
+ * The `exclude` entries with no glob characters whose path, resolved from
+ * `root`, doesn't exist, in config order.
+ */
+export function excludeEntriesMatchingNothing(root: string, exclude: readonly string[]): string[] {
+  return exclude.filter((entry) => !/[*?[\]{}!]/.test(entry) && !existsSync(resolve(root, entry)));
 }
 
 /** The files `include` matches below `root`, leaving out `exclude` and `ignore`. */

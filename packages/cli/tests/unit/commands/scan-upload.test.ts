@@ -139,6 +139,28 @@ describe("runScan upload outcome", () => {
     expect(stderr()).toBe(`Error: "include" in ${join(dir, "scout.config.json")} (vendor/**/*.tsx) ${says}\n`);
   });
 
+  it.each([
+    { exclude: ["apps/old-admin"], warned: ["apps/old-admin"] },
+    { exclude: ["**/node_modules/**", "**/*.{test,spec,stories}.*"], warned: [] },
+    { exclude: ["src"], warned: [] },
+    { exclude: ["./src/"], warned: [] },
+    { exclude: ["src/A.tsx"], warned: [] },
+    { exclude: ["packages/legacy", "apps/old-admin"], warned: ["packages/legacy", "apps/old-admin"] },
+  ])("warns once for each folder or file in exclude that doesn't exist, and still scans: $exclude", async ({ exclude, warned }) => {
+    const dir = setupConsumer();
+    const configPath = join(dir, "scout.config.json");
+    writeFileSync(configPath, JSON.stringify({ repoId: "upload-test", include: ["**/*.tsx"], exclude }));
+    writeFileSync(join(dir, "src", "A.tsx"), "export const A = () => <div />;\n");
+    mkdirSync(join(dir, "lib"));
+    writeFileSync(join(dir, "lib", "B.tsx"), "export const B = () => <div />;\n");
+    const result = await runScan({ configPath, quiet: true });
+    expect(stderr()).toBe(
+      warned.map((entry) => `Warning: "${entry}" in exclude matches nothing. Update or remove it in ${configPath}.\n`).join(""),
+    );
+    expect(scanExitCode(result)).toBe(0);
+    expect(existsSync(join(dir, "scout-scan.json"))).toBe(true);
+  });
+
   it("says once that it's waiting for the dashboard, then reports the published URL", async () => {
     const dir = setupConsumer();
     let firstGet: () => void = () => {};
