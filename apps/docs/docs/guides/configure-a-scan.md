@@ -50,7 +50,7 @@ For a repo that keeps its code in `app/` and `components/`, list both folders:
 
 The `exclude` patterns from `init` skip test, spec and story files, and `node_modules`. Add a pattern to `exclude` for anything else you don't want counted, such as `**/__mocks__/**` for mocks or `src/generated/**` for generated code.
 
-You don't need to exclude files your `.gitignore` already ignores, or folders whose names start with a dot, such as `.next`. The scan skips both.
+You don't need to exclude files your `.gitignore` already ignores, or folders whose names start with a dot, such as `.next`. The scan skips both. It also skips a folder below the config's folder that holds its own git repository, such as a submodule, even when an `include` pattern points into it.
 
 ## Check that the scan reads your files
 
