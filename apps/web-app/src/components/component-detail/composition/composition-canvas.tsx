@@ -685,7 +685,7 @@ function CanvasInner({
                       )
                     }
                     aria-label={leftPill.ariaLabel}
-                    className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="absolute left-2 top-1/2 z-10 translate-y-[18px] rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   >
                     {leftPill.label}
                   </button>
@@ -706,7 +706,7 @@ function CanvasInner({
                       )
                     }
                     aria-label={rightPill.ariaLabel}
-                    className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="absolute right-2 top-1/2 z-10 translate-y-[18px] rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   >
                     {rightPill.label}
                   </button>
