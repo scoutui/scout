@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { runInit } from "../../../src/commands/init.js";
 import { Logger } from "../../../src/util/log.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 import { fakeSsh } from "../../helpers/fake-ssh.js";
 
 function git(cwd: string, ...args: string[]): void {

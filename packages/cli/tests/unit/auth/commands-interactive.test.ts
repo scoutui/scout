@@ -21,7 +21,6 @@ function stubAdapter(over: Partial<PromptAdapter>): PromptAdapter {
     confirm: async () => true,
     select: async (o) => o.options[0]!.value,
     multiselect: async () => [],
-    spinner: () => ({ start: () => {}, stop: () => {} }),
     isCancel: (v): v is symbol => v === CANCEL,
     ...over,
   };

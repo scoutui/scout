@@ -1,4 +1,6 @@
+/** How the CLI's output looks: whether to style it, its colours, the wordmark and the symbols that mark a result. */
 import { isInteractive } from "./interactive.js";
+import { readVersion } from "./version.js";
 
 const ANSI = {
   reset: "\x1b[0m",
@@ -90,25 +92,42 @@ export function createColor(opts: ColorOptions = {}): Colorizer {
   };
 }
 
+/** Scout's wordmark: `scout` in the brand colour, the CLI's version, then `detail`. */
+export function wordmark(color: Colorizer, detail?: string): string {
+  return `${color.bold(color.brand("scout"))} ${color.dim(readVersion())}${detail !== undefined ? color.dim(` · ${detail}`) : ""}`;
+}
+
+const SYMBOLS = { success: "✓", warning: "!", error: "✗" } as const;
+
+export type SymbolKind = keyof typeof SYMBOLS;
+
+/** The symbol that marks a line as a success, a warning or an error, in that status's colour. */
+export function symbol(color: Colorizer, kind: SymbolKind): string {
+  const paint = kind === "success" ? color.green : kind === "warning" ? color.yellow : color.red;
+  return paint(SYMBOLS[kind]);
+}
+
 type Stream = { isTTY?: boolean };
 
 export type TerminalStyle = {
+  /** Someone is watching in a terminal: not in CI, and stdin, stdout and stderr all terminals. */
+  interactive: boolean;
   /**
-   * Someone is watching in a terminal that takes colour: not in CI, stdin, stdout and stderr all terminals, and
-   * NO_COLOR not set. Commands then show the wordmark, mark results with symbols and animate their progress.
+   * Interactive, and NO_COLOR not set. Commands then show the wordmark, mark results with symbols and animate their
+   * progress.
    */
   styled: boolean;
   /** Colour in a terminal, unless NO_COLOR is set; FORCE_COLOR turns it on anywhere. */
   color: Colorizer;
 };
 
-/** How this run writes to the terminal: whether it's styled for someone watching, and its colours. */
+/** How this run writes to the terminal: whether someone is watching, whether it's styled for them, and its colours. */
 export function terminalStyle(
   opts: { env?: NodeJS.ProcessEnv; stdin?: Stream; stdout?: Stream; stderr?: Stream } = {},
 ): TerminalStyle {
   const env = opts.env ?? process.env;
-  const watched =
+  const interactive =
     isInteractive({ env, stdin: opts.stdin ?? process.stdin, stdout: opts.stdout ?? process.stdout }) &&
     Boolean((opts.stderr ?? process.stderr).isTTY);
-  return { styled: watched && !noColor(env), color: createColor({ isTTY: watched, env }) };
+  return { interactive, styled: interactive && !noColor(env), color: createColor({ isTTY: interactive, env }) };
 }

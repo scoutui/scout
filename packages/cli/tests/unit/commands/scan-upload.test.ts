@@ -145,6 +145,20 @@ describe("runScan upload outcome", () => {
     expect(fetchSpy.mock.calls[1]?.[0]).toBe("https://h.example/api/scans");
   });
 
+  it.each([
+    ["after a dry run in a terminal", false, true, true],
+    ["after a dry run in a log", false, false, false],
+    ["after an upload in a terminal", true, true, false],
+  ])("lists the most used components only on a dry run in a terminal (%s)", async (_case, upload, interactive, listed) => {
+    const dir = setupConsumer();
+    vi.spyOn(global, "fetch")
+      .mockImplementationOnce(preScanReply())
+      .mockResolvedValueOnce(Response.json(receipt, { status: 202 }))
+      .mockResolvedValueOnce(Response.json(ready));
+    await runScan({ cwd: dir, upload, log: new Logger({ interactive, styled: false }) });
+    expect(stdout().includes("Most used:\n  Box")).toBe(listed);
+  });
+
   it("says the commit is already on the dashboard and how to scan it again", async () => {
     const dir = setupConsumer();
     vi.spyOn(global, "fetch")

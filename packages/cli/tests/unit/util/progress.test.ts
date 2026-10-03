@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createProgress, startPhase } from "../../../src/util/progress.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 
 const plain = createColor({ isTTY: false, env: {} });
 const colored = createColor({ isTTY: true, env: {} });
@@ -183,6 +183,15 @@ describe("progress with motion", () => {
       `\r⠋ Installing dependencies…  ${"━".repeat(15)}${"─".repeat(15)}\x1b[K`,
       "\r⠋ Installing dependencies…\x1b[K",
     ]);
+  });
+
+  it.each([
+    [80, `\r⠋ Scanning…  ${"━".repeat(7)}╸${"─".repeat(22)}  3 of 12\x1b[K`],
+    [30, "\r⠋ Scanning…  3 of 12\x1b[K"],
+    [16, "\r⠋ Scanning…  3 \x1b[K"],
+  ])("draws a phase's count after its bar, and keeps it when the bar is left out, cut to %i columns", (columns, line) => {
+    startPhase({ label: "Scanning…", writer, isTTY: true, columns, motion: plain, fraction: 0.25, count: "3 of 12" }).done();
+    expect(writes[0]).toBe(line);
   });
 
   it("draws a spinner, a bar, the count, the percentage and the time across a wide terminal", () => {

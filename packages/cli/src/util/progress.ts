@@ -4,7 +4,7 @@
  * motion, a spinner turns at its start and a bar fills as the count grows. In
  * a log (CI), whole lines, few enough that the log stays readable.
  */
-import type { Colorizer } from "./color.js";
+import type { Colorizer } from "./style.js";
 
 export type ProgressOptions = {
   total: number;
@@ -140,6 +140,8 @@ export type PhaseOptions = {
   motion?: Colorizer | undefined;
   /** With motion, a bar filled to this fraction after the label, when the terminal has room for it. */
   fraction?: number;
+  /** With motion, text after the bar, such as `3 of 12`. */
+  count?: string;
 };
 
 /**
@@ -159,9 +161,11 @@ export function startPhase(opts: PhaseOptions): { done(): void } {
   let frame = 0;
   const line = (): string => {
     const spinner = SPINNER[frame++ % SPINNER.length] as string;
-    const room = (opts.columns ?? 80) - 1 - `${spinner} ${opts.label}  `.length;
-    if (opts.fraction === undefined || room < BAR_MIN) return spun(motion, `${spinner} ${opts.label}`, opts.columns);
-    return `${motion.brand(spinner)} ${opts.label}  ${bar(motion, opts.fraction, Math.min(BAR_MAX, room))}`;
+    const count = opts.count === undefined ? "" : `  ${opts.count}`;
+    const room = (opts.columns ?? 80) - 1 - `${spinner} ${opts.label}  ${count}`.length;
+    if (opts.fraction === undefined || room < BAR_MIN) return spun(motion, `${spinner} ${opts.label}${count}`, opts.columns);
+    const bold = opts.count === undefined ? "" : `  ${motion.bold(opts.count)}`;
+    return `${motion.brand(spinner)} ${opts.label}  ${bar(motion, opts.fraction, Math.min(BAR_MAX, room))}${bold}`;
   };
   const draw = () => opts.writer(`\r${line()}\x1b[K`);
   draw();

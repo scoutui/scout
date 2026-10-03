@@ -1,6 +1,6 @@
 import { displayNameOf, type Component, type ScanArtifact } from "@scoutui/scan-format";
 import type { ScanStats } from "../artifact/scan-stats.js";
-import type { Colorizer } from "../util/color.js";
+import type { Colorizer } from "../util/style.js";
 import { packagesNotInstalled } from "../artifact/not-installed.js";
 
 const UNMATCHED_PAGE = "https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences";
@@ -8,11 +8,11 @@ const MOST_USED = 5;
 
 /**
  * The summary after a scan: the components and occurrences the dashboard will show, how many occurrences Scout
- * couldn't match to a component, and the most used components with where each comes from. Ends with a blank line.
- * Numbers group their thousands, as the dashboard shows them. In colour, the numbers are bold, and where each
- * component comes from is dim.
+ * couldn't match to a component, and with `mostUsed`, the most used components with where each comes from. Ends with
+ * a blank line. Numbers group their thousands, as the dashboard shows them. In colour, the numbers are bold, and where
+ * each component comes from is dim.
  */
-export function printSummary(out: ScanArtifact, stats: ScanStats, color: Colorizer): void {
+export function printSummary(out: ScanArtifact, stats: ScanStats, color: Colorizer, opts: { mostUsed: boolean }): void {
   const seconds = (stats.scanDurationMs / 1000).toFixed(1);
   const counted = (n: number, noun: string): string => `${color.bold(grouped(n))} ${n === 1 ? noun : `${noun}s`}`;
   const lines = [
@@ -37,7 +37,7 @@ export function printSummary(out: ScanArtifact, stats: ScanStats, color: Coloriz
     .filter((c) => c.stats.occurrenceCount > 0)
     .sort((a, b) => b.stats.occurrenceCount - a.stats.occurrenceCount)
     .slice(0, MOST_USED);
-  if (used.length > 0) {
+  if (opts.mostUsed && used.length > 0) {
     const rows = used.map((c) => ({ name: nameOf(c), source: sourceOf(c), count: grouped(c.stats.occurrenceCount) }));
     const nameWidth = Math.max(...rows.map((r) => r.name.length));
     const sourceWidth = Math.max(...rows.map((r) => r.source.length));

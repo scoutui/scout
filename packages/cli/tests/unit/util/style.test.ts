@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { colorDepth, colorEnabled, createColor, terminalStyle } from "../../../src/util/color.js";
+import { colorDepth, colorEnabled, createColor, symbol, terminalStyle } from "../../../src/util/style.js";
 
 describe("colorEnabled", () => {
   it("is off when NO_COLOR is set (any non-empty value)", () => {
@@ -61,15 +61,25 @@ describe("terminalStyle", () => {
   const tty = { isTTY: true };
   const piped = { isTTY: false };
   it.each([
-    ["all three streams are terminals", {}, [tty, tty, tty], { styled: true, color: true }],
-    ["CI is set", { CI: "1" }, [tty, tty, tty], { styled: false, color: false }],
-    ["stdin isn't a terminal", {}, [piped, tty, tty], { styled: false, color: false }],
-    ["stdout is piped", {}, [tty, piped, tty], { styled: false, color: false }],
-    ["stderr is piped", {}, [tty, tty, piped], { styled: false, color: false }],
-    ["NO_COLOR is set in a terminal", { NO_COLOR: "1" }, [tty, tty, tty], { styled: false, color: false }],
-    ["FORCE_COLOR is set with everything piped", { FORCE_COLOR: "1" }, [piped, piped, piped], { styled: false, color: true }],
+    ["all three streams are terminals", {}, [tty, tty, tty], { interactive: true, styled: true, color: true }],
+    ["CI is set", { CI: "1" }, [tty, tty, tty], { interactive: false, styled: false, color: false }],
+    ["stdin isn't a terminal", {}, [piped, tty, tty], { interactive: false, styled: false, color: false }],
+    ["stdout is piped", {}, [tty, piped, tty], { interactive: false, styled: false, color: false }],
+    ["stderr is piped", {}, [tty, tty, piped], { interactive: false, styled: false, color: false }],
+    ["NO_COLOR is set in a terminal", { NO_COLOR: "1" }, [tty, tty, tty], { interactive: true, styled: false, color: false }],
+    ["FORCE_COLOR is set with everything piped", { FORCE_COLOR: "1" }, [piped, piped, piped], { interactive: false, styled: false, color: true }],
   ] as const)("when %s", (_case, env, [stdin, stdout, stderr], expected) => {
     const style = terminalStyle({ env, stdin, stdout, stderr });
-    expect({ styled: style.styled, color: style.color.enabled }).toEqual(expected);
+    expect({ interactive: style.interactive, styled: style.styled, color: style.color.enabled }).toEqual(expected);
+  });
+});
+
+describe("symbol", () => {
+  it.each([
+    ["success", "\x1b[32m✓\x1b[0m"],
+    ["warning", "\x1b[33m!\x1b[0m"],
+    ["error", "\x1b[31m✗\x1b[0m"],
+  ] as const)("marks a %s in its status colour", (kind, out) => {
+    expect(symbol(createColor({ isTTY: true, env: {} }), kind)).toBe(out);
   });
 });

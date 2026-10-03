@@ -1,17 +1,19 @@
 import { describe, it, expect, vi } from "vitest";
 import { Logger } from "../../../src/util/log.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 
-function captureStderr(fn: () => void): string {
+function capture(stream: NodeJS.WriteStream, fn: () => void): string {
   const chunks: string[] = [];
-  const spy = vi.spyOn(process.stderr, "write").mockImplementation(((s: string) => {
+  const spy = vi.spyOn(stream, "write").mockImplementation(((s: string) => {
     chunks.push(s);
     return true;
-  }) as typeof process.stderr.write);
+  }) as typeof stream.write);
   fn();
   spy.mockRestore();
   return chunks.join("");
 }
+
+const captureStderr = (fn: () => void): string => capture(process.stderr, fn);
 
 const plain = createColor({ isTTY: false, env: {} });
 
@@ -26,6 +28,15 @@ describe("Logger", () => {
     const out = captureStderr(() => log.error("boom"));
     expect(out).toContain("\x1b[31m");
     expect(out).toContain("boom");
+  });
+  it.each([
+    [true, "! Warning: careful\n", "✗ Error: boom\n", "✓ Done.\n"],
+    [false, "Warning: careful\n", "Error: boom\n", "Done.\n"],
+  ])("marks a warning, an error and a success with its symbol only when styled (styled: %s)", (styled, warning, error, success) => {
+    const log = new Logger({ color: plain, styled, isTTY: false });
+    expect(captureStderr(() => log.warn("careful"))).toBe(warning);
+    expect(captureStderr(() => log.error("boom"))).toBe(error);
+    expect(capture(process.stdout, () => log.success("Done."))).toBe(success);
   });
   it("prints a message with a newline, control characters and runs of spaces on one line", () => {
     const log = new Logger({ color: plain });

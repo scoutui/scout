@@ -1,4 +1,4 @@
-import type { Colorizer } from "../util/color.js";
+import type { Colorizer } from "../util/style.js";
 
 const TOP = `scout <command> [options]
 

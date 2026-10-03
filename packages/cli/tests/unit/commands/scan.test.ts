@@ -7,7 +7,7 @@ import { runScan, scanExitCode } from "../../../src/commands/scan.js";
 import * as parseModule from "../../../src/parse-by-ext.js";
 import * as parserReact from "@scoutui/parser-react";
 import { Logger } from "../../../src/util/log.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 
 function setupConsumer() {
   const dir = mkdtempSync(join(tmpdir(), "cc-e2e-"));

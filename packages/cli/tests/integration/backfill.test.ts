@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reportError } from "../../src/cli/report.js";
 import { runBackfill } from "../../src/commands/backfill.js";
 import { Logger } from "../../src/util/log.js";
+import { createColor } from "../../src/util/style.js";
 import { assertValidArtifact } from "../helpers/artifact.js";
 import { acceptingDashboard, preScanReply } from "../helpers/fake-dashboard.js";
 import { pushToOrigin } from "../helpers/git-origin.js";
@@ -180,6 +181,26 @@ describe("scout backfill", () => {
       ].join(""),
     );
     expect(stdout()).toBe("Backfilled main since 1 Jun 2026: 2 uploaded, 2 already on the dashboard, 0 skipped. See https://h.example/repos/example%2Fweb\n");
+    expect(code).toBe(0);
+  }, 60_000);
+
+  it("when styled, shows the commit and its step on one line rewritten in place, then the outcome with the link on its own line", async () => {
+    const { dir, shas } = pushedRepo([{ date: "2026-06-10T10:00:00Z" }, { date: "2026-06-17T10:00:00Z" }]);
+    const [c1 = "", c2 = ""] = shas;
+    acceptingDashboard(() => ({ decision: "upload" }));
+
+    const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ styled: true, color: createColor({ isTTY: false, env: {} }), isTTY: true }) });
+
+    expect(stderr()).not.toContain("Scanning ");
+    for (const [what, sha, day, count] of [
+      ["installing dependencies…", c2, "17 Jun 2026", "1 of 2"],
+      ["scanning…", c2, "17 Jun 2026", "1 of 2"],
+      ["uploading the scan…", c2, "17 Jun 2026", "1 of 2"],
+      ["installing dependencies…", c1, "10 Jun 2026", "2 of 2"],
+    ] as const) {
+      expect(stderr()).toMatch(new RegExp(`\\r⠋ ${named(sha, day).replace(/[()]/g, "\\$&")}: ${what}  [━╸─]+  ${count}\\x1b\\[K`));
+    }
+    expect(stdout()).toBe(`✓ Backfilled main since 1 Jun 2026: 2 uploaded, 0 already on the dashboard, 0 skipped.\n  ${END}`);
     expect(code).toBe(0);
   }, 60_000);
 

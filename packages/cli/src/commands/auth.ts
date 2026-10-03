@@ -8,6 +8,8 @@ import { resolveHost, getStoredSession, setStoredSession, removeStoredSession, R
 import { parseCommand } from "../cli/parse.js";
 import { assertNotCancelled, PromptCancelledError, type PromptAdapter } from "../prompts/adapter.js";
 import { Logger } from "../util/log.js";
+import { startPhase } from "../util/progress.js";
+import { symbol } from "../util/style.js";
 import { ConfigError, loadConfig } from "../config/loader.js";
 import { withDocsLink } from "../upload.js";
 
@@ -48,7 +50,6 @@ export async function runAuthLogin(opts: {
   store?: StoreOpt;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
-  prompts?: PromptAdapter;
   log?: Logger;
 }): Promise<number> {
   const base = normalizeHost(opts.host);
@@ -92,9 +93,15 @@ export async function runAuthLogin(opts: {
   if (device.warning !== null) log.warn(device.warning);
   out(`To authorize this device, open:\n  ${log.color.brand(device.verificationUri)}\nCode: ${log.color.bold(device.userCode)}\n`);
   if (openBrowser(device.verificationUriComplete, base)) out("Opened your browser…\n");
-  const spin = opts.prompts?.spinner();
-  if (spin) spin.start("Waiting for approval…");
-  else out("Waiting for approval… ");
+  // When styled, a spinner turns on stderr while Scout waits; otherwise the result follows on the same line.
+  const waiting = log.styled
+    ? startPhase({ label: "Waiting for approval…", writer: (s) => process.stderr.write(s), isTTY: true, columns: process.stderr.columns, motion: log.color })
+    : undefined;
+  if (waiting === undefined) out("Waiting for approval… ");
+  const stopWaiting = (): void => {
+    if (waiting === undefined) out("\n");
+    else waiting.done();
+  };
 
   let intervalMs = device.interval * 1000;
   const deadline = now() + device.expiresIn * 1000;
@@ -105,8 +112,7 @@ export async function runAuthLogin(opts: {
     try {
       result = await pollToken(base, device.deviceCode);
     } catch (e) {
-      spin?.stop("Login failed");
-      if (!spin) out("\n");
+      stopWaiting();
       if (e instanceof AuthHttpError) log.error(`Couldn't sign in: ${base} returned an error. Run scout auth login again.`, requestDetail(e));
       else if (e instanceof AuthProtocolError) log.error(`Couldn't sign in: ${base} ${UNEXPECTED_REPLY}`, requestDetail(e));
       else log.error(`Couldn't reach ${base}. Check your connection, then run scout auth login again.`, requestDetail(e));
@@ -118,8 +124,8 @@ export async function runAuthLogin(opts: {
         userEmail: result.session.email,
       };
       await setStoredSession(base, entry, filePath !== undefined ? { filePath } : {});
-      if (spin) spin.stop("Approved");
-      out(`${log.color.green("✓")} Signed in as ${entry.userEmail || "your account"}\n`);
+      waiting?.done();
+      out(`${symbol(log.color, "success")} Signed in as ${entry.userEmail || "your account"} to ${base}.\n`);
       if (await tokenStorage(base, filePath) === "hosts.json") {
         log.warn(`Couldn't save your session to the system keychain, so it was saved to ${displayPath(filePath ?? hostsFilePath())} instead.`);
       }
@@ -130,21 +136,18 @@ export async function runAuthLogin(opts: {
       continue;
     }
     if (result.kind === "expired") {
-      spin?.stop("Code expired");
-      if (!spin) out("\n");
+      stopWaiting();
       log.error("Code expired. Run `scout auth login` again.");
       return 1;
     }
     if (result.kind === "denied") {
-      spin?.stop("Authorization declined");
-      if (!spin) out("\n");
+      stopWaiting();
       log.error("Authorization was declined.");
       return 1;
     }
     // pending → keep polling
   }
-  spin?.stop("Timed out");
-  if (!spin) out("\n");
+  stopWaiting();
   log.error("Timed out waiting for approval. Run `scout auth login` again.");
   return 1;
 }
@@ -327,7 +330,6 @@ export async function runAuth(argv: string[], deps: AuthDeps = {}): Promise<numb
         return runAuthLogin({
           host: resolved,
           ...(deps.store ? { store: deps.store } : {}),
-          ...(prompts ? { prompts } : {}),
           ...(deps.sleep ? { sleep: deps.sleep } : {}),
           ...(deps.now ? { now: deps.now } : {}),
           log,

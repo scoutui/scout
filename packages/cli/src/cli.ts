@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { runScan, scanExitCode, type ScanOptions } from "./commands/scan.js";
 import { runInit } from "./commands/init.js";
-import { Logger, debugRequested, wordmark } from "./util/log.js";
+import { Logger, debugRequested } from "./util/log.js";
+import { wordmark } from "./util/style.js";
 import { readVersion } from "./util/version.js";
 import { readCliPackage } from "./scan/meta.js";
 import { topHelp, commandHelp, styleHelp } from "./cli/help.js";

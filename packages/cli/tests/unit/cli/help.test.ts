@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { topHelp, commandHelp, styleHelp } from "../../../src/cli/help.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 
 describe("topHelp", () => {
   it("lists every command and points at per-command help", () => {

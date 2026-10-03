@@ -27,7 +27,7 @@ import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 import { Logger } from "../util/log.js";
-import type { Colorizer } from "../util/color.js";
+import type { Colorizer } from "../util/style.js";
 import { describeUploadError, UploadRefusedError, uploadPending } from "../upload.js";
 import type { AuthedUploader } from "../auth/upload-auth.js";
 import { errorMessage, errorStack } from "../util/errors.js";
@@ -235,7 +235,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
 
   if (!quiet) {
     if (log.styled) process.stdout.write("\n");
-    printSummary(artifact, stats, log.color);
+    printSummary(artifact, stats, log.color, { mostUsed: uploader === undefined && log.interactive });
   }
 
   if (uploader === undefined) {
