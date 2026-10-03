@@ -30,6 +30,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-barrel-tag",
       "version": null,
       "composition": {
         "rendersByCount": {

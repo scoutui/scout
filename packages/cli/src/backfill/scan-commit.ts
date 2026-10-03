@@ -48,7 +48,7 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
   }
   const meta = stampMeta(checkout, { cwd: cfg.configDir, repoIdOverride: repoId, tracked: state.tracked });
   const outputRoot = await scanOutputRoot(cfg.configDir, {});
-  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, scanLog);
+  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, scanLog, meta.repo.id);
 
   const uncommitted = await uncommittedRefusal(cfg.configDir, { files, exempt: [], ignore: cfg.configPath });
   if (uncommitted !== null) return finish({ kind: "refused", reason: "uncommitted", detail: uncommitted.detail });

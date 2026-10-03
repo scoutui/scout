@@ -2,6 +2,7 @@ export { buildWorkspaceGraph } from "./build-graph.js";
 export { createDeclaredDependencyTest, declaredInPath } from "./declared-deps.js";
 export {
   findOwningPackage,
+  findPackageOrRoot,
   isFirstPartyPath,
   resetFindOwningPackageCache,
 } from "./find-owning-package.js";

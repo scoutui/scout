@@ -13,12 +13,12 @@ import { globbySync } from "globby";
 import * as yaml from "js-yaml";
 import type { PackageManager, WorkspaceGraph, WorkspacePackage } from "./types.js";
 
-export function buildWorkspaceGraph(rootPath: string): WorkspaceGraph {
+export function buildWorkspaceGraph(rootPath: string, repoName: string): WorkspaceGraph {
   const absRoot = resolve(rootPath);
   const rootPkgJsonPath = join(absRoot, "package.json");
   const rootPkg = readJsonSafely(rootPkgJsonPath) ?? {};
   const rootPackageName: string =
-    typeof rootPkg.name === "string" ? rootPkg.name : "<unnamed>";
+    typeof rootPkg.name === "string" && rootPkg.name.length > 0 ? rootPkg.name : repoName;
 
   return {
     packageManager: sniffPackageManager(absRoot),

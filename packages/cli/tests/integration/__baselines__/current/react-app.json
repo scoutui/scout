@@ -52,6 +52,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -87,6 +88,7 @@
         "line": 4,
         "column": 7
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -116,6 +118,7 @@
         "line": 3,
         "column": 15
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -163,6 +166,7 @@
         "line": 1,
         "column": 15
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -192,6 +196,7 @@
         "line": 3,
         "column": 15
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -233,6 +238,7 @@
         "line": 4,
         "column": 7
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -264,6 +270,7 @@
         "line": 4,
         "column": 7
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -312,6 +319,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -369,6 +377,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "react-app",
       "version": null,
       "composition": {
         "rendersByCount": {},

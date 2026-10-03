@@ -34,6 +34,7 @@
         "line": 6,
         "column": 15
       },
+      "owningPackage": "react-literal-tag",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -63,6 +64,7 @@
         "line": 4,
         "column": 15
       },
+      "owningPackage": "react-literal-tag",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -106,6 +108,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "react-literal-tag",
       "version": null,
       "composition": {
         "rendersByCount": {

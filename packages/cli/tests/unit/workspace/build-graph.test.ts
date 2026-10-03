@@ -20,7 +20,7 @@ describe("buildWorkspaceGraph: packageManager sniff", () => {
     try {
       write(dir, "package.json", JSON.stringify({ name: "root" }));
       write(dir, "yarn.lock", "");
-      expect(buildWorkspaceGraph(dir).packageManager).toBe("yarn");
+      expect(buildWorkspaceGraph(dir, "example-repo").packageManager).toBe("yarn");
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
@@ -29,7 +29,7 @@ describe("buildWorkspaceGraph: packageManager sniff", () => {
     try {
       write(dir, "package.json", JSON.stringify({ name: "root" }));
       write(dir, "package-lock.json", "{}");
-      expect(buildWorkspaceGraph(dir).packageManager).toBe("npm");
+      expect(buildWorkspaceGraph(dir, "example-repo").packageManager).toBe("npm");
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
@@ -38,7 +38,7 @@ describe("buildWorkspaceGraph: packageManager sniff", () => {
     try {
       write(dir, "package.json", JSON.stringify({ name: "root" }));
       write(dir, "pnpm-lock.yaml", "");
-      expect(buildWorkspaceGraph(dir).packageManager).toBe("pnpm");
+      expect(buildWorkspaceGraph(dir, "example-repo").packageManager).toBe("pnpm");
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
@@ -46,7 +46,7 @@ describe("buildWorkspaceGraph: packageManager sniff", () => {
     const dir = makeFixture();
     try {
       write(dir, "package.json", JSON.stringify({ name: "root" }));
-      expect(buildWorkspaceGraph(dir).packageManager).toBe("unknown");
+      expect(buildWorkspaceGraph(dir, "example-repo").packageManager).toBe("unknown");
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
@@ -55,9 +55,35 @@ describe("buildWorkspaceGraph: packageManager sniff", () => {
     try {
       write(dir, "package.json", JSON.stringify({ name: "solo" }));
       write(dir, "pnpm-lock.yaml", "");
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packageManager).toBe("pnpm");
       expect(g.packages).toEqual([]);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+});
+
+describe("buildWorkspaceGraph: rootPackageName", () => {
+  it("is the root package.json name", () => {
+    const dir = makeFixture();
+    try {
+      write(dir, "package.json", JSON.stringify({ name: "@example/root" }));
+      expect(buildWorkspaceGraph(dir, "example-repo").rootPackageName).toBe("@example/root");
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("is the repository name when the root package.json has no name", () => {
+    const dir = makeFixture();
+    try {
+      write(dir, "package.json", JSON.stringify({}));
+      expect(buildWorkspaceGraph(dir, "example-repo").rootPackageName).toBe("example-repo");
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("is the repository name when the root package.json name is empty", () => {
+    const dir = makeFixture();
+    try {
+      write(dir, "package.json", JSON.stringify({ name: "" }));
+      expect(buildWorkspaceGraph(dir, "example-repo").rootPackageName).toBe("example-repo");
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });
@@ -70,7 +96,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "yarn.lock", "");
       write(dir, "packages/a/package.json", JSON.stringify({ name: "@fix/a" }));
       write(dir, "packages/b/package.json", JSON.stringify({ name: "@fix/b" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name).sort()).toEqual(["@fix/a", "@fix/b"]);
       expect(g.packages.every((p) => p.absolutePath.startsWith(dir))).toBe(true);
     } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -87,7 +113,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "app-a/package.json", JSON.stringify({ name: "app-a" }));
       write(dir, "app-a/src/index.ts", "");
       write(dir, "app-b/package.json", JSON.stringify({ name: "app-b" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name).sort()).toEqual(["app-a", "app-b"]);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
@@ -101,7 +127,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
         JSON.stringify({ name: "root", workspaces: { packages: ["packages/*"] } }),
       );
       write(dir, "packages/a/package.json", JSON.stringify({ name: "@fix/a" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages).toHaveLength(1);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
@@ -112,7 +138,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "package.json", JSON.stringify({ name: "root" }));
       write(dir, "pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
       write(dir, "packages/a/package.json", JSON.stringify({ name: "@fix/a" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name)).toEqual(["@fix/a"]);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
@@ -124,7 +150,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "pnpm-workspace.yaml", "packages:\n  - 'apps/*'\n");
       write(dir, "apps/x/package.json", JSON.stringify({ name: "@fix/x" }));
       write(dir, "packages/y/package.json", JSON.stringify({ name: "@fix/y" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name)).toEqual(["@fix/x"]);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
@@ -133,7 +159,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
     const dir = makeFixture();
     try {
       write(dir, "package.json", JSON.stringify({ name: "root" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages).toEqual([]);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
@@ -145,7 +171,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "yarn.lock", "");
       write(dir, "packages/a/package.json", JSON.stringify({ name: "@fix/a" }));
       mkdirSync(join(dir, "packages/empty"), { recursive: true });
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name)).toEqual(["@fix/a"]);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
@@ -157,7 +183,7 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "yarn.lock", "");
       write(dir, "packages/a/package.json", JSON.stringify({ version: "0.0.0" }));
       write(dir, "packages/b/package.json", JSON.stringify({ name: "@fix/b" }));
-      const g = buildWorkspaceGraph(dir);
+      const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name)).toEqual(["@fix/b"]);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });

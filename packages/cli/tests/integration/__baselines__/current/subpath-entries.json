@@ -34,6 +34,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "subpath-entries",
       "version": null,
       "composition": {
         "rendersByCount": {

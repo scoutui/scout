@@ -34,6 +34,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "external-alias",
       "version": null,
       "composition": {
         "rendersByCount": {
