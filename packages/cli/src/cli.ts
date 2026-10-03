@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { runScan, scanExitCode, type ScanOptions } from "./commands/scan.js";
 import { runInit } from "./commands/init.js";
-import { Logger, debugRequested } from "./util/log.js";
+import { Logger, debugRequested, wordmark } from "./util/log.js";
 import { readVersion } from "./util/version.js";
 import { readCliPackage } from "./scan/meta.js";
-import { topHelp, commandHelp } from "./cli/help.js";
+import { topHelp, commandHelp, styleHelp } from "./cli/help.js";
 import { parseCommand, KNOWN_COMMANDS, INTERNAL_COMMIT_SCAN, unknownCommandMessage, CliError } from "./cli/parse.js";
 import { reportError } from "./cli/report.js";
 import { parseSince } from "./backfill/commits.js";
@@ -22,9 +22,14 @@ function wantsHelp(args: string[]): boolean {
   return args.includes("--help") || args.includes("-h");
 }
 
+/** Help on stdout: under the wordmark, in colour, when styled; otherwise as it is. */
+function writeHelp(text: string, log: Logger): void {
+  process.stdout.write(log.styled ? `${wordmark(log.color)}\n\n${styleHelp(text, log.color)}` : text);
+}
+
 async function main(argv: string[], log: Logger): Promise<number> {
   if (argv[0] === undefined) {
-    process.stdout.write(topHelp());
+    writeHelp(topHelp(), log);
     return 0;
   }
   if (argv.includes("--version") || argv.includes("-v")) {
@@ -34,7 +39,7 @@ async function main(argv: string[], log: Logger): Promise<number> {
 
   const [cmd, ...rest] = argv;
   if (cmd === undefined || cmd === "--help" || cmd === "-h") {
-    process.stdout.write(topHelp());
+    writeHelp(topHelp(), log);
     return 0;
   }
 
@@ -49,7 +54,7 @@ async function main(argv: string[], log: Logger): Promise<number> {
   }
 
   if (wantsHelp(rest)) {
-    process.stdout.write(commandHelp(cmd));
+    writeHelp(commandHelp(cmd), log);
     return 0;
   }
 

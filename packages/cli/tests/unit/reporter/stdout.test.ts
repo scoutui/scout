@@ -35,13 +35,13 @@ const packageExport = (packageName: string, exportName: string, publicEntry = ""
 const declaredIn = (filePath: string, exportName: string) =>
   ({ kind: "repository-declaration", repoId: "r", filePath, exportName }) as const;
 
-function capture(components: Component[], stats: ScanStats): string {
+function capture(components: Component[], stats: ScanStats, color = createColor({ isTTY: false, env: {} })): string {
   const chunks: string[] = [];
   const spy = vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => {
     chunks.push(s);
     return true;
   }) as typeof process.stdout.write);
-  printSummary({ meta: baseMeta, components, occurrences: [], diagnostics: [] }, stats, createColor({ isTTY: false, env: {} }));
+  printSummary({ meta: baseMeta, components, occurrences: [], diagnostics: [] }, stats, color);
   spy.mockRestore();
   return chunks.join("");
 }
@@ -94,5 +94,27 @@ describe("printSummary", () => {
     expect(capture([component("a", declaredIn("src/App.tsx", "App"), 0)], {
       filesScanned: 1, scanDurationMs: 0, componentCount: 1, occurrenceCount: 0, resolvedOccurrenceCount: 0,
     })).toBe("Scanned 1 file in 0.0s: 1 component, 0 occurrences.\n\n");
+  });
+
+  it("in colour, makes the numbers bold and where each component comes from dim, keeping the columns aligned", () => {
+    const printed = capture(
+      [component("a", packageExport("@acme/ui", "Button"), 12), component("b", declaredIn("src/Card.tsx", "Card"), 3)],
+      { filesScanned: 2, scanDurationMs: 100, componentCount: 2, occurrenceCount: 16, resolvedOccurrenceCount: 15 },
+      createColor({ isTTY: true, env: {} }),
+    );
+    const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+    const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+    expect(printed).toBe(
+      [
+        `Scanned ${bold("2")} files in 0.1s: ${bold("2")} components, ${bold("15")} occurrences.`,
+        `Scout couldn't match ${bold("1")} more occurrence to a component. See \x1b[36mhttps://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\x1b[0m`,
+        "",
+        bold("Most used:"),
+        `  Button  ${dim("@acme/ui    ")}  ${bold("12")}`,
+        `  Card    ${dim("src/Card.tsx")}  ${bold(" 3")}`,
+        "",
+        "",
+      ].join("\n"),
+    );
   });
 });

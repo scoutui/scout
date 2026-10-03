@@ -27,6 +27,7 @@ import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 import { Logger } from "../util/log.js";
+import type { Colorizer } from "../util/color.js";
 import { describeUploadError, UploadRefusedError, uploadPending } from "../upload.js";
 import type { AuthedUploader } from "../auth/upload-auth.js";
 import { errorMessage, errorStack } from "../util/errors.js";
@@ -106,8 +107,8 @@ export function scanExitCode(result: ScanResult): number {
 }
 
 /** The line for a commit the dashboard already has a scan of, linking to it. */
-function alreadyOnDashboard(commit: string, url: string): string {
-  return `Commit ${shortCommit(commit)} is already on the dashboard: ${url}. Run scout scan --rescan to scan it again.`;
+function alreadyOnDashboard(commit: string, url: string, color: Colorizer): string {
+  return `Commit ${shortCommit(commit)} is already on the dashboard: ${color.brand(url)}. Run scout scan --rescan to scan it again.`;
 }
 
 export async function runScan(opts: ScanOptions): Promise<ScanResult> {
@@ -210,7 +211,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
       });
       const [answer] = (await uploader.check(preScanRequest(meta, opts.rescan === true, [meta.repo.commit]), log)) ?? [];
       if (answer?.decision === "skip") {
-        log.result(alreadyOnDashboard(meta.repo.commit, new URL(answer.url, uploader.base).href));
+        log.result(alreadyOnDashboard(meta.repo.commit, new URL(answer.url, uploader.base).href, log.color));
         return { output: null, upload: "exists" };
       }
       if (answer?.decision === "refuse") throw new UploadRefusedError(answer.message, answer.code, preScanUrl(uploader.base));
@@ -233,11 +234,12 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   if (uploader === undefined) await writeJson(artifact, outputPath);
 
   if (!quiet) {
+    if (log.styled) process.stdout.write("\n");
     printSummary(artifact, stats, log.color);
   }
 
   if (uploader === undefined) {
-    log.result(`Wrote ${relative(await realpath(opts.cwd ?? process.cwd()), outputPath)} (not uploaded).`);
+    log.success(`Wrote ${relative(await realpath(opts.cwd ?? process.cwd()), outputPath)} (not uploaded).`);
     return { output: artifact, upload: "skipped" };
   }
 
@@ -254,14 +256,11 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
         .finally(() => uploadLine?.done());
       upload = result.status === "inserted" ? "ok" : "exists";
       const scanUrl = new URL(result.url, uploader.base).href;
+      const link = log.color.brand(scanUrl);
       const commit = artifact.meta.repo.commit;
-      log.result(
-        result.status === "exists"
-          ? alreadyOnDashboard(commit, scanUrl)
-          : result.replaced
-            ? `Uploaded the scan of ${shortCommit(commit)}, replacing the earlier one: ${scanUrl}`
-            : `Uploaded the scan of ${shortCommit(commit)}: ${scanUrl}`,
-      );
+      if (result.status === "exists") log.result(alreadyOnDashboard(commit, scanUrl, log.color));
+      else if (result.replaced) log.success(`Uploaded the scan of ${shortCommit(commit)}, replacing the earlier one: ${link}`);
+      else log.success(`Uploaded the scan of ${shortCommit(commit)}: ${link}`);
     } catch (err) {
       upload = "failed";
       const { message, detail } = describeUploadError(err, uploader.base);

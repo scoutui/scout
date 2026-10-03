@@ -60,6 +60,10 @@ export class Logger {
   result(msg: string): void {
     process.stdout.write(`${msg}\n`);
   }
+  /** A `result` that went well, after a green `✓` when styled. */
+  success(msg: string): void {
+    process.stdout.write(`${this.styled ? `${this.color.green("✓")} ` : ""}${msg}\n`);
+  }
   /** One `Warning:` line; `detail` prints as it is under debug. */
   warn(msg: string, detail?: string): void {
     process.stderr.write(`${this.clearLine}${this.color.yellow("Warning:")} ${oneLine(msg)}\n`);

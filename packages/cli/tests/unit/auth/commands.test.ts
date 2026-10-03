@@ -10,6 +10,7 @@ import * as browser from "../../../src/auth/browser.js";
 import { systemKeychain } from "../../../src/auth/keychain.js";
 import { fakeKeychain } from "./fake-keychain.js";
 import { Logger } from "../../../src/util/log.js";
+import { createColor } from "../../../src/util/color.js";
 
 let dir: string;
 let file: string;
@@ -34,7 +35,7 @@ function captureStderr(): string[] {
 }
 
 const UNEXPECTED_REPLY = "sent an unexpected reply. Check that it's your Scout dashboard and that the CLI is up to date.";
-const plain = { color: { dim: String, bold: String, green: String, yellow: String, red: String, cyan: String } };
+const plain = { color: createColor({ isTTY: false, env: {} }) };
 
 const deviceCode = {
   deviceCode: "dc",

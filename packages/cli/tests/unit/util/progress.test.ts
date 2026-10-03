@@ -176,6 +176,15 @@ describe("progress with motion", () => {
     expect(writes).toEqual(["\r⠋ Matching \x1b[K", "\r⠙ Matching \x1b[K", "\r\x1b[K"]);
   });
 
+  it("draws a bar after a phase's label when given how far along it is, and leaves it out when the terminal is narrow", () => {
+    startPhase({ label: "Installing dependencies…", writer, isTTY: true, columns: 80, motion: plain, fraction: 0.5 }).done();
+    startPhase({ label: "Installing dependencies…", writer, isTTY: true, columns: 30, motion: plain, fraction: 0.5 }).done();
+    expect(writes.filter((w) => w !== "\r\x1b[K")).toEqual([
+      `\r⠋ Installing dependencies…  ${"━".repeat(15)}${"─".repeat(15)}\x1b[K`,
+      "\r⠋ Installing dependencies…\x1b[K",
+    ]);
+  });
+
   it("draws a spinner, a bar, the count, the percentage and the time across a wide terminal", () => {
     const p = createProgress({ total: 929, writer, isTTY: true, columns: 80, motion: plain });
     p.tick();

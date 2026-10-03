@@ -82,7 +82,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     include: opts.frameworks && opts.frameworks.length > 0 ? includeGlob(opts.frameworks) : DEFAULT_INCLUDE,
   };
   await writeConfig(out, buildConfig(answers));
-  log.info(done);
+  log.success(done);
 }
 
 async function gitDefaults(cwd: string, log: Logger, prompts: PromptAdapter | undefined): Promise<GitDefaults> {

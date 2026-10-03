@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { topHelp, commandHelp } from "../../../src/cli/help.js";
+import { topHelp, commandHelp, styleHelp } from "../../../src/cli/help.js";
+import { createColor } from "../../../src/util/color.js";
 
 describe("topHelp", () => {
   it("lists every command and points at per-command help", () => {
@@ -60,5 +61,24 @@ describe("commandHelp", () => {
   });
   it("falls back to the top-level help for an unknown command", () => {
     expect(commandHelp("nope")).toBe(topHelp());
+  });
+});
+
+describe("styleHelp", () => {
+  it.each(["scan", "backfill", "init", "auth", "top"])("leaves the %s help as it is without colour", (command) => {
+    const text = command === "top" ? topHelp() : commandHelp(command);
+    expect(styleHelp(text, createColor({ isTTY: false, env: {} }))).toBe(text);
+  });
+  it("in colour, makes the usage line and headings bold, names the brand colour, defaults dim and the docs link the brand colour", () => {
+    const color = createColor({ isTTY: true, env: {} });
+    const lines = styleHelp(topHelp(), color).split("\n");
+    expect(lines[0]).toBe("\x1b[1mscout <command> [options]\x1b[0m");
+    expect(lines).toContain("\x1b[1mCommands:\x1b[0m");
+    expect(lines).toContain("  \x1b[36mscan\x1b[0m          Scan the repo and upload the scan to the dashboard");
+    expect(lines).toContain("  \x1b[36m--help, -h\x1b[0m");
+    expect(lines).toContain("Docs: \x1b[36mhttps://scoutui.dev/docs\x1b[0m");
+    expect(styleHelp(commandHelp("scan"), color).split("\n")).toContain(
+      "  \x1b[36m--config <path>\x1b[0m    Config file to read \x1b[2m(default: ./scout.config.json)\x1b[0m",
+    );
   });
 });

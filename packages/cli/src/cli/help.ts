@@ -1,3 +1,5 @@
+import type { Colorizer } from "../util/color.js";
+
 const TOP = `scout <command> [options]
 
 Commands:
@@ -83,4 +85,24 @@ export function topHelp(): string {
 /** Per-command usage: `scout <cmd> --help`. Falls back to the overview. */
 export function commandHelp(command: string): string {
   return REGISTRY[command] ?? TOP;
+}
+
+/**
+ * Help text in colour: the usage line and section headings bold, each command's or option's name in the brand colour,
+ * defaults dim, and the docs link in the brand colour.
+ */
+export function styleHelp(text: string, color: Colorizer): string {
+  return text
+    .split("\n")
+    .map((line, index) => {
+      if (index === 0 || /^[A-Z][\w ]*:$/.test(line)) return line === "" ? line : color.bold(line);
+      const docs = /^(Docs: )(\S+)$/.exec(line);
+      if (docs) return `${docs[1]}${color.brand(docs[2] as string)}`;
+      const entry = /^( {2})(\S.*?)(?:( {2,})(.*))?$/.exec(line);
+      if (!entry) return line;
+      const [, indent, name, gap, description] = entry;
+      const described = description?.replace(/\(default: [^)]*\)/, (d) => color.dim(d));
+      return `${indent}${color.brand(name as string)}${gap ?? ""}${described ?? ""}`;
+    })
+    .join("\n");
 }

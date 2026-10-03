@@ -90,7 +90,7 @@ export async function runAuthLogin(opts: {
     return 1;
   }
   if (device.warning !== null) log.warn(device.warning);
-  out(`To authorize this device, open:\n  ${device.verificationUri}\nCode: ${device.userCode}\n`);
+  out(`To authorize this device, open:\n  ${log.color.brand(device.verificationUri)}\nCode: ${log.color.bold(device.userCode)}\n`);
   if (openBrowser(device.verificationUriComplete, base)) out("Opened your browser…\n");
   const spin = opts.prompts?.spinner();
   if (spin) spin.start("Waiting for approval…");
@@ -119,7 +119,7 @@ export async function runAuthLogin(opts: {
       };
       await setStoredSession(base, entry, filePath !== undefined ? { filePath } : {});
       if (spin) spin.stop("Approved");
-      out(`✓ Signed in as ${entry.userEmail || "your account"}\n`);
+      out(`${log.color.green("✓")} Signed in as ${entry.userEmail || "your account"}\n`);
       if (await tokenStorage(base, filePath) === "hosts.json") {
         log.warn(`Couldn't save your session to the system keychain, so it was saved to ${displayPath(filePath ?? hostsFilePath())} instead.`);
       }

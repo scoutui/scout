@@ -138,6 +138,8 @@ export type PhaseOptions = {
   columns?: number;
   /** In a terminal, turn a spinner before the label, in these colours. */
   motion?: Colorizer | undefined;
+  /** With motion, a bar filled to this fraction after the label, when the terminal has room for it. */
+  fraction?: number;
 };
 
 /**
@@ -155,7 +157,13 @@ export function startPhase(opts: PhaseOptions): { done(): void } {
     };
   }
   let frame = 0;
-  const draw = () => opts.writer(`\r${spun(motion, `${SPINNER[frame++ % SPINNER.length]} ${opts.label}`, opts.columns)}\x1b[K`);
+  const line = (): string => {
+    const spinner = SPINNER[frame++ % SPINNER.length] as string;
+    const room = (opts.columns ?? 80) - 1 - `${spinner} ${opts.label}  `.length;
+    if (opts.fraction === undefined || room < BAR_MIN) return spun(motion, `${spinner} ${opts.label}`, opts.columns);
+    return `${motion.brand(spinner)} ${opts.label}  ${bar(motion, opts.fraction, Math.min(BAR_MAX, room))}`;
+  };
+  const draw = () => opts.writer(`\r${line()}\x1b[K`);
   draw();
   const stopFrames = everyFrame(draw);
   return {
