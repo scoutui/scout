@@ -14,7 +14,7 @@ describe("topHelp", () => {
   it("says what each command is for in the user's words, how to start, and where the docs are", () => {
     const out = topHelp();
     expect(out).toContain("  init          Create scout.config.json for this repo\n");
-    expect(out).toContain("  auth          Sign in to a dashboard, check or sign out (login | status | logout)\n");
+    expect(out).toContain("  auth          Sign in to a dashboard, see who you're signed in as, or sign out (login | status | logout)\n");
     expect(out.endsWith("\nGet started: scout init, then scout scan --dry-run.\nDocs: https://scoutui.dev/docs\n")).toBe(true);
   });
 });
@@ -31,7 +31,7 @@ describe("commandHelp", () => {
     const out = commandHelp("scan");
     expect(out).toContain("  --config <path>    Config file to read (default: ./scout.config.json)\n");
     expect(out).toContain("  --quiet            Hide progress, the summary and most warnings\n");
-    expect(out).toContain("  --repo-id <name>   Repository name on the dashboard (default: repoId in the config, else from the git remote)\n");
+    expect(out).toContain("  --repo-id <name>   Repository name on the dashboard (default: repoId in the config, else from the git remote, else the folder name)\n");
     expect(out).toContain("  --repo-root <dir>  Folder that paths in the scan file are relative to (default: the top of the git repository)\n");
     expect(out).toContain("  --host <url>       Dashboard address (default: SCOUTUI_HOST, else host in scout.config.json, else the first dashboard you signed in to)\n");
     expect(out).toContain("  --debug            Show the details behind an error\n");
@@ -50,6 +50,7 @@ describe("commandHelp", () => {
     expect(out).toContain("  login   Sign in to a dashboard in your browser. Saves the session in the system keychain, or in ~/.config/scoutui/hosts.json if the keychain can't be used\n");
     expect(out).toContain("  status  Show who you're signed in as\n");
     expect(out).toContain("  logout  Sign out, ending the session on the dashboard\n");
+    expect(out).toContain("  --debug            Show the details behind an error\n");
   });
   it("lists supported framework choices for init", () => {
     const out = commandHelp("init");

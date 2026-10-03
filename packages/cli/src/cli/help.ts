@@ -4,7 +4,7 @@ Commands:
   scan          Scan the repo and upload the scan to the dashboard
   backfill      Scan one commit a week of the tracked branch's history and upload each scan
   init          Create scout.config.json for this repo
-  auth          Sign in to a dashboard, check or sign out (login | status | logout)
+  auth          Sign in to a dashboard, see who you're signed in as, or sign out (login | status | logout)
 
 Run \`scout <command> --help\` for command-specific options.
 
@@ -27,7 +27,7 @@ Scan the repo and upload the scan to the dashboard.
 Options:
 ${CONFIG}
   --quiet            Hide progress, the summary and most warnings
-  --repo-id <name>   Repository name on the dashboard (default: repoId in the config, else from the git remote)
+  --repo-id <name>   Repository name on the dashboard (default: repoId in the config, else from the git remote, else the folder name)
   --repo-root <dir>  Folder that paths in the scan file are relative to (default: the top of the git repository)
   --dry-run          Scan without uploading, and write scout-scan.json next to the config
   --rescan           Upload even if the dashboard already has this commit, replacing its scan
@@ -62,11 +62,15 @@ Options:
   --debug             Show the details behind an error
 `;
 
-const AUTH = `scout auth <login|status|logout> [--host <url>]
+const AUTH = `scout auth <login|status|logout> [options]
 
   login   Sign in to a dashboard in your browser. Saves the session in the system keychain, or in ~/.config/scoutui/hosts.json if the keychain can't be used
   status  Show who you're signed in as
   logout  Sign out, ending the session on the dashboard
+
+Options:
+${HOST}
+  --debug            Show the details behind an error
 `;
 
 const REGISTRY: Record<string, string> = { scan: SCAN, backfill: BACKFILL, init: INIT, auth: AUTH };

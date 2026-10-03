@@ -56,6 +56,6 @@ export class Logger {
   }
   /** Text printed only under debug. */
   detail(text: string | undefined): void {
-    if (this.debug && text !== undefined && text !== "") process.stderr.write(`${text.replace(/\n$/, "")}\n`);
+    if (this.debug && text !== undefined && text !== "") process.stderr.write(`${this.clearLine}${text.replace(/\n$/, "")}\n`);
   }
 }

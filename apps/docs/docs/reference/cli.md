@@ -84,7 +84,7 @@ Before it scans, `scan` checks these, in this order, and stops at the first that
 | You're on another branch, and the commit isn't on the tracked branch | `Error: Couldn't upload the scan: you're on <checked-out branch>, and the dashboard tracks <branch>. Switch to <branch> and try again.` |
 | On a detached HEAD, the commit isn't on the tracked branch | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>. Check out <branch> and try again.` |
 | A tracked file has uncommitted changes, or a file the scan reads isn't committed. `--debug` lists the files. | `Error: Couldn't upload the scan: you have uncommitted changes. Commit or stash them and try again.` |
-| No upload host is set, or you aren't signed in to it | `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json, or run scout scan --dry-run to scan without uploading.` or `Error: Not signed in to <host>.`, followed by what to run. See [Host resolution](#host-resolution). |
+| No upload host is set, or you aren't signed in to it | `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.` or `Error: Not signed in to <host>.`, followed by what to run. See [Host resolution](#host-resolution). |
 | The dashboard refuses the scan: this CLI's version, the repository name, or a `--rescan` from an older CLI | The dashboard's own line, such as `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI (<version>). Upgrade the CLI to <version> or newer, or run npx @scoutui/cli@<version> scan --rescan.` |
 | A package in `dependencies` or `devDependencies` isn't installed | `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed. Install your dependencies and try again.` `<package.json>` is the file that lists it, relative to the monorepo root, or to the config's folder outside a monorepo. |
 | The scanned folder is a Nuxt app that hasn't been prepared | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.` |
@@ -288,7 +288,7 @@ Your *default host* is the first host you signed in to with `auth login`. Signin
 
 When none is set:
 
-- `scan` and `backfill` fail with `Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json, or run scout scan --dry-run to scan without uploading.` and exit `1`. A dry run needs no host.
+- `scan` and `backfill` fail with `Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.` and exit `1`. A dry run needs no host.
 - `auth login` asks for a `Dashboard address` when prompts are on. Otherwise it exits `2`.
 - `auth status` and `auth logout` ask `Which dashboard?` when prompts are on and you are signed in to more than one host. Otherwise they treat you as not signed in.
 

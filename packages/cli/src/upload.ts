@@ -321,7 +321,7 @@ export function describeUploadError(err: unknown, host: string | undefined): { m
   if (auth !== null) return { message: auth };
   if (err instanceof NoHostError) {
     return {
-      message: `Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json, or run scout scan --dry-run to scan without uploading.`,
+      message: `Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.`,
     };
   }
   if (err instanceof CliError || err instanceof InvalidHostError) return { message: err.message };
