@@ -1,8 +1,6 @@
 import type { ScanStats } from "../artifact/scan-stats.js";
 import { nuxtAppUnprepared } from "../scan/global-components.js";
-import { relative } from "node:path";
-import { posixPath } from "@scoutui/reference-graph";
-import { missingDependency } from "../workspace/declared-deps.js";
+import { declaredInPath, missingDependency } from "../workspace/declared-deps.js";
 import type { WorkspaceGraph } from "../workspace/types.js";
 
 /** What stops an upload before scanning, as `setupProblem` finds it. */
@@ -11,8 +9,8 @@ export type SetupProblem =
   | { kind: "nuxt-unprepared" };
 
 /** Why an upload must stop before scanning, as the line it prints, or null when it may scan. See `setupProblem`. */
-export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], scanRoot: string): string | null {
-  const problem = setupProblem(graph, files, scanRoot);
+export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], scanRoot: string, outputRoot: string): string | null {
+  const problem = setupProblem(graph, files, scanRoot, outputRoot);
   if (problem?.kind === "dependencies-missing") {
     return `Couldn't upload the scan: ${problem.packageName} is listed in ${problem.declaredIn} but isn't installed. Install your dependencies and try again.`;
   }
@@ -23,15 +21,20 @@ export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], sc
 }
 
 /**
- * What stops an upload before scanning: `dependencies-missing`, naming the package and the workspace-relative
- * `package.json` that lists it, when a package that the workspace root's `package.json`, or that of a member owning one of
+ * What stops an upload before scanning: `dependencies-missing`, naming the package and the `package.json` that lists
+ * it (`declaredInPath`), when a package that the workspace root's `package.json`, or that of a member owning one of
  * `files`, lists in `dependencies` or `devDependencies` isn't installed; else `nuxt-unprepared` when the scan root declares
  * `nuxt` and the app hasn't been prepared; null when neither.
  */
-export function setupProblem(graph: WorkspaceGraph, files: readonly string[], scanRoot: string): SetupProblem | null {
+export function setupProblem(
+  graph: WorkspaceGraph,
+  files: readonly string[],
+  scanRoot: string,
+  outputRoot: string,
+): SetupProblem | null {
   const missing = missingDependency(graph, files);
   if (missing !== null) {
-    return { kind: "dependencies-missing", packageName: missing.packageName, declaredIn: posixPath(relative(graph.rootPath, missing.manifest)) };
+    return { kind: "dependencies-missing", packageName: missing.packageName, declaredIn: declaredInPath(outputRoot, missing.manifest) };
   }
   if (nuxtAppUnprepared(scanRoot)) return { kind: "nuxt-unprepared" };
   return null;

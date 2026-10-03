@@ -50,6 +50,7 @@ import { diagnosticLogLines, formatWarning } from "../reporter/diagnostic-lines.
 import {
   buildWorkspaceGraph,
   createDeclaredDependencyTest,
+  declaredInPath,
   isFirstPartyPath,
   resetFindOwningPackageCache,
   type WorkspaceGraph,
@@ -211,7 +212,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     }
   }
 
-  const setupRefused = uploader ? setupRefusal(workspaceGraph, files, cfg.configDir) : null;
+  const setupRefused = uploader ? setupRefusal(workspaceGraph, files, cfg.configDir, outputRoot) : null;
   if (setupRefused !== null) {
     log.error(setupRefused);
     return { output: null, upload: "failed" };
@@ -551,7 +552,7 @@ export async function scanRepository(input: {
       const manifest = declaredIn(absoluteFromGraphKey(fromFile), packageName);
       if (manifest === null) return false;
       if (!declaringManifest.has(packageName)) {
-        declaringManifest.set(packageName, posixPath(relative(outputRoot, manifest)));
+        declaringManifest.set(packageName, declaredInPath(outputRoot, manifest));
       }
       return true;
     },

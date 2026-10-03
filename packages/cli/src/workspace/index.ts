@@ -1,5 +1,5 @@
 export { buildWorkspaceGraph } from "./build-graph.js";
-export { createDeclaredDependencyTest } from "./declared-deps.js";
+export { createDeclaredDependencyTest, declaredInPath } from "./declared-deps.js";
 export {
   findOwningPackage,
   isFirstPartyPath,

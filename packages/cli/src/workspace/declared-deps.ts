@@ -7,7 +7,8 @@
  * parameter so tests can drive it without filesystem fixtures.
  */
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
 import { isInstalledPackage } from "../walker/installed-package.js";
 import { findOwningPackage } from "./find-owning-package.js";
 import type { WorkspaceGraph, WorkspacePackage } from "./types.js";
@@ -49,6 +50,11 @@ export function createDeclaredDependencyTest(
     }
     return names.has(packageName) ? join(owner.absolutePath, "package.json") : null;
   };
+}
+
+/** A declaring `package.json` as the scan names it: relative to the scan's output root, with `/` separators. */
+export function declaredInPath(outputRoot: string, manifest: string): string {
+  return posixPath(relative(outputRoot, manifest));
 }
 
 /**

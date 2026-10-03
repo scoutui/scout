@@ -53,7 +53,7 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
   const uncommitted = await uncommittedRefusal(cfg.configDir, { files, exempt: [], ignore: cfg.configPath });
   if (uncommitted !== null) return finish({ kind: "refused", reason: "uncommitted", detail: uncommitted.detail });
   if (isPnpProject(cfg.configDir) || isPnpProject(workspaceRoot)) return finish({ kind: "refused", reason: "pnp" });
-  const problem = setupProblem(workspaceGraph, files, cfg.configDir);
+  const problem = setupProblem(workspaceGraph, files, cfg.configDir, outputRoot);
   if (problem !== null) return finish({ kind: "refused", reason: problem.kind });
 
   const { artifact, stats } = await scanRepository({

@@ -136,6 +136,18 @@ describe("an upload's refusal", () => {
     expect(stderr()).toContain(notInstalled("@example/web-button", "app/package.json"));
   });
 
+  it("names the package.json relative to the repository, as the dry run's warning does, when the workspace is in a subfolder", async () => {
+    const dir = stage({
+      "frontend/package.json": JSON.stringify({ name: "root", private: true, workspaces: ["app"] }),
+      "frontend/app/package.json": JSON.stringify({ name: "app", private: true, dependencies: { "@example/web-button": "1.0.0" } }),
+      "frontend/app/scout.config.json": config(["src/**/*.tsx"]),
+      "frontend/app/src/App.tsx": webButtonApp,
+    });
+    await runScan({ cwd: join(dir, "frontend", "app"), quiet: true, upload: true });
+    expect(upload).not.toHaveBeenCalled();
+    expect(stderr()).toContain(notInstalled("@example/web-button", "frontend/app/package.json"));
+  });
+
   it("names the missing dependencies, not the Nuxt preparation, when a Nuxt app has nothing installed", async () => {
     const dir = stage({
       "package.json": JSON.stringify({ name: "nuxt-app", private: true, dependencies: { nuxt: "^4.0.0" } }),
