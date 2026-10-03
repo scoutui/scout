@@ -19,6 +19,7 @@ export interface ConfigFile {
   $schema?: string;
   tsconfigPath?: string;
   aliases?: Record<string, string[]>;
+  install?: string;
 }
 
 const ajv = new Ajv({ allErrors: true, strict: false });

@@ -27,8 +27,8 @@ export function preScanUrl(host: string): string {
   return `${host.replace(/\/$/, "")}/api/scans/preflight`;
 }
 
-/** The pre-scan check's question for a scan, from the metadata it was stamped with. */
-export function preScanRequest(meta: StampedMeta, rescan: boolean): PreScanRequest {
+/** The pre-scan check's question for these commits, from the metadata a scan was stamped with. */
+export function preScanRequest(meta: StampedMeta, rescan: boolean, commits: readonly string[]): PreScanRequest {
   return {
     repoId: meta.repo.id,
     remote: meta.repo.gitRemote,
@@ -36,7 +36,7 @@ export function preScanRequest(meta: StampedMeta, rescan: boolean): PreScanReque
     scannerVersion: meta.scannerVersion,
     schemaVersion: SCHEMA_VERSION,
     rescan,
-    commits: [meta.repo.commit],
+    commits: [...commits],
   };
 }
 

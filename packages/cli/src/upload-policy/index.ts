@@ -14,10 +14,26 @@ const DEPENDENCIES_NOT_INSTALLED =
  * prepared.
  */
 export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], scanRoot: string): string | null {
-  if (!declaredDependenciesInstalled(graph, files)) return DEPENDENCIES_NOT_INSTALLED;
-  if (nuxtAppUnprepared(scanRoot)) {
+  const problem = setupProblem(graph, files, scanRoot);
+  if (problem === "dependencies-missing") return DEPENDENCIES_NOT_INSTALLED;
+  if (problem === "nuxt-unprepared") {
     return "Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.";
   }
+  return null;
+}
+
+/**
+ * What stops an upload before scanning: `dependencies-missing` when a package that the workspace root's `package.json`, or
+ * that of a member owning one of `files`, lists in `dependencies` or `devDependencies` isn't installed; else
+ * `nuxt-unprepared` when the scan root declares `nuxt` and the app hasn't been prepared; null when neither.
+ */
+export function setupProblem(
+  graph: WorkspaceGraph,
+  files: readonly string[],
+  scanRoot: string,
+): "dependencies-missing" | "nuxt-unprepared" | null {
+  if (!declaredDependenciesInstalled(graph, files)) return "dependencies-missing";
+  if (nuxtAppUnprepared(scanRoot)) return "nuxt-unprepared";
   return null;
 }
 

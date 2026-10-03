@@ -5,7 +5,7 @@ sidebar_label: "Config"
 
 # Config reference
 
-`scan` reads `scout.config.json` from the current directory, or the file named by [`--config`](/docs/reference/cli#scan). The file is plain JSON: comments and trailing commas are errors.
+[`scan`](/docs/reference/cli#scan) and [`backfill`](/docs/reference/cli#backfill) read `scout.config.json` from the current directory, or the file named by their `--config` flag. The file is plain JSON: comments and trailing commas are errors.
 
 The smallest valid config:
 
@@ -15,7 +15,7 @@ The smallest valid config:
 }
 ```
 
-The *config folder* is the folder that holds the config file. Relative paths in the config resolve against it, whatever directory you run `scan` from. The one exception is `aliases`; see [Paths](#paths).
+The *config folder* is the folder that holds the config file. Relative paths in the config resolve against it, whatever directory you run `scan` or `backfill` from. The one exception is `aliases`; see [Paths](#paths).
 
 ## Fields
 
@@ -35,8 +35,16 @@ Only needed when you upload scans to a dashboard.
 
 | Field | Type | Default | Behavior |
 | --- | --- | --- | --- |
-| `host` | non-empty string | none | Dashboard that `scan` uploads to and the `auth` commands sign in to. `--host` and `SCOUTUI_HOST` win over it; it wins over your default host. See [Host resolution](/docs/reference/cli#host-resolution). `init` writes it when you give a dashboard address. |
-| `branch` | non-empty string | the remote's default branch | Branch the dashboard tracks. Without it, `scan` follows the remote's default branch as the clone recorded it (`<remote>/HEAD`). `init` writes it when it can tell which branch that is. |
+| `host` | non-empty string | none | Dashboard that `scan` and `backfill` upload to and the `auth` commands sign in to. `--host` and `SCOUTUI_HOST` win over it; it wins over your default host. See [Host resolution](/docs/reference/cli#host-resolution). `init` writes it when you give a dashboard address. |
+| `branch` | non-empty string | the remote's default branch | Branch the dashboard tracks. Without it, `scan` and `backfill` follow the remote's default branch as the clone recorded it (`<remote>/HEAD`). `init` writes it when it can tell which branch that is. |
+
+### Backfill fields
+
+Only [`backfill`](/docs/reference/cli#backfill) reads this field. `scan` ignores it, and `init` never writes it.
+
+| Field | Type | Default | Behavior |
+| --- | --- | --- | --- |
+| `install` | non-empty string | none: `backfill` works out the install from the lockfile | Command `backfill` runs at each commit to install dependencies, through the shell, from the top of the repository. It replaces `backfill`'s own install, `nuxt prepare` included, so for a Nuxt app the command must prepare the app too. Example: `"yarn install --immutable"`. |
 
 ### Import resolution fields
 
@@ -97,7 +105,7 @@ The [repo id](/docs/reference/glossary#repo-id) comes from the first of these th
 
 ## Validation errors
 
-A config error stops `scan` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, and `<folder>` the config folder.
+A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, and `<folder>` the config folder.
 
 | Problem | Message |
 | --- | --- |

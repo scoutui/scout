@@ -27,7 +27,7 @@ import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 import { Logger } from "../util/log.js";
-import { describeUploadError, UploadRefusedError } from "../upload.js";
+import { describeUploadError, UploadRefusedError, uploadPending } from "../upload.js";
 import type { AuthedUploader } from "../auth/upload-auth.js";
 import { errorMessage, errorStack } from "../util/errors.js";
 import { CliError } from "../cli/parse.js";
@@ -188,14 +188,13 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
         ...(opts.hostOverride !== undefined ? { flagHost: opts.hostOverride } : {}),
         ...(cfg.host !== undefined ? { configHost: cfg.host } : {}),
         onStatus: (status) => {
-          const pending = status.state === "queued" || status.state === "processing" || (!status.readable && status.state === "duplicate");
-          if (pending && !waiting) {
+          if (uploadPending(status) && !waiting) {
             waiting = true;
             log.info("Waiting for the dashboard to process the scan…");
           }
         },
       });
-      const [answer] = (await uploader.check(preScanRequest(meta, opts.rescan === true), log)) ?? [];
+      const [answer] = (await uploader.check(preScanRequest(meta, opts.rescan === true, [meta.repo.commit]), log)) ?? [];
       if (answer?.decision === "skip") {
         log.result(alreadyOnDashboard(meta.repo.commit, new URL(answer.url, uploader.base).href));
         return { output: null, upload: "exists" };

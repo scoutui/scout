@@ -33,6 +33,7 @@ In CI, use an upload token instead. See [Run a scan and upload in CI](https://sc
 | --- | --- |
 | `scout init` | Creates `scout.config.json` for the repo |
 | `scout scan` | Scans the repo and uploads the scan to the dashboard; `--dry-run` writes it to `scout-scan.json` instead |
+| `scout backfill` | Scans past commits on the tracked branch, one per week, and uploads them |
 | `scout auth login`, `status`, `logout` | Signs in to a dashboard, shows the sign-in, or ends it |
 
 The [CLI reference](https://scoutui.dev/docs/reference/cli) lists every flag, exit code and environment variable, and the [config reference](https://scoutui.dev/docs/reference/config) every field in `scout.config.json`.

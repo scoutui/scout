@@ -27,6 +27,8 @@ What one file can't answer are questions that span repos or time, and those are 
 
 The CLI sends scans to the dashboard; the dashboard never reaches into your repos. `scout scan` scans and sends the artifact, and writes no file. To keep the artifact as a file, run `scout scan --dry-run`: it writes `scout-scan.json` and doesn't contact the dashboard.
 
+`scout scan` sends the commit you have checked out. Past commits come in through `scout backfill`, which scans one commit a week of the tracked branch's history, each in a temporary checkout, and uploads them. A repo's charts can then show its history straight away. See [Fill in a repo's history](/docs/guides/fill-in-a-repos-history).
+
 Before it scans, `scout scan` checks everything that would stop the upload, so nobody waits for a scan the dashboard won't take:
 
 - The commit is on the branch the dashboard tracks, with no uncommitted changes and the clone's full history.

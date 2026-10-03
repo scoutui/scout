@@ -18,6 +18,11 @@ export type UploadStatus = {
   error?: { code: string; message: string };
 };
 
+/** Whether the dashboard is still working on an upload: queued, processing, or a duplicate that isn't readable yet. */
+export function uploadPending(status: UploadStatus): boolean {
+  return status.state === "queued" || status.state === "processing" || (!status.readable && status.state === "duplicate");
+}
+
 function statusUrl(host: string, receipt: UploadReceipt): string {
   const base = new URL(host);
   const url = new URL(receipt.statusUrl, base);

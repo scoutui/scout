@@ -9,4 +9,5 @@ export type ResolvedConfig = {
   gitignore: boolean;
   tsconfigPath?: string;
   aliases?: Record<string, string[]>;
+  install?: string;
 };

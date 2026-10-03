@@ -20,7 +20,10 @@ export class CliError extends Error {
   }
 }
 
-export const KNOWN_COMMANDS = ["scan", "init", "auth"] as const;
+export const KNOWN_COMMANDS = ["scan", "backfill", "init", "auth"] as const;
+
+/** The hidden command backfill runs in a child process to scan one commit. */
+export const INTERNAL_COMMIT_SCAN = "__backfill-scan";
 
 const SCAN_OPTIONS = {
   config: { type: "string" },
@@ -30,6 +33,14 @@ const SCAN_OPTIONS = {
   "dry-run": { type: "boolean" },
   rescan: { type: "boolean" },
   host: { type: "string" },
+} satisfies OptionsConfig;
+
+const BACKFILL_OPTIONS = {
+  since: { type: "string" },
+  rescan: { type: "boolean" },
+  config: { type: "string" },
+  host: { type: "string" },
+  quiet: { type: "boolean" },
 } satisfies OptionsConfig;
 
 const INIT_OPTIONS = {
@@ -44,6 +55,7 @@ const AUTH_OPTIONS = { host: { type: "string" } } satisfies OptionsConfig;
 
 const COMMANDS: Record<string, { options: OptionsConfig; allowPositionals: boolean }> = {
   scan: { options: SCAN_OPTIONS, allowPositionals: false },
+  backfill: { options: BACKFILL_OPTIONS, allowPositionals: false },
   init: { options: INIT_OPTIONS, allowPositionals: false },
   auth: { options: AUTH_OPTIONS, allowPositionals: true },
 };

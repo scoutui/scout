@@ -27,6 +27,11 @@
         "type": "array",
         "items": { "type": "string", "minLength": 1 }
       }
+    },
+    "install": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The command scout backfill runs at each commit to install dependencies, from the repository root. Leave it out and backfill works it out from the lockfile."
     }
   }
 }

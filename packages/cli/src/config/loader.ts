@@ -77,5 +77,6 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   if (parsed.branch !== undefined) resolved.branch = parsed.branch;
   if (parsed.tsconfigPath !== undefined) resolved.tsconfigPath = parsed.tsconfigPath;
   if (parsed.aliases !== undefined) resolved.aliases = parsed.aliases;
+  if (parsed.install !== undefined) resolved.install = parsed.install;
   return resolved;
 }

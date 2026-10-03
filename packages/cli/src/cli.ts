@@ -5,9 +5,11 @@ import { Logger, debugRequested } from "./util/log.js";
 import { readVersion } from "./util/version.js";
 import { readCliPackage } from "./scan/meta.js";
 import { topHelp, commandHelp } from "./cli/help.js";
-import { parseCommand, KNOWN_COMMANDS, unknownCommandMessage, CliError } from "./cli/parse.js";
+import { parseCommand, KNOWN_COMMANDS, INTERNAL_COMMIT_SCAN, unknownCommandMessage, CliError } from "./cli/parse.js";
 import { reportError } from "./cli/report.js";
+import { parseSince } from "./backfill/commits.js";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { isInteractive } from "./util/interactive.js";
 import { clackAdapter, PromptCancelledError } from "./prompts/adapter.js";
 import type { Framework, InitOptions } from "./commands/init.js";
@@ -36,6 +38,11 @@ async function main(argv: string[], log: Logger): Promise<number> {
     return 0;
   }
 
+  if (cmd === INTERNAL_COMMIT_SCAN) {
+    const { runCommitScan } = await import("./backfill/scan-commit.js");
+    return await runCommitScan(rest, log);
+  }
+
   if (!isKnownCommand(cmd)) {
     log.error(unknownCommandMessage(cmd));
     return 2;
@@ -49,6 +56,8 @@ async function main(argv: string[], log: Logger): Promise<number> {
   switch (cmd) {
     case "scan":
       return await runScanCommand(rest, log);
+    case "backfill":
+      return await runBackfillCommand(rest, log);
     case "init":
       return await runInitCommand(rest, log);
     case "auth": {
@@ -74,6 +83,22 @@ async function runScanCommand(rest: string[], log: Logger): Promise<number> {
   if (rescan) scanOpts.rescan = true;
   if (typeof host === "string") scanOpts.hostOverride = host;
   return scanExitCode(await runScan(scanOpts));
+}
+
+async function runBackfillCommand(rest: string[], log: Logger): Promise<number> {
+  const { values } = parseCommand("backfill", rest);
+  const { since, rescan, config, host, quiet } = values;
+  const sinceDate = typeof since === "string" ? parseSince(since) : undefined;
+  if (sinceDate === null) throw new CliError("--since must be a date in the form YYYY-MM-DD, for example 2026-04-02.");
+  const { runBackfill } = await import("./commands/backfill.js");
+  return await runBackfill({
+    configPath: typeof config === "string" ? config : "./scout.config.json",
+    ...(sinceDate !== undefined ? { since: sinceDate } : {}),
+    rescan: Boolean(rescan),
+    ...(typeof host === "string" ? { hostOverride: host } : {}),
+    log: new Logger({ quiet: Boolean(quiet), debug: log.debug }),
+    cliEntry: fileURLToPath(import.meta.url),
+  });
 }
 
 async function runInitCommand(rest: string[], log: Logger): Promise<number> {
