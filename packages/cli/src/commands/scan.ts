@@ -188,7 +188,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   }
 
   let uploader: AuthedUploader | undefined;
-  // With motion, the upload's progress turns in place on stderr instead of printing a line.
+  // When styled, the upload's progress turns in place on stderr instead of printing a line.
   let uploadLine: { done(): void } | undefined;
   const showUpload = (label: string): void => {
     uploadLine?.done();

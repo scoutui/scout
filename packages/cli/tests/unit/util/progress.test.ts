@@ -192,8 +192,8 @@ describe("progress with motion", () => {
   });
 
   it.each([
-    [1, "╸" + "─".repeat(29)],
-    [30, "━".repeat(15) + "─".repeat(15)],
+    [1, `╸${"─".repeat(29)}`],
+    [30, `${"━".repeat(15)}${"─".repeat(15)}`],
     [60, "━".repeat(30)],
   ])("fills the bar in half cells (%i of 60)", (count, filled) => {
     const p = createProgress({ total: 60, writer, isTTY: true, columns: 80, motion: plain });
