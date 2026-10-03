@@ -1,8 +1,9 @@
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
 import { type AuthedUploader, createAuthedUploader } from "../auth/upload-auth.js";
-import { defaultSince, firstParentChain, formatDay, weeklyCommits } from "../backfill/commits.js";
+import { type ChainCommit, defaultSince, firstParentChain, formatDay, weeklyCommits } from "../backfill/commits.js";
 import {
   type Corepack,
   type CorepackPlan,
@@ -16,15 +17,15 @@ import {
   readPackageManager,
 } from "../backfill/install.js";
 import { killProcessGroup, type ProcessResult, runProcess } from "../backfill/run-process.js";
-import { COMMIT_SCAN_FILE, readCommitScanResult } from "../backfill/scan-commit.js";
+import { COMMIT_SCAN_FILE, type CommitScanResult, readCommitScanResult } from "../backfill/scan-commit.js";
 import { checkoutCommit, createWorktree, removeWorktreeSync } from "../backfill/worktree.js";
 import { INTERNAL_COMMIT_SCAN } from "../cli/parse.js";
 import { declaresNuxt } from "../scan/global-components.js";
 import { readCheckout, stampMeta } from "../scan/meta.js";
-import { type CommitAnswer, preScanRequest } from "../upload-policy/dashboard.js";
+import { type CommitAnswer, preScanRequest, preScanUrl } from "../upload-policy/dashboard.js";
 import { checkTrackedBranch } from "../upload-policy/git-state.js";
-import { describeUploadError, uploadPending } from "../upload.js";
-import { readGitToplevel } from "../util/git.js";
+import { describeUploadError, UploadError, UploadRefusedError, type UploadResult, uploadPending } from "../upload.js";
+import { readGitToplevel, runGit } from "../util/git.js";
 import type { Logger } from "../util/log.js";
 import { loadScanConfig } from "./scan.js";
 
@@ -59,10 +60,23 @@ type RunContext = {
   corepack: Corepack | undefined;
 };
 
+type Refusal = Extract<CommitScanResult, { kind: "refused" }>["reason"];
+
 const PRE_SCAN_CHUNK = 500;
+
+const FAILURES_TO_STOP = 3;
 
 const COREPACK_FAILED =
   "Couldn't download Corepack, which Scout needs to install Yarn and pnpm projects. Check your connection and npm registry settings, then run scout backfill again.";
+
+const RUN_AGAIN = "Run scout backfill again to continue: it skips what's already uploaded.";
+
+const REFUSAL_REASONS: Record<Refusal, string> = {
+  uncommitted: `the install changed tracked files. Set "install" in scout.config.json to the command this repo installs with.`,
+  pnp: "it installs with Yarn Plug'n'Play, which Scout can't read.",
+  "dependencies-missing": "some dependencies are missing after the install.",
+  "nuxt-unprepared": "nuxt prepare failed.",
+};
 
 /**
  * Scans one commit a week of the tracked branch's history, newest first, each in a temporary worktree with its
@@ -71,9 +85,13 @@ const COREPACK_FAILED =
 export async function runBackfill(opts: BackfillOptions): Promise<number> {
   const state: RunState = { run: undefined, pid: undefined };
   const onSignal = (): void => {
-    if (state.pid !== undefined) killProcessGroup(state.pid);
-    if (state.run !== undefined) removeWorktreeSync(state.run.cwd, state.run.dir);
-    process.exit(130);
+    try {
+      if (state.pid !== undefined) killProcessGroup(state.pid);
+      if (state.run !== undefined) removeWorktreeSync(state.run.cwd, state.run.dir);
+    } finally {
+      process.stderr.write(`Stopped. ${RUN_AGAIN}\n`);
+      process.exit(130);
+    }
   };
   process.on("SIGINT", onSignal);
   process.on("SIGTERM", onSignal);
@@ -105,6 +123,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
   }
   const top = (await readGitToplevel(cfg.configDir)) ?? cfg.configDir;
   const configText = await readFile(cfg.configPath, "utf8");
+  const folder = posixPath(relative(top, cfg.configDir));
 
   const since = opts.since ?? defaultSince(new Date());
   const ref = `${tracked.remote}/${tracked.branch}`;
@@ -139,24 +158,48 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     log.error(message, detail);
     return 1;
   }
+  const authed = uploader;
 
-  const already = picked.filter(({ commit }) => answers.get(commit)?.decision === "skip").length;
-  const refused = picked.filter(({ commit }) => answers.get(commit)?.decision === "refuse").length;
+  const onDashboard = picked.filter(({ commit }) => answers.get(commit)?.decision === "skip");
   const toScan = picked.filter(({ commit }) => {
     const decision = answers.get(commit)?.decision;
     return decision !== "refuse" && (rescan || decision !== "skip");
   });
-  const counts = { uploaded: 0, already: rescan ? 0 : already, skipped: refused, replaced: 0 };
-  const link = new URL(`/repos/${encodeURIComponent(meta.repo.id)}`, uploader.base).href;
+  const counts = { uploaded: 0, already: rescan ? 0 : onDashboard.length, skipped: 0, replaced: 0 };
+  const link = new URL(`/repos/${encodeURIComponent(meta.repo.id)}`, authed.base).href;
   const endLine = (): string =>
     `Backfilled ${tracked.branch} since ${formatDay(since)}: ${counts.uploaded} uploaded, ${counts.already} already there, ${counts.skipped} skipped${rescan ? `, ${counts.replaced} replaced` : ""}. See ${link}`;
 
+  let earliest: string | undefined = onDashboard.map(({ committedAt }) => committedAt).sort()[0];
+  let fixable = 0;
+  const streak = { failures: 0, fixable: 0 };
+  const skip = ({ commit, committedAt }: ChainCommit, reason: string, detail?: string): void => {
+    counts.skipped++;
+    log.warn(`Skipped ${commit.slice(0, 7)} (${formatDay(committedAt)}): ${reason}`, detail);
+  };
+  const fail = (entry: ChainCommit, reason: string, canFix: boolean, detail?: string): void => {
+    skip(entry, reason, detail);
+    streak.failures++;
+    if (canFix) streak.fixable++;
+  };
+  const refused = (entry: ChainCommit, err: UploadRefusedError): void => {
+    const { message, detail } = describeUploadError(err, authed.base);
+    skip(entry, message.replace(/^Couldn't upload the scan: /, ""), detail);
+  };
+  const exitCode = (): number => (fixable + streak.fixable > 0 ? 1 : 0);
+
   const [first] = toScan;
+  if (first !== undefined) {
+    progress(startLine({ found: picked.length, already: onDashboard.length, scan: toScan.length, rescan, ref, since: formatDay(since) }));
+  }
+  for (const entry of picked) {
+    const answer = answers.get(entry.commit);
+    if (answer?.decision === "refuse") refused(entry, new UploadRefusedError(answer.message, answer.code, preScanUrl(authed.base)));
+  }
   if (first === undefined) {
     log.result(endLine());
     return 0;
   }
-  progress(startLine({ found: picked.length, already, scan: toScan.length, rescan, ref, since: formatDay(since) }));
 
   const runDir = await realpath(await mkdtemp(join(tmpdir(), "scout-backfill-")));
   state.run = { cwd: cfg.configDir, dir: runDir };
@@ -169,10 +212,29 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     corepack: undefined,
   };
   const configPath = join(checkoutDir, relative(top, cfg.configPath));
+  const hasFolder = async (commit: string): Promise<boolean> =>
+    folder === "" || (await runGit(checkoutDir, ["cat-file", "-e", `${commit}:${folder}`])).ok;
 
-  for (const [index, { commit, committedAt }] of toScan.entries()) {
+  for (const [index, entry] of toScan.entries()) {
+    const { commit, committedAt } = entry;
     progress(`Scanning ${commit.slice(0, 7)} (${formatDay(committedAt)}), ${index + 1} of ${toScan.length}…`);
     await checkoutCommit(checkoutDir, commit);
+    if (!(await hasFolder(commit))) {
+      let newer: ChainCommit | undefined;
+      for (const candidate of picked.slice(0, picked.indexOf(entry)).reverse()) {
+        if (await hasFolder(candidate.commit)) {
+          newer = candidate;
+          break;
+        }
+      }
+      if (newer === undefined) {
+        log.error(`${folder} isn't on ${ref} yet, so there's nothing to backfill.`);
+        return 1;
+      }
+      log.result(`${folder} doesn't exist before ${formatDay(newer.committedAt)}, so the chart starts there.`);
+      log.result(endLine());
+      return exitCode();
+    }
     await writeFile(configPath, configText);
 
     const installed = await install(work, state, log);
@@ -181,34 +243,92 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
       return 1;
     }
     if (installed.kind !== "installed") {
-      counts.skipped++;
-      continue;
+      const timedOut = installed.kind === "install-failed" && installed.result.timedOut;
+      fail(entry, installSkipReason(installed), true, timedOut ? "The install was stopped after 10 minutes." : undefined);
+    } else {
+      const outDir = join(runDir, commit);
+      await mkdir(outDir);
+      const child = await finished(
+        state,
+        runProcess(process.execPath, [opts.cliEntry, INTERNAL_COMMIT_SCAN, configPath, outDir, ...(log.debug ? ["--debug"] : [])], {
+          cwd: work.configDir,
+        }),
+      );
+      log.detail(child.output);
+      const result = await readCommitScanResult(outDir);
+      if (result === null) {
+        if (!log.debug) process.stderr.write(child.output);
+        return 1;
+      }
+      if (result.kind === "refused") {
+        fail(entry, REFUSAL_REASONS[result.reason], result.reason !== "pnp", result.detail);
+      } else if (result.kind === "empty") {
+        skip(entry, "the scan found no components.");
+      } else {
+        waiting = false;
+        try {
+          const uploaded = await uploadWhenAllowed(authed, await readFile(join(outDir, COMMIT_SCAN_FILE), "utf8"), rescan, progress);
+          if (uploaded.status === "exists") counts.already++;
+          else if (rescan && uploaded.replaced) counts.replaced++;
+          else counts.uploaded++;
+          if (earliest === undefined || committedAt < earliest) earliest = committedAt;
+          fixable += streak.fixable;
+          streak.failures = 0;
+          streak.fixable = 0;
+        } catch (err) {
+          if (!(err instanceof UploadRefusedError)) {
+            const { message, detail } = describeUploadError(err, authed.base);
+            log.error(message, detail);
+            process.stderr.write(`${RUN_AGAIN}\n`);
+            return 1;
+          }
+          refused(entry, err);
+        }
+      }
+      await rm(outDir, { recursive: true, force: true });
     }
 
-    const outDir = join(runDir, commit);
-    await mkdir(outDir);
-    const child = await finished(
-      state,
-      runProcess(process.execPath, [opts.cliEntry, INTERNAL_COMMIT_SCAN, configPath, outDir, ...(log.debug ? ["--debug"] : [])], {
-        cwd: work.configDir,
-      }),
-    );
-    log.detail(child.output);
-    const result = await readCommitScanResult(outDir);
-    if (result?.kind === "scanned") {
-      waiting = false;
-      const uploaded = await uploader.upload(await readFile(join(outDir, COMMIT_SCAN_FILE), "utf8"), { rescan });
-      if (uploaded.status === "exists") counts.already++;
-      else if (rescan && uploaded.replaced) counts.replaced++;
-      else counts.uploaded++;
-    } else {
-      counts.skipped++;
+    if (streak.failures === FAILURES_TO_STOP) {
+      if (earliest === undefined) {
+        log.error(
+          `Couldn't install the ${FAILURES_TO_STOP} newest commits, so nothing was backfilled. Check the lines above, or set "install" in scout.config.json.`,
+        );
+        return 1;
+      }
+      log.result(`History before ${formatDay(earliest)} can't be installed with today's tools, so the chart starts there.`);
+      log.result(endLine());
+      return fixable > 0 ? 1 : 0;
     }
-    await rm(outDir, { recursive: true, force: true });
   }
 
   log.result(endLine());
-  return 0;
+  return exitCode();
+}
+
+/** Uploads `artifactJson`, and while the dashboard answers 429, says how long it waits, waits, and uploads it again. */
+async function uploadWhenAllowed(
+  uploader: AuthedUploader,
+  artifactJson: string,
+  rescan: boolean,
+  progress: (line: string) => void,
+): Promise<UploadResult> {
+  for (;;) {
+    try {
+      return await uploader.upload(artifactJson, { rescan });
+    } catch (err) {
+      if (!(err instanceof UploadError) || err.code !== 429) throw err;
+      const minutes = Math.max(1, Math.ceil((err.retryAfterSeconds ?? 60) / 60));
+      progress(`The dashboard asked Scout to slow down. Continuing in ${minutes === 1 ? "1 minute" : `${minutes} minutes`}…`);
+      await new Promise((resolve) => setTimeout(resolve, minutes * 60_000));
+    }
+  }
+}
+
+/** Why a commit that didn't install is skipped. */
+function installSkipReason(installed: Exclude<Install, { kind: "installed" | "corepack-failed" }>): string {
+  if (installed.kind === "no-lockfile") return "there's no lockfile to install from.";
+  if (installed.kind === "nuxt-failed") return "nuxt prepare failed.";
+  return installed.label === null ? "the install command in scout.config.json failed." : `${installed.label} failed.`;
 }
 
 /** Installs the commit checked out in `work`: with the config's `install` command, else from its lockfile, then `nuxt prepare` for a Nuxt app. */
