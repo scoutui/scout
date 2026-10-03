@@ -69,7 +69,9 @@ const FAILURES_TO_STOP = 3;
 const COREPACK_FAILED =
   "Couldn't download Corepack, which Scout needs to install Yarn and pnpm projects. Check your connection and npm registry settings, then run scout backfill again.";
 
-const RUN_AGAIN = "Run scout backfill again to continue: it skips what's already uploaded.";
+const RUN_AGAIN = "Run scout backfill again to continue: it skips what's already on the dashboard.";
+
+const RETRY_SKIPPED = "Run scout backfill --debug to retry the skipped commits and see why they failed.";
 
 const REFUSAL_REASONS: Record<Refusal, string> = {
   uncommitted: `the install changed tracked files. Set "install" in scout.config.json to the command this repo installs with.`,
@@ -173,7 +175,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
   const counts = { uploaded: 0, already: rescan ? 0 : onDashboard.length, skipped: 0, replaced: 0 };
   const link = new URL(`/repos/${encodeURIComponent(meta.repo.id)}`, authed.base).href;
   const endLine = (): string =>
-    `Backfilled ${tracked.branch} since ${formatDay(since)}: ${counts.uploaded} uploaded, ${counts.already} already there, ${counts.skipped} skipped${rescan ? `, ${counts.replaced} replaced` : ""}. See ${link}`;
+    `Backfilled ${tracked.branch} since ${formatDay(since)}: ${counts.uploaded} uploaded, ${rescan ? `${counts.replaced} replaced, ` : ""}${counts.already} already on the dashboard, ${counts.skipped} skipped. See ${link}`;
 
   let earliest: string | undefined = onDashboard.map(({ committedAt }) => committedAt).sort()[0];
   let fixable = 0;
@@ -191,7 +193,12 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     const { message, detail } = describeUploadError(err, authed.base);
     skip(entry, message.replace(/^Couldn't upload the scan: /, ""), detail);
   };
-  const exitCode = (): number => (fixable + streak.fixable > 0 ? 1 : 0);
+  const finish = (): number => {
+    log.result(endLine());
+    if (fixable + streak.fixable === 0) return 0;
+    process.stderr.write(`${RETRY_SKIPPED}\n`);
+    return 1;
+  };
 
   const [first] = toScan;
   if (first !== undefined) {
@@ -233,12 +240,11 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
         }
       }
       if (newer === undefined) {
-        log.error(`${folder} isn't on ${ref} yet, so there's nothing to backfill.`);
+        log.error(`${folder} isn't on ${ref} yet, so there's nothing to backfill. Merge it, run git fetch, then run scout backfill again.`);
         return 1;
       }
-      log.result(`${folder} doesn't exist before ${formatDay(newer.committedAt)}, so the chart starts there.`);
-      log.result(endLine());
-      return exitCode();
+      log.result(`${folder} doesn't exist before ${formatDay(newer.committedAt)}, so the charts start there.`);
+      return finish();
     }
     await writeFile(configPath, configText);
 
@@ -300,18 +306,19 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     if (streak.failures === FAILURES_TO_STOP) {
       if (earliest === undefined) {
         log.error(
-          `Couldn't install the ${FAILURES_TO_STOP} newest commits, so nothing was backfilled. Check the lines above, or set "install" in scout.config.json.`,
+          `Couldn't install the ${FAILURES_TO_STOP} newest commits, so nothing was uploaded. Check the lines above, or set "install" in scout.config.json.`,
         );
         return 1;
       }
-      log.result(`History before ${formatDay(earliest)} can't be installed with today's tools, so the chart starts there.`);
+      log.result(
+        `The ${FAILURES_TO_STOP} commits before ${formatDay(earliest)} wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.`,
+      );
       log.result(endLine());
       return fixable > 0 ? 1 : 0;
     }
   }
 
-  log.result(endLine());
-  return exitCode();
+  return finish();
 }
 
 /** Uploads `artifactJson`, and while the dashboard answers 429, says how long it waits, waits, and uploads it again. */

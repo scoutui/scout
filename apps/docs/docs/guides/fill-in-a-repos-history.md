@@ -50,7 +50,7 @@ If the dashboard is receiving too many uploads, backfill prints `The dashboard a
 When it's done, it prints what happened and links to the repo's page, where the charts now show the history:
 
 ```text
-Backfilled main since 3 Apr 2026: 26 uploaded, 1 already there, 0 skipped. See https://scout.example.com/repos/storefront
+Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
 ```
 
 ## Choose how far back
@@ -77,7 +77,7 @@ The first line says how many scans it replaces:
 Found 27 commits on origin/main, one a week since 3 Apr 2026. Scout will scan all 27, replacing the 1 already on the dashboard.
 ```
 
-The last line counts them, for example `26 uploaded, 0 already there, 0 skipped, 1 replaced`.
+The last line counts them, for example `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped`.
 
 ## Fix a skipped commit
 
@@ -99,9 +99,9 @@ Warning: Skipped 51d8e20 (18 Sep 2026): pnpm install failed.
 | `the scan found no components.` | Usually nothing: the code that `include` matches wasn't there yet at that commit. |
 | Anything else | The dashboard refused that commit's scan. The line says why. |
 
-Backfill installs a Yarn or pnpm project with the version each commit names in its `packageManager`, then in `devEngines`, Volta, mise or asdf's `.tool-versions`, else with the newest release that writes its lockfile's format. Older commits of a Yarn 2 or later project that name no version can fail with `yarn install failed.`, because their lockfile doesn't say which Yarn wrote it. Set `install` to the command the repo installs with.
+Backfill uses the Yarn or pnpm version each commit pins. If older commits pin none and fail with `yarn install failed.`, set [`install`](#set-the-install-command). The [CLI reference](/docs/reference/cli#how-it-installs-each-commit) lists where backfill looks for a pin.
 
-A skip you can fix, one of the first six reasons, makes backfill exit `1` when it ends, so a CI job shows that history is missing; the [exit codes](/docs/reference/cli#backfill-exit-codes) list the exceptions. Once you've fixed it, run backfill again: it scans only the commits that aren't on the dashboard yet.
+If a commit was skipped for a reason you can fix, backfill exits `1` when it ends, so a CI job shows that history is missing, and prints `Run scout backfill --debug to retry the skipped commits and see why they failed.` The [exit codes](/docs/reference/cli#backfill-exit-codes) list the exceptions. Once you've fixed it, run backfill again: it scans only the commits that aren't on the dashboard yet.
 
 ### Set the install command
 
@@ -120,23 +120,23 @@ For a Nuxt app, the command must also prepare the app, because backfill then doe
 
 `scout scan` ignores `install`. See the [config reference](/docs/reference/config#backfill-fields).
 
-## Where the chart starts
+## Where the charts start
 
-Backfill can stop before it reaches the `--since` date. It then prints where the chart's history starts, followed by the last line:
+Backfill can stop before it reaches the `--since` date. It then prints where the charts start, followed by the last line:
 
-- `History before 6 Apr 2026 can't be installed with today's tools, so the chart starts there.` Three commits in a row were skipped because they couldn't be installed, which usually means older history needs older tools. The date is that of the oldest commit backfill picked that's on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
-- `apps/web doesn't exist before 6 Apr 2026, so the chart starts there.` The config's folder isn't in older commits, for example because the app was created or moved then. Older commits can't be scanned with this config.
+- `The 3 commits before 6 Apr 2026 wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.` Three commits in a row were skipped because they couldn't be installed, which usually means older history needs older tools. The date is that of the oldest commit backfill picked that's on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
+- `apps/web doesn't exist before 6 Apr 2026, so the charts start there.` The config's folder isn't in older commits, for example because the app was created or moved then. Older commits can't be scanned with this config.
 
 ## If backfill stops with `Error:`
 
 | Message starts with | What to do |
 | --- | --- |
-| `Error: Couldn't install the 3 newest commits, so nothing was backfilled.` | Fix what the skip lines above it name, often by setting [`install`](#set-the-install-command), and run backfill again. |
+| `Error: Couldn't install the 3 newest commits, so nothing was uploaded.` | Fix what the skip lines above it name, often by setting [`install`](#set-the-install-command), and run backfill again. |
 | `Error: <folder> isn't on <remote>/<branch> yet` | The config's folder is only on a branch that isn't merged yet. Merge it, fetch, and run backfill again. |
 | `Error: Couldn't download Corepack` | Check your connection and your npm registry settings, then run backfill again. Or set [`install`](#set-the-install-command) to the command the repo installs with: backfill then doesn't need Corepack. |
 | `Error: Couldn't scan <commit> (<date>): the scan stopped unexpectedly.` | Run backfill again with `--debug` to see how far the scan got before it stopped. A scan can stop like this when it runs out of memory, for example in a container with a low memory limit. |
 | `Error: Couldn't check out <commit> (<date>) in a temporary folder.` | Run backfill again with `--debug` to read git's error. Fix what it names, for example by freeing disk space, then run backfill again. |
-| An upload error, such as `Error: Couldn't reach <host>.`, followed by `Run scout backfill again to continue: it skips what's already uploaded.` | Fix what the error names, then run backfill again. See [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload). |
+| An upload error, such as `Error: Couldn't reach <host>.`, followed by `Run scout backfill again to continue: it skips what's already on the dashboard.` | Fix what the error names, then run backfill again. See [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload). |
 
 Before it scans anything, backfill stops on the same problems as `scout scan`, such as a shallow clone or a missing sign-in, with the same lines. See [An upload is refused or fails](/docs/guides/troubleshoot-a-scan#an-upload-is-refused-or-fails).
 
@@ -145,13 +145,13 @@ Before it scans anything, backfill stops on the same problems as `scout scan`, s
 Press Ctrl-C to stop. Backfill removes its temporary checkout and prints:
 
 ```text
-Stopped. Run scout backfill again to continue: it skips what's already uploaded.
+Stopped. Run scout backfill again to continue: it skips what's already on the dashboard.
 ```
 
-Run it again whenever you like. It counts the commits it has uploaded as already there and scans only the rest. Leave out `--rescan` if you used it, or it scans them all again. Once every commit is on the dashboard, a run prints only the last line:
+Run it again whenever you like. It counts the commits it has uploaded as already on the dashboard and scans only the rest. Leave out `--rescan` if you used it, or it scans them all again. Once every commit is on the dashboard, a run prints only the last line:
 
 ```text
-Backfilled main since 3 Apr 2026: 0 uploaded, 27 already there, 0 skipped. See https://scout.example.com/repos/storefront
+Backfilled main since 3 Apr 2026: 0 uploaded, 27 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
 ```
 
 For every flag, skip and exit code, see the [CLI reference](/docs/reference/cli#backfill).

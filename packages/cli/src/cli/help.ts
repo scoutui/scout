@@ -2,7 +2,7 @@ const TOP = `scout <command> [options]
 
 Commands:
   scan          Scan the repo and upload the scan to the dashboard
-  backfill      Scan past commits on the tracked branch and upload them to the dashboard
+  backfill      Scan one commit a week of the tracked branch's history and upload each scan
   init          Scaffold scout.config.json
   auth          Sign in / out of a Scout host (login | logout | status)
 
@@ -30,7 +30,7 @@ Options:
 
 const BACKFILL = `scout backfill [options]
 
-Scan past commits on the tracked branch and upload them to the dashboard.
+Scan one commit a week of the tracked branch's history and upload each scan.
 
 Options:
   --since <date>     Earliest commit date, as YYYY-MM-DD (default: six months ago)
@@ -38,7 +38,7 @@ Options:
   --config <path>    Override config path (default: ./scout.config.json)
   --host <url>       Override host URL (else SCOUTUI_HOST, else host in scout.config.json, else your default host)
   --quiet            Hide the progress lines
-  --debug            Also show each scan's output and the install's output
+  --debug            Also show each install's and each scan's output
 `;
 
 const INIT = `scout init [options]

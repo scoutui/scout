@@ -114,7 +114,7 @@ Scans one commit a week of the tracked branch's history, newest first, and uploa
 | `--rescan` | none | off | Also scans the commits the dashboard already has, replacing their scans. |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
 | `--host <url>` | URL | see [Host resolution](#host-resolution) | Dashboard to upload to. |
-| `--quiet` | none | off | Hides the [progress lines](#backfill-output): the `Found` line, the `Scanning` lines and the `slow down` line. Skips, errors, the line saying where the chart starts and the last line still print. |
+| `--quiet` | none | off | Hides the [progress lines](#backfill-output): the `Found` line, the `Scanning` lines and the `slow down` line. Skips, errors, the line saying where the charts start, the last line and the line after it saying to retry with `--debug` still print. |
 
 With [`--debug`](#global-flags), `backfill` also prints each install's and each scan's output, `Waiting for the dashboard to process the scan…` once for each upload, and the detail behind a skip, such as the files an install changed or `The install was stopped after 10 minutes.`
 
@@ -130,7 +130,7 @@ It doesn't check which branch is checked out, or for uncommitted changes.
 
 - The latest commit on `<remote>/<branch>`, whatever its date. `backfill` reads the branch as the clone last fetched it, and doesn't fetch. `<remote>` and `<branch>` are the ones `scan` uploads to.
 - Then, for each earlier week from Monday to Sunday, the newest commit of that week on the branch's first-parent history whose commit date is on or after `--since`. A commit that came into the branch through a merge is never picked; the merge commit can be.
-- Commits the dashboard already has are counted as already there and not scanned, unless `--rescan` is passed.
+- Commits the dashboard already has are counted as already on the dashboard and not scanned, unless `--rescan` is passed.
 
 Every commit is scanned with the current config file, so commits from before the config existed are scanned too. The config's folder must exist at the latest commit.
 
@@ -163,15 +163,15 @@ The first seven are *install skips*. Three in a row stop the run (see [Stop line
 
 | Line | When | Exit code |
 | --- | --- | --- |
-| `History before <date> can't be installed with today's tools, so the chart starts there.` | Three install skips in a row, with at least one commit of the range on the dashboard. `<date>` is the oldest of those commits' dates. | `0`, or `1` after an earlier skip marked *Exit `1`* |
-| `<folder> doesn't exist before <date>, so the chart starts there.` | The config's folder isn't in the commit. `<date>` is the date of the next newer picked commit that has the folder. | `0`, or `1` after a skip marked *Exit `1`* |
-| `Error: Couldn't install the 3 newest commits, so nothing was backfilled. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with no commit of the range on the dashboard. | `1` |
-| `Error: <folder> isn't on <remote>/<branch> yet, so there's nothing to backfill.` | The config's folder isn't in the latest commit. | `1` |
+| `The 3 commits before <date> wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with at least one commit of the range on the dashboard. `<date>` is the oldest of those commits' dates. | `0`, or `1` after an earlier skip marked *Exit `1`* |
+| `<folder> doesn't exist before <date>, so the charts start there.` | The config's folder isn't in the commit. `<date>` is the date of the next newer picked commit that has the folder. | `0`, or `1` after a skip marked *Exit `1`* |
+| `Error: Couldn't install the 3 newest commits, so nothing was uploaded. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with no commit of the range on the dashboard. | `1` |
+| `Error: <folder> isn't on <remote>/<branch> yet, so there's nothing to backfill. Merge it, run git fetch, then run scout backfill again.` | The config's folder isn't in the latest commit. | `1` |
 | `Error: Couldn't download Corepack, which Scout needs to install Yarn and pnpm projects. Check your connection and npm registry settings, then run scout backfill again.` | Downloading Corepack failed. `--debug` prints npm's output. | `1` |
 | `Error: Couldn't scan <commit> (<date>): the scan stopped unexpectedly. Run scout backfill --debug to see how far it got.` | The scan of a commit stopped before it finished, for example because it ran out of memory. Any lines the scan printed come first. `--debug` prints the scan's progress up to where it stopped. | `1` |
 | `Error: Couldn't check out <commit> (<date>) in a temporary folder. Run scout backfill --debug to see git's output.` | Git couldn't check out the commit, for example because the disk is full. `--debug` prints git's output. | `1` |
-| An upload error, then `Run scout backfill again to continue: it skips what's already uploaded.` | An upload failed for a reason other than the dashboard refusing that commit, for example the dashboard can't be reached. | `1` |
-| `Stopped. Run scout backfill again to continue: it skips what's already uploaded.` | Ctrl-C, the terminal closed, or the process received SIGTERM. The temporary checkout is removed first. | `130` |
+| An upload error, then `Run scout backfill again to continue: it skips what's already on the dashboard.` | An upload failed for a reason other than the dashboard refusing that commit, for example the dashboard can't be reached. | `1` |
+| `Stopped. Run scout backfill again to continue: it skips what's already on the dashboard.` | Ctrl-C, the terminal closed, or the process received SIGTERM. The temporary checkout is removed first. | `130` |
 
 `<folder>` is the config's folder, relative to the top of the repository. The first two lines are followed by the last line; the others aren't.
 
@@ -188,10 +188,12 @@ Progress lines print on stderr, and `--quiet` hides them:
 The last line prints on stdout, even with `--quiet`:
 
 ```text
-Backfilled main since 3 Apr 2026: 26 uploaded, 1 already there, 0 skipped. See https://scout.example.com/repos/storefront
+Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
 ```
 
-It names the tracked branch, the `--since` date and the repo's page on the dashboard. *Already there* counts the commits the dashboard already had, whether it said so before the scan or on upload. With `--rescan`, the line also counts the scans it replaced, `0 skipped, 1 replaced.`, and those aren't counted as already there.
+It names the tracked branch, the `--since` date and the repo's page on the dashboard. *Already on the dashboard* counts the commits the dashboard already had, whether it said so before the scan or on upload. With `--rescan`, the line also counts the scans it replaced, after the uploads: `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped.` Those aren't counted as already on the dashboard.
+
+When a skip marked *Exit `1`* makes the run exit `1`, the last line is followed on stderr by `Run scout backfill --debug to retry the skipped commits and see why they failed.`, even with `--quiet`. It doesn't print when the run stops at the history line.
 
 ### Exit codes {#backfill-exit-codes}
 

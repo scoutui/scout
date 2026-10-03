@@ -28,6 +28,8 @@ const DEFAULT_FILES: Record<string, string> = {
 
 const END = "See https://h.example/repos/example%2Fweb\n";
 
+const RETRY = "Run scout backfill --debug to retry the skipped commits and see why they failed.\n";
+
 const NEWER_CLI = "a1c9e04 was scanned with a newer CLI (1.4.0). Upgrade the CLI to 1.4.0 or newer, or run npx @scoutui/cli@1.4.0 scan --rescan.";
 
 type Commit = { date: string; files?: Record<string, string> };
@@ -177,7 +179,7 @@ describe("scout backfill", () => {
         `Scanning ${c5.slice(0, 7)} (18 Jun 2026), 2 of 2…\n`,
       ].join(""),
     );
-    expect(stdout()).toBe("Backfilled main since 1 Jun 2026: 2 uploaded, 2 already there, 0 skipped. See https://h.example/repos/example%2Fweb\n");
+    expect(stdout()).toBe("Backfilled main since 1 Jun 2026: 2 uploaded, 2 already on the dashboard, 0 skipped. See https://h.example/repos/example%2Fweb\n");
     expect(code).toBe(0);
   }, 60_000);
 
@@ -284,7 +286,7 @@ describe("scout backfill", () => {
         run.kill("SIGINT");
 
         expect(await exited).toBe(130);
-        const stopped = "Stopped. Run scout backfill again to continue: it skips what's already uploaded.\n";
+        const stopped = "Stopped. Run scout backfill again to continue: it skips what's already on the dashboard.\n";
         expect(output.slice(-stopped.length)).toBe(stopped);
         expect(surroundings(dir)).toEqual(before);
         await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow(), { timeout: 2_000, interval: 50 });
@@ -300,7 +302,7 @@ describe("scout backfill", () => {
   });
 
   describe("skips commits that won't install, and stops after three in a row", () => {
-    it("goes on after each failed install while uploads come between them, and exits 1", async () => {
+    it("goes on after each failed install while uploads come between them, says to retry with --debug, and exits 1", async () => {
       const fails = { "fail-install": "" };
       const { dir, shas } = pushedRepo([
         { date: "2026-05-13T10:00:00Z" },
@@ -328,10 +330,11 @@ describe("scout backfill", () => {
           `Scanning ${named(c2, "20 May 2026")}, 5 of 6…\n`,
           failed(c2, "20 May 2026"),
           `Scanning ${named(c1, "13 May 2026")}, 6 of 6…\n`,
+          RETRY,
         ].join(""),
       );
       expect(uploadedCommits(fetchSpy)).toEqual([c6, c3, c1]);
-      expect(stdout()).toBe(`Backfilled main since 1 May 2026: 3 uploaded, 0 already there, 3 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 May 2026: 3 uploaded, 0 already on the dashboard, 3 skipped. ${END}`);
       expect(code).toBe(1);
     }, 60_000);
 
@@ -354,11 +357,40 @@ describe("scout backfill", () => {
       expect(uploadedCommits(fetchSpy)).toEqual([c6]);
       expect(stdout()).toBe(
         [
-          "History before 17 Jun 2026 can't be installed with today's tools, so the chart starts there.\n",
-          `Backfilled main since 1 May 2026: 1 uploaded, 0 already there, 4 skipped. ${END}`,
+          `The 3 commits before 17 Jun 2026 wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.\n`,
+          `Backfilled main since 1 May 2026: 1 uploaded, 0 already on the dashboard, 4 skipped. ${END}`,
         ].join(""),
       );
       expect(code).toBe(0);
+    }, 60_000);
+
+    it("stops at the history line after an earlier failed install, without saying to retry with --debug, and exits 1", async () => {
+      const fails = { "fail-install": "" };
+      const { dir, shas } = pushedRepo([
+        { date: "2026-05-20T10:00:00Z", files: fails },
+        { date: "2026-05-27T10:00:00Z", files: fails },
+        { date: "2026-06-03T10:00:00Z", files: fails },
+        { date: "2026-06-10T10:00:00Z" },
+        { date: "2026-06-17T10:00:00Z", files: fails },
+        { date: "2026-06-24T10:00:00Z" },
+      ]);
+      const [c1 = "", c2 = "", c3 = "", c4 = "", c5 = "", c6 = ""] = shas;
+      const fetchSpy = acceptingDashboard();
+
+      const code = await backfill(dir, { since: "2026-05-01", log: new Logger({ quiet: true }) });
+
+      const failed = (sha: string, day: string) => `Warning: Skipped ${named(sha, day)}: the install command in scout.config.json failed.\n`;
+      expect(stderr()).toBe(
+        [failed(c5, "17 Jun 2026"), failed(c3, "3 Jun 2026"), failed(c2, "27 May 2026"), failed(c1, "20 May 2026")].join(""),
+      );
+      expect(uploadedCommits(fetchSpy)).toEqual([c6, c4]);
+      expect(stdout()).toBe(
+        [
+          `The 3 commits before 10 Jun 2026 wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.\n`,
+          `Backfilled main since 1 May 2026: 2 uploaded, 0 already on the dashboard, 4 skipped. ${END}`,
+        ].join(""),
+      );
+      expect(code).toBe(1);
     }, 60_000);
 
     it("stops with nothing backfilled when the three newest fail, and exits 1", async () => {
@@ -380,7 +412,7 @@ describe("scout backfill", () => {
           failed(c4, "17 Jun 2026"),
           failed(c3, "10 Jun 2026"),
           failed(c2, "3 Jun 2026"),
-          `Error: Couldn't install the 3 newest commits, so nothing was backfilled. Check the lines above, or set "install" in scout.config.json.\n`,
+          `Error: Couldn't install the 3 newest commits, so nothing was uploaded. Check the lines above, or set "install" in scout.config.json.\n`,
         ].join(""),
       );
       expect(sent(fetchSpy, "/api/scans")).toEqual([]);
@@ -466,8 +498,8 @@ describe("scout backfill", () => {
 
       const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }) });
 
-      expect(stderr()).toBe(`Warning: Skipped ${named(c1, "17 Jun 2026")}: there's no lockfile to install from.\n`);
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already there, 1 skipped. ${END}`);
+      expect(stderr()).toBe(`Warning: Skipped ${named(c1, "17 Jun 2026")}: there's no lockfile to install from.\n${RETRY}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already on the dashboard, 1 skipped. ${END}`);
       expect(code).toBe(1);
     }, 60_000);
   });
@@ -491,8 +523,8 @@ describe("scout backfill", () => {
 
       expect(stdout()).toBe(
         [
-          "apps/web doesn't exist before 10 Jun 2026, so the chart starts there.\n",
-          `Backfilled main since 1 Jun 2026: 2 uploaded, 0 already there, 0 skipped. ${END}`,
+          "apps/web doesn't exist before 10 Jun 2026, so the charts start there.\n",
+          `Backfilled main since 1 Jun 2026: 2 uploaded, 0 already on the dashboard, 0 skipped. ${END}`,
         ].join(""),
       );
       expect(code).toBe(0);
@@ -504,7 +536,7 @@ describe("scout backfill", () => {
 
       const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }), configAt: "apps/web/scout.config.json" });
 
-      expect(stderr()).toBe("Error: apps/web isn't on origin/main yet, so there's nothing to backfill.\n");
+      expect(stderr()).toBe("Error: apps/web isn't on origin/main yet, so there's nothing to backfill. Merge it, run git fetch, then run scout backfill again.\n");
       expect(stdout()).toBe("");
       expect(code).toBe(1);
     }, 60_000);
@@ -521,7 +553,7 @@ describe("scout backfill", () => {
       expect(stderr()).toBe(
         [
           "Error: Couldn't upload the scan: the dashboard returned an error. Try again, or ask your dashboard administrator to check its logs.\n",
-          "Run scout backfill again to continue: it skips what's already uploaded.\n",
+          "Run scout backfill again to continue: it skips what's already on the dashboard.\n",
         ].join(""),
       );
       expect(sent(fetchSpy, "/api/scans")).toHaveLength(1);
@@ -562,7 +594,7 @@ describe("scout backfill", () => {
           waiting,
         ].join(""),
       );
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already there, 0 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already on the dashboard, 0 skipped. ${END}`);
       expect(code).toBe(0);
     }, 60_000);
 
@@ -584,7 +616,7 @@ describe("scout backfill", () => {
       expect(stderr()).toContain(
         "Found 2 commits on origin/main, one a week since 1 Jun 2026. Scout will scan all 2, replacing the 1 already on the dashboard.\n",
       );
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already there, 0 skipped, 1 replaced. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped. ${END}`);
       expect(code).toBe(0);
     }, 60_000);
 
@@ -596,7 +628,7 @@ describe("scout backfill", () => {
       const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }) });
 
       expect(stderr()).toBe(`Warning: Skipped ${named(c1, "17 Jun 2026")}: it installs with Yarn Plug'n'Play, which Scout can't read.\n`);
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already there, 1 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already on the dashboard, 1 skipped. ${END}`);
       expect(code).toBe(0);
     }, 60_000);
 
@@ -608,8 +640,8 @@ describe("scout backfill", () => {
 
       const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }) });
 
-      expect(stderr()).toBe(`Warning: Skipped ${named(c1, "17 Jun 2026")}: some dependencies are missing after the install.\n`);
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already there, 1 skipped. ${END}`);
+      expect(stderr()).toBe(`Warning: Skipped ${named(c1, "17 Jun 2026")}: some dependencies are missing after the install.\n${RETRY}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already on the dashboard, 1 skipped. ${END}`);
       expect(code).toBe(1);
     }, 60_000);
 
@@ -621,7 +653,7 @@ describe("scout backfill", () => {
       const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }) });
 
       expect(stderr()).toBe(`Warning: Skipped ${named(c1, "17 Jun 2026")}: the scan found no components.\n`);
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already there, 1 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 0 already on the dashboard, 1 skipped. ${END}`);
       expect(code).toBe(0);
     }, 60_000);
 
@@ -638,7 +670,7 @@ describe("scout backfill", () => {
 
       expect(stderr()).toBe(`Warning: Skipped ${named(c2, "17 Jun 2026")}: ${NEWER_CLI}\n`);
       expect(uploadedCommits(fetchSpy)).toEqual([c2, c1]);
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already there, 1 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already on the dashboard, 1 skipped. ${END}`);
       expect(code).toBe(0);
     }, 60_000);
 
@@ -659,7 +691,7 @@ describe("scout backfill", () => {
         ].join(""),
       );
       expect(uploadedCommits(fetchSpy)).toEqual([c1]);
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already there, 1 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 1 uploaded, 0 already on the dashboard, 1 skipped. ${END}`);
       expect(code).toBe(0);
     }, 60_000);
 
@@ -669,7 +701,7 @@ describe("scout backfill", () => {
 
       const code = await backfill(dir, { since: "2026-06-01" });
 
-      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 2 already there, 0 skipped. ${END}`);
+      expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 2 already on the dashboard, 0 skipped. ${END}`);
       expect(stderr()).toBe("");
       expect(code).toBe(0);
     }, 60_000);
