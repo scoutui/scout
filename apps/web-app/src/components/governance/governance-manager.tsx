@@ -1102,7 +1102,6 @@ function RecordForm({
               scope={byScope}
               onScopeChange={setByScope}
               placeholder="Search for a replacement"
-              closedPlaceholder="Choose a replacement"
               emptyText={emptyText}
               ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
               invalid={Boolean(fieldErrors.supersededBy)}

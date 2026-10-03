@@ -2,4 +2,4 @@
 "@scoutui/web-app": patch
 ---
 
-After you create a lifecycle record, **Package or component** and **Superseded by** now start blank for the next one. Before, each kept the package you had searched in as a chip, which looked like a pick, so the next Create could refuse with "Choose what supersedes it." while a package still showed.
+In the lifecycle record form, **Package or component** and **Superseded by** now show a package only while you search in it or once you've picked it. After you create a record, both start blank for the next one. Selecting a package to search in it and then clicking away also leaves the field blank, instead of keeping the package as a chip that looked like a pick. Before, Create could refuse with "Choose what supersedes it." while a package still showed in the field.
