@@ -7,12 +7,10 @@ sidebar_label: "Config"
 
 [`scan`](/docs/reference/cli#scan) and [`backfill`](/docs/reference/cli#backfill) read `scout.config.json` from the current directory, or the file named by their `--config` flag. The file is plain JSON: comments and trailing commas are errors.
 
-The smallest valid config:
+The smallest valid config is an empty object. With it, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder:
 
 ```json title="scout.config.json"
-{
-  "include": ["src/**/*.{js,jsx,ts,tsx}"]
-}
+{}
 ```
 
 The *config folder* is the folder that holds the config file. Relative paths in the config resolve against it, whatever directory you run `scan` or `backfill` from. The one exception is `aliases`; see [Paths](#paths).
@@ -23,15 +21,18 @@ The *config folder* is the folder that holds the config file. Relative paths in 
 
 | Field | Type | Default | Behavior |
 | --- | --- | --- | --- |
-| `include` | array of non-empty strings, at least one | none, required | Glob patterns for the files to scan. |
-| `exclude` | array of non-empty strings | `[]` | Glob patterns for files to leave out, even when `include` matches them. |
+| `include` | array of non-empty strings, at least one | `["**/*.{js,jsx,ts,tsx,vue}"]`: every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder | Glob patterns for the files to scan. |
+| `exclude` | array of non-empty strings | `[]` | Glob patterns for files to leave out, even when `include` matches them. A path with no glob characters, such as `apps/playground`, leaves out that folder or file. |
 | `repoId` | non-empty string | derived; see [Repo identity](#repo-identity) | The [repo id](/docs/reference/glossary#repo-id) the scan is recorded under. `--repo-id` replaces it. |
 
 The scan skips:
 
+- test, spec and story files (`*.test.*`, `*.spec.*`, `*.stories.*`), files in `__tests__` folders, type declaration files (`*.d.ts`) and anything in `node_modules`, even when an `include` pattern names them;
 - files and folders whose names start with a dot, such as `.next`, unless an `include` pattern names them, for example `src/.generated/*.tsx`;
 - files ignored by `.gitignore`, unless [`gitignore`](#other-fields) is `false`;
 - a folder below the config folder that holds its own git repository, such as a submodule or another clone, even when an `include` pattern points into it.
+
+When an `exclude` entry has no glob characters (`*`, `?`, `[`, `]`, `{`, `}` or `!`) and nothing exists at that path, the scan warns and carries on: `Warning: "apps/playground" in exclude matches nothing. Update or remove it in ./scout.config.json.` With `--config`, it names that path instead.
 
 ### Upload fields
 
@@ -124,6 +125,5 @@ A config error stops `scan` or `backfill` with exit code `2` before it reads any
 
 | Config | Problem shown |
 | --- | --- |
-| `include` left out | `<root>: must have required property 'include'` |
 | `"include": []` | `/include: must NOT have fewer than 1 items` |
 | `"include": "src/**/*.tsx"` | `/include: must be array` |
