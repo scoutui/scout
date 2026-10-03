@@ -43,6 +43,7 @@
           "aeb23d65757b5d71": 1,
           "952fa8a2046587ee": 1,
           "aff663ef7f33a8b2": 1,
+          "27fce2330f30fa9b": 1,
           "a39eac46e7bbfb7b": 1
         },
         "renderedByCount": {},
@@ -185,6 +186,39 @@
       },
       "usage": "direct",
       "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "27fce2330f30fa9b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/forms.tsx",
+        "exportName": "Field"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Forms.Field"
+      ],
       "definition": {
         "line": 1,
         "column": 7
@@ -377,6 +411,29 @@
         "kind": "render"
       },
       "trace": [],
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "8d5d59119e5fbdae",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "27fce2330f30fa9b"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 15,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Forms"
+        }
+      ],
+      "writtenName": "Forms.Field",
       "props": {},
       "ownerComponentId": "93767a0c14a8b7ae"
     },

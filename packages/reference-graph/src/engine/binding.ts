@@ -339,7 +339,8 @@ function starExport(graph: Graph, file: string, name: string, path: readonly str
 }
 
 /** The binding export record `exp` of `fg` names: an exported local is
- *  resolved in `fg`, an `export … from` hop in its target. */
+ *  resolved in `fg`, an `export … from` hop in its target, and a namespace
+ *  re-export (`export * as NS from`) as `import * as NS` from its target. */
 function bindingForRecord(
   graph: Graph,
   fg: FileGraph,
@@ -360,6 +361,7 @@ function bindingForRecord(
       guard.pop(fg.filePath, exp.local);
     }
   }
+  if (exp.fromImported === "*") return moduleExport(graph, fg.filePath, exp.from, "*", path, guard, sought);
   const target = moduleTarget(graph, fg.filePath, exp.from, exp.fromImported, path);
   if (target.kind === "outside") return target.binding;
   const found = findExportRecord(graph, target.key, exp.fromImported, sought);

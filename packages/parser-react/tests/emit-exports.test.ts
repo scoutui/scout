@@ -67,9 +67,9 @@ describe("emitReact: export emission", () => {
     }
   });
 
-  it("does not emit a star ExportRecord for namespace `export * as Foo from './a'`", () => {
+  it("emits a named ExportRecord of the module's namespace for `export * as Foo from './a'`", () => {
     const fg = emit("export * as Foo from './a';");
-    expect(fg?.exports.find((e) => e.kind === "star")).toBeUndefined();
+    expect(fg?.exports).toEqual([{ kind: "named", exportedAs: "Foo", from: "./a", fromImported: "*" }]);
   });
 
   it("does not emit a star ExportRecord for type-only `export type * from './a'`", () => {
@@ -94,7 +94,6 @@ describe("emitReact: exports the graph does not record", () => {
   it.each([
     ["an anonymous default object", "export default { Item };"],
     ["an anonymous default class", "export default class {}"],
-    ["a namespace re-export", 'export * as Icons from "./icons";'],
     ["a destructured export", "export const { Item } = parts;"],
     ["an exported enum", "export enum Size { Small }"],
     ["an export assignment", "export = Menu;"],
@@ -112,6 +111,7 @@ describe("emitReact: exports the graph does not record", () => {
         "export function B() { return null; }",
         'export { C } from "./c";',
         'export * from "./d";',
+        'export * as F from "./f";',
         'export type * from "./e";',
         "export type T = string;",
         "export interface I {}",

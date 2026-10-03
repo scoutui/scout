@@ -1529,18 +1529,18 @@ function emitExportDefault(node: ExportDefaultDeclaration, fb: FileBuilder, sour
 }
 
 function emitExportAll(node: ExportAllDeclaration, fb: FileBuilder): void {
-  // Filter at emission: only bare runtime `export *` represents a runtime
-  // wildcard re-export. Namespace re-exports (`export * as Foo from`) create
-  // a single named binding; type-only re-exports (`export type *`) carry no
-  // runtime symbols. Both are excluded so the resolver's star-fallback
-  // never chases declarations that don't carry the symbols it's
-  // looking for.
+  // Only a bare runtime `export *` is a star re-export. A namespace re-export
+  // (`export * as Foo from`) is the one name `Foo`, recorded as a named
+  // re-export of the module's namespace (`fromImported: "*"`). A type-only
+  // re-export (`export type *`) carries no runtime symbols and is not recorded.
   if (node.exportKind === "type") return;
+  const from = node.source.value;
   if (node.exported) {
-    fb.markUnrecordedExports();
+    const exportedAs = node.exported.type === "Identifier" ? node.exported.name : node.exported.value;
+    fb.addExport({ kind: "named", exportedAs, from, fromImported: "*" });
     return;
   }
-  fb.addExport({ kind: "star", from: node.source.value });
+  fb.addExport({ kind: "star", from });
 }
 
 /** A module-scope statement that exports without an ES export declaration:
