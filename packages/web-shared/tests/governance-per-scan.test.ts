@@ -114,18 +114,18 @@ describe("governance per scan on the scan-file identity", () => {
     expect(migration?.progress).toBeCloseTo(4 / 6);
   });
 
-  it("never governs a repository declaration, even one whose workspace package is the rule's package", () => {
+  it("governs a repository declaration whose workspace package is the rule's package", () => {
     const packageRule = rule("package", { grain: "package", targetExport: null });
     const buttonRule = rule("button", {});
 
-    expect(governedComponentIds(buttonRule, localScan, [buttonRule])).toEqual(new Set());
-    expect(governedComponentIds(packageRule, localScan, [packageRule])).toEqual(new Set());
+    expect(governedComponentIds(buttonRule, localScan, [buttonRule])).toEqual(new Set([localButton.id]));
+    expect(governedComponentIds(packageRule, localScan, [packageRule])).toEqual(new Set([localButton.id]));
   });
 
   it("offers each governable package and name once, and a tag only where a scan resolves it", () => {
     expect(listGovernanceTargets([entries, scanA, scanB, localScan])).toEqual([
-      { packageName: "@example/ui", occurrences: 6 },
-      { packageName: "@example/ui", exportName: "Button", occurrences: 5 },
+      { packageName: "@example/ui", occurrences: 12 },
+      { packageName: "@example/ui", exportName: "Button", occurrences: 11 },
       { packageName: "@example/ui", exportName: "x-card", occurrences: 1 },
     ]);
   });

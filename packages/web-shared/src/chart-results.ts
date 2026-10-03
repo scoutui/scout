@@ -5,8 +5,8 @@ import { type GovernanceTracking, deriveGovernanceTracking } from "./governance-
 import { type RegistryStats, deriveRecordStats } from "./governance-registry.js";
 import { type GovernanceTarget, listGovernanceTargets } from "./governance.js";
 
-export const CHART_RESULTS_VERSION = 6;
-export const CHART_RESULTS_FORMAT_VERSION = 5;
+export const CHART_RESULTS_VERSION = 7;
+export const CHART_RESULTS_FORMAT_VERSION = 6;
 
 export type DashboardPreview = { view: DashboardView; missing: boolean };
 /** A stored preview, and when the snapshot it was derived from was read. */

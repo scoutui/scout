@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { GovernanceTargetConflictError } from "../../src/storage.js";
 import { PostgresDriver } from "../../src/drivers/postgres.js";
 import { useDriverDatabase } from "../helpers/driver-db.js";
-import { artifact, component, packageExport, resolvedAt, tag } from "../helpers/builders.js";
+import { artifact, component, packageExport, repoDeclaration, resolvedAt, tag } from "../helpers/builders.js";
 import { withReadModelDatabase } from "../../../../apps/web-app/tests/helpers/read-model-db.ts";
 import { publishScan } from "../../../../apps/web-app/src/lib/scan-projection.ts";
 
@@ -183,6 +183,23 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver governance on the pag
       expect(await driver.getCrossRepoComponent(card.id)).toMatchObject({
         deprecatedAnywhere: false, migrationStatus: active, governedByRecordId: null, usages: [{ repoId: "sample-app", deprecated: false }],
       });
+    });
+  });
+
+  it("marks a component deprecated in the monorepo that defines its workspace package, and leaves components outside that package active", async () => {
+    await withReadModelDatabase(async pool => {
+      const button = component(repoDeclaration("sample-monorepo", "packages/ui/src/Button.tsx", "Button"), { owningPackage: "@example/ui" });
+      const page = component(repoDeclaration("sample-monorepo", "apps/web/src/Page.tsx", "Page"), { owningPackage: "@example/web" });
+      const panel = component(repoDeclaration("sample-monorepo", "src/Panel.tsx", "Panel"));
+      const occurrences = [resolvedAt(button, "apps/web/src/Page.tsx", 1), resolvedAt(page, "apps/web/src/App.tsx", 2), resolvedAt(panel, "src/App.tsx", 3)];
+      await publishScan(pool, artifact({ repoId: "sample-monorepo", components: [button, page, panel], occurrences }), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      const record = await driver.createGovernance({ grain: "component", targetPackage: "@example/ui", targetExport: "Button", disposition });
+      expect(await driver.listRepos()).toMatchObject([{ repoId: "sample-monorepo", deprecatedCount: 1 }]);
+      expect(await driver.getComponentDetailHead("sample-monorepo", button.id)).toMatchObject({ deprecated: true, migrationStatus: retired, governedByRecordId: record.id });
+      expect(await driver.getComponentDetailHead("sample-monorepo", page.id)).toMatchObject({ deprecated: false, governedByRecordId: null });
+      expect(await driver.getComponentDetailHead("sample-monorepo", panel.id)).toMatchObject({ deprecated: false, governedByRecordId: null });
+      expect(await driver.getPackage("@example/ui")).toMatchObject({ deprecatedCount: 1, components: [{ componentId: button.id, deprecated: true }] });
     });
   });
 

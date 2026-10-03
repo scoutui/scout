@@ -25,7 +25,7 @@ describe("presentIdentity", () => {
     expect(governanceKey(button)).toEqual({ packageName: "@example/ui", name: "Button" });
   });
 
-  it("presents a repository declaration as local, by file path, and never governed", () => {
+  it("presents a repository declaration outside any workspace package as local, by file path, and never governed", () => {
     const panel = component(repoDeclaration("repo-a", "src/panel.vue", "Panel"), { framework: "vue" });
     expect(presentIdentity(panel)).toEqual({
       scope: "local", kind: "vue-component", packageName: null,
@@ -34,10 +34,10 @@ describe("presentIdentity", () => {
     expect(governanceKey(panel)).toBeNull();
   });
 
-  it("presents a repository declaration's workspace package, still local and never governed", () => {
+  it("presents a repository declaration's workspace package, still local, and governs it under that package", () => {
     const panel = component(repoDeclaration("repo-a", "packages/app-kit/src/panel.tsx", "Panel"), { owningPackage: "@example/app-kit" });
     expect(presentIdentity(panel)).toMatchObject({ scope: "local", packageName: "@example/app-kit" });
-    expect(governanceKey(panel)).toBeNull();
+    expect(governanceKey(panel)).toEqual({ packageName: "@example/app-kit", name: "Panel" });
   });
 
   it.each([

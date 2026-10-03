@@ -91,8 +91,10 @@ describe("deriveChartResults", () => {
       },
       repoCount: 3,
       sources: [
+        { packageName: "@example/app-kit", occurrences: 1, local: true },
         { packageName: "@sample/core", occurrences: 6 },
         { packageName: "@sample/mixed", occurrences: 2 },
+        { packageName: "@example/app-kit", exportName: "Panel", occurrences: 1, local: true },
         { packageName: "@sample/core", exportName: "ActionButton", occurrences: 1 },
         { packageName: "@sample/core", exportName: "Button", occurrences: 1 },
         { packageName: "@sample/core", exportName: "Button.Icon", occurrences: 2 },

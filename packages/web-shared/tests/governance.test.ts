@@ -132,14 +132,30 @@ describe("listGovernanceTargets", () => {
     expect(listGovernanceTargets(scans)).toContainEqual({ packageName: "legacy-ds", occurrences: 0 });
   });
 
-  it("excludes repository declarations and tags no scan attributes to a package", () => {
+  it("offers a repository declaration under its workspace package, marked local, and leaves out one with no package and an unattributed tag", () => {
     const scans = [
       scan("r1", "r1:s1", [
-        component(repoDeclaration("r1", "src/local.tsx", "Local"), { owningPackage: "app-ui" }),
+        component(repoDeclaration("r1", "packages/app-ui/src/local.tsx", "Local"), { owningPackage: "app-ui" }),
+        component(repoDeclaration("r1", "src/root.tsx", "Root")),
         component(tag("x-orphan"), { attribution: { status: "unknown", reason: "absent", evidence: [] } }),
       ]),
     ];
-    expect(listGovernanceTargets(scans)).toEqual([]);
+    expect(listGovernanceTargets(scans)).toEqual([
+      { packageName: "app-ui", occurrences: 0, local: true },
+      { packageName: "app-ui", exportName: "Local", occurrences: 0, local: true },
+    ]);
+  });
+
+  it("doesn't mark a package local when another scan installs it", () => {
+    const scans = [
+      scan("r1", "r1:s1", [component(repoDeclaration("r1", "packages/ui/src/button.tsx", "Button"), { owningPackage: "legacy-ds" })]),
+      scan("r2", "r2:s1", [component(packageExport("legacy-ds", "Card"))]),
+    ];
+    expect(listGovernanceTargets(scans)).toEqual([
+      { packageName: "legacy-ds", occurrences: 0 },
+      { packageName: "legacy-ds", exportName: "Button", occurrences: 0 },
+      { packageName: "legacy-ds", exportName: "Card", occurrences: 0 },
+    ]);
   });
 
   it("dedups identities seen across repos and scans", () => {

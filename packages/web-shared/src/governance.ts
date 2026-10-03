@@ -1,7 +1,7 @@
 import { parseCompoundExport } from "@scoutui/scan-format";
 import type { GovernanceRecord, MigrationStatus } from "./dto.js";
 import type { DigestScan } from "./digest.js";
-import { governanceKey, type PresentableComponent } from "./present-identity.js";
+import { governanceKey, presentIdentity, type PresentableComponent } from "./present-identity.js";
 import { latestScanPerRepo } from "./scan-order.js";
 
 /** What governance resolves: a package, and an export or tag name in it (null for the package itself). */
@@ -92,8 +92,11 @@ export function governanceHash(records: GovernanceRecord[]): string {
     .join("|");
 }
 
-/** A selectable governance target and its occurrences in each repo's latest scan. Package grain omits `exportName`. */
-export type GovernanceTarget = { packageName: string; exportName?: string; occurrences: number };
+/**
+ * A selectable governance target and its occurrences in each repo's latest scan. Package grain omits
+ * `exportName`. `local` marks a package that scanned repos define in their workspace and no scan installs.
+ */
+export type GovernanceTarget = { packageName: string; exportName?: string; occurrences: number; local?: true };
 
 /**
  * Every governable identity ever scanned, as governance targets for the record
@@ -103,14 +106,15 @@ export type GovernanceTarget = { packageName: string; exportName?: string; occur
  *
  * Each component contributes its `governanceKey` (the key `governedComponentIds`
  * matches on), so everything offered here governs a real component: package
- * exports at any public entry, and tags in the scans that resolve them to a
- * package. Each key's package is also offered at package grain, with the
- * occurrences of all its components.
+ * exports at any public entry, repository declarations in a workspace package,
+ * and tags in the scans that resolve them to a package. Each key's package is
+ * also offered at package grain, with the occurrences of all its components.
  *
  * Sorted, so the picker order does not depend on scan iteration order.
  */
 export function listGovernanceTargets(scans: DigestScan[]): GovernanceTarget[] {
   const packages = new Set<string>();
+  const installed = new Set<string>();
   const components = new Map<string, { packageName: string; exportName: string }>();
   const occurrences = new Map<string, number>();
   const keyOf = (packageName: string, exportName?: string) => `${packageName}\u0000${exportName ?? ""}`;
@@ -120,6 +124,7 @@ export function listGovernanceTargets(scans: DigestScan[]): GovernanceTarget[] {
       const key = governanceKey(c);
       if (key === null) continue;
       packages.add(key.packageName);
+      if (presentIdentity(c).scope === "external") installed.add(key.packageName);
       components.set(keyOf(key.packageName, key.name), { packageName: key.packageName, exportName: key.name });
     }
   }
@@ -134,11 +139,12 @@ export function listGovernanceTargets(scans: DigestScan[]): GovernanceTarget[] {
   }
 
   const sorted = (xs: string[]) => [...xs].sort((a, b) => a.localeCompare(b));
+  const local = (packageName: string) => (installed.has(packageName) ? {} : { local: true as const });
   return [
-    ...sorted([...packages]).map((packageName) => ({ packageName, occurrences: occurrences.get(keyOf(packageName)) ?? 0 })),
+    ...sorted([...packages]).map((packageName) => ({ packageName, occurrences: occurrences.get(keyOf(packageName)) ?? 0, ...local(packageName) })),
     ...sorted([...components.keys()]).map((k) => {
       const target = components.get(k) as { packageName: string; exportName: string };
-      return { ...target, occurrences: occurrences.get(k) ?? 0 };
+      return { ...target, occurrences: occurrences.get(k) ?? 0, ...local(target.packageName) };
     }),
   ];
 }
