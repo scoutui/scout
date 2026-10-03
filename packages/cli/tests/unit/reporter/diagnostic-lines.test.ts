@@ -17,17 +17,17 @@ describe("diagnosticLogLines", () => {
     [
       "a re-export cycle",
       { code: "cycle-detected", severity: "warning", filePath: "node_modules/@example/ui/index.js", exportName: "Button" },
-      "The re-exports of Button in node_modules/@example/ui/index.js loop back on themselves, so its occurrences aren't matched to a component.",
+      "The re-exports of Button in node_modules/@example/ui/index.js loop back on themselves, so its uses aren't matched to a component.",
     ],
     [
       "a re-export chain too long to follow",
       { code: "chain-too-deep", severity: "warning", filePath: "node_modules/@example/ui/deep.js", exportName: "Button", depth: 32 },
-      "Stopped following the re-exports of Button after 32 files (at node_modules/@example/ui/deep.js), so its occurrences aren't matched to a component.",
+      "Stopped following the re-exports of Button after 32 files (at node_modules/@example/ui/deep.js), so its uses aren't matched to a component.",
     ],
     [
       "a lazy import it can't follow",
       { code: "lazy-import-unsupported", severity: "warning", filePath: "src/App.tsx", line: 24, column: 6, specifier: "./Panel", detail: "the import() target could not be resolved to a component" },
-      "src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this usage isn't counted.",
+      "src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this use isn't counted.",
     ],
     [
       "a stale auto-import entry",
@@ -53,11 +53,11 @@ describe("diagnosticLogLines", () => {
     ).toEqual({
       warnings: [],
       counts: [
-        "2 usages couldn't be matched to a component and weren't counted.",
+        "2 uses couldn't be matched to a component and weren't counted.",
         "1 component passed in as a prop or argument wasn't counted.",
       ],
     });
-    expect(diagnosticLogLines([ref(1)]).counts).toEqual(["1 usage couldn't be matched to a component and wasn't counted."]);
+    expect(diagnosticLogLines([ref(1)]).counts).toEqual(["1 use couldn't be matched to a component and wasn't counted."]);
   });
 
   it("prints nothing for no diagnostics", () => {

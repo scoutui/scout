@@ -153,7 +153,7 @@ describe("runScan warnings about files it reads", () => {
     });
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     await runScan({ configPath: join(dir, "scout.config.json"), quiet: true });
-    expect(stderrOf(stderr)).toBe(`Warning: Couldn't finish reading ${app} (unexpected node), so some occurrences in it may be missing.\n`);
+    expect(stderrOf(stderr)).toBe(`Warning: Couldn't finish reading ${app} (unexpected node), so some uses in it may be missing.\n`);
   });
 
   it("prints the info counts only under debug", async () => {
@@ -177,7 +177,7 @@ describe("runScan warnings about files it reads", () => {
     ]);
     expect(lines).toContainEqual(expect.stringMatching(/^Reading files: 1 of 2 \(50\.0%\), \d+\.\ds$/));
     expect(lines.filter((line) => line.startsWith("Reading files"))).toHaveLength(1);
-    expect(lines).toContain("Matching occurrences to components…");
+    expect(lines).toContain("Matching uses to components…");
     expect(lines).toContain("Path aliases: tsconfig.json");
   });
 

@@ -9,4 +9,4 @@ None of this appears in CI, when output goes to a file or another command, or wi
 - The scan summary lists the most used components only after `scout scan --dry-run` in a terminal. After an upload, and in CI, the summary is the counts, so the dashboard link is the last line.
 - `auth login` ends with `✓ Signed in as <email> to <host>.`, naming the dashboard. With `NO_COLOR`, nothing turns while it waits.
 - Colour stays off in CI unless `FORCE_COLOR` is set.
-- The scan summary groups thousands, as the dashboard does: `1,191 components, 3,925 occurrences`.
+- The scan summary groups thousands, as the dashboard does: `1,191 components, 3,925 uses`.

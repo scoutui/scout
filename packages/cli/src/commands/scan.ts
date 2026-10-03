@@ -496,7 +496,7 @@ export async function scanRepository(input: {
           fileBuilder,
         });
       } catch (err) {
-        log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some occurrences in it may be missing.`, errorStack(err));
+        log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some uses in it may be missing.`, errorStack(err));
       }
     } else if (parsed.kind === "vue") {
       const wrapper = parsed.scriptAst !== undefined
@@ -522,14 +522,14 @@ export async function scanRepository(input: {
           ...(autoImports !== null ? { resolveAutoImport: autoImports.lookup } : {}),
         });
       } catch (err) {
-        log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some occurrences in it may be missing.`, errorStack(err));
+        log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some uses in it may be missing.`, errorStack(err));
       }
     }
     parseProgress.tick();
   }
 
   parseProgress.done();
-  const matching = startPhase({ label: "Matching occurrences to components…", writer, isTTY, columns, motion });
+  const matching = startPhase({ label: "Matching uses to components…", writer, isTTY, columns, motion });
   const localIndex = buildLocalIndex(localDefs);
 
   // ── Resolve phase: engine walks the populated graph ──────────────────────

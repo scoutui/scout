@@ -16,12 +16,12 @@ export function printSummary(out: ScanArtifact, stats: ScanStats, color: Coloriz
   const seconds = (stats.scanDurationMs / 1000).toFixed(1);
   const counted = (n: number, noun: string): string => `${color.bold(grouped(n))} ${n === 1 ? noun : `${noun}s`}`;
   const lines = [
-    `Scanned ${counted(stats.filesScanned, "file")} in ${seconds}s: ${counted(stats.componentCount, "component")}, ${counted(stats.resolvedOccurrenceCount, "occurrence")}.`,
+    `Scanned ${counted(stats.filesScanned, "file")} in ${seconds}s: ${counted(stats.componentCount, "component")}, ${counted(stats.resolvedOccurrenceCount, "use")}.`,
   ];
   const unmatched = stats.occurrenceCount - stats.resolvedOccurrenceCount;
   if (unmatched > 0) {
     lines.push(
-      `Scout couldn't match ${color.bold(grouped(unmatched))} more ${unmatched === 1 ? "occurrence" : "occurrences"} to a component. See ${color.brand(UNMATCHED_PAGE)}`,
+      `Scout couldn't match ${color.bold(grouped(unmatched))} more ${unmatched === 1 ? "use" : "uses"} to a component. See ${color.brand(UNMATCHED_PAGE)}`,
     );
     const packages = packagesNotInstalled(out.occurrences);
     const notInstalled = [...packages.values()].reduce((sum, n) => sum + n, 0);
