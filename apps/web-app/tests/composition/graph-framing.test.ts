@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { COLUMN_CAP, GAP_X, GAP_Y, MAX_NODE_W, NODE_H, NODE_W } from "@/components/component-detail/composition/graph-layout";
 import {
-  computeChipWidth, computeDefaultFrame, computeRowBudget, edgePillCopy, gutterMaskWidth, isNodeVisible, isPathVisible, hiddenColumns,
+  computeChipWidth, computeDefaultFrame, computeRowBudget, edgePillCopy, gutterMaskWidth, hiddenComponentCount, isNodeVisible, isPathVisible, hiddenColumns,
   distinctTails, chipFaceFragments, shouldRecomputeEdgeAffordances,
   FRAME_PADDING, LABEL_CLEARANCE, MIN_ROW_BUDGET, PILL_GUTTER, PINNED_FIT_ZOOM, READABLE_ZOOM, WINDOW_ZOOM,
 } from "@/components/component-detail/composition/graph-framing";
@@ -340,12 +340,12 @@ describe("edgePillCopy: the visible label is always the directional count, toolt
   it("at the default frame, the label is the directional count and the tooltip/aria offer to show everything instead of re-applying the frame the user is already in", () => {
     expect(edgePillCopy("left", 1, true)).toEqual({
       label: "← 1 more",
-      ariaLabel: "1 more column off screen to the left, show all",
+      ariaLabel: "1 more component off screen to the left, show all",
       remedy: "showAll",
     });
     expect(edgePillCopy("right", 3, true)).toEqual({
       label: "3 more →",
-      ariaLabel: "3 more columns off screen to the right, show all",
+      ariaLabel: "3 more components off screen to the right, show all",
       remedy: "showAll",
     });
   });
@@ -353,14 +353,32 @@ describe("edgePillCopy: the visible label is always the directional count, toolt
   it("after a free pan/zoom away from the default frame, the label is unchanged and the tooltip/aria offer to reset back to it", () => {
     expect(edgePillCopy("left", 1, false)).toEqual({
       label: "← 1 more",
-      ariaLabel: "1 more column off screen to the left, reset view",
+      ariaLabel: "1 more component off screen to the left, reset view",
       remedy: "resetView",
     });
     expect(edgePillCopy("right", 3, false)).toEqual({
       label: "3 more →",
-      ariaLabel: "3 more columns off screen to the right, reset view",
+      ariaLabel: "3 more components off screen to the right, reset view",
       remedy: "resetView",
     });
+  });
+});
+
+describe("hiddenComponentCount: what an edge pill counts", () => {
+  // Columns at x = -1, 0, 1 (in chip pitches): two parents and a "+3 more"
+  // chip on the left, the focus, one child on the right.
+  const items = [
+    { x: -1, y: 0 }, { x: -1, y: 1 }, { x: -1, y: 2, nodes: [{}, {}, {}] },
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+  ];
+  it.each([
+    ["left", 1, 5],
+    ["left", 2, 6],
+    ["right", 1, 1],
+    ["right", 0, 0],
+  ] as const)("%s side, %i hidden column(s): %i component(s)", (side, hidden, expected) => {
+    expect(hiddenComponentCount(items, side, hidden)).toBe(expected);
   });
 });
 

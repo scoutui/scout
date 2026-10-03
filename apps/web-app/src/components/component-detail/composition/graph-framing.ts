@@ -231,16 +231,29 @@ export function gutterMaskWidth(zoom: number, chipWidth: number = NODE_W): numbe
   return Math.max(FRAME_PADDING + PILL_GUTTER, (chipWidth * zoom) / 2);
 }
 
+/** How many components the outermost `hiddenCount` columns on one side hold:
+ *  one per chip, plus every component a "+N more" chip stands for. */
+export function hiddenComponentCount(
+  items: ReadonlyArray<{ x: number; nodes?: readonly unknown[] }>,
+  side: "left" | "right",
+  hiddenCount: number,
+): number {
+  const columns = [...new Set(items.map((i) => i.x))].sort((a, b) => a - b);
+  const hidden = new Set(side === "left" ? columns.slice(0, hiddenCount) : columns.slice(columns.length - hiddenCount));
+  return items.reduce((n, i) => (hidden.has(i.x) ? n + (i.nodes?.length ?? 1) : n), 0);
+}
+
 export type EdgePillCopy = { label: string; ariaLabel: string; remedy: "showAll" | "resetView" };
 
 /**
- * The edge pill's label, aria-label and remedy for one side. At the default
- * frame a reset would change nothing, so the remedy is show all (fitAll);
- * after a pan or zoom it is reset view. The visible label is the hidden count
- * either way, and the aria-label names the remedy.
+ * The edge pill's label, aria-label and remedy for one side, given how many
+ * components are off screen there. At the default frame a reset would change
+ * nothing, so the remedy is show all (fitAll); after a pan or zoom it is reset
+ * view. The visible label is the count either way, and the aria-label names
+ * the remedy.
  */
 export function edgePillCopy(side: "left" | "right", count: number, atDefaultFrame: boolean): EdgePillCopy {
-  const noun = count === 1 ? "column" : "columns";
+  const noun = count === 1 ? "component" : "components";
   const sideText = side === "left" ? "to the left" : "to the right";
   const label = side === "left" ? `← ${count.toLocaleString()} more` : `${count.toLocaleString()} more →`;
   if (atDefaultFrame) {

@@ -32,6 +32,7 @@ import {
   FIT_PADDING,
   gutterMaskWidth,
   hiddenColumns,
+  hiddenComponentCount,
   isNodeVisible,
   isPathVisible,
   PINNED_FIT_ZOOM,
@@ -558,8 +559,14 @@ function CanvasInner({
     return () => window.removeEventListener("keydown", onKey);
   }, [pinned, onRelease]);
 
-  const leftPill = hiddenCols.left > 0 ? edgePillCopy("left", hiddenCols.left, atDefaultFrame) : null;
-  const rightPill = hiddenCols.right > 0 ? edgePillCopy("right", hiddenCols.right, atDefaultFrame) : null;
+  const leftPill =
+    hiddenCols.left > 0
+      ? edgePillCopy("left", hiddenComponentCount(layout.items, "left", hiddenCols.left), atDefaultFrame)
+      : null;
+  const rightPill =
+    hiddenCols.right > 0
+      ? edgePillCopy("right", hiddenComponentCount(layout.items, "right", hiddenCols.right), atDefaultFrame)
+      : null;
 
   return (
     <TooltipProvider>
