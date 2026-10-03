@@ -166,6 +166,12 @@ export function CompositionTab({
   // lg everything stacks.
   return (
     <div className="flex flex-col gap-4 lg:h-[70vh] lg:min-h-[32rem] lg:flex-row">
+      {/* Below lg the caption leads the tab; from lg up it sits in the render tree's header. */}
+      {caption ? (
+        <p className="text-pretty text-sm lg:hidden">
+          <CaptionLines caption={caption} />
+        </p>
+      ) : null}
       {railCollapsed ? null : (
         <div className="grid items-start gap-4 md:grid-cols-2 lg:flex lg:w-[22.5rem] lg:shrink-0 lg:flex-col lg:items-stretch">
           <div className="contents lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-stretch lg:gap-4">

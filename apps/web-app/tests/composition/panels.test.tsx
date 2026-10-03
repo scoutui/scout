@@ -105,6 +105,13 @@ describe("flat closure panels", () => {
     expect(screen.queryByText("further → far → mid → F")).not.toBeInTheDocument();
   });
 
+  it("the caption comes before the lists, so it leads the tab on a narrow screen", () => {
+    render(<CompositionTab detail={detail} graph={graph} />);
+    const caption = screen.getByText(/components render/);
+    const firstList = screen.getByRole("heading", { name: "Rendered by" });
+    expect(caption.compareDocumentPosition(firstList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("an empty list says None in this repo, without repeating the caption", () => {
     // F is a true leaf in both directions: nothing renders it and it renders
     // nothing, like an unused design-system component.

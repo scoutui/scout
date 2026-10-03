@@ -790,7 +790,7 @@ export function CompositionCanvas(props: {
       <header className="flex shrink-0 items-center justify-between gap-2 border-b bg-muted px-3 py-2 max-sm:flex-wrap">
           <div className="min-w-0">
             <h2 className="text-label text-muted-foreground">Render tree</h2>
-            <p className="text-pretty text-sm">{props.caption}</p>
+            <p className="text-pretty text-sm max-lg:hidden">{props.caption}</p>
           </div>
           <CanvasControls actionsRef={actionsRef} leading={props.listsToggle} />
         </header>
