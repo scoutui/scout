@@ -169,6 +169,10 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   }
 
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
+  if (files.length === 0) {
+    log.error(`No files match "include" in ${configPath} (${cfg.include.join(", ")}). Point it at your source files and scan again.`);
+    return { output: null, upload: "skipped" };
+  }
 
   if (opts.upload) {
     // An untracked config or scan output file doesn't count as an uncommitted change.
@@ -307,9 +311,6 @@ export async function readWorkspace(
     exclude: cfg.exclude,
     gitignore: cfg.gitignore,
   });
-  if (files.length === 0) {
-    log.warn(`No files matched include globs: ${cfg.include.join(", ")}`);
-  }
 
   return { workspaceRoot, workspaceGraph, files };
 }

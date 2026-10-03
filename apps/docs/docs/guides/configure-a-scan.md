@@ -66,10 +66,10 @@ The summary counts the files it read:
 Scanned 3 files in 0.1s: 6 components, 5 occurrences.
 ```
 
-The first number should be close to the number of source files you expect. If it's too low, widen `include`. If it's too high, add to `exclude`. If `include` matches no files at all, the scan warns:
+The first number should be close to the number of source files you expect. If it's too low, widen `include`. If it's too high, add to `exclude`. If `include` matches no files at all, the scan stops before reading anything:
 
 ```
-Warning: No files matched include globs: src/**/*.{ts,tsx,jsx,js,vue}
+Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,vue}). Point it at your source files and scan again.
 ```
 
 If the summary has lines like these, some of the repo's dependencies aren't installed:
