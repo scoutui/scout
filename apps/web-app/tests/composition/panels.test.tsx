@@ -83,6 +83,25 @@ describe("flat closure panels", () => {
     );
   });
 
+  it("a pinned row spells out its path to the focus, in render order", () => {
+    const chainGraph: CompositionGraph = {
+      nodes: [node("further"), node("far"), node("mid"), node("F"), node("leaf")],
+      edges: [
+        { source: "further", target: "far", count: 1 },
+        { source: "far", target: "mid", count: 1 },
+        { source: "mid", target: "F", count: 1 },
+        { source: "F", target: "leaf", count: 1 },
+      ],
+    };
+    render(<CompositionTab detail={detail} graph={chainGraph} />);
+    expect(screen.queryByText(/→/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^further,/ }));
+    expect(screen.getByText("further → far → mid → F")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^leaf,/ }));
+    expect(screen.getByText("F → leaf")).toBeInTheDocument();
+    expect(screen.queryByText("further → far → mid → F")).not.toBeInTheDocument();
+  });
+
   it("empty lists say so in the same plain words as the caption", () => {
     // F is a true leaf in both directions: nothing renders it and it renders
     // nothing, like an unused design-system component.

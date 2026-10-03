@@ -126,6 +126,13 @@ export function CompositionTab({
   // component sits in both lists, and only the clicked row is pinned.
   const pinnedRowId = pinned ? (pinnedEndpoint?.id ?? null) : null;
   const pinnedIdIn = (dir: "up" | "down") => (pinnedEndpoint?.dir === dir ? pinnedRowId : null);
+  // The pinned path's names in render order, the order the canvas draws them
+  // left to right: `pinned` runs from the focus outward.
+  const pinnedChain = useMemo(() => {
+    if (!pinned) return null;
+    const names = pinned.map((p) => model.byId.get(p.id)?.displayName ?? p.id);
+    return pinnedEndpoint?.dir === "up" ? names.reverse() : names;
+  }, [pinned, pinnedEndpoint, model]);
 
   // Toggle-off matches on id and direction, so clicking the same component in
   // the other list switches the pin instead of releasing it.
@@ -171,6 +178,7 @@ export function CompositionTab({
               onHoverEnd={() => setHovered(null)}
               onCommit={(id) => commit({ id, dir: "up" })}
               pinnedId={pinnedIdIn("up")}
+              pinnedChain={pinnedChain}
             />
             <ClosurePanel
               title="Renders"
@@ -181,6 +189,7 @@ export function CompositionTab({
               onHoverEnd={() => setHovered(null)}
               onCommit={(id) => commit({ id, dir: "down" })}
               pinnedId={pinnedIdIn("down")}
+              pinnedChain={pinnedChain}
             />
           </div>
         </div>
@@ -266,6 +275,7 @@ function ClosurePanel({
   onHoverEnd,
   onCommit,
   pinnedId,
+  pinnedChain,
 }: {
   title: string;
   /** Replaces every `{name}` token in `emptyCopy`. */
@@ -276,6 +286,8 @@ function ClosurePanel({
   onHoverEnd: () => void;
   onCommit: (id: string) => void;
   pinnedId: string | null;
+  /** The pinned path's names in render order, shown under the pinned row. */
+  pinnedChain: string[] | null;
 }) {
   // Both panels can show a filter input at once, so each needs its own `name`.
   const filterName = `${title.toLowerCase().replace(/\s+/g, "-")}-filter`;
@@ -348,6 +360,9 @@ function ClosurePanel({
                   path nor a package; an empty line would still take height. */}
               {label ? (
                 <span className="min-w-0 truncate text-code text-muted-foreground">{label}</span>
+              ) : null}
+              {pinnedId === node.id && pinnedChain ? (
+                <span className="min-w-0 text-pretty font-mono text-xs">{pinnedChain.join(" → ")}</span>
               ) : null}
             </button>
           );
