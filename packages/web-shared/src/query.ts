@@ -19,7 +19,7 @@ export type QueryView = {
   kind: "react" | "vue" | "wc" | "tag";
   package: string;
   deprecated: boolean;
-  occurrences: number;
+  uses: number;
   tag: string[];
 };
 
@@ -47,7 +47,7 @@ export function toQueryView(
     kind: friendlyKind(kind),
     package: packageName ?? "",
     deprecated: componentDeprecated(c, governance),
-    occurrences: c.stats.occurrenceCount,
+    uses: c.stats.occurrenceCount,
     tag: resolveTags(packageName, tags).map((t) => t.value),
   };
 }
@@ -67,7 +67,7 @@ export function parseQuery(input: string): { ast: LiqeQuery | null; error: strin
 /**
  * Whether a component matches the parsed query. False when liqe throws at eval
  * time, which it does for a query that parses but can't be evaluated (a numeric
- * comparison against a string, `occurrences:>foo`) and for unknown field names.
+ * comparison against a string, `uses:>foo`) and for unknown field names.
  */
 export function matchesQuery(
   ast: LiqeQuery,

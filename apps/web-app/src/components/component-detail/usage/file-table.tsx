@@ -107,8 +107,8 @@ export function FileTable({
               </th>
             );
           })}
-          <TableHead scope="col" aria-sort={ariaSort("calls", sortKey, dir)} className={cn(th, "pl-3 pr-4 text-right", SORT_TH)} style={headTop}>
-            <SortButton label="Uses" sortKey="calls" current={sortKey} dir={dir} onClick={onSort} align="right" />
+          <TableHead scope="col" aria-sort={ariaSort("uses", sortKey, dir)} className={cn(th, "pl-3 pr-4 text-right", SORT_TH)} style={headTop}>
+            <SortButton label="Uses" sortKey="uses" current={sortKey} dir={dir} onClick={onSort} align="right" />
           </TableHead>
         </tr>
       </thead>

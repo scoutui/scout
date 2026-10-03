@@ -42,9 +42,9 @@ export function serializeSel(picks: readonly UsagePick[]): string {
   return picks.map((p) => `${p.prop}~${p.kind}~${p.label}`.replaceAll("%", "%25").replaceAll(",", "%2C")).join(",");
 }
 
-const SORT = /^(calls|file|prop:[^~]+)~(asc|desc)$/;
+const SORT = /^(uses|file|prop:[^~]+)~(asc|desc)$/;
 
-/** Reads `sort`: `calls`, `file` or `prop:<name>`, then `~asc` or `~desc`. Anything else is the default sort. */
+/** Reads `sort`: `uses`, `file` or `prop:<name>`, then `~asc` or `~desc`. Anything else is the default sort. */
 export function parseSort(raw: string): UsageSort {
   const match = SORT.exec(raw);
   return match ? { key: match[1] as UsageSortKey, dir: match[2] as UsageSort["dir"] } : DEFAULT_USAGE_SORT;

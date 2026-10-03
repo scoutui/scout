@@ -96,17 +96,17 @@ describe("usage URL", () => {
   });
 
   it.each([
-    ["", { key: "calls", dir: "desc" }],
+    ["", { key: "uses", dir: "desc" }],
     ["file~asc", { key: "file", dir: "asc" }],
     ["prop:size~desc", { key: "prop:size", dir: "desc" }],
-    ["calls~sideways", { key: "calls", dir: "desc" }],
+    ["uses~sideways", { key: "uses", dir: "desc" }],
   ])("reads sort %j", (raw, sort) => {
     expect(parseSort(raw)).toEqual(sort);
   });
 
   it.each([
-    [{ key: "calls", dir: "desc" }, ""],
-    [{ key: "calls", dir: "asc" }, "calls~asc"],
+    [{ key: "uses", dir: "desc" }, ""],
+    [{ key: "uses", dir: "asc" }, "uses~asc"],
     [{ key: "prop:size", dir: "asc" }, "prop:size~asc"],
   ] as const)("writes sort %j as %j", (sort, raw) => {
     expect(serializeSort(sort)).toBe(raw);

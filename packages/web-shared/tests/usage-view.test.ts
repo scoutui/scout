@@ -299,8 +299,8 @@ describe("usageView sort and grouping", () => {
   const calls = [call("src/c/Gamma.tsx", 1), call("src/b/Beta.tsx", 1, [lit("size", "small")]), call("src/a/Zeta.tsx", 1, [lit("size", "large")]), call("src/a/Zeta.tsx", 2, [lit("size", "large")])];
 
   it.each<[string, UsageFilters["sort"], string[], string[]]>([
-    ["calls, highest first, then path", { key: "calls", dir: "desc" }, [], ["Zeta.tsx", "Beta.tsx", "Gamma.tsx"]],
-    ["calls, lowest first", { key: "calls", dir: "asc" }, [], ["Beta.tsx", "Gamma.tsx", "Zeta.tsx"]],
+    ["uses, highest first, then path", { key: "uses", dir: "desc" }, [], ["Zeta.tsx", "Beta.tsx", "Gamma.tsx"]],
+    ["uses, lowest first", { key: "uses", dir: "asc" }, [], ["Beta.tsx", "Gamma.tsx", "Zeta.tsx"]],
     ["file name, A to Z", { key: "file", dir: "asc" }, [], ["Beta.tsx", "Gamma.tsx", "Zeta.tsx"]],
     ["a value column, highest first, files without it last", { key: "prop:size", dir: "desc" }, ["size"], ["Beta.tsx", "Zeta.tsx", "Gamma.tsx"]],
     ["a value column, lowest first, files without it last", { key: "prop:size", dir: "asc" }, ["size"], ["Zeta.tsx", "Beta.tsx", "Gamma.tsx"]],
@@ -310,9 +310,9 @@ describe("usageView sort and grouping", () => {
 
   it.each<[string, UsageFilters["sort"], UsageSortKey, UsageFilters["sort"]]>([
     ["flips the sorted column", { key: "file", dir: "asc" }, "file", { key: "file", dir: "desc" }],
-    ["starts calls highest first", { key: "file", dir: "asc" }, "calls", { key: "calls", dir: "desc" }],
-    ["starts the file name A to Z", { key: "calls", dir: "desc" }, "file", { key: "file", dir: "asc" }],
-    ["starts a value column A to Z", { key: "calls", dir: "desc" }, "prop:size", { key: "prop:size", dir: "asc" }],
+    ["starts uses highest first", { key: "file", dir: "asc" }, "uses", { key: "uses", dir: "desc" }],
+    ["starts the file name A to Z", { key: "uses", dir: "desc" }, "file", { key: "file", dir: "asc" }],
+    ["starts a value column A to Z", { key: "uses", dir: "desc" }, "prop:size", { key: "prop:size", dir: "asc" }],
   ])("a header click %s", (_title, sort, key, next) => {
     expect(nextUsageSort(sort, key)).toEqual(next);
   });
