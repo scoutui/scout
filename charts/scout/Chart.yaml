@@ -2,8 +2,8 @@ apiVersion: v2
 name: scout
 description: The Scout dashboard, which shows how design-system components are used across your repos and over time, with its scan worker and an optional Postgres.
 type: application
-version: 0.2.0
-appVersion: "0.2.0"
+version: 0.3.0
+appVersion: "0.3.0"
 home: https://scoutui.dev
 sources:
   - https://github.com/scoutui/scout

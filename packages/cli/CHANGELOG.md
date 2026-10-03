@@ -1,5 +1,57 @@
 # @scoutui/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- [#57](https://github.com/scoutui/scout/pull/57) [`b31629d`](https://github.com/scoutui/scout/commit/b31629d5fd3e65a6a2d8ded8cb9c7dc1fb34b475) Thanks [@siggerzz](https://github.com/siggerzz)! - In a terminal, the CLI's output now has one look. `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`: `scan` adds the repo and commit, and `backfill` the repo. Numbers stand out, Scout's teal marks links and, in help, commands and flags, and a line saying something went well starts with `✓`, a warning with `!` and an error with `✗`. While `scan` reads files a spinner turns beside a progress bar, and the upload shows a spinner until the dashboard has the scan. `backfill` shows one line for the commit it's working on, with what it's doing, a bar of the commits done and the count, in place of a `Scanning` line per commit, and ends with the link on a line of its own. `auth login` turns a spinner while it waits for you to approve the sign-in.
+
+  None of this appears in CI, when output goes to a file or another command, or with `NO_COLOR`, so logs read as before, apart from these changes:
+
+  - The scan summary lists the most used components only after `scout scan --dry-run` in a terminal. After an upload, and in CI, the summary is the counts, so the dashboard link is the last line.
+  - `auth login` ends with `✓ Signed in as <email> to <host>.`, naming the dashboard. With `NO_COLOR`, nothing turns while it waits.
+  - Colour stays off in CI unless `FORCE_COLOR` is set.
+  - The scan summary groups thousands, as the dashboard does: `1,191 components, 3,925 occurrences`.
+
+- [#53](https://github.com/scoutui/scout/pull/53) [`a2bfa4c`](https://github.com/scoutui/scout/commit/a2bfa4c77a0e3109041ecd5b1557e5f33a77c637) Thanks [@siggerzz](https://github.com/siggerzz)! - `scout scan` now stops when `include` matches no files, instead of reporting an empty scan as a success. It prints `Error: No files match "include" in ./scout.config.json (<patterns>). Point it at your source files and scan again.` and exits `2`, on a dry run and an upload alike. An upload used to scan first and then exit `1`; it now stops before contacting the dashboard.
+
+- [#60](https://github.com/scoutui/scout/pull/60) [`876263d`](https://github.com/scoutui/scout/commit/876263d3fa5877f69f28c7060509b35327b892ae) Thanks [@siggerzz](https://github.com/siggerzz)! - The scan now counts more of the components your code imports, and names more of them correctly:
+
+  - After `const AliasedStar = Icons.Star`, with `Icons` imported from a package, `<AliasedStar />` counts as `Icons.Star`, the same as `<Icons.Star />`.
+  - Members of `export * as Shapes from "./shapes"`, such as `<Shapes.Circle />`, count for the files that declare them.
+  - More components imported through a folder outside `include`, or matched by `exclude`, now get the same name, and the same file or package, as when that folder is scanned:
+    - A Vue component keeps its own name instead of `default`, and the scan no longer warns "Stopped following re-exports" for it.
+    - Members of `export * as Shapes from …`, or of `import * as Shapes from …` exported again with `export { Shapes }`, in that folder count for the file or package that declares them.
+    - A component from `export * from` a package counts for the package instead of a file inside `node_modules`.
+
+  A folder below the config's folder that holds its own git repository, such as a submodule or another clone, is no longer scanned as part of your repository. If `include` only matches files in such a folder, the scan stops and names it.
+
+- [#57](https://github.com/scoutui/scout/pull/57) [`b31629d`](https://github.com/scoutui/scout/commit/b31629d5fd3e65a6a2d8ded8cb9c7dc1fb34b475) Thanks [@siggerzz](https://github.com/siggerzz)! - In a terminal, the CLI now says when a newer version is available, on the line under the wordmark (or first, for a command without one), with the command that gets it for your repo's package manager, for example `Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.` If the repo doesn't list the CLI yet, the line says `Install it with …` instead. When the dashboard you last uploaded to can't read the new version's scans yet, the notice says so instead, and to keep the current version until the dashboard is upgraded, with a link to the upgrade guide. `--help` lists `SCOUTUI_NO_UPDATE_CHECK=1`, which turns the notice off. Scout asks the npm registry at most once a day, in the background, so the line never holds up a command and shows what it heard on the next run. It says nothing when it can't reach the registry. The check is off in CI, when output goes to a file or another command, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK=1` or `NO_UPDATE_NOTIFIER` is set.
+
+### Patch Changes
+
+- [#56](https://github.com/scoutui/scout/pull/56) [`89c4c61`](https://github.com/scoutui/scout/commit/89c4c61103ed6d0c9acb402124ffbf8e606e2796) Thanks [@siggerzz](https://github.com/siggerzz)! - Clearer `--help` text. `scout --help` now ends with how to get started (`scout init`, then `scout scan --dry-run`) and where the docs are. Each option says what it does: `scan --quiet` hides progress and most warnings as well as the summary, and `--host` lists where the address comes from when you don't pass one. `scan`, `init` and `auth` now list `--debug` too.
+
+- [#54](https://github.com/scoutui/scout/pull/54) [`9ae786a`](https://github.com/scoutui/scout/commit/9ae786a282563cdfb349e27c5c17124ecbe84f09) Thanks [@siggerzz](https://github.com/siggerzz)! - Clearer messages from `scout scan` and `scout auth login`:
+
+  - The lines that started with `[scan]` now read `Monorepo root: ../..` and `Path aliases: tsconfig.json`. At a monorepo root with no tsconfig of its own, it counts the workspace packages that have a tsconfig file, instead of saying none was found. With no tsconfig anywhere, it says how to point `tsconfigPath` at one with another name.
+  - A tsconfig the scan can't read gets one warning with its path relative to the repository and what to do, such as `docs/tsconfig.json points to docs/.nuxt/tsconfig.json, which doesn't exist, so its path aliases aren't followed.`, in place of the file system's own error. A problem that several tsconfig files reach is reported once.
+  - When dependencies aren't installed, the refusal to upload names the first missing package and the `package.json` that lists it, relative to the repository like the scan's own warning.
+  - An address that isn't a Scout dashboard now says so (`<host> didn't answer like a Scout dashboard. Check the dashboard address and try again.`) instead of asking you to check the dashboard's logs.
+  - With no dashboard address set, the upload error also names `SCOUTUI_HOST`, and `scout auth login` says how to give one.
+  - A missing config reads `Couldn't find ./scout.config.json. Run scout init to create one, or pass --config <path>.` Config errors name the config path as you gave it, and invalid JSON ends with what to do; `--debug` shows where the parser stopped.
+  - `scout auth --help` lists `--host` and `--debug`, and `scout --help` says what `auth status` does.
+  - With `--debug` in a terminal, debug lines no longer print on the end of the progress line.
+
+- [#55](https://github.com/scoutui/scout/pull/55) [`2c6e2d2`](https://github.com/scoutui/scout/commit/2c6e2d2d9c7eddbe64887eb5d50fb1ee4c633fdf) Thanks [@siggerzz](https://github.com/siggerzz)! - `scout scan`'s progress is easier to read:
+
+  - In a CI log, the file count prints once as the scan starts and then at most every 10 seconds, instead of a line every 50 files.
+  - A new line, `Matching occurrences to components…`, shows the part of the scan that used to print nothing.
+  - In a terminal, the progress line is cut to the terminal's width, so a narrow window no longer leaves a trail of half-rewritten lines, and a warning no longer lands on the end of it.
+  - An upload ends with `Uploaded the scan of <commit>: <url>` instead of an internal scan ID, and the summary no longer repeats the advice the warning above it already gives.
+
+- [#48](https://github.com/scoutui/scout/pull/48) [`473263d`](https://github.com/scoutui/scout/commit/473263d47b81cec89e8c76e7580cca4cd1c281c6) Thanks [@siggerzz](https://github.com/siggerzz)! - In a Vue app that uses `unplugin-vue-components`, the scan now reads the `components.d.ts` the plugin writes, at the top of the app or in `src/`. Components used in a template without an import are now counted for their package or file: with Element Plus's resolver, `<el-button>` is Element Plus's `ElButton` rather than a web component with no package, and `<router-view>` is vue-router's `RouterView`.
+
 ## 0.2.0
 
 ### Minor Changes
