@@ -48,7 +48,7 @@ scout scan [options]
 
 Most runs need no flags: `scout scan` reads `scout.config.json` in the current directory, [checks that the dashboard can take the scan](#upload-flags), scans, uploads the scan and waits for the dashboard to publish it. It writes no file. To scan without uploading, run `scout scan --dry-run`.
 
-In a terminal, `scan` starts with a heading, `▲ Scout <version> · <repo id> at <commit>`, and a compass needle turns at the start of the progress line while it reads files. Neither appears with `--quiet`, when the output goes to a file or another command, or when the `CI` environment variable is set. `NO_COLOR` turns off their colour.
+In a terminal, `scan` starts with a heading, `▲ Scout <version> · <repo id> at <commit>`, and turns a compass needle at the start of the progress line while it reads files. Both appear only when [prompts are on](#prompts), stderr is a terminal and `--quiet` isn't passed. `NO_COLOR` turns off the heading's colour.
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
