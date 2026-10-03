@@ -104,7 +104,7 @@ While it scans, `scan` writes its progress to stderr: `Reading files: <count> of
 
 The config file must be inside a git repository with at least one commit. Otherwise `scan` exits `1` with `Error: Couldn't scan: <folder> isn't inside a git repository. Run scout scan from a git checkout.`, or `Error: Couldn't scan: this repository has no commits yet. Commit your files and try again.` In a shallow clone, a dry run warns `Warning: This checkout doesn't have the full history. Run git fetch --unshallow and scan again.` and records no [`initialCommit`](/docs/reference/artifact#meta). An upload refuses a shallow clone instead (see [Upload flags](#upload-flags)).
 
-If no file matches `include`, `scan` stops before it scans or contacts the dashboard, on a dry run too, and exits `2` with `Error: No files match "include" in <config path> (<patterns>). Point it at your source files and scan again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
+If no file matches `include`, `scan` stops before it scans or contacts the dashboard, on a dry run too, and exits `2` with `Error: No files match "include" in <config path> (<patterns>). Point it at your source files and scan again.` `<config path>` is the `--config` value, `./scout.config.json` by default. When the config has no `include` and the config folder has no file to scan, the message is `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in <folder>. Check "exclude" in <config path>, or scan from the folder that holds your source files.`, where `<folder>` is the config folder's full path.
 
 `scan` needs the repo's dependencies installed. Components from a declared package that isn't installed aren't found: each place that uses one is recorded as an [unmatched use](/docs/reference/glossary#unmatched-use). A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans; a dry run scans anyway. One listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with its uses unmatched.
 
@@ -139,7 +139,7 @@ Before it scans, `scan` checks these, in this order, and stops at the first that
 
 When a check before the scan fails, nothing is uploaded and no file is written.
 
-After the scan, `scan` refuses a scan that found no uses: `Error: Couldn't upload the scan: no uses were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
+After the scan, `scan` refuses a scan that found no uses: `Error: Couldn't upload the scan: no uses were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default. When the config has no `include`, the line names `"exclude"` instead.
 
 If the dashboard already has a scan of this commit, `scan` prints `Commit <commit> is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and exits `0` without scanning, unless the dashboard couldn't prepare that scan: then the upload replaces it. Some error lines end with `See <url>`: the page that explains that problem.
 
@@ -204,7 +204,7 @@ A commit that can't be scanned prints `Warning: Skipped <commit> (<date>): <reas
 | `nuxt prepare failed.` | `nuxt prepare` failed, or the Nuxt app still isn't prepared after the install. | yes |
 | `there's no lockfile to install from.` | No `install` is set, and neither the config's folder nor a folder above it has a `pnpm-lock.yaml`, `yarn.lock` or `package-lock.json`. | yes |
 | `it installs with Yarn Plug'n'Play, which Scout can't read.` | The install used Yarn Plug'n'Play. | no |
-| `the scan found no components.` | The scan found no components in the files `include` matches. | no |
+| `the scan found no components.` | The scan found no components in the files it read. | no |
 | The dashboard's reason | The dashboard refused the commit's scan, before the scan or on upload. | no |
 
 The first seven are *install skips*. Three in a row stop the run (see [Stop lines](#backfill-stop-lines)); an upload starts the count again. A scan with no components and a dashboard refusal neither count nor start it again. A skip marked *Exit `1`* makes the run exit `1`, unless it is one of the three that stopped the run at the history line.
@@ -361,7 +361,7 @@ A host without a scheme gets `https://`. A host must use `https://`; plain `http
 | --- | --- |
 | `0` | Success, including `auth logout` when you weren't signed in. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
 | `1` | The command ran but failed: `scan` [refused the scan](#upload-flags), the upload failed or didn't finish in time, the config for `scan` isn't in a git repository with a commit or git can't read that repository, `init` found an existing config, `auth login` or `auth status` failed, or `auth logout` couldn't end the session on the dashboard. Also any unexpected error. |
-| `2` | Usage or config error: unknown command, flag or `auth` subcommand, a malformed flag, an extra argument, `--rescan` with `--dry-run`, an unknown `--framework` value, a missing or invalid config file, a config field Scout doesn't use, an `include` that matches no files, a `--repo-root` that isn't a folder, Yarn Plug'n'Play detected, `auth login` with no host and prompts off, or an `auth` or `init --host` address that isn't `https://`. On a dry run, also a `scout-scan.json` that links to a file outside the config's folder: `Error: scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
+| `2` | Usage or config error: unknown command, flag or `auth` subcommand, a malformed flag, an extra argument, `--rescan` with `--dry-run`, an unknown `--framework` value, a missing or invalid config file, a config field Scout doesn't use, no files to scan (an `include` that matches no files, or no source files in the config folder), a `--repo-root` that isn't a folder, Yarn Plug'n'Play detected, `auth login` with no host and prompts off, or an `auth` or `init --host` address that isn't `https://`. On a dry run, also a `scout-scan.json` that links to a file outside the config's folder: `Error: scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
 | `130` | You cancelled a prompt in `init` or `auth`, or stopped `backfill`. |
 
 [Run a scan and upload in CI](/docs/guides/run-in-ci#fix-a-failed-upload) lists the upload errors behind exit code `1`. `backfill` uses the same codes for its own outcomes: see [its exit codes](#backfill-exit-codes).

@@ -24,7 +24,9 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
 
-If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too, after the installed packages. Its components are listed once you search in it: type `legacy` and pick `@acme/ui-legacy`. Or type `button`: after the results, `@acme/ui-legacy` is listed with how many of its components match, and picking it keeps `button` as the search. A component [defined in the repo](/docs/reference/glossary#local) outside any workspace package is never offered.
+If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too, after the installed packages. Its components are listed once you search in it: type `legacy` and pick `@acme/ui-legacy`. Or type `button`: after the results, `@acme/ui-legacy` is listed with how many of its components match, and picking it keeps `button` as the search.
+
+A component [defined in the repo](/docs/reference/glossary#local) outside every workspace package is offered under the repo's [root package](/docs/reference/artifact#root-package): the name in the root `package.json`, or the repo id when it has none. In a repo that isn't a monorepo, that's every component the repo defines. Scans uploaded by older CLI versions record no package for these components, so if one is missing, upload a new scan of the repo.
 
 A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered under a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 

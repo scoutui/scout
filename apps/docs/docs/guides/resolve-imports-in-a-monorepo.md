@@ -91,7 +91,7 @@ repository-declaration  @acme/ui  Button  packages/ui/src/Button.tsx
 
 If it isn't listed like that:
 
-- **Its package shows as `-`.** The package's folder doesn't match a pattern in `workspaces` or `pnpm-workspace.yaml`. With `"workspaces": ["apps/*"]`, a package in `packages/ui` isn't included. Add `"packages/*"`.
+- **Its package shows the [root package](/docs/reference/artifact#root-package)'s name, such as `storefront`, instead of `@acme/ui`.** The package's folder doesn't match a pattern in `workspaces` or `pnpm-workspace.yaml`. With `"workspaces": ["apps/*"]`, a package in `packages/ui` isn't included. Add `"packages/*"`.
 - **Its uses are unresolved, as `package-not-installed` or `module-not-found`.** No workspace package has the name your code imports. Check that the package's `package.json` `name` matches the import exactly and that its folder is in the workspace list, then install dependencies.
 - **A deep import such as `@acme/ui/Button` is listed as `package-export` with no file.** Add a matching entry to the package's `exports`, for example `"./*": "./src/*.tsx"`.
 
