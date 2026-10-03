@@ -1,5 +1,5 @@
 import type { CompositionGraphNode } from "@scoutui/web-shared";
-import type { GraphModel } from "./graph-model";
+import { byCallSites, type GraphModel } from "./graph-model";
 
 /** The narrowest a chip gets. The canvas widens chips up to MAX_NODE_W when
  *  the pane has room (see computeChipWidth). */
@@ -174,12 +174,7 @@ export function computeLayout(
     level: number,
     weightOf: (n: CompositionGraphNode) => number,
   ): void => {
-    const sorted = [...nodes].sort(
-      (a, b) =>
-        weightOf(b) - weightOf(a) ||
-        b.occurrenceCount - a.occurrenceCount ||
-        a.id.localeCompare(b.id),
-    );
+    const sorted = [...nodes].sort(byCallSites(weightOf));
 
     let visible = sorted;
     const hiddenMembers: CompositionGraphNode[] = [];
