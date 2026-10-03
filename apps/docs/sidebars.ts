@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
             "guides/resolve-imports-in-a-monorepo",
             "guides/authenticate-uploads",
             "guides/run-in-ci",
+            "guides/fill-in-a-repos-history",
             "guides/link-web-components-to-your-package",
             "guides/troubleshoot-a-scan",
           ],

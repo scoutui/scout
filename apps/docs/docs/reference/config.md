@@ -38,6 +38,14 @@ Only needed when you upload scans to a dashboard.
 | `host` | non-empty string | none | Dashboard that `scan` uploads to and the `auth` commands sign in to. `--host` and `SCOUTUI_HOST` win over it; it wins over your default host. See [Host resolution](/docs/reference/cli#host-resolution). `init` writes it when you give a dashboard address. |
 | `branch` | non-empty string | the remote's default branch | Branch the dashboard tracks. Without it, `scan` follows the remote's default branch as the clone recorded it (`<remote>/HEAD`). `init` writes it when it can tell which branch that is. |
 
+### Backfill fields
+
+Only [`backfill`](/docs/reference/cli#backfill) reads this field. `scan` ignores it, and `init` never writes it.
+
+| Field | Type | Default | Behavior |
+| --- | --- | --- | --- |
+| `install` | non-empty string | none: `backfill` works out the install from the lockfile | Command `backfill` runs at each commit to install dependencies, through the shell, from the top of the repository. It replaces `backfill`'s own install, `nuxt prepare` included, so for a Nuxt app the command must prepare the app too. Example: `"yarn install --immutable"`. |
+
 ### Import resolution fields
 
 Rarely needed. Set these only when imports go through path aliases the scan can't find on its own. See [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo).
