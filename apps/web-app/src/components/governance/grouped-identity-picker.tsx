@@ -106,7 +106,6 @@ export function GroupedIdentityPicker({
   scope,
   onScopeChange,
   placeholder,
-  closedPlaceholder,
   emptyText,
   ariaDescribedBy,
   invalid,
@@ -128,8 +127,6 @@ export function GroupedIdentityPicker({
   scope: string | null;
   onScopeChange: (scope: string | null) => void;
   placeholder: string;
-  /** Shown when narrowed, closed and empty. */
-  closedPlaceholder?: string | undefined;
   /** Shown in the list when there is nothing to search. */
   emptyText: string;
   ariaDescribedBy?: string | undefined;
@@ -205,6 +202,12 @@ export function GroupedIdentityPicker({
     setHighlight(null);
   }
 
+  /** Closes the list without a pick. With no value, the search is no longer narrowed to a package. */
+  function dismiss() {
+    close();
+    if (value === null && scope !== null) onScopeChange(null);
+  }
+
   function narrow(row: Extract<SearchRow, { kind: "package" }>) {
     onScopeChange(row.packageName);
     setQuery(row.narrowedQuery);
@@ -238,7 +241,7 @@ export function GroupedIdentityPicker({
       if (active) choose(active);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      close();
+      dismiss();
     } else if (e.key === "Tab" && !e.shiftKey && active?.kind === "package" && (highlight !== null || query !== "")) {
       e.preventDefault();
       narrow(active);
@@ -297,14 +300,14 @@ export function GroupedIdentityPicker({
         spellCheck={false}
         disabled={disabled}
         value={inputValue}
-        placeholder={scope === null ? placeholder : open ? `Search in ${scope}` : (closedPlaceholder ?? `Search in ${scope}`)}
+        placeholder={scope === null ? placeholder : `Search in ${scope}`}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
         }}
         onClick={() => setOpen(true)}
         onFocus={(e) => e.currentTarget.select()}
-        onBlur={close}
+        onBlur={dismiss}
         onKeyDown={onKeyDown}
         className={cn(
           "h-full min-w-0 flex-1 bg-transparent font-mono text-xs outline-none placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed",

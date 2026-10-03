@@ -408,7 +408,7 @@ describe("GovernanceManager", () => {
     expect(document.getElementById("record-r1")).not.toHaveAttribute("aria-current");
   });
 
-  it("keeps the form open after Create, saying what was added, with the fields cleared and Type and each field's package kept", async () => {
+  it("keeps the form open after Create, saying what was added, with both search boxes blank and Type kept, and blank again when closed with nothing picked", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     const { rerender } = render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     const source = screen.getByRole("combobox", { name: "Package or component" });
@@ -433,13 +433,27 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     expect(source).toHaveValue("");
     expect(source).toHaveFocus();
-    expect(source).toHaveAttribute("placeholder", "Search in old-icons");
+    expect(source).toHaveAttribute("placeholder", "Search packages and components");
     expect(by).toHaveValue("");
-    expect(by).toHaveAccessibleDescription("@acme/new");
+    expect(by).toHaveAttribute("placeholder", "Search for a replacement");
+    expect(screen.queryByRole("button", { name: "Search all packages" })).not.toBeInTheDocument();
 
     const created = rec("new", "old-icons", "Star", { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } });
     rerender(<GovernanceManager records={[created]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(document.getElementById("record-new")).toHaveAttribute("aria-current", "true");
+
+    for (const [box, packageName] of [[source, "old-icons"], [by, "@acme/new"]] as const) {
+      fireEvent.change(box, { target: { value: packageName } });
+      fireEvent.click(screen.getByRole("option", { name: new RegExp(`^${packageName}`) }));
+      expect(box).toHaveAccessibleDescription(packageName);
+      fireEvent.blur(box);
+      expect(box).toHaveValue("");
+      expect(box).not.toHaveAccessibleDescription();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    expect(await screen.findByText("Choose a package or component.")).toBeInTheDocument();
+    expect(screen.getByText("Choose what supersedes it.")).toBeInTheDocument();
+    expect(saveGovernance).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
     pick("Package or component", "heart");

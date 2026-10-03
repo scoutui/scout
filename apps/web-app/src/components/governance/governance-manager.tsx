@@ -961,6 +961,8 @@ function RecordForm({
         }
         setCreated((prev) => createdOf(form, (prev?.n ?? 0) + 1));
         setForm({ ...emptyForm(), dispositionKind: form.dispositionKind });
+        setSourceScope(null);
+        setByScope(null);
         onCreated(res.id);
         document.getElementById("gov-source")?.focus();
         return;
@@ -1100,7 +1102,6 @@ function RecordForm({
               scope={byScope}
               onScopeChange={setByScope}
               placeholder="Search for a replacement"
-              closedPlaceholder="Choose a replacement"
               emptyText={emptyText}
               ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
               invalid={Boolean(fieldErrors.supersededBy)}
