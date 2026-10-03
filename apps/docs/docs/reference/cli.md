@@ -46,7 +46,7 @@ In a terminal, the output is *styled* for the person watching it:
 
 - `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id.
 - Colour picks out numbers, the names of components, commands and flags, and links. Secondary text, such as where a component comes from, is dimmer.
-- A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`.
+- A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`. A warning starts with `!`, and an error with `✗`.
 - Progress turns a spinner, with a bar wherever the total is known.
 
 Output is styled when all of these hold:
@@ -70,6 +70,8 @@ Most runs need no flags: `scout scan` reads `scout.config.json` in the current d
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
 | `--dry-run` | none | off | Scans without uploading, and writes the artifact to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
 | `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
+
+After the scan, a summary counts the files read, the components found and their occurrences. On a dry run in a terminal, it also lists the five most used components with the package or file each comes from. The list is left out of an upload and of a CI job's log, so after an upload the last line is the link to the scan.
 
 While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching occurrences to components…`. In a terminal, that's one line rewritten in place. When [styled](#terminal-output), a spinner turns at its start and a bar fills as the files are read, and the upload shows `Uploading the scan…` with a spinner, then `Waiting for the dashboard to process the scan…` in place of that line. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
 
@@ -203,15 +205,26 @@ Progress lines print on stderr, and `--quiet` hides them:
 | Line | When |
 | --- | --- |
 | `Found 27 commits on origin/main, one a week since 3 Apr 2026. Scout will scan all 27.` | First, unless there's nothing to scan. When some are already on the dashboard, it ends `1 is already on the dashboard, so Scout will scan 26.`; with `--rescan`, `Scout will scan all 27, replacing the 1 already on the dashboard.` |
-| `Scanning <commit> (<date>), <n> of <total>…` | Before each commit. |
+| `Scanning <commit> (<date>), <n> of <total>…` | Before each commit, unless styled. |
 | `The dashboard asked Scout to slow down. Continuing in 1 minute…` | The dashboard is receiving too many uploads. `backfill` waits as long as it asks, then uploads the scan again. |
 
-When [styled](#terminal-output), and without `--debug`, a line under each `Scanning` line turns a spinner while `backfill` installs dependencies, scans the commit and uploads its scan, beside a bar of the commits done so far. It's cleared when the commit is done.
+When [styled](#terminal-output), and without `--debug`, one line rewritten in place takes the place of the `Scanning` lines. It names the commit and the step, `installing dependencies…`, `scanning…` or `uploading the scan…`, beside a spinner, a bar of the commits done so far and the count:
+
+```text
+⠹ 9b07c3d (25 Sep 2026): installing dependencies…  ━━━━━━━━━━━━━━━━━━━━━╸────────  20 of 26
+```
 
 The last line prints on stdout, even with `--quiet`:
 
 ```text
 Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
+```
+
+When styled, it starts with `✓`, or `!` when a commit was skipped, and the link moves to a line of its own:
+
+```text
+✓ Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped.
+  See https://scout.example.com/repos/storefront
 ```
 
 It names the tracked branch, the `--since` date and the repo's page on the dashboard. *Already on the dashboard* counts the commits the dashboard already had, whether it said so before the scan or on upload. With `--rescan`, the line also counts the scans it replaced, after the uploads: `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped.` Those aren't counted as already on the dashboard.
@@ -276,7 +289,7 @@ scout auth <login|logout|status> [--host <url>]
 
 | Subcommand | Behavior | Exit code |
 | --- | --- | --- |
-| `login` | Signs in with a code you approve in the browser, and saves the session. It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
+| `login` | Signs in with a code you approve in the browser, saves the session, and prints `✓ Signed in as <email> to <host>.` It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
 | `status` | Checks the session with the dashboard and prints `Signed in as <email> to <host> (session saved in the system keychain).` When the session is saved in `hosts.json`, the line ends with that file's path instead, for example `(session saved in ~/.config/scoutui/hosts.json).` | `0` signed in. `1` not signed in to that host, the session is no longer valid, or the dashboard can't check it. |
 | `logout` | Ends the session on the dashboard, then deletes it from this computer. If that host was your default, you have no default until you next sign in. | `0`, including when you weren't signed in. `1` the dashboard couldn't end the session, so it stays saved. |
 

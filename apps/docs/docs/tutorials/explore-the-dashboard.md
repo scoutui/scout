@@ -42,7 +42,7 @@ Opened your browser…
 Our code will be different. If the browser doesn't open, we open the link ourselves with our code on the end, such as `http://localhost:3000/login/device?code=HJKM-4TQX`. The browser shows an approval page with our email under **Signed in as** and the same code under **Device code**. We check that the code matches and press **Approve**. The terminal finishes with:
 
 ```
-✓ Signed in as dev@acme.test
+✓ Signed in as dev@acme.test to http://localhost:3000.
 ```
 
 Now we scan and upload. `scan` takes only a commit that's on the remote's default branch, with the repo's dependencies installed and no uncommitted changes apart from the config and the scan file. In the first tutorial we added the CLI to `package.json`, so we commit that and push it.
@@ -57,11 +57,10 @@ npm ci
 npx scout scan --host http://localhost:3000
 ```
 
-It prints the same scan summary as before, then says it's waiting while the dashboard processes the scan. The last line gives the address of our repo's page:
+It prints the same counts as before, without the list of most used components, then waits while the dashboard processes the scan. The last line gives the address of our repo's page:
 
 ```
-Waiting for the dashboard to process the scan…
-Uploaded the scan of a1c9e04: http://localhost:3000/repos/acme%2Fstorefront
+✓ Uploaded the scan of a1c9e04: http://localhost:3000/repos/acme%2Fstorefront
 ```
 
 ## Step 2: Find our repo
