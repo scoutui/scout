@@ -16,6 +16,35 @@
   },
   "components": [
     {
+      "id": "df977e51ad44a93d",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/cjs-interop/Interop.tsx",
+        "exportName": "Interop"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e2884d5bb54e5fcc": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "b64fbf93a0f63717",
       "identity": {
         "kind": "repository-declaration",
@@ -3760,6 +3789,34 @@
       }
     },
     {
+      "id": "e2884d5bb54e5fcc",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/design-system",
+        "publicEntry": "",
+        "exportName": "default"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Button"
+      ],
+      "version": "0.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "df977e51ad44a93d": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "292f9cb89f29bd3a",
       "identity": {
         "kind": "package-export",
@@ -4335,6 +4392,23 @@
     }
   ],
   "occurrences": [
+    {
+      "occurrenceId": "9ed5cc81d54578f0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e2884d5bb54e5fcc"
+      },
+      "filePath": "src/cjs-interop/Interop.tsx",
+      "line": 7,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "Button",
+      "props": {},
+      "ownerComponentId": "df977e51ad44a93d"
+    },
     {
       "occurrenceId": "893b3e4f41d500ad",
       "resolution": {

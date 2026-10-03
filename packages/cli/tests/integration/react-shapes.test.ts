@@ -534,6 +534,15 @@ describe("integration: react-shapes fixture", () => {
     });
   });
 
+  describe("cjs-interop", () => {
+    it("credits `'default' in X ? X.default : X` over a default import once, to the package's default export", () => {
+      const S = "cjs-interop";
+      expect(rendersIn(S)).toEqual([
+        row("Interop.tsx:7:9", pkgOf("@example/design-system", "default"), local(S, "Interop.tsx", "Interop"), []),
+      ]);
+    });
+  });
+
   describe("compound-roots", () => {
     it("names each member of an imported compound by its whole path, and reports a compound whose root is never bound", () => {
       const S = "compound-roots";
