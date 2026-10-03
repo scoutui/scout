@@ -38,7 +38,7 @@ export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
         {detail.definedAt ? (
           <>
             <Sep />
-            <span>
+            <span className="wrap-anywhere">
               defined at{" "}
               <span className="font-mono">{detail.definedAt.filePath}:{detail.definedAt.line}:{detail.definedAt.column}</span>
             </span>
