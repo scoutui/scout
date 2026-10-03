@@ -192,13 +192,14 @@ describe("scout backfill", () => {
     const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ styled: true, color: createColor({ isTTY: false, env: {} }), isTTY: true }) });
 
     expect(stderr()).not.toContain("Scanning ");
+    const barred = stderr().replace(/[━╸─]+/g, "<bar>");
     for (const [what, sha, day, count] of [
       ["installing dependencies…", c2, "17 Jun 2026", "1 of 2"],
       ["scanning…", c2, "17 Jun 2026", "1 of 2"],
       ["uploading the scan…", c2, "17 Jun 2026", "1 of 2"],
       ["installing dependencies…", c1, "10 Jun 2026", "2 of 2"],
     ] as const) {
-      expect(stderr()).toMatch(new RegExp(`\\r⠋ ${named(sha, day).replace(/[()]/g, "\\$&")}: ${what}  [━╸─]+  ${count}\\x1b\\[K`));
+      expect(barred).toContain(`\r⠋ ${named(sha, day)}: ${what}  <bar>  ${count}\x1b[K`);
     }
     expect(stdout()).toBe(`✓ Backfilled main since 1 Jun 2026: 2 uploaded, 0 already on the dashboard, 0 skipped.\n  ${END}`);
     expect(code).toBe(0);
