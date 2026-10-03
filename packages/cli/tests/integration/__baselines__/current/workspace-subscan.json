@@ -12,6 +12,24 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "apps/**/*.tsx",
+        "packages/**/*.{ts,tsx}"
+      ],
+      "exclude": [],
+      "packages": [
+        {
+          "name": "@ws-sub/web",
+          "folder": "apps/web"
+        },
+        {
+          "name": "@ws-sub/ui",
+          "folder": "packages/ui"
+        }
+      ]
     }
   },
   "components": [
@@ -374,6 +392,7 @@
         "componentId": "e37b620312476a5b"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 10,
       "column": 6,
       "credit": {
@@ -401,6 +420,7 @@
         "componentId": "a8ccae49e77587a3"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 11,
       "column": 6,
       "credit": {
@@ -428,6 +448,7 @@
         "componentId": "aeb23d65757b5d71"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 12,
       "column": 6,
       "credit": {
@@ -450,6 +471,7 @@
         "componentId": "952fa8a2046587ee"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 13,
       "column": 6,
       "credit": {
@@ -473,6 +495,7 @@
         "componentId": "aff663ef7f33a8b2"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 14,
       "column": 6,
       "credit": {
@@ -489,6 +512,7 @@
         "componentId": "27fce2330f30fa9b"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 15,
       "column": 6,
       "credit": {
@@ -512,6 +536,7 @@
         "componentId": "8b3a5eff07c52947"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 16,
       "column": 6,
       "credit": {
@@ -535,6 +560,7 @@
         "componentId": "ead8369588a7bd08"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 17,
       "column": 6,
       "credit": {
@@ -558,6 +584,7 @@
         "componentId": "a39eac46e7bbfb7b"
       },
       "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@ws-sub/web",
       "line": 7,
       "column": 10,
       "credit": {

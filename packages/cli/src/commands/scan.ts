@@ -23,6 +23,7 @@ import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../sc
 import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload-policy/git-state.js";
 import { installedVersionReader } from "../scan/stamp-version.js";
 import { buildCemIndex } from "../scan/cem-index.js";
+import { buildScanScope } from "../scan/scope.js";
 import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
@@ -52,6 +53,7 @@ import {
   buildWorkspaceGraph,
   createDeclaredDependencyTest,
   declaredInPath,
+  findPackageOrRoot,
   isFirstPartyPath,
   resetFindOwningPackageCache,
   type WorkspaceGraph,
@@ -701,8 +703,9 @@ export async function scanRepository(input: {
     },
   };
 
+  const scope = buildScanScope({ cfg, outputRoot, workspaceGraph, files });
   const artifact = await emitArtifact({
-    meta,
+    meta: { ...meta, scope },
     repoId: meta.repo.id,
     seeds: [...seedsById.values()],
     occurrences: outputOccurrences,
@@ -718,6 +721,9 @@ export async function scanRepository(input: {
     // Scan-file paths are outputRoot-relative, so versions are read from
     // outputRoot, not cfg.configDir.
     readVersion: installedVersionReader(outputRoot),
+    ...(scope.packages.length > 1
+      ? { usedIn: (filePath: string) => findPackageOrRoot(workspaceGraph, resolve(outputRoot, filePath))?.name }
+      : {}),
   });
 
   if (!quiet) {

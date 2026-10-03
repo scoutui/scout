@@ -131,6 +131,8 @@ const occurrenceSchema = z.object({
   occurrenceId: nonEmptyString,
   resolution: resolutionSchema,
   filePath: z.string(),
+  /** The name of the package in `meta.scope.packages` whose folder holds `filePath`. Present only when `meta.scope.packages` has more than one entry. */
+  usedIn: nonEmptyString.optional(),
   line: finiteNumber,
   column: finiteNumber,
   credit: creditSchema,
@@ -270,7 +272,7 @@ const componentSchema = z
     declared: plainObject<DeclaredPropApi>().optional(),
     /** Repository declarations only: declaration position in `identity.filePath`. */
     definition: z.object({ line: finiteNumber, column: finiteNumber }).optional(),
-    /** Repository declarations only: owning workspace package name. */
+    /** Repository declarations only: the package its file belongs to, the deepest workspace package holding it or else the root package. */
     owningPackage: z.string().optional(),
     version: z.string().nullable(),
   })
@@ -281,6 +283,18 @@ const componentSchema = z
     if (onTag ? component.framework !== undefined : component.framework === undefined) fail(ctx, ["framework"]);
   });
 export type Component = z.infer<typeof componentSchema>;
+
+const scanScopeSchema = z.object({
+  /** The config's folder, from the repository root; "" at the root. */
+  folder: z.string(),
+  /** The config's `include`; absent when the config has none and the scan read every source file. */
+  include: z.array(nonEmptyString).optional(),
+  /** The config's `exclude`, [] when it has none. */
+  exclude: z.array(nonEmptyString),
+  /** Each package holding a scanned file: workspace packages, and the root package when a scanned file sits outside every workspace package. Sorted by folder. */
+  packages: z.array(z.object({ name: nonEmptyString, folder: z.string() })),
+});
+export type ScanScope = z.infer<typeof scanScopeSchema>;
 
 const scanMetaSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
@@ -300,6 +314,8 @@ const scanMetaSchema = z.object({
     initialCommit: z.string().nullable(),
     branch: z.string().nullable(),
   }),
+  /** What the scan covered: the config's folder, its include and exclude, and the packages its files sit in. */
+  scope: scanScopeSchema.optional(),
 });
 export type ScanMeta = z.infer<typeof scanMetaSchema>;
 

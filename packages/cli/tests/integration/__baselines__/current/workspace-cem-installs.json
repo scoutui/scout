@@ -12,6 +12,23 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "apps/**/*.vue"
+      ],
+      "exclude": [],
+      "packages": [
+        {
+          "name": "workspace-cem-installs-site",
+          "folder": "apps/site"
+        },
+        {
+          "name": "workspace-cem-installs-web",
+          "folder": "apps/web"
+        }
+      ]
     }
   },
   "components": [
@@ -178,6 +195,7 @@
         "componentId": "499e5bce2c8cca46"
       },
       "filePath": "apps/site/pages/index.vue",
+      "usedIn": "workspace-cem-installs-site",
       "line": 2,
       "column": 3,
       "credit": {
@@ -194,6 +212,7 @@
         "componentId": "fcf4ea2742dd1be9"
       },
       "filePath": "apps/web/src/App.vue",
+      "usedIn": "workspace-cem-installs-web",
       "line": 2,
       "column": 3,
       "credit": {

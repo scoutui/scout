@@ -37,6 +37,8 @@ export type EmitInput = {
   declaredIn: ReadonlyMap<string, string>;
   /** Reads a package's installed version (`installedVersionReader`). */
   readVersion: PackageVersionReader;
+  /** The package each occurrence's file belongs to, by output-space path; given only when the scope has more than one package. */
+  usedIn?: (filePath: string) => string | undefined;
 };
 
 /**
@@ -60,10 +62,12 @@ export async function emitArtifact(input: EmitInput): Promise<ScanArtifact<Diagn
     const { credit, trace } = toCreditAndTrace(eo.viaChain, authoredTag);
     const writtenName =
       eo.rawComponentId !== undefined ? recordedWrittenName(eo.writtenName, toIdentity(eo.rawComponentId, repoId)) : undefined;
+    const usedIn = input.usedIn?.(eo.filePath);
     return {
       occurrenceId: computeOccurrenceId(idKey, eo.filePath, eo.line, eo.column, ownerComponentId),
       resolution,
       filePath: eo.filePath,
+      ...(usedIn !== undefined ? { usedIn } : {}),
       line: eo.line,
       column: eo.column,
       credit,
@@ -99,6 +103,7 @@ export async function emitArtifact(input: EmitInput): Promise<ScanArtifact<Diagn
       scanId: meta.scanId,
       scannedAt: meta.scannedAt,
       repo: meta.repo,
+      ...(meta.scope !== undefined ? { scope: meta.scope } : {}),
     },
     components,
     occurrences,
