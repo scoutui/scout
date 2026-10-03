@@ -24,6 +24,9 @@
   "bin": {
     "scout": "dist/cli.js"
   },
+  "scout": {
+    "scanFormat": 2
+  },
   "files": [
     "dist",
     "schema",

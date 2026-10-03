@@ -411,6 +411,25 @@ describe("runScan pre-scan check", () => {
     expect(stderr()).toBe("Skipped the pre-scan check: https://h.example doesn't offer it. The upload will check the scan instead.\n");
   });
 
+  it.each<[string, unknown, number[] | undefined]>([
+    ["lists them", [2, 3], [2, 3]],
+    ["doesn't say", undefined, undefined],
+    ["lists something other than formats", ["2"], undefined],
+  ])("passes on the scan formats the dashboard reads when its reply %s, and uploads", async (_, scanFormats, heard) => {
+    const dir = setupConsumer();
+    vi.spyOn(global, "fetch")
+      .mockImplementationOnce(async (input, init) => {
+        const reply = (await (await preScanReply()(input, init)).json()) as Record<string, unknown>;
+        return Response.json({ ...reply, scanFormats });
+      })
+      .mockResolvedValueOnce(Response.json(receipt, { status: 202 }))
+      .mockResolvedValueOnce(Response.json(ready));
+    const onScanFormats = vi.fn();
+    const result = await runScan({ cwd: dir, quiet: true, upload: true, onScanFormats });
+    expect(result.upload).toBe("ok");
+    expect(onScanFormats.mock.calls).toEqual(heard === undefined ? [] : [[heard]]);
+  });
+
   it.each<[string, (commit: string) => string]>([
     ["an answer it doesn't know", (commit) => JSON.stringify({ refusal: null, commits: [{ commit, decision: "later" }], warning: null })],
     ["a page from a sign-in proxy", () => "<!doctype html><title>Sign in</title>"],

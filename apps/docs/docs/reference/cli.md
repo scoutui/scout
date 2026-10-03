@@ -57,6 +57,24 @@ Output is styled when all of these hold:
 
 Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `auth login` still ends with `✓ Signed in as <email> to <host>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
 
+## New versions
+
+In a terminal, Scout checks once a day for a newer version of `@scoutui/cli`. When there is one, the command ends with a line on stderr that names it and how to get it with your repo's package manager:
+
+```
+Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.
+```
+
+If no `package.json` from the current folder up to the repo's lockfile lists `@scoutui/cli`, the line runs the latest instead, for example `Run it with npx @scoutui/cli@latest.` Without a lockfile, the line uses npm.
+
+When `scan` or `backfill` uploads, the dashboard also says which scan formats it reads. If it can't read the new version's scans yet, the line says to wait for it instead:
+
+```
+Scout 0.3.0 is available, but your dashboard can't read its scans yet. Stay on this version until your dashboard administrator upgrades it.
+```
+
+The check waits a second at most, and says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
+
 ## `scan`
 
 ```
@@ -345,6 +363,7 @@ A host without a scheme gets `https://`. A host must use `https://`; plain `http
 | --- | --- |
 | `SCOUTUI_HOST` | Host for uploads and `auth`. Its place in the order is under [Host resolution](#host-resolution). |
 | `SCOUTUI_DEBUG` | Any value other than empty or `0` works like [`--debug`](#global-flags). |
+| `SCOUTUI_NO_UPDATE_CHECK` | Any value other than empty or `0` turns off the [check for a newer version](#new-versions). |
 | `SCOUTUI_TOKEN` | When set and not empty, `scan` and `backfill` upload with this token instead of your saved session. It must match the dashboard's `SCOUTUI_CI_UPLOAD_TOKEN`. Used by CI; see [Run a scan and upload in CI](/docs/guides/run-in-ci). |
 
 Rarely needed:
@@ -354,4 +373,6 @@ Rarely needed:
 | `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`, and turns off [styled output](#terminal-output). |
 | `NO_COLOR` | Any non-empty value turns off colored output and [styled output](#terminal-output), even when `FORCE_COLOR` is set. |
 | `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal or runs in CI. It doesn't add the rest of [styled output](#terminal-output). |
+| `NO_UPDATE_NOTIFIER` | When set, even empty, turns off the [check for a newer version](#new-versions), as it does for other command-line tools. |
 | `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |
+| `XDG_CACHE_HOME` | Folder that holds `scoutui/update-check.json`, the [check for a newer version](#new-versions)'s last answer. Default: `~/.cache`. |

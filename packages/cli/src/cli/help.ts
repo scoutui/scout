@@ -15,6 +15,8 @@ Other:
   --version, -v
   --debug        Show the details behind an error (or set SCOUTUI_DEBUG=1)
 
+Scout says when a newer version is available. To stop it checking, set SCOUTUI_NO_UPDATE_CHECK=1.
+
 Get started: scout init, then scout scan --dry-run.
 Docs: https://scoutui.dev/docs
 `;

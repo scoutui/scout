@@ -9,6 +9,7 @@ import {
   type CorepackPlan,
   fetchCorepack,
   findLockfile,
+  isInstallable,
   INSTALL_TIMEOUT_MS,
   type InstallPlan,
   installPlan,
@@ -37,6 +38,8 @@ export type BackfillOptions = {
   since?: string;
   rescan: boolean;
   hostOverride?: string;
+  /** Given the scan formats the dashboard reads, when its pre-scan check lists them. */
+  onScanFormats?: (formats: number[]) => void;
   log: Logger;
   /** The CLI's entry script, which the run starts once per commit to scan it. */
   cliEntry: string;
@@ -152,6 +155,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     uploader = await createAuthedUploader({
       ...(opts.hostOverride !== undefined ? { flagHost: opts.hostOverride } : {}),
       ...(cfg.host !== undefined ? { configHost: cfg.host } : {}),
+      ...(opts.onScanFormats ? { onScanFormats: opts.onScanFormats } : {}),
       onStatus: (status) => {
         if (uploadPending(status) && !waiting) {
           waiting = true;
@@ -393,7 +397,7 @@ async function install(work: RunContext, state: RunState, log: Logger): Promise<
   }
 
   const lockfile = findLockfile(work.configDir, work.checkout);
-  if (lockfile === null) return { kind: "no-lockfile" };
+  if (lockfile === null || !isInstallable(lockfile)) return { kind: "no-lockfile" };
   const head = (await readFile(join(lockfile.dir, lockfile.name), "utf8")).slice(0, 2048);
   const plan = installPlan(lockfile.name, head, readPackageManager(lockfile, work.checkout, head));
   let runnable: NpmPlan | (CorepackPlan & { corepack: Corepack });

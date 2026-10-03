@@ -11,6 +11,7 @@ describe("topHelp", () => {
     expect(out).toMatch(/--help/);
     expect(out).toMatch(/--version/);
     expect(out).toMatch(/--debug/);
+    expect(out).toMatch(/set SCOUTUI_NO_UPDATE_CHECK=1/);
   });
   it("says what each command is for in the user's words, how to start, and where the docs are", () => {
     const out = topHelp();

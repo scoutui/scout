@@ -16,6 +16,8 @@ export async function createAuthedUploader(opts: {
   configHost?: string;
   store?: { filePath?: string };
   onStatus?: (status: UploadStatus) => void;
+  /** Given the scan formats the dashboard reads, when its pre-scan check lists them. */
+  onScanFormats?: (formats: number[]) => void;
 }): Promise<AuthedUploader> {
   const filePath = opts.store?.filePath;
   const store = await loadStore(filePath);
@@ -36,7 +38,7 @@ export async function createAuthedUploader(opts: {
   return {
     base,
     async check(request: PreScanRequest, log: Logger): Promise<CommitAnswer[] | null> {
-      return await checkBeforeScan({ host: base, token, request, log }).catch(async (err: unknown) => {
+      return await checkBeforeScan({ host: base, token, request, log, ...(opts.onScanFormats ? { onScanFormats: opts.onScanFormats } : {}) }).catch(async (err: unknown) => {
         if (!(err instanceof UploadError) || err.code !== 401) throw err;
         return await onUnauthorized();
       });

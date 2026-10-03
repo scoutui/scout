@@ -22,6 +22,12 @@ export type CommitAnswer =
 
 type Reply = { refusal: { code: string; message: string } | null; commits: CommitAnswer[]; warning: string | null };
 
+/** The scan formats a reply says the dashboard reads, or null when it doesn't list them. */
+function readScanFormats(body: unknown): number[] | null {
+  const { scanFormats } = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+  return Array.isArray(scanFormats) && scanFormats.every((format) => Number.isInteger(format)) ? scanFormats : null;
+}
+
 /** The pre-scan check's address on the dashboard at `host`. */
 export function preScanUrl(host: string): string {
   return `${host.replace(/\/$/, "")}/api/scans/preflight`;
@@ -79,12 +85,18 @@ function readReply(body: unknown, commits: readonly string[]): Reply | null {
 }
 
 /**
- * Asks the dashboard at `host` whether it would take an upload of `request`'s commits, before anything is scanned, and prints
- * the dashboard's warning line. Returns its answer for each commit, or null when the dashboard doesn't offer the check or its
+ * Asks the dashboard at `host` whether it would take an upload of `request`'s commits, before anything is scanned, prints
+ * the dashboard's warning line, and gives `onScanFormats` the scan formats the dashboard says it reads. Returns its answer for each commit, or null when the dashboard doesn't offer the check or its
  * reply can't be read, so the upload checks the scan instead. A refusal of the whole scan throws `UploadRefusedError`; any
  * other status than 200 and 404 throws `UploadError`, as the upload's replies do, once the upload's retries are used up.
  */
-export async function checkBeforeScan(opts: { host: string; token: string; request: PreScanRequest; log: Logger }): Promise<CommitAnswer[] | null> {
+export async function checkBeforeScan(opts: {
+  host: string;
+  token: string;
+  request: PreScanRequest;
+  log: Logger;
+  onScanFormats?: (formats: number[]) => void;
+}): Promise<CommitAnswer[] | null> {
   const url = preScanUrl(opts.host);
   const { status, text } = await withTransientRetry(async () => {
     const res = await fetch(url, {
@@ -103,11 +115,14 @@ export async function checkBeforeScan(opts: { host: string; token: string; reque
     opts.log.detail(`Skipped the pre-scan check: ${opts.host} doesn't offer it. The upload will check the scan instead.`);
     return null;
   }
-  const reply = readReply(parseJson(text), opts.request.commits);
+  const body = parseJson(text);
+  const reply = readReply(body, opts.request.commits);
   if (reply === null) {
     opts.log.detail(`Skipped the pre-scan check: ${opts.host}'s reply couldn't be read. The upload will check the scan instead.\n${text}`);
     return null;
   }
+  const scanFormats = readScanFormats(body);
+  if (scanFormats !== null) opts.onScanFormats?.(scanFormats);
   if (reply.warning !== null) opts.log.warn(reply.warning);
   if (reply.refusal !== null) throw new UploadRefusedError(reply.refusal.message, reply.refusal.code, url);
   return reply.commits;

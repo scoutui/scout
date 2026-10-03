@@ -89,6 +89,8 @@ export type ScanOptions = {
   /** Upload even if the dashboard already has this commit, replacing its scan. Needs `upload`. */
   rescan?: boolean;
   hostOverride?: string;
+  /** Given the scan formats the dashboard reads, when its pre-scan check lists them. */
+  onScanFormats?: (formats: number[]) => void;
 };
 
 export type UploadOutcome = "ok" | "exists" | "skipped" | "failed";
@@ -201,6 +203,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
       uploader = await createAuthedUploader({
         ...(opts.hostOverride !== undefined ? { flagHost: opts.hostOverride } : {}),
         ...(cfg.host !== undefined ? { configHost: cfg.host } : {}),
+        ...(opts.onScanFormats ? { onScanFormats: opts.onScanFormats } : {}),
         onStatus: (status) => {
           if (uploadPending(status) && !waiting) {
             waiting = true;

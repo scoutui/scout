@@ -12,8 +12,15 @@ import { parseSince } from "./backfill/commits.js";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isInteractive } from "./util/interactive.js";
+import { latestRelease, updateCachePath, updateCheckWanted, updateNotice } from "./update-check.js";
 import { clackAdapter, PromptCancelledError } from "./prompts/adapter.js";
 import type { Framework, InitOptions } from "./commands/init.js";
+
+/** The scan formats the dashboard reads, once its pre-scan check has said. */
+let scanFormats: number[] | null = null;
+const onScanFormats = (formats: number[]): void => {
+  scanFormats = formats;
+};
 
 function isKnownCommand(cmd: string): cmd is (typeof KNOWN_COMMANDS)[number] {
   return (KNOWN_COMMANDS as readonly string[]).includes(cmd);
@@ -88,6 +95,7 @@ async function runScanCommand(rest: string[], log: Logger): Promise<number> {
   if (typeof repoRoot === "string") scanOpts.repoRoot = repoRoot;
   if (rescan) scanOpts.rescan = true;
   if (typeof host === "string") scanOpts.hostOverride = host;
+  scanOpts.onScanFormats = onScanFormats;
   return scanExitCode(await runScan(scanOpts));
 }
 
@@ -102,6 +110,7 @@ async function runBackfillCommand(rest: string[], log: Logger): Promise<number> 
     ...(sinceDate !== undefined ? { since: sinceDate } : {}),
     rescan: Boolean(rescan),
     ...(typeof host === "string" ? { hostOverride: host } : {}),
+    onScanFormats,
     log: new Logger({ quiet: Boolean(quiet), debug: log.debug }),
     cliEntry: fileURLToPath(import.meta.url),
   });
@@ -145,7 +154,19 @@ function parseFrameworks(raw: string | boolean | string[] | undefined): Framewor
 
 const argv = process.argv.slice(2);
 const log = new Logger({ debug: debugRequested(argv) });
-main(argv.filter((arg) => arg !== "--debug"), log).then(
-  (code) => process.exit(code),
-  (err: unknown) => process.exit(reportError(err, log, readCliPackage().bugs)),
-);
+const release =
+  argv[0] !== INTERNAL_COMMIT_SCAN && updateCheckWanted({ argv }) ? latestRelease({ cachePath: updateCachePath() }) : null;
+
+/** After the command, a line on stderr when a newer release is out. */
+async function writeUpdateNotice(): Promise<void> {
+  if (release === null) return;
+  const line = await updateNotice({ running: readVersion(), latest: await release, scanFormats, cwd: process.cwd(), color: log.color });
+  if (line !== null) process.stderr.write(`${log.styled ? "\n" : ""}${line}\n`);
+}
+
+main(argv.filter((arg) => arg !== "--debug"), log)
+  .catch((err: unknown) => reportError(err, log, readCliPackage().bugs))
+  .then(async (code) => {
+    await writeUpdateNotice().catch(() => {});
+    process.exit(code);
+  });
