@@ -2,10 +2,10 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { runProcess } from "./run-process.js";
 
-export type Lockfile = { dir: string; name: "pnpm-lock.yaml" | "yarn.lock" | "package-lock.json" | "bun.lock" | "bun.lockb" };
+export type Lockfile = { dir: string; name: "pnpm-lock.yaml" | "yarn.lock" | "package-lock.json" };
 
-/** A lockfile backfill can install from: Bun's can't be. */
-export type InstallableLockfile = Lockfile & { name: "pnpm-lock.yaml" | "yarn.lock" | "package-lock.json" };
+/** A `Lockfile`, or Bun's `bun.lock` or `bun.lockb`, which backfill can't install from. */
+export type AnyLockfile = { dir: string; name: Lockfile["name"] | "bun.lock" | "bun.lockb" };
 
 /** How to install from a lockfile. `packageManagerCommand` turns `install` or `nuxtPrepare` into the command to run. */
 export type InstallPlan = NpmPlan | CorepackPlan;
@@ -37,7 +37,9 @@ type Manifest = {
   volta?: { yarn?: unknown; pnpm?: unknown } | null;
 };
 
-const LOCKFILES = ["pnpm-lock.yaml", "yarn.lock", "package-lock.json", "bun.lock", "bun.lockb"] as const;
+const LOCKFILES = ["pnpm-lock.yaml", "yarn.lock", "package-lock.json"] as const;
+
+const ANY_LOCKFILES = [...LOCKFILES, "bun.lock", "bun.lockb"] as const;
 
 const MISE_FILES = ["mise.toml", ".mise.toml", join(".config", "mise.toml")] as const;
 
@@ -75,12 +77,25 @@ const LOCKFILE_WRITERS: { yarnClassic: string; yarn: WriterRows; pnpm: WriterRow
 };
 
 /**
- * The nearest folder from `configDir` up to `root` holding a `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`, `bun.lock`
- * or `bun.lockb`. When it holds several, the one whose manager the folder's `packageManager` names, else the first in that order.
+ * The nearest folder from `configDir` up to `root` holding a `pnpm-lock.yaml`, `yarn.lock` or `package-lock.json`.
+ * When it holds several, the one whose manager the folder's `packageManager` names, else the first in that order.
  */
 export function findLockfile(configDir: string, root: string): Lockfile | null {
+  return nearestLockfile(LOCKFILES, configDir, root);
+}
+
+/** `findLockfile`, also counting Bun's `bun.lock` and `bun.lockb` after the others. */
+export function findAnyLockfile(configDir: string, root: string): AnyLockfile | null {
+  return nearestLockfile(ANY_LOCKFILES, configDir, root);
+}
+
+function nearestLockfile<Name extends AnyLockfile["name"]>(
+  lockfiles: readonly Name[],
+  configDir: string,
+  root: string,
+): { dir: string; name: Name } | null {
   for (const dir of foldersUp(configDir, root)) {
-    const found = LOCKFILES.filter((name) => existsSync(join(dir, name)));
+    const found = lockfiles.filter((name) => existsSync(join(dir, name)));
     const packageManager = found.length > 1 ? packageManagerField(readManifest(dir)) : undefined;
     const name = found.find((lockfile) => names(packageManager, MANAGER_OF[lockfile])) ?? found[0];
     if (name !== undefined) return { dir, name };
@@ -99,7 +114,7 @@ export function findLockfile(configDir: string, root: string): Lockfile | null {
  * first, and every folder is checked for one source before the next source is tried. Failing those, it's the
  * `devEngines.packageManager` range.
  */
-export function readPackageManager(lockfile: InstallableLockfile, root: string, head: string): string | undefined {
+export function readPackageManager(lockfile: Lockfile, root: string, head: string): string | undefined {
   const manager = MANAGER_OF[lockfile.name];
   const manifest = readManifest(lockfile.dir);
   const declared = packageManagerField(manifest);
@@ -117,7 +132,7 @@ export function readPackageManager(lockfile: InstallableLockfile, root: string, 
  * for it. Yarn and pnpm use that package manager as written when it names them, else the release that writes the
  * lockfile's version, else the newest release listed for them.
  */
-export function installPlan(lockfile: InstallableLockfile["name"], head: string, packageManager: string | undefined): InstallPlan {
+export function installPlan(lockfile: Lockfile["name"], head: string, packageManager: string | undefined): InstallPlan {
   if (lockfile === "package-lock.json") {
     return {
       manager: "npm",
@@ -201,13 +216,8 @@ export function packageManagerCommand(
 }
 
 /** The package manager that writes `lockfile`. */
-export function lockfileManager(lockfile: Lockfile): (typeof MANAGER_OF)[Lockfile["name"]] {
+export function lockfileManager(lockfile: AnyLockfile): (typeof MANAGER_OF)[AnyLockfile["name"]] {
   return MANAGER_OF[lockfile.name];
-}
-
-/** Whether backfill can install from `lockfile`. */
-export function isInstallable(lockfile: Lockfile): lockfile is InstallableLockfile {
-  return lockfileManager(lockfile) !== "bun";
 }
 
 function readManifest(dir: string): Manifest | undefined {

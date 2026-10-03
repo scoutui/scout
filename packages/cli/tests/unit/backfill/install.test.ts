@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   type CorepackPlan,
   findLockfile,
-  type InstallableLockfile,
   type InstallPlan,
   installPlan,
   type Lockfile,
@@ -71,7 +70,7 @@ function pnpmPlan(spec: string): CorepackPlan {
 }
 
 describe("installPlan", () => {
-  it.each<[string, InstallableLockfile["name"], string, string | undefined, InstallPlan]>([
+  it.each<[string, Lockfile["name"], string, string | undefined, InstallPlan]>([
     ["installs a package-lock.json with npm ci, whatever packageManager says", "package-lock.json", PACKAGE_LOCK, "npm@10.9.2", NPM_PLAN],
     ["installs a Yarn 1 lockfile with Yarn 1.22.22 when there's no packageManager", "yarn.lock", YARN_CLASSIC, undefined, yarnClassicPlan("yarn@1.22.22")],
     ["installs a Yarn 1 lockfile with the Yarn 1 packageManager names", "yarn.lock", YARN_CLASSIC, "yarn@1.22.19", yarnClassicPlan("yarn@1.22.19")],
@@ -124,19 +123,14 @@ describe("findLockfile", () => {
     expect(findLockfile(join(base, "repo/apps/web"), join(base, "repo"))).toBeNull();
   });
 
-  it.each<Lockfile["name"]>(["bun.lock", "bun.lockb"])("finds Bun's %s", (name) => {
-    write(base, `repo/${name}`);
-    expect(findLockfile(join(base, "repo"), join(base, "repo"))).toEqual({ dir: join(base, "repo"), name });
-  });
-
-  it.each<[string, Record<string, string>, Lockfile["name"]]>([
-    ["takes package-lock.json over bun.lock when there is no packageManager", { name: "example-web" }, "package-lock.json"],
-    ["takes bun.lock when packageManager names Bun", { name: "example-web", packageManager: "bun@1.2.0" }, "bun.lock"],
-  ])("with Bun's lockfile and npm's in one folder, %s", (_title, manifest, name) => {
+  it.each<[string, Record<string, string>, string[], Lockfile["name"] | null]>([
+    ["finds none beside bun.lock", { name: "example-web" }, ["bun.lock"], null],
+    ["finds none beside bun.lockb", { name: "example-web" }, ["bun.lockb"], null],
+    ["takes package-lock.json beside bun.lock when packageManager names Bun", { name: "example-web", packageManager: "bun@1.2.0" }, ["bun.lock", "package-lock.json"], "package-lock.json"],
+  ])("ignores Bun's lockfiles, which it can't install from: %s", (_title, manifest, lockfiles, name) => {
     write(base, "repo/package.json", JSON.stringify(manifest));
-    write(base, "repo/bun.lock");
-    write(base, "repo/package-lock.json");
-    expect(findLockfile(join(base, "repo"), join(base, "repo"))).toEqual({ dir: join(base, "repo"), name });
+    for (const lockfile of lockfiles) write(base, `repo/${lockfile}`);
+    expect(findLockfile(join(base, "repo"), join(base, "repo"))).toEqual(name === null ? null : { dir: join(base, "repo"), name });
   });
 
   it.each<[string, Record<string, string>, Lockfile["name"]]>([
@@ -160,7 +154,7 @@ describe("readPackageManager", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  const HEADS: Record<InstallableLockfile["name"], string> = {
+  const HEADS: Record<Lockfile["name"], string> = {
     "pnpm-lock.yaml": pnpmLock("9.0"),
     "yarn.lock": yarnBerryLock(8, "10c0"),
     "package-lock.json": PACKAGE_LOCK,
@@ -220,7 +214,7 @@ describe("readPackageManager", () => {
     expect(readPackageManager({ dir, name: "pnpm-lock.yaml" }, dir, HEADS["pnpm-lock.yaml"])).toBe(packageManager);
   });
 
-  it.each<[string, InstallableLockfile["name"], Record<string, string>, string | undefined]>([
+  it.each<[string, Lockfile["name"], Record<string, string>, string | undefined]>([
     ["takes volta.yarn for a yarn.lock", "yarn.lock", { "package.json": packageJson({ volta: { node: "20.11.0", yarn: "3.8.1" } }) }, "yarn@3.8.1"],
     ["takes yarn under [tools] in mise.toml", "yarn.lock", { "mise.toml": '[tools]\nnode = "20.11.0"\nyarn = "3.8.1"\n' }, "yarn@3.8.1"],
     [

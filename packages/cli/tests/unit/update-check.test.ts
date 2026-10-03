@@ -100,7 +100,7 @@ describe("latestRelease", () => {
 
 describe("updateNotice", () => {
   const UPDATE = "Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.";
-  const BEHIND = "Scout 0.3.0 is available, but your dashboard can't read its scans yet. Stay on this version until your dashboard administrator upgrades it.";
+  const BEHIND = "Scout 0.3.0 is available, but your dashboard can't read its scans yet. Keep this version for now.";
 
   beforeEach(() => {
     write("repo/package-lock.json");
@@ -122,6 +122,7 @@ describe("updateNotice", () => {
   it.each<[string, Record<string, string>, string]>([
     ["npm", { "package-lock.json": "" }, "Update with npm i -D @scoutui/cli@latest."],
     ["Yarn", { "yarn.lock": "__metadata:\n  version: 8\n" }, "Update with yarn add -D @scoutui/cli@latest."],
+    ["Yarn 1", { "yarn.lock": "# yarn lockfile v1\n" }, "Update with yarn add -D @scoutui/cli@latest."],
     ["pnpm", { "pnpm-lock.yaml": "lockfileVersion: '9.0'\n" }, "Update with pnpm add -D @scoutui/cli@latest."],
     ["Bun", { "bun.lock": "" }, "Update with bun add -d @scoutui/cli@latest."],
     ["no lockfile", {}, "Update with npm i -D @scoutui/cli@latest."],
@@ -131,6 +132,17 @@ describe("updateNotice", () => {
     write("app/web/package.json", JSON.stringify({ name: "web" }));
     const line = await updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app/web"), root: base, color: plain });
     expect(line).toBe(`Scout 0.3.0 is available. ${end}`);
+  });
+
+  it.each<[string, Record<string, string>, Record<string, unknown>, string]>([
+    ["pnpm", { "pnpm-lock.yaml": "lockfileVersion: '9.0'\n", "pnpm-workspace.yaml": "packages:\n  - web\n" }, {}, "pnpm add -D -w"],
+    ["Yarn 1", { "yarn.lock": "# yarn lockfile v1\n" }, { workspaces: ["web"] }, "yarn add -D -W"],
+    ["Yarn 2 or later, which needs no flag,", { "yarn.lock": "__metadata:\n  version: 8\n" }, { workspaces: ["web"] }, "yarn add -D"],
+  ])("at a %s workspace root that installs the CLI, adds the flag for the root", async (_title, files, manifest, install) => {
+    for (const [name, text] of Object.entries(files)) write(`app/${name}`, text);
+    write("app/package.json", JSON.stringify({ ...manifest, devDependencies: { "@scoutui/cli": "0.2.0" } }));
+    const line = await updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app"), root: base, color: plain });
+    expect(line).toBe(`Scout 0.3.0 is available. Update with ${install} @scoutui/cli@latest.`);
   });
 
   it.each<[string, Record<string, string>, string]>([

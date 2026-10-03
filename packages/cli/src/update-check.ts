@@ -1,8 +1,8 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { compareCliVersions, isSnapshotVersion } from "@scoutui/scan-format";
-import { findLockfile, foldersUp, isYarnClassic, type Lockfile, lockfileManager } from "./backfill/install.js";
+import { type AnyLockfile, findAnyLockfile, foldersUp, isYarnClassic, lockfileManager } from "./backfill/install.js";
 import { readGitToplevel } from "./util/git.js";
 import { type Colorizer, terminalStyle } from "./util/style.js";
 
@@ -95,7 +95,7 @@ export async function updateNotice(opts: {
   if (latest === null || isSnapshotVersion(opts.running) || compareCliVersions(latest.version, opts.running) <= 0) return null;
   const available = `Scout ${color.bold(latest.version)} is available`;
   if (latest.scanFormat !== null && opts.scanFormats !== null && !opts.scanFormats.includes(latest.scanFormat)) {
-    return `${available}, but your dashboard can't read its scans yet. Stay on this version until your dashboard administrator upgrades it.`;
+    return `${available}, but your dashboard can't read its scans yet. Keep this version for now.`;
   }
   const root = opts.root ?? (await readGitToplevel(opts.cwd)) ?? opts.cwd;
   const update = updateCommand(opts.cwd, root);
@@ -105,23 +105,36 @@ export async function updateNotice(opts: {
 /**
  * How to get the latest CLI in `cwd`: install it with the repo's package manager when a package.json from `cwd` up to
  * the lockfile's folder lists it, or else run it with that package manager's runner. npm when there's no lockfile.
+ * When the package.json that lists it is a workspace's root, pnpm gets `-w` and Yarn 1 `-W`, which they need to add there.
  */
 function updateCommand(cwd: string, root: string): { install: boolean; command: string } {
-  const lockfile = findLockfile(cwd, root);
+  const lockfile = findAnyLockfile(cwd, root);
   const manager = lockfile === null ? "npm" : lockfileManager(lockfile);
-  if (foldersUp(cwd, lockfile?.dir ?? root).some(listsCli)) return { install: true, command: `${INSTALL[manager]} ${PACKAGE}@latest` };
-  const runner = lockfile !== null && manager === "yarn" && isYarnClassic(readHead(lockfile)) ? RUN.npm : RUN[manager];
-  return { install: false, command: `${runner} ${PACKAGE}@latest` };
+  const yarnClassic = lockfile !== null && manager === "yarn" && isYarnClassic(readHead(lockfile));
+  const listed = foldersUp(cwd, lockfile?.dir ?? root).find((dir) => listsCli(readManifest(dir)));
+  if (listed === undefined) return { install: false, command: `${yarnClassic ? RUN.npm : RUN[manager]} ${PACKAGE}@latest` };
+  const rootFlag =
+    manager === "pnpm" && existsSync(join(listed, "pnpm-workspace.yaml"))
+      ? " -w"
+      : yarnClassic && readManifest(listed)?.workspaces !== undefined
+        ? " -W"
+        : "";
+  return { install: true, command: `${INSTALL[manager]}${rootFlag} ${PACKAGE}@latest` };
 }
 
-function listsCli(dir: string): boolean {
-  const manifest = readJson(join(dir, "package.json")) as { dependencies?: unknown; devDependencies?: unknown } | null;
+type Manifest = { dependencies?: unknown; devDependencies?: unknown; workspaces?: unknown };
+
+function readManifest(dir: string): Manifest | null {
+  return readJson(join(dir, "package.json")) as Manifest | null;
+}
+
+function listsCli(manifest: Manifest | null): boolean {
   return [manifest?.dependencies, manifest?.devDependencies].some(
     (deps) => typeof deps === "object" && deps !== null && PACKAGE in deps,
   );
 }
 
-function readHead(lockfile: Lockfile): string {
+function readHead(lockfile: AnyLockfile): string {
   try {
     return readFileSync(join(lockfile.dir, lockfile.name), "utf8").slice(0, 2048);
   } catch {

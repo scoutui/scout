@@ -65,12 +65,12 @@ In a terminal, Scout checks once a day for a newer version of `@scoutui/cli`. Wh
 Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.
 ```
 
-If no `package.json` from the current folder up to the repo's lockfile lists `@scoutui/cli`, the line runs the latest instead, for example `Run it with npx @scoutui/cli@latest.` Without a lockfile, the line uses npm.
+If no `package.json` from the current folder up to the repo's lockfile lists `@scoutui/cli`, the line runs the latest instead, for example `Run it with npx @scoutui/cli@latest.` Without a lockfile, the line uses npm. When the `package.json` that lists it is a workspace's root, the command adds `-w` for pnpm and `-W` for Yarn 1, which they need to add a package there.
 
 When `scan` or `backfill` uploads, the dashboard also says which scan formats it reads. If it can't read the new version's scans yet, the line says to wait for it instead:
 
 ```
-Scout 0.3.0 is available, but your dashboard can't read its scans yet. Stay on this version until your dashboard administrator upgrades it.
+Scout 0.3.0 is available, but your dashboard can't read its scans yet. Keep this version for now.
 ```
 
 The check waits a second at most, and says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).

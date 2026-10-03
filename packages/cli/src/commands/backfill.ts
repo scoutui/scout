@@ -9,7 +9,6 @@ import {
   type CorepackPlan,
   fetchCorepack,
   findLockfile,
-  isInstallable,
   INSTALL_TIMEOUT_MS,
   type InstallPlan,
   installPlan,
@@ -397,7 +396,7 @@ async function install(work: RunContext, state: RunState, log: Logger): Promise<
   }
 
   const lockfile = findLockfile(work.configDir, work.checkout);
-  if (lockfile === null || !isInstallable(lockfile)) return { kind: "no-lockfile" };
+  if (lockfile === null) return { kind: "no-lockfile" };
   const head = (await readFile(join(lockfile.dir, lockfile.name), "utf8")).slice(0, 2048);
   const plan = installPlan(lockfile.name, head, readPackageManager(lockfile, work.checkout, head));
   let runnable: NpmPlan | (CorepackPlan & { corepack: Corepack });
