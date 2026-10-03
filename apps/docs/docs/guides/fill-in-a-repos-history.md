@@ -124,7 +124,7 @@ For a Nuxt app, the command must also prepare the app, because backfill then doe
 
 Backfill can stop before it reaches the `--since` date. It then prints where the charts start, followed by the last line:
 
-- `The 3 commits before 6 Apr 2026 wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.` Three commits in a row were skipped because they couldn't be installed, which usually means older history needs older tools. The date is that of the oldest commit backfill picked that's on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
+- `3 commits in a row wouldn't install, so the charts start at 6 Apr 2026. Check the lines above, or set "install" in scout.config.json.` This usually means older history needs older tools. The date is that of the oldest commit backfill picked that's on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
 - `apps/web doesn't exist before 6 Apr 2026, so the charts start there.` The config's folder isn't in older commits, for example because the app was created or moved then. Older commits can't be scanned with this config.
 
 ## If backfill stops with `Error:`
@@ -132,7 +132,7 @@ Backfill can stop before it reaches the `--since` date. It then prints where the
 | Message starts with | What to do |
 | --- | --- |
 | `Error: Couldn't install the 3 newest commits, so nothing was uploaded.` | Fix what the skip lines above it name, often by setting [`install`](#set-the-install-command), and run backfill again. |
-| `Error: <folder> isn't on <remote>/<branch> yet` | The config's folder is only on a branch that isn't merged yet. Merge it, fetch, and run backfill again. |
+| `Error: <folder> isn't on <remote>/<branch> yet` | The config's folder is only on a branch that isn't merged yet. Merge it, run `git fetch`, then run backfill again. |
 | `Error: Couldn't download Corepack` | Check your connection and your npm registry settings, then run backfill again. Or set [`install`](#set-the-install-command) to the command the repo installs with: backfill then doesn't need Corepack. |
 | `Error: Couldn't scan <commit> (<date>): the scan stopped unexpectedly.` | Run backfill again with `--debug` to see how far the scan got before it stopped. A scan can stop like this when it runs out of memory, for example in a container with a low memory limit. |
 | `Error: Couldn't check out <commit> (<date>) in a temporary folder.` | Run backfill again with `--debug` to read git's error. Fix what it names, for example by freeing disk space, then run backfill again. |

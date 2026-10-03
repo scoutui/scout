@@ -311,7 +311,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
         return 1;
       }
       log.result(
-        `The ${FAILURES_TO_STOP} commits before ${formatDay(earliest)} wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.`,
+        `${FAILURES_TO_STOP} commits in a row wouldn't install, so the charts start at ${formatDay(earliest)}. Check the lines above, or set "install" in scout.config.json.`,
       );
       log.result(endLine());
       return fixable > 0 ? 1 : 0;

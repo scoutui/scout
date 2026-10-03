@@ -357,7 +357,7 @@ describe("scout backfill", () => {
       expect(uploadedCommits(fetchSpy)).toEqual([c6]);
       expect(stdout()).toBe(
         [
-          `The 3 commits before 17 Jun 2026 wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.\n`,
+          `3 commits in a row wouldn't install, so the charts start at 17 Jun 2026. Check the lines above, or set "install" in scout.config.json.\n`,
           `Backfilled main since 1 May 2026: 1 uploaded, 0 already on the dashboard, 4 skipped. ${END}`,
         ].join(""),
       );
@@ -386,7 +386,7 @@ describe("scout backfill", () => {
       expect(uploadedCommits(fetchSpy)).toEqual([c6, c4]);
       expect(stdout()).toBe(
         [
-          `The 3 commits before 10 Jun 2026 wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.\n`,
+          `3 commits in a row wouldn't install, so the charts start at 10 Jun 2026. Check the lines above, or set "install" in scout.config.json.\n`,
           `Backfilled main since 1 May 2026: 2 uploaded, 0 already on the dashboard, 4 skipped. ${END}`,
         ].join(""),
       );

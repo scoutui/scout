@@ -114,7 +114,7 @@ Scans one commit a week of the tracked branch's history, newest first, and uploa
 | `--rescan` | none | off | Also scans the commits the dashboard already has, replacing their scans. |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
 | `--host <url>` | URL | see [Host resolution](#host-resolution) | Dashboard to upload to. |
-| `--quiet` | none | off | Hides the [progress lines](#backfill-output): the `Found` line, the `Scanning` lines and the `slow down` line. Skips, errors, the line saying where the charts start, the last line and the line after it saying to retry with `--debug` still print. |
+| `--quiet` | none | off | Hides the [progress lines](#backfill-output): the `Found` line, the `Scanning` lines and the `slow down` line. Everything else still prints. |
 
 With [`--debug`](#global-flags), `backfill` also prints each install's and each scan's output, `Waiting for the dashboard to process the scan…` once for each upload, and the detail behind a skip, such as the files an install changed or `The install was stopped after 10 minutes.`
 
@@ -163,7 +163,7 @@ The first seven are *install skips*. Three in a row stop the run (see [Stop line
 
 | Line | When | Exit code |
 | --- | --- | --- |
-| `The 3 commits before <date> wouldn't install, so the charts start there. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with at least one commit of the range on the dashboard. `<date>` is the oldest of those commits' dates. | `0`, or `1` after an earlier skip marked *Exit `1`* |
+| `3 commits in a row wouldn't install, so the charts start at <date>. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with at least one commit of the range on the dashboard. `<date>` is the oldest of those commits' dates. | `0`, or `1` after an earlier skip marked *Exit `1`* |
 | `<folder> doesn't exist before <date>, so the charts start there.` | The config's folder isn't in the commit. `<date>` is the date of the next newer picked commit that has the folder. | `0`, or `1` after a skip marked *Exit `1`* |
 | `Error: Couldn't install the 3 newest commits, so nothing was uploaded. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with no commit of the range on the dashboard. | `1` |
 | `Error: <folder> isn't on <remote>/<branch> yet, so there's nothing to backfill. Merge it, run git fetch, then run scout backfill again.` | The config's folder isn't in the latest commit. | `1` |
