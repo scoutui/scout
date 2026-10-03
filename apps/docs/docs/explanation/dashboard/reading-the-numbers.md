@@ -57,7 +57,7 @@ The dashboard doesn't check what is published on npm, so "highest" can be behind
 
 A component is [deprecated](/docs/reference/glossary#deprecated) in the dashboard only when a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks it superseded or retired: a record on the component itself, on the component it is part of (a record on `Card` covers `Card.Header`), or on its whole package.
 
-Only components imported from a package, and web components the scan links to a package, can be deprecated. A component defined in the repo never is, even when it lives in a workspace package that a record names: a record on `@acme/ui` covers `Button` in the repos that install `@acme/ui`, but not in the monorepo where `@acme/ui` is written.
+A record names a package, so it covers that package wherever a scan finds it: components imported from the package, web components the scan links to it, and components defined in a monorepo's workspace package of that name. A record on `@acme/ui` covers `Button` in the repos that install `@acme/ui` and in the monorepo where `@acme/ui` is written. Two repos whose workspace packages share a name, such as `@repo/ui`, share its records too. A component defined in the repo outside any workspace package belongs to no package, so it can't be deprecated.
 
 Deprecation is a decision your team records once, on the **governance** page, rather than something each scan reports. That has two effects:
 

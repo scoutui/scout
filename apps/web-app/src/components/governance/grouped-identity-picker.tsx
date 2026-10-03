@@ -23,6 +23,7 @@ const keepFocus = (e: React.MouseEvent) => {
 };
 
 const components = (n: number) => `${n.toLocaleString()} component${n === 1 ? "" : "s"}`;
+const matches = (n: number) => `${n.toLocaleString()} match${n === 1 ? "" : "es"}`;
 
 /** The name with each matched range in bold. */
 function marked(name: string, ranges: Array<[number, number]>): ReactNode[] {
@@ -50,7 +51,9 @@ function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean
     return (
       <>
         <span className="min-w-0 truncate font-mono text-xs">{row.packageName}</span>
-        <span className="shrink-0 text-[0.6875rem] text-muted-foreground">{components(row.components)}</span>
+        <span className="shrink-0 text-[0.6875rem] text-muted-foreground">
+          {row.matches === null ? components(row.components) : matches(row.matches)}
+        </span>
         {active ? (
           <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-4 text-[0.6875rem] text-muted-foreground">
             <kbd aria-hidden className="inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-sans">
@@ -202,14 +205,14 @@ export function GroupedIdentityPicker({
     setHighlight(null);
   }
 
-  function narrow(packageName: string) {
-    onScopeChange(packageName);
-    setQuery("");
+  function narrow(row: Extract<SearchRow, { kind: "package" }>) {
+    onScopeChange(row.packageName);
+    setQuery(row.narrowedQuery);
   }
 
   function choose(row: SearchRow) {
     if (row.kind === "package") {
-      narrow(row.packageName);
+      narrow(row);
     } else if (row.refusal === null) {
       onSelect(row.kind === "component" ? { packageName: row.packageName, exportName: row.exportName } : { packageName: row.packageName });
       close();
@@ -238,7 +241,7 @@ export function GroupedIdentityPicker({
       close();
     } else if (e.key === "Tab" && !e.shiftKey && active?.kind === "package" && (highlight !== null || query !== "")) {
       e.preventDefault();
-      narrow(active.packageName);
+      narrow(active);
     }
   }
 

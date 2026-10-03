@@ -22,7 +22,9 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 
 ![The New record form, filled in to record VxeButton from vxe-pc-ui as superseded by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
-The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first. Components [defined in the repo](/docs/reference/glossary#defined-in-the-repo) are never offered.
+The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
+
+If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too, after the installed packages. Its components are listed once you search in it: type `legacy` and pick `@acme/ui-legacy`. Or type `button`: after the results, `@acme/ui-legacy` is listed with how many of its components match, and picking it keeps `button` as the search. A component [defined in the repo](/docs/reference/glossary#defined-in-the-repo) outside any workspace package is never offered.
 
 A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered under a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 

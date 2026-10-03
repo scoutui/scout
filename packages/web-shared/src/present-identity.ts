@@ -50,14 +50,15 @@ export function presentIdentity(component: PresentableComponent): Presented {
 }
 
 /**
- * The governance key: the presented package and name (export or tag) of an external component.
- * Null when ungovernable: any local presentation (a repository declaration or a tag resolved to a repository),
- * or an unknown or conflicting tag.
+ * The governance key: the presented package and name (export or tag) of a component, so a
+ * repository declaration counts under its workspace package. Null when ungovernable: a component
+ * with no package (a repository declaration outside any workspace package, a tag resolved to a
+ * repository, an unknown or conflicting tag).
  */
 export function governanceKey(component: PresentableComponent): { packageName: string; name: string } | null {
-  const { scope, packageName, exportName, tagName } = presentIdentity(component);
+  const { packageName, exportName, tagName } = presentIdentity(component);
   const name = exportName ?? tagName;
-  return scope === "external" && packageName !== null && name !== null ? { packageName, name } : null;
+  return packageName !== null && name !== null ? { packageName, name } : null;
 }
 
 /** `governanceKey` as read-model rows store it: both fields null when the component is ungovernable. */

@@ -93,6 +93,22 @@ describe("GroupedIdentityPicker", () => {
     expect(onScopeChange).toHaveBeenLastCalledWith(null);
   });
 
+  it("narrows to a package offered for the names it holds and keeps searching for them", () => {
+    const onScopeChange = vi.fn();
+    const local: GovernanceTarget[] = [
+      { packageName: "@example/ui", occurrences: 12, local: true },
+      { packageName: "@example/ui", exportName: "Button", occurrences: 9, local: true },
+      { packageName: "@example/ui", exportName: "Card", occurrences: 3, local: true },
+    ];
+    render(<Field sources={local} onScopeChange={onScopeChange} />);
+    fireEvent.change(input(), { target: { value: "ui button" } });
+    expect(screen.getByRole("option")).toHaveAccessibleName(/@example\/ui.*1 match/);
+    fireEvent.keyDown(input(), { key: "Enter" });
+    expect(onScopeChange).toHaveBeenLastCalledWith("@example/ui");
+    expect(input()).toHaveValue("button");
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([expect.stringMatching(/^Button/)]);
+  });
+
   it("picks the first component on Enter, never the whole package", () => {
     const onSelect = vi.fn();
     render(<Field scope="@example/old-ui" onSelect={onSelect} />);
