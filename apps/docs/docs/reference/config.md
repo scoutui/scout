@@ -30,7 +30,7 @@ The *config folder* is the folder that holds the config file. Relative paths in 
 The scan skips:
 
 - files and folders whose names start with a dot, such as `.next`, unless an `include` pattern names them, for example `src/.generated/*.tsx`;
-- files ignored by `.gitignore`; see [`gitignore`](#other-fields);
+- files ignored by `.gitignore`, unless [`gitignore`](#other-fields) is `false`;
 - a folder below the config folder that holds its own git repository, such as a submodule or another clone, even when an `include` pattern points into it.
 
 ### Upload fields
