@@ -56,20 +56,20 @@ export async function checkTrackedBranch(
 
 /**
  * Why an upload can't go ahead with the checkout's local changes, or null when it can: a change to any tracked file, or an
- * untracked file among `files` (the files the scan reads) that isn't in `exempt`. Changes to `ignore` never count, tracked or
- * untracked. `detail` lists the files from the repository's top folder.
+ * untracked file among `files` (the files the scan reads) that isn't in `exempt`. Changes to the files in `ignore` never count,
+ * tracked or untracked. `detail` lists the files from the repository's top folder.
  */
 export async function uncommittedRefusal(
   cwd: string,
-  opts: { files: readonly string[]; exempt: readonly string[]; ignore?: string },
+  opts: { files: readonly string[]; exempt: readonly string[]; ignore?: readonly string[] },
 ): Promise<{ message: string; detail: string } | null> {
   const changes = await localChanges(cwd);
   if (!changes.ok) throw gitFailed(cwd, changes.detail);
   const read = new Set(opts.files.map((file) => resolve(file)));
   const exempt = new Set(opts.exempt.map((file) => resolve(file)));
-  const ignored = opts.ignore === undefined ? undefined : resolve(opts.ignore);
+  const ignored = new Set((opts.ignore ?? []).map((file) => resolve(file)));
   const blocking = [...changes.tracked, ...changes.untracked.filter((file) => read.has(file) && !exempt.has(file))].filter(
-    (file) => file !== ignored,
+    (file) => !ignored.has(file),
   );
   if (blocking.length === 0) return null;
   return {

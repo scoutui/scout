@@ -50,7 +50,7 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
   const outputRoot = await scanOutputRoot(cfg.configDir, {});
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, scanLog);
 
-  const uncommitted = await uncommittedRefusal(cfg.configDir, { files, exempt: [], ignore: cfg.configPath });
+  const uncommitted = await uncommittedRefusal(cfg.configDir, { files, exempt: [], ignore: [cfg.configPath] });
   if (uncommitted !== null) return finish({ kind: "refused", reason: "uncommitted", detail: uncommitted.detail });
   if (isPnpProject(cfg.configDir) || isPnpProject(workspaceRoot)) return finish({ kind: "refused", reason: "pnp" });
   const problem = setupProblem(workspaceGraph, files, cfg.configDir);

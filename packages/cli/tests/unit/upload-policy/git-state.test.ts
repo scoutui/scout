@@ -159,7 +159,7 @@ describe("an upload refuses uncommitted changes, listing the files under debug",
     const dir = pushedRepo();
     writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ ...config, exclude: ["**/*.test.tsx"] }));
     writeFileSync(join(dir, "src", "App.tsx"), "export function App() { return <div />; }\n");
-    const refusal = await uncommittedRefusal(dir, { files: [], exempt: [], ignore: join(dir, "scout.config.json") });
+    const refusal = await uncommittedRefusal(dir, { files: [], exempt: [], ignore: [join(dir, "scout.config.json")] });
     expect(refusal).toEqual({
       message: `${REFUSED} you have uncommitted changes. Commit or stash them and try again.`,
       detail: "src/App.tsx",

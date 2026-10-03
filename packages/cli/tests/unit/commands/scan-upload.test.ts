@@ -98,6 +98,25 @@ describe("runScan upload outcome", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("uploads when the only change is a committed --csv file an earlier scan rewrote, and rewrites it", async () => {
+    const dir = setupConsumer();
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "pipe" });
+    mkdirSync(join(dir, "reports"));
+    writeFileSync(join(dir, "reports", "components.csv"), "committed\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "add report");
+    git("push", "-q", "origin", "main");
+    writeFileSync(join(dir, "reports", "components.csv"), "rewritten by an earlier scan\n");
+    vi.spyOn(global, "fetch")
+      .mockImplementationOnce(preScanReply())
+      .mockResolvedValueOnce(Response.json(receipt, { status: 202 }))
+      .mockResolvedValueOnce(Response.json(ready));
+    const result = await runScan({ cwd: dir, quiet: true, upload: true, csvPath: "reports/components.csv" });
+    expect(stderr()).toBe("");
+    expect(scanExitCode(result)).toBe(0);
+    expect(readFileSync(join(dir, "reports", "components.csv"), "utf8")).toMatch(/^component,source,version,occurrences,files\n/);
+  });
+
   it("says once that it's waiting for the dashboard, then reports the published URL", async () => {
     const dir = setupConsumer();
     let firstGet: () => void = () => {};

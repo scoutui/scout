@@ -174,8 +174,13 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
 
   if (opts.upload) {
-    // An untracked config or scan output file doesn't count as an uncommitted change.
-    const uncommitted = await uncommittedRefusal(cfg.configDir, { files, exempt: [cfg.configPath, outputPath] });
+    // An untracked config or scan output file doesn't count as an uncommitted change, nor does the CSV file the scan rewrites.
+    const csvPath = opts.csvPath === undefined ? undefined : await physicalPath(resolve(opts.cwd ?? process.cwd(), opts.csvPath));
+    const uncommitted = await uncommittedRefusal(cfg.configDir, {
+      files,
+      exempt: [cfg.configPath, outputPath],
+      ...(csvPath ? { ignore: [csvPath] } : {}),
+    });
     if (uncommitted !== null) {
       log.error(uncommitted.message, uncommitted.detail);
       return { output: null, upload: "failed" };
@@ -235,7 +240,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
       throw new CliError(`Couldn't write ${opts.csvPath}. Check that you can write to that folder and try again.`, 1, { cause: err });
     }
     const n = artifact.components.length;
-    log.result(`Wrote ${relative(cwd, csvPath)} (${n} ${n === 1 ? "component" : "components"}).`);
+    log.result(`Wrote ${opts.csvPath} (${n} ${n === 1 ? "component" : "components"}).`);
   }
 
   if (uploader === undefined) {
