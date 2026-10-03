@@ -45,6 +45,96 @@
       }
     },
     {
+      "id": "36cb095df8a26926",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/cjs-interop/Through.tsx",
+        "exportName": "Through"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e2884d5bb54e5fcc": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b5bb487315ec600b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/cjs-interop/Variant.tsx",
+        "exportName": "Variant"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "0c8e92d8dabef3c0": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "0c8e92d8dabef3c0",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/cjs-interop/icon-variants.tsx",
+        "exportName": "DefaultIcon"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "variants.default"
+      ],
+      "definition": {
+        "line": 1,
+        "column": 0
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "b5bb487315ec600b": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "b64fbf93a0f63717",
       "identity": {
         "kind": "repository-declaration",
@@ -3798,22 +3888,24 @@
       },
       "framework": "react",
       "stats": {
-        "occurrenceCount": 1,
-        "fileCount": 1
+        "occurrenceCount": 2,
+        "fileCount": 2
       },
       "usage": "direct",
       "props": {},
       "writtenNames": [
-        "Button"
+        "Button",
+        "ThingButton"
       ],
       "version": "0.0.0",
       "composition": {
         "rendersByCount": {},
         "renderedByCount": {
-          "df977e51ad44a93d": 1
+          "df977e51ad44a93d": 1,
+          "36cb095df8a26926": 1
         },
         "isRootCount": 0,
-        "isLeafCount": 1
+        "isLeafCount": 2
       }
     },
     {
@@ -4408,6 +4500,46 @@
       "writtenName": "Button",
       "props": {},
       "ownerComponentId": "df977e51ad44a93d"
+    },
+    {
+      "occurrenceId": "8f67c38a86e5a613",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e2884d5bb54e5fcc"
+      },
+      "filePath": "src/cjs-interop/Through.tsx",
+      "line": 7,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "ThingButton",
+      "props": {},
+      "ownerComponentId": "36cb095df8a26926"
+    },
+    {
+      "occurrenceId": "7597e6a1ec01bb91",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "0c8e92d8dabef3c0"
+      },
+      "filePath": "src/cjs-interop/Variant.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./icon-variants",
+          "name": "default"
+        }
+      ],
+      "writtenName": "variants.default",
+      "props": {},
+      "ownerComponentId": "b5bb487315ec600b"
     },
     {
       "occurrenceId": "893b3e4f41d500ad",

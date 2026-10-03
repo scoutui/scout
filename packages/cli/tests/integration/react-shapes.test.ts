@@ -535,10 +535,22 @@ describe("integration: react-shapes fixture", () => {
   });
 
   describe("cjs-interop", () => {
-    it("credits `'default' in X ? X.default : X` over a default import once, to the package's default export", () => {
-      const S = "cjs-interop";
-      expect(rendersIn(S)).toEqual([
+    const S = "cjs-interop";
+
+    it("credits `'default' in X ? X.default : X` over a package's default export once, imported directly or through a barrel", () => {
+      expect(rendersIn(S, "Interop.tsx")).toEqual([
         row("Interop.tsx:7:9", pkgOf("@example/design-system", "default"), local(S, "Interop.tsx", "Interop"), []),
+      ]);
+      expect(rendersIn(S, "Through.tsx")).toEqual([
+        row("Through.tsx:7:9", pkgOf("@example/design-system", "default"), local(S, "Through.tsx", "Through"), []),
+      ]);
+    });
+
+    it("credits the `default` member of a default export the scan reads to that member", () => {
+      expect(rendersIn(S, "Variant.tsx")).toEqual([
+        row("Variant.tsx:4:9", local(S, "icon-variants.tsx", "DefaultIcon"), local(S, "Variant.tsx", "Variant"), [
+          imported("./icon-variants", "default"),
+        ]),
       ]);
     });
   });

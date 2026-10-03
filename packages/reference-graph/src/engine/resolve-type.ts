@@ -1,7 +1,7 @@
 import type { FileGraph, Graph, InferredType, Reference } from "../index.js";
 import { boundArgument, type ArgumentMap } from "./argument-map.js";
 import { resolveReference } from "./resolve-reference.js";
-import { bindingImport, bindingValue, staticMemberReference } from "./binding.js";
+import { bindingImport, bindingValue, resolveBinding, staticMemberReference, type Binding } from "./binding.js";
 import { dynamicImportBinding } from "./wrapper-folding.js";
 import { createCycleGuard, type CycleGuard } from "./cycle-detection.js";
 import { libraryStubFor } from "./library-stubs.js";
@@ -34,7 +34,9 @@ export type MemberReach = { ref: Reference } | { ref: null; terminals: ResolvedT
  * property, either:
  * - a holder whose declaration has `member` recorded (`staticMemberReference`);
  * - an import whose value the graph cannot see (`bindingImport`, value
- *   Unknown), which names that import's reference extended by `member`.
+ *   Unknown), which names that import's reference extended by `member`, or
+ *   the import's own reference for `default` read on a default export
+ *   (`"default" in X ? X.default : X`).
  *
  * Otherwise the terminals `obj` resolves to, exactly what
  * `resolveType(obj)` returns, found by the same pass. Each holder on the way
@@ -62,6 +64,7 @@ export function reachMember(
       const value = resolveReference(graph, fileGraph, obj.ref, guard);
       if (value.kind === "TypeOf" || value.kind === "MemberOf") return reachMember(graph, fileGraph, value, member, argMap, guard);
       if (value.kind === "Unknown" && bindingImport(graph, fileGraph, obj.ref) !== undefined) {
+        if (member === "default" && isDefaultExport(resolveBinding(graph, fileGraph, obj.ref, guard))) return { ref: obj.ref };
         return { ref: { ...obj.ref, memberChain: [...obj.ref.memberChain, member] } };
       }
       return { ref: null, terminals: referenceTerminals(graph, fileGraph, obj, value, argMap, guard) };
@@ -81,6 +84,11 @@ export function reachMember(
   } finally {
     guard.popNode(obj);
   }
+}
+
+/** Whether `binding` is a package's or an unparsed file's default export itself. */
+function isDefaultExport(binding: Binding): boolean {
+  return (binding.kind === "package-export" || binding.kind === "unparsed") && binding.exportName === "default" && binding.path.length === 0;
 }
 
 /** What a reference resolves to, given the value `resolveReference` found. */

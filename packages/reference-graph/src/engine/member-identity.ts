@@ -34,18 +34,12 @@ export function effectiveExportName(imported: string, memberChain: readonly stri
  * namespace import (`import * as Dialog; <Dialog.Root.Foo/>` → root `Root`,
  * residual `["Foo"]`); every other import form keeps `imported` as the root,
  * so the whole chain is residual (`import { Dialog }; <Dialog.Popup/>` →
- * root `Dialog`, residual `["Popup"]`). A default import's leading `default`
- * member is the default export itself, as CommonJS interop reads it
- * (`import Link; Link.default` → root `default`, residual `[]`). Lookups
- * (re-export chains, default export local names, workspace definitions) key
- * on the root; the identity stamped on the occurrence is
- * `compoundExportName(root, residual)`.
+ * root `Dialog`, residual `["Popup"]`). Lookups (re-export chains, default
+ * export local names, workspace definitions) key on the root; the identity
+ * stamped on the occurrence is `compoundExportName(root, residual)`.
  */
 export function residualMemberChain(imported: string, memberChain: readonly string[]): readonly string[] {
-  const first = memberChain[0];
-  return (imported === "*" && first !== undefined) || (imported === "default" && first === "default")
-    ? memberChain.slice(1)
-    : memberChain;
+  return imported === "*" && memberChain.length > 0 ? memberChain.slice(1) : memberChain;
 }
 
 /**
