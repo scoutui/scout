@@ -9,18 +9,19 @@ const MOST_USED = 5;
 /**
  * The summary after a scan: the components and occurrences the dashboard will show, how many occurrences Scout
  * couldn't match to a component, and the most used components with where each comes from. Ends with a blank line.
- * In colour, the numbers are bold, and where each component comes from is dim.
+ * Numbers group their thousands, as the dashboard shows them. In colour, the numbers are bold, and where each
+ * component comes from is dim.
  */
 export function printSummary(out: ScanArtifact, stats: ScanStats, color: Colorizer): void {
   const seconds = (stats.scanDurationMs / 1000).toFixed(1);
-  const counted = (n: number, noun: string): string => `${color.bold(String(n))} ${n === 1 ? noun : `${noun}s`}`;
+  const counted = (n: number, noun: string): string => `${color.bold(grouped(n))} ${n === 1 ? noun : `${noun}s`}`;
   const lines = [
     `Scanned ${counted(stats.filesScanned, "file")} in ${seconds}s: ${counted(stats.componentCount, "component")}, ${counted(stats.resolvedOccurrenceCount, "occurrence")}.`,
   ];
   const unmatched = stats.occurrenceCount - stats.resolvedOccurrenceCount;
   if (unmatched > 0) {
     lines.push(
-      `Scout couldn't match ${color.bold(String(unmatched))} more ${unmatched === 1 ? "occurrence" : "occurrences"} to a component. See ${color.brand(UNMATCHED_PAGE)}`,
+      `Scout couldn't match ${color.bold(grouped(unmatched))} more ${unmatched === 1 ? "occurrence" : "occurrences"} to a component. See ${color.brand(UNMATCHED_PAGE)}`,
     );
     const packages = packagesNotInstalled(out.occurrences);
     const notInstalled = [...packages.values()].reduce((sum, n) => sum + n, 0);
@@ -37,7 +38,7 @@ export function printSummary(out: ScanArtifact, stats: ScanStats, color: Coloriz
     .sort((a, b) => b.stats.occurrenceCount - a.stats.occurrenceCount)
     .slice(0, MOST_USED);
   if (used.length > 0) {
-    const rows = used.map((c) => ({ name: nameOf(c), source: sourceOf(c), count: String(c.stats.occurrenceCount) }));
+    const rows = used.map((c) => ({ name: nameOf(c), source: sourceOf(c), count: grouped(c.stats.occurrenceCount) }));
     const nameWidth = Math.max(...rows.map((r) => r.name.length));
     const sourceWidth = Math.max(...rows.map((r) => r.source.length));
     const countWidth = Math.max(...rows.map((r) => r.count.length));
@@ -48,6 +49,11 @@ export function printSummary(out: ScanArtifact, stats: ScanStats, color: Coloriz
     lines.push("");
   }
   process.stdout.write(`${lines.join("\n")}\n`);
+}
+
+/** `n` with its thousands grouped: `1,191`. */
+function grouped(n: number): string {
+  return n.toLocaleString("en-US");
 }
 
 /** The component's name as the dashboard shows it, and a tag's name in angle brackets. */

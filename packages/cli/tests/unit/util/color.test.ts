@@ -30,6 +30,7 @@ describe("createColor", () => {
     expect(c.yellow("wait")).toBe("\x1b[33mwait\x1b[0m");
     expect(c.bold("n")).toBe("\x1b[1mn\x1b[0m");
     expect(c.dim("m")).toBe("\x1b[2mm\x1b[0m");
+    expect(c.brand("")).toBe("");
   });
 });
 

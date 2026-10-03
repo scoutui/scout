@@ -68,7 +68,7 @@ export type Colorizer = {
 };
 
 function wrap(code: string, enabled: boolean): (s: string) => string {
-  return enabled ? (s) => `${code}${s}${ANSI.reset}` : (s) => s;
+  return enabled ? (s) => (s === "" ? s : `${code}${s}${ANSI.reset}`) : (s) => s;
 }
 
 /**

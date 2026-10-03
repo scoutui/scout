@@ -117,4 +117,26 @@ describe("printSummary", () => {
       ].join("\n"),
     );
   });
+
+  it("groups the thousands in large numbers, as the dashboard does", () => {
+    const printed = capture([component("a", packageExport("@acme/ui", "Button"), 1204), component("b", declaredIn("src/Card.tsx", "Card"), 3)], {
+      filesScanned: 2929,
+      scanDurationMs: 100,
+      componentCount: 1191,
+      occurrenceCount: 5925,
+      resolvedOccurrenceCount: 3925,
+    });
+    expect(printed).toBe(
+      [
+        "Scanned 2,929 files in 0.1s: 1,191 components, 3,925 occurrences.",
+        "Scout couldn't match 2,000 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences",
+        "",
+        "Most used:",
+        "  Button  @acme/ui      1,204",
+        "  Card    src/Card.tsx      3",
+        "",
+        "",
+      ].join("\n"),
+    );
+  });
 });
