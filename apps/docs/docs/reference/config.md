@@ -5,7 +5,7 @@ sidebar_label: "Config"
 
 # Config reference
 
-`scan` reads `scout.config.json` from the current directory, or the file named by [`--config`](/docs/reference/cli#scan). The file is plain JSON: comments and trailing commas are errors.
+[`scan`](/docs/reference/cli#scan) and [`backfill`](/docs/reference/cli#backfill) read `scout.config.json` from the current directory, or the file named by their `--config` flag. The file is plain JSON: comments and trailing commas are errors.
 
 The smallest valid config:
 
@@ -35,8 +35,8 @@ Only needed when you upload scans to a dashboard.
 
 | Field | Type | Default | Behavior |
 | --- | --- | --- | --- |
-| `host` | non-empty string | none | Dashboard that `scan` uploads to and the `auth` commands sign in to. `--host` and `SCOUTUI_HOST` win over it; it wins over your default host. See [Host resolution](/docs/reference/cli#host-resolution). `init` writes it when you give a dashboard address. |
-| `branch` | non-empty string | the remote's default branch | Branch the dashboard tracks. Without it, `scan` follows the remote's default branch as the clone recorded it (`<remote>/HEAD`). `init` writes it when it can tell which branch that is. |
+| `host` | non-empty string | none | Dashboard that `scan` and `backfill` upload to and the `auth` commands sign in to. `--host` and `SCOUTUI_HOST` win over it; it wins over your default host. See [Host resolution](/docs/reference/cli#host-resolution). `init` writes it when you give a dashboard address. |
+| `branch` | non-empty string | the remote's default branch | Branch the dashboard tracks. Without it, `scan` and `backfill` follow the remote's default branch as the clone recorded it (`<remote>/HEAD`). `init` writes it when it can tell which branch that is. |
 
 ### Backfill fields
 

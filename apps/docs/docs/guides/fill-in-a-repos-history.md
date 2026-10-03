@@ -1,5 +1,5 @@
 ---
-description: "Scan one commit a week of a repo's history with scout backfill, so its charts show the last six months from the first day."
+description: "Scan one commit a week of a repo's history with scout backfill, so its charts show the last six months straight away."
 sidebar_label: "Fill in a repo's history"
 ---
 
@@ -61,7 +61,7 @@ Backfill goes back six months unless you pass `--since` with the earliest commit
 npx scout backfill --since 2026-01-01
 ```
 
-The latest commit is always scanned, whatever its date.
+The latest commit is always included, whatever its date.
 
 ## Replace scans already on the dashboard
 
@@ -114,13 +114,15 @@ A skip you can fix, one of the first six reasons, makes backfill exit `1` when i
 }
 ```
 
+Backfill runs the command with your own tools and downloads nothing for it, so `yarn` or `pnpm` must be installed if the command uses them. For a Nuxt app, the command must also prepare the app, for example `yarn install --immutable && yarn nuxt prepare`, because backfill then doesn't run `nuxt prepare` itself.
+
 `scout scan` ignores `install`. See the [config reference](/docs/reference/config#backfill-fields).
 
 ## Where the chart starts
 
 Backfill can stop before it reaches the `--since` date. It then prints where the chart's history starts, followed by the last line:
 
-- `History before 6 Apr 2026 can't be installed with today's tools, so the chart starts there.` Three commits in a row were skipped because they couldn't be installed, which usually means older history needs older tools. The date is that of the oldest commit now on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
+- `History before 6 Apr 2026 can't be installed with today's tools, so the chart starts there.` Three commits in a row were skipped because they couldn't be installed, which usually means older history needs older tools. The date is that of the oldest commit backfill picked that's on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
 - `apps/web doesn't exist before 6 Apr 2026, so the chart starts there.` The config's folder isn't in older commits, for example because the app was created or moved then. Older commits can't be scanned with this config.
 
 ## If backfill stops with `Error:`

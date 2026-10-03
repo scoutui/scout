@@ -169,7 +169,7 @@ The first seven are *install skips*. Three in a row stop the run (see [Stop line
 | `Error: <folder> isn't on <remote>/<branch> yet, so there's nothing to backfill.` | The config's folder isn't in the latest commit. | `1` |
 | `Error: Couldn't download Corepack, which Scout needs to install Yarn and pnpm projects. Check your connection and npm registry settings, then run scout backfill again.` | Downloading Corepack failed. `--debug` prints npm's output. | `1` |
 | An upload error, then `Run scout backfill again to continue: it skips what's already uploaded.` | An upload failed for a reason other than the dashboard refusing that commit, for example the dashboard can't be reached. | `1` |
-| `Stopped. Run scout backfill again to continue: it skips what's already uploaded.` | Ctrl-C, or the process received SIGTERM. The temporary checkout is removed first. | `130` |
+| `Stopped. Run scout backfill again to continue: it skips what's already uploaded.` | Ctrl-C, the terminal closed, or the process received SIGTERM. The temporary checkout is removed first. | `130` |
 
 `<folder>` is the config's folder, relative to the top of the repository. The first two lines are followed by the last line; the others aren't.
 
@@ -198,7 +198,7 @@ It names the tracked branch, the `--since` date and the repo's page on the dashb
 | `0` | The run finished, or stopped at the history or folder line, with no skip marked *Exit `1`*. |
 | `1` | A skip marked *Exit `1`*, except the three that stopped the run at the history line. A stop line starting `Error:`. A problem before the first commit: the folder isn't in a git repository, a check on the remote, history or branch failed, no host, not signed in, or the dashboard refused or failed the request. Also any unexpected error. |
 | `2` | Usage or config error: an unknown flag, an extra argument, a `--since` that isn't a `YYYY-MM-DD` date, or a missing or invalid config file. |
-| `130` | You stopped it with Ctrl-C, or it received SIGTERM. |
+| `130` | You stopped it with Ctrl-C or closed the terminal, or it received SIGTERM. |
 
 ## `init`
 
