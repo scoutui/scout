@@ -105,13 +105,16 @@ describe("flat closure panels", () => {
     expect(screen.queryByText("further → far → mid → F")).not.toBeInTheDocument();
   });
 
-  it("empty lists say so in the same plain words as the caption", () => {
+  it("an empty list says None in this repo, without repeating the caption", () => {
     // F is a true leaf in both directions: nothing renders it and it renders
     // nothing, like an unused design-system component.
     const loneGraph: CompositionGraph = { nodes: [node("F")], edges: [] };
     render(<CompositionTab detail={detail} graph={loneGraph} />);
-    expect(screen.getByText("Nothing in this repo renders F.")).toBeInTheDocument();
-    expect(screen.getByText("F renders no other components in this repo.")).toBeInTheDocument();
+    for (const title of ["Rendered by", "Renders"]) {
+      expect(screen.getByRole("heading", { name: title }).closest("section")).toHaveTextContent(
+        `${title}0None in this repo.`,
+      );
+    }
   });
 });
 

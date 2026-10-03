@@ -171,8 +171,6 @@ export function CompositionTab({
           <div className="contents lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-stretch lg:gap-4">
             <ClosurePanel
               title="Rendered by"
-              focusName={focusName}
-              emptyCopy="Nothing in this repo renders {name}."
               rows={dependents}
               onHoverStart={(id) => setHovered({ id, dir: "up" })}
               onHoverEnd={() => setHovered(null)}
@@ -182,8 +180,6 @@ export function CompositionTab({
             />
             <ClosurePanel
               title="Renders"
-              focusName={focusName}
-              emptyCopy="{name} renders no other components in this repo."
               rows={rendered}
               onHoverStart={(id) => setHovered({ id, dir: "down" })}
               onHoverEnd={() => setHovered(null)}
@@ -268,8 +264,6 @@ function closureLabelOf({ node }: TraceEndpoint): string {
  */
 function ClosurePanel({
   title,
-  focusName,
-  emptyCopy,
   rows,
   onHoverStart,
   onHoverEnd,
@@ -278,9 +272,6 @@ function ClosurePanel({
   pinnedChain,
 }: {
   title: string;
-  /** Replaces every `{name}` token in `emptyCopy`. */
-  focusName: string;
-  emptyCopy: string;
   rows: TraceEndpoint[];
   onHoverStart: (id: string) => void;
   onHoverEnd: () => void;
@@ -291,7 +282,6 @@ function ClosurePanel({
 }) {
   // Both panels can show a filter input at once, so each needs its own `name`.
   const filterName = `${title.toLowerCase().replace(/\s+/g, "-")}-filter`;
-  const withName = (s: string) => s.replaceAll("{name}", focusName);
 
   return (
     // A panel with rows may shrink so its list scrolls, but never below 10rem,
@@ -315,7 +305,7 @@ function ClosurePanel({
         name={filterName}
         rows={rows}
         rowKey={(e) => e.node.id}
-        emptyCopy={withName(emptyCopy)}
+        emptyCopy="None in this repo."
         filterLabel={`Filter ${title}`}
         matches={closureMatches}
         labelOf={closureLabelOf}
@@ -418,7 +408,7 @@ function PanelList<Row>({
   };
 
   if (rows.length === 0) {
-    return <p className="px-3 py-6 text-center text-sm text-muted-foreground wrap-anywhere">{emptyCopy}</p>;
+    return <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyCopy}</p>;
   }
 
   return (
