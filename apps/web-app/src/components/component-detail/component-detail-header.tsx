@@ -5,6 +5,7 @@ import { friendlyKind } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
 import { MigrationLine } from "@/components/governance/migration-line";
 import { KIND_LABEL } from "@/lib/component-facets";
+import { cn } from "@/lib/utils";
 
 export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
   return (
@@ -37,8 +38,9 @@ export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
         {detail.version ? (<><Sep /><span className="font-mono">v{detail.version}</span></>) : null}
         {detail.definedAt ? (
           <>
-            <Sep />
-            <span className="wrap-anywhere">
+            {/* Below sm the path always starts its own line, so it needs no separator. */}
+            <Sep className="max-sm:hidden" />
+            <span className="wrap-anywhere max-sm:basis-full">
               defined at{" "}
               <span className="font-mono">{detail.definedAt.filePath}:{detail.definedAt.line}:{detail.definedAt.column}</span>
             </span>
@@ -51,7 +53,7 @@ export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
 }
 
 // Not `text-border`: it measured 1.15:1 against the panel, which is invisible.
-function Sep() {
-  return <span aria-hidden className="text-muted-foreground/60">·</span>;
+function Sep({ className }: { className?: string }) {
+  return <span aria-hidden className={cn("text-muted-foreground/60", className)}>·</span>;
 }
 
