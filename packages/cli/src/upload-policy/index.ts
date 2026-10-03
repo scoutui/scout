@@ -22,7 +22,11 @@ export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], sc
   return null;
 }
 
-/** Which of `setupRefusal`'s two problems stops an upload before scanning, or null when there's neither. */
+/**
+ * What stops an upload before scanning: `dependencies-missing` when a package that the workspace root's `package.json`, or
+ * that of a member owning one of `files`, lists in `dependencies` or `devDependencies` isn't installed; else
+ * `nuxt-unprepared` when the scan root declares `nuxt` and the app hasn't been prepared; null when neither.
+ */
 export function setupProblem(
   graph: WorkspaceGraph,
   files: readonly string[],

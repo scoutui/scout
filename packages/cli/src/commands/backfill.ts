@@ -87,19 +87,24 @@ export async function runBackfill(opts: BackfillOptions): Promise<number> {
   const onSignal = (): void => {
     try {
       if (state.pid !== undefined) killProcessGroup(state.pid);
+    } catch {}
+    try {
       if (state.run !== undefined) removeWorktreeSync(state.run.cwd, state.run.dir);
-    } finally {
+    } catch {}
+    try {
       process.stderr.write(`Stopped. ${RUN_AGAIN}\n`);
-      process.exit(130);
-    }
+    } catch {}
+    process.exit(130);
   };
   process.on("SIGINT", onSignal);
   process.on("SIGTERM", onSignal);
+  process.on("SIGHUP", onSignal);
   try {
     return await backfill(opts, state);
   } finally {
     process.off("SIGINT", onSignal);
     process.off("SIGTERM", onSignal);
+    process.off("SIGHUP", onSignal);
     if (state.run !== undefined) removeWorktreeSync(state.run.cwd, state.run.dir);
   }
 }
@@ -244,13 +249,13 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     }
     if (installed.kind !== "installed") {
       const timedOut = installed.kind === "install-failed" && installed.result.timedOut;
-      fail(entry, installSkipReason(installed), true, timedOut ? "The install was stopped after 10 minutes." : undefined);
+      fail(entry, installSkipReason(installed), true, timedOut ? `The install was stopped after ${INSTALL_TIMEOUT_MS / 60_000} minutes.` : undefined);
     } else {
       const outDir = join(runDir, commit);
       await mkdir(outDir);
       const child = await finished(
         state,
-        runProcess(process.execPath, [opts.cliEntry, INTERNAL_COMMIT_SCAN, configPath, outDir, ...(log.debug ? ["--debug"] : [])], {
+        runProcess(process.execPath, [opts.cliEntry, INTERNAL_COMMIT_SCAN, configPath, outDir, meta.repo.id, ...(log.debug ? ["--debug"] : [])], {
           cwd: work.configDir,
         }),
       );

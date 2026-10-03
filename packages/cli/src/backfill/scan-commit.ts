@@ -20,13 +20,14 @@ export type CommitScanResult =
   | { kind: "refused"; reason: "uncommitted" | "pnp" | "dependencies-missing" | "nuxt-unprepared"; detail?: string };
 
 /**
- * Scans the checkout of the config at `args[0]` with the checks an upload makes, and writes `result.json`, and `scan.json`
- * for a commit it scanned, into the folder at `args[1]`. Returns 0 once `result.json` is written. When the config can't be
- * loaded (2) or the commit can't be uploaded from this checkout (1), it prints why and writes nothing.
+ * Scans the checkout of the config at `args[0]` with the checks an upload makes, under the repo id `args[2]`, and writes
+ * `result.json`, and `scan.json` for a commit it scanned, into the folder at `args[1]`. Returns 0 once `result.json` is
+ * written. When the config can't be loaded (2) or the commit can't be uploaded from this checkout (1), it prints why and
+ * writes nothing.
  */
 export async function runCommitScan(args: string[], log: Logger): Promise<number> {
-  const [configPath, outDir] = args;
-  if (configPath === undefined || outDir === undefined) return 2;
+  const [configPath, outDir, repoId] = args;
+  if (configPath === undefined || outDir === undefined || repoId === undefined) return 2;
   const scanLog = new Logger({ quiet: !log.debug, debug: log.debug });
   const finish = async (result: CommitScanResult): Promise<number> => {
     await writeFile(join(outDir, COMMIT_RESULT_FILE), JSON.stringify(result));
@@ -45,11 +46,7 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
     scanLog.error(state.message);
     return 1;
   }
-  const meta = stampMeta(checkout, {
-    cwd: cfg.configDir,
-    ...(cfg.repoId !== undefined ? { repoIdOverride: cfg.repoId } : {}),
-    tracked: state.tracked,
-  });
+  const meta = stampMeta(checkout, { cwd: cfg.configDir, repoIdOverride: repoId, tracked: state.tracked });
   const outputRoot = await scanOutputRoot(cfg.configDir, {});
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, scanLog);
 

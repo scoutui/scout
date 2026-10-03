@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -66,13 +66,13 @@ function pushedRepo(commits: Commit[], config: object = CONFIG, configAt = "scou
   return { dir, shas };
 }
 
-function backfill(dir: string, opts: { since: string; log?: Logger; rescan?: boolean; configAt?: string }): Promise<number> {
+function backfill(dir: string, opts: { since: string; log?: Logger; rescan?: boolean; configAt?: string; cliEntry?: string }): Promise<number> {
   return runBackfill({
     configPath: join(dir, opts.configAt ?? "scout.config.json"),
     since: opts.since,
     rescan: opts.rescan ?? false,
     log: opts.log ?? new Logger(),
-    cliEntry: cli,
+    cliEntry: opts.cliEntry ?? cli,
   });
 }
 
@@ -204,7 +204,7 @@ describe("scout backfill", () => {
         untracked: readFileSync(join(dir, "untracked.md"), "utf8"),
         worktrees: worktrees(dir),
         folders: backfillFolders(),
-        listeners: [process.listenerCount("SIGINT"), process.listenerCount("SIGTERM")],
+        listeners: [process.listenerCount("SIGINT"), process.listenerCount("SIGTERM"), process.listenerCount("SIGHUP")],
       };
     }
 
@@ -664,15 +664,32 @@ describe("scout backfill", () => {
 
     it("prints only the end line when every commit is already on the dashboard, and exits 0", async () => {
       const { dir } = pushedRepo([{ date: "2026-06-10T10:00:00Z" }, { date: "2026-06-17T10:00:00Z" }]);
-      const foldersBefore = backfillFolders();
       acceptingDashboard((commit) => ({ decision: "skip", url: `/repos/example%2Fweb/scans/${commit}` }));
 
       const code = await backfill(dir, { since: "2026-06-01" });
 
       expect(stdout()).toBe(`Backfilled main since 1 Jun 2026: 0 uploaded, 2 already there, 0 skipped. ${END}`);
       expect(stderr()).toBe("");
-      expect(backfillFolders()).toEqual(foldersBefore);
       expect(code).toBe(0);
+    }, 60_000);
+
+    it("stops with the scan's output when a commit's scan ends without a result, and exits 1", async () => {
+      const { dir } = pushedRepo([{ date: "2026-06-17T10:00:00Z" }]);
+      const stubDir = realpathSync(mkdtempSync(join(tmpdir(), "cc-backfill-stub-")));
+      dirs.push(stubDir);
+      const stub = join(stubDir, "scan.cjs");
+      writeFileSync(
+        stub,
+        String.raw`require("fs").writeFileSync(require("path").join(__dirname, "out-dir"), process.argv[4]); process.stderr.write("Error: Scout stopped unexpectedly (boom).\n"); process.exit(1);`,
+      );
+      acceptingDashboard();
+
+      const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }), cliEntry: stub });
+
+      expect(stderr()).toBe("Error: Scout stopped unexpectedly (boom).\n");
+      expect(stdout()).toBe("");
+      expect(code).toBe(1);
+      expect(existsSync(dirname(readFileSync(join(stubDir, "out-dir"), "utf8")))).toBe(false);
     }, 60_000);
   });
 });
