@@ -26,7 +26,13 @@ export type ImportRecord = {
 
 export type ExportRecord =
   | { kind: "named"; exportedAs: string; local: string }
-  | { kind: "named"; exportedAs: string; from: string; fromImported: string }
+  | {
+      kind: "named";
+      exportedAs: string;
+      from: string;
+      /** `"default"` | exported name | `"*"` (namespace: `export * as exportedAs from`). */
+      fromImported: string;
+    }
   | { kind: "star"; from: string }
   | { kind: "default"; local: string };
 
@@ -153,9 +159,9 @@ export type FileGraph = {
    *  parser-react may emit an empty array. */
   unrecordedMemberWrites: Reference[];
   /** Set when the file exports something `exports` does not record (an
-   *  anonymous `export default { … }`, `export * as ns`, a CommonJS
-   *  assignment, a Vue SFC script's named export), so a name missing from
-   *  `exports` is not provably absent. */
+   *  anonymous `export default { … }`, a CommonJS assignment, a Vue SFC
+   *  script's named export), so a name missing from `exports` is not provably
+   *  absent. */
   unrecordedExports?: true;
 };
 
