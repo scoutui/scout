@@ -1,0 +1,10 @@
+{
+  "name": "vue-components-dts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@example/vue-kit": "2.1.0",
+    "vue": "3.5.33"
+  }
+}

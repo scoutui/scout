@@ -1,0 +1,4 @@
+{
+  "repoId": "vue-components-dts",
+  "include": ["src/**/*.vue"]
+}
