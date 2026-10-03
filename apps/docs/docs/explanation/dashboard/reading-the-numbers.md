@@ -105,4 +105,4 @@ Each series counts its own occurrences without checking the others. When one com
 - A chart holds a tag and a package under it, or a package and a component from it.
 - A component defined in the repo lives in a workspace package that a tag or a package series matches. It counts there and under **local**.
 
-On a share chart, the chart builder warns that series can share components, unless every series is a different single component. Where series can overlap, read their shares as a comparison between series, not a breakdown of the code. For a clean breakdown, pick series that can't contain each other, such as library tags whose patterns match different packages. The warning still shows for those, because the dashboard doesn't compare tag patterns.
+On a share chart, the chart builder warns when series can share components. Where series can overlap, read their shares as a comparison between series, not a breakdown of the code. For a clean breakdown, pick series that can't contain each other, such as library tags whose patterns match different packages.

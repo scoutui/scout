@@ -39,10 +39,10 @@ A *series* is one line, bar or row on the chart. Over time, a chart gains a poin
 To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [Tags](/docs/guides/dashboard/tag-your-libraries) shows how to create `acme-ui` and `acme-ui-legacy`, the two used here. Package and component series need no tag.
 
 1. On the charts page, press **New chart**.
-2. Type a name into **Name**, for example `acme-ui vs acme-ui-legacy`.
+2. Type a name into **Name**, for example `acme-ui vs acme-ui-legacy`. You can't save a chart without one. You can also add a **Description**, which shows under the chart's name on its page.
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
-5. Under **Metric**, keep **Count** to chart occurrences, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so the control disappears when you pick it.
+5. Under **Metric**, keep **Count** to chart occurrences, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **Share** when you pick it.
 6. In the **Series** panel, on the **Tags** tab, press `acme-ui`, then `acme-ui-legacy`. Each gets a `✓` and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
 7. Press **Save chart**. The chart opens on its own page and appears under **Saved charts**.
 
@@ -58,17 +58,19 @@ The picker's other entries chart more than tags:
 - The **Packages** tab adds one package, such as `@acme/icons`.
 - The **Components** tab adds one component, such as `Button` from `@acme/ui`.
 
-With one repo picked under **Repos**, the **Packages** and **Components** tabs list only what that repo's latest scan contains. A tab shows at most 50 entries, so type into the search box to find the rest. To remove a series, press its **×** in the list, or press its entry in the picker again.
+With one repo picked under **Repos**, the **Tags**, **Packages** and **Components** tabs list only what that repo's latest scan contains. A tab shows at most 50 entries, so type into the search box to find the rest. To remove a series, press its **×** in the list, or press its entry in the picker again.
 
 ### Count only deprecated components
 
-To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, press **deprecated only** on a tag or package series in the list at the top of the **Series** panel. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as superseded or retired. If no record covers any of them, the series drops to zero.
+To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, open the options of a tag or package series in the list at the top of the **Series** panel and choose **Only deprecated components**. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as superseded or retired. If no record covers any of them, the series drops to zero.
+
+The option is offered only when some, but not all, of the series' components are deprecated. Once it's on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
 
 ## Change or delete a chart
 
 On a chart's page, except for a **Stacked** chart, the **Count** and **Share** toggle switches the view without changing the saved chart.
 
-To change the chart itself, press **Edit**. The chart builder opens with the chart's name, repos, chart type, metric and series. Make your changes and press **Save chart** to update the same chart.
+To change the chart itself, press **Edit**. The chart builder opens with the chart's name, repos, chart type, metric and series. Make your changes and press **Save chart** to update the same chart, or **Cancel** to leave without saving.
 
 To delete a chart, open it, press **Delete**, then **Delete chart**. Deleting can't be undone, and any signed-in user can delete any saved chart.
 
@@ -89,7 +91,7 @@ These charts have no **Edit** or **Delete**. One goes away when its record is de
 
 ## Good to know
 
-- With **Share** or **Stacked**, a caption in the chart builder warns that series can share components. It shows for two tags too, not only for overlapping series. A component in two series counts in both, for example with a tag and a package under that tag on one chart. See [Why shares can overlap](/docs/explanation/dashboard/reading-the-numbers#why-shares-can-overlap).
+- With **Share** or **Stacked**, a caption in the chart builder warns when series can share components, for example a tag and a package under that tag, or **Local components** with a package. A component in two series counts in both. See [Why shares can overlap](/docs/explanation/dashboard/reading-the-numbers#why-shares-can-overlap).
 - The **Migrations** and **Retirements** rows and the saved-chart previews on the charts list catch up a moment after a scan is uploaded or a record, tag or chart is saved. A chart you've just saved shows a flat preview until then.
 - A chart over time leaves out scans that aren't ready and lists them above the chart, for example **1 scan is left out**. A chart of the latest scans uses each repo's newest ready scan and says which repos it shows at an older scan.
 - If the new chart builder or a chart's page shows **Preparing scan data** instead of its content, the dashboard is still getting scan data ready, and the chart loads by itself when it's done. **Scan data can't be read** means the dashboard can't read a stored scan the chart needs. See [When a page shows Preparing scan data](/docs/explanation/cli-and-dashboard#scan-preparing).
