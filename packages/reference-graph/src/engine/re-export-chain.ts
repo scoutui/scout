@@ -21,8 +21,7 @@ import { packageNameFromSpecifier } from "./specifier.js";
  *     recurse into each parsed source with the same `imported` name; first
  *     non-null result wins. If none does, the result is the package exit of
  *     an `export *`, when that is the only star target the search could not
- *     follow into a parsed file and `imported` is not `default` (the rule
- *     `starExport` in `binding.ts` applies).
+ *     follow into a parsed file and `imported` is not `default`.
  *
  * A namespace hop (`import * as NS; export { NS }`, or `export * as NS from`)
  * continues into NS's module with the first segment of `path` as the name

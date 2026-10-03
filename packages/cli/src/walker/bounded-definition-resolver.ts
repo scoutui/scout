@@ -62,7 +62,6 @@ export function createBoundedDefinitionResolver(opts: {
   // leaf, as the whole-graph walk does.
   const builder = createGraphBuilder({ moduleResolver: opts.moduleResolver, lazyReExportResolution: true });
   const parsed = new Set<string>();
-  const sfcFiles = new Set<string>();
   const shadowGraph = (): Graph => builder.build({ firstParty: opts.firstParty });
 
   const tryParse = (absFile: string): boolean => {
@@ -83,7 +82,6 @@ export function createBoundedDefinitionResolver(opts: {
     try {
       if (file.kind === "vue") {
         emitVueFile({ graphBuilder: builder, graphKey: absFile, definitionPath: absFile, parsed: file });
-        sfcFiles.add(absFile);
       } else {
         const fb = builder.beginFile(absFile);
         emitReact({ file: absFile, source, ast: file.ast, fileBuilder: fb });
@@ -156,9 +154,10 @@ export function createBoundedDefinitionResolver(opts: {
 
   const resolveDefinition: BoundedDefinitionResolver["resolveDefinition"] = (absTarget, imported, path) => {
     const pinned = pin(absTarget, imported, path);
-    // An SFC is declared at a placeholder position, so a pin into one carries no definition.
-    if (pinned === null || "specifier" in pinned || sfcFiles.has(pinned.absFile)) return pinned;
-    const definition = declarationPositionIn(shadowGraph(), pinned.absFile, pinned.exportName, pinned.path);
+    if (pinned === null || "specifier" in pinned) return pinned;
+    const graph = shadowGraph();
+    if (graph.files.get(pinned.absFile)?.dialect === "vue") return pinned;
+    const definition = declarationPositionIn(graph, pinned.absFile, pinned.exportName, pinned.path);
     return definition === undefined ? pinned : { ...pinned, definition };
   };
 

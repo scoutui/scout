@@ -126,6 +126,11 @@ describe("followReExportChain: named + star resolution", () => {
     return gb.build({ firstParty: (abs) => !abs.startsWith("node_modules/") });
   };
 
+  it("exits to the one package whose `export *` could hold the name, from the star source that exports it", () => {
+    const graph = starGraph([{ kind: "star", from: "./a.ts" }], [{ kind: "star", from: "@example/one" }]);
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toEqual({ file: "a.ts", specifier: "@example/one", exportName: "X", path: [] });
+  });
+
   it("returns null when `export *` of two packages could hold the name, one of them in a star source", () => {
     const graph = starGraph(
       [
@@ -250,6 +255,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
   ])("stays at the barrel for a namespace re-export followed with no member: $source", ({ form, specifier }) => {
     const gb = createGraphBuilder({
       moduleResolver: (_i, s) => (s === "./seo.ts" ? "seo.ts" : s === "@example/ui" ? "node_modules/@example/ui/index.js" : null),
+      lazyReExportResolution: true,
     });
     const fb = gb.beginFile("index.ts");
     if (form === "import") {
@@ -258,7 +264,6 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
     } else {
       fb.addExport({ kind: "named", exportedAs: "NS", from: specifier, fromImported: "*" });
     }
-    gb.beginFile("seo.ts").addExport({ kind: "named", exportedAs: "Seo", local: "Seo" });
     const graph = gb.build({ firstParty: (abs) => abs === "seo.ts" });
     expect(followReExportChain(graph, "index.ts", "NS", [])).toEqual({ file: "index.ts", localExport: "NS", path: [] });
   });

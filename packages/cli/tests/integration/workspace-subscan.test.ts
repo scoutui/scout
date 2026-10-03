@@ -98,15 +98,6 @@ describe("integration: sub-package scan of a monorepo", () => {
     expect(chipOf(subOut)?.id).toBe(chipOf(rootOut)?.id);
   });
 
-  it("root scan: a member of a namespace the sibling's barrel re-exports with `export * as` is the component its file declares", () => {
-    const occ = rootOut.occurrences.find((o) => o.filePath === "apps/web/src/App.tsx" && o.line === 15);
-    const field = rootOut.components.find((c) => c.id === occ?.resolution.componentId);
-    expect([field?.identity, field?.definition]).toEqual([
-      { kind: "repository-declaration", repoId: "workspace-subscan", filePath: "packages/ui/src/forms.tsx", exportName: "Field" },
-      { line: 1, column: 7 },
-    ]);
-  });
-
   it.each([
     { line: 15, filePath: "packages/ui/src/forms.tsx", exportName: "Field" },
     { line: 16, filePath: "packages/ui/src/layout.tsx", exportName: "Stack" },
