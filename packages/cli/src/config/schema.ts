@@ -13,7 +13,7 @@ export interface ConfigFile {
   repoId?: string;
   host?: string;
   branch?: string;
-  include: string[];
+  include?: string[];
   exclude?: string[];
   gitignore?: boolean;
   $schema?: string;

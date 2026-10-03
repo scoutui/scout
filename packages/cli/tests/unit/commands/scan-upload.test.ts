@@ -140,6 +140,34 @@ describe("runScan upload outcome", () => {
   });
 
   it.each([
+    {
+      repositories: [],
+      says: (dir: string) =>
+        `No .js, .jsx, .ts, .tsx or .vue files to scan in ${dir}. Check "exclude" in ${join(dir, "scout.config.json")}, or scan from the folder that holds your source files.`,
+    },
+    {
+      repositories: ["vendor/lib"],
+      says: () => "The only source files here are in vendor/lib, which is a separate git repository. Run the scan from that folder instead.",
+    },
+    {
+      repositories: ["vendor/a", "vendor/b"],
+      says: () => "The only source files here are in vendor/a and vendor/b, which are separate git repositories. Run the scan from each of those folders instead.",
+    },
+  ])("stops with exit 2 when a config without include finds no source files outside folders that hold their own git repository: $repositories", async ({ repositories, says }) => {
+    const dir = setupConsumer();
+    rmSync(join(dir, "src"), { recursive: true });
+    for (const repository of repositories) {
+      mkdirSync(join(dir, repository, "src"), { recursive: true });
+      writeFileSync(join(dir, repository, ".git"), "gitdir: ../../.git/modules/lib\n");
+      writeFileSync(join(dir, repository, "src/A.tsx"), "export const A = () => <div />;\n");
+    }
+    writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ repoId: "upload-test", exclude: [] }));
+    const result = await runScan({ configPath: join(dir, "scout.config.json") });
+    expect(scanExitCode(result)).toBe(2);
+    expect(stderr()).toBe(`Error: ${says(dir)}\n`);
+  });
+
+  it.each([
     { exclude: ["apps/old-admin"], warned: ["apps/old-admin"] },
     { exclude: ["**/node_modules/**", "**/*.{test,spec,stories}.*"], warned: [] },
     { exclude: ["src"], warned: [] },

@@ -83,13 +83,16 @@ describe("loadConfig", () => {
     await expect(loadConfig(path)).rejects.toMatchObject({ message: `${path} has a field Scout doesn't use: "output". Remove it and try again.` });
   });
 
-  it("requires include field", async () => {
-    const dir = tmp();
-    const path = writeConfig(dir, {
-      repoId: "my-repo",
-    });
-    await expect(loadConfig(path)).rejects.toMatchObject({ code: "CONFIG_INVALID" });
-    await expect(loadConfig(path)).rejects.toThrow(/include/);
+  it("accepts a config without include", async () => {
+    const path = writeConfig(tmp(), { repoId: "my-repo" });
+    const cfg = await loadConfig(path);
+    expect(cfg.repoId).toBe("my-repo");
+    expect("include" in cfg).toBe(false);
+  });
+
+  it("rejects an empty include", async () => {
+    const path = writeConfig(tmp(), { include: [] });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `Invalid config at ${path}: /include: must NOT have fewer than 1 items` });
   });
 
   it("accepts tsconfigPath", async () => {

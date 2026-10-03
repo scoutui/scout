@@ -12,7 +12,7 @@ import type { LocalDefinition } from "../local-index/types.js";
 import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
 import { emitVueFile } from "../emit-vue-file.js";
 import { createProgress, startPhase } from "../util/progress.js";
-import { excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
+import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
 import { resolveTsconfigPath } from "../walker/tsconfig-discovery.js";
 import { buildPackageAliasLayers } from "../walker/package-alias-layers.js";
@@ -250,7 +250,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   }
 
   let upload: UploadOutcome = "skipped";
-  const refusal = emptyScanRefusal(stats, { configPath });
+  const refusal = emptyScanRefusal(stats, { configPath, ...(cfg.include !== undefined ? { include: cfg.include } : {}) });
   if (refusal !== null) {
     upload = "failed";
     log.error(refusal);
@@ -328,19 +328,27 @@ export async function readWorkspace(
   return { workspaceRoot, workspaceGraph, files };
 }
 
-/** The file walk for `cfg`: its include, exclude and gitignore, from the config's folder. */
+/** The file walk for `cfg`: its include (`DEFAULT_INCLUDE` when it has none), exclude and gitignore, from the config's folder. */
 function walkOptions(cfg: ResolvedConfig): WalkOptions {
-  return { root: cfg.configDir, include: cfg.include, exclude: cfg.exclude, gitignore: cfg.gitignore };
+  return { root: cfg.configDir, include: cfg.include ?? [...DEFAULT_INCLUDE], exclude: cfg.exclude, gitignore: cfg.gitignore };
 }
 
-/** The error for an `include` that matches no file, naming the nested repositories it only matches inside. */
-function noFilesMessage(configPath: string, include: readonly string[], repositories: readonly string[]): string {
-  const patterns = `"include" in ${configPath} (${include.join(", ")})`;
-  if (repositories.length === 0) return `No files match ${patterns}. Point it at your source files and scan again.`;
+/**
+ * The error for a scan that found no file to read, naming `include` when the config has one, and the nested
+ * repositories that hold the only files it would read.
+ */
+function noFilesMessage(configPath: string, include: readonly string[] | undefined, repositories: readonly string[]): string {
+  const patterns = include === undefined ? undefined : `"include" in ${configPath} (${include.join(", ")})`;
+  if (repositories.length === 0) {
+    return patterns === undefined
+      ? `No .js, .jsx, .ts, .tsx or .vue files to scan in ${dirname(configPath)}. Check "exclude" in ${configPath}, or scan from the folder that holds your source files.`
+      : `No files match ${patterns}. Point it at your source files and scan again.`;
+  }
+  const only = patterns === undefined ? "The only source files here are in" : `${patterns} only matches files in`;
   const folders = repositories.map(posixPath);
   return folders.length === 1
-    ? `${patterns} only matches files in ${folders[0]}, which is a separate git repository. Run the scan from that folder instead.`
-    : `${patterns} only matches files in ${folders.slice(0, -1).join(", ")} and ${folders.at(-1)}, which are separate git repositories. Run the scan from each of those folders instead.`;
+    ? `${only} ${folders[0]}, which is a separate git repository. Run the scan from that folder instead.`
+    : `${only} ${folders.slice(0, -1).join(", ")} and ${folders.at(-1)}, which are separate git repositories. Run the scan from each of those folders instead.`;
 }
 
 /** The scan file built from the workspace's files, checked against its format, and its stats. */
