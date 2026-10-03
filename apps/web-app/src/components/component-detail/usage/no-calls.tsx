@@ -11,7 +11,7 @@ export function NoCalls({ detail, source }: { detail: ComponentDetail; source: S
     <div className="panel overflow-clip">
       <div className="px-4 py-10 text-center text-sm text-muted-foreground">
         <p className="text-foreground">
-          This scan found no calls to <span className="font-mono">{detail.displayName}</span> in <span className="font-mono">{detail.repoId}</span>.
+          This scan found no uses of <span className="font-mono">{detail.displayName}</span> in <span className="font-mono">{detail.repoId}</span>.
         </p>
         {href ? (
           <p className="mt-1.5">

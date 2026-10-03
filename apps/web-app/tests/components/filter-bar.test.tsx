@@ -280,18 +280,18 @@ describe("FilterBar pills", () => {
   });
 });
 
-describe("FilterBar occurrence vocabulary", () => {
-  it("labels the active occurrence pill with the word occurrences", () => {
+describe("FilterBar uses vocabulary", () => {
+  it("labels the active uses pill with the word uses", () => {
     renderBar(options, { ...emptyFacets(), occurrences: { op: ">=", value: 100 } });
-    expect(screen.getByText("occurrences")).toBeInTheDocument();
+    expect(screen.getByText("uses")).toBeInTheDocument();
     expect(screen.getByText("≥ 100")).toBeInTheDocument();
-    expect(screen.queryByText(/\buses\b|\busages\b/)).toBeNull();
+    expect(screen.queryByText(/\boccurrences?\b|\busages?\b/)).toBeNull();
   });
 
-  it("names the facet Occurrences in the filter menu", async () => {
+  it("names the facet Uses in the filter menu", async () => {
     renderBar();
     fireEvent.click(screen.getByRole("button", { name: /^filter/i }));
-    expect(await screen.findByRole("button", { name: /^occurrences/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /^uses/i })).toBeInTheDocument();
   });
 });
 

@@ -72,7 +72,7 @@ export function CohortTable({
           <TableHead aria-hidden className="w-[22%]" />
           <TableHead className="text-right">
             <SortButton
-              label={metric === "share" ? "Share" : "Occurrences"}
+              label={metric === "share" ? "Share" : "Uses"}
               sortKey="value"
               current={sortKey}
               dir={sortDir}

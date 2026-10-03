@@ -41,9 +41,9 @@ describe("ComponentsTable", () => {
 
   it("puts aria-sort on the active column header, not the button", () => {
     render(<ComponentsTable repoId="r1" rows={[row]} />);
-    expect(screen.getByRole("columnheader", { name: /occurrences/i })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("columnheader", { name: /uses/i })).toHaveAttribute("aria-sort", "descending");
     expect(screen.getByRole("columnheader", { name: /^component/i })).toHaveAttribute("aria-sort", "none");
-    expect(screen.getByRole("button", { name: /occurrences/i })).not.toHaveAttribute("aria-sort");
+    expect(screen.getByRole("button", { name: /uses/i })).not.toHaveAttribute("aria-sort");
   });
 
   it("URL-encodes repoId and componentId with special characters", () => {
@@ -123,10 +123,10 @@ describe("ComponentsTable", () => {
       { name: "Package", width: "w-[23%]" },
       { name: "Version", width: "w-[11%]" },
       { name: "Files", width: "w-[9%]" },
-      { name: "Occurrences", width: "w-[17%]" },
+      { name: "Uses", width: "w-[17%]" },
     ];
     const occurrencesCell = (tr: HTMLElement) => within(tr).getAllByRole("cell").at(-1) as HTMLElement;
-    const DELTA_SORT_NAME = "Occurrences, sorts by change since previous scan";
+    const DELTA_SORT_NAME = "Uses, sorts by change since previous scan";
 
     it("renders the same five columns at the same widths in both views, so toggling reflows nothing", () => {
       const { unmount } = render(<ComponentsTable repoId="r1" rows={[row]} />);
@@ -139,14 +139,14 @@ describe("ComponentsTable", () => {
       expect(within(rowOf(screen.getByText("OldModal"))).getAllByRole("cell")).toHaveLength(5);
     });
 
-    it("outside the changed view the Occurrences cell is the bare medium-weight count", () => {
+    it("outside the changed view the Uses cell is the bare medium-weight count", () => {
       render(<ComponentsTable repoId="r1" rows={[{ ...row, occurrenceCount: 49 }]} />);
       const cell = occurrencesCell(rowOf(screen.getByText("Button")));
       expect(cell.textContent).toBe("49");
       expect(cell.className).toMatch(/(^|\s)font-medium(\s|$)/);
     });
 
-    it("in the changed view the Occurrences cell reads `49 (+2)`: the count muted, the Δ medium ink in a fixed-width slot", () => {
+    it("in the changed view the Uses cell reads `49 (+2)`: the count muted, the Δ medium ink in a fixed-width slot", () => {
       render(<ComponentsTable repoId="r1" rows={[{ ...row, occurrenceCount: 49 }]} marks={{ c1: { kind: "changed", delta: 2 } }} />);
       const cell = occurrencesCell(rowOf(screen.getByText("Button")));
       expect(cell.textContent).toBe("49 (+2)");
@@ -189,9 +189,9 @@ describe("ComponentsTable", () => {
       expect(marker.className).toMatch(/border-muted-foreground\/70/);
       expect(marker.className).not.toMatch(/border-border/);
       expect(marker.className).toMatch(/text-muted-foreground/);
-      // Below sm the tier reads the same in words: `0 occurrences (−5)`, no trailing segment.
-      const tier = within(tr).getByText(/^occurrences/).parentElement as HTMLElement;
-      expect(tier.textContent).toBe("0 occurrences (−5)");
+      // Below sm the tier reads the same in words: `0 uses (−5)`, no trailing segment.
+      const tier = within(tr).getByText(/^uses/).parentElement as HTMLElement;
+      expect(tier.textContent).toBe("0 uses (−5)");
       // No link and no tab stop: there is no detail page to reach.
       expect(within(tr).queryAllByRole("link")).toHaveLength(0);
       expect(tr.querySelector("a, button, [tabindex]")).toBeNull();
@@ -235,7 +235,7 @@ describe("ComponentsTable", () => {
       const badge = within(tr).getByText("added");
       expect(badge.className).toMatch(/rounded-4xl/);
       expect(badge.className).toMatch(/border-muted-foreground\/70/);
-      const zero = within(tr).getByText("0 occurrences");
+      const zero = within(tr).getByText("0 uses");
       expect(zero.className).toMatch(/text-muted-foreground/);
       expect(badge.compareDocumentPosition(zero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(tr.textContent).not.toContain("±0");
@@ -256,18 +256,18 @@ describe("ComponentsTable", () => {
       render(<ComponentsTable repoId="r1" rows={[fresh, grew]} marks={{ fresh: { kind: "added" }, grew: { kind: "changed", delta: 3 } }} />);
       const freshRow = rowOf(screen.getByText("Fresh"));
       expect(within(freshRow).getByText("added").className).toMatch(/rounded-4xl/);
-      expect(within(freshRow).queryByText(/0 occurrences/)).toBeNull();
+      expect(within(freshRow).queryByText(/0 uses/)).toBeNull();
       const grewRow = rowOf(screen.getByText("Grew"));
       expect(within(grewRow).queryByText(/^(added|removed|changed)$/)).toBeNull();
     });
 
-    it("below sm, a live row's Δ attaches to occurrences, not files", () => {
+    it("below sm, a live row's Δ attaches to uses, not files", () => {
       const moved = { ...row, componentId: "m", displayName: "Moved", occurrenceCount: 36, fileCount: 30 };
       render(<ComponentsTable repoId="r1" rows={[moved]} marks={{ m: { kind: "changed", delta: -23 } }} />);
       const tr = rowOf(screen.getByText("Moved"));
       const tier = within(tr).getByText("30 files").parentElement as HTMLElement;
-      // The flex tier's dot has no surrounding text, so the tier reads `36 occurrences (−23)·30 files`.
-      expect(tier.textContent).toBe("36 occurrences (−23)·30 files");
+      // The flex tier's dot has no surrounding text, so the tier reads `36 uses (−23)·30 files`.
+      expect(tier.textContent).toBe("36 uses (−23)·30 files");
       expect(within(tier).getByText("−23").className).toMatch(/font-medium/);
     });
 
@@ -289,8 +289,8 @@ describe("ComponentsTable", () => {
       expect(opened[1]).toContain("Shrunk");   // −3
       expect(opened[2]).toContain("Small");    // +2
       expect(opened[3]).toContain("Big");      // +10
-      // The sort lives on the Occurrences header: the label is unchanged, the key is the Δ.
-      expect(screen.getByRole("columnheader", { name: /^Occurrences/ })).toHaveAttribute("aria-sort", "ascending");
+      // The sort lives on the Uses header: the label is unchanged, the key is the Δ.
+      expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "ascending");
       expect(screen.getByRole("columnheader", { name: "Component" })).toHaveAttribute("aria-sort", "none");
       expect(within(rowOf(screen.getByText("Big"))).getAllByRole("link")).toHaveLength(1);
       expect(occurrencesCell(rowOf(screen.getByText("Small"))).textContent).toBe("9 (+2)");
@@ -298,29 +298,29 @@ describe("ComponentsTable", () => {
       fireEvent.click(screen.getByRole("button", { name: DELTA_SORT_NAME }));
       const flipped = names();
       expect(flipped.map((t) => ["OldModal", "Shrunk", "Small", "Big"].find((n) => t.includes(n)))).toEqual(["Big", "Small", "Shrunk", "OldModal"]);
-      expect(screen.getByRole("columnheader", { name: /^Occurrences/ })).toHaveAttribute("aria-sort", "descending");
+      expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "descending");
     });
 
-    it("names what the Occurrences header sorts in the changed view only, visible label unchanged", () => {
+    it("names what the Uses header sorts in the changed view only, visible label unchanged", () => {
       const { unmount } = render(<ComponentsTable repoId="r1" rows={[row]} marks={{ c1: { kind: "changed", delta: 2 } }} />);
       const sort = screen.getByRole("button", { name: DELTA_SORT_NAME });
       expect(sort).toHaveAttribute("title", DELTA_SORT_NAME);
-      expect(sort.textContent).toBe("Occurrences");
+      expect(sort.textContent).toBe("Uses");
       unmount();
       render(<ComponentsTable repoId="r1" rows={[row]} />);
-      const plain = screen.getByRole("button", { name: "Occurrences" });
+      const plain = screen.getByRole("button", { name: "Uses" });
       expect(plain).not.toHaveAttribute("title");
       expect(screen.queryByRole("button", { name: /change since previous scan/ })).toBeNull();
     });
 
-    it("coming back to Occurrences from another column reopens ascending, biggest drop first", () => {
+    it("coming back to Uses from another column reopens ascending, biggest drop first", () => {
       const a = { ...row, componentId: "a", displayName: "Gain", occurrenceCount: 9, fileCount: 1 };
       const c = { ...row, componentId: "c", displayName: "Drop", occurrenceCount: 20, fileCount: 7 };
       render(<ComponentsTable repoId="r1" rows={[a, c]} marks={{ a: { kind: "changed", delta: 2 }, c: { kind: "changed", delta: -3 } }} />);
       fireEvent.click(screen.getByRole("button", { name: "Files" }));
       expect(screen.getByRole("columnheader", { name: "Files" })).toHaveAttribute("aria-sort", "descending");
       fireEvent.click(screen.getByRole("button", { name: DELTA_SORT_NAME }));
-      expect(screen.getByRole("columnheader", { name: /^Occurrences/ })).toHaveAttribute("aria-sort", "ascending");
+      expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "ascending");
       expect(screen.getAllByRole("row").slice(1).map((r) => (r.textContent ?? "").includes("Drop"))).toEqual([true, false]);
     });
 
@@ -330,13 +330,13 @@ describe("ComponentsTable", () => {
       const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
       expect(screen.getByText("added").parentElement?.className).toBe(NAME_ROW);
       expect(screen.getByText("removed").parentElement?.className).toBe(NAME_ROW);
-      // The beside-badge `0 occurrences` note is desktop-only; the mobile tier already says it.
-      expect(screen.getByText("0 occurrences").className).toBe("hidden shrink-0 text-xs text-muted-foreground sm:inline");
+      // The beside-badge `0 uses` note is desktop-only; the mobile tier already says it.
+      expect(screen.getByText("0 uses").className).toBe("hidden shrink-0 text-xs text-muted-foreground sm:inline");
       const tier = within(rowOf(screen.getByText("PharmacyLicenseLogoExample"))).getByText("0 files").parentElement as HTMLElement;
-      expect(tier.textContent).toBe("0 occurrences·0 files");
+      expect(tier.textContent).toBe("0 uses·0 files");
     });
 
-    it("mobile tiers say `1 occurrence` and `1 file`, and a removed row that had no occurrences shows no `(—)`", () => {
+    it("mobile tiers say `1 use` and `1 file`, and a removed row that had no occurrences shows no `(—)`", () => {
       const one = { ...row, componentId: "one", displayName: "One", occurrenceCount: 1, fileCount: 1 };
       const heldGhost = ghostRow({
         componentId: "hg", displayName: "HeldGhost", packageName: "@x/lib", scope: "external",
@@ -344,9 +344,9 @@ describe("ComponentsTable", () => {
       });
       render(<ComponentsTable repoId="r1" rows={[one, heldGhost]} marks={{ one: { kind: "changed", delta: 1 }, hg: { kind: "removed" } }} />);
       const tier = within(rowOf(screen.getByText("One"))).getByText("1 file").parentElement as HTMLElement;
-      expect(tier.textContent).toBe("1 occurrence (+1)·1 file");
-      const ghostTier = within(rowOf(screen.getByText("HeldGhost"))).getByText(/^occurrences/).parentElement as HTMLElement;
-      expect(ghostTier.textContent).toBe("0 occurrences");
+      expect(tier.textContent).toBe("1 use (+1)·1 file");
+      const ghostTier = within(rowOf(screen.getByText("HeldGhost"))).getByText(/^uses/).parentElement as HTMLElement;
+      expect(ghostTier.textContent).toBe("0 uses");
     });
   });
 });

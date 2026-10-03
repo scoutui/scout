@@ -84,7 +84,7 @@ export function FilterBar({
     tagFacet(options.tags, facets.tags, setTags),
     {
       key: "occurrences",
-      label: "Occurrences",
+      label: "Uses",
       picker: <OccurrencePicker facets={facets} onChange={onChange} />,
       active: facets.occurrences ? 1 : 0,
     },
@@ -119,7 +119,7 @@ export function FilterBar({
       ? [
           {
             key: "occurrences",
-            field: "occurrences",
+            field: "uses",
             value: `${occurrenceSymbol(facets.occurrences.op)} ${facets.occurrences.value.toLocaleString()}`,
             onRemove: () => onChange({ ...facets, occurrences: null }),
           },

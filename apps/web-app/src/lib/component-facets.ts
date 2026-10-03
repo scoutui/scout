@@ -189,7 +189,7 @@ export function facetOptions(
 // --- URL params ---------------------------------------------------------------
 
 /** The params the components table keeps its facets in. */
-export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "occurrences", "changed"];
+export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "changed"];
 
 const KINDS: readonly KindValue[] = ["react", "vue", "wc", "tag"];
 const OCCURRENCE_WORDS: Record<OccurrenceOp, string> = { ">=": "gte:", ">": "gt:", "<=": "lte:", "<": "lt:", "=": "" };
@@ -209,7 +209,7 @@ export function facetsToParams(f: FacetState): QueryParams {
   for (const pkg of f.packages) params.push(["package", pkg]);
   for (const tag of f.tags) params.push(["tag", tag]);
   if (f.deprecated !== null) params.push(["deprecated", String(f.deprecated)]);
-  if (f.occurrences) params.push(["occurrences", `${OCCURRENCE_WORDS[f.occurrences.op]}${f.occurrences.value}`]);
+  if (f.occurrences) params.push(["uses", `${OCCURRENCE_WORDS[f.occurrences.op]}${f.occurrences.value}`]);
   if (f.changed) params.push(["changed", "true"]);
   return params;
 }
@@ -226,7 +226,7 @@ export function paramsToFacets(params: URLSearchParams): FacetState {
   const deprecated = params.get("deprecated");
   if (deprecated === "true" || deprecated === "false") f.deprecated = deprecated === "true";
   f.changed = params.get("changed") === "true";
-  const om = OCCURRENCE_RE.exec(params.get("occurrences") ?? "");
+  const om = OCCURRENCE_RE.exec(params.get("uses") ?? "");
   if (om) {
     const op = (Object.keys(OCCURRENCE_WORDS) as OccurrenceOp[]).find((k) => OCCURRENCE_WORDS[k] === (om[1] ?? ""));
     if (op) f.occurrences = { op, value: Number(om[2]) };

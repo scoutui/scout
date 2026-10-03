@@ -114,7 +114,7 @@ export function ComponentsTable({
           <TableHead className="w-[40%]" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
             <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          {/* Below xl, Occurrences takes 5 points from Package: at 11% the
+          {/* Below xl, Uses takes 5 points from Package: at 11% the
               changed view's `475 (−9)` overflowed at 640 and the header
               truncated at 1024. Both views share the widths, so toggling
               reflows nothing. */}
@@ -128,12 +128,12 @@ export function ComponentsTable({
             <SortButton label="Files" sortKey="fileCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
           <TableHead className="w-[17%] text-right pr-3 xl:w-[12%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
-            {/* The visible label stays `Occurrences`; in the changed view the
+            {/* The visible label stays `Uses`; in the changed view the
                 title and accessible name say the sort key is the Δ, so
                 "ascending" is never announced over counts that aren't. */}
             <SortButton
-              label="Occurrences"
-              title={marks ? "Occurrences, sorts by change since previous scan" : undefined}
+              label="Uses"
+              title={marks ? "Uses, sorts by change since previous scan" : undefined}
               sortKey={occurrencesKey}
               current={sortKey}
               dir={sortDir}
@@ -232,13 +232,13 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
           {deprecated ? <DeprecatedMark /> : null}
           {/* An added row with no occurrences says so beside the badge instead
               of showing ±0 (below sm the occurrences tier already reads
-              `0 occurrences`). Changed rows carry no badge: the Δ beside their
+              `0 uses`). Changed rows carry no badge: the Δ beside their
               count marks them. */}
           {mark?.kind === "added" ? (
             <>
               <Badge variant="outline" className={MARK_BADGE}>added</Badge>
               {r.occurrenceCount === 0 ? (
-                <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">0 occurrences</span>
+                <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">0 uses</span>
               ) : null}
             </>
           ) : null}
@@ -265,11 +265,11 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
           ) : null}
         </div>
         {/* The Δ is an occurrence Δ, so it attaches to occurrences:
-            `36 occurrences (−23) · 30 files`. */}
+            `36 uses (−23) · 30 files`. */}
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
           <span>
             <span className="font-medium tabular-nums text-foreground">{r.occurrenceCount.toLocaleString()}</span>
-            {r.occurrenceCount === 1 ? " occurrence" : " occurrences"}
+            {r.occurrenceCount === 1 ? " use" : " uses"}
             {delta !== undefined && delta !== 0 ? <OccurrenceDelta delta={delta} deprecated={deprecated} /> : null}
           </span>
           <Dot />
@@ -325,7 +325,7 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
           {r.deprecated ? <DeprecatedMark /> : null}
           <Badge variant="outline" className={MARK_BADGE}>removed</Badge>
         </div>
-        {/* Stacked tiers below sm: the package, then `0 occurrences (−5)`. */}
+        {/* Stacked tiers below sm: the package, then `0 uses (−5)`. */}
         {r.packageName ? (
           <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
             <span className="font-mono">{r.packageName}</span>
@@ -334,7 +334,7 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
           <span>
             <span className="tabular-nums text-faint">0</span>
-            {" occurrences"}
+            {" uses"}
             {/* A held reference with no occurrences lost none, so it shows no Δ. */}
             {r.occurrenceCount > 0 ? (
               <OccurrenceDelta delta={deltaOf({ kind: "removed" }, r.occurrenceCount)} deprecated={r.deprecated} />

@@ -120,11 +120,11 @@ describe("count and empty-list text", () => {
   const calls = input([call("src/a/Pay.tsx", 1, [lit("size", "large")]), call("src/a/Pay.tsx", 2), call("src/b/Panel.tsx", 1, [lit("size", "small")])]);
 
   it.each<[string, Partial<UsageFilters>, UsageDue | null, ReturnType<typeof countText>]>([
-    ["every call without filters", {}, null, { short: "3 calls", long: "3 calls · 2 files" }],
-    ["the calls in view of every call under a filter", { picks: [pick("size", "value", "large")] }, null, { short: "1 of 3 calls", long: "1 of 3 calls · 1 file" }],
-    ["the calls in view of every call under a folder filter", { area: "src/b" }, null, { short: "1 of 3 calls", long: "1 of 3 calls · 1 file" }],
-    ["a deprecated component's calls as still to migrate", {}, "to migrate", { short: "3 to migrate", long: "3 calls still to migrate · 2 files" }],
-    ["a deprecated component's calls in view as still to migrate under a filter", { picks: [pick("size", "value", "large")] }, "to migrate", { short: "1 of 3 to migrate", long: "1 of 3 calls still to migrate · 1 file" }],
+    ["every call without filters", {}, null, { short: "3 uses", long: "3 uses · 2 files" }],
+    ["the calls in view of every call under a filter", { picks: [pick("size", "value", "large")] }, null, { short: "1 of 3 uses", long: "1 of 3 uses · 1 file" }],
+    ["the calls in view of every call under a folder filter", { area: "src/b" }, null, { short: "1 of 3 uses", long: "1 of 3 uses · 1 file" }],
+    ["a deprecated component's calls as still to migrate", {}, "to migrate", { short: "3 to migrate", long: "3 uses still to migrate · 2 files" }],
+    ["a deprecated component's calls in view as still to migrate under a filter", { picks: [pick("size", "value", "large")] }, "to migrate", { short: "1 of 3 to migrate", long: "1 of 3 uses still to migrate · 1 file" }],
   ])("counts %s", (_title, filters, due, text) => {
     expect(countText(view(calls, filters), due)).toEqual(text);
   });
@@ -145,9 +145,9 @@ describe("count and empty-list text", () => {
   });
 
   it.each<[string, Partial<UsageFilters>, string | null]>([
-    ["names the search and the filters when together they leave no calls", { find: "zzz", picks: [pick("size", "value", "large")] }, "No calls match this search and these filters."],
-    ["names the search when it leaves no calls", { find: "zzz" }, "No calls match this search."],
-    ["names the filters when they leave no calls", { picks: [pick("size", "value", "medium")] }, "No calls match these filters."],
+    ["names the search and the filters when together they leave no calls", { find: "zzz", picks: [pick("size", "value", "large")] }, "No uses match this search and these filters."],
+    ["names the search when it leaves no calls", { find: "zzz" }, "No uses match this search."],
+    ["names the filters when they leave no calls", { picks: [pick("size", "value", "medium")] }, "No uses match these filters."],
     ["says nothing while calls are in view", { find: "pay" }, null],
   ])("%s", (_title, filters, text) => {
     expect(emptyText(view(calls, filters))).toBe(text);
@@ -213,9 +213,9 @@ describe("the filter column", () => {
 
   const inOne = (n: number) => input(Array.from({ length: n }, (_, i) => call(`src/a/F${i}.tsx`, 1)));
   it.each<[string, UsageInput, Partial<UsageFilters>, ReturnType<typeof oneFolderText>]>([
-    ["names the folder of a single call", inOne(1), {}, { lead: "The call is in", label: "a/" }],
-    ["names the folder of both calls", inOne(2), {}, { lead: "Both calls are in", label: "a/" }],
-    ["names the folder of every call", inOne(3), {}, { lead: "All 3 calls are in", label: "a/" }],
+    ["names the folder of a single call", inOne(1), {}, { lead: "The only use is in", label: "a/" }],
+    ["names the folder of both calls", inOne(2), {}, { lead: "Both uses are in", label: "a/" }],
+    ["names the folder of every call", inOne(3), {}, { lead: "All 3 uses are in", label: "a/" }],
     ["says nothing for calls in two folders", input([call("src/a/One.tsx", 1), call("src/b/Two.tsx", 1)]), {}, null],
     ["says nothing while the folder is filtered", inOne(2), { area: "src/a" }, null],
   ])("one-folder sentence: %s", (_title, given, filters, sentence) => {
@@ -340,8 +340,8 @@ describe("usageView sort and grouping", () => {
 describe("usageView rows open", () => {
   const calls = [...Array.from({ length: 5 }, (_, i) => call(`src/a/F${i}.tsx`, 1)), call("src/b/G.tsx", 1)];
   it.each<[string, Partial<UsageFilters>, boolean]>([
-    ["start open with 5 calls in view", { find: "src/a/" }, true],
-    ["start closed with 6 calls in view", {}, false],
+    ["start open with 5 uses in view", { find: "src/a/" }, true],
+    ["start closed with 6 uses in view", {}, false],
   ])("file rows %s", (_title, filters, open) => {
     expect(view(input(calls), filters).rowsOpen).toBe(open);
   });
@@ -363,7 +363,7 @@ describe("value columns", () => {
 
   it.each<[string, OccurrenceRow[], UsagePick[], number, string[]]>([
     ["a prop needs a written value", six(), [], 1000, ["size", "tone"]],
-    ["none at 5 calls or fewer", six().slice(0, 5), [], 1000, []],
+    ["none at 5 uses or fewer", six().slice(0, 5), [], 1000, []],
     ["at most three, most set first", six().map((c, i) => ({ ...c, props: [...c.props, ...(i < 3 ? [lit("a", "1")] : []), lit("b", "1")] })), [], 1000, ["b", "size", "tone"]],
     ["orders props set on the same number of calls by name", Array.from({ length: 6 }, (_, i) => call(`src/F${i}.tsx`, 1, [lit("b", "1"), lit("a", "1")])), [], 1000, ["a", "b"]],
     ["a prop filtered to one value loses its column", six(), [pick("size", "value", "large")], 1000, ["tone"]],
@@ -389,7 +389,7 @@ describe("value columns", () => {
   it("a file's cell is titled with each value and its calls, then the calls that don't set it", () => {
     const v = viewWith(input([call("src/A.tsx", 1, [lit("label", "Pay")]), call("src/A.tsx", 2, [lit("label", "Pay")]), call("src/A.tsx", 3, [lit("label", "")]), call("src/A.tsx", 4, [dyn("label")]), call("src/A.tsx", 5)]), {}, ["label"]);
     const cell = v.sections[0]?.files[0]?.cells.label;
-    expect(cell && cellTitle(cell)).toBe('Pay: 2 calls\n"" (Empty string): 1 call\n{…} (Expression): 1 call\nNot set: 1 call');
+    expect(cell && cellTitle(cell)).toBe('Pay: 2 uses\n"" (Empty string): 1 use\n{…} (Expression): 1 use\nNot set: 1 use');
   });
 
   it.each<[string, UsagePick[], boolean[]]>([
@@ -442,7 +442,7 @@ describe("copy list", () => {
   it("lists each call site's line once, headed by the component, the counts and the filters", () => {
     const v = viewWith(input([call("src/Pay.tsx", 6, [], owned("form")), call("src/Pay.tsx", 6, [], owned("dialog")), call("src/Pay.tsx", 9)]), { picks: [pick("size", "unset")] });
     expect(copyListText({ sections: v.sections, displayName: "Button", repoId: "shop", deprecated: false, migrationStatus: { status: "active" }, folderKey: null, filters: filterText([pick("size", "unset")], null, ""), href: "https://scout.test/x", urlFor: (path, line) => `https://git.test/${path}#L${line}` }))
-      .toBe("Button in shop: 3 calls in 1 file\nFilters: size not set\n\n- src/Pay.tsx:6, 9 https://git.test/src/Pay.tsx#L6\n\nView in Scout: https://scout.test/x");
+      .toBe("Button in shop: 3 uses in 1 file\nFilters: size not set\n\n- src/Pay.tsx:6, 9 https://git.test/src/Pay.tsx#L6\n\nView in Scout: https://scout.test/x");
   });
 
   const name = (i: number) => `F${String(i).padStart(2, "0")}.tsx`;
@@ -453,12 +453,12 @@ describe("copy list", () => {
 
   it("lists a grouped view folder by folder, most calls first, each headed by its full path", () => {
     const v = viewWith(input([...filesIn("apps/web/checkout/", 12), ...filesIn("apps/web/", 13)]));
-    expect(copy(v)).toBe(["Button in shop: 25 calls in 25 files", "", "apps/web (13 files)", ...listed("apps/web/", 13), "", "apps/web/checkout (12 files)", ...listed("apps/web/checkout/", 12), "", "View in Scout: https://scout.test/x"].join("\n"));
+    expect(copy(v)).toBe(["Button in shop: 25 uses in 25 files", "", "apps/web (13 files)", ...listed("apps/web/", 13), "", "apps/web/checkout (12 files)", ...listed("apps/web/checkout/", 12), "", "View in Scout: https://scout.test/x"].join("\n"));
   });
 
   it("names the folder in the header of a folder's own copy, without a heading line", () => {
     const v = viewWith(input([...filesIn("", 13), ...filesIn("src/", 12)]));
-    expect(copy(v, { sections: v.sections.slice(0, 1), folderKey: "." })).toBe(["Button in shop, folder (repo root): 13 calls in 13 files", "", ...listed("", 13), "", "View in Scout: https://scout.test/x"].join("\n"));
+    expect(copy(v, { sections: v.sections.slice(0, 1), folderKey: "." })).toBe(["Button in shop, folder (repo root): 13 uses in 13 files", "", ...listed("", 13), "", "View in Scout: https://scout.test/x"].join("\n"));
   });
 
   it.each<[string, CopyListInput["migrationStatus"], boolean, string]>([
@@ -467,7 +467,7 @@ describe("copy list", () => {
     ["retired", { status: "retired", reason: "Use a link instead" }, false, "Retired: Use a link instead"],
     ["deprecated", { status: "active" }, true, "Deprecated."],
   ])("says under the header when the component is %s", (_title, migrationStatus, deprecated, line) => {
-    expect(copy(viewWith(input([call("src/Pay.tsx", 6)])), { migrationStatus, deprecated })).toBe(`Button in shop: 1 call in 1 file\n${line}\n\n- src/Pay.tsx:6\n\nView in Scout: https://scout.test/x`);
+    expect(copy(viewWith(input([call("src/Pay.tsx", 6)])), { migrationStatus, deprecated })).toBe(`Button in shop: 1 use in 1 file\n${line}\n\n- src/Pay.tsx:6\n\nView in Scout: https://scout.test/x`);
   });
 
   it.each<[UsagePick[], string | null, string, string]>([

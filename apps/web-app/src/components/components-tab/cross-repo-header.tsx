@@ -31,7 +31,7 @@ export function CrossRepoHeader({ detail }: { detail: CrossRepoComponentDetail }
           <Sep />
           <span className="tabular-nums">{detail.repoCount.toLocaleString()} {repoNoun}</span>
           <Sep />
-          <span className="tabular-nums">{detail.totalOccurrences.toLocaleString()} occurrences</span>
+          <span className="tabular-nums">{detail.totalOccurrences.toLocaleString()} uses</span>
         </div>
       </div>
 

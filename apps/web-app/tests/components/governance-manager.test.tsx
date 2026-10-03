@@ -84,14 +84,14 @@ describe("GovernanceManager", () => {
     window.location.hash = "";
   });
 
-  it("shows one Records table with the name, replacement or reason, and occurrences left columns", () => {
+  it("shows one Records table with the name, replacement or reason, and uses left columns", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     expect(screen.getByText("6 records · counts from each repo's latest scan")).toBeInTheDocument();
     const table = screen.getByRole("table", { name: "Records" });
     expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
       "Name",
       "Replacement or reason",
-      "Occurrences left",
+      "Uses left",
       "Edit",
     ]);
     expect(screen.getAllByRole("table")).toHaveLength(1);

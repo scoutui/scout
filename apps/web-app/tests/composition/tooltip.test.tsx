@@ -22,7 +22,7 @@ describe("Tooltip", () => {
 });
 
 // Every line the canvas draws is a real render edge, so every line names its
-// call-site count. composition-canvas.tsx's edgeTips memo calls buildEdgeTips.
+// count of direct uses. composition-canvas.tsx's edgeTips memo calls buildEdgeTips.
 describe("buildEdgeTips", () => {
   const tipsFor = (edges: [string, string, number?][]) => {
     const g = graph([node("F"), node("r0")], edges);
@@ -31,27 +31,27 @@ describe("buildEdgeTips", () => {
     return buildEdgeTips(layout);
   };
 
-  it("gives a focus-adjacent edge a call-site tooltip", () => {
+  it("gives a focus-adjacent edge a direct-uses tooltip", () => {
     const tips = tipsFor([["r0", "F", 12]]);
-    expect([...tips.values()].map((t) => t.tip)).toContain("12 call sites render directly.");
+    expect([...tips.values()].map((t) => t.tip)).toContain("12 direct uses.");
   });
 
-  it("uses the singular for exactly one call site", () => {
+  it("uses the singular for exactly one direct use", () => {
     const tips = tipsFor([["r0", "F", 1]]);
-    expect([...tips.values()].map((t) => t.tip)).toContain("1 call site renders directly.");
+    expect([...tips.values()].map((t) => t.tip)).toContain("1 direct use.");
   });
 
-  it("never says the word occurrence", () => {
+  it("never says occurrence or call site", () => {
     const tips = tipsFor([["r0", "F", 12]]);
     expect(tips.size).toBeGreaterThan(0);
-    for (const { tip } of tips.values()) expect(tip.toLowerCase()).not.toContain("occurrence");
+    for (const { tip } of tips.values()) expect(tip.toLowerCase()).not.toMatch(/occurrence|call site/);
   });
 
   it("tooltips every drawn edge, including a revealed step that doesn't touch the focus", () => {
     const m = model(graph([node("F"), node("P"), node("G")], [["P", "F", 2], ["G", "P", 3]]));
     const layout = computeLayout(m, "F", { pinned: [{ id: "F", level: 0 }, { id: "P", level: -1 }, { id: "G", level: -2 }] });
     const tips = buildEdgeTips(layout);
-    expect(tips.get("G>P")?.tip).toBe("3 call sites render directly.");
-    expect(tips.get("P>F")?.tip).toBe("2 call sites render directly.");
+    expect(tips.get("G>P")?.tip).toBe("3 direct uses.");
+    expect(tips.get("P>F")?.tip).toBe("2 direct uses.");
   });
 });

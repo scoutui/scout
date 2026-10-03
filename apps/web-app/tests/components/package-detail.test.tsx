@@ -54,11 +54,11 @@ describe("PackageDetailHeader", () => {
     expect(heading.className).toMatch(/font-mono/);
   });
 
-  it("renders identity counts in the meta line: repos, components, occurrences", () => {
+  it("renders identity counts in the meta line: repos, components, uses", () => {
     render(<PackageDetailHeader detail={baseDetail} />);
     expect(screen.getByText(/2 repos/)).toBeInTheDocument();
     expect(screen.getByText(/4 components/)).toBeInTheDocument();
-    expect(screen.getByText(/11 occurrences/)).toBeInTheDocument();
+    expect(screen.getByText(/11 uses/)).toBeInTheDocument();
   });
 
   it("renders the version composition bar, latest first, unversioned last", () => {
@@ -66,7 +66,7 @@ describe("PackageDetailHeader", () => {
     const bar = screen.getByRole("img");
     expect(bar).toHaveAttribute(
       "aria-label",
-      "Occurrences by version: 2.0.0 8, 1.2.3 3, unversioned 0",
+      "Uses by version: 2.0.0 8, 1.2.3 3, unversioned 0",
     );
   });
 
