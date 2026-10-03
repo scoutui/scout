@@ -4,7 +4,11 @@ import { targetConflict } from "@scoutui/web-shared/client";
 export type IdentityPick = { packageName: string; exportName?: string };
 
 export type SearchRow =
-  | { kind: "package"; packageName: string; components: number }
+  /**
+   * A package to narrow the search to. `matches` counts the names in it the search matches when the
+   * package is offered for them, otherwise null; `narrowedQuery` is the search kept once narrowed.
+   */
+  | { kind: "package"; packageName: string; components: number; matches: number | null; narrowedQuery: string }
   | { kind: "whole"; packageName: string; components: number; refusal: string | null }
   | { kind: "component"; packageName: string; exportName: string; refusal: string | null; matched: Array<[number, number]> };
 
@@ -174,6 +178,11 @@ const sameTarget = (a: IdentityPick, b: IdentityPick) =>
  * first component that can be picked or, when no row is a component, the first
  * package row; otherwise none. Never a whole package. `total` is how many components
  * match when the list stops at `MAX_COMPONENT_ROWS`, otherwise null.
+ *
+ * A package only scanned repos define (`local`) lists after the installed ones. Until
+ * the search is narrowed to it, its components stay out of the list: up to
+ * `MAX_PACKAGE_ROWS` such packages follow the results instead, with how many of their
+ * names match, keeping the words that didn't match the package's name.
  */
 export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultIndex: number | null; total: number | null } {
   const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -181,16 +190,17 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
   const offered = (pick: IdentityPick) => !(input.mode === "successor" && input.exclude && sameTarget(pick, input.exclude));
 
   const components = componentCounts(input.sources);
+  const local = new Set(input.sources.flatMap((s) => (s.local ? [s.packageName] : [])));
   const packages = new Map<string, number>();
   for (const s of input.sources) {
     if (s.exportName === undefined) packages.set(s.packageName, s.occurrences);
     else if (!packages.has(s.packageName)) packages.set(s.packageName, 0);
   }
-  const packageRow = (packageName: string): SearchRow => ({
-    kind: "package", packageName, components: components.get(packageName) ?? 0,
+  const packageRow = (packageName: string, matches: number | null = null, narrowedQuery = ""): SearchRow => ({
+    kind: "package", packageName, components: components.get(packageName) ?? 0, matches, narrowedQuery,
   });
-  const byOccurrences = (a: string, b: string) =>
-    (packages.get(b) ?? 0) - (packages.get(a) ?? 0) || a.localeCompare(b);
+  const packageOrder = (a: string, b: string) =>
+    Number(local.has(a)) - Number(local.has(b)) || (packages.get(b) ?? 0) - (packages.get(a) ?? 0) || a.localeCompare(b);
 
   const rank = (packageName: string | null, scoped: boolean): Ranked[] =>
     input.sources.flatMap((s): Ranked[] => {
@@ -206,17 +216,25 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
   let total: number | null = null;
   if (input.scope === null) {
     if (terms.length === 0) {
-      rows.push(...[...packages.keys()].sort(byOccurrences).map(packageRow));
+      rows.push(...[...packages.keys()].sort(packageOrder).map((p) => packageRow(p)));
     } else {
       const matching = [...packages.keys()].flatMap((name) => {
         const tiers = terms.map((t) => matchPackageTerm(t, name));
         return tiers.every((t) => t !== null) ? [{ name, tier: Math.max(...tiers) }] : [];
       });
-      matching.sort((a, b) => a.tier - b.tier || byOccurrences(a.name, b.name));
-      rows.push(...matching.slice(0, MAX_PACKAGE_ROWS).map((p) => packageRow(p.name)));
-      const ranked = refusedLast(rank(null, false));
+      matching.sort((a, b) => a.tier - b.tier || packageOrder(a.name, b.name));
+      const named = matching.slice(0, MAX_PACKAGE_ROWS).map((p) => p.name);
+      rows.push(...named.map((p) => packageRow(p)));
+      const found = rank(null, false);
+      const ranked = refusedLast(found.filter((r) => !local.has(r.row.packageName)));
       if (ranked.length > MAX_COMPONENT_ROWS) total = ranked.length;
       rows.push(...ranked.slice(0, MAX_COMPONENT_ROWS).map((r) => r.row));
+      const matchesIn = new Map<string, number>();
+      for (const { row } of found) {
+        if (local.has(row.packageName) && !named.includes(row.packageName)) matchesIn.set(row.packageName, (matchesIn.get(row.packageName) ?? 0) + 1);
+      }
+      rows.push(...[...matchesIn].slice(0, MAX_PACKAGE_ROWS).map(([packageName, matches]) =>
+        packageRow(packageName, matches, terms.filter((t) => !packageName.toLowerCase().includes(t)).join(" "))));
     }
   } else {
     const scope = input.scope;

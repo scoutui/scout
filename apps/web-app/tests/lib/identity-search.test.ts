@@ -101,6 +101,52 @@ describe("searchTargets: packages", () => {
   });
 });
 
+describe("searchTargets: packages defined in a scanned repo", () => {
+  const local = (t: GovernanceTarget): GovernanceTarget => ({ ...t, local: true });
+  const monorepo = [
+    pkg("@example/legacy-kit", 20), target("@example/legacy-kit", "Button", 20),
+    local(pkg("@example/app", 500)), local(target("@example/app", "Page", 300)), local(target("@example/app", "Header", 200)),
+    local(pkg("@example/ui", 90)), local(target("@example/ui", "Button", 60)), local(target("@example/ui", "ButtonGroup", 30)),
+    local(pkg("@example/next-ui", 10)), local(target("@example/next-ui", "Button", 10)),
+  ];
+
+  it("lists them after the installed packages when nothing is typed", () => {
+    expect(labels({ sources: monorepo })).toEqual([
+      "package @example/legacy-kit", "package @example/app", "package @example/ui", "package @example/next-ui",
+    ]);
+  });
+
+  it("leaves their components out of a search with no package chosen and offers their packages after the results", () => {
+    const { rows } = search({ sources: monorepo, query: "button" });
+    expect(rows.map(label)).toEqual(["Button @example/legacy-kit", "package @example/ui", "package @example/next-ui"]);
+    expect(rows.slice(1)).toMatchObject([{ matches: 2, narrowedQuery: "button" }, { matches: 1, narrowedQuery: "button" }]);
+  });
+
+  it("makes the first package active when no installed component matches", () => {
+    const result = search({ sources: monorepo, query: "header" });
+    expect(result.rows.map(label)).toEqual(["package @example/app"]);
+    expect(result.defaultIndex).toBe(0);
+  });
+
+  it("keeps only the words that didn't match the package's name for the narrowed search", () => {
+    expect(search({ sources: monorepo, query: "next button" }).rows).toMatchObject([
+      { kind: "package", packageName: "@example/next-ui", matches: 1, narrowedQuery: "button" },
+    ]);
+  });
+
+  it("offers a package once when its name matches too, and at most three for the names they hold", () => {
+    expect(search({ sources: monorepo, query: "ui" }).rows).toMatchObject([
+      { packageName: "@example/ui", matches: null, narrowedQuery: "" }, { packageName: "@example/next-ui", matches: null, narrowedQuery: "" },
+    ]);
+    const many = ["a", "b", "c", "d"].flatMap((p) => [local(pkg(`@example/${p}`, 1)), local(target(`@example/${p}`, "Button", 1))]);
+    expect(labels({ sources: many, query: "button" })).toHaveLength(3);
+  });
+
+  it("lists their components once the search is narrowed to them", () => {
+    expect(labels({ sources: monorepo, query: "button", scope: "@example/ui" })).toEqual(["Button @example/ui", "ButtonGroup @example/ui"]);
+  });
+});
+
 describe("searchTargets: narrowed to a package", () => {
   it("offers the whole package first, then its components by occurrences, with the first component active", () => {
     const result = search({ sources: estate, scope: "@example/new-ui" });
