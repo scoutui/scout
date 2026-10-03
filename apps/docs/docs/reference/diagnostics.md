@@ -35,7 +35,7 @@ Every code except `dependency-not-installed` also has `filePath`, the file the d
 | [`unresolved-reference`](#unresolved-reference) | `info` | A tag names something the scan can't follow to a component, for any other reason. |
 | [`lazy-import-unsupported`](#lazy-import-unsupported) | `warning` | A component loaded with `import()` is written in a shape the scan can't follow. |
 | [`auto-import-manifest-missing`](#auto-import-manifest-missing) | `warning` | A Nuxt app has no generated components file. |
-| [`auto-import-stale-entry`](#auto-import-stale-entry) | `warning` | Nuxt's generated components file lists a file that no longer exists. |
+| [`auto-import-stale-entry`](#auto-import-stale-entry) | `warning` | The list of auto-imported components names a file that no longer exists. |
 | [`cycle-detected`](#cycle-detected) | `warning` | A package's re-exports loop back on themselves. |
 | [`chain-too-deep`](#chain-too-deep) | `warning` | A package's re-exports pass through more than 32 files. |
 
@@ -130,7 +130,7 @@ Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads
 
 **What to do:** where you can, reduce the `.then` callback to a single export pick, such as `.then((m) => ({ default: m.Panel }))`.
 
-## Nuxt codes
+## Auto-import codes
 
 ### `auto-import-manifest-missing`
 
@@ -157,11 +157,11 @@ Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nux
 
 **Severity:** `warning`
 
-Nuxt's generated components file lists a component whose file no longer exists. The scan ignores that entry, so tags that use the component aren't tied to it, the same as for [`auto-import-manifest-missing`](#auto-import-manifest-missing).
+The list of auto-imported components, which Nuxt or `unplugin-vue-components` writes, names a component whose file no longer exists. The scan ignores that entry, so tags that use the component aren't tied to it, the same as for [`auto-import-manifest-missing`](#auto-import-manifest-missing).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `filePath` | string | The generated components file the entry was read from. |
+| `filePath` | string | The components file the entry was read from. |
 | `componentName` | string | The component name the entry declares. |
 | `target` | string | The missing file, relative to the folder that holds the config. |
 
@@ -169,7 +169,7 @@ Nuxt's generated components file lists a component whose file no longer exists. 
 Warning: /home/dev/checkout/.nuxt/components.d.ts lists PromoBanner at components/PromoBanner.vue, which no longer exists. Regenerate that file (for Nuxt, run npx nuxt prepare) and scan again.
 ```
 
-**What to do:** run `nuxt prepare` to regenerate the file, then scan again.
+**What to do:** regenerate the file, then scan again. In a Nuxt app, run `nuxt prepare`. With `unplugin-vue-components`, build the app, for example with `vite build`: a build rewrites the file, while the dev server only adds to it.
 
 ## Package re-export codes
 

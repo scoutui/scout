@@ -58,7 +58,7 @@ Fix each reason as follows. The [artifact reference](/docs/reference/artifact#un
 | --- | --- |
 | `package-not-installed` | Install the repo's dependencies. See [Dependencies aren't installed](#dependencies-arent-installed). |
 | `module-not-found` | Fix the import path. For a path alias such as `@/components`, see [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo#find-imports-that-didnt-resolve). If a build step generates the file, run it before you scan. |
-| `unbound-name` | Nothing in the file imports the name. In a Nuxt app, the scan also warns that the app hasn't been prepared: run `npx nuxt prepare`, then scan again. A Vue component registered with `app.component()` or by a plugin, such as `<RouterLink>`, is matched only when the file imports it. |
+| `unbound-name` | Nothing in the file imports the name. In a Nuxt app, the scan also warns that the app hasn't been prepared: run `npx nuxt prepare`, then scan again. A Vue component registered with `app.component()` or by a plugin, such as `<RouterLink>`, is matched only when the file imports it or a [list of auto-imports](/docs/reference/framework-support#vue) names it. |
 | `chain-bailed` | An installed package's re-exports loop or run too deep. There is nothing to fix in your repo; see [Package re-export codes](/docs/reference/diagnostics#package-re-export-codes). |
 
 ## Dependencies aren't installed

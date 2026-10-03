@@ -10,10 +10,13 @@ import { canonicalTagName, isValidCustomElementName } from "@scoutui/reference-g
  * interface, so generated files, hand-written declarations and library
  * packages all augment it.
  *
- * Nuxt is the only producer probed. It writes its registry twice, as an
+ * Two producers are probed. Nuxt writes its registry twice, as an
  * `export const` list and as this augmentation. Nuxt 3 puts both in
  * `.nuxt/components.d.ts`; Nuxt 4 moves the augmentation to
- * `.nuxt/types/components.d.ts`. Both paths are probed, in that order.
+ * `.nuxt/types/components.d.ts`. `unplugin-vue-components` writes
+ * `components.d.ts` at the project root by default, or wherever its `dts`
+ * option points, most often `src/components.d.ts`. All four paths are
+ * probed, in that order.
  */
 export type GlobalComponentsRegistry = {
   /** The declaration file the registry was read from. */
@@ -36,8 +39,11 @@ export type GlobalTagDeclaration = { tagName: string; line: number; specifier: s
 /** One line of a declaration file, 1-based. */
 type SourceLine = { text: string; line: number };
 
+/** Nuxt's generated declaration files. */
+const NUXT_PATHS = [join(".nuxt", "components.d.ts"), join(".nuxt", "types", "components.d.ts")];
+
 /** Declaration files probed, in order. First one that resolves entries wins. */
-const CANDIDATE_PATHS = [join(".nuxt", "components.d.ts"), join(".nuxt", "types", "components.d.ts")];
+const CANDIDATE_PATHS = [...NUXT_PATHS, "components.d.ts", join("src", "components.d.ts")];
 
 // The modules a GlobalComponents augmentation can target. Both forms are live
 // in the ecosystem: `@vue/runtime-core` is the historical one, `vue` the
@@ -262,7 +268,7 @@ export function detectAutoImportFramework(scanRoot: string): { expectedPath: str
   // `.nuxt/components.d.ts` even when the augmentation under `.nuxt/types/`
   // is the missing one. With nothing generated, this is the first candidate,
   // which `nuxt prepare` writes.
-  const candidates = CANDIDATE_PATHS.map((c) => join(scanRoot, c));
+  const candidates = NUXT_PATHS.map((c) => join(scanRoot, c));
   return { expectedPath: candidates.find((p) => !existsSync(p)) ?? (candidates[0] as string) };
 }
 
@@ -272,7 +278,7 @@ export function detectAutoImportFramework(scanRoot: string): { expectedPath: str
  * declaration still counts as prepared.
  */
 export function nuxtAppUnprepared(scanRoot: string): boolean {
-  return declaresNuxt(scanRoot) && CANDIDATE_PATHS.every((c) => !existsSync(join(scanRoot, c)));
+  return declaresNuxt(scanRoot) && NUXT_PATHS.every((c) => !existsSync(join(scanRoot, c)));
 }
 
 /** Whether `scanRoot`'s `package.json` lists `nuxt` in `dependencies` or `devDependencies`. */
