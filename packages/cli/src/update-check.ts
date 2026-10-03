@@ -10,8 +10,9 @@ const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE}/latest`;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TIMEOUT_MS = 1000;
 
+const UPGRADE_GUIDE = "https://scoutui.dev/docs/guides/upgrade-scout#version-messages";
+
 const INSTALL = { npm: "npm i -D", yarn: "yarn add -D", pnpm: "pnpm add -D", bun: "bun add -d" } as const;
-const RUN = { npm: "npx", yarn: "yarn dlx", pnpm: "pnpm dlx", bun: "bunx" } as const;
 
 /** The CLI's latest release, and the scan format it writes when its package.json says. */
 export type Release = { version: string; scanFormat: number | null };
@@ -85,9 +86,9 @@ export function keepScanFormats(cachePath: string, scanFormats: number[]): void 
 
 /**
  * The line telling someone that `latest` is out, or null when it isn't newer than the `running` version or that's a
- * snapshot build. When the dashboard said which `scanFormats` it reads and they leave out the release's, the line says
- * to wait for the dashboard. Otherwise it names the command that gets the release in `cwd`, looking for the lockfile
- * no higher than `root` (default: the top of the file system).
+ * snapshot build. When the dashboard said which `scanFormats` it reads and they leave out the release's, a second line
+ * says to wait for the dashboard's upgrade. Otherwise it names the command that updates the CLI in `cwd`, or installs it
+ * when the repo doesn't, looking for the lockfile no higher than `root` (default: the top of the file system).
  */
 export function updateNotice(opts: {
   running: string;
@@ -100,30 +101,32 @@ export function updateNotice(opts: {
   if (latest === null || isSnapshotVersion(opts.running) || compareCliVersions(latest.version, opts.running) <= 0) return null;
   const available = `Scout ${latest.version} is available`;
   if (latest.scanFormat !== null && opts.scanFormats !== null && !opts.scanFormats.includes(latest.scanFormat)) {
-    return `${available}, but your dashboard can't read its scans yet. Keep this version for now.`;
+    return `${available}, but your dashboard can't read its scans yet.\nKeep this version until your dashboard is upgraded. See ${UPGRADE_GUIDE}`;
   }
   const update = updateCommand(opts.cwd, opts.root ?? parse(resolve(opts.cwd)).root);
-  return update.install ? `${available}. Update with ${update.command}.` : `${available}. Run it with ${update.command}.`;
+  return `${available}. ${update.installed ? "Update" : "Install it"} with ${update.command}.`;
 }
 
 /**
- * How to get the latest CLI in `cwd`: install it with the repo's package manager when a package.json from `cwd` up to
- * the lockfile's folder lists it, or else run it with that package manager's runner. npm when there's no lockfile.
- * When the package.json that lists it is a workspace's root, pnpm gets `-w` and Yarn 1 `-W`, which they need to add there.
+ * The command that adds the latest CLI as a dev dependency with the repo's package manager (npm when there's no
+ * lockfile), and whether it's `installed` already: listed in a package.json from `cwd` up to the lockfile's folder. The
+ * command adds it to that package.json, or else to the nearest one. When that's a workspace's root, pnpm gets `-w` and
+ * Yarn 1 `-W`, which they need to add there.
  */
-function updateCommand(cwd: string, root: string): { install: boolean; command: string } {
+function updateCommand(cwd: string, root: string): { installed: boolean; command: string } {
   const lockfile = findAnyLockfile(cwd, root);
   const manager = lockfile === null ? "npm" : lockfileManager(lockfile);
+  const folders = foldersUp(cwd, lockfile?.dir ?? root);
+  const listed = folders.find((dir) => listsCli(readManifest(dir)));
+  const target = listed ?? folders.find((dir) => readManifest(dir) !== null) ?? cwd;
   const yarnClassic = lockfile !== null && manager === "yarn" && isYarnClassic(readHead(lockfile));
-  const listed = foldersUp(cwd, lockfile?.dir ?? root).find((dir) => listsCli(readManifest(dir)));
-  if (listed === undefined) return { install: false, command: `${yarnClassic ? RUN.npm : RUN[manager]} ${PACKAGE}@latest` };
   const rootFlag =
-    manager === "pnpm" && existsSync(join(listed, "pnpm-workspace.yaml"))
+    manager === "pnpm" && existsSync(join(target, "pnpm-workspace.yaml"))
       ? " -w"
-      : yarnClassic && readManifest(listed)?.workspaces !== undefined
+      : yarnClassic && readManifest(target)?.workspaces !== undefined
         ? " -W"
         : "";
-  return { install: true, command: `${INSTALL[manager]}${rootFlag} ${PACKAGE}@latest` };
+  return { installed: listed !== undefined, command: `${INSTALL[manager]}${rootFlag} ${PACKAGE}@latest` };
 }
 
 type Manifest = { dependencies?: unknown; devDependencies?: unknown; workspaces?: unknown };

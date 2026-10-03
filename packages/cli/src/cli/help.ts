@@ -13,9 +13,8 @@ Run \`scout <command> --help\` for command-specific options.
 Other:
   --help, -h
   --version, -v
-  --debug        Show the details behind an error (or set SCOUTUI_DEBUG=1)
-
-Scout says when a newer version is available. To stop it checking, set SCOUTUI_NO_UPDATE_CHECK=1.
+  --debug                    Show the details behind an error (or set SCOUTUI_DEBUG=1)
+  SCOUTUI_NO_UPDATE_CHECK=1  Turn off the update notice
 
 Get started: scout init, then scout scan --dry-run.
 Docs: https://scoutui.dev/docs
