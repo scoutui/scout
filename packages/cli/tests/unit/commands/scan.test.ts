@@ -7,6 +7,7 @@ import { runScan, scanExitCode } from "../../../src/commands/scan.js";
 import * as parseModule from "../../../src/parse-by-ext.js";
 import * as parserReact from "@scoutui/parser-react";
 import { Logger } from "../../../src/util/log.js";
+import { createColor } from "../../../src/util/color.js";
 
 function setupConsumer() {
   const dir = mkdtempSync(join(tmpdir(), "cc-e2e-"));
@@ -95,31 +96,27 @@ describe("runScan scan file", () => {
   });
 });
 
-describe("runScan heading", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllEnvs();
-  });
+describe("runScan wordmark", () => {
+  afterEach(() => vi.restoreAllMocks());
   const head = (dir: string) => execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { cwd: dir }).toString().trim();
   const { version } = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8")) as { version: string };
 
-  it("starts with a Scout heading naming the version, repository and commit in an interactive terminal, without colour under NO_COLOR", async () => {
-    vi.stubEnv("NO_COLOR", "1");
+  it("starts with the wordmark naming the version, repository and commit, then a blank line, when someone is watching", async () => {
     const dir = setupConsumer();
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
-    await runScan({ configPath: join(dir, "scout.config.json"), interactive: true });
-    expect(String(stderr.mock.calls[0]?.[0])).toBe(`▲ Scout ${version} · scan-test at ${head(dir)}\n`);
+    await runScan({ configPath: join(dir, "scout.config.json"), log: new Logger({ interactive: true, color: createColor({ isTTY: false, env: {} }) }) });
+    expect(String(stderr.mock.calls[0]?.[0])).toBe(`scout ${version} · scan-test at ${head(dir)}\n\n`);
   });
 
   it.each([
-    ["not interactive", { interactive: false }],
-    ["quiet", { interactive: true, log: new Logger({ quiet: true }) }],
-  ])("prints no heading when %s", async (_case, opts) => {
+    ["no one is watching", () => new Logger({ interactive: false })],
+    ["quiet", () => new Logger({ quiet: true, interactive: true })],
+  ])("prints no wordmark when %s", async (_case, log) => {
     const dir = setupConsumer();
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     vi.spyOn(process.stdout, "write").mockReturnValue(true);
-    await runScan({ configPath: join(dir, "scout.config.json"), ...opts });
-    expect(stderr.mock.calls.map(([text]) => String(text)).join("")).not.toContain("Scout");
+    await runScan({ configPath: join(dir, "scout.config.json"), log: log() });
+    expect(stderr.mock.calls.map(([text]) => String(text)).join("")).not.toContain(`scout ${version}`);
   });
 });
 

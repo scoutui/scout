@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createProgress, startPhase } from "../../../src/util/progress.js";
+import { createColor } from "../../../src/util/color.js";
+
+const plain = createColor({ isTTY: false, env: {} });
+const colored = createColor({ isTTY: true, env: {} });
 
 describe("phase line", () => {
   it("writes the phase once in a log", () => {
@@ -148,5 +152,67 @@ describe("progress reporter", () => {
     } finally {
       process.stderr.write = origStderrWrite;
     }
+  });
+});
+
+describe("progress with motion", () => {
+  let writes: string[];
+  const writer = (s: string) => {
+    writes.push(s);
+  };
+  beforeEach(() => {
+    writes = [];
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("turns a spinner before a phase's label each frame, cut to the terminal's width, and stops when done", () => {
+    const phase = startPhase({ label: "Matching occurrences to components…", writer, isTTY: true, columns: 12, motion: plain });
+    vi.advanceTimersByTime(80);
+    phase.done();
+    vi.advanceTimersByTime(800);
+    expect(writes).toEqual(["\r⠋ Matching \x1b[K", "\r⠙ Matching \x1b[K", "\r\x1b[K"]);
+  });
+
+  it("draws a spinner, a bar, the count, the percentage and the time across a wide terminal", () => {
+    const p = createProgress({ total: 929, writer, isTTY: true, columns: 80, motion: plain });
+    p.tick();
+    expect(writes).toEqual([`\r⠋ Reading files  ${"─".repeat(30)}  1 of 929  0%  0.0s\x1b[K`]);
+  });
+
+  it.each([
+    [1, "╸" + "─".repeat(29)],
+    [30, "━".repeat(15) + "─".repeat(15)],
+    [60, "━".repeat(30)],
+  ])("fills the bar in half cells (%i of 60)", (count, filled) => {
+    const p = createProgress({ total: 60, writer, isTTY: true, columns: 80, motion: plain });
+    for (let i = 0; i < count; i++) p.tick();
+    vi.advanceTimersByTime(80);
+    expect(writes.at(-1)).toContain(`Reading files  ${filled}  ${count} of 60`);
+  });
+
+  it("turns the spinner each frame between ticks, and stops redrawing when done", () => {
+    const p = createProgress({ total: 929, writer, isTTY: true, columns: 80, motion: plain });
+    p.tick();
+    vi.advanceTimersByTime(80);
+    p.done();
+    vi.advanceTimersByTime(800);
+    expect(writes.map((w) => w.slice(0, 2))).toEqual(["\r⠋", "\r⠙", "\r\x1b"]);
+  });
+
+  it("leaves the bar out in a narrow terminal, and cuts the line before colouring the spinner", () => {
+    const p = createProgress({ total: 929, writer, isTTY: true, columns: 30, motion: colored });
+    p.tick();
+    expect(writes).toEqual(["\r\x1b[36m⠋\x1b[0m Reading files: 1 of 929 (0.\x1b[K"]);
+  });
+
+  it("writes the same lines as without motion in a log", () => {
+    const p = createProgress({ total: 1000, writer, isTTY: false, motion: plain });
+    p.tick();
+    vi.advanceTimersByTime(800);
+    p.done();
+    expect(writes).toEqual(["Reading files: 1 of 1000 (0.1%), 0.0s\n"]);
   });
 });

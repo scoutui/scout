@@ -1,11 +1,17 @@
-import { createColor, type Colorizer } from "./color.js";
+import { terminalStyle, type Colorizer } from "./color.js";
+import { readVersion } from "./version.js";
 
 export type LoggerOptions = {
   /** Hide `info` lines. Warnings and errors still print. */
   quiet?: boolean;
   /** Print the detail passed to `warn` and `error`. */
   debug?: boolean;
+  /** The colours to write with (default: `terminalStyle`'s). */
   color?: Colorizer;
+  /** Whether someone is watching in a terminal (default: `terminalStyle`'s). */
+  interactive?: boolean;
+  /** Whether spinners and progress bars may animate (default: `terminalStyle`'s). */
+  motion?: boolean;
   /** Whether stderr is a terminal, where a progress line may be showing (default: stderr's own `isTTY`). */
   isTTY?: boolean;
 };
@@ -17,6 +23,11 @@ export function debugRequested(argv: readonly string[], env: NodeJS.ProcessEnv =
   return argv.includes("--debug") || (fromEnv !== undefined && fromEnv !== "" && fromEnv !== "0");
 }
 
+/** Scout's wordmark: `scout` in the brand colour, the CLI's version, then `detail`. */
+export function wordmark(color: Colorizer, detail?: string): string {
+  return `${color.bold(color.brand("scout"))} ${color.dim(readVersion())}${detail !== undefined ? color.dim(` · ${detail}`) : ""}`;
+}
+
 /** Collapses newlines, control characters and runs of spaces, so a message prints on one line. */
 export function oneLine(message: string): string {
   // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
@@ -26,7 +37,9 @@ export function oneLine(message: string): string {
 export class Logger {
   readonly quiet: boolean;
   readonly debug: boolean;
-  private readonly color: Colorizer;
+  readonly color: Colorizer;
+  readonly interactive: boolean;
+  readonly motion: boolean;
   /** Clears a progress line being rewritten in place, so a warning or error starts on a clean line. */
   private readonly clearLine: string;
 
@@ -34,8 +47,15 @@ export class Logger {
     this.quiet = opts.quiet ?? false;
     this.debug = opts.debug ?? false;
     const isTTY = opts.isTTY ?? Boolean(process.stderr.isTTY);
-    this.color = opts.color ?? createColor({ isTTY });
+    const style = terminalStyle();
+    this.color = opts.color ?? style.color;
+    this.interactive = opts.interactive ?? style.interactive;
+    this.motion = opts.motion ?? style.motion;
     this.clearLine = isTTY ? "\r\x1b[K" : "";
+  }
+  /** The wordmark and a blank line, once per command, when someone is watching in a terminal and not under quiet. */
+  heading(detail?: string): void {
+    if (this.interactive && !this.quiet) process.stderr.write(`${wordmark(this.color, detail)}\n\n`);
   }
   info(msg: string): void {
     if (!this.quiet) process.stdout.write(`${msg}\n`);

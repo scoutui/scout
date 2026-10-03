@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { colorEnabled, createColor } from "../../../src/util/color.js";
+import { colorDepth, colorEnabled, createColor, terminalStyle } from "../../../src/util/color.js";
 
 describe("colorEnabled", () => {
   it("is off when NO_COLOR is set (any non-empty value)", () => {
@@ -28,8 +28,46 @@ describe("createColor", () => {
     expect(c.green("ok")).toBe("\x1b[32mok\x1b[0m");
     expect(c.red("bad")).toBe("\x1b[31mbad\x1b[0m");
     expect(c.yellow("wait")).toBe("\x1b[33mwait\x1b[0m");
-    expect(c.cyan("mark")).toBe("\x1b[36mmark\x1b[0m");
     expect(c.bold("n")).toBe("\x1b[1mn\x1b[0m");
     expect(c.dim("m")).toBe("\x1b[2mm\x1b[0m");
+  });
+});
+
+describe("brand colour", () => {
+  it.each([
+    [{ COLORTERM: "truecolor" }, "\x1b[38;2;7;154;153mscout\x1b[0m"],
+    [{ TERM: "xterm-256color" }, "\x1b[38;5;30mscout\x1b[0m"],
+    [{}, "\x1b[36mscout\x1b[0m"],
+  ])("is Scout's teal at the depth the terminal supports (%j)", (env, out) => {
+    expect(createColor({ isTTY: true, env }).brand("scout")).toBe(out);
+  });
+});
+
+describe("colorDepth", () => {
+  it.each([
+    [{}, "16"],
+    [{ TERM: "xterm-256color" }, "256"],
+    [{ COLORTERM: "truecolor" }, "truecolor"],
+    [{ COLORTERM: "24bit" }, "truecolor"],
+    [{ FORCE_COLOR: "2" }, "256"],
+    [{ FORCE_COLOR: "3" }, "truecolor"],
+  ])("reads %j as %s", (env, depth) => {
+    expect(colorDepth(env)).toBe(depth);
+  });
+});
+
+describe("terminalStyle", () => {
+  const tty = { isTTY: true };
+  const piped = { isTTY: false };
+  it.each([
+    ["all three streams are terminals", {}, [tty, tty, tty], { interactive: true, color: true, motion: true }],
+    ["CI is set", { CI: "1" }, [tty, tty, tty], { interactive: false, color: false, motion: false }],
+    ["stdout is piped", {}, [tty, piped, tty], { interactive: false, color: false, motion: false }],
+    ["stderr is piped", {}, [tty, tty, piped], { interactive: false, color: false, motion: false }],
+    ["NO_COLOR is set in a terminal", { NO_COLOR: "1" }, [tty, tty, tty], { interactive: true, color: false, motion: false }],
+    ["FORCE_COLOR is set with everything piped", { FORCE_COLOR: "1" }, [piped, piped, piped], { interactive: false, color: true, motion: false }],
+  ] as const)("when %s", (_case, env, [stdin, stdout, stderr], expected) => {
+    const style = terminalStyle({ env, stdin, stdout, stderr });
+    expect({ interactive: style.interactive, color: style.color.enabled, motion: style.motion }).toEqual(expected);
   });
 });

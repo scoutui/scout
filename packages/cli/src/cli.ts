@@ -82,7 +82,6 @@ async function runScanCommand(rest: string[], log: Logger): Promise<number> {
   if (typeof repoRoot === "string") scanOpts.repoRoot = repoRoot;
   if (rescan) scanOpts.rescan = true;
   if (typeof host === "string") scanOpts.hostOverride = host;
-  if (isInteractive() && process.stderr.isTTY) scanOpts.interactive = true;
   return scanExitCode(await runScan(scanOpts));
 }
 

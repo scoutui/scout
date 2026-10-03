@@ -24,10 +24,9 @@ import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload
 import { installedVersionReader } from "../scan/stamp-version.js";
 import { buildCemIndex } from "../scan/cem-index.js";
 import { isPnpProject } from "../util/pnp-check.js";
-import { readGitToplevel } from "../util/git.js";
+import { readGitToplevel, shortCommit } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 import { Logger } from "../util/log.js";
-import { createColor } from "../util/color.js";
 import { describeUploadError, UploadRefusedError, uploadPending } from "../upload.js";
 import type { AuthedUploader } from "../auth/upload-auth.js";
 import { errorMessage, errorStack } from "../util/errors.js";
@@ -89,8 +88,6 @@ export type ScanOptions = {
   /** Upload even if the dashboard already has this commit, replacing its scan. Needs `upload`. */
   rescan?: boolean;
   hostOverride?: string;
-  /** A person is watching in a terminal: start with a heading, and turn a needle on the progress line. */
-  interactive?: boolean;
 };
 
 export type UploadOutcome = "ok" | "exists" | "skipped" | "failed";
@@ -110,7 +107,7 @@ export function scanExitCode(result: ScanResult): number {
 
 /** The line for a commit the dashboard already has a scan of, linking to it. */
 function alreadyOnDashboard(commit: string, url: string): string {
-  return `Commit ${commit.slice(0, 7)} is already on the dashboard: ${url}. Run scout scan --rescan to scan it again.`;
+  return `Commit ${shortCommit(commit)} is already on the dashboard: ${url}. Run scout scan --rescan to scan it again.`;
 }
 
 export async function runScan(opts: ScanOptions): Promise<ScanResult> {
@@ -156,11 +153,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     ...(tracked !== undefined ? { tracked } : {}),
   });
 
-  const branded = opts.interactive === true && !quiet;
-  if (branded) {
-    const color = createColor({ isTTY: true });
-    process.stderr.write(`${color.cyan("▲")} ${color.bold("Scout")} ${meta.scannerVersion} ${color.dim(`· ${meta.repo.id} at ${meta.repo.commit.slice(0, 7)}`)}\n`);
-  }
+  log.heading(`${meta.repo.id} at ${shortCommit(meta.repo.commit)}`);
 
   const outputRoot = await scanOutputRoot(cfg.configDir, opts);
 
@@ -194,6 +187,12 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   }
 
   let uploader: AuthedUploader | undefined;
+  // With motion, the upload's progress turns in place on stderr instead of printing a line.
+  let uploadLine: { done(): void } | undefined;
+  const showUpload = (label: string): void => {
+    uploadLine?.done();
+    uploadLine = startPhase({ label, writer: (s) => process.stderr.write(s), isTTY: true, columns: process.stderr.columns, motion: log.color });
+  };
   if (opts.upload) {
     try {
       const { createAuthedUploader } = await import("../auth/upload-auth.js");
@@ -204,7 +203,8 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
         onStatus: (status) => {
           if (uploadPending(status) && !waiting) {
             waiting = true;
-            log.info("Waiting for the dashboard to process the scan…");
+            if (uploadLine !== undefined) showUpload("Waiting for the dashboard to process the scan…");
+            else log.info("Waiting for the dashboard to process the scan…");
           }
         },
       });
@@ -227,13 +227,13 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     return { output: null, upload: "failed" };
   }
 
-  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt: t0, needle: branded });
+  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt: t0 });
 
   // A dry run writes the scan file; an upload doesn't.
   if (uploader === undefined) await writeJson(artifact, outputPath);
 
   if (!quiet) {
-    printSummary(artifact, stats);
+    printSummary(artifact, stats, log.color);
   }
 
   if (uploader === undefined) {
@@ -248,7 +248,10 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     log.error(refusal);
   } else {
     try {
-      const result = await uploader.upload(JSON.stringify(artifact), { rescan: opts.rescan === true });
+      if (log.motion && !quiet) showUpload("Uploading the scan…");
+      const result = await uploader
+        .upload(JSON.stringify(artifact), { rescan: opts.rescan === true })
+        .finally(() => uploadLine?.done());
       upload = result.status === "inserted" ? "ok" : "exists";
       const scanUrl = new URL(result.url, uploader.base).href;
       const commit = artifact.meta.repo.commit;
@@ -256,8 +259,8 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
         result.status === "exists"
           ? alreadyOnDashboard(commit, scanUrl)
           : result.replaced
-            ? `Uploaded the scan of ${commit.slice(0, 7)}, replacing the earlier one: ${scanUrl}`
-            : `Uploaded the scan of ${commit.slice(0, 7)}: ${scanUrl}`,
+            ? `Uploaded the scan of ${shortCommit(commit)}, replacing the earlier one: ${scanUrl}`
+            : `Uploaded the scan of ${shortCommit(commit)}: ${scanUrl}`,
       );
     } catch (err) {
       upload = "failed";
@@ -336,8 +339,6 @@ export async function scanRepository(input: {
   log: Logger;
   /** performance.now() when the scan started. */
   startedAt: number;
-  /** Turn a compass needle on the progress line. */
-  needle?: boolean;
 }): Promise<{ artifact: ScanArtifact; stats: ScanStats }> {
   const { cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt } = input;
   const { quiet } = log;
@@ -403,12 +404,14 @@ export async function scanRepository(input: {
   }
   const isTTY = !!process.stderr.isTTY;
   const { columns } = process.stderr;
+  const motion = log.motion ? log.color : undefined;
   const parseProgress = createProgress({
     total: files.length,
     writer,
     isTTY,
     label: "Reading files",
     columns,
+    motion,
   });
 
   const localDefs: LocalDefinition[] = [];
@@ -524,7 +527,7 @@ export async function scanRepository(input: {
   }
 
   parseProgress.done();
-  const matching = startPhase({ label: "Matching occurrences to components…", writer, isTTY, columns });
+  const matching = startPhase({ label: "Matching occurrences to components…", writer, isTTY, columns, motion });
   const localIndex = buildLocalIndex(localDefs);
 
   // ── Resolve phase: engine walks the populated graph ──────────────────────
