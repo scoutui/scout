@@ -351,9 +351,12 @@ function ClosurePanel({
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{stepsWord}</span>
               </span>
               {/* `pathValueOf` returns "" for a node with neither a file
-                  path nor a package; an empty line would still take height. */}
+                  path nor a package; an empty line would still take height.
+                  A path too long for the row is cut from its start. */}
               {label ? (
-                <span className="min-w-0 truncate text-code text-muted-foreground">{label}</span>
+                <span className="min-w-0 truncate text-left text-code text-muted-foreground [direction:rtl]">
+                  <bdi dir="ltr">{label}</bdi>
+                </span>
               ) : null}
               {pinnedId === node.id && pinnedChain ? (
                 <span className="min-w-0 text-pretty font-mono text-xs">{pinnedChain.join(" → ")}</span>
