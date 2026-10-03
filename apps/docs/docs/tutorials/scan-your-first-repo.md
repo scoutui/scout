@@ -72,7 +72,7 @@ If the repo's dependencies aren't installed, the scan can't find any component f
 ```
 Scanned 3 files in 0.1s: 3 components, 1 occurrence.
 Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
-4 of them are from packages that aren't installed. Install your dependencies and scan again.
+4 of them are from packages that aren't installed.
 ```
 
 `Button`, `Card` and `LegacyButton` are then missing from the results, and `scan` refuses to upload. [Dependencies aren't installed](/docs/guides/troubleshoot-a-scan#dependencies-arent-installed) shows the fix.

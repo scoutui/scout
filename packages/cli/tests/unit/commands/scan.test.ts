@@ -150,6 +150,8 @@ describe("runScan warnings about files it reads", () => {
     expect(lines.filter((line) => line.startsWith("Warning:"))).toEqual([
       `Warning: tsconfig parse errors in ${join(realpathSync(dir), "tsconfig.json")}: ValueExpected, CloseBraceExpected, CloseBraceExpected`,
     ]);
-    expect(lines).toContainEqual(expect.stringMatching(/^Reading files: 2 of 2 \(100\.0%\), \d+\.\ds$/));
+    expect(lines).toContainEqual(expect.stringMatching(/^Reading files: 1 of 2 \(50\.0%\), \d+\.\ds$/));
+    expect(lines.filter((line) => line.startsWith("Reading files"))).toHaveLength(1);
+    expect(lines).toContain("Matching occurrences to components…");
   });
 });

@@ -10,7 +10,7 @@ import { detectVueComponents } from "../local-index/detect-vue.js";
 import { detectWebComponents } from "../local-index/detect-wc.js";
 import type { LocalDefinition } from "../local-index/types.js";
 import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
-import { createProgress } from "../util/progress.js";
+import { createProgress, startPhase } from "../util/progress.js";
 import { walkFiles } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
 import { resolveTsconfigPath } from "../walker/tsconfig-discovery.js";
@@ -242,8 +242,8 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
         result.status === "exists"
           ? alreadyOnDashboard(commit, scanUrl)
           : result.replaced
-            ? `Uploaded scan for ${commit.slice(0, 7)} → ${scanUrl}, replacing the earlier scan of this commit`
-            : `Uploaded scan ${result.scanId} → ${scanUrl}`,
+            ? `Uploaded the scan of ${commit.slice(0, 7)}, replacing the earlier one: ${scanUrl}`
+            : `Uploaded the scan of ${commit.slice(0, 7)}: ${scanUrl}`,
       );
     } catch (err) {
       upload = "failed";
@@ -384,11 +384,13 @@ export async function scanRepository(input: {
     writer("[scan] tsconfig: not found (path aliases will not resolve)\n");
   }
   const isTTY = !!process.stderr.isTTY;
+  const { columns } = process.stderr;
   const parseProgress = createProgress({
     total: files.length,
     writer,
     isTTY,
     label: "Reading files",
+    columns,
   });
 
   const localDefs: LocalDefinition[] = [];
@@ -504,6 +506,7 @@ export async function scanRepository(input: {
   }
 
   parseProgress.done();
+  const matching = startPhase({ label: "Matching occurrences to components…", writer, isTTY, columns });
   const localIndex = buildLocalIndex(localDefs);
 
   // ── Resolve phase: engine walks the populated graph ──────────────────────
@@ -695,6 +698,7 @@ export async function scanRepository(input: {
     );
   }
 
+  matching.done();
   const stats = buildScanStats({
     filesScanned: files.length,
     scanDurationMs: Math.round(t1 - startedAt),

@@ -67,7 +67,7 @@ Fix each reason as follows. The [artifact reference](/docs/reference/artifact#un
 Warning: @acme/ui is listed in package.json but isn't installed, so 3 occurrences of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
-The summary also reads `3 of them are from a package that isn't installed. Install your dependencies and scan again.` The scan finds a package's components only in the installed package, so every use of `@acme/ui` is unresolved and none of its components are listed. Run your package manager's install in the scanned checkout, then scan again. In CI, install before the scan step.
+The summary also reads `3 of them are from a package that isn't installed.` The scan finds a package's components only in the installed package, so every use of `@acme/ui` is unresolved and none of its components are listed. Run your package manager's install in the scanned checkout, then scan again. In CI, install before the scan step.
 
 ## A web component has no package
 

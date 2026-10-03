@@ -43,7 +43,7 @@ When a package your `package.json` declares isn't installed, the scan can't tie 
 
 ```text
 Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
-4 of them are from packages that aren't installed. Install your dependencies and scan again.
+4 of them are from packages that aren't installed.
 ```
 
 Until the packages in `dependencies` and `devDependencies` are installed, `scout scan` stops before it scans. A dry run (`scout scan --dry-run`) scans anyway and prints the summary above.

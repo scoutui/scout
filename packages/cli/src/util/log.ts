@@ -6,6 +6,8 @@ export type LoggerOptions = {
   /** Print the detail passed to `warn` and `error`. */
   debug?: boolean;
   color?: Colorizer;
+  /** Whether stderr is a terminal, where a progress line may be showing (default: stderr's own `isTTY`). */
+  isTTY?: boolean;
 };
 
 /** `--debug` or a `SCOUTUI_DEBUG` that isn't empty or `0`. */
@@ -25,11 +27,15 @@ export class Logger {
   readonly quiet: boolean;
   readonly debug: boolean;
   private readonly color: Colorizer;
+  /** Clears a progress line being rewritten in place, so a warning or error starts on a clean line. */
+  private readonly clearLine: string;
 
   constructor(opts: LoggerOptions = {}) {
     this.quiet = opts.quiet ?? false;
     this.debug = opts.debug ?? false;
-    this.color = opts.color ?? createColor({ isTTY: Boolean(process.stderr.isTTY) });
+    const isTTY = opts.isTTY ?? Boolean(process.stderr.isTTY);
+    this.color = opts.color ?? createColor({ isTTY });
+    this.clearLine = isTTY ? "\r\x1b[K" : "";
   }
   info(msg: string): void {
     if (!this.quiet) process.stdout.write(`${msg}\n`);
@@ -40,12 +46,12 @@ export class Logger {
   }
   /** One `Warning:` line; `detail` prints as it is under debug. */
   warn(msg: string, detail?: string): void {
-    process.stderr.write(`${this.color.yellow("Warning:")} ${oneLine(msg)}\n`);
+    process.stderr.write(`${this.clearLine}${this.color.yellow("Warning:")} ${oneLine(msg)}\n`);
     this.detail(detail);
   }
   /** One `Error:` line; `detail` prints as it is under debug. */
   error(msg: string, detail?: string): void {
-    process.stderr.write(`${this.color.red("Error:")} ${oneLine(msg)}\n`);
+    process.stderr.write(`${this.clearLine}${this.color.red("Error:")} ${oneLine(msg)}\n`);
     this.detail(detail);
   }
   /** Text printed only under debug. */
