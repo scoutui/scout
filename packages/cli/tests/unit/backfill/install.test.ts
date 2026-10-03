@@ -27,6 +27,11 @@ function pnpmLock(version: string): string {
   return `lockfileVersion: '${version}'\n\nsettings:\n  autoInstallPeers: true\n  excludeLinksFromLockfile: false\n\n`;
 }
 
+function write(folder: string, path: string, text = ""): void {
+  mkdirSync(dirname(join(folder, path)), { recursive: true });
+  writeFileSync(join(folder, path), text);
+}
+
 const NPM_PLAN: NpmPlan = {
   manager: "npm",
   install: ["ci", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -97,14 +102,9 @@ describe("findLockfile", () => {
     rmSync(base, { recursive: true, force: true });
   });
 
-  function write(path: string, text = ""): void {
-    mkdirSync(dirname(join(base, path)), { recursive: true });
-    writeFileSync(join(base, path), text);
-  }
-
   it("takes the lockfile in the nearest folder above the config's folder", () => {
-    write("repo/yarn.lock");
-    write("repo/apps/package-lock.json");
+    write(base, "repo/yarn.lock");
+    write(base, "repo/apps/package-lock.json");
     mkdirSync(join(base, "repo/apps/web"));
     expect(findLockfile(join(base, "repo/apps/web"), join(base, "repo"))).toEqual({
       dir: join(base, "repo/apps"),
@@ -113,12 +113,12 @@ describe("findLockfile", () => {
   });
 
   it("takes the lockfile in the config's folder when that is the root", () => {
-    write("repo/pnpm-lock.yaml");
+    write(base, "repo/pnpm-lock.yaml");
     expect(findLockfile(join(base, "repo"), join(base, "repo"))).toEqual({ dir: join(base, "repo"), name: "pnpm-lock.yaml" });
   });
 
   it("looks no further up than the root", () => {
-    write("yarn.lock");
+    write(base, "yarn.lock");
     mkdirSync(join(base, "repo/apps/web"), { recursive: true });
     expect(findLockfile(join(base, "repo/apps/web"), join(base, "repo"))).toBeNull();
   });
@@ -127,9 +127,9 @@ describe("findLockfile", () => {
     ["takes yarn.lock over package-lock.json when there is no packageManager", { name: "example-web" }, "yarn.lock"],
     ["takes the lockfile of the manager packageManager names", { name: "example-web", packageManager: "npm@10.9.2" }, "package-lock.json"],
   ])("with two lockfiles in one folder, %s", (_title, manifest, name) => {
-    write("repo/package.json", JSON.stringify(manifest));
-    write("repo/yarn.lock");
-    write("repo/package-lock.json");
+    write(base, "repo/package.json", JSON.stringify(manifest));
+    write(base, "repo/yarn.lock");
+    write(base, "repo/package-lock.json");
     expect(findLockfile(join(base, "repo"), join(base, "repo"))).toEqual({ dir: join(base, "repo"), name });
   });
 });
@@ -143,6 +143,10 @@ describe("readPackageManager", () => {
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
   });
+
+  function packageJson(fields: Record<string, unknown>): string {
+    return JSON.stringify({ name: "example-web", ...fields });
+  }
 
   it.each<[string, Record<string, unknown>, string | undefined]>([
     [
@@ -177,9 +181,87 @@ describe("readPackageManager", () => {
       { devEngines: { packageManager: { name: "pnpm", onFail: "error" } } },
       undefined,
     ],
+    [
+      "takes devEngines.packageManager when packageManager names another manager",
+      { packageManager: "yarn@4.12.0", devEngines: { packageManager: { name: "pnpm", version: "^9.0.0" } } },
+      "pnpm@^9.0.0",
+    ],
+    ["takes volta.pnpm for a pnpm-lock.yaml", { volta: { node: "20.11.0", pnpm: "9.1.0" } }, "pnpm@9.1.0"],
+    [
+      "takes an exact devEngines.packageManager version over a Volta pin",
+      { devEngines: { packageManager: { name: "pnpm", version: "9.15.9" } }, volta: { pnpm: "9.1.0" } },
+      "pnpm@9.15.9",
+    ],
+    ["takes a prerelease version as exact", { volta: { pnpm: "10.0.0-rc.1" } }, "pnpm@10.0.0-rc.1"],
   ])("%s", (_title, manifest, packageManager) => {
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "example-web", ...manifest }));
-    expect(readPackageManager({ dir, name: "pnpm-lock.yaml" })).toBe(packageManager);
+    write(dir, "package.json", packageJson(manifest));
+    expect(readPackageManager({ dir, name: "pnpm-lock.yaml" }, dir)).toBe(packageManager);
+  });
+
+  it.each<[string, Lockfile["name"], Record<string, string>, string | undefined]>([
+    ["takes volta.yarn for a yarn.lock", "yarn.lock", { "package.json": packageJson({ volta: { node: "20.11.0", yarn: "3.8.1" } }) }, "yarn@3.8.1"],
+    ["takes yarn under [tools] in mise.toml", "yarn.lock", { "mise.toml": '[tools]\nnode = "20.11.0"\nyarn = "3.8.1"\n' }, "yarn@3.8.1"],
+    [
+      "takes volta.yarn over a mise.toml pin in the same folder",
+      "yarn.lock",
+      { "package.json": packageJson({ volta: { yarn: "3.8.1" } }), "mise.toml": '[tools]\nyarn = "4.1.0"\n' },
+      "yarn@3.8.1",
+    ],
+    ["takes pnpm under [tools] in .mise.toml", "pnpm-lock.yaml", { ".mise.toml": "[tools]\npnpm = '9.1.0'\n" }, "pnpm@9.1.0"],
+    ["takes yarn under [tools] in .config/mise.toml", "yarn.lock", { ".config/mise.toml": '[env]\nNODE_ENV = "development"\n\n[tools]\nyarn = "3.8.1"\n' }, "yarn@3.8.1"],
+    ["ignores a yarn key outside [tools] in mise.toml", "yarn.lock", { "mise.toml": '[tools]\nnode = "20.11.0"\n\n[env]\nyarn = "3.8.1"\n' }, undefined],
+    ["takes the yarn line in .tool-versions", "yarn.lock", { ".tool-versions": "nodejs 20.11.0\nyarn 3.8.1\n" }, "yarn@3.8.1"],
+    [
+      "passes over a range or partial version to the next exact pin",
+      "yarn.lock",
+      {
+        "package.json": packageJson({ volta: { yarn: "^3.8.0" } }),
+        "mise.toml": '[tools]\nyarn = "3"\n',
+        ".tool-versions": "yarn 3.8.1\n",
+      },
+      "yarn@3.8.1",
+    ],
+    [
+      "takes an exact mise pin over a devEngines.packageManager range",
+      "pnpm-lock.yaml",
+      {
+        "package.json": packageJson({ devEngines: { packageManager: { name: "pnpm", version: "^9.0.0" } } }),
+        "mise.toml": '[tools]\npnpm = "9.1.0"\n',
+      },
+      "pnpm@9.1.0",
+    ],
+    [
+      "ignores pins for pnpm beside a yarn.lock",
+      "yarn.lock",
+      {
+        "package.json": packageJson({ volta: { pnpm: "9.1.0" } }),
+        "mise.toml": '[tools]\npnpm = "9.1.0"\n',
+        ".tool-versions": "pnpm 9.1.0\n",
+      },
+      undefined,
+    ],
+  ])("%s", (_title, name, files, packageManager) => {
+    for (const [path, text] of Object.entries(files)) write(dir, path, text);
+    expect(readPackageManager({ dir, name }, dir)).toBe(packageManager);
+  });
+
+  it.each<[string, Record<string, string>, string | undefined]>([
+    ["takes a pin from a folder above it, up to the root", { ".tool-versions": "yarn 3.8.1\n" }, "yarn@3.8.1"],
+    [
+      "takes the nearer of two pins from the same source",
+      { ".tool-versions": "yarn 3.8.1\n", "apps/web/.tool-versions": "yarn 4.1.0\n" },
+      "yarn@4.1.0",
+    ],
+    [
+      "takes a mise pin in a folder above it over a .tool-versions pin beside it",
+      { "mise.toml": '[tools]\nyarn = "3.8.1"\n', "apps/web/.tool-versions": "yarn 4.1.0\n" },
+      "yarn@3.8.1",
+    ],
+    ["ignores a Volta pin in a folder above it", { "package.json": packageJson({ volta: { yarn: "3.8.1" } }) }, undefined],
+  ])("with the lockfile in a subfolder, %s", (_title, files, packageManager) => {
+    for (const [path, text] of Object.entries(files)) write(dir, path, text);
+    mkdirSync(join(dir, "apps/web"), { recursive: true });
+    expect(readPackageManager({ dir: join(dir, "apps/web"), name: "yarn.lock" }, dir)).toBe(packageManager);
   });
 });
 

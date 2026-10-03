@@ -356,7 +356,7 @@ async function install(work: RunContext, state: RunState, log: Logger): Promise<
   const lockfile = findLockfile(work.configDir, work.checkout);
   if (lockfile === null) return { kind: "no-lockfile" };
   const head = (await readFile(join(lockfile.dir, lockfile.name), "utf8")).slice(0, 2048);
-  const plan = installPlan(lockfile.name, head, readPackageManager(lockfile));
+  const plan = installPlan(lockfile.name, head, readPackageManager(lockfile, work.checkout));
   let runnable: NpmPlan | (CorepackPlan & { corepack: Corepack });
   if (plan.manager === "npm") {
     runnable = plan;

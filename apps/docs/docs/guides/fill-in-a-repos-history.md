@@ -99,7 +99,7 @@ Warning: Skipped 51d8e20 (18 Sep 2026): pnpm install failed.
 | `the scan found no components.` | Usually nothing: the code that `include` matches wasn't there yet at that commit. |
 | Anything else | The dashboard refused that commit's scan. The line says why. |
 
-Older commits of a Yarn 2 or later project can fail with `yarn install failed.` when their `package.json` has no `packageManager` field, because their lockfile doesn't say which Yarn wrote it. Set `install` to the command the repo installs with.
+Backfill installs a Yarn or pnpm project with the version each commit names in its `packageManager`, then in `devEngines`, Volta, mise or asdf's `.tool-versions`, else with the newest release that writes its lockfile's format. Older commits of a Yarn 2 or later project that name no version can fail with `yarn install failed.`, because their lockfile doesn't say which Yarn wrote it. Set `install` to the command the repo installs with.
 
 A skip you can fix, one of the first six reasons, makes backfill exit `1` when it ends, so a CI job shows that history is missing; the [exit codes](/docs/reference/cli#backfill-exit-codes) list the exceptions. Once you've fixed it, run backfill again: it scans only the commits that aren't on the dashboard yet.
 
