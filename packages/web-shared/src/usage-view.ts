@@ -6,9 +6,9 @@ export type UsageGroup = "prop" | "styling" | "event" | "attribute";
 export type UsagePickKind = "value" | "dynamic" | "unset";
 /** One picked value of one prop: a written value (`label` is it), `{…}` or not set (`label` is ""). */
 export type UsagePick = { prop: string; kind: UsagePickKind; label: string };
-export type UsageSortKey = "calls" | "file" | `prop:${string}`;
+export type UsageSortKey = "uses" | "file" | `prop:${string}`;
 export type UsageSort = { key: UsageSortKey; dir: "asc" | "desc" };
-export const DEFAULT_USAGE_SORT: UsageSort = { key: "calls", dir: "desc" };
+export const DEFAULT_USAGE_SORT: UsageSort = { key: "uses", dir: "desc" };
 export type UsageFilters = { find: string; area: string | null; picks: readonly UsagePick[]; sort: UsageSort };
 export type UsageInput = Pick<ComponentDetail, "occurrences" | "props" | "events" | "hasDeclaredApi">;
 export type UsagePropInfo = { name: string; group: UsageGroup; status: PropUsage["status"]; declared: DeclaredMeta | null };
@@ -519,7 +519,7 @@ function fileOf(path: string, calls: readonly IndexedCall[], depth: number, colu
 function sortFiles(files: readonly UsageFile[], sort: UsageSort): UsageFile[] {
   const sorted = [...files].sort((a, b) => b.calls - a.calls || a.path.localeCompare(b.path));
   const sign = sort.dir === "asc" ? 1 : -1;
-  if (sort.key === "calls") return sort.dir === "desc" ? sorted : sorted.sort((a, b) => (a.calls - b.calls) * sign);
+  if (sort.key === "uses") return sort.dir === "desc" ? sorted : sorted.sort((a, b) => (a.calls - b.calls) * sign);
   const prop = sort.key.startsWith("prop:") ? sort.key.slice(5) : null;
   const text = (f: UsageFile) => (prop === null ? `${f.lead}${f.base}`.toLowerCase() : (f.cells[prop]?.values[0]?.text ?? null));
   return sorted.sort((a, b) => {
@@ -533,7 +533,7 @@ function sortFiles(files: readonly UsageFile[], sort: UsageSort): UsageFile[] {
 /** The sort after a click on the header of `key`: the sorted column flips; another starts calls highest first, or A to Z. */
 export function nextUsageSort(sort: UsageSort, key: UsageSortKey): UsageSort {
   if (key === sort.key) return { key, dir: sort.dir === "asc" ? "desc" : "asc" };
-  return { key, dir: key === "calls" ? "desc" : "asc" };
+  return { key, dir: key === "uses" ? "desc" : "asc" };
 }
 
 /** The folders every one of these paths sits under, below `key` when it's given, ending in `/`; null when none. */
@@ -652,7 +652,7 @@ export function usageView(index: UsageIndex, filters: UsageFilters, columns: rea
   const sort = stale ? DEFAULT_USAGE_SORT : filters.sort;
   const depths = leadDepths([...byPath.keys()]);
   const files = sortFiles([...byPath].map(([path, calls]) => fileOf(path, calls, depths.get(path) ?? 0, columns, lineProps, picks)), sort);
-  const grouped = !index.few && !area && new Set(folderOf.values()).size > 1 && files.length > GROUP_PAST && sort.key === "calls";
+  const grouped = !index.few && !area && new Set(folderOf.values()).size > 1 && files.length > GROUP_PAST && sort.key === "uses";
 
   return {
     total: index.total,

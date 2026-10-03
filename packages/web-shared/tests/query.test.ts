@@ -33,7 +33,7 @@ describe("toQueryView", () => {
       kind: "react",
       package: "@scope/lib",
       deprecated: false,
-      occurrences: 5,
+      uses: 5,
       tag: ["web"],
     });
   });
@@ -106,10 +106,10 @@ describe("matchesQuery (end-to-end)", () => {
     const { ast } = parseQuery(q);
     return ast ? matchesQuery(ast, c, [], [webTag]) : true;
   };
-  it("filters by scope + kind + numeric occurrences", () => {
-    expect(run("scope:external kind:react occurrences:>1")).toBe(true);
+  it("filters by scope + kind + numeric uses", () => {
+    expect(run("scope:external kind:react uses:>1")).toBe(true);
     expect(run("scope:local")).toBe(false);
-    expect(run("occurrences:>100")).toBe(false);
+    expect(run("uses:>100")).toBe(false);
   });
   it("name is substring, case-insensitive", () => {
     expect(run("name:butt")).toBe(true);
@@ -121,12 +121,12 @@ describe("matchesQuery (end-to-end)", () => {
   });
   it("supports boolean composition for free", () => {
     expect(run("kind:react OR kind:vue")).toBe(true);
-    expect(run("scope:local OR occurrences:>1")).toBe(true);
+    expect(run("scope:local OR uses:>1")).toBe(true);
   });
   it("returns false (does not throw) for a numeric comparison against a non-number", () => {
-    // `occurrences:>foo` parses fine but liqe throws at eval; matchesQuery must swallow it.
-    expect(parseQuery("occurrences:>foo").ast).not.toBeNull(); // it is a valid parse
-    expect(run("occurrences:>foo")).toBe(false);
+    // `uses:>foo` parses fine but liqe throws at eval; matchesQuery must swallow it.
+    expect(parseQuery("uses:>foo").ast).not.toBeNull(); // it is a valid parse
+    expect(run("uses:>foo")).toBe(false);
   });
   it("an unknown field matches nothing", () => {
     expect(run("color:blue")).toBe(false);
