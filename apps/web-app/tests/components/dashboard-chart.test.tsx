@@ -79,4 +79,27 @@ describe("DashboardChart deprecated-only series", () => {
     }
     expect(container.textContent).toContain("element-plus");
   });
+
+  it("keeps a deprecated-only end label above the date labels when its series ends at zero", () => {
+    const config: DashboardConfig = {
+      scope: { kind: "all" },
+      cohorts: [{ kind: "tag", tagId: "t-vue", deprecatedOnly: true }, { kind: "package", packageName: "element-plus" }],
+      chartType: "trend",
+      metric: "count",
+    };
+    const series: CohortSeries[] = [
+      { ...kits, points: [{ t: "2026-09-01T00:00:00Z", value: 12 }, { t: "2026-09-02T00:00:00Z", value: 0 }] },
+      { ...plus, points: [{ t: "2026-09-01T00:00:00Z", value: 32 }, { t: "2026-09-02T00:00:00Z", value: 32 }] },
+    ];
+    const { container } = render(<DashboardChart config={config} view={{ kind: "series", series, coverage }} />);
+    const mark = screen.getByText("deprecated only", { selector: "tspan" });
+    const label = mark.parentElement;
+    const baseline =
+      Number(label?.getAttribute("y") ?? Number.NaN) +
+      Number(label?.getAttribute("dy") ?? Number.NaN) +
+      Number(mark.getAttribute("dy") ?? Number.NaN);
+    const dateTops = [...container.querySelectorAll(".recharts-xAxis-tick-labels text")].map((t) => Number(t.getAttribute("y")));
+    expect(dateTops.length).toBeGreaterThan(0);
+    expect(baseline).toBeLessThan(Math.min(...dateTops));
+  });
 });

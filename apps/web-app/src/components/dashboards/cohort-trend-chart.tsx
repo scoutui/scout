@@ -65,9 +65,11 @@ export function CohortTrendChart({
   // `seriesWashes` decides which series get the wash, here and in the sparkline.
   const washes = seriesWashes(series);
   // End-label declutter: a tail closer than the label box above it (~13px a line,
-  // approximated in data space) keeps its dot but drops its label.
+  // approximated in data space) keeps its dot but drops its label. A two-line label
+  // that would hang below the plot sits a line higher, its second line level with the dot.
   // Hovering a legend row always shows that series' label.
   const labelled = new Set<string>();
+  const lifted = new Set<string>();
   {
     const PLOT_PX = 230; // chart height minus vertical margins and the x-axis band
     const LABEL_PX = 13;
@@ -79,10 +81,14 @@ export function CohortTrendChart({
     let lastV: number | null = null;
     let lastGap = minGap;
     for (const tail of tails) {
-      if (lastV === null || lastV - tail.v >= lastGap) {
+      const twoLines = deprecatedOnly.has(tail.key);
+      const lift = twoLines && tail.v < 2 * minGap;
+      if (lift) lifted.add(tail.key);
+      const top = lift ? tail.v + minGap : tail.v;
+      if (lastV === null || lastV - top >= lastGap) {
         labelled.add(tail.key);
         lastV = tail.v;
-        lastGap = deprecatedOnly.has(tail.key) ? 2 * minGap : minGap;
+        lastGap = twoLines && !lift ? 2 * minGap : minGap;
       }
     }
   }
@@ -169,7 +175,7 @@ export function CohortTrendChart({
                         <text
                           x={cx + 9}
                           y={cy}
-                          dy={3}
+                          dy={lifted.has(s.cohortKey) ? -9 : 3}
                           fontSize={11}
                           fontFamily="var(--font-mono)"
                           fill="var(--muted-foreground)"
