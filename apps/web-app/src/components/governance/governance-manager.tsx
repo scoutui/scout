@@ -961,6 +961,8 @@ function RecordForm({
         }
         setCreated((prev) => createdOf(form, (prev?.n ?? 0) + 1));
         setForm({ ...emptyForm(), dispositionKind: form.dispositionKind });
+        setSourceScope(null);
+        setByScope(null);
         onCreated(res.id);
         document.getElementById("gov-source")?.focus();
         return;
