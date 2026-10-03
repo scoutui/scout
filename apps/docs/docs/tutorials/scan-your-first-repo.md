@@ -135,7 +135,7 @@ Wrote scout-scan.json (not uploaded).
 ```
 
 :::note
-A repo without a `tsconfig.json` prints `Path aliases: no tsconfig.json found.` instead, with how to name one that has another name. The scan still runs; it just can't follow import aliases such as `@/components`.
+A repo without a `tsconfig.json` prints `Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.` instead. The scan still runs; it just can't follow import aliases such as `@/components`.
 :::
 
 The summary's first line says the scan read our three files and found six components. Three come from packages: `Button`, `Card` and `LegacyButton`. The other three, `App`, `ProductCard` and `Checkout`, are defined in the repo.
