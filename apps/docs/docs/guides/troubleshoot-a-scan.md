@@ -32,6 +32,8 @@ If it stops with `Error: Couldn't scan: git failed in <path>.`, run `git status`
 
 If the scan stops with `Error: No files match "include"`, or the summary counts fewer files than your repo has, your `include` patterns don't match your code. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
 
+The scan skips code inside a submodule or another clone below the config's folder. If `include` only matches files in one, the scan stops with `Error: "include" in <path> (<patterns>) only matches files in <folder>, which is a separate git repository.` Run the scan from that folder instead.
+
 ## A file has syntax errors
 
 A line such as `Warning: /home/dev/storefront/src/Broken.tsx has syntax errors (Unexpected token), so the scan read what it could.` means the scan couldn't fully parse that file. It carries on, but components defined or used in that file can be missing from the results. Fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.

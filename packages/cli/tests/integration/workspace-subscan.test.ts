@@ -98,6 +98,28 @@ describe("integration: sub-package scan of a monorepo", () => {
     expect(chipOf(subOut)?.id).toBe(chipOf(rootOut)?.id);
   });
 
+  it.each([
+    { line: 15, filePath: "packages/ui/src/forms.tsx", exportName: "Field" },
+    { line: 16, filePath: "packages/ui/src/layout.tsx", exportName: "Stack" },
+    { line: 17, filePath: "packages/ui/src/spacer.tsx", exportName: "Spacer" },
+  ])(
+    "sub scan: a member of a namespace the sibling's barrel re-exports is the component the root scan finds ($exportName)",
+    ({ line, filePath, exportName }) => {
+      const componentAt = (o: ScanArtifact) => {
+        const occ = o.occurrences.find((x) => x.filePath === "apps/web/src/App.tsx" && x.line === line);
+        return o.components.find((c) => c.id === occ?.resolution.componentId);
+      };
+      const sub = componentAt(subOut);
+      const root = componentAt(rootOut);
+      expect(sub?.id).toBe(root?.id);
+      expect([sub?.identity, sub?.definition, root?.definition]).toEqual([
+        { kind: "repository-declaration", repoId: "workspace-subscan", filePath, exportName },
+        { line: 1, column: 7 },
+        { line: 1, column: 7 },
+      ]);
+    },
+  );
+
   it.fails("root and sub scans give the component rendered as <Table.Row /> the same id and name", () => {
     const tableRowOf = (o: ScanArtifact) => {
       const occ = o.occurrences.find((x) => x.filePath === "apps/web/src/App.tsx" && x.line === 13);

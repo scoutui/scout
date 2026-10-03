@@ -339,7 +339,8 @@ function starExport(graph: Graph, file: string, name: string, path: readonly str
 }
 
 /** The binding export record `exp` of `fg` names: an exported local is
- *  resolved in `fg`, an `export … from` hop in its target. */
+ *  resolved in `fg`, an `export … from` hop in its target, and a namespace
+ *  re-export (`export * as NS from`) as `import * as NS` from its target. */
 function bindingForRecord(
   graph: Graph,
   fg: FileGraph,
@@ -360,6 +361,7 @@ function bindingForRecord(
       guard.pop(fg.filePath, exp.local);
     }
   }
+  if (exp.fromImported === "*") return moduleExport(graph, fg.filePath, exp.from, "*", path, guard, sought);
   const target = moduleTarget(graph, fg.filePath, exp.from, exp.fromImported, path);
   if (target.kind === "outside") return target.binding;
   const found = findExportRecord(graph, target.key, exp.fromImported, sought);
@@ -434,10 +436,11 @@ export function bindingIdentity(binding: Binding): TerminalIdentity {
 }
 
 /** An `unparsed` binding pinned to the definition the host's
- *  `resolveLocalDefinition` finds for it, with the declaration position the
- *  host located; the resolved file when the host finds none. When the host
- *  finds that it leaves first-party code through a package import, it is
- *  that package export. Any other binding is returned unchanged. */
+ *  `resolveLocalDefinition` finds for it, with the member path left past
+ *  that definition and the declaration position the host located; the
+ *  resolved file when the host finds none. When the host finds that it
+ *  leaves first-party code through a package import, it is that package
+ *  export. Any other binding is returned unchanged. */
 export function pinUnparsed<B extends Binding>(
   graph: Graph,
   binding: B,
@@ -450,7 +453,7 @@ export function pinUnparsed<B extends Binding>(
       kind: "package-export",
       specifier: def.specifier,
       exportName: def.exportName,
-      path: binding.path,
+      path: def.path ?? binding.path,
       stub: null,
       fromFile: graphKeyFor(graph, def.fromFile) ?? def.fromFile,
       resolved: true,
@@ -460,6 +463,7 @@ export function pinUnparsed<B extends Binding>(
     ...binding,
     file: def.absFile,
     exportName: def.exportName,
+    path: def.path ?? binding.path,
     ...(def.definition !== undefined ? { definition: def.definition } : {}),
   };
 }

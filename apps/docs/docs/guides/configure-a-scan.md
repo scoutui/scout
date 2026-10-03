@@ -50,7 +50,7 @@ For a repo that keeps its code in `app/` and `components/`, list both folders:
 
 The `exclude` patterns from `init` skip test, spec and story files, and `node_modules`. Add a pattern to `exclude` for anything else you don't want counted, such as `**/__mocks__/**` for mocks or `src/generated/**` for generated code.
 
-You don't need to exclude files your `.gitignore` already ignores, or folders whose names start with a dot, such as `.next`. The scan skips both.
+You don't need to exclude files your `.gitignore` already ignores, or folders whose names start with a dot, such as `.next`. The scan skips both. It also skips a folder below the config's folder that holds its own git repository, such as a submodule, even when an `include` pattern points into it.
 
 ## Check that the scan reads your files
 
@@ -71,6 +71,8 @@ The first number should be close to the number of source files you expect. If it
 ```
 Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,vue}). Point it at your source files and scan again.
 ```
+
+Code inside a submodule or another clone below the config's folder isn't scanned, so an `include` pattern that points into one matches no files.
 
 If the summary has lines like these, some of the repo's dependencies aren't installed:
 

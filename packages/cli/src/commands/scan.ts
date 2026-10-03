@@ -10,13 +10,13 @@ import { detectVueComponents } from "../local-index/detect-vue.js";
 import { detectWebComponents } from "../local-index/detect-wc.js";
 import type { LocalDefinition } from "../local-index/types.js";
 import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
+import { emitVueFile } from "../emit-vue-file.js";
 import { createProgress, startPhase } from "../util/progress.js";
-import { walkFiles } from "../walker/files.js";
+import { nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
 import { resolveTsconfigPath } from "../walker/tsconfig-discovery.js";
 import { buildPackageAliasLayers } from "../walker/package-alias-layers.js";
 import { emitReact } from "@scoutui/parser-react";
-import { emitVueTemplate } from "@scoutui/parser-vue";
 import { writeJson } from "../reporter/json.js";
 import { printSummary } from "../reporter/stdout.js";
 import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../scan/meta.js";
@@ -176,7 +176,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
 
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
   if (files.length === 0) {
-    log.error(`No files match "include" in ${configPath} (${cfg.include.join(", ")}). Point it at your source files and scan again.`);
+    log.error(noFilesMessage(configPath, cfg.include, await nestedRepositoriesMatched(walkOptions(cfg))));
     return { output: null, upload: "skipped" };
   }
 
@@ -320,14 +320,24 @@ export async function readWorkspace(
   resetFindOwningPackageCache();
   const workspaceGraph = buildWorkspaceGraph(workspaceRoot);
 
-  const files = await walkFiles({
-    root: cfg.configDir,
-    include: cfg.include,
-    exclude: cfg.exclude,
-    gitignore: cfg.gitignore,
-  });
+  const files = await walkFiles(walkOptions(cfg));
 
   return { workspaceRoot, workspaceGraph, files };
+}
+
+/** The file walk for `cfg`: its include, exclude and gitignore, from the config's folder. */
+function walkOptions(cfg: ResolvedConfig): WalkOptions {
+  return { root: cfg.configDir, include: cfg.include, exclude: cfg.exclude, gitignore: cfg.gitignore };
+}
+
+/** The error for an `include` that matches no file, naming the nested repositories it only matches inside. */
+function noFilesMessage(configPath: string, include: readonly string[], repositories: readonly string[]): string {
+  const patterns = `"include" in ${configPath} (${include.join(", ")})`;
+  if (repositories.length === 0) return `No files match ${patterns}. Point it at your source files and scan again.`;
+  const folders = repositories.map(posixPath);
+  return folders.length === 1
+    ? `${patterns} only matches files in ${folders[0]}, which is a separate git repository. Run the scan from that folder instead.`
+    : `${patterns} only matches files in ${folders.slice(0, -1).join(", ")} and ${folders.at(-1)}, which are separate git repositories. Run the scan from each of those folders instead.`;
 }
 
 /** The scan file built from the workspace's files, checked against its format, and its stats. */
@@ -499,26 +509,13 @@ export async function scanRepository(input: {
         log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some occurrences in it may be missing.`, errorStack(err));
       }
     } else if (parsed.kind === "vue") {
-      const wrapper = parsed.scriptAst !== undefined
-        ? {
-            descriptor: parsed.descriptor,
-            scriptProgram: parsed.scriptAst,
-            ...(parsed.plainScriptAst !== undefined ? { plainScriptProgram: parsed.plainScriptAst } : {}),
-          }
-        : { descriptor: parsed.descriptor };
-      const sfcDefs = detectVueComponents({ kind: "sfc", wrapper }, outRel);
-      localDefs.push(...sfcDefs);
-
       try {
-        const fileBuilder = graphBuilder.beginFile(relPath, "vue");
-        emitVueTemplate({
-          file: relPath,
-          wrapper,
-          fileBuilder,
-          // Reuse detectVueComponents' resolved symbol so the SFC's local-index
-          // seed and the engine's owner ComponentId hash to the same id.
-          // Otherwise the SFC seed is pruned as an unreachable local.
-          ...(sfcDefs[0]?.exportName !== undefined ? { sfcSymbol: sfcDefs[0].exportName } : {}),
+        emitVueFile({
+          graphBuilder,
+          graphKey: relPath,
+          definitionPath: outRel,
+          parsed,
+          onDefinitions: (definitions) => localDefs.push(...definitions),
           ...(autoImports !== null ? { resolveAutoImport: autoImports.lookup } : {}),
         });
       } catch (err) {

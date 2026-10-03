@@ -735,9 +735,10 @@ function walkTypeOf(
  * member, walk the member's value through `walkInner`, so a wrapper
  * product stored in a map (`MAP.memo` → `memo(Button)`) reaches
  * `walkReturnTypeOf` and keeps its `hoc-wrapper` hop. Anything that is not an
- * in-graph Object (an Array, an import-backed namespace the graph cannot see)
- * takes the leaf fold. A recorded static member the object reaches
- * (`reachMember`) is walked as the reference it names.
+ * in-graph Object (an Array, a parameter, a call's result) takes the leaf
+ * fold. A member `reachMember` names a reference for (a recorded static
+ * member, or a member of an import the graph cannot see) is walked as that
+ * reference.
  *
  * Cycle guard: mirrors `walkTypeOf`. `const A = { Item: () => B.Item };
  * const B = { Item: () => A.Item }` is legal, loadable JS and the walk

@@ -18,9 +18,14 @@ const fixtureDir = resolve(monorepoRoot, "test/fixtures/reexport-unparsed-barrel
 //   src/ui/index.ts    export { Button } from "@example/ui";
 //                      export { Card } from "@example/shared";
 //   src/ui/rewrap.ts   import { Badge } from "@example/ui"; export { Badge };
-//   src/ui/star.ts     export * from "@example/ui";
+//   src/ui/star.ts     export * from "./local-star";
+//                      export * from "@example/ui";
+//   src/ui/ns.ts       import * as UiKit from "@example/ui"; export { UiKit };
+//   src/ui/ns-star.ts  export * as UiParts from "@example/ui";
 //
-// src/app/through-barrels.tsx renders all four through those barrels, and
+// src/ui/local-star.tsx declares Spinner. src/app/through-barrels.tsx renders
+// Button, Card, Badge, Tooltip, UiKit.Avatar, UiParts.Banner and Spinner
+// through those barrels, and
 // src/app/direct.tsx renders Button imported from @example/ui directly.
 // @example/ui is installed and untracked; @example/shared is a workspace
 // package, linked into node_modules as Yarn does.
@@ -77,10 +82,42 @@ describe("integration: a component imported through a barrel the scan leaves out
     ]);
   });
 
-  it.fails("credits `export *` from an installed package to that package", () => {
+  it("credits a member of a namespace import from an installed package that the barrel exports again to that package", () => {
+    expect(rows("Avatar")).toEqual([
+      {
+        identity: { kind: "package-export", packageName: "@example/ui", publicEntry: "", exportName: "Avatar" },
+        renders: 1,
+      },
+    ]);
+  });
+
+  it("credits a member of `export * as` an installed package to that package", () => {
+    expect(rows("Banner")).toEqual([
+      {
+        identity: { kind: "package-export", packageName: "@example/ui", publicEntry: "", exportName: "Banner" },
+        renders: 1,
+      },
+    ]);
+  });
+
+  it("credits `export *` from an installed package to that package", () => {
     expect(rows("Tooltip")).toEqual([
       {
         identity: { kind: "package-export", packageName: "@example/ui", publicEntry: "", exportName: "Tooltip" },
+        renders: 1,
+      },
+    ]);
+  });
+
+  it("credits a name a repository file exports through `export *` to that file, over a package's `export *` in the same barrel", () => {
+    expect(rows("Spinner")).toEqual([
+      {
+        identity: {
+          kind: "repository-declaration",
+          repoId: "reexport-unparsed-barrel",
+          filePath: "src/ui/local-star.tsx",
+          exportName: "Spinner",
+        },
         renders: 1,
       },
     ]);

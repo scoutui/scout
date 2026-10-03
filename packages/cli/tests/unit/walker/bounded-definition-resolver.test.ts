@@ -42,6 +42,7 @@ describe("createBoundedDefinitionResolver", () => {
     expect(resolveDef(join(stage, "src", "index.ts"), "Button", [])).toEqual({
       absFile: join(stage, "src", "button.tsx"),
       exportName: "Button",
+      path: [],
       definition: { line: 1, column: 7 },
     });
   });
@@ -51,6 +52,7 @@ describe("createBoundedDefinitionResolver", () => {
     expect(resolveDef(join(stage, "src", "index2.ts"), "Btn", [])).toEqual({
       absFile: join(stage, "src", "button.tsx"),
       exportName: "Button",
+      path: [],
       definition: { line: 1, column: 7 },
     });
   });
@@ -92,6 +94,27 @@ describe("createBoundedDefinitionResolver", () => {
     expect(warnings).toEqual([
       `Stopped following re-exports of "Widget" at ${join(stage, "deep", "c2.ts")}, so its occurrences are counted under that file.`,
     ]);
+  });
+
+  it("doesn't parse a package an `export *` names, so a repository `export *` after it is reached within the file cap", () => {
+    const pkg = join(stage, "frontier", "node_modules", "@example", "ui");
+    mkdirSync(pkg, { recursive: true });
+    writeFileSync(join(stage, "frontier", "barrel.ts"), `export * from "@example/ui";\nexport * from "./local";\n`);
+    writeFileSync(join(stage, "frontier", "local.tsx"), "export function Spinner() { return null; }\n");
+    writeFileSync(join(pkg, "index.js"), "export function Tooltip() { return null; }\n");
+    const targets: Record<string, string> = {
+      "@example/ui": join(pkg, "index.js"),
+      "./local": join(stage, "frontier", "local.tsx"),
+    };
+    const resolveDef = createBoundedDefinitionResolver({
+      moduleResolver: (_from, spec) => targets[spec] ?? null,
+      firstParty: (abs) => abs.startsWith(stage) && !abs.includes("/node_modules/"),
+      maxFiles: 2,
+    }).resolveDefinition;
+    expect(resolveDef(join(stage, "frontier", "barrel.ts"), "Spinner", [])).toMatchObject({
+      absFile: join(stage, "frontier", "local.tsx"),
+      exportName: "Spinner",
+    });
   });
 
   it("emits the same diagnostic and pins to the hop when the next file can't be read", () => {

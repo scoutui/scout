@@ -43,6 +43,9 @@
           "aeb23d65757b5d71": 1,
           "952fa8a2046587ee": 1,
           "aff663ef7f33a8b2": 1,
+          "27fce2330f30fa9b": 1,
+          "8b3a5eff07c52947": 1,
+          "ead8369588a7bd08": 1,
           "a39eac46e7bbfb7b": 1
         },
         "renderedByCount": {},
@@ -185,6 +188,105 @@
       },
       "usage": "direct",
       "props": {},
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "27fce2330f30fa9b",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/forms.tsx",
+        "exportName": "Field"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Forms.Field"
+      ],
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "8b3a5eff07c52947",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/layout.tsx",
+        "exportName": "Stack"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Layout.Stack"
+      ],
+      "definition": {
+        "line": 1,
+        "column": 7
+      },
+      "owningPackage": "@ws-sub/ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "93767a0c14a8b7ae": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "ead8369588a7bd08",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-subscan",
+        "filePath": "packages/ui/src/spacer.tsx",
+        "exportName": "Spacer"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "Layout.Spacer"
+      ],
       "definition": {
         "line": 1,
         "column": 7
@@ -377,6 +479,75 @@
         "kind": "render"
       },
       "trace": [],
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "8d5d59119e5fbdae",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "27fce2330f30fa9b"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 15,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Forms"
+        }
+      ],
+      "writtenName": "Forms.Field",
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "1a4e5223b1cb656d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "8b3a5eff07c52947"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 16,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Layout"
+        }
+      ],
+      "writtenName": "Layout.Stack",
+      "props": {},
+      "ownerComponentId": "93767a0c14a8b7ae"
+    },
+    {
+      "occurrenceId": "aa44d9065fd4a191",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "ead8369588a7bd08"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "line": 17,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@ws-sub/ui",
+          "name": "Layout"
+        }
+      ],
+      "writtenName": "Layout.Spacer",
       "props": {},
       "ownerComponentId": "93767a0c14a8b7ae"
     },

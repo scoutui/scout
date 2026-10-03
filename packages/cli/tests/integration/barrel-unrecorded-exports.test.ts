@@ -12,7 +12,7 @@ const cli = resolve(import.meta.dirname, "../../dist/cli.js");
 
 /** Barrels that `export *` one package beside an export the parser does not record. */
 const BARRELS: Record<string, string> = {
-  ds1: 'export * from "@example/ds";\nexport * as Icons from "../icons";\n',
+  ds1: 'export * from "@example/ds";\nimport * as icons from "../icons";\nexport const { Star } = icons;\n',
   ds2: 'export * from "@example/ds";\nexport default { install() {} };\n',
   ds3: 'export * from "@example/ds";\nexport enum Size { S }\n',
   ds4: 'export * from "@example/ds";\nexport default class {}\n',
