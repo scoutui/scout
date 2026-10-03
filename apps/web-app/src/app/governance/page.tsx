@@ -42,6 +42,7 @@ export default async function GovernancePage() {
         summary={registry ? progressLabel({ inProgress: active, complete, unseen }) : null}
         authors={authors}
         notice={notice ? <ChartResultsState notice={notice} besideNumbers={registry !== null} /> : null}
+        sourcesUnavailable={registry ? null : (notice?.unavailable?.state ?? "preparing")}
       />
 
       <section id="tags" aria-labelledby="tags-title" className="scroll-mt-24">

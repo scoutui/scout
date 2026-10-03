@@ -57,7 +57,6 @@ const all = [button, badge, field, input, toast, icons, select];
 const sources = [
   { packageName: "old-icons", exportName: "Star" },
   { packageName: "old-icons", exportName: "Heart" },
-  { packageName: "old-icons", exportName: "Star" },
   { packageName: "old-select" },
 ];
 const card = rec("c", "old-kit", "Card", retired("Use a panel."));
@@ -171,7 +170,7 @@ describe("groupRecords", () => {
     expect([map.complete.map((g) => g.packageName), map.completeRecords]).toEqual([["old-kit"], 1]);
   });
 
-  it("counts a package record's scanned components, de-duplicated, or null when no scan has any", () => {
+  it("counts a package record's scanned components, or null when no scan has any", () => {
     const { groups } = groupRecords({ visible: [icons, select], all, stats: {}, sources });
     expect(groups.map((g) => [g.packageName, rowsOf(g)[0]?.componentCount])).toEqual([
       ["old-icons", 2],

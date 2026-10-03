@@ -1,6 +1,7 @@
 import type { GovernanceRecord, RecordAuthors, RecordStat } from "@scoutui/web-shared";
 import { resolveGovernance } from "@scoutui/web-shared/client";
 import { formatDay } from "@/lib/dashboard-format";
+import { componentCounts } from "@/lib/identity-search";
 import { packageComponentFiltersToParams } from "@/lib/package-facets";
 import { hrefWithQuery } from "@/lib/query-string";
 
@@ -43,19 +44,13 @@ function nextHopOf(record: GovernanceRecord, stat: RecordStat | undefined, all: 
 }
 
 function rowMaker(input: MapInput): (record: GovernanceRecord) => MapRow {
-  const components = new Map<string, Set<string>>();
-  for (const s of input.sources) {
-    if (!s.exportName) continue;
-    const set = components.get(s.packageName) ?? new Set<string>();
-    set.add(s.exportName);
-    components.set(s.packageName, set);
-  }
+  const components = componentCounts(input.sources);
   return (record) => {
     const stat = input.stats[record.id];
     return {
       record,
       stat,
-      componentCount: record.grain === "package" ? (components.get(record.targetPackage)?.size ?? null) : null,
+      componentCount: record.grain === "package" ? (components.get(record.targetPackage) ?? null) : null,
       nextHop: nextHopOf(record, stat, input.all),
     };
   };

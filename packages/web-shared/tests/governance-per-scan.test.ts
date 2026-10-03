@@ -124,9 +124,9 @@ describe("governance per scan on the scan-file identity", () => {
 
   it("offers each governable package and name once, and a tag only where a scan resolves it", () => {
     expect(listGovernanceTargets([entries, scanA, scanB, localScan])).toEqual([
-      { packageName: "@example/ui" },
-      { packageName: "@example/ui", exportName: "Button" },
-      { packageName: "@example/ui", exportName: "x-card" },
+      { packageName: "@example/ui", occurrences: 6 },
+      { packageName: "@example/ui", exportName: "Button", occurrences: 5 },
+      { packageName: "@example/ui", exportName: "x-card", occurrences: 1 },
     ]);
   });
 

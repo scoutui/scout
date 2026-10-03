@@ -91,13 +91,13 @@ describe("deriveChartResults", () => {
       },
       repoCount: 3,
       sources: [
-        { packageName: "@sample/core" },
-        { packageName: "@sample/mixed" },
-        { packageName: "@sample/core", exportName: "ActionButton" },
-        { packageName: "@sample/core", exportName: "Button" },
-        { packageName: "@sample/core", exportName: "Button.Icon" },
-        { packageName: "@sample/core", exportName: "sample-button" },
-        { packageName: "@sample/mixed", exportName: "Field" },
+        { packageName: "@sample/core", occurrences: 6 },
+        { packageName: "@sample/mixed", occurrences: 2 },
+        { packageName: "@sample/core", exportName: "ActionButton", occurrences: 1 },
+        { packageName: "@sample/core", exportName: "Button", occurrences: 1 },
+        { packageName: "@sample/core", exportName: "Button.Icon", occurrences: 2 },
+        { packageName: "@sample/core", exportName: "sample-button", occurrences: 2 },
+        { packageName: "@sample/mixed", exportName: "Field", occurrences: 2 },
       ],
     });
   });

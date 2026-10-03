@@ -12,14 +12,12 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 ## Record a migration
 
 1. Select **governance** in the top navigation and press **Add record**. With no records yet, the form is already open.
-2. Open **Package or component** and type a few words, such as `legacy button`. Every word must match the package name or the component name.
+2. In **Package or component**, type a few words, such as `legacy button`. Every word must match the package name or the component name.
 3. Pick what the record covers:
-   - the `LegacyButton` row under `@acme/ui-legacy`, for that component, or
-   - the **whole package** row for `@acme/ui-legacy`, for every component in it.
-
-   The hint under the field confirms which one you picked.
+   - `LegacyButton` from `@acme/ui-legacy`, for that component, or
+   - every component in `@acme/ui-legacy`: search for `legacy` instead, pick `@acme/ui-legacy`, then pick **All of @acme/ui-legacy**.
 4. Leave **Type** on **Superseded**.
-5. Open **Superseded by** and pick the `Button` row under `@acme/ui`. If you pick the package row instead, the whole of `@acme/ui` counts as the replacement.
+5. In **Superseded by**, type `button` and pick `Button` from `@acme/ui`. To make the whole of `@acme/ui` the replacement, search for `@acme/ui` instead, pick it, then pick **All of @acme/ui**.
 6. Press **Create**.
 
 ![The New record form, filled in to record VxeButton from vxe-pc-ui as superseded by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
@@ -35,7 +33,7 @@ Each package or component can have one record, and a package has either one whol
 Retire a component when it is being removed with no replacement, for example `Modal` from `@acme/ui-legacy`.
 
 1. On the **governance** page, press **Add record**.
-2. In **Package or component**, pick the `Modal` row under `@acme/ui-legacy`, or the package's **whole package** row.
+2. In **Package or component**, pick `Modal` from `@acme/ui-legacy`, or **All of @acme/ui-legacy**.
 3. Set **Type** to **Retired**.
 4. In **Reason**, say why it is going, for example `Removed in @acme/ui-legacy 4.0; no replacement.`
 5. Press **Create**.

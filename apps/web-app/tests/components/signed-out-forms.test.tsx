@@ -46,8 +46,8 @@ function governance() {
     <GovernanceManager
       records={[record]}
       sources={[
-        { packageName: "@example/old", exportName: "Button" },
-        { packageName: "@example/new", exportName: "Button" },
+        { packageName: "@example/old", exportName: "Button", occurrences: 3 },
+        { packageName: "@example/new", exportName: "Button", occurrences: 1 },
       ]}
       stats={{}}
       repoCount={0}

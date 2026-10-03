@@ -131,7 +131,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(digests).not.toHaveBeenCalled();
       const registry = await driver.getStoredRegistry();
       expect(registry?.stats[unseen.id]?.status).toBe("unseen");
-      expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ stats: registry?.stats, sources: registry?.sources, repoCount: registry?.repoCount })]);
+      expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ stats: registry?.stats, sources: registry?.sources, repoCount: registry?.repoCount, sourcesUnavailable: null })]);
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([]);
       const packageNames = allPropsFor(tree, "TagsPanel")[0]?.packageNames;
       expect(packageNames).toContain("@sample/core");
@@ -169,7 +169,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const tree = await page();
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([{ notice: { unavailable: preparing, fallbacks: [] }, besideNumbers: false }]);
       expect(allPropsFor(tree, "GovernanceManager")).toEqual([
-        expect.objectContaining({ records: expect.arrayContaining([expect.objectContaining({ id: retired.id })]), stats: {}, sources: [], repoCount: 0 }),
+        expect.objectContaining({ records: expect.arrayContaining([expect.objectContaining({ id: retired.id })]), stats: {}, sources: [], repoCount: 0, sourcesUnavailable: "preparing" }),
       ]);
       expect(allPropsFor(tree, "TagsPanel")).toEqual([expect.objectContaining({ packageNames: null })]);
     });

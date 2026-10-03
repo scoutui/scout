@@ -129,10 +129,10 @@ We want everyone to move from `LegacyButton` to `Button`. A [lifecycle record](/
 
 We select **governance** again. In the **New record** form:
 
-1. We click **Package or component**, type `legacy button`, and pick the `LegacyButton` row under `@acme/ui-legacy`.
+1. We click **Package or component**, type `legacy button`, and pick `LegacyButton` from `@acme/ui-legacy`.
 2. We leave **Type** on **Superseded**.
-3. We click **Superseded by**, type `button`, and pick the `Button` row under `@acme/ui`.
-4. We press **Create**.
+3. We click **Superseded by**, type `button`, and pick `Button` from `@acme/ui`.
+4. We press **Create**. The form says `LegacyButton superseded by Button` and stays open for another record, so we press **Close**.
 
 Under **Records**, `LegacyButton` now reads **Superseded by** `Button · @acme/ui`. Its count is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Occurrences left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
 

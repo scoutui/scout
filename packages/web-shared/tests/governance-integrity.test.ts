@@ -119,6 +119,22 @@ describe("validateGovernanceInput", () => {
     const elsewhere = rec({ id: "x", grain: "package", targetPackage: "@other/ui", targetExport: null });
     expect(validateGovernanceInput(input({}), [elsewhere])).toBeNull();
   });
+
+  it("reports a cycle ahead of a grain overlap", () => {
+    const a = rec({
+      id: "a", targetPackage: "@example/ui", targetExport: "Button",
+      disposition: { kind: "superseded", by: { packageName: "@example/next", exportName: "Card" } },
+    });
+    const b = rec({
+      id: "b", grain: "package", targetPackage: "@example/next", targetExport: null,
+      disposition: { kind: "retired", reason: "gone" },
+    });
+    const save = input({
+      targetPackage: "@example/next", targetExport: "Card",
+      disposition: { kind: "superseded", by: { packageName: "@example/ui", exportName: "Button" } },
+    });
+    expect(validateGovernanceInput(save, [a, b])).toEqual({ kind: "cycle", via: "@example/ui/Button" });
+  });
 });
 
 describe("conflictMessage", () => {

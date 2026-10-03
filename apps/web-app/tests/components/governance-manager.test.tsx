@@ -38,11 +38,29 @@ const records: GovernanceRecord[] = [
 ];
 
 const sources = [
-  { packageName: "@acme/old", exportName: "Button" },
-  { packageName: "@acme/new", exportName: "Button" },
-  { packageName: "old-icons", exportName: "Star" },
-  { packageName: "old-icons", exportName: "Heart" },
+  { packageName: "@acme/old", exportName: "Button", occurrences: 3 },
+  { packageName: "@acme/new", exportName: "Button", occurrences: 1 },
+  { packageName: "old-icons", exportName: "Star", occurrences: 4 },
+  { packageName: "old-icons", exportName: "Heart", occurrences: 2 },
 ];
+
+const statuses = () => screen.getAllByRole("status").map((s) => s.textContent);
+
+/** Types into a search box and presses Enter, which picks the first component it can. */
+function pick(field: string, query: string) {
+  const box = screen.getByRole("combobox", { name: field });
+  fireEvent.change(box, { target: { value: query } });
+  fireEvent.keyDown(box, { key: "Enter" });
+}
+
+/** Picks all of @acme/old as the source: narrows to its package row, above the active Button row, then picks `All of`. */
+function pickAcmeOldPackage() {
+  const source = screen.getByRole("combobox", { name: "Package or component" });
+  fireEvent.change(source, { target: { value: "@acme/old" } });
+  fireEvent.keyDown(source, { key: "ArrowUp" });
+  fireEvent.keyDown(source, { key: "Enter" });
+  fireEvent.click(screen.getByRole("option", { name: /^All of @acme\/old/ }));
+}
 
 const stats = {
   r1: { status: "active", left: 20, leftIn: ["repo-a", "repo-b"], componentIds: ["c-button"], trackingId: "migration:r1", successorDeprecated: false },
@@ -262,6 +280,15 @@ describe("GovernanceManager", () => {
     expect(saveGovernance).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [null, "Nothing scanned yet"],
+    ["preparing", "Preparing scan data"],
+  ] as const)("says why there is nothing to search when the stored results are %s", (state, text) => {
+    render(<GovernanceManager records={[]} sources={[]} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} sourcesUnavailable={state} />);
+    fireEvent.click(screen.getByRole("combobox", { name: "Package or component" }));
+    expect(statuses()).toContain(text);
+  });
+
   it("labels the form's fields in plain words, with hints", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(screen.getByRole("heading", { name: "New record" })).toBeInTheDocument();
@@ -278,13 +305,13 @@ describe("GovernanceManager", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     await screen.findAllByRole("alert");
-    expect(screen.getByRole("button", { name: /^Package or component:/ })).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("button", { name: /^Superseded by:/ })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("combobox", { name: "Package or component" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("combobox", { name: "Superseded by" })).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("names the source picker with its current selection state", () => {
+  it("names the source search box after its label, empty before a pick", () => {
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
-    expect(screen.getByRole("button", { name: "Package or component: none selected" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Package or component" })).toHaveValue("");
   });
 
   it("opens the form via Add record for a non-empty registry, closing an open edit form", () => {
@@ -315,7 +342,7 @@ describe("GovernanceManager", () => {
     expect(row).not.toBeNull();
     expect(within(row as HTMLElement).getByRole("heading", { level: 3, name: "Edit record" })).toBeInTheDocument();
     expect(row?.contains(document.activeElement)).toBe(true);
-    expect(within(row as HTMLElement).getByRole("button", { name: /^Package or component: Button · @acme\/old$/ })).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByRole("combobox", { name: "Package or component" })).toHaveValue("Button · @acme/old");
     fireEvent.click(within(row as HTMLElement).getByRole("button", { name: "Cancel" }));
     expect(screen.getByRole("button", { name: "Edit Button" })).toHaveFocus();
   });
@@ -381,6 +408,48 @@ describe("GovernanceManager", () => {
     expect(document.getElementById("record-r1")).not.toHaveAttribute("aria-current");
   });
 
+  it("keeps the form open after Create, saying what was added, with the fields cleared and Type and each field's package kept", async () => {
+    const { saveGovernance } = await import("@/app/governance/governance-actions");
+    const { rerender } = render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    const source = screen.getByRole("combobox", { name: "Package or component" });
+    fireEvent.change(source, { target: { value: "old-icons" } });
+    fireEvent.keyDown(source, { key: "ArrowUp" });
+    fireEvent.keyDown(source, { key: "Enter" });
+    fireEvent.keyDown(source, { key: "Enter" });
+    const by = screen.getByRole("combobox", { name: "Superseded by" });
+    fireEvent.change(by, { target: { value: "@acme/new" } });
+    fireEvent.keyDown(by, { key: "ArrowUp" });
+    fireEvent.keyDown(by, { key: "Enter" });
+    fireEvent.keyDown(by, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await vi.waitFor(() => expect(statuses()).toContain("Star superseded by Button"));
+    expect(saveGovernance).toHaveBeenCalledWith({
+      grain: "component",
+      targetPackage: "old-icons",
+      targetExport: "Star",
+      disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } },
+    });
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(source).toHaveValue("");
+    expect(source).toHaveFocus();
+    expect(source).toHaveAttribute("placeholder", "Search in old-icons");
+    expect(by).toHaveValue("");
+    expect(by).toHaveAccessibleDescription("@acme/new");
+
+    const created = rec("new", "old-icons", "Star", { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } });
+    rerender(<GovernanceManager records={[created]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    expect(document.getElementById("record-new")).toHaveAttribute("aria-current", "true");
+
+    fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
+    pick("Package or component", "heart");
+    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Gone" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    await vi.waitFor(() => expect(statuses()).toContain("Heart retired"));
+    expect(screen.getByRole("radio", { name: "Retired" })).toBeChecked();
+    expect(screen.getByLabelText("Reason")).toHaveValue("");
+  });
+
   it("renders the jump link to the existing record on a target_governed conflict", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     vi.mocked(saveGovernance).mockResolvedValueOnce({
@@ -390,9 +459,7 @@ describe("GovernanceManager", () => {
     });
 
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
-    fireEvent.click(screen.getByRole("button", { name: "Package or component: none selected" }));
-    const option = await screen.findByRole("option", { name: /^@acme\/old/ });
-    fireEvent.click(option.querySelector("button") as HTMLButtonElement);
+    pickAcmeOldPackage();
 
     fireEvent.click(screen.getByRole("radio", { name: /retired/i }));
     fireEvent.change(await screen.findByLabelText(/reason/i), { target: { value: "gone" } });
@@ -414,9 +481,7 @@ describe("GovernanceManager", () => {
     expect(document.getElementById("record-r1")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /add record/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Package or component: none selected" }));
-    const option = await screen.findByRole("option", { name: /^@acme\/old/ });
-    fireEvent.click(option.querySelector("button") as HTMLButtonElement);
+    pick("Package or component", "star");
     fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
     fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "gone" } });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
@@ -436,9 +501,7 @@ describe("GovernanceManager", () => {
     });
 
     render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
-    fireEvent.click(screen.getByRole("button", { name: "Package or component: none selected" }));
-    const option = await screen.findByRole("option", { name: /^@acme\/old/ });
-    fireEvent.click(option.querySelector("button") as HTMLButtonElement);
+    pickAcmeOldPackage();
 
     fireEvent.click(screen.getByRole("radio", { name: /retired/i }));
     fireEvent.change(await screen.findByLabelText(/reason/i), { target: { value: "gone" } });

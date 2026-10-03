@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { Component, TagAttribution } from "@scoutui/scan-format";
 import { resolveGovernance, governingRecord, isDeprecated, governanceHash, componentDeprecated, governedComponentIds, listGovernanceTargets } from "../src/governance.js";
 import type { GovernanceRecord } from "../src/dto.js";
-import { artifact, component, packageExport, received, repoDeclaration, tag } from "./helpers/builders.js";
+import { artifact, component, packageExport, received, repoDeclaration, resolvedAt, tag } from "./helpers/builders.js";
 
 const rec = (o: Partial<GovernanceRecord>): GovernanceRecord => ({
   id: "x", grain: "component", targetPackage: "@legacy/ui", targetExport: "Button",
@@ -76,20 +76,52 @@ describe("listGovernanceTargets", () => {
   const resolvedTo = (packageName: string): TagAttribution => ({ status: "resolved", target: { kind: "package", packageName }, confidence: "observed", evidence: [] });
   const scan = (repoId: string, scanId: string, components: Component[]) =>
     received(artifact({ repoId, scanId, scannedAt: "2026-01-01T00:00:00Z", components, occurrences: [] }));
+  const used = (repoId: string, scanId: string, scannedAt: string, uses: Array<[Component, number]>, arrivedAt?: string) =>
+    received(artifact({
+      repoId, scanId, scannedAt,
+      components: uses.map(([c]) => c),
+      occurrences: uses.flatMap(([c, n]) => Array.from({ length: n }, (_, i) => resolvedAt(c, "src/app.tsx", i + 1))),
+    }), arrivedAt);
 
-  it("offers an identity that only ever appeared in a superseded scan", () => {
-    // r1's latest scan no longer has Button; an older scan does.
+  it("counts each target's occurrences in each repo's latest scan, a package summing its components", () => {
+    const button = component(packageExport("legacy-ds", "Button"));
+    const card = component(packageExport("legacy-ds", "Card"));
     const scans = [
-      scan("r1", "r1:old", [component(packageExport("legacy-ds", "Button"))]),
-      scan("r1", "r1:new", [component(packageExport("legacy-ds", "Card"))]),
+      used("r1", "r1:new", "2026-02-01T00:00:00Z", [[button, 2], [card, 1]]),
+      used("r1", "r1:old", "2026-01-01T00:00:00Z", [[button, 5]]),
+      used("r2", "r2:s1", "2026-01-15T00:00:00Z", [[button, 3]]),
     ];
-    expect(listGovernanceTargets(scans)).toContainEqual({ packageName: "legacy-ds", exportName: "Button" });
+    expect(listGovernanceTargets(scans)).toEqual([
+      { packageName: "legacy-ds", occurrences: 6 },
+      { packageName: "legacy-ds", exportName: "Button", occurrences: 5 },
+      { packageName: "legacy-ds", exportName: "Card", occurrences: 1 },
+    ]);
+  });
+
+  it("takes a repo's latest scan by its place in history, not by commit date alone", () => {
+    const button = component(packageExport("legacy-ds", "Button"));
+    // Committed in the future but received first: it sits at its arrival, before r1:feb.
+    const scans = [
+      used("r1", "r1:future", "2026-03-01T00:00:00Z", [[button, 9]], "2026-01-10T00:00:00Z"),
+      used("r1", "r1:feb", "2026-02-01T00:00:00Z", [[button, 4]]),
+    ];
+    expect(listGovernanceTargets(scans)).toContainEqual({ packageName: "legacy-ds", exportName: "Button", occurrences: 4 });
+  });
+
+  it("keeps a target that only older scans have, with no occurrences", () => {
+    const button = component(packageExport("legacy-ds", "Button"));
+    const card = component(packageExport("legacy-ds", "Card"));
+    const scans = [
+      used("r1", "r1:old", "2026-01-01T00:00:00Z", [[button, 5]]),
+      used("r1", "r1:new", "2026-02-01T00:00:00Z", [[card, 1]]),
+    ];
+    expect(listGovernanceTargets(scans)).toContainEqual({ packageName: "legacy-ds", exportName: "Button", occurrences: 0 });
   });
 
   it("offers a tag under the package a scan resolves it to, and that target governs it", () => {
     const text = component(tag("legacy-text"), { attribution: resolvedTo("legacy-ds") });
     const s = scan("r1", "r1:s1", [text]);
-    expect(listGovernanceTargets([s])).toContainEqual({ packageName: "legacy-ds", exportName: "legacy-text" });
+    expect(listGovernanceTargets([s])).toContainEqual(expect.objectContaining({ packageName: "legacy-ds", exportName: "legacy-text" }));
     // The seams must agree: what the picker offers must govern a real component.
     const textRule = rec({ targetPackage: "legacy-ds", targetExport: "legacy-text" });
     expect(governedComponentIds(textRule, s, [textRule])).toEqual(new Set([text.id]));
@@ -97,7 +129,7 @@ describe("listGovernanceTargets", () => {
 
   it("includes a package-grain entry for every package", () => {
     const scans = [scan("r1", "r1:s1", [component(packageExport("legacy-ds", "Button"))])];
-    expect(listGovernanceTargets(scans)).toContainEqual({ packageName: "legacy-ds" });
+    expect(listGovernanceTargets(scans)).toContainEqual({ packageName: "legacy-ds", occurrences: 0 });
   });
 
   it("excludes repository declarations and tags no scan attributes to a package", () => {
