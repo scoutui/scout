@@ -26,7 +26,7 @@ npm install --save-dev @scoutui/cli@latest
 
 Commit the change and merge it into the [branch the dashboard tracks](/docs/reference/config).
 
-In a terminal, Scout says at the end of a command when a newer version is available, with the command for your repo's package manager. When your dashboard can't read the new version's scans yet, it says so, and to keep your current version for now. See [New versions](/docs/reference/cli#new-versions).
+In a terminal, Scout says under its wordmark when a newer version is available, with the command for your repo's package manager. When your dashboard can't read the new version's scans yet, it says so, and to keep your current version for now. See [New versions](/docs/reference/cli#new-versions).
 
 ## If the CLI is newer or older than the dashboard {#version-messages}
 

@@ -13,6 +13,8 @@ export type LoggerOptions = {
   styled?: boolean;
   /** Whether stderr is a terminal, where a progress line may be showing (default: stderr's own `isTTY`). */
   isTTY?: boolean;
+  /** The update notice, shown under the wordmark. */
+  notice?: string | null;
 };
 
 /** `--debug` or a `SCOUTUI_DEBUG` that isn't empty or `0`. */
@@ -34,6 +36,7 @@ export class Logger {
   readonly color: Colorizer;
   readonly interactive: boolean;
   readonly styled: boolean;
+  private readonly notice: string | null;
   /** Clears a progress line being rewritten in place, so a warning or error starts on a clean line. */
   private readonly clearLine: string;
 
@@ -45,11 +48,13 @@ export class Logger {
     this.color = opts.color ?? style.color;
     this.interactive = opts.interactive ?? style.interactive;
     this.styled = opts.styled ?? style.styled;
+    this.notice = opts.notice ?? null;
     this.clearLine = isTTY ? "\r\x1b[K" : "";
   }
-  /** The wordmark and a blank line, once per command, when styled and not under quiet. */
+  /** The wordmark, the update notice dimmed under it when there is one, and a blank line, once per command, when styled and not under quiet. */
   heading(detail?: string): void {
-    if (this.styled && !this.quiet) process.stderr.write(`${wordmark(this.color, detail)}\n\n`);
+    const notice = this.notice === null ? "" : `${this.color.dim(this.notice)}\n`;
+    if (this.styled && !this.quiet) process.stderr.write(`${wordmark(this.color, detail)}\n${notice}\n`);
   }
   info(msg: string): void {
     if (!this.quiet) process.stdout.write(`${msg}\n`);

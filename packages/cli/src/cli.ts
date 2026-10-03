@@ -12,15 +12,9 @@ import { parseSince } from "./backfill/commits.js";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isInteractive } from "./util/interactive.js";
-import { latestRelease, updateCachePath, updateCheckWanted, updateNotice } from "./update-check.js";
+import { keepScanFormats, startUpdateCheck, updateCachePath, updateCheckWanted, updateNotice } from "./update-check.js";
 import { clackAdapter, PromptCancelledError } from "./prompts/adapter.js";
 import type { Framework, InitOptions } from "./commands/init.js";
-
-/** The scan formats the dashboard reads, once its pre-scan check has said. */
-let scanFormats: number[] | null = null;
-const onScanFormats = (formats: number[]): void => {
-  scanFormats = formats;
-};
 
 function isKnownCommand(cmd: string): cmd is (typeof KNOWN_COMMANDS)[number] {
   return (KNOWN_COMMANDS as readonly string[]).includes(cmd);
@@ -30,24 +24,39 @@ function wantsHelp(args: string[]): boolean {
   return args.includes("--help") || args.includes("-h");
 }
 
-/** Help on stdout: under the wordmark, in colour, when styled; otherwise as it is. */
-function writeHelp(text: string, log: Logger): void {
-  process.stdout.write(log.styled ? `${wordmark(log.color)}\n\n${styleHelp(text, log.color)}` : text);
+/** Help on stdout: under the wordmark and the update notice, in colour, when styled; otherwise as it is. */
+function writeHelp(text: string, log: Logger, notice: string | null): void {
+  const under = notice === null ? "" : `${log.color.dim(notice)}\n`;
+  process.stdout.write(log.styled ? `${wordmark(log.color)}\n${under}\n${styleHelp(text, log.color)}` : text);
 }
 
-async function main(argv: string[], log: Logger): Promise<number> {
+/** The update notice on a line of its own, for a command with no wordmark to put it under. */
+function writeNotice(notice: string | null, log: Logger): void {
+  if (notice !== null) process.stderr.write(`${log.color.dim(notice)}\n`);
+}
+
+/** Keeps the scan formats the dashboard reads, for the next run's update notice. */
+function onScanFormats(formats: number[]): void {
+  if (check !== null) keepScanFormats(updateCachePath(), formats);
+}
+
+async function main(argv: string[], log: Logger, update: string | null): Promise<number> {
+  // The wordmark shows only when styled; without it, the update notice goes first.
+  if (!log.styled) writeNotice(update, log);
+  const notice = log.styled ? update : null;
   if (argv[0] === undefined) {
-    writeHelp(topHelp(), log);
+    writeHelp(topHelp(), log, notice);
     return 0;
   }
   if (argv.includes("--version") || argv.includes("-v")) {
+    writeNotice(notice, log);
     process.stdout.write(`${readVersion()}\n`);
     return 0;
   }
 
   const [cmd, ...rest] = argv;
   if (cmd === undefined || cmd === "--help" || cmd === "-h") {
-    writeHelp(topHelp(), log);
+    writeHelp(topHelp(), log, notice);
     return 0;
   }
 
@@ -57,23 +66,26 @@ async function main(argv: string[], log: Logger): Promise<number> {
   }
 
   if (!isKnownCommand(cmd)) {
+    writeNotice(notice, log);
     log.error(unknownCommandMessage(cmd));
     return 2;
   }
 
   if (wantsHelp(rest)) {
-    writeHelp(commandHelp(cmd), log);
+    writeHelp(commandHelp(cmd), log, notice);
     return 0;
   }
 
   switch (cmd) {
     case "scan":
-      return await runScanCommand(rest, log);
+      return await runScanCommand(rest, log, notice);
     case "backfill":
-      return await runBackfillCommand(rest, log);
+      return await runBackfillCommand(rest, log, notice);
     case "init":
+      writeNotice(notice, log);
       return await runInitCommand(rest, log);
     case "auth": {
+      writeNotice(notice, log);
       const { runAuth } = await import("./commands/auth.js");
       const interactive = isInteractive();
       return await runAuth(rest, { log, ...(interactive ? { interactive, prompts: clackAdapter } : {}) });
@@ -82,13 +94,13 @@ async function main(argv: string[], log: Logger): Promise<number> {
   return 2; // isKnownCommand makes the switch exhaustive; satisfies the type checker.
 }
 
-async function runScanCommand(rest: string[], log: Logger): Promise<number> {
+async function runScanCommand(rest: string[], log: Logger, notice: string | null): Promise<number> {
   const { values } = parseCommand("scan", rest);
   const { config, quiet, "dry-run": dryRun, "repo-id": repoId, "repo-root": repoRoot, rescan, host } = values;
   if (dryRun && rescan) throw new CliError("--rescan and --dry-run can't be used together: --dry-run doesn't upload.");
   const scanOpts: ScanOptions = {
     configPath: typeof config === "string" ? config : "./scout.config.json",
-    log: new Logger({ quiet: Boolean(quiet), debug: log.debug }),
+    log: new Logger({ quiet: Boolean(quiet), debug: log.debug, notice }),
     upload: !dryRun,
   };
   if (typeof repoId === "string") scanOpts.repoId = repoId;
@@ -99,7 +111,7 @@ async function runScanCommand(rest: string[], log: Logger): Promise<number> {
   return scanExitCode(await runScan(scanOpts));
 }
 
-async function runBackfillCommand(rest: string[], log: Logger): Promise<number> {
+async function runBackfillCommand(rest: string[], log: Logger, notice: string | null): Promise<number> {
   const { values } = parseCommand("backfill", rest);
   const { since, rescan, config, host, quiet } = values;
   const sinceDate = typeof since === "string" ? parseSince(since) : undefined;
@@ -111,7 +123,7 @@ async function runBackfillCommand(rest: string[], log: Logger): Promise<number> 
     rescan: Boolean(rescan),
     ...(typeof host === "string" ? { hostOverride: host } : {}),
     onScanFormats,
-    log: new Logger({ quiet: Boolean(quiet), debug: log.debug }),
+    log: new Logger({ quiet: Boolean(quiet), debug: log.debug, notice }),
     cliEntry: fileURLToPath(import.meta.url),
   });
 }
@@ -154,19 +166,13 @@ function parseFrameworks(raw: string | boolean | string[] | undefined): Framewor
 
 const argv = process.argv.slice(2);
 const log = new Logger({ debug: debugRequested(argv) });
-const release =
-  argv[0] !== INTERNAL_COMMIT_SCAN && updateCheckWanted({ argv }) ? latestRelease({ cachePath: updateCachePath() }) : null;
+const check = argv[0] !== INTERNAL_COMMIT_SCAN && updateCheckWanted({ argv }) ? startUpdateCheck({ cachePath: updateCachePath() }) : null;
+const notice =
+  check === null ? null : updateNotice({ running: readVersion(), latest: check.latest, scanFormats: check.scanFormats, cwd: process.cwd() });
 
-/** After the command, a line on stderr when a newer release is out. */
-async function writeUpdateNotice(): Promise<void> {
-  if (release === null) return;
-  const line = await updateNotice({ running: readVersion(), latest: await release, scanFormats, cwd: process.cwd(), color: log.color });
-  if (line !== null) process.stderr.write(`${log.styled ? "\n" : ""}${line}\n`);
-}
-
-main(argv.filter((arg) => arg !== "--debug"), log)
+main(argv.filter((arg) => arg !== "--debug"), log, notice)
   .catch((err: unknown) => reportError(err, log, readCliPackage().bugs))
   .then(async (code) => {
-    await writeUpdateNotice().catch(() => {});
+    await check?.done.catch(() => {});
     process.exit(code);
   });

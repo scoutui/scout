@@ -1,10 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, parse, resolve } from "node:path";
 import { compareCliVersions, isSnapshotVersion } from "@scoutui/scan-format";
 import { type AnyLockfile, findAnyLockfile, foldersUp, isYarnClassic, lockfileManager } from "./backfill/install.js";
-import { readGitToplevel } from "./util/git.js";
-import { type Colorizer, terminalStyle } from "./util/style.js";
+import { terminalStyle } from "./util/style.js";
 
 const PACKAGE = "@scoutui/cli";
 const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE}/latest`;
@@ -53,52 +52,57 @@ export function updateCachePath(env: NodeJS.ProcessEnv = process.env): string {
   return join(xdg && xdg.trim() !== "" ? xdg : join(homedir(), ".cache"), "scoutui", "update-check.json");
 }
 
+/** What earlier runs found out: when the registry was last asked, its latest release, and the scan formats the dashboard last said it reads. */
+export type Kept = { checkedAt: number | null; latest: Release | null; scanFormats: number[] | null };
+
 /**
- * The CLI's latest release on the npm registry. The answer is kept at `cachePath`, and the registry is asked again only
- * once the answer is a day old, a failed ask included. Null when the registry doesn't answer within `timeoutMs` or its
- * answer can't be read.
+ * Starts the check for a newer release. `latest` and `scanFormats` are what earlier runs kept at `cachePath`, so the
+ * notice can show at once. When the registry was last asked a day or more ago, or never, it's asked again in the
+ * background and its answer kept for the next run; `done` settles once it is, within `timeoutMs`. A failed ask keeps
+ * the last release.
  */
-export async function latestRelease(opts: {
+export function startUpdateCheck(opts: {
   cachePath: string;
   now?: number;
   fetch?: Fetch;
   timeoutMs?: number;
-}): Promise<Release | null> {
+}): Kept & { done: Promise<void> } {
   const now = opts.now ?? Date.now();
   const kept = readKept(opts.cachePath);
-  if (kept !== null && kept.checkedAt <= now && now - kept.checkedAt < DAY_MS) return kept.latest;
-  const latest = await askRegistry(opts.fetch ?? fetch, opts.timeoutMs ?? TIMEOUT_MS);
-  try {
-    mkdirSync(dirname(opts.cachePath), { recursive: true });
-    writeFileSync(opts.cachePath, JSON.stringify({ checkedAt: now, latest }));
-  } catch {
-    // Without a cache folder, the registry is asked on every run.
-  }
-  return latest;
+  const fresh = kept.checkedAt !== null && kept.checkedAt <= now && now - kept.checkedAt < DAY_MS;
+  const done = fresh
+    ? Promise.resolve()
+    : askRegistry(opts.fetch ?? fetch, opts.timeoutMs ?? TIMEOUT_MS).then((latest) =>
+        keep(opts.cachePath, latest === null ? { checkedAt: now } : { checkedAt: now, latest }),
+      );
+  return { ...kept, done };
+}
+
+/** Keeps the scan formats the dashboard says it reads, for the next run's notice. */
+export function keepScanFormats(cachePath: string, scanFormats: number[]): void {
+  keep(cachePath, { scanFormats });
 }
 
 /**
  * The line telling someone that `latest` is out, or null when it isn't newer than the `running` version or that's a
  * snapshot build. When the dashboard said which `scanFormats` it reads and they leave out the release's, the line says
- * to wait for the dashboard. Otherwise it names the command that gets the release in `cwd`, in the repo whose top
- * folder is `root` (default: git's top folder for `cwd`).
+ * to wait for the dashboard. Otherwise it names the command that gets the release in `cwd`, looking for the lockfile
+ * no higher than `root` (default: the top of the file system).
  */
-export async function updateNotice(opts: {
+export function updateNotice(opts: {
   running: string;
   latest: Release | null;
   scanFormats: readonly number[] | null;
   cwd: string;
   root?: string;
-  color: Colorizer;
-}): Promise<string | null> {
-  const { latest, color } = opts;
+}): string | null {
+  const { latest } = opts;
   if (latest === null || isSnapshotVersion(opts.running) || compareCliVersions(latest.version, opts.running) <= 0) return null;
-  const available = `Scout ${color.bold(latest.version)} is available`;
+  const available = `Scout ${latest.version} is available`;
   if (latest.scanFormat !== null && opts.scanFormats !== null && !opts.scanFormats.includes(latest.scanFormat)) {
     return `${available}, but your dashboard can't read its scans yet. Keep this version for now.`;
   }
-  const root = opts.root ?? (await readGitToplevel(opts.cwd)) ?? opts.cwd;
-  const update = updateCommand(opts.cwd, root);
+  const update = updateCommand(opts.cwd, opts.root ?? parse(resolve(opts.cwd)).root);
   return update.install ? `${available}. Update with ${update.command}.` : `${available}. Run it with ${update.command}.`;
 }
 
@@ -160,14 +164,27 @@ function readRelease(body: unknown): Release | null {
   return { version, scanFormat: Number.isInteger(scanFormat) ? (scanFormat as number) : null };
 }
 
-/** The answer kept at `path`, or null when there's none or it can't be read. */
-function readKept(path: string): { checkedAt: number; latest: Release | null } | null {
-  const kept = readJson(path) as { checkedAt?: unknown; latest?: { version?: unknown; scanFormat?: unknown } | null } | null;
-  if (typeof kept?.checkedAt !== "number") return null;
-  if (kept.latest === null) return { checkedAt: kept.checkedAt, latest: null };
-  const { version, scanFormat } = kept.latest ?? {};
-  if (typeof version !== "string" || !(scanFormat === null || Number.isInteger(scanFormat))) return null;
-  return { checkedAt: kept.checkedAt, latest: { version, scanFormat: scanFormat as number | null } };
+/** What's kept at `path`, each part null when it's missing or can't be read. */
+function readKept(path: string): Kept {
+  const kept = readJson(path) as { checkedAt?: unknown; latest?: { version?: unknown; scanFormat?: unknown } | null; scanFormats?: unknown } | null;
+  const { version, scanFormat } = kept?.latest ?? {};
+  const latest = typeof version === "string" && (scanFormat === null || Number.isInteger(scanFormat)) ? { version, scanFormat: scanFormat as number | null } : null;
+  const scanFormats = kept?.scanFormats;
+  return {
+    checkedAt: typeof kept?.checkedAt === "number" ? kept.checkedAt : null,
+    latest,
+    scanFormats: Array.isArray(scanFormats) && scanFormats.every((format) => Number.isInteger(format)) ? scanFormats : null,
+  };
+}
+
+/** Writes `parts` over what's kept at `path`. */
+function keep(path: string, parts: Partial<Kept>): void {
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify({ ...readKept(path), ...parts }));
+  } catch {
+    // Without a cache folder, nothing is kept and the registry is asked on every run.
+  }
 }
 
 function readJson(path: string): unknown {

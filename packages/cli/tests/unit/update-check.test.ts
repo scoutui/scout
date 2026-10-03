@@ -3,12 +3,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SCHEMA_VERSION } from "@scoutui/scan-format";
-import { latestRelease, type Release, updateCheckWanted, updateNotice } from "../../src/update-check.js";
-import { createColor } from "../../src/util/style.js";
+import { keepScanFormats, type Release, startUpdateCheck, updateCheckWanted, updateNotice } from "../../src/update-check.js";
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 3, 21, 0);
-const plain = createColor({ isTTY: false, env: {} });
 
 let base: string;
 beforeEach(() => {
@@ -44,41 +42,50 @@ describe("updateCheckWanted", () => {
   });
 });
 
-describe("latestRelease", () => {
+describe("startUpdateCheck", () => {
   const cachePath = () => join(base, "cache/scoutui/update-check.json");
+  const kept = () => JSON.parse(readFileSync(cachePath(), "utf8"));
   const registry = (body: unknown) => vi.fn(async () => Response.json(body));
+  const keep = (contents: unknown) => write("cache/scoutui/update-check.json", JSON.stringify(contents));
 
-  it("asks the registry for the latest release and the scan format it writes, and keeps the answer", async () => {
+  it("with nothing kept, has no answer yet, and keeps the registry's latest release and the scan format it writes for next time", async () => {
     const fetch = registry({ version: "0.3.0", scout: { scanFormat: 3 } });
-    expect(await latestRelease({ cachePath: cachePath(), now: NOW, fetch })).toEqual({ version: "0.3.0", scanFormat: 3 });
+    const check = startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch });
+    expect(check.latest).toBeNull();
+    await check.done;
     expect(fetch).toHaveBeenCalledWith("https://registry.npmjs.org/@scoutui/cli/latest", expect.anything());
-    expect(JSON.parse(readFileSync(cachePath(), "utf8"))).toEqual({ checkedAt: NOW, latest: { version: "0.3.0", scanFormat: 3 } });
+    expect(kept()).toEqual({ checkedAt: NOW, latest: { version: "0.3.0", scanFormat: 3 }, scanFormats: null });
   });
 
-  it("reads a release that doesn't say which scan format it writes", async () => {
-    const fetch = registry({ version: "0.3.0" });
-    expect(await latestRelease({ cachePath: cachePath(), now: NOW, fetch })).toEqual({ version: "0.3.0", scanFormat: null });
+  it("keeps a release that doesn't say which scan format it writes", async () => {
+    await startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch: registry({ version: "0.3.0" }) }).done;
+    expect(kept().latest).toEqual({ version: "0.3.0", scanFormat: null });
   });
 
   it.each<[string, number, number]>([
-    ["less than a day old", NOW - DAY + 60_000, 0],
-    ["a day old", NOW - DAY, 1],
-  ])("with an answer kept %s, asks the registry only if it's a day old", async (_title, checkedAt, asked) => {
-    write("cache/scoutui/update-check.json", JSON.stringify({ checkedAt, latest: { version: "0.2.5", scanFormat: 2 } }));
+    ["less than a day ago", NOW - DAY + 60_000, 0],
+    ["a day ago", NOW - DAY, 1],
+  ])("gives the answer kept %s at once, and asks the registry again only if it's a day old", async (_title, checkedAt, asked) => {
+    keep({ checkedAt, latest: { version: "0.2.5", scanFormat: 2 }, scanFormats: [2] });
     const fetch = registry({ version: "0.3.0", scout: { scanFormat: 3 } });
-    const latest = await latestRelease({ cachePath: cachePath(), now: NOW, fetch });
+    const check = startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch });
+    expect(check).toMatchObject({ latest: { version: "0.2.5", scanFormat: 2 }, scanFormats: [2] });
+    await check.done;
     expect(fetch).toHaveBeenCalledTimes(asked);
-    expect(latest).toEqual(asked ? { version: "0.3.0", scanFormat: 3 } : { version: "0.2.5", scanFormat: 2 });
+    expect(kept().latest).toEqual(asked ? { version: "0.3.0", scanFormat: 3 } : { version: "0.2.5", scanFormat: 2 });
   });
 
-  it("offline, gives nothing, and doesn't ask again that day", async () => {
+  it("offline, keeps the last answer and doesn't ask again that day", async () => {
+    keep({ checkedAt: NOW - DAY, latest: { version: "0.2.5", scanFormat: 2 }, scanFormats: null });
     const offline = vi.fn(async () => {
       throw new TypeError("fetch failed");
     });
-    expect(await latestRelease({ cachePath: cachePath(), now: NOW, fetch: offline })).toBeNull();
+    await startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch: offline }).done;
     const fetch = registry({ version: "0.3.0" });
-    expect(await latestRelease({ cachePath: cachePath(), now: NOW + 60_000, fetch })).toBeNull();
+    const check = startUpdateCheck({ cachePath: cachePath(), now: NOW + 60_000, fetch });
+    await check.done;
     expect(fetch).not.toHaveBeenCalled();
+    expect(check.latest).toEqual({ version: "0.2.5", scanFormat: 2 });
   });
 
   it("gives up when the registry takes longer than the time allowed", async () => {
@@ -86,15 +93,32 @@ describe("latestRelease", () => {
       (_url: string, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal?.reason))),
     );
-    expect(await latestRelease({ cachePath: cachePath(), now: NOW, fetch: slow, timeoutMs: 20 })).toBeNull();
+    await startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch: slow, timeoutMs: 20 }).done;
+    expect(kept()).toEqual({ checkedAt: NOW, latest: null, scanFormats: null });
   });
 
   it.each<[string, unknown]>([
     ["a page from a proxy", "<!doctype html><title>Sign in</title>"],
     ["no version", { name: "@scoutui/cli" }],
-  ])("gives nothing when the registry answers with %s", async (_title, body) => {
+  ])("keeps no release when the registry answers with %s", async (_title, body) => {
     const fetch = vi.fn(async () => new Response(typeof body === "string" ? body : JSON.stringify(body)));
-    expect(await latestRelease({ cachePath: cachePath(), now: NOW, fetch })).toBeNull();
+    await startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch }).done;
+    expect(kept().latest).toBeNull();
+  });
+
+  it("gives the scan formats the dashboard last said it reads, kept beside the latest release", async () => {
+    keep({ checkedAt: NOW, latest: { version: "0.3.0", scanFormat: 3 }, scanFormats: null });
+    keepScanFormats(cachePath(), [2]);
+    expect(startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch: registry({}) })).toMatchObject({
+      latest: { version: "0.3.0", scanFormat: 3 },
+      scanFormats: [2],
+    });
+  });
+
+  it("keeps the dashboard's scan formats when it asks the registry again", async () => {
+    keep({ checkedAt: NOW - DAY, latest: null, scanFormats: [2] });
+    await startUpdateCheck({ cachePath: cachePath(), now: NOW, fetch: registry({ version: "0.3.0" }) }).done;
+    expect(kept().scanFormats).toEqual([2]);
   });
 });
 
@@ -116,7 +140,7 @@ describe("updateNotice", () => {
     ["no answer from the registry", "0.2.0", null, [SCHEMA_VERSION], null],
     ["a snapshot build", "0.0.0-pr-57-a1c9e04-20261003210000", { version: "0.3.0", scanFormat: SCHEMA_VERSION }, null, null],
   ])("for %s", async (_title, running, latest, scanFormats, line) => {
-    expect(await updateNotice({ running, latest, scanFormats, cwd: join(base, "repo"), root: base, color: plain })).toBe(line);
+    expect(updateNotice({ running, latest, scanFormats, cwd: join(base, "repo"), root: base })).toBe(line);
   });
 
   it.each<[string, Record<string, string>, string]>([
@@ -130,18 +154,18 @@ describe("updateNotice", () => {
     for (const [name, text] of Object.entries(lockfiles)) write(`app/${name}`, text);
     write("app/package.json", JSON.stringify({ devDependencies: { "@scoutui/cli": "0.2.0" } }));
     write("app/web/package.json", JSON.stringify({ name: "web" }));
-    const line = await updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app/web"), root: base, color: plain });
+    const line = updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app/web"), root: base });
     expect(line).toBe(`Scout 0.3.0 is available. ${end}`);
   });
 
   it.each<[string, Record<string, string>, Record<string, unknown>, string]>([
-    ["pnpm", { "pnpm-lock.yaml": "lockfileVersion: '9.0'\n", "pnpm-workspace.yaml": "packages:\n  - web\n" }, {}, "pnpm add -D -w"],
-    ["Yarn 1", { "yarn.lock": "# yarn lockfile v1\n" }, { workspaces: ["web"] }, "yarn add -D -W"],
-    ["Yarn 2 or later, which needs no flag,", { "yarn.lock": "__metadata:\n  version: 8\n" }, { workspaces: ["web"] }, "yarn add -D"],
-  ])("at a %s workspace root that installs the CLI, adds the flag for the root", async (_title, files, manifest, install) => {
+    ["pnpm adds -w", { "pnpm-lock.yaml": "lockfileVersion: '9.0'\n", "pnpm-workspace.yaml": "packages:\n  - web\n" }, {}, "pnpm add -D -w"],
+    ["Yarn 1 adds -W", { "yarn.lock": "# yarn lockfile v1\n" }, { workspaces: ["web"] }, "yarn add -D -W"],
+    ["Yarn 2 or later adds nothing, needing no flag", { "yarn.lock": "__metadata:\n  version: 8\n" }, { workspaces: ["web"] }, "yarn add -D"],
+  ])("at a workspace root that installs the CLI, %s", async (_title, files, manifest, install) => {
     for (const [name, text] of Object.entries(files)) write(`app/${name}`, text);
     write("app/package.json", JSON.stringify({ ...manifest, devDependencies: { "@scoutui/cli": "0.2.0" } }));
-    const line = await updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app"), root: base, color: plain });
+    const line = updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app"), root: base });
     expect(line).toBe(`Scout 0.3.0 is available. Update with ${install} @scoutui/cli@latest.`);
   });
 
@@ -154,7 +178,7 @@ describe("updateNotice", () => {
   ])("with %s, names its runner when the repo doesn't install the CLI", async (_title, lockfiles, runner) => {
     for (const [name, text] of Object.entries(lockfiles)) write(`app/${name}`, text);
     write("app/package.json", JSON.stringify({ dependencies: { react: "19.0.0" } }));
-    const line = await updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app"), root: base, color: plain });
+    const line = updateNotice({ running: "0.2.0", latest: { version: "0.3.0", scanFormat: null }, scanFormats: null, cwd: join(base, "app"), root: base });
     expect(line).toBe(`Scout 0.3.0 is available. Run it with ${runner}.`);
   });
 });
