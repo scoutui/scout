@@ -59,21 +59,25 @@ Otherwise, such as in a CI job or when output goes to a file or another command,
 
 ## New versions
 
-In a terminal, Scout checks once a day for a newer version of `@scoutui/cli`. When there is one, the command ends with a line on stderr that names it and how to get it with your repo's package manager:
+In a terminal, Scout checks at most once a day for a newer version of `@scoutui/cli`. When there is one, the command ends with a line on stderr that names it and how to get it:
 
 ```
 Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.
 ```
 
-If no `package.json` from the current folder up to the repo's lockfile lists `@scoutui/cli`, the line runs the latest instead, for example `Run it with npx @scoutui/cli@latest.` Without a lockfile, the line uses npm. When the `package.json` that lists it is a workspace's root, the command adds `-w` for pnpm and `-W` for Yarn 1, which they need to add a package there.
+The command follows your repo:
 
-When `scan` or `backfill` uploads, the dashboard also says which scan formats it reads. If it can't read the new version's scans yet, the line says to wait for it instead:
+- It uses the package manager of the nearest lockfile: npm, Yarn, pnpm or Bun. Without a lockfile, it uses npm.
+- If no `package.json` from the current folder up to the lockfile lists `@scoutui/cli`, the line runs the latest instead, for example `Run it with npx @scoutui/cli@latest.`
+- When the `package.json` that lists it is a workspace's root, pnpm's command adds `-w` and Yarn 1's adds `-W`.
+
+When `scan` or `backfill` uploads, Scout also learns whether your dashboard can read the new version's scans. If it can't yet, the line says to wait instead:
 
 ```
 Scout 0.3.0 is available, but your dashboard can't read its scans yet. Keep this version for now.
 ```
 
-The check waits a second at most, and says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
+The check says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
 
 ## `scan`
 
@@ -375,4 +379,4 @@ Rarely needed:
 | `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal or runs in CI. It doesn't add the rest of [styled output](#terminal-output). |
 | `NO_UPDATE_NOTIFIER` | When set, even empty, turns off the [check for a newer version](#new-versions), as it does for other command-line tools. |
 | `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |
-| `XDG_CACHE_HOME` | Folder that holds `scoutui/update-check.json`, the [check for a newer version](#new-versions)'s last answer. Default: `~/.cache`. |
+| `XDG_CACHE_HOME` | Folder that holds `scoutui/update-check.json`, where the [check for a newer version](#new-versions) keeps its last answer. Default: `~/.cache`. |
