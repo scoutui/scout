@@ -67,8 +67,8 @@ export function SeriesLegend({
               <span className="flex min-w-0 items-baseline">
                 <span className={cn("truncate text-xs", s.unknown ? "font-sans text-muted-foreground" : "font-mono")}>{primary}</span>
                 {narrowed ? (
-                  <span aria-hidden className="ml-1 shrink-0 font-sans text-xs text-muted-foreground">
-                    · deprecated
+                  <span className="ml-1 shrink-0 font-sans text-xs text-muted-foreground">
+                    <span aria-hidden>·</span> <span aria-hidden={s.role === "deprecated" || undefined}>deprecated</span>
                   </span>
                 ) : null}
               </span>

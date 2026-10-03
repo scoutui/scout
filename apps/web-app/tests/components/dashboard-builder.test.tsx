@@ -176,6 +176,7 @@ const savedWith = (cohorts: CohortSelector[]) => ({
   id: "chart-1", name: "Old kits", description: null,
   config: { scope: { kind: "all" as const }, cohorts, chartType: "trend" as const, metric: "count" as const },
 });
+const spokenDeprecated = () => screen.getAllByText("deprecated").filter((el) => !el.closest('[aria-hidden="true"]'));
 
 describe("series options", () => {
   it("narrows a library to its deprecated components from the row menu", async () => {
@@ -184,7 +185,8 @@ describe("series options", () => {
     const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
     expect(item).toHaveTextContent("1 of 3 components in vue-ui-kits is deprecated");
     fireEvent.click(item);
-    expect(await screen.findByText("· deprecated")).toBeInTheDocument();
+    expect(await screen.findByText((_, el) => el?.textContent === "· deprecated")).toBeInTheDocument();
+    expect(spokenDeprecated()).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
     await waitFor(() => expect(actions.save).toHaveBeenCalledWith(expect.objectContaining({
       config: expect.objectContaining({ cohorts: [{ kind: "tag", tagId: "t-vue", deprecatedOnly: true }] }),
@@ -200,6 +202,15 @@ describe("series options", () => {
     render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
     fireEvent.click(screen.getByRole("button", { name: "Options for react-ui-kits" }));
     expect(await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("says deprecated once to screen readers when the preview marks a deprecated-only series deprecated", async () => {
+    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series: [
+      { cohortKey: "tag:t-react", label: "react-ui-kits", color: "", role: "deprecated", points: [{ t: "2026-09-01T00:00:00Z", value: 4 }] },
+    ] } });
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    await waitFor(() => expect(screen.getAllByText("deprecated")).toHaveLength(2));
+    expect(spokenDeprecated()).toHaveLength(1);
   });
 
   it("offers only the libraries the chosen repo uses, and all of them again for All repos", async () => {
