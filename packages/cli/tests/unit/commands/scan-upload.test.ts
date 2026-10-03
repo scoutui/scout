@@ -116,6 +116,20 @@ describe("runScan upload outcome", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("names the folder when include only matches files in a folder that holds its own git repository", async () => {
+    const dir = setupConsumer();
+    mkdirSync(join(dir, "vendor/lib/src"), { recursive: true });
+    writeFileSync(join(dir, "vendor/lib/.git"), "gitdir: ../../.git/modules/lib\n");
+    writeFileSync(join(dir, "vendor/lib/src/A.tsx"), "export const A = () => <div />;\n");
+    writeFileSync(join(dir, "scout.config.json"),
+      JSON.stringify({ repoId: "upload-test", include: ["vendor/lib/**/*.tsx"], exclude: [] }));
+    const result = await runScan({ configPath: join(dir, "scout.config.json") });
+    expect(scanExitCode(result)).toBe(2);
+    expect(stderr()).toBe(
+      `Error: "include" in ${join(dir, "scout.config.json")} (vendor/lib/**/*.tsx) only matches files in vendor/lib, which is a separate git repository. Run the scan from that folder instead.\n`,
+    );
+  });
+
   it("says once that it's waiting for the dashboard, then reports the published URL", async () => {
     const dir = setupConsumer();
     let firstGet: () => void = () => {};

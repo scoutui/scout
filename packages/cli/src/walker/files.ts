@@ -54,20 +54,39 @@ async function nestedRepositories(root: string): Promise<string[]> {
 
 export async function walkFiles(opts: WalkOptions): Promise<string[]> {
   const nested = await nestedRepositories(opts.root);
+  const files = await globFiles(opts, nested.map((dir) => `${convertPathToPattern(relative(opts.root, dir))}/**`));
+  // globby lists directories concurrently, so its order varies run to run.
+  // Every later order in the scan (graph, engine, occurrences, seeds) follows
+  // file order, so sort it for a deterministic artefact.
+  return files.sort();
+}
+
+/**
+ * The nested repositories below `root` that hold a file `include` matches,
+ * relative to `root` and sorted.
+ */
+export async function nestedRepositoriesMatched(opts: WalkOptions): Promise<string[]> {
+  const nested = await nestedRepositories(opts.root);
+  if (nested.length === 0) return [];
+  const files = await globFiles(opts, []);
+  return nested
+    .filter((dir) => files.some((file) => file.startsWith(dir + sep)))
+    .map((dir) => relative(opts.root, dir))
+    .sort();
+}
+
+/** The files `include` matches below `root`, leaving out `exclude` and `ignore`. */
+function globFiles(opts: WalkOptions, ignore: string[]): Promise<string[]> {
   // `dot: false` skips `.next/`, `.nuxt/`, `.turbo/` and the like unless the
   // user globs them in. `suppressErrors` skips unreadable directories (EACCES)
   // instead of failing.
-  const files = await globby(opts.include, {
+  return globby(opts.include, {
     cwd: opts.root,
-    ignore: [...opts.exclude, ...nested.map((dir) => `${convertPathToPattern(relative(opts.root, dir))}/**`)],
+    ignore: [...opts.exclude, ...ignore],
     gitignore: opts.gitignore,
     dot: false,
     absolute: true,
     onlyFiles: true,
     suppressErrors: true,
   });
-  // globby lists directories concurrently, so its order varies run to run.
-  // Every later order in the scan (graph, engine, occurrences, seeds) follows
-  // file order, so sort it for a deterministic artefact.
-  return files.sort();
 }

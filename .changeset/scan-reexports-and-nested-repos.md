@@ -1,5 +1,5 @@
 ---
-"@scoutui/cli": patch
+"@scoutui/cli": minor
 ---
 
 The scan now counts more of the components your code imports, and names more of them correctly:
@@ -11,4 +11,4 @@ The scan now counts more of the components your code imports, and names more of 
   - Members of `export * as Shapes from …`, or of `import * as Shapes from …` exported again with `export { Shapes }`, in that folder count for the file or package that declares them.
   - A component from `export * from` a package counts for the package instead of a file inside `node_modules`.
 
-A folder below the config's folder that holds its own git repository, such as a submodule or another clone, is no longer scanned as part of your repository, and an `include` pattern that points into one now matches nothing.
+A folder below the config's folder that holds its own git repository, such as a submodule or another clone, is no longer scanned as part of your repository. If `include` only matches files in such a folder, the scan stops and names it.
