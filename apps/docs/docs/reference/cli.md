@@ -40,6 +40,23 @@ An unknown flag, a value on an on/off flag (`--quiet=true`), or an extra word af
 
 With prompts off, a command never waits for input. It uses its flags and defaults, or exits with an error.
 
+## Terminal output
+
+In a terminal, the output is *styled* for the person watching it:
+
+- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id.
+- Colour picks out numbers, the names of components, commands and flags, and links. Secondary text, such as where a component comes from, is dimmer.
+- A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`.
+- Progress turns a spinner, with a bar wherever the total is known.
+
+Output is styled when all of these hold:
+
+- stdin, stdout and stderr are all terminals.
+- `CI` is unset, empty, `false` or `0`.
+- `NO_COLOR` is unset or empty.
+
+Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation. `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
+
 ## `scan`
 
 ```
@@ -48,15 +65,13 @@ scout scan [options]
 
 Most runs need no flags: `scout scan` reads `scout.config.json` in the current directory, [checks that the dashboard can take the scan](#upload-flags), scans, uploads the scan and waits for the dashboard to publish it. It writes no file. To scan without uploading, run `scout scan --dry-run`.
 
-In a terminal, `scan` starts with a heading, `▲ Scout <version> · <repo id> at <commit>`, and turns a compass needle at the start of the progress line while it reads files. Both appear only when [prompts are on](#prompts), stderr is a terminal and `--quiet` isn't passed. `NO_COLOR` turns off the heading's colour.
-
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
 | `--dry-run` | none | off | Scans without uploading, and writes the artifact to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
 | `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
 
-While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching occurrences to components…`. In a terminal, that's one line rewritten in place. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
+While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching occurrences to components…`. In a terminal, that's one line rewritten in place. When [styled](#terminal-output), a spinner turns at its start and a bar fills as the files are read, and the upload shows `Uploading the scan…` with a spinner, then `Waiting for the dashboard to process the scan…` in place of that line. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
 
 The config file must be inside a git repository with at least one commit. Otherwise `scan` exits `1` with `Error: Couldn't scan: <folder> isn't inside a git repository. Run scout scan from a git checkout.`, or `Error: Couldn't scan: this repository has no commits yet. Commit your files and try again.` In a shallow clone, a dry run warns `Warning: This checkout doesn't have the full history. Run git fetch --unshallow and scan again.` and records no [`initialCommit`](/docs/reference/artifact#meta). An upload refuses a shallow clone instead (see [Upload flags](#upload-flags)).
 
@@ -191,6 +206,8 @@ Progress lines print on stderr, and `--quiet` hides them:
 | `Scanning <commit> (<date>), <n> of <total>…` | Before each commit. |
 | `The dashboard asked Scout to slow down. Continuing in 1 minute…` | The dashboard is receiving too many uploads. `backfill` waits as long as it asks, then uploads the scan again. |
 
+When [styled](#terminal-output), and without `--debug`, a line under each `Scanning` line turns a spinner while `backfill` installs dependencies, scans the commit and uploads its scan, beside a bar of the commits done so far. It's cleared when the commit is done.
+
 The last line prints on stdout, even with `--quiet`:
 
 ```text
@@ -321,7 +338,7 @@ Rarely needed:
 
 | Variable | Behavior |
 | --- | --- |
-| `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`. |
-| `NO_COLOR` | Any non-empty value turns off colored output, even when `FORCE_COLOR` is set. |
-| `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal. |
+| `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`, and turns off [styled output](#terminal-output). |
+| `NO_COLOR` | Any non-empty value turns off colored output and [styled output](#terminal-output), even when `FORCE_COLOR` is set. |
+| `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal or runs in CI. It doesn't add the rest of [styled output](#terminal-output). |
 | `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |
