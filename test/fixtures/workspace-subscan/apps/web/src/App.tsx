@@ -1,4 +1,4 @@
-import { Badge, Button, Chip, Forms, Table, useSlot } from "@ws-sub/ui";
+import { Badge, Button, Chip, Forms, Layout, Table, useSlot } from "@ws-sub/ui";
 import { Card } from "./card";
 
 const { Cell } = Table;
@@ -13,6 +13,8 @@ export function App() {
       <Table.Row />
       <Cell />
       <Forms.Field />
+      <Layout.Stack />
+      <Layout.Spacer />
     </main>
   );
 }

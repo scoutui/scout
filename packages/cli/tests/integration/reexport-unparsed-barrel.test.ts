@@ -19,8 +19,11 @@ const fixtureDir = resolve(monorepoRoot, "test/fixtures/reexport-unparsed-barrel
 //                      export { Card } from "@example/shared";
 //   src/ui/rewrap.ts   import { Badge } from "@example/ui"; export { Badge };
 //   src/ui/star.ts     export * from "@example/ui";
+//   src/ui/ns.ts       import * as UiKit from "@example/ui"; export { UiKit };
+//   src/ui/ns-star.ts  export * as UiParts from "@example/ui";
 //
-// src/app/through-barrels.tsx renders all four through those barrels, and
+// src/app/through-barrels.tsx renders Button, Card, Badge, Tooltip,
+// UiKit.Avatar and UiParts.Banner through those barrels, and
 // src/app/direct.tsx renders Button imported from @example/ui directly.
 // @example/ui is installed and untracked; @example/shared is a workspace
 // package, linked into node_modules as Yarn does.
@@ -72,6 +75,24 @@ describe("integration: a component imported through a barrel the scan leaves out
     expect(rows("Badge")).toEqual([
       {
         identity: { kind: "package-export", packageName: "@example/ui", publicEntry: "", exportName: "Badge" },
+        renders: 1,
+      },
+    ]);
+  });
+
+  it("credits a member of a namespace import from an installed package that the barrel exports again to that package", () => {
+    expect(rows("Avatar")).toEqual([
+      {
+        identity: { kind: "package-export", packageName: "@example/ui", publicEntry: "", exportName: "Avatar" },
+        renders: 1,
+      },
+    ]);
+  });
+
+  it("credits a member of `export * as` an installed package to that package", () => {
+    expect(rows("Banner")).toEqual([
+      {
+        identity: { kind: "package-export", packageName: "@example/ui", publicEntry: "", exportName: "Banner" },
         renders: 1,
       },
     ]);

@@ -42,6 +42,7 @@ describe("createBoundedDefinitionResolver", () => {
     expect(resolveDef(join(stage, "src", "index.ts"), "Button", [])).toEqual({
       absFile: join(stage, "src", "button.tsx"),
       exportName: "Button",
+      path: [],
       definition: { line: 1, column: 7 },
     });
   });
@@ -51,6 +52,7 @@ describe("createBoundedDefinitionResolver", () => {
     expect(resolveDef(join(stage, "src", "index2.ts"), "Btn", [])).toEqual({
       absFile: join(stage, "src", "button.tsx"),
       exportName: "Button",
+      path: [],
       definition: { line: 1, column: 7 },
     });
   });

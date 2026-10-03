@@ -46,7 +46,7 @@ describe("followReExportChain: named + star resolution", () => {
       "barrel.ts": { exports: [{ kind: "named", exportedAs: "X", from: "./leaf.ts", fromImported: "X" }] },
       "leaf.ts": { exports: [{ kind: "named", exportedAs: "X", local: "X" }] },
     });
-    expect(followReExportChain(graph, "barrel.ts", "X")).toEqual({ file: "leaf.ts", localExport: "X" });
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toEqual({ file: "leaf.ts", localExport: "X", path: [] });
   });
 
   it("resolves a single-level star re-export to the canonical source", () => {
@@ -54,7 +54,7 @@ describe("followReExportChain: named + star resolution", () => {
       "barrel.ts": { exports: [{ kind: "star", from: "./leaf.ts" }] },
       "leaf.ts": { exports: [{ kind: "named", exportedAs: "X", local: "X" }] },
     });
-    expect(followReExportChain(graph, "barrel.ts", "X")).toEqual({ file: "leaf.ts", localExport: "X" });
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toEqual({ file: "leaf.ts", localExport: "X", path: [] });
   });
 
   it("resolves a multi-level star chain to the deepest canonical source", () => {
@@ -63,7 +63,7 @@ describe("followReExportChain: named + star resolution", () => {
       "mid.ts": { exports: [{ kind: "star", from: "./leaf.ts" }] },
       "leaf.ts": { exports: [{ kind: "named", exportedAs: "X", local: "X" }] },
     });
-    expect(followReExportChain(graph, "barrel.ts", "X")).toEqual({ file: "leaf.ts", localExport: "X" });
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toEqual({ file: "leaf.ts", localExport: "X", path: [] });
   });
 
   it("prefers a named hit over star-fallback at the same hop", () => {
@@ -78,7 +78,7 @@ describe("followReExportChain: named + star resolution", () => {
       "b.ts": { exports: [{ kind: "named", exportedAs: "X", local: "X_via_star" }] },
     });
     // Named hit at barrel → recurse into a.ts, where X is local → {a.ts, X}.
-    expect(followReExportChain(graph, "barrel.ts", "X")).toEqual({ file: "a.ts", localExport: "X" });
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toEqual({ file: "a.ts", localExport: "X", path: [] });
   });
 
   it("first-wins among multiple star branches that all resolve the same symbol", () => {
@@ -92,7 +92,7 @@ describe("followReExportChain: named + star resolution", () => {
       "a.ts": { exports: [{ kind: "named", exportedAs: "X", local: "X" }] },
       "b.ts": { exports: [{ kind: "named", exportedAs: "X", local: "X" }] },
     });
-    expect(followReExportChain(graph, "barrel.ts", "X")).toEqual({ file: "a.ts", localExport: "X" });
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toEqual({ file: "a.ts", localExport: "X", path: [] });
   });
 
   it("returns null on a mutual `export *` cycle when the symbol is nowhere", () => {
@@ -100,14 +100,14 @@ describe("followReExportChain: named + star resolution", () => {
       "a.ts": { exports: [{ kind: "star", from: "./b.ts" }] },
       "b.ts": { exports: [{ kind: "star", from: "./a.ts" }] },
     });
-    expect(followReExportChain(graph, "a.ts", "Nonexistent")).toBeNull();
+    expect(followReExportChain(graph, "a.ts", "Nonexistent", [])).toBeNull();
   });
 
   it("returns null when a star branch's source can't be resolved", () => {
     const graph = buildGraph({
       "barrel.ts": { exports: [{ kind: "star", from: "./missing.ts" }] },
     });
-    expect(followReExportChain(graph, "barrel.ts", "X")).toBeNull();
+    expect(followReExportChain(graph, "barrel.ts", "X", [])).toBeNull();
   });
 });
 
@@ -120,7 +120,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
       },
       "seo.ts": { exports: [{ kind: "default", local: "Seo" }] },
     });
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "seo.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "seo.ts", localExport: "Seo", path: [] });
   });
 
   it("follows `import { X } from './x'; export { X }` to the leaf", () => {
@@ -131,7 +131,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
       },
       "widget.ts": { exports: [{ kind: "named", exportedAs: "Widget", local: "Widget" }] },
     });
-    expect(followReExportChain(graph, "index.ts", "Widget")).toEqual({ file: "widget.ts", localExport: "Widget" });
+    expect(followReExportChain(graph, "index.ts", "Widget", [])).toEqual({ file: "widget.ts", localExport: "Widget", path: [] });
   });
 
   it("follows `import X from './x'; export { X as default }` to the leaf", () => {
@@ -142,7 +142,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
       },
       "seo.ts": { exports: [{ kind: "default", local: "Seo" }] },
     });
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "seo.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "seo.ts", localExport: "Seo", path: [] });
   });
 
   it("follows a multi-hop barrel → barrel → impl re-wrap", () => {
@@ -157,7 +157,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
       },
       "seo.ts": { exports: [{ kind: "default", local: "Seo" }] },
     });
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "seo.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "seo.ts", localExport: "Seo", path: [] });
   });
 
   it("stays at the barrel for a bare-package re-wrap", () => {
@@ -167,7 +167,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
         exports: [{ kind: "default", local: "Seo" }],
       },
     });
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "index.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "index.ts", localExport: "Seo", path: [] });
   });
 
   it("stays at the barrel when the re-wrapped specifier does not resolve", () => {
@@ -178,7 +178,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
       },
     });
     // moduleResolver returns null for "./gone.ts" (not in files) → nextKey null.
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "index.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "index.ts", localExport: "Seo", path: [] });
   });
 
   it("advances to an unparsed key on a lazy graph (bounded resolver opt-in)", () => {
@@ -193,7 +193,7 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
     fb.addImport({ specifier: "./seo.ts", imported: "default", local: "Seo", loc: { line: 1, column: 1 } });
     fb.addExport({ kind: "default", local: "Seo" });
     const graph = gb.build(); // "seo.ts" deliberately never begun
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "seo.ts", localExport: "default" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "seo.ts", localExport: "default", path: [] });
   });
 
   it("keeps the barrel terminal for an out-of-scope target on a complete graph (no repoRoot, no flag)", () => {
@@ -207,24 +207,34 @@ describe("followReExportChain: barrel re-wrap of an imported local", () => {
     fb.addImport({ specifier: "./excluded.ts", imported: "default", local: "Seo", loc: { line: 1, column: 1 } });
     fb.addExport({ kind: "default", local: "Seo" });
     const graph = gb.build(); // "excluded.ts" resolves but is never begun; flag defaults false
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "index.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "index.ts", "default", [])).toEqual({ file: "index.ts", localExport: "Seo", path: [] });
   });
 
-  it("does not forward a namespace re-export (`import * as NS`)", () => {
-    const graph = buildGraph({
-      "index.ts": {
-        imports: [{ specifier: "./seo.ts", imported: "*", local: "NS" }],
-        exports: [{ kind: "default", local: "NS" }],
-      },
-      "seo.ts": { exports: [{ kind: "default", local: "Seo" }] },
+  it.each([
+    { source: 'import * as NS from "./seo.ts"; export { NS }', form: "import", specifier: "./seo.ts" },
+    { source: 'export * as NS from "./seo.ts"', form: "export-from", specifier: "./seo.ts" },
+    { source: 'import * as NS from "@example/ui"; export { NS }', form: "import", specifier: "@example/ui" },
+    { source: 'export * as NS from "@example/ui"', form: "export-from", specifier: "@example/ui" },
+  ])("stays at the barrel for a namespace re-export followed with no member: $source", ({ form, specifier }) => {
+    const gb = createGraphBuilder({
+      moduleResolver: (_i, s) => (s === "./seo.ts" ? "seo.ts" : s === "@example/ui" ? "node_modules/@example/ui/index.js" : null),
     });
-    expect(followReExportChain(graph, "index.ts", "default")).toEqual({ file: "index.ts", localExport: "NS" });
+    const fb = gb.beginFile("index.ts");
+    if (form === "import") {
+      fb.addImport({ specifier, imported: "*", local: "NS", loc: { line: 1, column: 1 } });
+      fb.addExport({ kind: "named", exportedAs: "NS", local: "NS" });
+    } else {
+      fb.addExport({ kind: "named", exportedAs: "NS", from: specifier, fromImported: "*" });
+    }
+    gb.beginFile("seo.ts").addExport({ kind: "named", exportedAs: "Seo", local: "Seo" });
+    const graph = gb.build({ firstParty: (abs) => abs === "seo.ts" });
+    expect(followReExportChain(graph, "index.ts", "NS", [])).toEqual({ file: "index.ts", localExport: "NS", path: [] });
   });
 
   it("leaves a locally-defined default export untouched", () => {
     const graph = buildGraph({
       "seo.ts": { exports: [{ kind: "default", local: "Seo" }] },
     });
-    expect(followReExportChain(graph, "seo.ts", "default")).toEqual({ file: "seo.ts", localExport: "Seo" });
+    expect(followReExportChain(graph, "seo.ts", "default", [])).toEqual({ file: "seo.ts", localExport: "Seo", path: [] });
   });
 });

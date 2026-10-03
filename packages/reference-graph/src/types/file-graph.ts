@@ -204,11 +204,13 @@ export type Graph = {
    * Maps (resolved entry file, imported name) → definition file + canonical
    * export name so a member's identity is scope-invariant between whole-repo
    * and single-app scans. Absolute in, absolute out. Null → callers fall
-   * back to the resolved entry file itself. `definition` is where the pinned
-   * export, followed down `path`, is declared in `absFile`
-   * (`declarationPositionIn`), when the host locates it. When the chain
-   * leaves first-party code through a package import, the answer is that
-   * package export instead: the `specifier` it names, the `exportName`
+   * back to the resolved entry file itself. The answer's `path` is the member
+   * path left past its `exportName`: a namespace re-export on the way consumes
+   * segments of the `path` asked. Absent → the `path` asked. `definition` is
+   * where the pinned export, followed down that path, is declared in
+   * `absFile` (`declarationPositionIn`), when the host locates it. When the
+   * chain leaves first-party code through a package import, the answer is
+   * that package export instead: the `specifier` it names, the `exportName`
    * imported from it and the absolute `fromFile` the import is written in.
    */
   resolveLocalDefinition?: (
@@ -216,8 +218,8 @@ export type Graph = {
     imported: string,
     path: readonly string[],
   ) =>
-    | { absFile: string; exportName: string; definition?: { line: number; column: number } }
-    | { fromFile: string; specifier: string; exportName: string }
+    | { absFile: string; exportName: string; path?: readonly string[]; definition?: { line: number; column: number } }
+    | { fromFile: string; specifier: string; exportName: string; path?: readonly string[] }
     | null;
   /**
    * Host answer for a bare package import whose module did not resolve:
