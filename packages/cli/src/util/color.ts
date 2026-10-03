@@ -5,6 +5,7 @@ const ANSI = {
   green: "\x1b[32m",
   yellow: "\x1b[33m",
   red: "\x1b[31m",
+  cyan: "\x1b[36m",
 } as const;
 
 export type ColorOptions = { isTTY?: boolean; env?: NodeJS.ProcessEnv };
@@ -31,6 +32,7 @@ export type Colorizer = {
   green: (s: string) => string;
   yellow: (s: string) => string;
   red: (s: string) => string;
+  cyan: (s: string) => string;
 };
 
 function wrap(code: string, enabled: boolean): (s: string) => string {
@@ -39,8 +41,8 @@ function wrap(code: string, enabled: boolean): (s: string) => string {
 
 /**
  * A colour palette in layers: dim/bold are chrome (monochrome), green/yellow/red
- * are the status layer (callers pair them with a glyph and a word). 16-colour
- * ANSI only, so it follows the user's terminal theme.
+ * are the status layer (callers pair them with a glyph and a word), and cyan is
+ * the brand mark. 16-colour ANSI only, so it follows the user's terminal theme.
  */
 export function createColor(opts: ColorOptions = {}): Colorizer {
   const on = colorEnabled(opts);
@@ -50,5 +52,6 @@ export function createColor(opts: ColorOptions = {}): Colorizer {
     green: wrap(ANSI.green, on),
     yellow: wrap(ANSI.yellow, on),
     red: wrap(ANSI.red, on),
+    cyan: wrap(ANSI.cyan, on),
   };
 }

@@ -95,6 +95,34 @@ describe("runScan scan file", () => {
   });
 });
 
+describe("runScan heading", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+  const head = (dir: string) => execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { cwd: dir }).toString().trim();
+  const { version } = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8")) as { version: string };
+
+  it("starts with a Scout heading naming the version, repository and commit in an interactive terminal, without colour under NO_COLOR", async () => {
+    vi.stubEnv("NO_COLOR", "1");
+    const dir = setupConsumer();
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json"), interactive: true });
+    expect(String(stderr.mock.calls[0]?.[0])).toBe(`▲ Scout ${version} · scan-test at ${head(dir)}\n`);
+  });
+
+  it.each([
+    ["not interactive", { interactive: false }],
+    ["quiet", { interactive: true, log: new Logger({ quiet: true }) }],
+  ])("prints no heading when %s", async (_case, opts) => {
+    const dir = setupConsumer();
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json"), ...opts });
+    expect(stderr.mock.calls.map(([text]) => String(text)).join("")).not.toContain("Scout");
+  });
+});
+
 describe("runScan warnings about files it reads", () => {
   afterEach(() => vi.restoreAllMocks());
 

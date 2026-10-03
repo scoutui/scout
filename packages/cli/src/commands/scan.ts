@@ -27,6 +27,7 @@ import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 import { Logger } from "../util/log.js";
+import { createColor } from "../util/color.js";
 import { describeUploadError, UploadRefusedError, uploadPending } from "../upload.js";
 import type { AuthedUploader } from "../auth/upload-auth.js";
 import { errorMessage, errorStack } from "../util/errors.js";
@@ -88,6 +89,8 @@ export type ScanOptions = {
   /** Upload even if the dashboard already has this commit, replacing its scan. Needs `upload`. */
   rescan?: boolean;
   hostOverride?: string;
+  /** A person is watching in a terminal: start with a heading, and turn a needle on the progress line. */
+  interactive?: boolean;
 };
 
 export type UploadOutcome = "ok" | "exists" | "skipped" | "failed";
@@ -152,6 +155,12 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     ...(repoIdOverride !== undefined ? { repoIdOverride } : {}),
     ...(tracked !== undefined ? { tracked } : {}),
   });
+
+  const branded = opts.interactive === true && !quiet;
+  if (branded) {
+    const color = createColor({ isTTY: true });
+    process.stderr.write(`${color.cyan("▲")} ${color.bold("Scout")} ${meta.scannerVersion} ${color.dim(`· ${meta.repo.id} at ${meta.repo.commit.slice(0, 7)}`)}\n`);
+  }
 
   const outputRoot = await scanOutputRoot(cfg.configDir, opts);
 
@@ -218,7 +227,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     return { output: null, upload: "failed" };
   }
 
-  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt: t0 });
+  const { artifact, stats } = await scanRepository({ cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt: t0, needle: branded });
 
   // A dry run writes the scan file; an upload doesn't.
   if (uploader === undefined) await writeJson(artifact, outputPath);
@@ -327,6 +336,8 @@ export async function scanRepository(input: {
   log: Logger;
   /** performance.now() when the scan started. */
   startedAt: number;
+  /** Turn a compass needle on the progress line. */
+  needle?: boolean;
 }): Promise<{ artifact: ScanArtifact; stats: ScanStats }> {
   const { cfg, outputRoot, workspaceRoot, workspaceGraph, files, meta, log, startedAt } = input;
   const { quiet } = log;

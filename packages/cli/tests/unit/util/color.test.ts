@@ -28,6 +28,7 @@ describe("createColor", () => {
     expect(c.green("ok")).toBe("\x1b[32mok\x1b[0m");
     expect(c.red("bad")).toBe("\x1b[31mbad\x1b[0m");
     expect(c.yellow("wait")).toBe("\x1b[33mwait\x1b[0m");
+    expect(c.cyan("mark")).toBe("\x1b[36mmark\x1b[0m");
     expect(c.bold("n")).toBe("\x1b[1mn\x1b[0m");
     expect(c.dim("m")).toBe("\x1b[2mm\x1b[0m");
   });

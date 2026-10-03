@@ -34,7 +34,7 @@ function captureStderr(): string[] {
 }
 
 const UNEXPECTED_REPLY = "sent an unexpected reply. Check that it's your Scout dashboard and that the CLI is up to date.";
-const plain = { color: { dim: String, bold: String, green: String, yellow: String, red: String } };
+const plain = { color: { dim: String, bold: String, green: String, yellow: String, red: String, cyan: String } };
 
 const deviceCode = {
   deviceCode: "dc",
