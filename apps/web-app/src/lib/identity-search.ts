@@ -28,6 +28,7 @@ export type SearchInput = {
 };
 
 export const MAX_PACKAGE_ROWS = 3;
+export const MAX_LOCAL_PACKAGE_ROWS = 5;
 export const MAX_COMPONENT_ROWS = 50;
 
 type Range = [number, number];
@@ -181,7 +182,7 @@ const sameTarget = (a: IdentityPick, b: IdentityPick) =>
  *
  * A package only scanned repos define (`local`) lists after the installed ones. Until
  * the search is narrowed to it, its components stay out of the list: up to
- * `MAX_PACKAGE_ROWS` such packages follow the results instead, with how many of their
+ * `MAX_LOCAL_PACKAGE_ROWS` such packages follow the results instead, with how many of their
  * names match, keeping the words that didn't match the package's name.
  */
 export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultIndex: number | null; total: number | null } {
@@ -233,7 +234,7 @@ export function searchTargets(input: SearchInput): { rows: SearchRow[]; defaultI
       for (const { row } of found) {
         if (local.has(row.packageName) && !named.includes(row.packageName)) matchesIn.set(row.packageName, (matchesIn.get(row.packageName) ?? 0) + 1);
       }
-      rows.push(...[...matchesIn].slice(0, MAX_PACKAGE_ROWS).map(([packageName, matches]) =>
+      rows.push(...[...matchesIn].slice(0, MAX_LOCAL_PACKAGE_ROWS).map(([packageName, matches]) =>
         packageRow(packageName, matches, terms.filter((t) => !packageName.toLowerCase().includes(t)).join(" "))));
     }
   } else {

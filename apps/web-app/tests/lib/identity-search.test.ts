@@ -134,12 +134,12 @@ describe("searchTargets: packages defined in a scanned repo", () => {
     ]);
   });
 
-  it("offers a package once when its name matches too, and at most three for the names they hold", () => {
+  it("offers a package once when its name matches too, and at most five for the names they hold", () => {
     expect(search({ sources: monorepo, query: "ui" }).rows).toMatchObject([
       { packageName: "@example/ui", matches: null, narrowedQuery: "" }, { packageName: "@example/next-ui", matches: null, narrowedQuery: "" },
     ]);
-    const many = ["a", "b", "c", "d"].flatMap((p) => [local(pkg(`@example/${p}`, 1)), local(target(`@example/${p}`, "Button", 1))]);
-    expect(labels({ sources: many, query: "button" })).toHaveLength(3);
+    const many = ["a", "b", "c", "d", "e", "f"].flatMap((p) => [local(pkg(`@example/${p}`, 1)), local(target(`@example/${p}`, "Button", 1))]);
+    expect(labels({ sources: many, query: "button" })).toHaveLength(5);
   });
 
   it("lists their components once the search is narrowed to them", () => {
