@@ -8,6 +8,7 @@ import { readModelPage } from "@/lib/read-model-page";
 import type { ReadModelResult } from "@/lib/read-model-state";
 import { isDerivedId } from "@/lib/derived-dashboards";
 import { loadDashboardView, type DashboardView } from "@/lib/dashboard-load";
+import type { PickableComponent } from "@/components/dashboards/series-picker";
 
 async function requireUserId(): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
   const session = await auth();
@@ -78,7 +79,7 @@ export async function previewDashboard(config: DashboardConfig): Promise<ReadMod
  * read-only stance as previewDashboard.
  */
 export async function pickableForRepo(repoId: string): Promise<ReadModelResult<{
-  components: Array<{ componentId: string; displayName: string; packageName: string | null }>;
+  components: PickableComponent[];
   packages: string[];
 }>> {
   await requireSignedIn();
@@ -92,6 +93,7 @@ export async function pickableForRepo(repoId: string): Promise<ReadModelResult<{
     componentId: r.componentId,
     displayName: r.displayName,
     packageName: r.packageName,
+    deprecated: r.deprecated,
   }));
   const packages = packageList
     .map((p) => p.packageName)

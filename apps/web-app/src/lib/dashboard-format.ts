@@ -3,6 +3,8 @@
 /** User-facing words for the chart kinds. */
 export const CHART_KIND_LABEL = { trend: "Trend", bars: "Bars", "stacked-share": "Stacked", table: "Table" } as const;
 
+export const DEPRECATED_ONLY = "deprecated only";
+
 /**
  * A fraction (0..1) as a one-decimal percentage. A tiny non-zero share reads
  * "<0.1%" rather than "0.0%", so a cohort that is present never looks absent.

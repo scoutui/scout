@@ -12,7 +12,7 @@ function globToRegExp(glob: string): RegExp {
   return re;
 }
 
-export function tagMatchesPackage(tag: Tag, packageName: string): boolean {
+export function tagMatchesPackage(tag: Pick<Tag, "rule">, packageName: string): boolean {
   if (tag.rule.exact.includes(packageName)) return true;
   return tag.rule.glob.some((g) => globToRegExp(g).test(packageName));
 }

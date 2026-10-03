@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CohortSelector } from "@scoutui/web-shared";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
 
 const actions = vi.hoisted(() => ({ preview: vi.fn(), picker: vi.fn(), save: vi.fn() }));
@@ -164,3 +165,116 @@ describe("editing a saved chart", () => {
   });
 });
 
+describe("chart details and saving", () => {
+  const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const };
+
+  it("saves the description, and no description when it is blank", async () => {
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: "Old text", config }} />);
+    expect(screen.getByLabelText("Description")).toHaveValue("Old text");
+    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "  Deprecated parts of our kits.  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ description: "Deprecated parts of our kits." })));
+    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ description: null })));
+  });
+
+  it("cancels back to the chart being edited, or to the charts list for a new one", () => {
+    const { unmount } = render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart 1", name: "Kits", description: null, config }} />);
+    expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts/chart%201");
+    unmount();
+    builder();
+    expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts");
+  });
+
+  it("keeps Metric on Share with Count unavailable while Stacked is chosen", () => {
+    builder();
+    expect(screen.getByText("Share of these series")).not.toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Stacked" }));
+    expect(screen.getByRole("button", { name: "Share" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Count" })).toBeDisabled();
+    expect(screen.getByText("Share of these series")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Trend" }));
+    expect(screen.getByRole("button", { name: "Count" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Share of these series")).not.toBeVisible();
+  });
+
+  it("can't save without a name, and says so", () => {
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config }} />);
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "   " } });
+    expect(screen.getByRole("button", { name: "Save chart" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save chart" })).toHaveAccessibleDescription("Name the chart to save it.");
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Kits" } });
+    expect(screen.getByRole("button", { name: "Save chart" })).toBeEnabled();
+    expect(screen.queryByText("Name the chart to save it.")).toBeNull();
+  });
+});
+
+const vueKits = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: [], exact: ["ant-design-vue", "naive-ui"] } };
+const reactKits = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
+const kitComponents = [
+  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", deprecated: true },
+  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", deprecated: false },
+  { componentId: "c", displayName: "NButton", packageName: "naive-ui", deprecated: false },
+];
+const savedWith = (cohorts: CohortSelector[]) => ({
+  id: "chart-1", name: "Old kits", description: null,
+  config: { scope: { kind: "all" as const }, cohorts, chartType: "trend" as const, metric: "count" as const },
+});
+const spokenDeprecated = () => screen.getAllByText("deprecated").filter((el) => !el.closest('[aria-hidden="true"]'));
+
+describe("series options", () => {
+  it("narrows a library to its deprecated components from the row menu", async () => {
+    render(<DashboardBuilder libraryTags={[vueKits]} repos={[]} components={kitComponents} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-vue" }])} />);
+    fireEvent.click(screen.getByRole("button", { name: "Options for vue-ui-kits" }));
+    const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
+    expect(item).toHaveTextContent("1 of 3 components in vue-ui-kits is deprecated");
+    fireEvent.click(item);
+    expect(await screen.findByText((_, el) => el?.textContent === "· deprecated")).toBeInTheDocument();
+    expect(spokenDeprecated()).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(expect.objectContaining({
+      config: expect.objectContaining({ cohorts: [{ kind: "tag", tagId: "t-vue", deprecatedOnly: true }] }),
+    })));
+  });
+
+  it("offers no menu for a library with nothing deprecated", () => {
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", deprecated: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
+    expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
+  });
+
+  it("switches deprecated only off on a saved series and keeps the option to turn it back on", async () => {
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    fireEvent.click(screen.getByRole("button", { name: "Options for react-ui-kits" }));
+    const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
+    expect(item).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(item);
+    await waitFor(() => expect(screen.getByRole("menuitemcheckbox", { name: /Only deprecated components/ })).toHaveAttribute("aria-checked", "false"));
+    expect(screen.queryByText((_, el) => el?.textContent === "· deprecated")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(expect.objectContaining({
+      config: expect.objectContaining({ cohorts: [{ kind: "tag", tagId: "t-react" }] }),
+    })));
+  });
+
+  it("says deprecated once to screen readers when the preview marks a deprecated-only series deprecated", async () => {
+    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series: [
+      { cohortKey: "tag:t-react", label: "react-ui-kits", color: "", role: "deprecated", points: [{ t: "2026-09-01T00:00:00Z", value: 4 }] },
+    ] } });
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    await waitFor(() => expect(screen.getAllByText("deprecated")).toHaveLength(2));
+    expect(spokenDeprecated()).toHaveLength(1);
+  });
+
+  it("offers only the libraries the chosen repo uses, and all of them again for All repos", async () => {
+    actions.picker.mockResolvedValue({ state: "ready", value: { components: [kitComponents[2]], packages: ["naive-ui"] } });
+    render(<DashboardBuilder libraryTags={[reactKits, vueKits]} repos={["repo-a"]} components={kitComponents} packages={[]} />);
+    expect(screen.getByRole("button", { name: "react-ui-kits" })).toBeInTheDocument();
+    selectRepo("repo-a");
+    expect(await screen.findByRole("button", { name: "vue-ui-kits" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "react-ui-kits" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Local components" })).toBeInTheDocument();
+    selectRepo("");
+    expect(await screen.findByRole("button", { name: "react-ui-kits" })).toBeInTheDocument();
+  });
+});

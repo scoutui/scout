@@ -100,6 +100,16 @@ export function cohortChartConfig(cohorts: Array<{ cohortKey: string; label: str
   return Object.fromEntries(cohorts.map((c) => [c.cohortKey, { label: c.label }]));
 }
 
+export function deprecatedOnlyKeys(selectors: CohortSelector[]): ReadonlySet<string> {
+  return new Set(
+    selectors
+      .filter((s) => (s.kind === "package" || s.kind === "tag") && s.deprecatedOnly === true)
+      .map(cohortKey),
+  );
+}
+
+export const NO_KEYS: ReadonlySet<string> = new Set();
+
 export type ChartCohort = { cohortKey: string; color: string; role?: CohortRole | undefined };
 
 /** The cohorts a view draws, in the view's order. */

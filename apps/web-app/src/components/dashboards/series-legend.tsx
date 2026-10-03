@@ -1,7 +1,13 @@
 "use client";
-import { AlertTriangle, X } from "lucide-react";
+import { Ellipsis, X } from "lucide-react";
 import type { CohortRole, CohortSelector } from "@scoutui/web-shared";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { selectorKey } from "@/components/dashboards/dashboard-builder";
 import { splitCohortLabel } from "@/lib/dashboard-format";
@@ -9,8 +15,9 @@ import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 /**
  * One rendered series. `color`/`label` are resolved by the builder so the legend
- * matches the chart exactly (both colour through `chartColors`). `deprecatedOnly` is only
- * meaningful for `package`/`tag` selectors; the toggle is hidden for `component`/`local`.
+ * matches the chart exactly (both colour through `chartColors`). `deprecatedOnly` is
+ * null when the row offers no "Only deprecated components" option; otherwise it holds
+ * whether the option is on and the line shown under it, if any.
  * `label` is "" while no name is known. `unknown` marks a series the chart left out, and
  * its `color` is "".
  */
@@ -20,17 +27,15 @@ export type LegendSeries = {
   color: string;
   role?: CohortRole | undefined;
   unknown: boolean;
+  deprecatedOnly: { on: boolean; text: string | null } | null;
 };
-
-type DeprecatableSelector = Extract<CohortSelector, { kind: "package" | "tag" }>;
-const asDeprecatable = (s: CohortSelector): DeprecatableSelector | null =>
-  s.kind === "package" || s.kind === "tag" ? s : null;
 
 /**
  * The builder's series list, which is also the chart's legend. Each row shows the
- * series' chart colour, its name, a `deprecated only` filter for package and tag
- * series, and a remove control. A series the chart left out reads muted in sans, as
- * "Unknown component" or "Deleted tag" when it has no name, with an empty swatch.
+ * series' chart colour, its name, and a remove control. A package or tag series that
+ * can be narrowed to its deprecated components gets a row menu holding that option, and
+ * reads `<name> · deprecated` while it is on. A series the chart left out reads muted in
+ * sans, as "Unknown component" or "Deleted tag" when it has no name, with an empty swatch.
  */
 export function SeriesLegend({
   series,
@@ -45,8 +50,7 @@ export function SeriesLegend({
   return (
     <ul className="flex flex-col gap-1">
       {series.map((s, i) => {
-        const deprecatable = asDeprecatable(s.selector);
-        const deprecatedOnly = deprecatable?.deprecatedOnly === true;
+        const narrowed = (s.selector.kind === "package" || s.selector.kind === "tag") && s.selector.deprecatedOnly === true;
         const placeholder = s.unknown && !s.label ? (s.selector.kind === "tag" ? "Deleted tag" : "Unknown component") : null;
         const label = s.label || placeholder || "";
         // The name on one line and the package beneath, as in the picker rows.
@@ -60,32 +64,46 @@ export function SeriesLegend({
           >
             <CohortSwatch cohortKey={selectorKey(s.selector)} color={s.color} role={s.role} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5" title={label || undefined}>
-              <span className={cn("truncate text-xs", s.unknown ? "font-sans text-muted-foreground" : "font-mono")}>{primary}</span>
+              <span className="flex min-w-0 items-baseline">
+                <span className={cn("truncate text-xs", s.unknown ? "font-sans text-muted-foreground" : "font-mono")}>{primary}</span>
+                {narrowed ? (
+                  <span className="ml-1 shrink-0 font-sans text-xs text-muted-foreground">
+                    <span aria-hidden>·</span> <span aria-hidden={s.role === "deprecated" || undefined}>deprecated</span>
+                  </span>
+                ) : null}
+              </span>
               {secondary ? (
                 <span className={cn("truncate text-xs text-muted-foreground", s.unknown ? "font-sans" : "font-mono")}>{secondary}</span>
               ) : null}
             </span>
-            {deprecatable ? (
-              <button
-                type="button"
-                aria-pressed={deprecatedOnly}
-                onClick={() => onToggleDeprecatedOnly(i)}
-                className={cn(
-                  // A bordered chip in both states so it reads as a toggle, not a label.
-                  "inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.05em] transition-colors",
-                  deprecatedOnly
-                    ? "border-status-warn-border bg-status-warn-tint text-status-warn-text"
-                    : "border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                )}
-                title={
-                  deprecatedOnly
-                    ? "Showing deprecated components only. Click to include all."
-                    : "Show only deprecated components in this series."
-                }
-              >
-                <AlertTriangle aria-hidden className="size-3" />
-                deprecated only
-              </button>
+            {s.deprecatedOnly ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={label ? `Options for ${placeholder ? placeholder.toLowerCase() : label}` : "Options"}
+                      className="shrink-0 text-muted-foreground hover:text-foreground"
+                    />
+                  }
+                >
+                  <Ellipsis aria-hidden />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72">
+                  <DropdownMenuCheckboxItem
+                    checked={s.deprecatedOnly.on}
+                    onCheckedChange={() => onToggleDeprecatedOnly(i)}
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <div>Only deprecated components</div>
+                      {s.deprecatedOnly.text ? (
+                        <div className="text-xs text-muted-foreground">{s.deprecatedOnly.text}</div>
+                      ) : null}
+                    </div>
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
             <Button
               variant="ghost"

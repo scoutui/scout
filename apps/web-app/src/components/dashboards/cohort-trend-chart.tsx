@@ -3,10 +3,10 @@ import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { cohortChartConfig, dayTicks, repoCoverageAt, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
-import { distinctiveLabel, formatAxisCount, formatDay, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
+import { NO_KEYS, cohortChartConfig, dayTicks, repoCoverageAt, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
+import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDay, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
-import { CohortLabelText } from "@/components/dashboards/cohort-label";
+import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 // From this many series the overlay becomes small multiples. A line past the chart
@@ -25,12 +25,14 @@ export function CohortTrendChart({
   series,
   coverage,
   colors,
+  deprecatedOnly = NO_KEYS,
   metric,
   showLegend = true,
 }: {
   series: CohortSeries[];
   coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
+  deprecatedOnly?: ReadonlySet<string>;
   metric: "count" | "share";
   showLegend?: boolean;
 }) {
@@ -53,18 +55,21 @@ export function CohortTrendChart({
     );
   }
   if (series.length >= FACET_THRESHOLD) {
-    return <TrendFacets series={series} coverage={coverage} colors={colors} metric={metric} animate={animate} />;
+    return <TrendFacets series={series} coverage={coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={metric} animate={animate} />;
   }
   const config = cohortChartConfig(series);
   const lastTByKey = new Map(series.map((s) => [s.cohortKey, s.points[s.points.length - 1]?.t]));
   // Reserve just enough right margin for the longest (capped) end label.
-  const rightMargin = Math.min(168, 30 + Math.max(0, ...series.map((s) => distinctiveLabel(s.label).length)) * 7);
+  const endLabelChars = (s: CohortSeries) => Math.max(distinctiveLabel(s.label).length, deprecatedOnly.has(s.cohortKey) ? DEPRECATED_ONLY.length : 0);
+  const rightMargin = Math.min(168, 30 + Math.max(0, ...series.map(endLabelChars)) * 7);
   // `seriesWashes` decides which series get the wash, here and in the sparkline.
   const washes = seriesWashes(series);
-  // End-label declutter: a tail closer than the ~13px label box (approximated in
-  // data space) to an already-labelled one keeps its dot but drops its label.
+  // End-label declutter: a tail closer than the label box above it (~13px a line,
+  // approximated in data space) keeps its dot but drops its label. A two-line label
+  // that would hang below the plot sits a line higher, its second line level with the dot.
   // Hovering a legend row always shows that series' label.
   const labelled = new Set<string>();
+  const lifted = new Set<string>();
   {
     const PLOT_PX = 230; // chart height minus vertical margins and the x-axis band
     const LABEL_PX = 13;
@@ -74,10 +79,16 @@ export function CohortTrendChart({
       .map((s) => ({ key: s.cohortKey, v: s.points[s.points.length - 1]?.value ?? 0 }))
       .sort((a, b) => b.v - a.v);
     let lastV: number | null = null;
+    let lastGap = minGap;
     for (const tail of tails) {
-      if (lastV === null || lastV - tail.v >= minGap) {
+      const twoLines = deprecatedOnly.has(tail.key);
+      const lift = twoLines && tail.v < 2 * minGap;
+      if (lift) lifted.add(tail.key);
+      const top = lift ? tail.v + minGap : tail.v;
+      if (lastV === null || lastV - top >= lastGap) {
         labelled.add(tail.key);
         lastV = tail.v;
+        lastGap = twoLines && !lift ? 2 * minGap : minGap;
       }
     }
   }
@@ -125,7 +136,7 @@ export function CohortTrendChart({
                       style={{ backgroundColor: item?.color }}
                     />
                     <div className="flex flex-1 items-center justify-between gap-3 leading-none">
-                      <span className="font-mono text-muted-foreground">{config[String(name)]?.label ?? name}</span>
+                      <TooltipSeriesName name={config[String(name)]?.label ?? name} deprecatedOnly={deprecatedOnly.has(String(name))} />
                       <span className="font-medium tabular-nums text-foreground">
                         {formatMetric(Number(value), metric)}
                       </span>
@@ -164,12 +175,17 @@ export function CohortTrendChart({
                         <text
                           x={cx + 9}
                           y={cy}
-                          dy={3}
+                          dy={lifted.has(s.cohortKey) ? -9 : 3}
                           fontSize={11}
                           fontFamily="var(--font-mono)"
                           fill="var(--muted-foreground)"
                         >
                           {distinctiveLabel(s.label)}
+                          {deprecatedOnly.has(s.cohortKey) ? (
+                            <tspan x={cx + 9} dy={12} fontSize={10} fontFamily="var(--font-sans)">
+                              {DEPRECATED_ONLY}
+                            </tspan>
+                          ) : null}
                         </text>
                       ) : null}
                     </g>
@@ -205,7 +221,7 @@ export function CohortTrendChart({
               <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
               {/* Name and package truncate separately: a merged series and its slice
                   share a name, and one truncated string would render them alike. */}
-              <CohortLabelText label={s.label} className="max-w-[24rem] text-xs" />
+              <CohortLabelText label={s.label} deprecatedOnly={deprecatedOnly.has(s.cohortKey)} className="max-w-[24rem] text-xs" />
             </button>
           ))}
         </div>
@@ -237,12 +253,14 @@ function TrendFacets({
   series,
   coverage,
   colors,
+  deprecatedOnly,
   metric,
   animate,
 }: {
   series: CohortSeries[];
   coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
+  deprecatedOnly: ReadonlySet<string>;
   metric: "count" | "share";
   animate: boolean;
 }) {
@@ -263,7 +281,7 @@ function TrendFacets({
             <div key={s.cohortKey} className="min-w-0">
               <div className="flex items-baseline gap-1.5">
                 <CohortSwatch cohortKey={s.cohortKey} color={color} role={s.role} className="self-center" />
-                <CohortLabelText label={s.label} className="text-xs" />
+                <CohortLabelText label={s.label} deprecatedOnly={deprecatedOnly.has(s.cohortKey)} className="text-xs" />
                 <span className="ml-auto shrink-0 pl-2 text-sm font-medium tabular-nums">
                   {last ? formatMetric(last.value, metric) : "—"}
                 </span>
@@ -286,7 +304,7 @@ function TrendFacets({
                         labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
                         formatter={(value) => (
                           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
-                            <span className="font-mono text-muted-foreground">{distinctiveLabel(s.label)}</span>
+                            <TooltipSeriesName name={distinctiveLabel(s.label)} deprecatedOnly={deprecatedOnly.has(s.cohortKey)} />
                             <span className="font-medium tabular-nums text-foreground">
                               {formatMetric(Number(value), metric)}
                             </span>

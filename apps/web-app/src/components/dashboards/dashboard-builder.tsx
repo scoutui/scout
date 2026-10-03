@@ -1,18 +1,20 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { CircleX } from "lucide-react";
 import type { ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { seriesCanOverlap } from "@/lib/cohort-overlap";
+import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
-import { type ChartCohort, chartColors, drawnChartCohorts } from "@/lib/dashboard-chart-data";
+import { type ChartCohort, chartColors, deprecatedOnlyKeys, drawnChartCohorts } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
 import { SeriesPicker, type PickableComponent } from "@/components/dashboards/series-picker";
 import { SeriesLegend, type LegendSeries } from "@/components/dashboards/series-legend";
 import { SeriesEmptyState } from "@/components/dashboards/series-empty-state";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
@@ -65,11 +67,12 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; glyph: React.ReactNo
 ];
 
 /**
- * Chart builder. A controls strip holds the name, scope, chart type, metric and Save; a
- * series rail beside the chart lists the current series (remove, or toggle
- * `deprecatedOnly` on a package or tag series) above an always-open picker. Controls
- * build a DashboardConfig, and the preview re-projects it through previewDashboard,
- * keeping only the latest request's result.
+ * Chart builder. A controls strip holds the name, scope, chart type, metric, Cancel,
+ * Save and description; a series rail beside the chart lists the current series
+ * (remove, or narrow a package or tag series to its deprecated components from the
+ * row menu) above an always-open picker. Controls build a DashboardConfig, and the
+ * preview re-projects it through previewDashboard, keeping only the latest request's
+ * result.
  */
 
 /** A selector's name from the estate and picker lists, mirroring the engine's cohortIdentity; undefined when they don't hold it. */
@@ -117,7 +120,7 @@ export function DashboardBuilder({
   packages,
   saved,
 }: {
-  libraryTags: Array<{ id: string; label: string; color: string }>;
+  libraryTags: LibraryTag[];
   repos: string[];
   components: PickableComponent[];
   packages: string[];
@@ -125,6 +128,7 @@ export function DashboardBuilder({
   saved?: Pick<Dashboard, "id" | "name" | "description" | "config">;
 }) {
   const [name, setName] = useState(saved?.name ?? "");
+  const [description, setDescription] = useState(saved?.description ?? "");
   const [scopeRepoId, setScopeRepoId] = useState<string | null>(
     saved?.config.scope.kind === "repo" ? saved.config.scope.repoId : null,
   );
@@ -167,18 +171,19 @@ export function DashboardBuilder({
       });
     return () => { scopeRequest.current = null; };
   }, [scopeRepoId, pickerRetry]);
+  const pickable = scopedPickable?.components ?? components;
 
   // stacked-share is inherently a share view; force the metric so preview + save agree.
   const effectiveMetric: DashboardMetric = chartType === "stacked-share" ? "share" : metric;
 
-  // The picker's Groups section holds the library tags plus a synthetic entry that adds
-  // the `local` series.
+  // The picker's Groups section holds the library tags, only those the repo's components
+  // use under a repo scope, plus a synthetic entry that adds the `local` series.
   const pickerGroups = useMemo(
     () => [
-      ...libraryTags.map((t) => ({ id: t.id, label: t.label })),
+      ...(scopedPickable ? tagsInUse(libraryTags, scopedPickable.components) : libraryTags).map((t) => ({ id: t.id, label: t.label })),
       { id: "__local", label: "Local components", selector: { kind: "local" as const } },
     ],
-    [libraryTags],
+    [libraryTags, scopedPickable],
   );
 
   // The picker toggles: picking an already-added selector removes it (the picker
@@ -212,6 +217,8 @@ export function DashboardBuilder({
     [scopeRepoId, cohorts, chartType, effectiveMetric],
   );
 
+  const savedNarrowed = useMemo(() => deprecatedOnlyKeys(saved?.config.cohorts ?? []), [saved]);
+
   // A series in the last landed view takes its label, colour and role from there; any
   // other tag series brings its tag's colour. `chartColors` colours them all in saved
   // order, as the chart does. An unknown series reads by any name the lists or the
@@ -232,15 +239,24 @@ export function DashboardBuilder({
     const colors = chartColors(rows.map((r) => r.cohort));
     return rows.map(({ sel, key, drawn, unknown }) => {
       const saved = unknown && sel.kind === "component" ? sel.label : undefined;
+      const label = drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "";
+      let deprecatedOnly: LegendSeries["deprecatedOnly"] = null;
+      if (sel.kind === "package" || sel.kind === "tag") {
+        const share = deprecatedShare(sel, pickable, libraryTags);
+        if (offersDeprecatedOnly(sel, share) || savedNarrowed.has(key)) {
+          deprecatedOnly = { on: sel.deprecatedOnly === true, text: deprecatedShareText(share, label) };
+        }
+      }
       return {
         selector: sel,
-        label: drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "",
+        label,
         color: unknown ? "" : (colors.get(key) ?? ""),
         role: drawn?.role,
         unknown,
+        deprecatedOnly,
       };
     });
-  }, [cohorts, components, libraryTags, landed]);
+  }, [cohorts, components, libraryTags, landed, pickable, savedNarrowed]);
 
   useEffect(() => {
     const request = { config, retry: previewRetry };
@@ -284,14 +300,6 @@ export function DashboardBuilder({
   }, [config, cohorts, previewRetry]);
 
   async function save() {
-    if (!name.trim()) {
-      setError("Give the chart a name.");
-      return;
-    }
-    if (cohorts.length === 0) {
-      setError("Add at least one series to compare.");
-      return;
-    }
     setError(null);
     setSaving(true);
     // On success the action redirects to the saved chart, so this only resolves
@@ -299,7 +307,7 @@ export function DashboardBuilder({
     const res = await saveDashboard({
       ...(saved ? { id: saved.id } : {}),
       name: name.trim(),
-      description: saved?.description ?? null,
+      description: description.trim() || null,
       config,
     });
     setSaving(false);
@@ -308,88 +316,132 @@ export function DashboardBuilder({
 
   // The share caption shows only for the share metric, and only when the series can
   // overlap so a component can count toward two of them.
-  const showShareCaption = effectiveMetric === "share" && seriesCanOverlap(cohorts);
+  const showShareCaption =
+    effectiveMetric === "share" &&
+    seriesCanOverlap(cohorts, {
+      components: pickable,
+      packages: scopedPickable?.packages ?? packages,
+      tags: libraryTags,
+    });
 
   const selectedKeys = new Set(cohorts.map(selectorKey));
+  const nameMissing = !name.trim();
 
   return (
     <div className="panel space-y-4 p-4">
       {/* Controls strip */}
-      <div className="flex flex-wrap items-end gap-3 border-b pb-4">
-        <div className="min-w-[12rem] max-w-[20rem] flex-1 space-y-1.5">
-          <label htmlFor="dashboard-name" className="block text-label text-muted-foreground">
-            Name
-          </label>
-          <Input
-            id="dashboard-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Legacy vs current"
-          />
-        </div>
+      <div className="space-y-3 border-b pb-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[12rem] max-w-[20rem] flex-1 space-y-1.5">
+            <label htmlFor="dashboard-name" className="block text-label text-muted-foreground">
+              Name
+            </label>
+            <Input
+              id="dashboard-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Legacy vs current"
+            />
+          </div>
 
-        <div className="min-w-[10rem] space-y-1.5">
-          <label htmlFor="dashboard-scope" className="block text-label text-muted-foreground">
-            Repos
-          </label>
-          <select
-            id="dashboard-scope"
-            value={scopeRepoId ?? ""}
-            onChange={(e) => setScopeRepoId(e.target.value || null)}
-            className={cn(
-              "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
-              scopeRepoId ? "font-mono" : "font-sans",
-            )}
-          >
-            <option value="">All repos</option>
-            {repos.map((r) => (
-              <option key={r} value={r} className="font-mono">
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="min-w-[10rem] space-y-1.5">
+            <label htmlFor="dashboard-scope" className="block text-label text-muted-foreground">
+              Repos
+            </label>
+            <select
+              id="dashboard-scope"
+              value={scopeRepoId ?? ""}
+              onChange={(e) => setScopeRepoId(e.target.value || null)}
+              className={cn(
+                "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
+                scopeRepoId ? "font-mono" : "font-sans",
+              )}
+            >
+              <option value="">All repos</option>
+              {repos.map((r) => (
+                <option key={r} value={r} className="font-mono">
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="space-y-1.5">
-          <span className="block text-label text-muted-foreground">Chart type</span>
-          <ToggleGroup
-            value={[chartType]}
-            onValueChange={(v) => v[0] && setChartType(v[0] as ChartType)}
-            multiple={false}
-            variant="outline"
-            className="flex-wrap"
-            aria-label="Chart type"
-          >
-            {CHART_TYPES.map((c) => (
-              <ToggleGroupItem key={c.value} value={c.value} className="gap-1.5">
-                {c.glyph}
-                {c.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-
-        {chartType !== "stacked-share" ? (
           <div className="space-y-1.5">
-            <span className="block text-label text-muted-foreground">Metric</span>
+            <span className="block text-label text-muted-foreground">Chart type</span>
             <ToggleGroup
-              value={[metric]}
+              value={[chartType]}
+              onValueChange={(v) => v[0] && setChartType(v[0] as ChartType)}
+              multiple={false}
+              variant="outline"
+              className="flex-wrap"
+              aria-label="Chart type"
+            >
+              {CHART_TYPES.map((c) => (
+                <ToggleGroupItem key={c.value} value={c.value} className="gap-1.5">
+                  {c.glyph}
+                  {c.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-label text-muted-foreground">Metric</span>
+              <span
+                id="dashboard-metric-hint"
+                className="whitespace-nowrap text-xs leading-none text-muted-foreground"
+                style={effectiveMetric === "share" ? undefined : { visibility: "hidden" }}
+              >
+                Share of these series
+              </span>
+            </div>
+            <ToggleGroup
+              value={[effectiveMetric]}
               onValueChange={(v) => v[0] && setMetric(v[0] as DashboardMetric)}
               multiple={false}
               variant="outline"
               aria-label="Metric"
+              aria-describedby={effectiveMetric === "share" ? "dashboard-metric-hint" : undefined}
             >
-              <ToggleGroupItem value="count">Count</ToggleGroupItem>
+              <ToggleGroupItem value="count" disabled={chartType === "stacked-share"}>Count</ToggleGroupItem>
               <ToggleGroupItem value="share">Share</ToggleGroupItem>
             </ToggleGroup>
           </div>
-        ) : null}
 
-        <div className="ml-auto flex items-center gap-3 self-end">
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button onClick={() => void save()} disabled={saving || cohorts.length === 0}>
-            {saving ? "Saving…" : "Save chart"}
-          </Button>
+          <div className="ml-auto space-y-1.5 self-end">
+            <p id="dashboard-save-reason" className="empty:hidden text-right text-xs leading-none text-muted-foreground">
+              {nameMissing ? "Name the chart to save it." : null}
+            </p>
+            <div className="flex items-center gap-3">
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              <Link
+                href={saved ? `/charts/${encodeURIComponent(saved.id)}` : "/charts"}
+                className={cn(buttonVariants({ variant: "ghost" }))}
+              >
+                Cancel
+              </Link>
+              <Button
+                onClick={() => void save()}
+                disabled={saving || cohorts.length === 0 || nameMissing}
+                aria-describedby={nameMissing ? "dashboard-save-reason" : undefined}
+              >
+                {saving ? "Saving…" : "Save chart"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="dashboard-description" className="block text-label text-muted-foreground">
+            Description
+          </label>
+          <Input
+            id="dashboard-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional. Shown under the chart's name."
+          />
         </div>
       </div>
 
@@ -413,7 +465,7 @@ export function DashboardBuilder({
           ) : scopeRepoId && !scopedPickable ? (
             <output className="text-sm text-muted-foreground">Loading…</output>
           ) : <SeriesPicker
-            components={scopedPickable?.components ?? components}
+            components={pickable}
             packages={scopedPickable?.packages ?? packages}
             groups={pickerGroups}
             selectedKeys={selectedKeys}
