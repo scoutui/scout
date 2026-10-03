@@ -1,7 +1,10 @@
 import type { CompositionGraphNode } from "@scoutui/web-shared";
 import type { GraphModel } from "./graph-model";
 
+/** The narrowest a chip gets. The canvas widens chips up to MAX_NODE_W when
+ *  the pane has room (see computeChipWidth). */
 export const NODE_W = 176;
+export const MAX_NODE_W = 240;
 export const NODE_H = 28;
 export const GAP_X = 72;
 export const GAP_Y = 10;
@@ -40,6 +43,8 @@ export type CanvasLayout = {
   edges: LayoutEdge[];
   /** Real node id -> the display id it renders under. Drawn nodes only. */
   displayIdOf: Map<string, string>;
+  /** Width of every chip in this layout. */
+  chipWidth: number;
 };
 
 export function edgeWidth(count: number): number {
@@ -76,6 +81,9 @@ export function computeLayout(
    *  when the overflow is a single item). The canvas passes computeRowBudget's
    *  value for the pane height. */
   rowBudget: number = COLUMN_CAP,
+  /** Width of every chip. The canvas passes computeChipWidth's value for the
+   *  pane width. */
+  chipWidth: number = NODE_W,
 ): CanvasLayout {
   const pinned = state.pinned ?? [];
   const pinnedIds = new Set(pinned.map((p) => p.id));
@@ -234,7 +242,7 @@ export function computeLayout(
   for (const [level, levelItems] of itemsByLevel) {
     const slotCount = levelItems.length;
     const columnH = slotCount * NODE_H + (slotCount - 1) * GAP_Y;
-    const x = level * (NODE_W + GAP_X);
+    const x = level * (chipWidth + GAP_X);
     let y = -columnH / 2;
     for (const item of levelItems) {
       y = place(x, y, item);
@@ -294,5 +302,5 @@ export function computeLayout(
     width: edgeWidth(count),
   }));
 
-  return { items, edges, displayIdOf };
+  return { items, edges, displayIdOf, chipWidth };
 }

@@ -14,7 +14,7 @@ import {
 import { distinctTails } from "./graph-framing";
 import type { PinnedEntry } from "./graph-layout";
 import { readRailCollapsed, writeRailCollapsed } from "./rail-collapse";
-import { renderTreeCaption } from "./render-tree-caption";
+import { renderTreeCaption, type CaptionPart, type RenderTreeCaption } from "./render-tree-caption";
 import { ScopeGlyph } from "./scope-glyph";
 import { useQuerySyncedState } from "@/lib/use-query-synced-state";
 
@@ -80,7 +80,7 @@ export function CompositionTab({
   // Direct-neighbour counts exclude a self-render edge: the focus is never its
   // own neighbour.
   const caption = useMemo(() => {
-    if (!focusId) return "";
+    if (!focusId) return null;
     const notSelf = (a: { id: string }) => a.id !== focusId;
     return renderTreeCaption({
       focusName,
@@ -159,37 +159,12 @@ export function CompositionTab({
   // lg everything stacks.
   return (
     <div className="flex flex-col gap-4 lg:h-[70vh] lg:min-h-[32rem] lg:flex-row">
-      {railCollapsed ? (
-        <div className="flex shrink-0 items-center gap-3 lg:w-11 lg:flex-col lg:items-center lg:py-3">
-          <button
-            type="button"
-            onClick={toggleRail}
-            aria-label="Show lists"
-            className="rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-          >
-            <span aria-hidden>›</span>
-          </button>
-          <span className="text-xs tabular-nums text-muted-foreground lg:[writing-mode:vertical-rl]">
-            {`${dependents.length === 1 ? "1 depends on it" : `${dependents.length.toLocaleString()} depend on it`} · ${rendered.length === 0 ? "renders nothing" : `renders ${rendered.length.toLocaleString()}`}`}
-          </span>
-        </div>
-      ) : (
+      {railCollapsed ? null : (
         <div className="grid items-start gap-4 md:grid-cols-2 lg:flex lg:w-[22.5rem] lg:shrink-0 lg:flex-col lg:items-stretch">
-          <div className="flex justify-end md:col-span-2">
-            <button
-              type="button"
-              onClick={toggleRail}
-              aria-label="Hide lists"
-              className="rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              <span aria-hidden>‹</span>
-            </button>
-          </div>
           <div className="contents lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-stretch lg:gap-4">
             <ClosurePanel
               title="Rendered by"
               focusName={focusName}
-              subtitle="everything that renders {name}, nearest first · the number is steps down to {name}"
               emptyCopy="Nothing in this repo renders {name}."
               rows={dependents}
               onHoverStart={(id) => setHovered({ id, dir: "up" })}
@@ -200,7 +175,6 @@ export function CompositionTab({
             <ClosurePanel
               title="Renders"
               focusName={focusName}
-              subtitle="everything {name} ends up rendering, nearest first · the number is steps from {name}"
               emptyCopy="{name} renders no other components in this repo."
               rows={rendered}
               onHoverStart={(id) => setHovered({ id, dir: "down" })}
@@ -218,10 +192,41 @@ export function CompositionTab({
         repoId={detail.repoId}
         pinned={pinned}
         hoverPath={hoverPath}
-        caption={caption}
+        caption={caption ? <CaptionLines caption={caption} /> : null}
+        listsToggle={
+          <button
+            type="button"
+            onClick={toggleRail}
+            className="rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            {railCollapsed ? "Show lists" : "Hide lists"}
+          </button>
+        }
         onRelease={() => setPinnedEndpoint(null)}
       />
     </div>
+  );
+}
+
+/** The caption's two sentences, one per line, with the counts and the focus's
+ *  name set apart from the words around them. */
+function CaptionLines({ caption }: { caption: RenderTreeCaption }) {
+  const line = (parts: CaptionPart[]) =>
+    parts.map((part, i) =>
+      part.kind === "text" ? (
+        part.text
+      ) : (
+        // biome-ignore lint/suspicious/noArrayIndexKey: a caption's parts never reorder
+        <span key={i} className={part.kind === "count" ? "font-medium tabular-nums" : "font-mono"}>
+          {part.text}
+        </span>
+      ),
+    );
+  return (
+    <>
+      <span className="block">{line(caption.up)}</span>{" "}
+      <span className="block">{line(caption.down)}</span>
+    </>
   );
 }
 
@@ -255,7 +260,6 @@ function closureLabelOf({ node }: TraceEndpoint): string {
 function ClosurePanel({
   title,
   focusName,
-  subtitle,
   emptyCopy,
   rows,
   onHoverStart,
@@ -264,9 +268,8 @@ function ClosurePanel({
   pinnedId,
 }: {
   title: string;
-  /** Replaces every `{name}` token in `subtitle` and `emptyCopy`. */
+  /** Replaces every `{name}` token in `emptyCopy`. */
   focusName: string;
-  subtitle: string;
   emptyCopy: string;
   rows: TraceEndpoint[];
   onHoverStart: (id: string) => void;
@@ -295,7 +298,6 @@ function ClosurePanel({
             {rows.length.toLocaleString()}
           </span>
         </div>
-        <p className="text-pretty text-xs text-muted-foreground">{withName(subtitle)}</p>
       </header>
       <PanelList
         name={filterName}
@@ -403,7 +405,7 @@ function PanelList<Row>({
   };
 
   if (rows.length === 0) {
-    return <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyCopy}</p>;
+    return <p className="px-3 py-6 text-center text-sm text-muted-foreground wrap-anywhere">{emptyCopy}</p>;
   }
 
   return (
@@ -447,7 +449,7 @@ function PanelList<Row>({
             onClick={toggleExpanded}
             className="w-full cursor-pointer px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
           >
-            {expanded ? "Show fewer" : `Show ${(rows.length - PANEL_PAGE).toLocaleString()} more`}
+            {expanded ? "Show fewer" : `Show all ${rows.length.toLocaleString()}`}
           </button>
         </div>
       ) : null}

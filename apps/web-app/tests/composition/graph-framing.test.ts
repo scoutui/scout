@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { COLUMN_CAP, GAP_X, GAP_Y, NODE_H, NODE_W } from "@/components/component-detail/composition/graph-layout";
+import { COLUMN_CAP, GAP_X, GAP_Y, MAX_NODE_W, NODE_H, NODE_W } from "@/components/component-detail/composition/graph-layout";
 import {
-  computeDefaultFrame, computeRowBudget, edgePillCopy, gutterMaskWidth, isNodeVisible, isPathVisible, hiddenColumns,
+  computeChipWidth, computeDefaultFrame, computeRowBudget, edgePillCopy, gutterMaskWidth, isNodeVisible, isPathVisible, hiddenColumns,
   distinctTails, chipFaceFragments, shouldRecomputeEdgeAffordances,
-  FRAME_PADDING, LABEL_CLEARANCE, MIN_ROW_BUDGET, PILL_GUTTER, PINNED_FIT_ZOOM, WINDOW_ZOOM,
+  FRAME_PADDING, LABEL_CLEARANCE, MIN_ROW_BUDGET, PILL_GUTTER, PINNED_FIT_ZOOM, READABLE_ZOOM, WINDOW_ZOOM,
 } from "@/components/component-detail/composition/graph-framing";
 
 const COL = NODE_W + GAP_X;
@@ -309,6 +309,30 @@ describe("computeRowBudget", () => {
       const paneHeight = columnH + LABEL_CLEARANCE;
       expect(computeRowBudget(paneHeight)).toBeGreaterThanOrEqual(budget);
     }
+  });
+});
+
+describe("computeChipWidth", () => {
+  // Three columns (parents, focus, children) at the computed width, framed in
+  // a pane of that width.
+  const frameOfThreeColumns = (paneWidth: number, chipWidth: number) =>
+    computeDefaultFrame(
+      [-1, 0, 1].map((level) => ({ x: level * (chipWidth + GAP_X), y: 0 })),
+      paneWidth,
+      600,
+      READABLE_ZOOM,
+      chipWidth,
+    ).kind;
+
+  it.each([
+    [0, NODE_W, "fit"],
+    [779, NODE_W, "window"],
+    [822, 188, "fit"],
+    [982, 234, "fit"],
+    [1300, MAX_NODE_W, "fit"],
+  ] as const)("a %i px pane gets %i px chips, and three columns %s", (paneWidth, chipWidth, frame) => {
+    expect(computeChipWidth(paneWidth)).toBe(chipWidth);
+    expect(frameOfThreeColumns(paneWidth, chipWidth)).toBe(frame);
   });
 });
 

@@ -13,25 +13,45 @@ export type RenderTreeCounts = {
   rendered: number;
 };
 
-const components = (n: number): string =>
-  n === 1 ? "1 component" : `${n.toLocaleString()} components`;
-const rendersDirectly = (n: number, name: string): string =>
-  `${components(n)} ${n === 1 ? "renders" : "render"} ${name} directly`;
+/** A run of caption text. `count` and `name` mark the numbers and the focus's
+ *  name, which the header sets apart from the words around them. */
+export type CaptionPart = { text: string; kind: "text" | "count" | "name" };
+
+/** One sentence per side: what renders the focus, then what it renders. */
+export type RenderTreeCaption = { up: CaptionPart[]; down: CaptionPart[] };
+
+const text = (s: string): CaptionPart => ({ text: s, kind: "text" });
+const count = (n: number): CaptionPart => ({ text: n.toLocaleString(), kind: "count" });
 
 /** One sentence per side, in the order the canvas draws them: the direct
  *  count, then the total, which is dropped when it equals the direct count. */
-export function renderTreeCaption(c: RenderTreeCounts): string {
+export function renderTreeCaption(c: RenderTreeCounts): RenderTreeCaption {
+  const name: CaptionPart = { text: c.focusName, kind: "name" };
+  const components = (n: number) => (n === 1 ? " component" : " components");
+  const rendersDirectly = [
+    count(c.directParents),
+    text(`${components(c.directParents)} ${c.directParents === 1 ? "renders" : "render"} `),
+    name,
+    text(" directly"),
+  ];
   const up =
     c.directParents === 0
-      ? `Nothing in this repo renders ${c.focusName}.`
+      ? [text("Nothing in this repo renders "), name, text(".")]
       : c.dependents === c.directParents
-        ? `${rendersDirectly(c.directParents, c.focusName)}.`
-        : `${rendersDirectly(c.directParents, c.focusName)}; ${c.dependents.toLocaleString()} depend on it in total.`;
+        ? [...rendersDirectly, text(".")]
+        : [...rendersDirectly, text("; "), count(c.dependents), text(" depend on it in total.")];
   const down =
     c.directChildren === 0
-      ? `${c.focusName} renders no other components in this repo.`
+      ? [name, text(" renders no other components in this repo.")]
       : c.rendered === c.directChildren
-        ? `${c.focusName} renders ${components(c.directChildren)} directly.`
-        : `${c.focusName} renders ${components(c.directChildren)} directly; ${c.rendered.toLocaleString()} in total.`;
-  return `${up} ${down}`;
+        ? [name, text(" renders "), count(c.directChildren), text(`${components(c.directChildren)} directly.`)]
+        : [
+            name,
+            text(" renders "),
+            count(c.directChildren),
+            text(`${components(c.directChildren)} directly; `),
+            count(c.rendered),
+            text(" in total."),
+          ];
+  return { up, down };
 }
