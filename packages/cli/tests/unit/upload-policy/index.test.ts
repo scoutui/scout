@@ -44,10 +44,11 @@ const aliasOnly = () =>
     "src/App.tsx": `import { Button } from "@/components/Button";\nexport function App() { return <Button />; }\n`,
   });
 
-const nothingIncluded = () =>
+const noComponents = () =>
   stage({
-    "package.json": JSON.stringify({ name: "nothing-included", private: true }),
-    "scout.config.json": config(["**/*.nomatch"]),
+    "package.json": JSON.stringify({ name: "no-components", private: true }),
+    "scout.config.json": config(["src/**/*.ts"]),
+    "src/format.ts": "export const format = (n: number) => n.toFixed(2);\n",
   });
 
 const webButtonApp = `import "@example/web-button/button.js";\nexport function App() { return <example-button />; }\n`;
@@ -218,7 +219,7 @@ describe("an upload's refusal", () => {
   });
 
   it("refuses to upload a scan that found no occurrences, naming include and the config", async () => {
-    const dir = nothingIncluded();
+    const dir = noComponents();
     const result = await runScan({ cwd: dir, quiet: true, upload: true });
     expect(result.output?.occurrences).toEqual([]);
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
@@ -231,7 +232,7 @@ describe("an upload's refusal", () => {
   });
 
   it("a dry run exits 0 when the scan found no occurrences", async () => {
-    const result = await runScan({ cwd: nothingIncluded(), quiet: true });
+    const result = await runScan({ cwd: noComponents(), quiet: true });
     expect(result.output?.occurrences).toEqual([]);
     expect(scanExitCode(result)).toBe(0);
   });

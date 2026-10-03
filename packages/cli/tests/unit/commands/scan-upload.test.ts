@@ -98,6 +98,24 @@ describe("runScan upload outcome", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["a dry run", false],
+    ["an upload", true],
+  ])("stops %s with exit 2 before scanning when no file matches include, without contacting the dashboard", async (_label, upload) => {
+    const dir = setupConsumer();
+    writeFileSync(join(dir, "scout.config.json"),
+      JSON.stringify({ repoId: "upload-test", include: ["lib/**/*.tsx", "app/**/*.vue"], exclude: [], host: "https://h.example" }));
+    const fetchSpy = vi.spyOn(global, "fetch");
+    const result = await runScan({ configPath: join(dir, "scout.config.json"), upload });
+    expect(scanExitCode(result)).toBe(2);
+    expect(stderr()).toBe(
+      `Error: No files match "include" in ${join(dir, "scout.config.json")} (lib/**/*.tsx, app/**/*.vue). Point it at your source files and scan again.\n`,
+    );
+    expect(stdout()).toBe("");
+    expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it("says once that it's waiting for the dashboard, then reports the published URL", async () => {
     const dir = setupConsumer();
     let firstGet: () => void = () => {};
