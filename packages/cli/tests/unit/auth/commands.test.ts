@@ -10,6 +10,7 @@ import * as browser from "../../../src/auth/browser.js";
 import { systemKeychain } from "../../../src/auth/keychain.js";
 import { fakeKeychain } from "./fake-keychain.js";
 import { Logger } from "../../../src/util/log.js";
+import { createColor } from "../../../src/util/style.js";
 
 let dir: string;
 let file: string;
@@ -34,7 +35,7 @@ function captureStderr(): string[] {
 }
 
 const UNEXPECTED_REPLY = "sent an unexpected reply. Check that it's your Scout dashboard and that the CLI is up to date.";
-const plain = { color: { dim: String, bold: String, green: String, yellow: String, red: String } };
+const plain = { color: createColor({ isTTY: false, env: {} }) };
 
 const deviceCode = {
   deviceCode: "dc",
@@ -295,6 +296,23 @@ describe("runAuthLogin", () => {
     const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger(plain) });
     expect(code).toBe(1);
     expect(errs.join("")).toBe(`Error: Couldn't sign in: ${BASE} returned an error. Try again later.\n`);
+  });
+
+  it.each([
+    [false, `Waiting for approval… ✓ Signed in as ben@example.com to ${BASE}.\n`, ""],
+    [true, `✓ Signed in as ben@example.com to ${BASE}.\n`, "\r⠋ Waiting for approval…\x1b[K\r\x1b[K"],
+  ])("waits for approval with a spinner on stderr only when styled, then says who it signed in as and where (styled: %s)", async (styled, end, stderr) => {
+    vi.mocked(systemKeychain).mockReturnValue(fakeKeychain().keychain);
+    vi.spyOn(client, "requestDeviceCode").mockResolvedValue(deviceCode);
+    vi.spyOn(browser, "openBrowser").mockReturnValue(false);
+    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com" } });
+    const errs = captureStderr();
+    const lines: string[] = [];
+    vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { lines.push(s); return true; }) as typeof process.stdout.write);
+    const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger({ ...plain, styled }) });
+    expect(code).toBe(0);
+    expect(lines.join("")).toBe(`To authorize this device, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n${end}`);
+    expect(errs.join("")).toBe(stderr);
   });
 
   it("prints the dashboard's warning line before the sign-in steps", async () => {

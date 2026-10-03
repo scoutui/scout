@@ -41,13 +41,13 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
 4. The terminal finishes with:
 
    ```
-   ✓ Signed in as dev@acme.test
+   ✓ Signed in as dev@acme.test to https://scout.example.com.
    ```
 
 The CLI saves your session in the system keychain. When it can't use one, for example on Windows, it saves the session in a file instead and warns:
 
 ```
-Warning: Couldn't save your session to the system keychain, so it was saved to ~/.config/scoutui/hosts.json instead.
+! Warning: Couldn't save your session to the system keychain, so it was saved to ~/.config/scoutui/hosts.json instead.
 ```
 
 [Where the session is saved](/docs/reference/cli#where-the-session-is-saved) has the details.
@@ -106,7 +106,7 @@ npx scout scan --host https://scout.example.com
 The output ends with the uploaded scan and your repo's page:
 
 ```
-Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
+✓ Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
 
 For every `auth` flag and exit code, see the [CLI reference](/docs/reference/cli#auth).

@@ -1,5 +1,5 @@
 import { gitFailed } from "../scan/meta.js";
-import { runGit, STATUS_MAX_BUFFER } from "../util/git.js";
+import { runGit, shortCommit, STATUS_MAX_BUFFER } from "../util/git.js";
 
 /** A commit on the tracked branch, with its committer date as an ISO 8601 UTC timestamp. */
 export type ChainCommit = { commit: string; committedAt: string };
@@ -69,5 +69,5 @@ export function formatDay(iso: string): string {
 
 /** The commit as the run's lines name it: its first seven characters and its UTC day, like `a1c9e04 (28 Sep 2026)`. */
 export function commitLabel({ commit, committedAt }: ChainCommit): string {
-  return `${commit.slice(0, 7)} (${formatDay(committedAt)})`;
+  return `${shortCommit(commit)} (${formatDay(committedAt)})`;
 }

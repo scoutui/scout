@@ -1,6 +1,6 @@
 import { relative, resolve } from "node:path";
 import { gitFailed, type Checkout } from "../scan/meta.js";
-import { firstParentPosition, hasCommit, localChanges, recordedDefaultBranch, severalRemotesLine } from "../util/git.js";
+import { firstParentPosition, hasCommit, localChanges, recordedDefaultBranch, severalRemotesLine, shortCommit } from "../util/git.js";
 
 /** The branch an upload follows, and where the scanned commit sits on that branch's first-parent chain, counting from 1. */
 export type TrackedBranch = { branch: string; position: number };
@@ -22,7 +22,7 @@ export async function checkGitState(checkout: Checkout, opts: { cwd: string; bra
   const tracked = await checkTrackedBranch(checkout, opts);
   if (tracked.kind === "refused") return tracked;
   const { remote, branch } = tracked;
-  const commit = checkout.commit.slice(0, 7);
+  const commit = shortCommit(checkout.commit);
   const position = await firstParentPosition(opts.cwd, `refs/remotes/${remote}/${branch}`, checkout.commit);
   if (position === null) {
     if (checkout.branch === branch) return refused(`this commit isn't on ${remote}/${branch} yet. Push it and try again.`);

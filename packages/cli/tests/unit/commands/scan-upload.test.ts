@@ -145,6 +145,20 @@ describe("runScan upload outcome", () => {
     expect(fetchSpy.mock.calls[1]?.[0]).toBe("https://h.example/api/scans");
   });
 
+  it.each([
+    ["after a dry run in a terminal", false, true, true],
+    ["after a dry run in a log", false, false, false],
+    ["after an upload in a terminal", true, true, false],
+  ])("lists the most used components only on a dry run in a terminal (%s)", async (_case, upload, interactive, listed) => {
+    const dir = setupConsumer();
+    vi.spyOn(global, "fetch")
+      .mockImplementationOnce(preScanReply())
+      .mockResolvedValueOnce(Response.json(receipt, { status: 202 }))
+      .mockResolvedValueOnce(Response.json(ready));
+    await runScan({ cwd: dir, upload, log: new Logger({ interactive, styled: false }) });
+    expect(stdout().includes("Most used:\n  Box")).toBe(listed);
+  });
+
   it("says the commit is already on the dashboard and how to scan it again", async () => {
     const dir = setupConsumer();
     vi.spyOn(global, "fetch")
@@ -395,6 +409,25 @@ describe("runScan pre-scan check", () => {
     const result = await runScan({ cwd: dir, upload: true, log: debug() });
     expect(result.upload).toBe("ok");
     expect(stderr()).toBe("Skipped the pre-scan check: https://h.example doesn't offer it. The upload will check the scan instead.\n");
+  });
+
+  it.each<[string, unknown, number[] | undefined]>([
+    ["lists them", [2, 3], [2, 3]],
+    ["doesn't say", undefined, undefined],
+    ["lists something other than formats", ["2"], undefined],
+  ])("passes on the scan formats the dashboard reads when its reply %s, and uploads", async (_, scanFormats, heard) => {
+    const dir = setupConsumer();
+    vi.spyOn(global, "fetch")
+      .mockImplementationOnce(async (input, init) => {
+        const reply = (await (await preScanReply()(input, init)).json()) as Record<string, unknown>;
+        return Response.json({ ...reply, scanFormats });
+      })
+      .mockResolvedValueOnce(Response.json(receipt, { status: 202 }))
+      .mockResolvedValueOnce(Response.json(ready));
+    const onScanFormats = vi.fn();
+    const result = await runScan({ cwd: dir, quiet: true, upload: true, onScanFormats });
+    expect(result.upload).toBe("ok");
+    expect(onScanFormats.mock.calls).toEqual(heard === undefined ? [] : [[heard]]);
   });
 
   it.each<[string, (commit: string) => string]>([

@@ -59,6 +59,12 @@ describe("POST /api/scans/preflight without the database", () => {
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: "invalid request body" });
   });
+
+  it("says which scan formats it reads when it refuses a scan in another format", async () => {
+    const response = await POST(request(checkOf(scanOf("scan-a", { schemaVersion: SCHEMA_VERSION + 1 }), false)));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ refusal: { code: "unsupported_version" }, scanFormats: [SCHEMA_VERSION] });
+  });
 });
 
 describe.skipIf(!databaseUrl)("POST /api/scans/preflight", { timeout: 30_000 }, () => {
@@ -192,6 +198,6 @@ describe.skipIf(!databaseUrl)("POST /api/scans/preflight", { timeout: 30_000 }, 
   it("answers a valid request that carries a field it doesn't know", async () => {
     const response = await POST(request({ ...checkOf(scanOf("scan-b"), false), branch: "main" }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ refusal: null, commits: [{ commit: "a1c9e04d2f", decision: "upload" }], warning: null });
+    expect(await response.json()).toEqual({ refusal: null, commits: [{ commit: "a1c9e04d2f", decision: "upload" }], warning: null, scanFormats: [SCHEMA_VERSION] });
   });
 });

@@ -1,51 +1,12 @@
 import type { Pool, PoolClient } from "pg";
-import { SCHEMA_VERSION } from "@scoutui/scan-format";
+import { compareCliVersions, isSnapshotVersion, SCHEMA_VERSION } from "@scoutui/scan-format";
 import { PROJECTION_VERSION, scanModelReady, type ScanModelHeader } from "@scoutui/web-shared";
 import { scanValidationMessage, type ScanValidationCode } from "./scan-validation.ts";
 
 /** Why the dashboard won't accept a scan, with the message the upload reports. */
 export type Refusal = { code: ScanValidationCode; message: string };
 
-const SNAPSHOT_VERSION = /^0\.0\.0-/;
-const NUMERIC_IDENTIFIER = /^\d+$/;
-
 type Scanner = { scanner: string | null; scannerVersion: string };
-
-/** A version's numeric core parts and prerelease identifiers, without its build metadata. */
-function versionParts(version: string): { core: number[]; prerelease: string[] } {
-  const release = version.split("+", 1)[0] ?? "";
-  const dash = release.indexOf("-");
-  if (dash < 0) return { core: release.split(".").map(Number), prerelease: [] };
-  return { core: release.slice(0, dash).split(".").map(Number), prerelease: release.slice(dash + 1).split(".") };
-}
-
-function compareIdentifiers(a: string, b: string): number {
-  const aNumeric = NUMERIC_IDENTIFIER.test(a);
-  const bNumeric = NUMERIC_IDENTIFIER.test(b);
-  if (aNumeric && bNumeric) return Number(a) - Number(b);
-  if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-/**
- * SemVer 2.0.0 precedence of two CLI versions, negative when `a` is older. Build metadata (`+…`) is ignored and a missing core
- * part counts as 0. With equal cores, a release ranks above its prereleases, and prereleases compare identifier by identifier:
- * numeric ones as numbers and below alphanumeric ones, alphanumeric ones in ASCII order, and a shorter list below a longer one.
- */
-export function compareCliVersions(a: string, b: string): number {
-  const left = versionParts(a);
-  const right = versionParts(b);
-  for (let index = 0; index < Math.max(left.core.length, right.core.length); index++) {
-    const order = (left.core[index] ?? 0) - (right.core[index] ?? 0);
-    if (order) return order;
-  }
-  if (!left.prerelease.length || !right.prerelease.length) return right.prerelease.length - left.prerelease.length;
-  for (let index = 0; index < Math.min(left.prerelease.length, right.prerelease.length); index++) {
-    const order = compareIdentifiers(left.prerelease[index] ?? "", right.prerelease[index] ?? "");
-    if (order) return order;
-  }
-  return left.prerelease.length - right.prerelease.length;
-}
 
 /**
  * Why a `--rescan` upload may not replace its commit's stored scan, or null when it may.
@@ -54,11 +15,14 @@ export function compareCliVersions(a: string, b: string): number {
  */
 export function rescanRefusal(stored: Scanner & { commit: string }, incoming: Scanner): string | null {
   if (stored.scanner !== incoming.scanner) return null;
-  if (SNAPSHOT_VERSION.test(incoming.scannerVersion) || compareCliVersions(incoming.scannerVersion, stored.scannerVersion) >= 0) return null;
+  if (isSnapshotVersion(incoming.scannerVersion) || compareCliVersions(incoming.scannerVersion, stored.scannerVersion) >= 0) return null;
   const commit = stored.commit.slice(0, 7);
   const version = stored.scannerVersion;
   return `Couldn't upload the scan: ${commit} was scanned with a newer CLI (${version}). Upgrade the CLI to ${version} or newer, or run npx @scoutui/cli@${version} scan --rescan.`;
 }
+
+/** The scan formats (`schemaVersion`s) the dashboard reads. */
+export const SCAN_FORMATS: readonly number[] = [SCHEMA_VERSION];
 
 /** A CLI whose scans the dashboard reads, and the command to suggest running it with. */
 type MatchingCli = { version: string; command: "scan" | "auth login" };
@@ -68,7 +32,7 @@ type MatchingCli = { version: string; command: "scan" | "auth login" };
  * that CLI's version and an `npx` command that runs it, and starts "Couldn't sign in:" when the command is `auth login`.
  */
 export function versionRefusal(schemaVersion: number | "invalid", options: { matchingCli?: MatchingCli } = {}): Refusal | null {
-  if (schemaVersion === SCHEMA_VERSION) return null;
+  if (schemaVersion !== "invalid" && SCAN_FORMATS.includes(schemaVersion)) return null;
   const newer = typeof schemaVersion === "number" && schemaVersion > SCHEMA_VERSION;
   const cli = options.matchingCli;
   if (!cli) {

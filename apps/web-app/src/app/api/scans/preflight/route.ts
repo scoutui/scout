@@ -7,7 +7,7 @@ import { dashboardWarning } from "@/lib/dashboard-warning";
 import { rateLimit, clientKey, logRateLimitRejection } from "@/lib/rate-limit";
 import { repoIdentityRefusal } from "@/lib/repo-identity";
 import { readJsonBody } from "@/lib/request-body";
-import { acceptScan, commitDecision, storedScans } from "@/lib/scan-acceptance";
+import { acceptScan, commitDecision, SCAN_FORMATS, storedScans } from "@/lib/scan-acceptance";
 import { errorClass, repoScanUrl } from "@/lib/scan-jobs";
 
 const PREFLIGHT_LIMIT = 30;
@@ -28,6 +28,7 @@ const PreflightRequest = z.object({
  * Answers whether the dashboard would take an upload of this scan, before the CLI scans. `refusal` is set when it would refuse
  * the whole scan, and `commits` is then empty. Otherwise `commits` says, in request order, whether an upload of each commit
  * would be stored, skipped as a scan the dashboard already has, or refused. `warning` is a line for the CLI to print, or null.
+ * `scanFormats` lists the scan formats the dashboard reads.
  * It only reads, so the upload stays the final word.
  */
 export async function POST(req: Request): Promise<Response> {
@@ -63,7 +64,7 @@ export async function POST(req: Request): Promise<Response> {
     const pool = getPool();
     const refusal = acceptScan({ schemaVersion: scan.schemaVersion, scannerName: scan.scanner }, { matchingCli: { version: builtWithCli, command: "scan" } })
       ?? await repoIdentityRefusal(pool, { repoId: scan.repoId, remote: scan.remote });
-    if (refusal) return NextResponse.json({ refusal, commits: [], warning: dashboardWarning() });
+    if (refusal) return NextResponse.json({ refusal, commits: [], warning: dashboardWarning(), scanFormats: SCAN_FORMATS });
     const stored = await storedScans(pool, scan.repoId, scan.commits);
     const commits = scan.commits.map(commit => {
       const decision = commitDecision(stored.get(commit), { commit, scanner: scan.scanner, scannerVersion: scan.scannerVersion }, { rescan: scan.rescan });
@@ -71,7 +72,7 @@ export async function POST(req: Request): Promise<Response> {
       if (decision.kind === "refuse") return { commit, decision: "refuse", code: decision.refusal.code, message: decision.refusal.message };
       return { commit, decision: "upload" };
     });
-    return NextResponse.json({ refusal: null, commits, warning: dashboardWarning() });
+    return NextResponse.json({ refusal: null, commits, warning: dashboardWarning(), scanFormats: SCAN_FORMATS });
   } catch (error) {
     console.error(`[preflight] check failed: ${errorClass(error)}`);
     return NextResponse.json({ error: "server_error" }, { status: 500 });

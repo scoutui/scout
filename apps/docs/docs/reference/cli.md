@@ -26,7 +26,7 @@ scout <command> [options]
 | `--version`, `-v` | Prints the CLI version and exits `0`. |
 | `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and the counts of usages a scan couldn't match. Works before or after the command. |
 
-Every error prints one line starting `Error:`, and every warning one line starting `Warning:`, both on stderr. An error that isn't one of the expected ones prints `Error: Scout stopped unexpectedly (<reason>).` and asks you to run the command again with `--debug` and report the output.
+Every error prints one line starting `Error:`, and every warning one line starting `Warning:`, both on stderr. When [styled](#terminal-output), `✗` comes before `Error:` and `!` before `Warning:`. An error that isn't one of the expected ones prints `Error: Scout stopped unexpectedly (<reason>).` and asks you to run the command again with `--debug` and report the output.
 
 An unknown flag, a value on an on/off flag (`--quiet=true`), or an extra word after `scan`, `backfill` or `init` is an error that exits `2`. For a misspelled flag, the message suggests the closest one.
 
@@ -39,6 +39,50 @@ An unknown flag, a value on an on/off flag (`--quiet=true`), or an extra word af
 - For `init`, `--yes` is not passed.
 
 With prompts off, a command never waits for input. It uses its flags and defaults, or exits with an error.
+
+## Terminal output
+
+In a terminal, the output is *styled* for the person watching it:
+
+- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id.
+- Colour picks out numbers, links, and the commands and flags in help. Secondary text, such as where a component comes from, is dimmer.
+- A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`. A warning starts with `!`, and an error with `✗`.
+- Progress turns a spinner, with a bar wherever the total is known.
+
+Output is styled when all of these hold:
+
+- stdin, stdout and stderr are all terminals.
+- `CI` is unset, empty, `false` or `0`.
+- `NO_COLOR` is unset or empty.
+
+Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `auth login` still ends with `✓ Signed in as <email> to <host>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
+
+## New versions
+
+In a terminal, when a newer version of `@scoutui/cli` is available, the line under the wordmark names it and how to get it:
+
+```
+scout 0.2.0 · acme/storefront at 1a2b3c4
+Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.
+```
+
+When a command shows no wordmark, such as `--version`, `init` or `auth`, or when output isn't [styled](#terminal-output), the line comes first.
+
+The command follows your repo:
+
+- It uses the package manager of the nearest lockfile: npm, Yarn, pnpm or Bun. Without a lockfile, it uses npm.
+- If a `package.json` from the current folder up to the lockfile lists `@scoutui/cli`, the line says `Update with …`. Otherwise it says `Install it with …`, which adds it as a dev dependency of the nearest `package.json`.
+- When that `package.json` is a workspace's root, pnpm's command adds `-w` and Yarn 1's adds `-W`.
+
+If the dashboard you last uploaded to can't read the new version's scans yet, the notice says to wait instead, on three lines:
+
+```
+Scout 0.3.0 is available, but your dashboard can't read its scans yet.
+Keep this version until your dashboard is upgraded.
+See https://scoutui.dev/docs/guides/upgrade-scout#version-messages
+```
+
+Scout asks the npm registry at most once a day, in the background while a command runs, and the dashboard answers each time `scan` or `backfill` uploads. What they say shows from the next command on. The check says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
 
 ## `scan`
 
@@ -54,7 +98,9 @@ Most runs need no flags: `scout scan` reads `scout.config.json` in the current d
 | `--dry-run` | none | off | Scans without uploading, and writes the artifact to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
 | `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
 
-While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching occurrences to components…`. In a terminal, that's one line rewritten in place. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
+After the scan, a summary counts the files read, the components found and their occurrences. On a dry run in a terminal, it also lists up to five of the most used components, with the package or file each comes from. An upload, or output that isn't a terminal, such as a CI job's log, leaves the list out.
+
+While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching occurrences to components…`. In a terminal, that's one line rewritten in place. When [styled](#terminal-output), the upload also shows `Uploading the scan…`, then `Waiting for the dashboard to process the scan…`, on that line. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
 
 The config file must be inside a git repository with at least one commit. Otherwise `scan` exits `1` with `Error: Couldn't scan: <folder> isn't inside a git repository. Run scout scan from a git checkout.`, or `Error: Couldn't scan: this repository has no commits yet. Commit your files and try again.` In a shallow clone, a dry run warns `Warning: This checkout doesn't have the full history. Run git fetch --unshallow and scan again.` and records no [`initialCommit`](/docs/reference/artifact#meta). An upload refuses a shallow clone instead (see [Upload flags](#upload-flags)).
 
@@ -186,13 +232,26 @@ Progress lines print on stderr, and `--quiet` hides them:
 | Line | When |
 | --- | --- |
 | `Found 27 commits on origin/main, one a week since 3 Apr 2026. Scout will scan all 27.` | First, unless there's nothing to scan. When some are already on the dashboard, it ends `1 is already on the dashboard, so Scout will scan 26.`; with `--rescan`, `Scout will scan all 27, replacing the 1 already on the dashboard.` |
-| `Scanning <commit> (<date>), <n> of <total>…` | Before each commit. |
+| `Scanning <commit> (<date>), <n> of <total>…` | Before each commit, unless [styled](#terminal-output) without `--debug`. |
 | `The dashboard asked Scout to slow down. Continuing in 1 minute…` | The dashboard is receiving too many uploads. `backfill` waits as long as it asks, then uploads the scan again. |
+
+When [styled](#terminal-output), and without `--debug`, one line rewritten in place takes the place of the `Scanning` lines. It names the commit and the step, `installing dependencies…`, `scanning…` or `uploading the scan…`, beside a spinner, a bar of the commits done so far and the count:
+
+```text
+⠹ 9b07c3d (25 Sep 2026): installing dependencies…  ━━━━━━━━━━━━━━━━━━━━━╸────────  20 of 26
+```
 
 The last line prints on stdout, even with `--quiet`:
 
 ```text
 Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
+```
+
+When styled, it starts with `✓`, or `!` when a commit was skipped, and the link moves to a line of its own:
+
+```text
+✓ Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped.
+  See https://scout.example.com/repos/storefront
 ```
 
 It names the tracked branch, the `--since` date and the repo's page on the dashboard. *Already on the dashboard* counts the commits the dashboard already had, whether it said so before the scan or on upload. With `--rescan`, the line also counts the scans it replaced, after the uploads: `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped.` Those aren't counted as already on the dashboard.
@@ -257,7 +316,7 @@ scout auth <login|logout|status> [--host <url>]
 
 | Subcommand | Behavior | Exit code |
 | --- | --- | --- |
-| `login` | Signs in with a code you approve in the browser, and saves the session. It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
+| `login` | Signs in with a code you approve in the browser, saves the session, and prints `✓ Signed in as <email> to <host>.` It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
 | `status` | Checks the session with the dashboard and prints `Signed in as <email> to <host> (session saved in the system keychain).` When the session is saved in `hosts.json`, the line ends with that file's path instead, for example `(session saved in ~/.config/scoutui/hosts.json).` | `0` signed in. `1` not signed in to that host, the session is no longer valid, or the dashboard can't check it. |
 | `logout` | Ends the session on the dashboard, then deletes it from this computer. If that host was your default, you have no default until you next sign in. | `0`, including when you weren't signed in. `1` the dashboard couldn't end the session, so it stays saved. |
 
@@ -313,13 +372,16 @@ A host without a scheme gets `https://`. A host must use `https://`; plain `http
 | --- | --- |
 | `SCOUTUI_HOST` | Host for uploads and `auth`. Its place in the order is under [Host resolution](#host-resolution). |
 | `SCOUTUI_DEBUG` | Any value other than empty or `0` works like [`--debug`](#global-flags). |
+| `SCOUTUI_NO_UPDATE_CHECK` | Any value other than empty or `0` turns off the [check for a newer version](#new-versions). |
 | `SCOUTUI_TOKEN` | When set and not empty, `scan` and `backfill` upload with this token instead of your saved session. It must match the dashboard's `SCOUTUI_CI_UPLOAD_TOKEN`. Used by CI; see [Run a scan and upload in CI](/docs/guides/run-in-ci). |
 
 Rarely needed:
 
 | Variable | Behavior |
 | --- | --- |
-| `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`. |
-| `NO_COLOR` | Any non-empty value turns off colored output, even when `FORCE_COLOR` is set. |
-| `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal. |
+| `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`, and turns off [styled output](#terminal-output). |
+| `NO_COLOR` | Any non-empty value turns off colored output and [styled output](#terminal-output), even when `FORCE_COLOR` is set. |
+| `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal or runs in CI. It doesn't add the rest of [styled output](#terminal-output). |
+| `NO_UPDATE_NOTIFIER` | When set, even empty, turns off the [check for a newer version](#new-versions), as it does for other command-line tools. |
 | `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |
+| `XDG_CACHE_HOME` | Folder that holds `scoutui/update-check.json`, where the [check for a newer version](#new-versions) keeps what the registry and the dashboard last said. Default: `~/.cache`. |

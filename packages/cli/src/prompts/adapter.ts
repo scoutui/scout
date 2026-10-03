@@ -19,7 +19,6 @@ export type PromptAdapter = {
     initialValues?: T[];
     required?: boolean;
   }): Promise<T[] | symbol>;
-  spinner(): { start(message?: string): void; stop(message?: string): void };
   isCancel(value: unknown): value is symbol;
 };
 
@@ -44,7 +43,6 @@ export const clackAdapter: PromptAdapter = {
   confirm: (o) => clack.confirm(o),
   select: clackSelect,
   multiselect: clackMultiselect,
-  spinner: () => clack.spinner(),
   isCancel: (v): v is symbol => clack.isCancel(v),
 };
 

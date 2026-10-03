@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { reportError } from "../../../src/cli/report.js";
 import { Logger } from "../../../src/util/log.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 
 const plain = createColor({ isTTY: false, env: {} });
 const BUGS = "https://example.com/issues";

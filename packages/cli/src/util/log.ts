@@ -1,13 +1,20 @@
-import { createColor, type Colorizer } from "./color.js";
+import { symbol, terminalStyle, wordmark, type Colorizer, type SymbolKind } from "./style.js";
 
 export type LoggerOptions = {
   /** Hide `info` lines. Warnings and errors still print. */
   quiet?: boolean;
   /** Print the detail passed to `warn` and `error`. */
   debug?: boolean;
+  /** The colours to write with (default: `terminalStyle`'s). */
   color?: Colorizer;
+  /** Whether someone is watching in a terminal, styled or not (default: `terminalStyle`'s). */
+  interactive?: boolean;
+  /** Whether to style output for someone watching: wordmark, symbols and motion (default: `terminalStyle`'s). */
+  styled?: boolean;
   /** Whether stderr is a terminal, where a progress line may be showing (default: stderr's own `isTTY`). */
   isTTY?: boolean;
+  /** The update notice, shown under the wordmark. */
+  notice?: string | null;
 };
 
 /** `--debug` or a `SCOUTUI_DEBUG` that isn't empty or `0`. */
@@ -26,7 +33,10 @@ export function oneLine(message: string): string {
 export class Logger {
   readonly quiet: boolean;
   readonly debug: boolean;
-  private readonly color: Colorizer;
+  readonly color: Colorizer;
+  readonly interactive: boolean;
+  readonly styled: boolean;
+  private readonly notice: string | null;
   /** Clears a progress line being rewritten in place, so a warning or error starts on a clean line. */
   private readonly clearLine: string;
 
@@ -34,8 +44,17 @@ export class Logger {
     this.quiet = opts.quiet ?? false;
     this.debug = opts.debug ?? false;
     const isTTY = opts.isTTY ?? Boolean(process.stderr.isTTY);
-    this.color = opts.color ?? createColor({ isTTY });
+    const style = terminalStyle();
+    this.color = opts.color ?? style.color;
+    this.interactive = opts.interactive ?? style.interactive;
+    this.styled = opts.styled ?? style.styled;
+    this.notice = opts.notice ?? null;
     this.clearLine = isTTY ? "\r\x1b[K" : "";
+  }
+  /** The wordmark, the update notice dimmed under it when there is one, and a blank line, once per command, when styled and not under quiet. */
+  heading(detail?: string): void {
+    const notice = this.notice === null ? "" : `${this.color.dim(this.notice)}\n`;
+    if (this.styled && !this.quiet) process.stderr.write(`${wordmark(this.color, detail)}\n${notice}\n`);
   }
   info(msg: string): void {
     if (!this.quiet) process.stdout.write(`${msg}\n`);
@@ -44,15 +63,23 @@ export class Logger {
   result(msg: string): void {
     process.stdout.write(`${msg}\n`);
   }
-  /** One `Warning:` line; `detail` prints as it is under debug. */
+  /** A `result` that went well, after a green `✓` when styled. */
+  success(msg: string): void {
+    process.stdout.write(`${this.mark("success")}${msg}\n`);
+  }
+  /** One `Warning:` line, after a yellow `!` when styled; `detail` prints as it is under debug. */
   warn(msg: string, detail?: string): void {
-    process.stderr.write(`${this.clearLine}${this.color.yellow("Warning:")} ${oneLine(msg)}\n`);
+    process.stderr.write(`${this.clearLine}${this.mark("warning")}${this.color.yellow("Warning:")} ${oneLine(msg)}\n`);
     this.detail(detail);
   }
-  /** One `Error:` line; `detail` prints as it is under debug. */
+  /** One `Error:` line, after a red `✗` when styled; `detail` prints as it is under debug. */
   error(msg: string, detail?: string): void {
-    process.stderr.write(`${this.clearLine}${this.color.red("Error:")} ${oneLine(msg)}\n`);
+    process.stderr.write(`${this.clearLine}${this.mark("error")}${this.color.red("Error:")} ${oneLine(msg)}\n`);
     this.detail(detail);
+  }
+  /** The symbol and a space before a styled line, or nothing. */
+  private mark(kind: SymbolKind): string {
+    return this.styled ? `${symbol(this.color, kind)} ` : "";
   }
   /** Text printed only under debug. */
   detail(text: string | undefined): void {

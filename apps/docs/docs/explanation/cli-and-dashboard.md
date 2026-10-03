@@ -47,7 +47,7 @@ Uploads come from one of two places:
 
 Receiving a scan and showing it are two steps. The dashboard stores the upload and answers straight away. A background process, the *worker*, then checks the scan and publishes it. Only then does it show on the dashboard's pages.
 
-The CLI says once that it's waiting, then waits for that to finish. A typical run ends like this:
+The CLI says once that it's waiting, then waits for that to finish. In a CI job's log, a run ends like this:
 
 ```text
 Waiting for the dashboard to process the scan…

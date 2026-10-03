@@ -31,13 +31,16 @@ From the folder that holds `scout.config.json`, run:
 npx scout backfill
 ```
 
-It says how many commits it found, then scans them newest first:
+It says how many commits it found, then scans them newest first. One line shows the commit it's on, what it's doing and how many it has done:
 
 ```text
+scout 0.2.0 · storefront
+
 Found 27 commits on origin/main, one a week since 3 Apr 2026. 1 is already on the dashboard, so Scout will scan 26.
-Scanning 9b07c3d (25 Sep 2026), 1 of 26…
-Scanning 51d8e20 (18 Sep 2026), 2 of 26…
+⠹ 9b07c3d (25 Sep 2026): installing dependencies…  ──────────────────────────────  1 of 26
 ```
+
+In a CI job's log, the lines are plain, with no `scout` line or symbols, and each commit gets a line of its own, such as `Scanning 9b07c3d (25 Sep 2026), 1 of 26…`.
 
 It picks the latest commit on the branch and, for each earlier week, the newest commit of that week. A commit the dashboard already has, such as the one your first `scout scan` uploaded, is left as it is.
 
@@ -50,7 +53,8 @@ If the dashboard is receiving too many uploads, backfill prints `The dashboard a
 When it's done, it prints what happened and links to the repo's page, where the charts now show the history:
 
 ```text
-Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
+✓ Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped.
+  See https://scout.example.com/repos/storefront
 ```
 
 ## Choose how far back
@@ -77,14 +81,14 @@ The first line says how many scans it replaces:
 Found 27 commits on origin/main, one a week since 3 Apr 2026. Scout will scan all 27, replacing the 1 already on the dashboard.
 ```
 
-The last line counts them, for example `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped`.
+The `Backfilled` line counts them, for example `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped`.
 
 ## Fix a skipped commit
 
 When a commit can't be scanned, backfill skips it, says why, and carries on with the next one:
 
 ```text
-Warning: Skipped 51d8e20 (18 Sep 2026): pnpm install failed.
+! Warning: Skipped 51d8e20 (18 Sep 2026): pnpm install failed.
 ```
 
 | Reason | What to do |
@@ -122,7 +126,7 @@ For a Nuxt app, the command must also prepare the app, because backfill then doe
 
 ## Where the charts start
 
-Backfill can stop before it reaches the `--since` date. It then prints where the charts start, followed by the last line:
+Backfill can stop before it reaches the `--since` date. It then prints where the charts start, followed by the `Backfilled` line:
 
 - `3 commits in a row wouldn't install, so the charts start at 6 Apr 2026. Check the lines above, or set "install" in scout.config.json.` This usually means older history needs older tools. The date is that of the oldest commit backfill picked that's on the dashboard. To go further back, fix what the skip lines name, often by setting [`install`](#set-the-install-command), and run backfill again.
 - `apps/web doesn't exist before 6 Apr 2026, so the charts start there.` The config's folder isn't in older commits, for example because the app was created or moved then. Older commits can't be scanned with this config.
@@ -148,10 +152,11 @@ Press Ctrl-C to stop. Backfill removes its temporary checkout and prints:
 Stopped. Run scout backfill again to continue: it skips what's already on the dashboard.
 ```
 
-Run it again whenever you like. It counts the commits it has uploaded as already on the dashboard and scans only the rest. Leave out `--rescan` if you used it, or it scans them all again. Once every commit is on the dashboard, a run prints only the last line:
+Run it again whenever you like. It counts the commits it has uploaded as already on the dashboard and scans only the rest. Leave out `--rescan` if you used it, or it scans them all again. Once every commit is on the dashboard, a run scans nothing and ends with:
 
 ```text
-Backfilled main since 3 Apr 2026: 0 uploaded, 27 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
+✓ Backfilled main since 3 Apr 2026: 0 uploaded, 27 already on the dashboard, 0 skipped.
+  See https://scout.example.com/repos/storefront
 ```
 
 For every flag, skip and exit code, see the [CLI reference](/docs/reference/cli#backfill).

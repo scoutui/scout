@@ -79,7 +79,7 @@ In a repo that has its dependencies and the CLI installed and a `scout.config.js
 npx scout auth login --host http://localhost:3000
 ```
 
-Include `http://`; without a scheme the CLI assumes `https://`. The CLI opens your browser at an approval page showing the same code as the terminal. Press **Approve**, and the terminal prints `✓ Signed in as` with your email. [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads) covers checking and switching hosts.
+Include `http://`; without a scheme the CLI assumes `https://`. The CLI opens your browser at an approval page showing the same code as the terminal. Press **Approve**, and the terminal prints `✓ Signed in as <your email> to http://localhost:3000.` [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads) covers checking and switching hosts.
 
 ## Verify
 
@@ -94,7 +94,7 @@ npx scout scan --host http://localhost:3000
 The output ends with a link to your repo's page in the dashboard:
 
 ```
-Uploaded the scan of a1c9e04: http://localhost:3000/repos/storefront
+✓ Uploaded the scan of a1c9e04: http://localhost:3000/repos/storefront
 ```
 
 ## If something goes wrong

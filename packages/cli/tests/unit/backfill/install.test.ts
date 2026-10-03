@@ -123,6 +123,16 @@ describe("findLockfile", () => {
     expect(findLockfile(join(base, "repo/apps/web"), join(base, "repo"))).toBeNull();
   });
 
+  it.each<[string, Record<string, string>, string[], Lockfile["name"] | null]>([
+    ["finds none beside bun.lock", { name: "example-web" }, ["bun.lock"], null],
+    ["finds none beside bun.lockb", { name: "example-web" }, ["bun.lockb"], null],
+    ["takes package-lock.json beside bun.lock when packageManager names Bun", { name: "example-web", packageManager: "bun@1.2.0" }, ["bun.lock", "package-lock.json"], "package-lock.json"],
+  ])("ignores Bun's lockfiles, which it can't install from: %s", (_title, manifest, lockfiles, name) => {
+    write(base, "repo/package.json", JSON.stringify(manifest));
+    for (const lockfile of lockfiles) write(base, `repo/${lockfile}`);
+    expect(findLockfile(join(base, "repo"), join(base, "repo"))).toEqual(name === null ? null : { dir: join(base, "repo"), name });
+  });
+
   it.each<[string, Record<string, string>, Lockfile["name"]]>([
     ["takes yarn.lock over package-lock.json when there is no packageManager", { name: "example-web" }, "yarn.lock"],
     ["takes the lockfile of the manager packageManager names", { name: "example-web", packageManager: "npm@10.9.2" }, "package-lock.json"],

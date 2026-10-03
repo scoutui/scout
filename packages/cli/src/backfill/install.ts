@@ -4,6 +4,9 @@ import { runProcess } from "./run-process.js";
 
 export type Lockfile = { dir: string; name: "pnpm-lock.yaml" | "yarn.lock" | "package-lock.json" };
 
+/** A `Lockfile`, or Bun's `bun.lock` or `bun.lockb`, which backfill can't install from. */
+export type AnyLockfile = { dir: string; name: Lockfile["name"] | "bun.lock" | "bun.lockb" };
+
 /** How to install from a lockfile. `packageManagerCommand` turns `install` or `nuxtPrepare` into the command to run. */
 export type InstallPlan = NpmPlan | CorepackPlan;
 
@@ -36,6 +39,8 @@ type Manifest = {
 
 const LOCKFILES = ["pnpm-lock.yaml", "yarn.lock", "package-lock.json"] as const;
 
+const ANY_LOCKFILES = [...LOCKFILES, "bun.lock", "bun.lockb"] as const;
+
 const MISE_FILES = ["mise.toml", ".mise.toml", join(".config", "mise.toml")] as const;
 
 const EXACT_VERSION = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/;
@@ -44,6 +49,8 @@ const MANAGER_OF = {
   "pnpm-lock.yaml": "pnpm",
   "yarn.lock": "yarn",
   "package-lock.json": "npm",
+  "bun.lock": "bun",
+  "bun.lockb": "bun",
 } as const;
 
 type WriterRows = readonly [readonly [string, string], ...(readonly [string, string])[]];
@@ -74,8 +81,21 @@ const LOCKFILE_WRITERS: { yarnClassic: string; yarn: WriterRows; pnpm: WriterRow
  * When it holds several, the one whose manager the folder's `packageManager` names, else the first in that order.
  */
 export function findLockfile(configDir: string, root: string): Lockfile | null {
+  return nearestLockfile(LOCKFILES, configDir, root);
+}
+
+/** `findLockfile`, also counting Bun's `bun.lock` and `bun.lockb` after the others. */
+export function findAnyLockfile(configDir: string, root: string): AnyLockfile | null {
+  return nearestLockfile(ANY_LOCKFILES, configDir, root);
+}
+
+function nearestLockfile<Name extends AnyLockfile["name"]>(
+  lockfiles: readonly Name[],
+  configDir: string,
+  root: string,
+): { dir: string; name: Name } | null {
   for (const dir of foldersUp(configDir, root)) {
-    const found = LOCKFILES.filter((name) => existsSync(join(dir, name)));
+    const found = lockfiles.filter((name) => existsSync(join(dir, name)));
     const packageManager = found.length > 1 ? packageManagerField(readManifest(dir)) : undefined;
     const name = found.find((lockfile) => names(packageManager, MANAGER_OF[lockfile])) ?? found[0];
     if (name !== undefined) return { dir, name };
@@ -195,6 +215,11 @@ export function packageManagerCommand(
   return { command: process.execPath, args: [plan.corepack.script, plan.spec, ...plan[step]] };
 }
 
+/** The package manager that writes `lockfile`. */
+export function lockfileManager(lockfile: AnyLockfile): (typeof MANAGER_OF)[AnyLockfile["name"]] {
+  return MANAGER_OF[lockfile.name];
+}
+
 function readManifest(dir: string): Manifest | undefined {
   try {
     return (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as Manifest | null) ?? undefined;
@@ -252,7 +277,8 @@ function fitsLockfile(version: string, manager: string, head: string): boolean {
   return isYarnClassic(head) ? major === 1 : major >= 2;
 }
 
-function isYarnClassic(head: string): boolean {
+/** Whether a `yarn.lock` that starts with `head` was written by Yarn 1. */
+export function isYarnClassic(head: string): boolean {
   return /^# yarn lockfile v1\b/m.test(head);
 }
 
@@ -268,7 +294,8 @@ function readText(path: string): string | undefined {
   }
 }
 
-function foldersUp(from: string, root: string): string[] {
+/** `from` and each folder above it up to `root`, nearest first. */
+export function foldersUp(from: string, root: string): string[] {
   const top = resolve(root);
   const folders: string[] = [];
   for (let dir = resolve(from); ; dir = dirname(dir)) {

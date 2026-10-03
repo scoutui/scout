@@ -3,7 +3,7 @@ import { buildScanStats } from "../../../src/artifact/scan-stats.js";
 import type { Occurrence, ScanArtifact } from "@scoutui/scan-format";
 import { formatWarning } from "../../../src/reporter/diagnostic-lines.js";
 import { printSummary } from "../../../src/reporter/stdout.js";
-import { createColor } from "../../../src/util/color.js";
+import { createColor } from "../../../src/util/style.js";
 
 const occurrence = (resolution: Occurrence["resolution"], line: number): Occurrence => ({
   occurrenceId: `o${line}`,
@@ -41,7 +41,7 @@ function capture(out: ScanArtifact): string {
     return true;
   }) as typeof process.stdout.write);
   const stats = buildScanStats({ filesScanned: 1, scanDurationMs: 0, components: out.components, occurrences: out.occurrences });
-  printSummary(out, stats, createColor({ isTTY: false, env: {} }));
+  printSummary(out, stats, createColor({ isTTY: false, env: {} }), { mostUsed: true });
   spy.mockRestore();
   return chunks.join("");
 }

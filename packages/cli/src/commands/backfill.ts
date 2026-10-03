@@ -27,6 +27,8 @@ import { checkTrackedBranch } from "../upload-policy/git-state.js";
 import { describeUploadError, UploadError, UploadRefusedError, type UploadResult, uploadPending } from "../upload.js";
 import { readGitToplevel, runGit } from "../util/git.js";
 import type { Logger } from "../util/log.js";
+import { startPhase } from "../util/progress.js";
+import { symbol } from "../util/style.js";
 import { loadScanConfig } from "./scan.js";
 
 export type BackfillOptions = {
@@ -35,6 +37,8 @@ export type BackfillOptions = {
   since?: string;
   rescan: boolean;
   hostOverride?: string;
+  /** Given the scan formats the dashboard reads, when its pre-scan check lists them. */
+  onScanFormats?: (formats: number[]) => void;
   log: Logger;
   /** The CLI's entry script, which the run starts once per commit to scan it. */
   cliEntry: string;
@@ -94,7 +98,7 @@ export async function runBackfill(opts: BackfillOptions): Promise<number> {
       if (state.run !== undefined) removeWorktreeSync(state.run.cwd, state.run.dir);
     } catch {}
     try {
-      process.stderr.write(`Stopped. ${RUN_AGAIN}\n`);
+      process.stderr.write(`${opts.log.styled ? "\r\x1b[K" : ""}Stopped. ${RUN_AGAIN}\n`);
     } catch {}
     process.exit(130);
   };
@@ -113,8 +117,10 @@ export async function runBackfill(opts: BackfillOptions): Promise<number> {
 
 async function backfill(opts: BackfillOptions, state: RunState): Promise<number> {
   const { log, rescan } = opts;
+  // When styled, one line rewritten in place shows the commit being worked on, in place of a line for each commit.
+  const motion = log.styled && !log.quiet && !log.debug;
   const progress = (line: string): void => {
-    if (!log.quiet) process.stderr.write(`${line}\n`);
+    if (!log.quiet) process.stderr.write(`${log.styled ? "\r\x1b[K" : ""}${line}\n`);
   };
 
   const cfg = await loadScanConfig(opts.configPath, log);
@@ -139,6 +145,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     cwd: cfg.configDir,
     ...(cfg.repoId !== undefined ? { repoIdOverride: cfg.repoId } : {}),
   });
+  log.heading(meta.repo.id);
 
   let waiting = false;
   let uploader: AuthedUploader | undefined;
@@ -147,6 +154,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     uploader = await createAuthedUploader({
       ...(opts.hostOverride !== undefined ? { flagHost: opts.hostOverride } : {}),
       ...(cfg.host !== undefined ? { configHost: cfg.host } : {}),
+      ...(opts.onScanFormats ? { onScanFormats: opts.onScanFormats } : {}),
       onStatus: (status) => {
         if (uploadPending(status) && !waiting) {
           waiting = true;
@@ -174,8 +182,13 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
   });
   const counts = { uploaded: 0, already: rescan ? 0 : onDashboard.length, skipped: 0, replaced: 0 };
   const link = new URL(`/repos/${encodeURIComponent(meta.repo.id)}`, authed.base).href;
-  const endLine = (): string =>
-    `Backfilled ${tracked.branch} since ${formatDay(since)}: ${counts.uploaded} uploaded, ${rescan ? `${counts.replaced} replaced, ` : ""}${counts.already} already on the dashboard, ${counts.skipped} skipped. See ${link}`;
+  /** The run's outcome, then the link. When styled, after a symbol, with the link on its own line. */
+  const endLine = (): string => {
+    const n = (count: number): string => log.color.bold(String(count));
+    const done = `Backfilled ${tracked.branch} since ${formatDay(since)}: ${n(counts.uploaded)} uploaded, ${rescan ? `${n(counts.replaced)} replaced, ` : ""}${n(counts.already)} already on the dashboard, ${n(counts.skipped)} skipped.`;
+    const see = `See ${log.color.brand(link)}`;
+    return log.styled ? `${symbol(log.color, counts.skipped > 0 ? "warning" : "success")} ${done}\n  ${see}` : `${done} ${see}`;
+  };
 
   let earliest: string | undefined = onDashboard.map(({ committedAt }) => committedAt).sort()[0];
   let fixable = 0;
@@ -226,10 +239,28 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
   const configPath = join(checkoutDir, relative(top, cfg.configPath));
   const hasFolder = async (commit: string): Promise<boolean> =>
     folder === "" || (await runGit(checkoutDir, ["cat-file", "-e", `${commit}:${folder}`])).ok;
+  // With motion, the commit and the step run beside a spinner, a bar of the commits done and the count.
+  const step = async <T>(what: string, entry: ChainCommit, index: number, work: () => Promise<T>): Promise<T> => {
+    if (!motion) return await work();
+    const line = startPhase({
+      label: `${commitLabel(entry)}: ${what}`,
+      writer: (s) => process.stderr.write(s),
+      isTTY: true,
+      columns: process.stderr.columns,
+      motion: log.color,
+      fraction: index / toScan.length,
+      count: `${index + 1} of ${toScan.length}`,
+    });
+    try {
+      return await work();
+    } finally {
+      line.done();
+    }
+  };
 
   for (const [index, entry] of toScan.entries()) {
     const { commit, committedAt } = entry;
-    progress(`Scanning ${commitLabel(entry)}, ${index + 1} of ${toScan.length}…`);
+    if (!motion) progress(`Scanning ${commitLabel(entry)}, ${index + 1} of ${toScan.length}…`);
     await checkoutCommit(checkoutDir, entry);
     if (!(await hasFolder(commit))) {
       let newer: ChainCommit | undefined;
@@ -248,7 +279,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     }
     await writeFile(configPath, configText);
 
-    const installed = await install(work, state, log);
+    const installed = await step("installing dependencies…", entry, index, () => install(work, state, log));
     if (installed.kind === "corepack-failed") {
       log.error(COREPACK_FAILED, installed.output);
       return 1;
@@ -259,11 +290,13 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
     } else {
       const outDir = join(runDir, commit);
       await mkdir(outDir);
-      const child = await finished(
-        state,
-        runProcess(process.execPath, [opts.cliEntry, INTERNAL_COMMIT_SCAN, configPath, outDir, meta.repo.id, ...(log.debug ? ["--debug"] : [])], {
-          cwd: work.configDir,
-        }),
+      const child = await step("scanning…", entry, index, () =>
+        finished(
+          state,
+          runProcess(process.execPath, [opts.cliEntry, INTERNAL_COMMIT_SCAN, configPath, outDir, meta.repo.id, ...(log.debug ? ["--debug"] : [])], {
+            cwd: work.configDir,
+          }),
+        ),
       );
       const silent = child.output.trim() === "";
       if (!silent) log.detail(child.output);
@@ -282,7 +315,9 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
       } else {
         waiting = false;
         try {
-          const uploaded = await uploadWhenAllowed(authed, await readFile(join(outDir, COMMIT_SCAN_FILE), "utf8"), rescan, progress);
+          const uploaded = await step("uploading the scan…", entry, index, async () =>
+            uploadWhenAllowed(authed, await readFile(join(outDir, COMMIT_SCAN_FILE), "utf8"), rescan, progress),
+          );
           if (uploaded.status === "exists") counts.already++;
           else if (rescan && uploaded.replaced) counts.replaced++;
           else counts.uploaded++;

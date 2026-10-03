@@ -8,6 +8,11 @@ const exec = promisify(execFile);
 const NETWORK_TIMEOUT_MS = 10_000;
 const SSH_LOOKUP_TIMEOUT_MS = 3_000;
 /** Room for `git status` to list every changed and untracked file in a large checkout. */
+/** A commit's first seven characters, as git shows it. */
+export function shortCommit(commit: string): string {
+  return commit.slice(0, 7);
+}
+
 export const STATUS_MAX_BUFFER = 256 * 1024 * 1024;
 
 /** What git says about the checkout at a folder, each case told apart. */

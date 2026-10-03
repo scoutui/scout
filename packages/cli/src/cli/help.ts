@@ -1,17 +1,20 @@
+import type { Colorizer } from "../util/style.js";
+
 const TOP = `scout <command> [options]
 
 Commands:
   scan          Scan the repo and upload the scan to the dashboard
   backfill      Scan one commit a week of the tracked branch's history and upload each scan
   init          Create scout.config.json for this repo
-  auth          Sign in to a dashboard, see who you're signed in as, or sign out (login | status | logout)
+  auth          Sign in, see who you're signed in as, or sign out (login | status | logout)
 
 Run \`scout <command> --help\` for command-specific options.
 
 Other:
   --help, -h
   --version, -v
-  --debug        Show the details behind an error (or set SCOUTUI_DEBUG=1)
+  --debug                    Show the details behind an error (or set SCOUTUI_DEBUG=1)
+  SCOUTUI_NO_UPDATE_CHECK=1  Turn off the update notice
 
 Get started: scout init, then scout scan --dry-run.
 Docs: https://scoutui.dev/docs
@@ -83,4 +86,24 @@ export function topHelp(): string {
 /** Per-command usage: `scout <cmd> --help`. Falls back to the overview. */
 export function commandHelp(command: string): string {
   return REGISTRY[command] ?? TOP;
+}
+
+/**
+ * Help text in colour: the usage line and section headings bold, each command's or option's name in the brand colour,
+ * defaults dim, and the docs link in the brand colour.
+ */
+export function styleHelp(text: string, color: Colorizer): string {
+  return text
+    .split("\n")
+    .map((line, index) => {
+      if (index === 0 || /^[A-Z][\w ]*:$/.test(line)) return line === "" ? line : color.bold(line);
+      const docs = /^(Docs: )(\S+)$/.exec(line);
+      if (docs) return `${docs[1]}${color.brand(docs[2] as string)}`;
+      const entry = /^( {2})(\S.*?)(?:( {2,})(.*))?$/.exec(line);
+      if (!entry) return line;
+      const [, indent, name, gap, description] = entry;
+      const described = description?.replace(/\(default: [^)]*\)/, (d) => color.dim(d));
+      return `${indent}${color.brand(name as string)}${gap ?? ""}${described ?? ""}`;
+    })
+    .join("\n");
 }

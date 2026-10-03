@@ -7,6 +7,7 @@ import { runScan, scanExitCode } from "../../../src/commands/scan.js";
 import * as parseModule from "../../../src/parse-by-ext.js";
 import * as parserReact from "@scoutui/parser-react";
 import { Logger } from "../../../src/util/log.js";
+import { createColor } from "../../../src/util/style.js";
 
 function setupConsumer() {
   const dir = mkdtempSync(join(tmpdir(), "cc-e2e-"));
@@ -92,6 +93,30 @@ describe("runScan scan file", () => {
     expect(stderr.mock.calls.map(([text]) => String(text)).join("")).toBe(
       `Error: scout-scan.json in ${dir} links to a file outside that folder, so the scan won't write it. Delete the link and try again.\n`,
     );
+  });
+});
+
+describe("runScan wordmark", () => {
+  afterEach(() => vi.restoreAllMocks());
+  const head = (dir: string) => execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { cwd: dir }).toString().trim();
+  const { version } = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8")) as { version: string };
+
+  it("starts with the wordmark naming the version, repository and commit, then a blank line, when styled", async () => {
+    const dir = setupConsumer();
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json"), log: new Logger({ styled: true, color: createColor({ isTTY: false, env: {} }) }) });
+    expect(String(stderr.mock.calls[0]?.[0])).toBe(`scout ${version} · scan-test at ${head(dir)}\n\n`);
+  });
+
+  it.each([
+    ["not styled", () => new Logger({ styled: false })],
+    ["quiet", () => new Logger({ quiet: true, styled: true })],
+  ])("prints no wordmark when %s", async (_case, log) => {
+    const dir = setupConsumer();
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json"), log: log() });
+    expect(stderr.mock.calls.map(([text]) => String(text)).join("")).not.toContain(`scout ${version}`);
   });
 });
 

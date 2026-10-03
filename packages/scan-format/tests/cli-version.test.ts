@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareCliVersions } from "@/lib/scan-acceptance";
+import { compareCliVersions } from "../src/cli-version.js";
 
 const sign = { above: 1, "equal to": 0, below: -1 } as const;
 
