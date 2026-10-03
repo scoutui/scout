@@ -43,7 +43,7 @@ const graph: CompositionGraph = {
 };
 
 describe("flat closure panels", () => {
-  it("each panel is one list: header count, nearest-first step grammar, deprecated badge", () => {
+  it("each panel is one list: header count, nearest-first step grammar, deprecated mark", () => {
     render(<CompositionTab detail={detail} graph={graph} />);
     // The header names the list and its row count, the panel's only number.
     const renderedBy = screen.getByRole("heading", { name: "Rendered by" }).closest("header");
@@ -51,7 +51,10 @@ describe("flat closure panels", () => {
     const renders = screen.getByRole("heading", { name: "Renders" }).closest("header");
     expect(renders).toHaveTextContent("Renders1");
     expect(screen.getAllByText("1 step").length).toBeGreaterThan(0);
+    // A deprecated row carries the render tree's warning triangle right after its name.
     expect(screen.getByText("deprecated")).toBeInTheDocument();
+    expect(screen.getByText("ext").nextElementSibling?.querySelector("svg")).toBeInstanceOf(SVGElement);
+    expect(screen.getByText("root0").closest("button")?.querySelector("svg")).toBeNull();
     // No view toggle in either direction.
     expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Direct/ })).not.toBeInTheDocument();

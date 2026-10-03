@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ComponentDetail, CompositionGraph } from "@scoutui/web-shared";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { DeprecatedMark } from "@/components/deprecated-mark";
 import {
   buildGraphModel,
   closureOf,
@@ -348,12 +348,10 @@ function ClosurePanel({
             >
               <span className="flex min-w-0 items-center gap-2">
                 <ScopeGlyph scope={node.scope} className="self-center" />
-                <span className="min-w-0 flex-1 truncate font-mono text-xs">{node.displayName}</span>
-                {node.deprecated ? (
-                  <Badge variant="warning" className="shrink-0">
-                    deprecated
-                  </Badge>
-                ) : null}
+                <span className="flex min-w-0 flex-1 items-center gap-1">
+                  <span className="min-w-0 truncate font-mono text-xs">{node.displayName}</span>
+                  {node.deprecated ? <DeprecatedMark /> : null}
+                </span>
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{stepsWord}</span>
               </span>
               {/* `pathValueOf` returns "" for a node with neither a file
