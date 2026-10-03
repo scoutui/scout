@@ -64,6 +64,7 @@ describe("integration: package-reexports fixture", () => {
         local("bundled-entry", "App.tsx", "App"),
         local("leaf-relabel", "App.tsx", "App"),
         local("leaf-relabel", "Direct.tsx", "Direct"),
+        local("star-reexports", "Aliased.tsx", "Aliased"),
         local("star-reexports", "App.tsx", "App"),
         local("star-reexports", "Other.tsx", "Other"),
         local("star-reexports", "Page.vue", "Page"),
@@ -156,6 +157,14 @@ describe("integration: package-reexports fixture", () => {
       expect(rendersAt(S, "Other.tsx:10:6", "Other.tsx:11:6")).toEqual([
         row("Other.tsx:10:6", pkg("@example/card", "Card"), other, [imported("@example/kit", "Card")]),
         row("Other.tsx:11:6", pkg("@example/icons", "Icons.Star"), other, [imported("@example/kit", "Icons")]),
+      ]);
+    });
+
+    it("credits an alias of a member of a named import, declared in another file, as that member", () => {
+      expect(rendersAt(S, "Aliased.tsx:4:9")).toEqual([
+        row("Aliased.tsx:4:9", pkg("@example/icons", "Icons.Star"), local(S, "Aliased.tsx", "Aliased"), [
+          imported("./aliased-star", "AliasedStar"),
+        ]),
       ]);
     });
 

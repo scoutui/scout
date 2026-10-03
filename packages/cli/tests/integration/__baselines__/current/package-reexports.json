@@ -129,6 +129,35 @@
       }
     },
     {
+      "id": "897ba978536d42ca",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "package-reexports",
+        "filePath": "src/star-reexports/Aliased.tsx",
+        "exportName": "Aliased"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "e158ad2e457a5506": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "17e3248107ea8d72",
       "identity": {
         "kind": "repository-declaration",
@@ -271,6 +300,35 @@
       }
     },
     {
+      "id": "e158ad2e457a5506",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/icons",
+        "publicEntry": "",
+        "exportName": "Icons.Star"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {},
+      "writtenNames": [
+        "AliasedStar"
+      ],
+      "version": "1.0.0",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "897ba978536d42ca": 1,
+          "b7a609de6f636720": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
       "id": "65385e93190ff80f",
       "identity": {
         "kind": "package-export",
@@ -383,31 +441,6 @@
       }
     },
     {
-      "id": "e158ad2e457a5506",
-      "identity": {
-        "kind": "package-export",
-        "packageName": "@example/icons",
-        "publicEntry": "",
-        "exportName": "Icons.Star"
-      },
-      "framework": "react",
-      "stats": {
-        "occurrenceCount": 1,
-        "fileCount": 1
-      },
-      "usage": "direct",
-      "props": {},
-      "version": "1.0.0",
-      "composition": {
-        "rendersByCount": {},
-        "renderedByCount": {
-          "b7a609de6f636720": 1
-        },
-        "isRootCount": 0,
-        "isLeafCount": 1
-      }
-    },
-    {
       "id": "40d245e00cda4b28",
       "identity": {
         "kind": "package-export",
@@ -499,6 +532,29 @@
       ],
       "props": {},
       "ownerComponentId": "5dd9bdedbb6b504e"
+    },
+    {
+      "occurrenceId": "69c9905d1292661c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e158ad2e457a5506"
+      },
+      "filePath": "src/star-reexports/Aliased.tsx",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./aliased-star",
+          "name": "AliasedStar"
+        }
+      ],
+      "writtenName": "AliasedStar",
+      "props": {},
+      "ownerComponentId": "897ba978536d42ca"
     },
     {
       "occurrenceId": "71e76b3c8f736a48",
