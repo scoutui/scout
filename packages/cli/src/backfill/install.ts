@@ -84,25 +84,26 @@ export function findLockfile(configDir: string, root: string): Lockfile | null {
 }
 
 /**
- * The package manager the commit declares for `lockfile`, as `<name>@<version>`. That's the `packageManager` of the
- * `package.json` beside the lockfile when it names the lockfile's manager. Otherwise it's the first exact version
- * (`x.y.z`, optionally with a prerelease suffix) of that manager in that `package.json`'s `devEngines.packageManager`,
- * then in its `volta`, then under `[tools]` in `mise.toml`, `.mise.toml` or `.config/mise.toml`, then in
- * `.tool-versions`. Volta, mise and `.tool-versions` count for Yarn and pnpm only. mise and `.tool-versions` are each
- * looked for in the lockfile's folder and then each folder above it up to `root`, nearest first, and every folder is
- * checked for one source before the next source is tried. Failing those, it's the `devEngines.packageManager` version
- * as written.
+ * The package manager the commit declares for `lockfile`, whose text starts with `head`, as `<name>@<version>`. That's
+ * the `packageManager` of the `package.json` beside the lockfile when it names the lockfile's manager. Otherwise it's
+ * the first exact version (`x.y.z`, optionally with a prerelease suffix) of that manager in that `package.json`'s
+ * `devEngines.packageManager`, then in its `volta`, then under `[tools]` in `mise.toml`, `.mise.toml` or
+ * `.config/mise.toml`, then in `.tool-versions`. A Yarn version counts only when its major fits the lockfile: 1 for a
+ * Yarn 1 lockfile, 2 or higher for a later one. Volta, mise and `.tool-versions` count for Yarn and pnpm only. mise and
+ * `.tool-versions` are each looked for in the lockfile's folder and then each folder above it up to `root`, nearest
+ * first, and every folder is checked for one source before the next source is tried. Failing those, it's the
+ * `devEngines.packageManager` range.
  */
-export function readPackageManager(lockfile: Lockfile, root: string): string | undefined {
+export function readPackageManager(lockfile: Lockfile, root: string, head: string): string | undefined {
   const manager = MANAGER_OF[lockfile.name];
   const manifest = readManifest(lockfile.dir);
   const declared = packageManagerField(manifest);
   if (names(declared, manager)) return declared;
   const engine = devEngineVersion(manifest, manager);
+  const pins = manager === "npm" ? [engine] : [engine, ...toolPins(manifest, foldersUp(lockfile.dir, root), manager)];
   const version =
-    (isExact(engine) ? engine : undefined) ??
-    (manager === "npm" ? undefined : pinnedVersion(manifest, foldersUp(lockfile.dir, root), manager)) ??
-    engine;
+    pins.find((pin): pin is string => isExact(pin) && fitsLockfile(pin, manager, head)) ??
+    (isExact(engine) ? undefined : engine);
   return version === undefined ? undefined : `${manager}@${version}`;
 }
 
@@ -130,7 +131,7 @@ export function installPlan(lockfile: Lockfile["name"], head: string, packageMan
       label: "pnpm install",
     };
   }
-  if (/^# yarn lockfile v1\b/m.test(head)) {
+  if (isYarnClassic(head)) {
     return {
       manager: "yarn",
       spec: spec("yarn", packageManager, LOCKFILE_WRITERS.yarnClassic),
@@ -215,12 +216,12 @@ function devEngineVersion(manifest: Manifest | undefined, manager: string): stri
   return entry?.version;
 }
 
-function pinnedVersion(manifest: Manifest | undefined, folders: string[], manager: "yarn" | "pnpm"): string | undefined {
+function toolPins(manifest: Manifest | undefined, folders: string[], manager: "yarn" | "pnpm"): unknown[] {
   return [
     manifest?.volta?.[manager],
     ...folders.flatMap((dir) => MISE_FILES.map((file) => miseVersion(readText(join(dir, file)), manager))),
     ...folders.map((dir) => toolVersionsVersion(readText(join(dir, ".tool-versions")), manager)),
-  ].find(isExact);
+  ];
 }
 
 function miseVersion(text: string | undefined, manager: string): string | undefined {
@@ -243,6 +244,16 @@ function toolVersionsVersion(text: string | undefined, manager: string): string 
     if (tool === manager) return version;
   }
   return undefined;
+}
+
+function fitsLockfile(version: string, manager: string, head: string): boolean {
+  if (manager !== "yarn") return true;
+  const major = Number.parseInt(version, 10);
+  return isYarnClassic(head) ? major === 1 : major >= 2;
+}
+
+function isYarnClassic(head: string): boolean {
+  return /^# yarn lockfile v1\b/m.test(head);
 }
 
 function isExact(version: unknown): version is string {

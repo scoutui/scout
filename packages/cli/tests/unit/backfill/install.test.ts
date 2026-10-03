@@ -144,6 +144,12 @@ describe("readPackageManager", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  const HEADS: Record<Lockfile["name"], string> = {
+    "pnpm-lock.yaml": pnpmLock("9.0"),
+    "yarn.lock": yarnBerryLock(8, "10c0"),
+    "package-lock.json": PACKAGE_LOCK,
+  };
+
   function packageJson(fields: Record<string, unknown>): string {
     return JSON.stringify({ name: "example-web", ...fields });
   }
@@ -195,7 +201,7 @@ describe("readPackageManager", () => {
     ["takes a prerelease version as exact", { volta: { pnpm: "10.0.0-rc.1" } }, "pnpm@10.0.0-rc.1"],
   ])("%s", (_title, manifest, packageManager) => {
     write(dir, "package.json", packageJson(manifest));
-    expect(readPackageManager({ dir, name: "pnpm-lock.yaml" }, dir)).toBe(packageManager);
+    expect(readPackageManager({ dir, name: "pnpm-lock.yaml" }, dir, HEADS["pnpm-lock.yaml"])).toBe(packageManager);
   });
 
   it.each<[string, Lockfile["name"], Record<string, string>, string | undefined]>([
@@ -242,7 +248,27 @@ describe("readPackageManager", () => {
     ],
   ])("%s", (_title, name, files, packageManager) => {
     for (const [path, text] of Object.entries(files)) write(dir, path, text);
-    expect(readPackageManager({ dir, name }, dir)).toBe(packageManager);
+    expect(readPackageManager({ dir, name }, dir, HEADS[name])).toBe(packageManager);
+  });
+
+  it.each<[string, string, Record<string, string>, string | undefined]>([
+    ["takes a Yarn 1 pin for a Yarn 1 lockfile", YARN_CLASSIC, { "package.json": packageJson({ volta: { yarn: "1.22.19" } }) }, "yarn@1.22.19"],
+    ["passes over a Yarn 3 pin for a Yarn 1 lockfile", YARN_CLASSIC, { "package.json": packageJson({ volta: { yarn: "3.8.1" } }) }, undefined],
+    [
+      "passes over a Yarn 1 pin for a Yarn 2 or later lockfile",
+      HEADS["yarn.lock"],
+      { "package.json": packageJson({ volta: { yarn: "1.22.22" } }), "mise.toml": '[tools]\nyarn = "3.8.1"\n' },
+      "yarn@3.8.1",
+    ],
+    [
+      "passes over an exact devEngines.packageManager version whose major doesn't fit the lockfile",
+      HEADS["yarn.lock"],
+      { "package.json": packageJson({ devEngines: { packageManager: { name: "yarn", version: "1.22.22" } } }) },
+      undefined,
+    ],
+  ])("for a yarn.lock, %s", (_title, head, files, packageManager) => {
+    for (const [path, text] of Object.entries(files)) write(dir, path, text);
+    expect(readPackageManager({ dir, name: "yarn.lock" }, dir, head)).toBe(packageManager);
   });
 
   it.each<[string, Record<string, string>, string | undefined]>([
@@ -261,7 +287,7 @@ describe("readPackageManager", () => {
   ])("with the lockfile in a subfolder, %s", (_title, files, packageManager) => {
     for (const [path, text] of Object.entries(files)) write(dir, path, text);
     mkdirSync(join(dir, "apps/web"), { recursive: true });
-    expect(readPackageManager({ dir: join(dir, "apps/web"), name: "yarn.lock" }, dir)).toBe(packageManager);
+    expect(readPackageManager({ dir: join(dir, "apps/web"), name: "yarn.lock" }, dir, HEADS["yarn.lock"])).toBe(packageManager);
   });
 });
 
