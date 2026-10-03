@@ -92,7 +92,7 @@ describe("createBoundedDefinitionResolver", () => {
     if (result === null || !("absFile" in result)) throw new Error(`expected a pin to a file, got ${JSON.stringify(result)}`);
     expect(result.absFile).toBe(join(stage, "deep", "c2.ts"));
     expect(warnings).toEqual([
-      `Stopped following re-exports of "Widget" at ${join(stage, "deep", "c2.ts")}, so its occurrences are counted under that file.`,
+      `Stopped following re-exports of "Widget" at ${join(stage, "deep", "c2.ts")}, so its uses are counted under that file.`,
     ]);
   });
 
@@ -129,6 +129,6 @@ describe("createBoundedDefinitionResolver", () => {
     }).resolveDefinition;
     const result = resolveDef(join(stage, "gone", "entry.ts"), "Widget", []);
     expect(result).toMatchObject({ absFile: missing, exportName: "Widget" });
-    expect(warnings).toEqual([`Stopped following re-exports of "Widget" at ${missing}, so its occurrences are counted under that file.`]);
+    expect(warnings).toEqual([`Stopped following re-exports of "Widget" at ${missing}, so its uses are counted under that file.`]);
   });
 });

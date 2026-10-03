@@ -133,7 +133,7 @@ export function createBoundedDefinitionResolver(opts: {
           }
           if (filesUsed >= maxFiles || !tryParse(chained.file)) {
             // Cap or unparseable hop: best-effort pin to the named hop target.
-            opts.onWarning?.(`Stopped following re-exports of "${imported}" at ${chained.file}, so its occurrences are counted under that file.`);
+            opts.onWarning?.(`Stopped following re-exports of "${imported}" at ${chained.file}, so its uses are counted under that file.`);
             result = { absFile: chained.file, exportName: chained.localExport, path: chained.path };
             break;
           }
