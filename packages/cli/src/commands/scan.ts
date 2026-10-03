@@ -378,8 +378,13 @@ export async function scanRepository(input: {
   const cemIndex = await buildCemIndex({ root: outputRoot, configDir: cfg.configDir });
 
 
+  const packageLayers = resolveImportOpts.packageAliasLayers.length;
   if (tsconfigPath) {
     writer(`Path aliases: ${posixPath(relative(cfg.configDir, tsconfigPath))}\n`);
+  } else if (packageLayers > 0) {
+    writer(packageLayers === 1
+      ? "Path aliases: a tsconfig file in 1 workspace package\n"
+      : `Path aliases: tsconfig files in ${packageLayers} workspace packages\n`);
   } else {
     writer('Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.\n');
   }

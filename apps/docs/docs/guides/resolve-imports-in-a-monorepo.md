@@ -55,7 +55,7 @@ If your tsconfig has another name, such as `tsconfig.app.json`, set `tsconfigPat
 
 If that file doesn't exist, the scan runs without it. The `Path aliases` line still names the file, so look for a warning just above it: `Warning: <path> doesn't exist, so its path aliases aren't followed.` The same kind of warning names a file that a tsconfig's `extends` points to and that doesn't exist.
 
-Each workspace package's own `tsconfig.json` or `tsconfig.base.json` also applies to that package's files, so two apps can each map `@/*` to their own `src/`. When you scan the whole monorepo from the root, the `no tsconfig.json found` line can still appear; check the list of unresolved imports instead.
+Each workspace package's own `tsconfig.json` or `tsconfig.base.json` also applies to that package's files, so two apps can each map `@/*` to their own `src/`. When you scan the whole monorepo from a root that has no tsconfig of its own, the line names the packages' instead: `Path aliases: tsconfig files in 12 workspace packages`.
 
 ## If your aliases are only in a bundler config
 
