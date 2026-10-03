@@ -1,5 +1,32 @@
 # @scoutui/web-app
 
+## 0.3.0
+
+### Minor Changes
+
+- [#50](https://github.com/scoutui/scout/pull/50) [`cbe9174`](https://github.com/scoutui/scout/commit/cbe91740c55b7e46394f00dfd6be804051312986) Thanks [@siggerzz](https://github.com/siggerzz)! - Lifecycle records now cover packages written in the same monorepo as the apps that use them. The record pickers list these packages after the installed ones, and their components once you search in one. Typing a component name lists the packages that have it after the results. A record on such a package marks its components deprecated in that monorepo too, back to the first scan, with no rescan. After upgrading, the governance page reads Preparing scan data until the dashboard has recalculated, and monorepo components show as deprecated once each repo's scans have been rebuilt.
+
+### Patch Changes
+
+- [#49](https://github.com/scoutui/scout/pull/49) [`24fb33c`](https://github.com/scoutui/scout/commit/24fb33c3ad2c381cd2146dca3619eb6aa23ad186) Thanks [@siggerzz](https://github.com/siggerzz)! - A component's **Composition** tab is easier to read:
+
+  - The render tree's caption is larger. Each sentence is on its own line, with the counts and the component's name set apart. On a phone the caption now opens the tab.
+  - Chips on the render tree widen to fit longer names when there's room.
+  - **Hide lists** and **Show lists** now sit beside the zoom buttons.
+  - The lists drop their explanatory line, so each shows more rows, and their button reads **Show all** with the list's total.
+  - Clicking a row now lists the components on its path under the row, so a long path stays readable, including on a phone.
+  - The render tree's columns list components in the same order as the lists.
+  - A long file path in a list is cut from its start, so the file name stays visible.
+  - Deprecated components in the lists carry the same warning triangle as on the render tree.
+  - An empty list says "None in this repo."
+  - The legend lists only what the render tree shows.
+  - The buttons at the render tree's edges say how many components are off screen.
+  - A long "defined at" path now wraps, so a component's page fits a phone screen.
+
+- [#52](https://github.com/scoutui/scout/pull/52) [`b4d0984`](https://github.com/scoutui/scout/commit/b4d09845c957927843aec4e9c7024c9caf9ce88b) Thanks [@siggerzz](https://github.com/siggerzz)! - In the lifecycle record form, **Package or component** and **Superseded by** now show a package only while you search in it or once you've picked it. After you create a record, both start blank for the next one. Selecting a package to search in it and then clicking away also leaves the field blank, instead of keeping the package as a chip that looked like a pick. Before, Create could refuse with "Choose what supersedes it." while a package still showed in the field.
+
+- [#57](https://github.com/scoutui/scout/pull/57) [`b31629d`](https://github.com/scoutui/scout/commit/b31629d5fd3e65a6a2d8ded8cb9c7dc1fb34b475) Thanks [@siggerzz](https://github.com/siggerzz)! - The dashboard now tells the CLI which scan formats it reads when the CLI checks a scan before uploading it, so the CLI can tell people not to update to a version whose scans the dashboard can't read yet.
+
 ## 0.2.0
 
 ### Minor Changes
