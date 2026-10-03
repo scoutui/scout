@@ -125,7 +125,7 @@ describe("startUpdateCheck", () => {
 describe("updateNotice", () => {
   const UPDATE = "Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.";
   const BEHIND =
-    "Scout 0.3.0 is available, but your dashboard can't read its scans yet.\nKeep this version until your dashboard is upgraded. See https://scoutui.dev/docs/guides/upgrade-scout#version-messages";
+    "Scout 0.3.0 is available, but your dashboard can't read its scans yet.\nKeep this version until your dashboard is upgraded.\nSee https://scoutui.dev/docs/guides/upgrade-scout#version-messages";
 
   beforeEach(() => {
     write("repo/package-lock.json");

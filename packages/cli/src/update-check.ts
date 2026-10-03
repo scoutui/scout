@@ -86,8 +86,8 @@ export function keepScanFormats(cachePath: string, scanFormats: number[]): void 
 
 /**
  * The line telling someone that `latest` is out, or null when it isn't newer than the `running` version or that's a
- * snapshot build. When the dashboard said which `scanFormats` it reads and they leave out the release's, a second line
- * says to wait for the dashboard's upgrade. Otherwise it names the command that updates the CLI in `cwd`, or installs it
+ * snapshot build. When the dashboard said which `scanFormats` it reads and they leave out the release's, two more
+ * lines say to wait for the dashboard's upgrade and where to read about it. Otherwise it names the command that updates the CLI in `cwd`, or installs it
  * when the repo doesn't, looking for the lockfile no higher than `root` (default: the top of the file system).
  */
 export function updateNotice(opts: {
@@ -101,7 +101,7 @@ export function updateNotice(opts: {
   if (latest === null || isSnapshotVersion(opts.running) || compareCliVersions(latest.version, opts.running) <= 0) return null;
   const available = `Scout ${latest.version} is available`;
   if (latest.scanFormat !== null && opts.scanFormats !== null && !opts.scanFormats.includes(latest.scanFormat)) {
-    return `${available}, but your dashboard can't read its scans yet.\nKeep this version until your dashboard is upgraded. See ${UPGRADE_GUIDE}`;
+    return `${available}, but your dashboard can't read its scans yet.\nKeep this version until your dashboard is upgraded.\nSee ${UPGRADE_GUIDE}`;
   }
   const update = updateCommand(opts.cwd, opts.root ?? parse(resolve(opts.cwd)).root);
   return `${available}. ${update.installed ? "Update" : "Install it"} with ${update.command}.`;

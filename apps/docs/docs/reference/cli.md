@@ -74,11 +74,12 @@ The command follows your repo:
 - If a `package.json` from the current folder up to the lockfile lists `@scoutui/cli`, the line says `Update with …`. Otherwise it says `Install it with …`, which adds it as a dev dependency of the nearest `package.json`.
 - When that `package.json` is a workspace's root, pnpm's command adds `-w` and Yarn 1's adds `-W`.
 
-If the dashboard you last uploaded to can't read the new version's scans yet, the notice says to wait instead, on two lines:
+If the dashboard you last uploaded to can't read the new version's scans yet, the notice says to wait instead, on three lines:
 
 ```
 Scout 0.3.0 is available, but your dashboard can't read its scans yet.
-Keep this version until your dashboard is upgraded. See https://scoutui.dev/docs/guides/upgrade-scout#version-messages
+Keep this version until your dashboard is upgraded.
+See https://scoutui.dev/docs/guides/upgrade-scout#version-messages
 ```
 
 Scout asks the npm registry at most once a day, in the background while a command runs, and the dashboard answers each time `scan` or `backfill` uploads. What they say shows from the next command on. The check says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
