@@ -116,18 +116,27 @@ describe("runScan upload outcome", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("names the folder when include only matches files in a folder that holds its own git repository", async () => {
+  it.each([
+    {
+      repositories: ["vendor/lib"],
+      says: "only matches files in vendor/lib, which is a separate git repository. Run the scan from that folder instead.",
+    },
+    {
+      repositories: ["vendor/a", "vendor/b"],
+      says: "only matches files in vendor/a and vendor/b, which are separate git repositories. Run the scan from each of those folders instead.",
+    },
+  ])("names each folder that holds its own git repository when include only matches files in them: $repositories", async ({ repositories, says }) => {
     const dir = setupConsumer();
-    mkdirSync(join(dir, "vendor/lib/src"), { recursive: true });
-    writeFileSync(join(dir, "vendor/lib/.git"), "gitdir: ../../.git/modules/lib\n");
-    writeFileSync(join(dir, "vendor/lib/src/A.tsx"), "export const A = () => <div />;\n");
+    for (const repository of repositories) {
+      mkdirSync(join(dir, repository, "src"), { recursive: true });
+      writeFileSync(join(dir, repository, ".git"), "gitdir: ../../.git/modules/lib\n");
+      writeFileSync(join(dir, repository, "src/A.tsx"), "export const A = () => <div />;\n");
+    }
     writeFileSync(join(dir, "scout.config.json"),
-      JSON.stringify({ repoId: "upload-test", include: ["vendor/lib/**/*.tsx"], exclude: [] }));
+      JSON.stringify({ repoId: "upload-test", include: ["vendor/**/*.tsx"], exclude: [] }));
     const result = await runScan({ configPath: join(dir, "scout.config.json") });
     expect(scanExitCode(result)).toBe(2);
-    expect(stderr()).toBe(
-      `Error: "include" in ${join(dir, "scout.config.json")} (vendor/lib/**/*.tsx) only matches files in vendor/lib, which is a separate git repository. Run the scan from that folder instead.\n`,
-    );
+    expect(stderr()).toBe(`Error: "include" in ${join(dir, "scout.config.json")} (vendor/**/*.tsx) ${says}\n`);
   });
 
   it("says once that it's waiting for the dashboard, then reports the published URL", async () => {

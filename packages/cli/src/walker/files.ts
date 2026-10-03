@@ -1,6 +1,6 @@
 import type { Dirent } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { join, relative, sep } from "node:path";
+import { isAbsolute, join, relative, sep } from "node:path";
 import { convertPathToPattern, globby } from "globby";
 
 export type WalkOptions = {
@@ -69,8 +69,12 @@ export async function nestedRepositoriesMatched(opts: WalkOptions): Promise<stri
   const nested = await nestedRepositories(opts.root);
   if (nested.length === 0) return [];
   const files = await globFiles(opts, []);
+  const inside = (dir: string, file: string): boolean => {
+    const path = relative(dir, file);
+    return path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path);
+  };
   return nested
-    .filter((dir) => files.some((file) => file.startsWith(dir + sep)))
+    .filter((dir) => files.some((file) => inside(dir, file)))
     .map((dir) => relative(opts.root, dir))
     .sort();
 }
