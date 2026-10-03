@@ -23,6 +23,7 @@ import { buildEdgeTips, deriveHighlight, edgeStyle, type EdgeTip } from "./graph
 import { computeLayout, COLUMN_CAP, GAP_X, NODE_H, NODE_W, type PinnedEntry } from "./graph-layout";
 import {
   chipFaceFragments,
+  computeChipWidth,
   computeDefaultFrame,
   computeRowBudget,
   COLUMN_LABEL_OFFSET_Y,
@@ -31,9 +32,11 @@ import {
   FIT_PADDING,
   gutterMaskWidth,
   hiddenColumns,
+  hiddenComponentCount,
   isNodeVisible,
   isPathVisible,
   PINNED_FIT_ZOOM,
+  READABLE_ZOOM,
   shouldRecomputeEdgeAffordances,
   WINDOW_ZOOM,
 } from "./graph-framing";
@@ -60,6 +63,7 @@ type ChipData = {
   isFocus: boolean;
   href: string | null;
   ariaLabel: string;
+  width: number;
 };
 
 type MoreData = {
@@ -67,6 +71,7 @@ type MoreData = {
   /** Native `title` text: how many components the chip stands for and where to
    *  read them, since the chip does nothing on click. */
   title: string;
+  width: number;
 };
 
 /** Handlers node components read via context, so a hover flip never changes
@@ -154,7 +159,7 @@ function ChipNode({ id, data }: NodeProps) {
         d.isFocus && "ring-2 ring-foreground",
         highlight === "dim" && "opacity-30",
       )}
-      style={{ width: NODE_W, height: 28 }}
+      style={{ width: d.width, height: 28 }}
     >
       <Handle type="target" position={Position.Left} className="!pointer-events-none !opacity-0" />
       <Tooltip>
@@ -197,7 +202,7 @@ function MoreNode({ id, data }: NodeProps) {
         "flex items-center rounded-md border border-dashed bg-muted px-2 text-xs text-muted-foreground motion-safe:transition-opacity",
         highlight === "dim" && "opacity-30",
       )}
-      style={{ width: NODE_W, height: 28 }}
+      style={{ width: d.width, height: 28 }}
     >
       <Handle type="target" position={Position.Left} className="!pointer-events-none !opacity-0" />
       {d.label}
@@ -216,6 +221,9 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** Which marks the drawn render tree uses, and so which the legend lists. */
+type Legend = { external: boolean; local: boolean; deprecated: boolean; edges: boolean };
+
 /** Fit the whole graph, or reset to the default frame. Shared by the edge pills
  *  and the header's Reset view button, so both clear stale `hiddenCols`
  *  pills. */
@@ -230,6 +238,7 @@ function CanvasInner({
   colorMode,
   onRelease,
   actionsRef,
+  onLegendChange,
 }: {
   model: GraphModel;
   focusId: string;
@@ -239,6 +248,7 @@ function CanvasInner({
   colorMode: "light" | "dark";
   onRelease: () => void;
   actionsRef: CanvasActionsRef;
+  onLegendChange: (legend: Legend) => void;
 }) {
   const { fitView, setCenter, getViewport } = useReactFlow();
   const [store] = useState(() => new HighlightStore());
@@ -262,6 +272,9 @@ function CanvasInner({
   // measures the pane; jsdom's ResizeObserver never fires, so tests see
   // COLUMN_CAP.
   const [rowBudget, setRowBudget] = useState(COLUMN_CAP);
+  // Chip width from the pane width, NODE_W until the resize observer measures
+  // the pane.
+  const [chipWidth, setChipWidth] = useState(NODE_W);
   // Edges stay out of the accessibility tree (the caption covers them for
   // screen readers), so their tooltip is a plain positioned div.
   const [edgeTip, setEdgeTip] = useState<{ x: number; y: number; text: string } | null>(null);
@@ -269,11 +282,22 @@ function CanvasInner({
   // Hover goes through the store only, so it never rebuilds the layout or
   // node `data` identities.
   const layout = useMemo(
-    () => computeLayout(model, focusId, { pinned }, rowBudget),
-    [model, focusId, pinned, rowBudget],
+    () => computeLayout(model, focusId, { pinned }, rowBudget, chipWidth),
+    [model, focusId, pinned, rowBudget, chipWidth],
   );
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
+
+  const legend = useMemo<Legend>(() => {
+    const chips = layout.items.flatMap((i) => (i.kind === "chip" ? [i.node] : []));
+    return {
+      external: chips.some((n) => n.scope === "external"),
+      local: chips.some((n) => n.scope === "local"),
+      deprecated: chips.some((n) => n.deprecated),
+      edges: layout.edges.length > 0,
+    };
+  }, [layout]);
+  useEffect(() => onLegendChange(legend), [legend, onLegendChange]);
 
   const traceDisplayId = useCallback(
     (id: string) => store.setOverride(deriveHighlight(layoutRef.current, { kind: "chip", displayId: id })),
@@ -291,8 +315,9 @@ function CanvasInner({
       const w = el?.clientWidth ?? 0;
       const h = el?.clientHeight ?? 0;
       if (!item || w === 0) return;
-      if (!isNodeVisible(item, getViewport(), w, h)) {
-        setCenter(item.x + NODE_W / 2, item.y + NODE_H / 2, {
+      const chipW = layoutRef.current.chipWidth;
+      if (!isNodeVisible(item, getViewport(), w, h, chipW)) {
+        setCenter(item.x + chipW / 2, item.y + NODE_H / 2, {
           zoom: getViewport().zoom,
           duration: prefersReducedMotion() ? 0 : 150,
         });
@@ -364,6 +389,7 @@ function CanvasInner({
             ariaLabel: [node.displayName, scopeWord, node.deprecated ? "deprecated" : null, detail]
               .filter(Boolean)
               .join(", "),
+            width: layout.chipWidth,
           } satisfies ChipData,
         };
       }
@@ -376,6 +402,7 @@ function CanvasInner({
         data: {
           label: item.label,
           title: `${item.nodes.length.toLocaleString()} more, listed on the left.`,
+          width: layout.chipWidth,
         } satisfies MoreData,
       };
     });
@@ -412,7 +439,7 @@ function CanvasInner({
   const columnLabels = useMemo(() => {
     const labels: { text: string; x: number; y: number }[] = [];
     const add = (level: number, text: string) => {
-      const x = level * (NODE_W + GAP_X);
+      const x = level * (layout.chipWidth + GAP_X);
       const ys = layout.items.filter((i) => i.x === x).map((i) => i.y);
       if (ys.length > 0) labels.push({ text, x, y: Math.min(...ys) - COLUMN_LABEL_OFFSET_Y });
     };
@@ -443,20 +470,20 @@ function CanvasInner({
       const positions = pinned
         .map((p) => layout.items.find((i) => i.id === p.id))
         .filter((i): i is NonNullable<typeof i> => i !== undefined);
-      if (!opts.force && w > 0 && isPathVisible(positions, getViewport(), w, h)) return;
+      if (!opts.force && w > 0 && isPathVisible(positions, getViewport(), w, h, layout.chipWidth)) return;
       lastMoveIsDefaultRef.current = true;
       // Prefer the whole scene: framing the path alone clips the columns
       // around it with no mask. The zoom floor is looser than at rest
       // (PINNED_FIT_ZOOM) because a pin can add a row to a column and push a
       // scene that fitted at rest just under the at-rest floor.
-      if (computeDefaultFrame(layout.items, w, h, PINNED_FIT_ZOOM).kind === "fit") {
+      if (computeDefaultFrame(layout.items, w, h, PINNED_FIT_ZOOM, layout.chipWidth).kind === "fit") {
         fitView({ padding: FIT_PADDING, maxZoom: 1, duration });
         return;
       }
       fitView({ nodes: pinned.map((p) => ({ id: p.id })), padding: 0.2, maxZoom: 1, duration });
       return;
     }
-    const frame = computeDefaultFrame(layout.items, w, h);
+    const frame = computeDefaultFrame(layout.items, w, h, READABLE_ZOOM, layout.chipWidth);
     if (frame.kind === "fit") {
       setHiddenCols({ left: 0, right: 0 });
       lastMoveIsDefaultRef.current = true;
@@ -499,10 +526,12 @@ function CanvasInner({
     if (!el) return;
     let timer: number | undefined;
     const observer = new ResizeObserver(() => {
-      // The row budget is an integer, so a resize that doesn't change it
-      // causes no relayout. Only the camera re-frame is debounced.
+      // The row budget and chip width are integers, so a resize that changes
+      // neither causes no relayout. Only the camera re-frame is debounced.
       const budget = computeRowBudget(el.clientHeight);
       setRowBudget((prev) => (prev === budget ? prev : budget));
+      const width = computeChipWidth(el.clientWidth);
+      setChipWidth((prev) => (prev === width ? prev : width));
       window.clearTimeout(timer);
       timer = window.setTimeout(() => applyViewportRef.current(0), 150);
     });
@@ -530,8 +559,14 @@ function CanvasInner({
     return () => window.removeEventListener("keydown", onKey);
   }, [pinned, onRelease]);
 
-  const leftPill = hiddenCols.left > 0 ? edgePillCopy("left", hiddenCols.left, atDefaultFrame) : null;
-  const rightPill = hiddenCols.right > 0 ? edgePillCopy("right", hiddenCols.right, atDefaultFrame) : null;
+  const leftPill =
+    hiddenCols.left > 0
+      ? edgePillCopy("left", hiddenComponentCount(layout.items, "left", hiddenCols.left), atDefaultFrame)
+      : null;
+  const rightPill =
+    hiddenCols.right > 0
+      ? edgePillCopy("right", hiddenComponentCount(layout.items, "right", hiddenCols.right), atDefaultFrame)
+      : null;
 
   return (
     <TooltipProvider>
@@ -558,8 +593,9 @@ function CanvasInner({
               if (!shouldRecomputeEdgeAffordances(wasDefaultFrame, isPinned)) return;
               const el = shellRef.current?.querySelector(".react-flow");
               if (!el) return;
-              setHiddenCols(hiddenColumns(layoutRef.current.items, viewport, el.clientWidth));
-              const width = gutterMaskWidth(viewport.zoom);
+              const { items, chipWidth: chipW } = layoutRef.current;
+              setHiddenCols(hiddenColumns(items, viewport, el.clientWidth, chipW));
+              const width = gutterMaskWidth(viewport.zoom, chipW);
               setMaskWidth({ left: width, right: width });
             }}
             minZoom={0.35}
@@ -649,7 +685,7 @@ function CanvasInner({
                       )
                     }
                     aria-label={leftPill.ariaLabel}
-                    className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="absolute left-2 top-1/2 z-10 translate-y-[18px] rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   >
                     {leftPill.label}
                   </button>
@@ -670,7 +706,7 @@ function CanvasInner({
                       )
                     }
                     aria-label={rightPill.ariaLabel}
-                    className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="absolute right-2 top-1/2 z-10 translate-y-[18px] rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   >
                     {rightPill.label}
                   </button>
@@ -685,16 +721,17 @@ function CanvasInner({
   );
 }
 
-/** Zoom controls in the section header. They sit under the ReactFlowProvider
- *  so they can drive the viewport from outside the flow. Reset view goes
- *  through `actionsRef`, so it also clears stale edge pills. */
-function CanvasControls({ actionsRef }: { actionsRef: CanvasActionsRef }) {
+/** Zoom controls in the section header, after `leading`. They sit under the
+ *  ReactFlowProvider so they can drive the viewport from outside the flow.
+ *  Reset view goes through `actionsRef`, so it also clears stale edge pills. */
+function CanvasControls({ actionsRef, leading }: { actionsRef: CanvasActionsRef; leading: React.ReactNode }) {
   const { zoomIn, zoomOut } = useReactFlow();
   const control =
     "rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
   const duration = () => (prefersReducedMotion() ? 0 : 150);
   return (
     <div className="flex shrink-0 items-center gap-1">
+      {leading}
       <button type="button" aria-label="Zoom out" className={control} onClick={() => zoomOut({ duration: duration() })}>
         −
       </button>
@@ -718,7 +755,10 @@ export function CompositionCanvas(props: {
   repoId: string;
   pinned: PinnedEntry[] | null;
   hoverPath: string[] | null;
-  caption: string;
+  caption: React.ReactNode;
+  /** The control that hides or shows the lists beside the canvas, placed
+   *  before the zoom controls. */
+  listsToggle?: React.ReactNode;
   onRelease: () => void;
 }) {
   const { model, pinned, onRelease } = props;
@@ -731,6 +771,7 @@ export function CompositionCanvas(props: {
   // Hands CanvasInner's fitAll/resetView to its sibling CanvasControls. No-ops
   // until the canvas mounts.
   const actionsRef: CanvasActionsRef = useRef({ fitAll: () => {}, resetView: () => {} });
+  const [legend, setLegend] = useState<Legend | null>(null);
 
   const lastPinned = pinned && pinned.length > 0 ? pinned[pinned.length - 1] : null;
   const isPinned = lastPinned !== null;
@@ -746,12 +787,12 @@ export function CompositionCanvas(props: {
   return (
     <ReactFlowProvider>
     <section className="panel flex flex-col overflow-hidden lg:h-full lg:min-w-0 lg:flex-1">
-      <header className="flex shrink-0 items-center justify-between gap-2 border-b bg-muted px-3 py-2">
+      <header className="flex shrink-0 items-center justify-between gap-2 border-b bg-muted px-3 py-2 max-sm:flex-wrap">
           <div className="min-w-0">
             <h2 className="text-label text-muted-foreground">Render tree</h2>
-            <p className="text-pretty text-xs">{props.caption}</p>
+            <p className="text-pretty text-sm max-lg:hidden">{props.caption}</p>
           </div>
-          <CanvasControls actionsRef={actionsRef} />
+          <CanvasControls actionsRef={actionsRef} leading={props.listsToggle} />
         </header>
         <div className="relative h-[30rem] bg-background lg:h-auto lg:min-h-0 lg:flex-1">
           <a
@@ -773,7 +814,7 @@ export function CompositionCanvas(props: {
             </button>
           ) : null}
           {mounted ? (
-            <CanvasInner {...props} colorMode={resolvedTheme} actionsRef={actionsRef} />
+            <CanvasInner {...props} colorMode={resolvedTheme} actionsRef={actionsRef} onLegendChange={setLegend} />
           ) : null}
         </div>
         <span aria-live="polite" className="sr-only">
@@ -783,25 +824,33 @@ export function CompositionCanvas(props: {
               ? "Path cleared"
               : ""}
         </span>
-        <footer className="flex shrink-0 items-center gap-4 border-t bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <ScopeGlyph scope="external" />
-            external
-          </span>
-          <span className="flex items-center gap-1.5">
-            <ScopeGlyph scope="local" />
-            local
-          </span>
-          <span className="flex items-center gap-1.5">
-            <AlertTriangle aria-hidden className="size-3.5 shrink-0 text-status-warn" />
-            deprecated
-          </span>
-          <span className="flex items-center gap-1.5">
-            <svg aria-hidden="true" width="16" height="2" className="shrink-0">
-              <line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-            renders directly
-          </span>
+        <footer className="flex min-h-7 shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+          {legend?.external ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <ScopeGlyph scope="external" />
+              external
+            </span>
+          ) : null}
+          {legend?.local ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <ScopeGlyph scope="local" />
+              local
+            </span>
+          ) : null}
+          {legend?.deprecated ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <AlertTriangle aria-hidden className="size-3.5 shrink-0 text-status-warn" />
+              deprecated
+            </span>
+          ) : null}
+          {legend?.edges ? (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <svg aria-hidden="true" width="16" height="2" className="shrink-0">
+                <line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+              renders directly
+            </span>
+          ) : null}
         </footer>
       <div id="after-composition-canvas" tabIndex={-1} />
     </section>

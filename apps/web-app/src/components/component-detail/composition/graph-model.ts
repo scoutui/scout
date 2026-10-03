@@ -70,8 +70,8 @@ function bfs(
  * focus. The focus is never in its own list, even with a self-render edge, and
  * a cycle terminates: BFS settles every id once, at its shortest distance.
  *
- * Ordered nearest first, then by call sites against the focus (only 1-step
- * rows have any), then by call sites repo-wide, then by name.
+ * Ordered nearest first, then by `byCallSites` (only 1-step rows have call
+ * sites against the focus).
  */
 export function closureOf(
   model: GraphModel,
@@ -80,19 +80,29 @@ export function closureOf(
 ): TraceEndpoint[] {
   const next = direction === "up" ? model.parentsOf : model.childrenOf;
   const callSites = new Map((next.get(focusId) ?? []).map((a) => [a.id, a.count]));
+  const order = byCallSites((n) => callSites.get(n.id) ?? 0);
   const rows: TraceEndpoint[] = [];
   for (const [id, hops] of bfs(focusId, next)) {
     if (id === focusId) continue;
     const node = model.byId.get(id);
     if (node) rows.push({ node, hops });
   }
-  return rows.sort(
-    (a, b) =>
-      a.hops - b.hops ||
-      (callSites.get(b.node.id) ?? 0) - (callSites.get(a.node.id) ?? 0) ||
-      b.node.occurrenceCount - a.node.occurrenceCount ||
-      a.node.displayName.localeCompare(b.node.displayName),
-  );
+  return rows.sort((a, b) => a.hops - b.hops || order(a.node, b.node));
+}
+
+/**
+ * The order of components at the same distance from the focus, shared by the
+ * lists and the render tree's columns: most call sites against the focus
+ * first, then most call sites repo-wide, then by name, then by id.
+ */
+export function byCallSites(
+  callSitesAgainstFocus: (node: CompositionGraphNode) => number,
+): (a: CompositionGraphNode, b: CompositionGraphNode) => number {
+  return (a, b) =>
+    callSitesAgainstFocus(b) - callSitesAgainstFocus(a) ||
+    b.occurrenceCount - a.occurrenceCount ||
+    a.displayName.localeCompare(b.displayName) ||
+    a.id.localeCompare(b.id);
 }
 
 /** Min-hop path from `from` to `to` following `next` adjacency. Ids ordered from→to; null when unreachable. */

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { CompositionGraphNode } from "@scoutui/web-shared";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { buildGraphModel } from "@/components/component-detail/composition/graph-model";
@@ -30,9 +30,7 @@ describe("CompositionCanvas smoke", () => {
         />
       </ThemeProvider>,
     );
-    expect(await screen.findByText("external")).toBeInTheDocument();
-    // The legend's deprecated entry carries the same triangle as the chips.
-    expect(screen.getByText("deprecated").querySelector("svg")).not.toBeNull();
+    expect(await screen.findByText("rendered by")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Skip render tree" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
     // Reset view is always in the control cluster, not only once the camera has moved.
@@ -50,12 +48,11 @@ describe("CompositionCanvas smoke", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("renders directly")).toBeInTheDocument();
-    // Four legend entries: every drawn edge is a real render edge, so there is
-    // no second edge grammar left to explain.
+    // Every drawn edge is a real render edge, so there is no second edge
+    // grammar left to explain.
     expect(
       screen.queryByText("indirect path — components in between aren't drawn"),
     ).not.toBeInTheDocument();
-    expect(await screen.findByText("rendered by")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Render tree graph" })).toBeInTheDocument();
   });
 
@@ -86,7 +83,7 @@ describe("CompositionCanvas smoke", () => {
         />
       </ThemeProvider>,
     );
-    await screen.findByText("external");
+    await screen.findByText("rendered by");
     fireEvent.focus(trigger("a", "a"));
     expect(await screen.findByText("1 call site")).toBeInTheDocument();
   });
@@ -110,7 +107,7 @@ describe("CompositionCanvas smoke", () => {
         />
       </ThemeProvider>,
     );
-    await screen.findByText("external");
+    await screen.findByText("rendered by");
     fireEvent.focus(trigger("a", "a"));
     expect(await screen.findByText("click to open")).toBeInTheDocument();
   });
@@ -135,7 +132,7 @@ describe("CompositionCanvas smoke", () => {
         />
       </ThemeProvider>,
     );
-    await screen.findByText("external");
+    await screen.findByText("rendered by");
     fireEvent.focus(trigger("F", "span"));
     // The scope line always renders, so this proves the tooltip opened.
     expect(await screen.findByText("local")).toBeInTheDocument();
@@ -195,7 +192,7 @@ describe("CompositionCanvas smoke", () => {
         />
       </ThemeProvider>,
     );
-    await screen.findByText("external");
+    await screen.findByText("rendered by");
     const linkName = trigger("a", "a").querySelector("span.font-mono");
     expect(linkName?.className).toContain("hover:underline");
     expect(linkName?.className).toContain("cursor-pointer");
@@ -225,7 +222,7 @@ describe("CompositionCanvas smoke", () => {
         />
       </ThemeProvider>,
     );
-    await screen.findByText("external");
+    await screen.findByText("rendered by");
     const dep = trigger("a", "a");
     const depName = dep.querySelector("span.font-mono");
     expect(depName?.nextElementSibling?.querySelector("svg")).toBeInstanceOf(SVGElement);
@@ -266,6 +263,57 @@ describe("CompositionCanvas smoke", () => {
     expect(document.querySelector('[data-slot="tooltip-content"] span.font-mono')?.textContent).toBe(
       "ServerPage",
     );
+  });
+
+  const legendOf = (container: HTMLElement) => {
+    const footer = container.querySelector("footer");
+    if (!footer) throw new Error("no legend");
+    return within(footer);
+  };
+
+  it("the legend lists only the marks the render tree shows", async () => {
+    const { container, unmount } = render(
+      <ThemeProvider>
+        <CompositionCanvas
+          model={buildGraphModel({ nodes: [node("a"), node("F")], edges: [{ source: "a", target: "F", count: 1 }] })}
+          focusId="F" repoId="r/x" pinned={null} hoverPath={null} caption="caption" onRelease={() => {}}
+        />
+      </ThemeProvider>,
+    );
+    await screen.findByText("rendered by");
+    expect(legendOf(container).getByText("local")).toBeInTheDocument();
+    expect(legendOf(container).getByText("renders directly")).toBeInTheDocument();
+    expect(legendOf(container).queryByText("external")).not.toBeInTheDocument();
+    expect(legendOf(container).queryByText("deprecated")).not.toBeInTheDocument();
+    unmount();
+
+    const withMarks = render(
+      <ThemeProvider>
+        <CompositionCanvas
+          model={buildGraphModel({
+            nodes: [node("F"), node("ext", { scope: "external", packageName: "@ui/lib", filePath: null, deprecated: true })],
+            edges: [{ source: "F", target: "ext", count: 1 }],
+          })}
+          focusId="F" repoId="r/x" pinned={null} hoverPath={null} caption="caption" onRelease={() => {}}
+        />
+      </ThemeProvider>,
+    );
+    await screen.findByText("renders");
+    expect(legendOf(withMarks.container).getByText("external")).toBeInTheDocument();
+    // The legend's deprecated entry carries the same triangle as the chips.
+    expect(legendOf(withMarks.container).getByText("deprecated").querySelector("svg")).toBeInstanceOf(SVGElement);
+    withMarks.unmount();
+
+    const lone = render(
+      <ThemeProvider>
+        <CompositionCanvas
+          model={buildGraphModel({ nodes: [node("F")], edges: [] })}
+          focusId="F" repoId="r/x" pinned={null} hoverPath={null} caption="caption" onRelease={() => {}}
+        />
+      </ThemeProvider>,
+    );
+    expect(await legendOf(lone.container).findByText("local")).toBeInTheDocument();
+    expect(legendOf(lone.container).queryByText("renders directly")).not.toBeInTheDocument();
   });
 
   // Not covered here: the edge tooltips. ReactFlow computes edge paths from

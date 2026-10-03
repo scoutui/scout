@@ -87,11 +87,9 @@ describe("rail/caption reconciliation on a cyclic upward graph", () => {
     expect(screen.getByRole("heading", { name: "Rendered by" }).closest("header")).toHaveTextContent(
       "Rendered by2",
     );
-    expect(
-      screen.getByText(
-        "1 component renders F directly; 2 depend on it in total. F renders no other components in this repo.",
-      ),
-    ).toBeInTheDocument();
+    expect((await screen.findByRole("heading", { name: "Render tree" })).nextElementSibling).toHaveTextContent(
+      "1 component renders F directly; 2 depend on it in total. F renders no other components in this repo.",
+    );
   });
 
   // A component in both lists reads as pinned only in the list that was

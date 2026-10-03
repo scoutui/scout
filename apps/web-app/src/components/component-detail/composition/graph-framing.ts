@@ -1,4 +1,4 @@
-import { COLUMN_CAP, GAP_X, GAP_Y, NODE_H, NODE_W } from "./graph-layout";
+import { COLUMN_CAP, GAP_X, GAP_Y, MAX_NODE_W, NODE_H, NODE_W } from "./graph-layout";
 
 export const READABLE_ZOOM = 1;
 /** While a path is pinned the whole picture may fit a little smaller than the
@@ -22,6 +22,10 @@ export const PILL_GUTTER = 64;
  *  which render above the bounds ReactFlow computes from the nodes. */
 export const FIT_PADDING = { top: "44px", right: "6%", bottom: "6%", left: "6%" } as const;
 
+/** How much wider and taller than the scene's bounds the pane must be for the
+ *  whole scene to count as fitting. */
+const FIT_MARGIN = 1.16;
+
 /** One row's height plus the gap to the next. */
 const ROW_PITCH = NODE_H + GAP_Y;
 /** Fewest rows a column folds down to, however short the pane. */
@@ -39,6 +43,16 @@ export function computeRowBudget(paneHeight: number): number {
   const available = paneHeight - LABEL_CLEARANCE;
   const maxRows = Math.floor((available + GAP_Y) / ROW_PITCH);
   return Math.min(COLUMN_CAP, Math.max(MIN_ROW_BUDGET, maxRows - 1));
+}
+
+/**
+ * Chip width for a pane of the given width: as wide as three columns (parents,
+ * focus, children) can be while still fitting at full zoom, between NODE_W and
+ * MAX_NODE_W. A pane too narrow for three NODE_W columns keeps NODE_W.
+ */
+export function computeChipWidth(paneWidth: number): number {
+  const fitting = Math.floor((paneWidth / FIT_MARGIN - 2 * GAP_X) / 3);
+  return Math.min(MAX_NODE_W, Math.max(NODE_W, fitting));
 }
 
 export type DefaultFrame =
@@ -69,13 +83,14 @@ export function computeDefaultFrame(
   /** Smallest zoom at which the whole picture still counts as fitting. The
    *  at-rest floor by default; a pinned path passes PINNED_FIT_ZOOM. */
   minZoom: number = READABLE_ZOOM,
+  chipWidth: number = NODE_W,
 ): DefaultFrame {
   if (viewW <= 0 || viewH <= 0 || items.length === 0) return { kind: "fit" };
   const xs = items.map((i) => i.x);
   const ys = items.map((i) => i.y);
-  const bw = Math.max(...xs) + NODE_W - Math.min(...xs);
+  const bw = Math.max(...xs) + chipWidth - Math.min(...xs);
   const bh = Math.max(...ys) + NODE_H - Math.min(...ys);
-  if (Math.min(viewW / (bw * 1.16), viewH / (bh * 1.16)) >= minZoom) return { kind: "fit" };
+  if (Math.min(viewW / (bw * FIT_MARGIN), viewH / (bh * FIT_MARGIN)) >= minZoom) return { kind: "fit" };
 
   const columns = [...new Set(xs)].sort((a, b) => a - b);
   const focusIdx = columns.indexOf(0);
@@ -83,7 +98,7 @@ export function computeDefaultFrame(
 
   const firstColumn = columns[0] as number;
   const lastColumn = columns[columns.length - 1] as number;
-  const fullSpan = (lastColumn + NODE_W - firstColumn) * WINDOW_ZOOM;
+  const fullSpan = (lastColumn + chipWidth - firstColumn) * WINDOW_ZOOM;
   let lo: number;
   let hi: number;
   if (fullSpan <= viewW - FRAME_PADDING * 2) {
@@ -100,11 +115,11 @@ export function computeDefaultFrame(
     let extended = true;
     while (extended) {
       extended = false;
-      if (hi + 1 < columns.length && ((columns[hi + 1] as number) + NODE_W - (columns[lo] as number)) * WINDOW_ZOOM <= usable) {
+      if (hi + 1 < columns.length && ((columns[hi + 1] as number) + chipWidth - (columns[lo] as number)) * WINDOW_ZOOM <= usable) {
         hi += 1;
         extended = true;
       }
-      if (lo - 1 >= 0 && ((columns[hi] as number) + NODE_W - (columns[lo - 1] as number)) * WINDOW_ZOOM <= usable) {
+      if (lo - 1 >= 0 && ((columns[hi] as number) + chipWidth - (columns[lo - 1] as number)) * WINDOW_ZOOM <= usable) {
         lo -= 1;
         extended = true;
       }
@@ -114,7 +129,7 @@ export function computeDefaultFrame(
   // included column is the same on both sides. The nearest hidden column
   // bleeds `margin - GAP_X * zoom` past the pane edge, which is less than the
   // margin, so a mask that wide can never reach an included column's heading.
-  const windowSpan = ((columns[hi] as number) + NODE_W - (columns[lo] as number)) * WINDOW_ZOOM;
+  const windowSpan = ((columns[hi] as number) + chipWidth - (columns[lo] as number)) * WINDOW_ZOOM;
   const margin = (viewW - windowSpan) / 2;
   const bleed = Math.max(0, margin - GAP_X * WINDOW_ZOOM);
   // A column taller than the viewport, centred at y=0, would hide its heading
@@ -130,7 +145,7 @@ export function computeDefaultFrame(
     (winBh + LABEL_CLEARANCE) * WINDOW_ZOOM > viewH ? winMinY - LABEL_CLEARANCE + viewH / (2 * WINDOW_ZOOM) : 0;
   return {
     kind: "window",
-    centerX: ((columns[lo] as number) + (columns[hi] as number) + NODE_W) / 2,
+    centerX: ((columns[lo] as number) + (columns[hi] as number) + chipWidth) / 2,
     centerY,
     zoom: WINDOW_ZOOM,
     hiddenLeft: lo,
@@ -145,10 +160,11 @@ export function isNodeVisible(
   vp: ViewportTransform,
   viewW: number,
   viewH: number,
+  chipWidth: number = NODE_W,
 ): boolean {
   const left = item.x * vp.zoom + vp.x;
   const top = item.y * vp.zoom + vp.y;
-  return left >= 0 && top >= 0 && left + NODE_W * vp.zoom <= viewW && top + NODE_H * vp.zoom <= viewH;
+  return left >= 0 && top >= 0 && left + chipWidth * vp.zoom <= viewW && top + NODE_H * vp.zoom <= viewH;
 }
 
 export function isPathVisible(
@@ -156,8 +172,9 @@ export function isPathVisible(
   vp: ViewportTransform,
   viewW: number,
   viewH: number,
+  chipWidth: number = NODE_W,
 ): boolean {
-  return items.length > 0 && items.every((i) => isNodeVisible(i, vp, viewW, viewH));
+  return items.length > 0 && items.every((i) => isNodeVisible(i, vp, viewW, viewH, chipWidth));
 }
 
 /**
@@ -183,17 +200,18 @@ export function hiddenColumns(
   items: ReadonlyArray<{ x: number }>,
   vp: ViewportTransform,
   viewW: number,
+  chipWidth: number = NODE_W,
 ): { left: number; right: number } {
   // jsdom, and any element not yet measured, reports clientWidth 0, which
   // would make every column read as hidden.
   if (viewW <= 0) return { left: 0, right: 0 };
   const columns = [...new Set(items.map((i) => i.x))].sort((a, b) => a - b);
-  const threshold = (NODE_W * vp.zoom) / 2;
+  const threshold = (chipWidth * vp.zoom) / 2;
   let left = 0;
   let right = 0;
   for (const x of columns) {
     const l = x * vp.zoom + vp.x;
-    const r = (x + NODE_W) * vp.zoom + vp.x;
+    const r = (x + chipWidth) * vp.zoom + vp.x;
     const visible = Math.min(r, viewW) - Math.max(l, 0);
     if (visible >= threshold) continue;
     if ((l + r) / 2 < viewW / 2) left += 1;
@@ -204,25 +222,38 @@ export function hiddenColumns(
 
 /**
  * Width of the mask over a pane edge with hidden columns, at the live zoom.
- * A hidden column may still show up to `NODE_W * zoom / 2` past the edge
+ * A hidden column may still show up to `chipWidth * zoom / 2` past the edge
  * (hiddenColumns()'s threshold), which grows with zoom, so the mask grows with
  * it. `FRAME_PADDING + PILL_GUTTER` (88px) is the floor, which equals that
- * sliver at zoom 1.
+ * sliver for a NODE_W chip at zoom 1.
  */
-export function gutterMaskWidth(zoom: number): number {
-  return Math.max(FRAME_PADDING + PILL_GUTTER, (NODE_W * zoom) / 2);
+export function gutterMaskWidth(zoom: number, chipWidth: number = NODE_W): number {
+  return Math.max(FRAME_PADDING + PILL_GUTTER, (chipWidth * zoom) / 2);
+}
+
+/** How many components the outermost `hiddenCount` columns on one side hold:
+ *  one per chip, plus every component a "+N more" chip stands for. */
+export function hiddenComponentCount(
+  items: ReadonlyArray<{ x: number; nodes?: readonly unknown[] }>,
+  side: "left" | "right",
+  hiddenCount: number,
+): number {
+  const columns = [...new Set(items.map((i) => i.x))].sort((a, b) => a - b);
+  const hidden = new Set(side === "left" ? columns.slice(0, hiddenCount) : columns.slice(columns.length - hiddenCount));
+  return items.reduce((n, i) => (hidden.has(i.x) ? n + (i.nodes?.length ?? 1) : n), 0);
 }
 
 export type EdgePillCopy = { label: string; ariaLabel: string; remedy: "showAll" | "resetView" };
 
 /**
- * The edge pill's label, aria-label and remedy for one side. At the default
- * frame a reset would change nothing, so the remedy is show all (fitAll);
- * after a pan or zoom it is reset view. The visible label is the hidden count
- * either way, and the aria-label names the remedy.
+ * The edge pill's label, aria-label and remedy for one side, given how many
+ * components are off screen there. At the default frame a reset would change
+ * nothing, so the remedy is show all (fitAll); after a pan or zoom it is reset
+ * view. The visible label is the count either way, and the aria-label names
+ * the remedy.
  */
 export function edgePillCopy(side: "left" | "right", count: number, atDefaultFrame: boolean): EdgePillCopy {
-  const noun = count === 1 ? "column" : "columns";
+  const noun = count === 1 ? "component" : "components";
   const sideText = side === "left" ? "to the left" : "to the right";
   const label = side === "left" ? `← ${count.toLocaleString()} more` : `${count.toLocaleString()} more →`;
   if (atDefaultFrame) {

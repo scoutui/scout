@@ -11,7 +11,9 @@ vi.mock("next/navigation", async () =>
 );
 
 vi.mock("@/components/component-detail/composition/composition-canvas", () => ({
-  CompositionCanvas: () => <div data-testid="canvas-stub" />,
+  CompositionCanvas: ({ listsToggle }: { listsToggle?: React.ReactNode }) => (
+    <div data-testid="canvas-stub">{listsToggle}</div>
+  ),
 }));
 
 const node = (id: string, o?: Partial<CompositionGraphNode>): CompositionGraphNode => ({
@@ -41,7 +43,7 @@ const graph: CompositionGraph = {
 };
 
 describe("flat closure panels", () => {
-  it("each panel is one list: header count, nearest-first step grammar, deprecated badge", () => {
+  it("each panel is one list: header count, nearest-first step grammar, deprecated mark", () => {
     render(<CompositionTab detail={detail} graph={graph} />);
     // The header names the list and its row count, the panel's only number.
     const renderedBy = screen.getByRole("heading", { name: "Rendered by" }).closest("header");
@@ -49,20 +51,13 @@ describe("flat closure panels", () => {
     const renders = screen.getByRole("heading", { name: "Renders" }).closest("header");
     expect(renders).toHaveTextContent("Renders1");
     expect(screen.getAllByText("1 step").length).toBeGreaterThan(0);
+    // A deprecated row carries the render tree's warning triangle right after its name.
     expect(screen.getByText("deprecated")).toBeInTheDocument();
+    expect(screen.getByText("ext").nextElementSibling?.querySelector("svg")).toBeInstanceOf(SVGElement);
+    expect(screen.getByText("root0").closest("button")?.querySelector("svg")).toBeNull();
     // No view toggle in either direction.
     expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Direct/ })).not.toBeInTheDocument();
-  });
-
-  it("both subtitles say what the list holds and what the number means", () => {
-    render(<CompositionTab detail={detail} graph={graph} />);
-    expect(
-      screen.getByText("everything that renders F, nearest first · the number is steps down to F"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("everything F ends up rendering, nearest first · the number is steps from F"),
-    ).toBeInTheDocument();
   });
 
   // The list is a closure, not a neighbour list: a component three steps up
@@ -91,46 +86,60 @@ describe("flat closure panels", () => {
     );
   });
 
-  it("empty lists say so in the same plain words as the caption", () => {
+  it("a pinned row spells out its path to the focus, in render order", () => {
+    const chainGraph: CompositionGraph = {
+      nodes: [node("further"), node("far"), node("mid"), node("F"), node("leaf")],
+      edges: [
+        { source: "further", target: "far", count: 1 },
+        { source: "far", target: "mid", count: 1 },
+        { source: "mid", target: "F", count: 1 },
+        { source: "F", target: "leaf", count: 1 },
+      ],
+    };
+    render(<CompositionTab detail={detail} graph={chainGraph} />);
+    expect(screen.queryByText(/→/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^further,/ }));
+    expect(screen.getByText("further → far → mid → F")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^leaf,/ }));
+    expect(screen.getByText("F → leaf")).toBeInTheDocument();
+    expect(screen.queryByText("further → far → mid → F")).not.toBeInTheDocument();
+  });
+
+  it("the caption comes before the lists, so it leads the tab on a narrow screen", () => {
+    render(<CompositionTab detail={detail} graph={graph} />);
+    const caption = screen.getByText(/components render/);
+    const firstList = screen.getByRole("heading", { name: "Rendered by" });
+    expect(caption.compareDocumentPosition(firstList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("an empty list says None in this repo, without repeating the caption", () => {
     // F is a true leaf in both directions: nothing renders it and it renders
     // nothing, like an unused design-system component.
     const loneGraph: CompositionGraph = { nodes: [node("F")], edges: [] };
     render(<CompositionTab detail={detail} graph={loneGraph} />);
-    expect(screen.getByText("Nothing in this repo renders F.")).toBeInTheDocument();
-    expect(screen.getByText("F renders no other components in this repo.")).toBeInTheDocument();
-  });
-
-  // The collapsed strip counts the same two lists, and an empty downward list
-  // reads as words, never as a bare "renders 0".
-  it("the collapsed strip says 'renders nothing' when the downward list is empty", () => {
-    const loneGraph: CompositionGraph = {
-      nodes: [node("root0"), node("F")],
-      edges: [{ source: "root0", target: "F", count: 1 }],
-    };
-    render(<CompositionTab detail={detail} graph={loneGraph} />);
-    fireEvent.click(screen.getByRole("button", { name: /hide lists/i }));
-    expect(screen.getByText("1 depends on it · renders nothing")).toBeInTheDocument();
-    // rail-collapse.ts persists the preference to localStorage, so reopen the
-    // rail before the next test.
-    fireEvent.click(screen.getByRole("button", { name: /show lists/i }));
+    for (const title of ["Rendered by", "Renders"]) {
+      expect(screen.getByRole("heading", { name: title }).closest("section")).toHaveTextContent(
+        `${title}0None in this repo.`,
+      );
+    }
   });
 });
 
 describe("expansion, filter, focus", () => {
   it("Show more ⇄ Show fewer on one persistent button that keeps focus", () => {
     render(<CompositionTab detail={detail} graph={graph} />);
-    const toggle = screen.getByRole("button", { name: "Show 2 more" });
+    const toggle = screen.getByRole("button", { name: "Show all 8" });
     toggle.focus();
     fireEvent.click(toggle);
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Show fewer" }));
     fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
-    expect(screen.getByRole("button", { name: "Show 2 more" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show all 8" })).toBeInTheDocument();
   });
 
   it("filter appears only when expanded, narrows rows, and reports N of M", () => {
     render(<CompositionTab detail={detail} graph={graph} />);
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Show 2 more" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show all 8" }));
     const input = screen.getByRole("searchbox", { name: "Filter Rendered by" });
     fireEvent.change(input, { target: { value: "root7" } });
     expect(screen.getByText("root7")).toBeInTheDocument();
@@ -182,35 +191,14 @@ describe("rail collapse", () => {
     expect(screen.getByRole("heading", { name: /rendered by/i })).toBeInTheDocument();
   });
 
-  it("collapses to a strip that still names the counts, and restores", () => {
+  it("hides both lists and shows them again", () => {
     render(<CompositionTab detail={detail} graph={graph} />);
     fireEvent.click(screen.getByRole("button", { name: /hide lists/i }));
-
-    // The strip still names both counts: 8 above and 1 below, the numbers the
-    // open panels carry.
     expect(screen.queryByRole("heading", { name: /rendered by/i })).not.toBeInTheDocument();
-    const show = screen.getByRole("button", { name: /show lists/i });
-    expect(show).toBeInTheDocument();
-    expect(screen.getByText("8 depend on it · renders 1")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^renders$/i })).not.toBeInTheDocument();
 
-    fireEvent.click(show);
-    expect(screen.getByRole("heading", { name: /rendered by/i })).toBeInTheDocument();
-  });
-
-  it("singularizes the dependent count in the collapsed strip", () => {
-    const soloGraph: CompositionGraph = {
-      nodes: [node("root0"), node("F"), node("ext", { scope: "external", packageName: "@ui/lib", filePath: null })],
-      edges: [
-        { source: "root0", target: "F", count: 1 },
-        { source: "F", target: "ext", count: 2 },
-      ],
-    };
-    render(<CompositionTab detail={detail} graph={soloGraph} />);
-    fireEvent.click(screen.getByRole("button", { name: /hide lists/i }));
-    expect(screen.getByText("1 depends on it · renders 1")).toBeInTheDocument();
-    // rail-collapse.ts persists the preference to localStorage, so reopen the
-    // rail before the next test.
     fireEvent.click(screen.getByRole("button", { name: /show lists/i }));
+    expect(screen.getByRole("heading", { name: /rendered by/i })).toBeInTheDocument();
   });
 });
 
@@ -224,7 +212,7 @@ describe("rail scroll structure", () => {
     const scrollers = () => [...container.querySelectorAll('[class*="overflow-y-auto"]')];
     expect(scrollers().every((e) => e.tagName === "UL")).toBe(true);
     expect(scrollers()).toHaveLength(2); // both panels have rows in this fixture
-    fireEvent.click(screen.getByRole("button", { name: "Show 2 more" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show all 8" }));
     expect(screen.getByRole("button", { name: "Show fewer" })).toBeInTheDocument();
     expect(scrollers()).toHaveLength(2);
     expect(scrollers().every((e) => e.tagName === "UL")).toBe(true);
@@ -301,7 +289,7 @@ describe("long-content handling", () => {
     };
     render(<CompositionTab detail={detail} graph={manyGraph} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /show \d+ more/i }));
+    fireEvent.click(screen.getByRole("button", { name: /show all \d+/i }));
     expect(screen.getByText("…/meeting-not-started/[uid]/page.tsx")).toBeInTheDocument();
 
     const input = screen.getByRole("searchbox", { name: "Filter Rendered by" });

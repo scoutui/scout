@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CompositionGraphNode } from "@scoutui/web-shared";
-import { buildGraphModel, type GraphModel } from "@/components/component-detail/composition/graph-model";
+import { buildGraphModel, closureOf, type GraphModel } from "@/components/component-detail/composition/graph-model";
 import {
   COLUMN_CAP, GAP_X, GAP_Y, NODE_H, NODE_W, computeLayout, edgeWidth, type PinnedEntry,
 } from "@/components/component-detail/composition/graph-layout";
@@ -75,11 +75,22 @@ describe("1-hop neighbourhood at rest", () => {
 });
 
 describe("column sort and paging", () => {
-  it("sorts a column by call sites against the focus, then occurrence, then id", () => {
+  it("sorts a column by call sites against the focus, then occurrence, then name", () => {
     const m = withFocusEdges(owners(3, (i) => ({ occurrenceCount: i })), (i) => [1, 5, 5][i] as number);
     const col = layoutOf(m, "F").items.filter((i) => i.x === -COL);
     // o2 (5 call sites, occurrence 2) above o1 (5, occurrence 1) above o0 (1)
     expect(col.map((i) => (i.kind === "chip" ? i.node.id : i.id))).toEqual(["o2", "o1", "o0"]);
+  });
+
+  it("a column shows the same components in the same order as the list, and folds the list's later rows", () => {
+    // Every owner ties on call sites and occurrences; ids sort the opposite way to names.
+    const n = COLUMN_CAP + 2;
+    const m = withFocusEdges(owners(n, (i) => ({ displayName: String.fromCharCode(65 + n - 1 - i) })));
+    const listIds = closureOf(m, "F", "up").map((r) => r.node.id);
+    const col = layoutOf(m, "F").items.filter((i) => i.x === -COL);
+    expect(col.flatMap((i) => (i.kind === "chip" ? [i.node.id] : []))).toEqual(listIds.slice(0, COLUMN_CAP));
+    const more = col.find((i) => i.kind === "more");
+    expect(more?.kind === "more" && more.nodes.map((x) => x.id)).toEqual(listIds.slice(COLUMN_CAP));
   });
 
   it("caps a column at COLUMN_CAP and folds overflow into one '+N more components' chip that keeps the hidden edges", () => {
