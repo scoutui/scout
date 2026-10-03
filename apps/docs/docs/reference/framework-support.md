@@ -15,7 +15,7 @@ HTML files and Lit templates are not read.
 | --- | --- | --- |
 | Files | `.tsx`, `.jsx`, `.ts`, `.js` | `.vue` |
 | What is read | JSX anywhere in the file | The `<template>` and `<script>` blocks |
-| Components found | Imported or locally defined components used as JSX tags, and web components | Imported components, Nuxt auto-imported components, and web components |
+| Components found | Imported or locally defined components used as JSX tags, and web components | Imported components, auto-imported components, and web components |
 | Prop values | Yes | Yes |
 | Events | Props named `on` plus a capital letter, such as `onClick` | `@name` and `v-on:name` |
 | Renders and rendered by | Yes | Yes |
@@ -39,7 +39,11 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 **Recognised:** each `.vue` file is itself a component, named by the `name` in `defineOptions()` or `export default`, or else by its file name (`line-item.vue` is `LineItem`). In its template:
 
 - A tag that matches a script import, written either way (`<LineItem>` or `<line-item>`), is that component.
-- In a Nuxt app, a tag that matches an auto-imported component is that component. Run `nuxt prepare` before scanning so the list of auto-imports exists.
+- A tag that matches an auto-imported component is that component. The list of auto-imports is the first of these files, in the folder that holds your config, that lists any:
+  - `.nuxt/components.d.ts` or `.nuxt/types/components.d.ts`, which Nuxt writes. Run `nuxt prepare` before scanning so they exist.
+  - `components.d.ts` or `src/components.d.ts`, which `unplugin-vue-components` writes. Its resolvers list library components there too, so with Element Plus's resolver `<el-button>` is Element Plus's `ElButton`.
+
+  A `GlobalComponents` declaration you write yourself at one of these paths is read the same way.
 - Any other tag with a hyphen, such as `<acme-button>`, is counted as a [web component](#web-components).
 - Vue's built-in tags, such as `<Transition>` and `<component>`, are ignored, and so are plain HTML tags such as `<div>`.
 
@@ -47,7 +51,8 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 
 **Known gaps:**
 
-- Components registered globally without Nuxt, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Framework** filter shows as **Tag**. Import the component in the file's script to have it matched.
+- Components registered globally and missing from the list of auto-imports, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Framework** filter shows as **Tag**. Import the component in the file's script to have it matched.
+- A list of auto-imports at any other path is not read, for example when `unplugin-vue-components`'s `dts` option writes it to `types/components.d.ts`. Set `dts` to `true` or `src/components.d.ts` to have it read.
 - In a file with both `<script>` and `<script setup>`, a component imported in the plain `<script>` is not matched. Written `<LineItem>`, its tag is not counted at all. Written `<line-item>`, it is counted as a web component with no package. Move the import into `<script setup>`.
 
 ## Web components

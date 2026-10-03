@@ -398,8 +398,9 @@ export async function scanRepository(input: {
   // parse per file.
   const graphBuilder = createGraphBuilder({ moduleResolver: resolveImport, repoRoot: cfg.configDir });
 
-  // The generated GlobalComponents declaration (Nuxt writes one) lists globally
-  // available Vue components. Problems with it become diagnostics, not failures.
+  // The generated GlobalComponents declaration (Nuxt and unplugin-vue-components
+  // write one) lists globally available Vue components. Problems with it become
+  // diagnostics, not failures.
   const autoImports = loadGlobalComponents(cfg.configDir);
   if (autoImports !== null) {
     for (const s of autoImports.stale) {
