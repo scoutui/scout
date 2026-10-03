@@ -296,6 +296,21 @@ describe("runScan upload refused before the dashboard stores it", () => {
     expect(stderr()).toBe(line);
   });
 
+  it.each([
+    ["a web page", () => new Response("<!doctype html><title>Example Domain</title>", { status: 405, headers: { "Content-Type": "text/html" } }),
+      "Error: Couldn't upload the scan: https://h.example didn't answer like a Scout dashboard. Check the dashboard address and try again.\n"],
+    ["a dashboard's own error", () => Response.json({ error: "from the dashboard" }, { status: 400 }),
+      "Error: Couldn't upload the scan: the dashboard returned an error. Try again, or ask your dashboard administrator to check its logs.\n"],
+  ])("stops before scanning when the address answers the pre-scan check with %s, and says which it was", async (_case, reply, line) => {
+    const dir = setupConsumer();
+    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(async () => reply());
+    const result = await runScan({ cwd: dir, quiet: true, upload: true });
+    expect(result.output).toBeNull();
+    expect(scanExitCode(result)).toBe(1);
+    expect(stderr()).toBe(line);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
   it("shows the dashboard's reply only under debug", async () => {
     const dir = setupConsumer();
     vi.spyOn(global, "fetch").mockImplementationOnce(preScanReply()).mockResolvedValue(Response.json({ error: "Scan too large (limit 42 MiB)" }, { status: 413 }));

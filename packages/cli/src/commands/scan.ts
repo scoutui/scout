@@ -50,6 +50,7 @@ import { diagnosticLogLines, formatWarning } from "../reporter/diagnostic-lines.
 import {
   buildWorkspaceGraph,
   createDeclaredDependencyTest,
+  declaredInPath,
   isFirstPartyPath,
   resetFindOwningPackageCache,
   type WorkspaceGraph,
@@ -211,7 +212,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     }
   }
 
-  const setupRefused = uploader ? setupRefusal(workspaceGraph, files, cfg.configDir) : null;
+  const setupRefused = uploader ? setupRefusal(workspaceGraph, files, cfg.configDir, outputRoot) : null;
   if (setupRefused !== null) {
     log.error(setupRefused);
     return { output: null, upload: "failed" };
@@ -265,7 +266,7 @@ export async function loadScanConfig(configPath: string, log: Logger): Promise<R
     return await loadConfig(configPath);
   } catch (err) {
     if (err instanceof ConfigError) {
-      log.error(err.message);
+      log.error(err.message, err.detail);
       return null;
     }
     throw err;
@@ -298,7 +299,7 @@ export async function readWorkspace(
   // scan of a monorepo subfolder resolves against the hoisted node_modules and tsconfig.
   const workspaceRoot = findWorkspaceRoot(cfg.configDir, outputRoot) ?? cfg.configDir;
   if (workspaceRoot !== cfg.configDir) {
-    writer(`[scan] workspace root: ${workspaceRoot}\n`);
+    writer(`Monorepo root: ${posixPath(relative(cfg.configDir, workspaceRoot))}\n`);
   }
 
   // Clear caches from an earlier scan in the same process, in case the filesystem changed.
@@ -337,9 +338,12 @@ export async function scanRepository(input: {
       : posixPath(relative(outputRoot, resolve(cfg.configDir, scanRel)));
 
   const writer = quiet ? () => {} : (s: string) => process.stderr.write(s);
-  // Warnings about how the scan reads the repo, hidden by --quiet like progress.
+  // Warnings about how the scan reads the repo, each printed once, hidden by --quiet like progress.
+  const warned = new Set<string>();
   const scanWarning = (msg: string) => {
-    if (!quiet) log.warn(msg);
+    if (quiet || warned.has(msg)) return;
+    warned.add(msg);
+    log.warn(msg);
   };
   const reportSyntaxErrors = (path: string, messages: string[]) =>
     log.warn(syntaxErrorWarning(path, messages), messages.join("\n"));
@@ -350,10 +354,8 @@ export async function scanRepository(input: {
     onWarning: (msg: string) => scanWarning(msg),
   };
   if (cfg.aliases) resolveImportOpts.aliases = cfg.aliases;
-  resolveImportOpts.packageAliasLayers = buildPackageAliasLayers(
-    workspaceGraph,
-    (msg) => scanWarning(msg),
-  );
+  const packageAliases = buildPackageAliasLayers(workspaceGraph, (msg) => scanWarning(msg));
+  resolveImportOpts.packageAliasLayers = packageAliases.layers;
   const tsconfigPath = resolveTsconfigPath({
     configDir: cfg.configDir,
     repoRoot: workspaceRoot,
@@ -378,11 +380,15 @@ export async function scanRepository(input: {
   const cemIndex = await buildCemIndex({ root: outputRoot, configDir: cfg.configDir });
 
 
+  const packageTsconfigs = packageAliases.tsconfigCount;
   if (tsconfigPath) {
-    const rel = relative(cfg.configDir, tsconfigPath);
-    writer(`[scan] using tsconfig: ${rel || tsconfigPath}\n`);
+    writer(`Path aliases: ${posixPath(relative(cfg.configDir, tsconfigPath))}\n`);
+  } else if (packageTsconfigs > 0) {
+    writer(packageTsconfigs === 1
+      ? "Path aliases: a tsconfig file in 1 workspace package\n"
+      : `Path aliases: tsconfig files in ${packageTsconfigs} workspace packages\n`);
   } else {
-    writer("[scan] tsconfig: not found (path aliases will not resolve)\n");
+    writer('Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.\n');
   }
   const isTTY = !!process.stderr.isTTY;
   const { columns } = process.stderr;
@@ -546,7 +552,7 @@ export async function scanRepository(input: {
       const manifest = declaredIn(absoluteFromGraphKey(fromFile), packageName);
       if (manifest === null) return false;
       if (!declaringManifest.has(packageName)) {
-        declaringManifest.set(packageName, posixPath(relative(outputRoot, manifest)));
+        declaringManifest.set(packageName, declaredInPath(outputRoot, manifest));
       }
       return true;
     },

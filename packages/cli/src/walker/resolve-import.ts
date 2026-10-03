@@ -84,7 +84,7 @@ export type CreateImportResolverOptions = {
 
 export function createImportResolver(opts: CreateImportResolverOptions): ResolveImport {
   const configEntries = compileAliasMap(opts.aliases, opts.repoRoot);
-  const tsconfigLayer = loadTsconfigLayer(opts.tsconfigPath, opts.onWarning);
+  const tsconfigLayer = loadTsconfigLayer(opts.tsconfigPath, opts.repoRoot, opts.onWarning);
   const workspaceExportEntries: AliasEntry[] = opts.workspaceGraph
     ? buildWorkspaceExportEntries(opts.workspaceGraph)
     : [];
@@ -214,10 +214,11 @@ function compileAliasMap(
 
 function loadTsconfigLayer(
   tsconfigPath: string | undefined,
+  repoRoot: string,
   onWarning?: (message: string) => void,
 ): { entries: AliasEntry[]; baseUrlDir: string | undefined } {
   if (!tsconfigPath) return { entries: [], baseUrlDir: undefined };
-  const { entries, baseUrlDir, warnings } = loadTsconfigChain(tsconfigPath);
+  const { entries, baseUrlDir, warnings } = loadTsconfigChain(tsconfigPath, repoRoot);
   if (onWarning) for (const w of warnings) onWarning(w);
   return { entries, baseUrlDir };
 }

@@ -42,9 +42,21 @@ describe("loadConfig", () => {
     expect(cfg.aliases).toBeUndefined();
   });
 
-  it("rejects when file missing", async () => {
+  it("rejects when file missing, saying how to create one or point at another", async () => {
     await expect(loadConfig("/nonexistent/path.json")).rejects.toMatchObject({
       code: "CONFIG_MISSING",
+      message: "Couldn't find /nonexistent/path.json. Run scout init to create one, or pass --config <path>.",
+    });
+  });
+
+  it("rejects a file that isn't JSON, naming the path as given, with where the parser stopped as the detail", async () => {
+    const dir = tmp();
+    const path = join(dir, "scout.config.json");
+    writeFileSync(path, '{ "include": ["src/**"]\n');
+    await expect(loadConfig(path)).rejects.toMatchObject({
+      code: "CONFIG_INVALID",
+      message: `${path} isn't valid JSON. Fix it and try again.`,
+      detail: expect.stringMatching(/\(line 2 column 1\)$/),
     });
   });
 
@@ -63,12 +75,12 @@ describe("loadConfig", () => {
     ["fields it doesn't use", { output: "./scout-scan.json", include: ["src/**/*.ts"], exlude: ["**/*.test.ts"] }, `has fields Scout doesn't use: "output", "exlude". Remove them and try again.`],
   ])("names %s", async (_, cfg, line) => {
     const path = writeConfig(tmp(), cfg);
-    await expect(loadConfig(path)).rejects.toMatchObject({ message: `${realpathSync(path)} ${line}` });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `${path} ${line}` });
   });
 
   it("names a field it doesn't use before any other problem", async () => {
     const path = writeConfig(tmp(), { output: "./scout-scan.json", include: [] });
-    await expect(loadConfig(path)).rejects.toMatchObject({ message: `${realpathSync(path)} has a field Scout doesn't use: "output". Remove it and try again.` });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `${path} has a field Scout doesn't use: "output". Remove it and try again.` });
   });
 
   it("requires include field", async () => {
@@ -122,7 +134,7 @@ describe("loadConfig", () => {
 
   it("rejects an empty install", async () => {
     const path = writeConfig(tmp(), { include: ["src/**/*.ts"], install: "" });
-    await expect(loadConfig(path)).rejects.toMatchObject({ message: `Invalid config at ${realpathSync(path)}: /install: must NOT have fewer than 1 characters` });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `Invalid config at ${path}: /install: must NOT have fewer than 1 characters` });
   });
 
   describe("legacy manifests field migration", () => {
@@ -133,9 +145,9 @@ describe("loadConfig", () => {
         manifests: ["@example/pkg"],
         include: ["src/**/*.tsx"],
       });
-      await expect(loadConfig(path)).rejects.toThrow(
-        /manifests.*removed/i
-      );
+      await expect(loadConfig(path)).rejects.toMatchObject({
+        message: `${path}: the \`manifests\` field was removed. Replace with \`include\` (array of glob patterns for files to scan).`,
+      });
     });
 
     it("loads a valid config without packageScopes", async () => {

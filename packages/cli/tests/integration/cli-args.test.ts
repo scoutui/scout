@@ -99,7 +99,7 @@ describe("cli argument handling", () => {
       const dir = pushedRepo(".");
       const { code, stdout, stderr } = await run(["scan", ...flags], { cwd: dir, env: withoutDashboard() });
       expect(stderr).toBe(
-        `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json, or run scout scan --dry-run to scan without uploading.\n`,
+        `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.\n`,
       );
       expect(code).toBe(1);
       expect(stdout).toBe("");

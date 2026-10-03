@@ -93,7 +93,7 @@ To upload as a different account, sign out, then sign in again. If the approval 
 
 ## Verify
 
-Install the repo's dependencies first. Without them, `scan` refuses with `Error: Couldn't upload the scan: some dependencies aren't installed. Install them and try again.`
+Install the repo's dependencies first. Without them, `scan` refuses with `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed. Install your dependencies and try again.`
 
 `scan` also takes only a commit that's pushed to the remote's default branch, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
 

@@ -62,7 +62,7 @@ Warning: @acme/ui is listed in package.json but isn't installed, so 3 occurrence
 **What to do:** install the repo's dependencies with your package manager, then scan again. Until every package in `dependencies` and `devDependencies` is installed, `scan` stops before it scans:
 
 ```text
-Error: Couldn't upload the scan: some dependencies aren't installed. Install them and try again.
+Error: Couldn't upload the scan: @acme/ui is listed in package.json but isn't installed. Install your dependencies and try again.
 ```
 
 A package listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with that package's occurrences unresolved.

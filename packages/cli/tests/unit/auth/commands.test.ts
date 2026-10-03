@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SCHEMA_VERSION } from "@scoutui/scan-format";
@@ -489,8 +489,10 @@ describe("runAuth dispatcher", () => {
     expect(await runAuth(argv, { env: {}, store: { filePath: file } })).toBe(2);
     expect(errors.join("")).toBe(line);
   });
-  it("requires a host for login", async () => {
+  it("requires a host for login, and says how to give one", async () => {
+    const errors = captureStderr();
     expect(await runAuth(["login"], { env: {}, store: { filePath: file } })).toBe(2);
+    expect(errors.join("")).toBe("Error: Couldn't sign in: no dashboard address is set. Run scout auth login --host <url>, or set SCOUTUI_HOST.\n");
   });
 
   it("refuses to sign in to a plain http host and says why", async () => {
@@ -522,7 +524,7 @@ describe("runAuth dispatcher", () => {
     await writeFile(join(dir, "scout.config.json"), JSON.stringify({ include: ["src/**"], hots: BASE }));
     const errors = captureStderr();
     expect(await runAuth(["status"], { env: {}, cwd: dir, store: { filePath: file } })).toBe(2);
-    expect(errors.join("")).toBe(`Error: ${await realpath(join(dir, "scout.config.json"))} has a field Scout doesn't use: "hots". Remove it and try again.\n`);
+    expect(errors.join("")).toBe(`Error: ${join(dir, "scout.config.json")} has a field Scout doesn't use: "hots". Remove it and try again.\n`);
   });
 
   it("delegates `logout --host` and clears the entry", async () => {

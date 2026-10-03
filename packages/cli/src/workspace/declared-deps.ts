@@ -1,13 +1,14 @@
 /**
  * Declared dependencies of the workspace root and its packages.
  * `createDeclaredDependencyTest` answers for one file;
- * `declaredDependenciesInstalled` checks the install for a set of files.
+ * `missingDependency` checks the install for a set of files.
  *
  * `createDeclaredDependencyTest` takes the root `package.json` read as a
  * parameter so tests can drive it without filesystem fixtures.
  */
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
 import { isInstalledPackage } from "../walker/installed-package.js";
 import { findOwningPackage } from "./find-owning-package.js";
 import type { WorkspaceGraph, WorkspacePackage } from "./types.js";
@@ -51,33 +52,48 @@ export function createDeclaredDependencyTest(
   };
 }
 
+/** A declaring `package.json` as the scan names it: relative to the scan's output root, with `/` separators. */
+export function declaredInPath(outputRoot: string, manifest: string): string {
+  return posixPath(relative(outputRoot, manifest));
+}
+
 /**
- * Whether every package listed in `dependencies` or `devDependencies` is
+ * The first package listed in `dependencies` or `devDependencies` that isn't
  * installed where Node looks from the `package.json` that lists it
- * (`isInstalledPackage`). The manifests read are the workspace root's and
+ * (`isInstalledPackage`), with the absolute path of that `package.json`, or
+ * null when all are installed. The manifests read are the workspace root's and
  * those of the workspace members that own one of the absolute paths `files`
- * (`findOwningPackage`). Stops at the first package that is not installed.
+ * (`findOwningPackage`).
  */
-export function declaredDependenciesInstalled(graph: WorkspaceGraph, files: readonly string[]): boolean {
+export function missingDependency(
+  graph: WorkspaceGraph,
+  files: readonly string[],
+): { packageName: string; manifest: string } | null {
   const rootManifest = join(graph.rootPath, "package.json");
-  if (!requiredInstalled(rootManifest, defaultReader(rootManifest))) return false;
+  const fromRoot = firstMissing(rootManifest, defaultReader(rootManifest));
+  if (fromRoot !== null) return fromRoot;
   const checked = new Set<WorkspacePackage>();
   for (const file of files) {
     const owner = findOwningPackage(graph, file);
     if (owner === null || checked.has(owner)) continue;
     checked.add(owner);
-    if (!requiredInstalled(join(owner.absolutePath, "package.json"), owner.packageJson)) return false;
+    const fromMember = firstMissing(join(owner.absolutePath, "package.json"), owner.packageJson);
+    if (fromMember !== null) return fromMember;
   }
-  return true;
+  return null;
 }
 
-/** Whether every package `pkg` lists in `dependencies` or `devDependencies` is installed from `manifest`. */
-function requiredInstalled(manifest: string, pkg: PkgJson | null): boolean {
-  if (!pkg) return true;
-  return [pkg.dependencies, pkg.devDependencies].every((bucket) =>
-    Object.keys(bucket ?? {}).every((name) => isInstalledPackage(manifest, name)),
-  );
+/** The first package `pkg` lists in `dependencies` or `devDependencies` that isn't installed from `manifest`, or null. */
+function firstMissing(manifest: string, pkg: PkgJson | null): { packageName: string; manifest: string } | null {
+  if (!pkg) return null;
+  for (const bucket of [pkg.dependencies, pkg.devDependencies]) {
+    for (const packageName of Object.keys(bucket ?? {})) {
+      if (!isInstalledPackage(manifest, packageName)) return { packageName, manifest };
+    }
+  }
+  return null;
 }
+
 
 function collect(pkg: PkgJson | null, into: Set<string>): void {
   if (!pkg) return;

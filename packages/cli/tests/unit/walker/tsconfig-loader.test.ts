@@ -45,18 +45,36 @@ describe("loadTsconfigChain: JSONC parse", () => {
   });
 
   it("returns empty entries + warning when file is missing", () => {
-    const { entries, warnings } = loadTsconfigChain(join(root, "does-not-exist.json"));
+    const { entries, warnings } = loadTsconfigChain(join(root, "does-not-exist.json"), root);
     expect(entries).toEqual([]);
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toMatch(/does-not-exist\.json/);
+    expect(warnings).toEqual([
+      'does-not-exist.json doesn\'t exist, so its path aliases aren\'t followed. Check "tsconfigPath" in scout.config.json and scan again.',
+    ]);
+  });
+
+  it("returns empty entries + warning when the file can't be read", () => {
+    mkdirSync(join(root, "tsconfig.json"));
+    const { entries, warnings } = loadTsconfigChain(join(root, "tsconfig.json"), root);
+    expect(entries).toEqual([]);
+    expect(warnings).toEqual([
+      "Couldn't read tsconfig.json, so its path aliases aren't followed. Check that it's a readable file and scan again.",
+    ]);
   });
 
   it("returns empty entries + warning when file is malformed beyond JSONC repair", () => {
     writeFileSync(join(root, "tsconfig.json"), "{ this is not json at all ");
-    const { entries, warnings } = loadTsconfigChain(join(root, "tsconfig.json"));
+    const { entries, warnings } = loadTsconfigChain(join(root, "tsconfig.json"), root);
     expect(entries).toEqual([]);
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings[0]).toMatch(/tsconfig\.json/);
+    expect(warnings).toEqual([
+      "tsconfig.json has JSON syntax errors, so some of its path aliases may be missing. Fix them and scan again.",
+    ]);
+  });
+
+  it("returns empty entries + warning when the file isn't a JSON object", () => {
+    writeFileSync(join(root, "tsconfig.json"), "42");
+    const { entries, warnings } = loadTsconfigChain(join(root, "tsconfig.json"), root);
+    expect(entries).toEqual([]);
+    expect(warnings).toEqual(["tsconfig.json isn't a JSON object, so its path aliases aren't followed. Fix it and scan again."]);
   });
 
   it("returns empty entries when paths is absent", () => {
@@ -160,8 +178,10 @@ describe("loadTsconfigChain: extends", () => {
       join(root, "b.json"),
       JSON.stringify({ extends: "./a.json" }),
     );
-    const { entries, warnings } = loadTsconfigChain(join(root, "a.json"));
-    expect(warnings.some((w) => w.includes("a.json") && /cycle/.test(w))).toBe(true);
+    const { entries, warnings } = loadTsconfigChain(join(root, "a.json"), root);
+    expect(warnings).toEqual([
+      'b.json extends a.json, which loops back to it, so path aliases past it aren\'t followed. Fix "extends" in b.json and scan again.',
+    ]);
     // Whatever resolved before the cycle hit should still be present.
     expect(entries).toHaveLength(1);
     expect(entries[0]?.targets).toEqual(["src/a/*"]);
@@ -178,10 +198,28 @@ describe("loadTsconfigChain: extends", () => {
       join(root, "present.json"),
       JSON.stringify({ compilerOptions: { paths: { "@x/*": ["src/x/*"] } } }),
     );
-    const { entries, warnings } = loadTsconfigChain(join(root, "tsconfig.json"));
-    expect(warnings).toContainEqual(expect.stringMatching(/does-not-exist/));
+    const { entries, warnings } = loadTsconfigChain(join(root, "tsconfig.json"), root);
+    expect(warnings).toEqual([
+      "tsconfig.json points to does-not-exist.json, which doesn't exist, so its path aliases aren't followed. Fix the path and scan again.",
+    ]);
     expect(entries).toHaveLength(1);
     expect(entries[0]?.targets).toEqual(["src/x/*"]);
+  });
+
+  it("suggests nuxt prepare when the missing extends target is in a .nuxt folder", () => {
+    writeFileSync(join(root, "tsconfig.json"), JSON.stringify({ extends: "./.nuxt/tsconfig.json" }));
+    const { warnings } = loadTsconfigChain(join(root, "tsconfig.json"), root);
+    expect(warnings).toEqual([
+      "tsconfig.json points to .nuxt/tsconfig.json, which doesn't exist, so its path aliases aren't followed. Fix the path, or for Nuxt run npx nuxt prepare, and scan again.",
+    ]);
+  });
+
+  it("warns when an extends package isn't installed", () => {
+    writeFileSync(join(root, "tsconfig.json"), JSON.stringify({ extends: "@cc-test/not-installed/tsconfig.json" }));
+    const { warnings } = loadTsconfigChain(join(root, "tsconfig.json"), root);
+    expect(warnings).toEqual([
+      'tsconfig.json extends "@cc-test/not-installed/tsconfig.json", which isn\'t installed, so its path aliases aren\'t followed. Install your dependencies and scan again.',
+    ]);
   });
 
   it("anchors inherited paths to the parent's baseUrl, not the leaf's", () => {

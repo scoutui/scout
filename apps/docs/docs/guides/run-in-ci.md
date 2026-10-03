@@ -81,9 +81,10 @@ Each of these prints one `Error:` line and exits `1`. Match the error in the job
 | `Error: Couldn't upload the scan: couldn't tell which branch the dashboard tracks.` | The clone doesn't record the remote's default branch. | Keep the `git remote set-head origin --auto` step, or set `branch` in the config. |
 | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>.` or `you're on <branch>` | The job ran on a commit that isn't on the tracked branch, such as a pull request. | Run the upload job only on pushes to that branch, as the workflow above does. |
 | `Error: Couldn't upload the scan: you have uncommitted changes.` | A step before the scan changed a tracked file, often an install rewriting the lockfile. | Use your package manager's frozen install, such as `npm ci` or `yarn install --immutable`. Add `--debug` to list the files. |
-| `Error: Couldn't upload the scan: some dependencies aren't installed.` | The job didn't install all of the repo's dependencies before the scan. | Run the install step before the scan step. |
+| `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed.` | The job didn't install all of the repo's dependencies before the scan. | Run the install step before the scan step. |
 | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared.` | The Nuxt app's `.nuxt/` folder wasn't generated. | Add `npx nuxt prepare` after the install step. |
 | `Error: Couldn't upload the scan: no components were found.` | The scan found nothing in the files `include` matches. | See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files). |
+| `Error: Couldn't upload the scan: <host> didn't answer like a Scout dashboard.` | The address isn't the dashboard's, or it has a typo. | Check `SCOUTUI_HOST`, or `host` in the config. |
 | `Error: Couldn't upload the scan: the dashboard rejected SCOUTUI_TOKEN.` | The token doesn't match the dashboard's, or the dashboard has no CI upload token set. | Copy the token again from whoever runs the dashboard. |
 | `Error: Not signed in to <host>.` | `SCOUTUI_TOKEN` was empty. | Check the secret's name, and that the job can read it. |
 | `Error: Couldn't upload the scan: no dashboard address is set.` | No host was set. | Set `SCOUTUI_HOST`, or add `host` to the config. |

@@ -141,17 +141,78 @@ describe("runScan warnings about files it reads", () => {
     expect(stderrOf(stderr)).toBe("1 component passed in as a prop or argument wasn't counted.\n");
   });
 
-  it("prints a tsconfig problem under the Warning label, and its progress through the files it reads", async () => {
+  it("prints a tsconfig problem under the Warning label, the tsconfig it reads aliases from, and its progress through the files it reads", async () => {
     const dir = setupConsumer();
     writeFileSync(join(dir, "tsconfig.json"), '{ "compilerOptions": { "paths": ');
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     await runScan({ configPath: join(dir, "scout.config.json") });
     const lines = stderrOf(stderr).split("\n");
     expect(lines.filter((line) => line.startsWith("Warning:"))).toEqual([
-      `Warning: tsconfig parse errors in ${join(realpathSync(dir), "tsconfig.json")}: ValueExpected, CloseBraceExpected, CloseBraceExpected`,
+      "Warning: tsconfig.json has JSON syntax errors, so some of its path aliases may be missing. Fix them and scan again.",
     ]);
     expect(lines).toContainEqual(expect.stringMatching(/^Reading files: 1 of 2 \(50\.0%\), \d+\.\ds$/));
     expect(lines.filter((line) => line.startsWith("Reading files"))).toHaveLength(1);
     expect(lines).toContain("Matching occurrences to components…");
+    expect(lines).toContain("Path aliases: tsconfig.json");
+  });
+
+  it("says when it finds no tsconfig to read path aliases from, and how to name one", async () => {
+    const dir = setupConsumer();
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json") });
+    expect(stderrOf(stderr).split("\n")).toContain(
+      'Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.',
+    );
+  });
+
+  const withAliases = { compilerOptions: { paths: { "@/*": ["./src/*"] } } };
+  it.each([
+    [["one", "two"], withAliases, "Path aliases: tsconfig files in 2 workspace packages"],
+    [["one"], withAliases, "Path aliases: a tsconfig file in 1 workspace package"],
+    [["one"], { compilerOptions: {} }, "Path aliases: a tsconfig file in 1 workspace package"],
+  ])("at a monorepo root with no tsconfig of its own, says the aliases come from the packages' tsconfigs (%j, %j)", async (apps, tsconfig, line) => {
+    const dir = setupConsumer();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "root", private: true, workspaces: ["apps/*"] }));
+    for (const app of apps) {
+      mkdirSync(join(dir, "apps", app), { recursive: true });
+      writeFileSync(join(dir, "apps", app, "package.json"), JSON.stringify({ name: app }));
+      writeFileSync(join(dir, "apps", app, "tsconfig.json"), JSON.stringify(tsconfig));
+    }
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json") });
+    const lines = stderrOf(stderr).split("\n");
+    expect(lines.filter((l) => l.startsWith("Path aliases:"))).toEqual([line]);
+  });
+
+  it("warns once about a missing file that the root's and two packages' tsconfigs all reach", async () => {
+    const dir = setupConsumer();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "root", private: true, workspaces: ["apps/*"] }));
+    writeFileSync(join(dir, "tsconfig.base.json"), JSON.stringify({ extends: "./.generated/tsconfig.json" }));
+    writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ extends: "./tsconfig.base.json" }));
+    for (const app of ["one", "two"]) {
+      mkdirSync(join(dir, "apps", app), { recursive: true });
+      writeFileSync(join(dir, "apps", app, "package.json"), JSON.stringify({ name: app }));
+      writeFileSync(join(dir, "apps", app, "tsconfig.json"), JSON.stringify({ extends: "../../tsconfig.base.json" }));
+    }
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json") });
+    const lines = stderrOf(stderr).split("\n");
+    expect(lines.filter((line) => line.startsWith("Warning:"))).toEqual([
+      "Warning: tsconfig.base.json points to .generated/tsconfig.json, which doesn't exist, so its path aliases aren't followed. Fix the path and scan again.",
+    ]);
+  });
+
+  it("names the monorepo root relative to the config's folder when the config is in a workspace package", async () => {
+    const dir = setupConsumer();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "root", private: true, workspaces: ["apps/*"] }));
+    mkdirSync(join(dir, "apps", "web", "src"), { recursive: true });
+    writeFileSync(join(dir, "apps", "web", "package.json"), JSON.stringify({ name: "web" }));
+    writeFileSync(join(dir, "apps", "web", "scout.config.json"), JSON.stringify({ repoId: "web", include: ["src/**/*.tsx"], exclude: [] }));
+    writeFileSync(join(dir, "apps", "web", "src", "App.tsx"), "export function App() { return <div />; }\n");
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "apps", "web", "scout.config.json") });
+    const lines = stderrOf(stderr).split("\n");
+    expect(lines).toContain("Monorepo root: ../..");
+    expect(lines.filter((line) => line.startsWith("[scan]"))).toEqual([]);
   });
 });

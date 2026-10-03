@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { mkdtempSync, realpathSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadConfig, type ConfigError } from "../../../src/config/loader.js";
@@ -39,7 +39,7 @@ describe("includePackageScopeManifests removed", () => {
     }
     expect(caught).toBeDefined();
     expect(caught?.code).toBe("CONFIG_INVALID");
-    expect(caught?.message).toBe(`${realpathSync(path)} has a field Scout doesn't use: "includePackageScopeManifests". Remove it and try again.`);
+    expect(caught?.message).toBe(`${path} has a field Scout doesn't use: "includePackageScopeManifests". Remove it and try again.`);
   });
 
   it("loads config without includePackageScopeManifests", async () => {

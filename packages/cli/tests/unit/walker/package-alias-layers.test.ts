@@ -32,7 +32,7 @@ describe("per-package tsconfig alias layers", () => {
 
   it("resolves the same alias to per-app targets keyed by the importing file's package", () => {
     const graph = buildWorkspaceGraph(stage);
-    const layers = buildPackageAliasLayers(graph);
+    const layers = buildPackageAliasLayers(graph).layers;
     expect(layers).toHaveLength(2);
     const resolve = createImportResolver({ repoRoot: stage, workspaceGraph: graph, packageAliasLayers: layers });
     expect(resolve(join(stage, "apps", "one", "src", "App.tsx"), "@/components/card"))
