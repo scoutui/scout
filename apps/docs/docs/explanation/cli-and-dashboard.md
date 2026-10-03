@@ -51,13 +51,13 @@ The CLI says once that it's waiting, then waits for that to finish. A typical ru
 
 ```text
 Waiting for the dashboard to process the scan…
-Uploaded scan 01K5Z8Q3M7T2V9XH4C6N1BRDWE → https://scout.example.com/repos/storefront
+Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
 
 The last line links to the repo's page. The other endings you might see:
 
 - **`Commit a1c9e04 is already on the dashboard`.** The dashboard already has a scan of this commit, for example because a teammate scanned it first or a CI job ran twice. The CLI asks before it scans, so it stops without scanning. Nothing changes, and it is not an error. To replace that scan, for example after upgrading the CLI, run `scout scan --rescan`.
-- **`Uploaded scan for a1c9e04 → <url>, replacing the earlier scan of this commit`.** A `--rescan` replaced the commit's scan. A plain upload replaces it too when the dashboard couldn't prepare the stored scan, for example one that pages show as **Scan data couldn't be prepared** or **Scan data can't be read**.
+- **`Uploaded the scan of a1c9e04, replacing the earlier one: <url>`.** A `--rescan` replaced the commit's scan. A plain upload replaces it too when the dashboard couldn't prepare the stored scan, for example one that pages show as **Scan data couldn't be prepared** or **Scan data can't be read**.
 - **`Error: Couldn't upload the scan: a1c9e04 was scanned with a newer CLI`.** A `--rescan` can't replace a scan made by a newer version of the CLI. The CLI asks before it scans, so it stops without scanning. Run the `npx` command the line names.
 - **`Error: Couldn't upload the scan:` and another reason.** The dashboard refused the scan, either as it arrived (for example `it's larger than the dashboard accepts`) or while processing it (for example `this CLI is newer than the dashboard`). The line says what to do next. A refused scan never shows on any page. Add `--debug` to see the detail behind the line.
 - **`Error: The dashboard is still processing the scan after 5 minutes.`** The CLI stopped waiting before the worker finished. The dashboard keeps working on the upload, and the scan appears if it succeeds.

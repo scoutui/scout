@@ -119,7 +119,7 @@ npx scout auth login --host https://scout.example.com
 npx scout scan --host https://scout.example.com
 ```
 
-The upload ends with `Uploaded scan <id> → https://scout.example.com/repos/storefront`, and the repo appears on the repos list.
+The upload ends with `Uploaded the scan of <commit>: https://scout.example.com/repos/storefront`, and the repo appears on the repos list.
 
 ## Let CI upload
 

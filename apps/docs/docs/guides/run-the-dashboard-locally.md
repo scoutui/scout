@@ -94,7 +94,7 @@ npx scout scan --host http://localhost:3000
 The output ends with a link to your repo's page in the dashboard:
 
 ```
-Uploaded scan 01M3A0D4GX9AGSDJJ0P6P9N7Q3 → http://localhost:3000/repos/storefront
+Uploaded the scan of a1c9e04: http://localhost:3000/repos/storefront
 ```
 
 ## If something goes wrong

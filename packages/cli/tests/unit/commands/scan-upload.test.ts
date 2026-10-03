@@ -79,7 +79,7 @@ describe("runScan upload outcome", () => {
     expect(stderr()).toBe(mode === "unauthorized"
       ? "Error: Session for https://h.example is no longer valid. Run `scout auth login --host https://h.example`.\n"
       : LOST_CONTACT);
-    expect(stdout()).not.toMatch(/Uploaded scan|already on the dashboard/);
+    expect(stdout()).not.toMatch(/Uploaded|already on the dashboard/);
     expect(fetchSpy.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "POST", "GET"]);
   });
 
@@ -133,12 +133,12 @@ describe("runScan upload outcome", () => {
     expect(stdout().endsWith(waiting)).toBe(true);
     await vi.advanceTimersByTimeAsync(1_000);
     expect(stdout().split(waiting)).toHaveLength(2);
-    expect(stdout()).not.toMatch(/Uploaded scan|already on the dashboard/);
+    expect(stdout()).not.toMatch(/Uploaded|already on the dashboard/);
     await vi.advanceTimersByTimeAsync(2_000);
     const completed = await result;
     expect(completed.upload).toBe("ok");
     expect(scanExitCode(completed)).toBe(0);
-    expect(stdout()).toContain("Uploaded scan S1 → https://h.example/repos/repo-a/scans/S1");
+    expect(stdout()).toContain(`Uploaded the scan of ${completed.output?.meta.repo.commit.slice(0, 7)}: https://h.example/repos/repo-a/scans/S1\n`);
     expect(stdout()).not.toContain("https://h.examplehttps://");
     expect(fetchSpy.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "POST", "GET", "GET", "GET"]);
     expect(fetchSpy.mock.calls[0]?.[0]).toBe("https://h.example/api/scans/preflight");
@@ -167,7 +167,7 @@ describe("runScan upload outcome", () => {
     const commit = result.output?.meta.repo.commit.slice(0, 7);
     expect(fetchSpy.mock.calls[0]?.[0]).toBe("https://h.example/api/scans/preflight");
     expect(fetchSpy.mock.calls[1]?.[0]).toBe("https://h.example/api/scans?rescan=1");
-    expect(stdout()).toContain(`Uploaded scan for ${commit} → https://h.example/repos/repo-a/scans/S1, replacing the earlier scan of this commit\n`);
+    expect(stdout()).toContain(`Uploaded the scan of ${commit}, replacing the earlier one: https://h.example/repos/repo-a/scans/S1\n`);
     expect(result.upload).toBe("ok");
   });
 
@@ -241,7 +241,7 @@ describe("runScan upload outcome", () => {
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
     expect(scanExitCode(pending)).toBe(1);
     expect(stderr()).toBe(STILL_PROCESSING);
-    expect(stdout()).not.toMatch(/Uploaded scan|already on the dashboard/);
+    expect(stdout()).not.toMatch(/Uploaded|already on the dashboard/);
     expect(fetchSpy.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "POST", "GET"]);
   });
 
@@ -268,8 +268,8 @@ describe("runScan upload outcome", () => {
       .mockImplementationOnce(preScanReply())
       .mockResolvedValueOnce(Response.json(receipt, { status: 202 }))
       .mockResolvedValueOnce(Response.json(ready));
-    await runScan({ cwd: dir, quiet: true, upload: true });
-    expect(stdout()).toBe("Uploaded scan S1 → https://h.example/repos/repo-a/scans/S1\n");
+    const result = await runScan({ cwd: dir, quiet: true, upload: true });
+    expect(stdout()).toBe(`Uploaded the scan of ${result.output?.meta.repo.commit.slice(0, 7)}: https://h.example/repos/repo-a/scans/S1\n`);
   });
 });
 

@@ -60,7 +60,7 @@ Push to `main` and open the job's log. After the scan summary, the CLI says once
 
 ```text
 Waiting for the dashboard to process the scan…
-Uploaded scan 01K5Z8Q3M7T2V9XH4C6N1BRDWE → https://scout.example.com/repos/storefront
+Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
 
 If the dashboard already has a scan of this commit, for example because the job ran again, the job skips the scan, prints `Commit a1c9e04 is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and still passes. [What happens after you upload](/docs/explanation/cli-and-dashboard#after-upload) describes the states an upload passes through.

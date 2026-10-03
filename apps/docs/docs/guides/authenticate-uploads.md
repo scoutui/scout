@@ -106,7 +106,7 @@ npx scout scan --host https://scout.example.com
 The output ends with the uploaded scan and your repo's page:
 
 ```
-Uploaded scan 01M3A0D4GX9AGSDJJ0P6P9N7Q3 → https://scout.example.com/repos/storefront
+Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
 
 For every `auth` flag and exit code, see the [CLI reference](/docs/reference/cli#auth).

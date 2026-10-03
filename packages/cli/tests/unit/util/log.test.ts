@@ -33,6 +33,11 @@ describe("Logger", () => {
       "Warning: Unexpected token at line 3 column 4\n",
     );
   });
+  it("clears a line being rewritten in place before a warning or an error in a terminal, and not in a log", () => {
+    expect(captureStderr(() => new Logger({ color: plain, isTTY: true }).warn("careful"))).toBe("\r\x1b[KWarning: careful\n");
+    expect(captureStderr(() => new Logger({ color: plain, isTTY: true }).error("boom"))).toBe("\r\x1b[KError: boom\n");
+    expect(captureStderr(() => new Logger({ color: plain, isTTY: false }).warn("careful"))).toBe("Warning: careful\n");
+  });
   it("prints the detail as it is, only under debug", () => {
     const raw = "Unexpected token\n  at line 3";
     expect(captureStderr(() => new Logger({ color: plain }).error("boom", raw))).toBe("Error: boom\n");

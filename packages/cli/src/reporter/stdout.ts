@@ -27,7 +27,7 @@ export function printSummary(
     if (notInstalled > 0) {
       const verb = notInstalled === 1 ? "is" : "are";
       const from = packages.size === 1 ? "a package that isn't installed" : "packages that aren't installed";
-      lines.push(color.yellow(`${notInstalled} of them ${verb} from ${from}. Install your dependencies and scan again.`));
+      lines.push(color.yellow(`${notInstalled} of them ${verb} from ${from}.`));
     }
   }
   lines.push("");

@@ -50,15 +50,15 @@ describe("missing dependency reporting", () => {
   it.each([
     [
       [occurrence(notInstalled("@example/ui"), 1), occurrence(notInstalled("@example/icons"), 2), occurrence(notInstalled("@example/ui"), 3), occurrence({ status: "unresolved", reason: { kind: "module-not-found" } }, 4)],
-      "Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n3 of them are from packages that aren't installed. Install your dependencies and scan again.\n",
+      "Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n3 of them are from packages that aren't installed.\n",
     ],
     [
       [occurrence(notInstalled("@example/ui"), 1)],
-      "Scout couldn't match 1 more occurrence to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n1 of them is from a package that isn't installed. Install your dependencies and scan again.\n",
+      "Scout couldn't match 1 more occurrence to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n1 of them is from a package that isn't installed.\n",
     ],
     [
       [occurrence(notInstalled("@example/ui"), 1), occurrence(notInstalled("@example/ui"), 2)],
-      "Scout couldn't match 2 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n2 of them are from a package that isn't installed. Install your dependencies and scan again.\n",
+      "Scout couldn't match 2 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n2 of them are from a package that isn't installed.\n",
     ],
   ])("says how many of the occurrences it couldn't match are from packages that aren't installed (%#)", (occurrences, lines) => {
     expect(capture(artifactOf(occurrences))).toBe(`Scanned 1 file in 0.0s: 0 components, 0 occurrences.\n${lines}\n`);

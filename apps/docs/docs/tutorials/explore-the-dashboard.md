@@ -61,7 +61,7 @@ It prints the same scan summary as before, then says it's waiting while the dash
 
 ```
 Waiting for the dashboard to process the scan…
-Uploaded scan 01M39ZTTR7833Q5PMDSCJNKN5S → http://localhost:3000/repos/acme%2Fstorefront
+Uploaded the scan of a1c9e04: http://localhost:3000/repos/acme%2Fstorefront
 ```
 
 ## Step 2: Find our repo
@@ -159,7 +159,7 @@ git push
 npx scout scan --host http://localhost:3000
 ```
 
-When it prints `Uploaded scan`, we refresh the chart page. It now draws two lines across the two scans: `LegacyButton` at 1 and `Button` at 2. The lines are flat because the new commit changes no code.
+When it prints `Uploaded the scan`, we refresh the chart page. It now draws two lines across the two scans: `LegacyButton` at 1 and `Button` at 2. The lines are flat because the new commit changes no code.
 
 ![The LegacyButton to Button migration chart after two scans, with LegacyButton flat at 1, Button flat at 2, and the legend below](/img/tutorial/migration-chart.png)
 

@@ -76,7 +76,7 @@ If the summary has lines like these, some of the repo's dependencies aren't inst
 
 ```
 Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
-4 of them are from packages that aren't installed. Install your dependencies and scan again.
+4 of them are from packages that aren't installed.
 ```
 
 The components from those packages are missing from the scan. Run your package manager's install, then scan again.

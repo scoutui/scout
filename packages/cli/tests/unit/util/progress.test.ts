@@ -1,5 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createProgress } from "../../../src/util/progress.js";
+import { createProgress, startPhase } from "../../../src/util/progress.js";
+
+describe("phase line", () => {
+  it("writes the phase once in a log", () => {
+    const writes: string[] = [];
+    const phase = startPhase({ label: "Matching occurrences to components…", writer: (s) => writes.push(s), isTTY: false });
+    phase.done();
+    expect(writes).toEqual(["Matching occurrences to components…\n"]);
+  });
+
+  it("writes the phase in place in a terminal, cut to its width, and clears it when done", () => {
+    const writes: string[] = [];
+    const phase = startPhase({ label: "Matching occurrences to components…", writer: (s) => writes.push(s), isTTY: true, columns: 10 });
+    phase.done();
+    expect(writes).toEqual(["\rMatching \x1b[K", "\r\x1b[K"]);
+  });
+});
 
 describe("progress reporter", () => {
   let writes: string[];
@@ -35,6 +51,27 @@ describe("progress reporter", () => {
     vi.advanceTimersByTime(251);
     p.tick();
     expect(writes.length).toBe(2);
+  });
+
+  it("in a log, writes the first tick, then at most one line every 10 seconds whatever the count, and no line for the last tick", () => {
+    const p = createProgress({ total: 1000, writer, isTTY: false });
+    p.tick();
+    for (let i = 0; i < 200; i++) p.tick();
+    vi.advanceTimersByTime(9_999);
+    p.tick();
+    expect(writes).toEqual(["Reading files: 1 of 1000 (0.1%), 0.0s\n"]);
+    vi.advanceTimersByTime(1);
+    p.tick();
+    expect(writes).toEqual(["Reading files: 1 of 1000 (0.1%), 0.0s\n", "Reading files: 203 of 1000 (20.3%), 10.0s\n"]);
+    for (let i = 0; i < 797; i++) p.tick();
+    p.done();
+    expect(writes).toHaveLength(2);
+  });
+
+  it("in a terminal, cuts the line to the terminal's width so it can be rewritten in place", () => {
+    const p = createProgress({ total: 929, writer, isTTY: true, columns: 20 });
+    p.tick();
+    expect(writes).toEqual(["\rReading files: 1 of\x1b[K"]);
   });
 
   it("emits without ANSI carriage return when not a TTY (CI logs)", () => {
