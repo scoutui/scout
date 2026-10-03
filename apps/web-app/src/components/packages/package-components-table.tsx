@@ -115,7 +115,7 @@ export function PackageComponentsTable({
                 <SortButton label="Consumers" sortKey="consumerCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
               </TableHead>
               <TableHead className="whitespace-nowrap text-right pr-3">
-                <SortButton label="Occurrences" sortKey="totalOccurrences" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+                <SortButton label="Uses" sortKey="totalOccurrences" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
               </TableHead>
             </TableRow>
           </TableHeader>

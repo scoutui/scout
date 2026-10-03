@@ -523,7 +523,7 @@ function RecordTable({
               Replacement or reason
             </th>
             <th scope="col" className={cn(OCC_CELL, "text-left text-label text-muted-foreground")}>
-              Occurrences left
+              Uses left
             </th>
             <th scope="col" className={EDIT_CELL}>
               <span className="sr-only">Edit</span>

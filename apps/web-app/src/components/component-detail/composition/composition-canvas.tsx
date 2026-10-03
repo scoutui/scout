@@ -175,8 +175,8 @@ function ChipNode({ id, data }: NodeProps) {
             {d.deprecated ? <span className="text-status-warn-text">deprecated</span> : null}
             <span className="text-muted-foreground">
               {d.occurrenceCount === 1
-                ? "1 call site"
-                : `${d.occurrenceCount.toLocaleString()} call sites`}
+                ? "1 use"
+                : `${d.occurrenceCount.toLocaleString()} uses`}
             </span>
             {d.href ? <span className="text-muted-foreground">click to open</span> : null}
           </div>

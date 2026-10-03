@@ -29,7 +29,7 @@ export function CohortShareBar({
 }) {
   const total = points.reduce((sum, p) => sum + p.value, 0);
   if (total <= 0) {
-    return <p className="text-sm text-muted-foreground">No occurrences yet.</p>;
+    return <p className="text-sm text-muted-foreground">No uses yet.</p>;
   }
   const segs = points.map((p) => {
     const share = p.value / total;

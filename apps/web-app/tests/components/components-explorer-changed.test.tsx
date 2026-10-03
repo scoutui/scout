@@ -28,12 +28,12 @@ const diff: ScanDiff = {
 };
 // The toolbar count <span> holds the whole sentence; its child spans hold the numbers.
 const sentence = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
-// A row's desktop Occurrences cell: the last cell of the row the name sits in.
+// A row's desktop Uses cell: the last cell of the row the name sits in.
 const occurrencesOf = (name: string) =>
   within(screen.getByText(name).closest("tr") as HTMLElement).getAllByRole("cell").at(-1)?.textContent;
-// Anchored: in the changed view the Occurrences header's name also ends in "since previous scan".
+// Anchored: in the changed view the Uses header's name also ends in "since previous scan".
 const sinceChip = () => screen.getByRole("button", { name: /^since previous scan/ });
-const DELTA_SORT_NAME = "Occurrences, sorts by change since previous scan";
+const DELTA_SORT_NAME = "Uses, sorts by change since previous scan";
 
 describe("ComponentsExplorer ?changed=true", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
@@ -44,7 +44,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     expect(screen.queryByText("Gone")).toBeNull();
     expect(sinceChip()).toHaveAttribute("aria-pressed", "false");
     expect(occurrencesOf("Grew")).toBe("9");
-    expect(screen.getByRole("columnheader", { name: "Occurrences" })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("columnheader", { name: "Uses" })).toHaveAttribute("aria-sort", "descending");
   });
 
   it("narrows to marked rows plus the removed ghosts, with the Δ beside each count, the pressed chip and an honest count", () => {
@@ -57,7 +57,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     expect(occurrencesOf("Grew")).toBe("9 (+3)");
     expect(occurrencesOf("Gone")).toBe("0 (−6)");
     expect(screen.getAllByRole("columnheader")).toHaveLength(5);
-    expect(screen.getByRole("columnheader", { name: /^Occurrences/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "ascending");
     expect(screen.getByRole("button", { name: DELTA_SORT_NAME })).toBeInTheDocument();
     // The chip counts every row the view shows: 1 added + 1 changed + 1 removed.
     const chip = sinceChip();
@@ -90,7 +90,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     for (const name of ["Same", "Grew", "Fresh"]) expect(screen.getByText(name)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
     expect(occurrencesOf("Grew")).toBe("9");
-    expect(screen.getByRole("columnheader", { name: "Occurrences" })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("columnheader", { name: "Uses" })).toHaveAttribute("aria-sort", "descending");
     expect(screen.getByText(sentence("3 components"))).toBeInTheDocument();
   });
 

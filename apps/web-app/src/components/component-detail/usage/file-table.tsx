@@ -108,7 +108,7 @@ export function FileTable({
             );
           })}
           <TableHead scope="col" aria-sort={ariaSort("calls", sortKey, dir)} className={cn(th, "pl-3 pr-4 text-right", SORT_TH)} style={headTop}>
-            <SortButton label="Calls" sortKey="calls" current={sortKey} dir={dir} onClick={onSort} align="right" />
+            <SortButton label="Uses" sortKey="calls" current={sortKey} dir={dir} onClick={onSort} align="right" />
           </TableHead>
         </tr>
       </thead>
@@ -160,7 +160,7 @@ function SectionHeading({ section, cols, first, pinned, copied, onCopy }: { sect
             {section.shared !== null ? <span className="min-w-0 truncate text-muted-foreground">{section.shared}</span> : null}
           </span>
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-            {plural(section.calls, "call")} in {plural(section.files.length, "file")}
+            {plural(section.calls, "use")} in {plural(section.files.length, "file")}
           </span>
           {section.label !== null ? (
             <span
@@ -218,7 +218,7 @@ function FileRow({
             type="button"
             onClick={onToggle}
             aria-expanded={open}
-            aria-label={`Calls in ${file.path}`}
+            aria-label={`Uses in ${file.path}`}
             className="flex size-6 cursor-pointer items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none"
           >
             <ChevronRight aria-hidden className={cn("size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none", open && "rotate-90")} />
@@ -256,7 +256,7 @@ function FileRow({
           </td>
         ))}
         <td className={cn(td, "pl-2 pr-3 text-right text-xs leading-6 tabular-nums md:pl-3 md:pr-4")}>
-          <span className="sr-only">Calls: </span>
+          <span className="sr-only">Uses: </span>
           {file.calls.toLocaleString()}
         </td>
       </tr>

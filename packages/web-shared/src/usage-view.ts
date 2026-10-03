@@ -714,7 +714,7 @@ export function propSections(view: UsageView, find: string): UsagePropSections {
 export function oneFolderText(view: UsageView): { lead: string; label: string } | null {
   const only = view.areas.length === 1 ? view.areas[0] : undefined;
   if (!only || only.picked) return null;
-  const lead = only.count === 1 ? "The call is in" : only.count === 2 ? "Both calls are in" : `All ${only.count.toLocaleString()} calls are in`;
+  const lead = only.count === 1 ? "The only use is in" : only.count === 2 ? "Both uses are in" : `All ${only.count.toLocaleString()} uses are in`;
   return { lead, label: only.label };
 }
 
@@ -771,12 +771,12 @@ export function usageDue(deprecated: boolean, status: ComponentDetail["migration
 }
 
 /**
- * The toolbar's count: the calls, as `n of N calls` under filters, and in the long form the files they're in. With
- * `due`, the short form reads `N to migrate` or `n of N to migrate` and the long form `… calls still to migrate`, or
+ * The toolbar's count: the uses, as `n of N uses` under filters, and in the long form the files they're in. With
+ * `due`, the short form reads `N to migrate` or `n of N to migrate` and the long form `… uses still to migrate`, or
  * the same with `to remove`.
  */
 export function countText(view: UsageView, due: UsageDue | null): { short: string; long: string } {
-  const calls = view.filtered ? `${view.shown.toLocaleString()} of ${plural(view.total, "call")}` : plural(view.total, "call");
+  const calls = view.filtered ? `${view.shown.toLocaleString()} of ${plural(view.total, "use")}` : plural(view.total, "use");
   const short = due ? `${view.filtered ? `${view.shown.toLocaleString()} of ${view.total.toLocaleString()}` : view.total.toLocaleString()} ${due}` : calls;
   return { short, long: `${calls}${due ? ` still ${due}` : ""} · ${plural(view.files, "file")}` };
 }
@@ -788,15 +788,15 @@ export function whereHeading(due: UsageDue | null): string {
 
 /** A file's value cell as its title reads: each value with its hint and calls, one a line, then the calls without the prop. */
 export function cellTitle(cell: UsageCell): string {
-  const values = cell.values.map((v) => `${v.text}${v.hint ? ` (${v.hint})` : ""}: ${plural(v.count, "call")}`);
-  return [...values, ...(cell.unset > 0 ? [`Not set: ${plural(cell.unset, "call")}`] : [])].join("\n");
+  const values = cell.values.map((v) => `${v.text}${v.hint ? ` (${v.hint})` : ""}: ${plural(v.count, "use")}`);
+  return [...values, ...(cell.unset > 0 ? [`Not set: ${plural(cell.unset, "use")}`] : [])].join("\n");
 }
 
 /** What the file list says when the search or the filters leave no calls in view; null while some are. */
 export function emptyText(view: UsageView): string | null {
   if (view.files > 0 || !view.filtered) return null;
-  if (view.searched && view.active > 0) return "No calls match this search and these filters.";
-  return view.searched ? "No calls match this search." : "No calls match these filters.";
+  if (view.searched && view.active > 0) return "No uses match this search and these filters.";
+  return view.searched ? "No uses match this search." : "No uses match these filters.";
 }
 
 function lifecycleText(status: ComponentDetail["migrationStatus"], deprecated: boolean): string | null {
@@ -810,7 +810,7 @@ export function copyListText(input: CopyListInput): string {
   const { sections, folderKey } = input;
   const files = sections.reduce((n, s) => n + s.files.length, 0);
   const where = folderKey ? `, folder ${areaName(folderKey)}` : "";
-  const out = [`${input.displayName} in ${input.repoId}${where}: ${plural(sections.reduce((n, s) => n + s.calls, 0), "call")} in ${plural(files, "file")}`];
+  const out = [`${input.displayName} in ${input.repoId}${where}: ${plural(sections.reduce((n, s) => n + s.calls, 0), "use")} in ${plural(files, "file")}`];
   const lifecycle = lifecycleText(input.migrationStatus, input.deprecated);
   if (lifecycle) out.push(lifecycle);
   if (input.filters) out.push(`Filters: ${input.filters}`);

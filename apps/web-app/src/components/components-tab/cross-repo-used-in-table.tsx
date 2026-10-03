@@ -50,7 +50,7 @@ export function CrossRepoUsedInTable({
               <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
             </TableHead>
             <TableHead className="whitespace-nowrap text-right">
-              <SortButton label="Occurrences" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+              <SortButton label="Uses" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
             </TableHead>
             <TableHead className="whitespace-nowrap text-right">
               <SortButton label="Deprecated" sortKey="deprecated" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />

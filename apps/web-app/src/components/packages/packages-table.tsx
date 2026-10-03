@@ -56,7 +56,7 @@ export function PackagesTable({
             <SortButton label="Version" sortKey="distinctVersionCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
           <TableHead className="whitespace-nowrap text-right">
-            <SortButton label="Occurrences" sortKey="totalOccurrences" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+            <SortButton label="Uses" sortKey="totalOccurrences" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
           <TableHead className="whitespace-nowrap text-right">
             <SortButton label="Deprecated" sortKey="deprecatedCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
@@ -81,7 +81,7 @@ export function PackagesTable({
                   <span aria-hidden className="text-border">·</span>
                   <span className={p.distinctVersionCount === 1 && p.soleVersion ? "font-mono" : undefined}>{versionLabel(p)}</span>
                   <span aria-hidden className="text-border">·</span>
-                  <span>{p.totalOccurrences.toLocaleString()} occurrences</span>
+                  <span>{p.totalOccurrences.toLocaleString()} uses</span>
                 </span>
                 {p.deprecatedCount > 0 ? (
                   <span className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-status-warn-text sm:hidden">
