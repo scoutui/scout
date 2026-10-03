@@ -51,7 +51,7 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 
 **Known gaps:**
 
-- Components registered globally and missing from the list of auto-imports, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Framework** filter shows as **Tag**. Import the component in the file's script to have it matched.
+- Components registered globally and missing from the list of auto-imports, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unmatched use](/docs/reference/glossary#unmatched-use). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Framework** filter shows as **Tag**. Import the component in the file's script to have it matched.
 - A list of auto-imports at any other path is not read, for example when `unplugin-vue-components`'s `dts` option writes it to `types/components.d.ts`. Set `dts` to `true` or `src/components.d.ts` to have it read.
 - In a file with both `<script>` and `<script setup>`, a component imported in the plain `<script>` is not matched. Written `<LineItem>`, its tag is not counted at all. Written `<line-item>`, it is counted as a web component with no package. Move the import into `<script setup>`.
 
@@ -74,5 +74,5 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 
 ## In both frameworks
 
-- A component from a package is found only when the package is installed. Without it, each use of the package is an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence): the JSON keeps it with its reason, and the dashboard leaves it out.
-- A capitalised tag that nothing imports or defines, such as `<Widget />`, is an unresolved occurrence too.
+- A component from a package is found only when the package is installed. Without it, each use of the package is [unmatched](/docs/reference/glossary#unmatched-use): the JSON keeps it with its reason, and the dashboard leaves it out.
+- A capitalised tag that nothing imports or defines, such as `<Widget />`, is unmatched too.

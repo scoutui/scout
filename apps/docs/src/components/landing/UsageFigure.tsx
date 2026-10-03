@@ -71,10 +71,10 @@ export default function UsageFigure(): React.ReactElement {
         <div className={styles.sites}>
           <p className={styles.band}>
             <span className={shared.label}>
-              Call sites<Code className={styles.selection}>· {SELECTION}</Code>
+              Uses<Code className={styles.selection}>· {SELECTION}</Code>
             </span>
             <span className={clsx(styles.small, shared.num)}>
-              {FILE_COUNT} files · {CALL_COUNT} call sites
+              {FILE_COUNT} files · {CALL_COUNT} uses
             </span>
           </p>
 
@@ -87,7 +87,7 @@ export default function UsageFigure(): React.ReactElement {
                     <span className={styles.base}>{f.base}</span>
                   </Code>
                   <span className={clsx(styles.small, shared.num)}>
-                    {f.lines.length} {f.lines.length === 1 ? "call" : "calls"}
+                    {f.lines.length} {f.lines.length === 1 ? "use" : "uses"}
                   </span>
                 </p>
                 <ol className={styles.calls}>

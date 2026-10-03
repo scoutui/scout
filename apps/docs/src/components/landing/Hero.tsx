@@ -24,7 +24,7 @@ type Row = {
 
 /**
  * partner-portal's changed view, sorted by the change since the previous scan with the biggest gain first (the
- * page opens on the biggest drop; one click on the Occurrences header flips it).
+ * page opens on the biggest drop; one click on the Uses header flips it).
  */
 const ROWS: readonly Row[] = [
   { name: "Button", pkg: "@acme/ui", version: "4.2.0", files: 17, occurrences: 38, delta: 9, selected: true },
@@ -42,11 +42,11 @@ function signed(n: number): string {
 
 function describeRow(r: Row): string {
   const change = `${r.delta > 0 ? "up" : "down"} ${Math.abs(r.delta)}`;
-  const state = r.mark === "removed" ? "removed" : r.mark === "added" ? `added, ${r.occurrences} occurrences` : `${r.occurrences} occurrences`;
+  const state = r.mark === "removed" ? "removed" : r.mark === "added" ? `added, ${r.occurrences} uses` : `${r.occurrences} uses`;
   return `${r.name} from ${r.pkg}${r.deprecated ? " (deprecated)" : ""}, ${state}, ${change}`;
 }
 
-const SUMMARY = `Example repo page for partner-portal, showing what changed since the previous scan: 6 deprecated components in use; 2 added, 4 removed and 11 changed since the previous scan. The table lists the 17 components that moved: ${ROWS.map(describeRow).join("; ")}; and more. Lifted out of the first row, the top of the Button's page in partner-portal: an external React component from @acme/ui version 4.2.0, open on its Usage tab with 38 occurrences.`;
+const SUMMARY = `Example repo page for partner-portal, showing what changed since the previous scan: 6 deprecated components in use; 2 added, 4 removed and 11 changed since the previous scan. The table lists the 17 components that moved: ${ROWS.map(describeRow).join("; ")}; and more. Lifted out of the first row, the top of the Button's page in partner-portal: an external React component from @acme/ui version 4.2.0, open on its Usage tab with 38 uses.`;
 
 function Sep({ className }: { className?: string }): React.ReactElement {
   return <span className={clsx(styles.sep, className)}>·</span>;
@@ -87,7 +87,7 @@ function TableRow({ r }: { r: Row }): React.ReactElement {
         </span>
         <span className={styles.tier}>
           <span>
-            <span className={removed ? styles.faint : styles.ink}>{r.occurrences}</span> occurrences{" "}
+            <span className={removed ? styles.faint : styles.ink}>{r.occurrences}</span> uses{" "}
             <Delta n={r.delta} />
           </span>
           {r.files === undefined ? null : (
@@ -205,7 +205,7 @@ function ProductView(): React.ReactElement {
                 <HeadCell label="Package" />
                 <HeadCell label="Version" />
                 <HeadCell label="Files" num />
-                <HeadCell label="Occurrences" num />
+                <HeadCell label="Uses" num />
               </div>
               {ROWS.map((r) => (
                 <TableRow key={`${r.name} ${r.pkg}`} r={r} />

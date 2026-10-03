@@ -63,7 +63,7 @@ npx scout scan --dry-run
 The summary counts the files it read:
 
 ```
-Scanned 3 files in 0.1s: 6 components, 5 occurrences.
+Scanned 3 files in 0.1s: 6 components, 5 uses.
 ```
 
 The first number should be close to the number of source files you expect. If it's too low, widen `include`. If it's too high, add to `exclude`. If `include` matches no files at all, the scan stops before reading anything:
@@ -75,7 +75,7 @@ Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,
 If the summary has lines like these, some of the repo's dependencies aren't installed:
 
 ```
-Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
+Scout couldn't match 4 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
 4 of them are from packages that aren't installed.
 ```
 

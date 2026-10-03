@@ -70,8 +70,8 @@ We check that it works with `npx scout --version`, which prints the installed ve
 If the repo's dependencies aren't installed, the scan can't find any component from `@acme/ui` or `@acme/ui-legacy`. The scan we run in step 3 still finishes, but its summary says it couldn't match those uses, with a yellow line saying why:
 
 ```
-Scanned 3 files in 0.1s: 3 components, 1 occurrence.
-Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
+Scanned 3 files in 0.1s: 3 components, 1 use.
+Scout couldn't match 4 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
 4 of them are from packages that aren't installed.
 ```
 
@@ -126,7 +126,7 @@ scout 0.1.0 · acme/storefront at 8676019
 
 Path aliases: tsconfig.json
 
-Scanned 3 files in 0.1s: 6 components, 5 occurrences.
+Scanned 3 files in 0.1s: 6 components, 5 uses.
 
 Most used:
   Button        @acme/ui                        2
@@ -143,9 +143,9 @@ A repo without a `tsconfig.json` prints `Path aliases: no tsconfig.json found. I
 
 The first line names what we scanned: Scout's version, our repo and its commit. The summary's first line says the scan read our three files and found six components. Three come from packages: `Button`, `Card` and `LegacyButton`. The other three, `App`, `ProductCard` and `Checkout`, are defined in the repo.
 
-It also counted five [occurrences](/docs/reference/glossary#occurrence), places in the code where a component is used, and tied each one to a component. A use it can't tie to a component is an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). When there are any, the summary counts them on a second line, `Scout couldn't match … more occurrences to a component.` Ours has none, so that line isn't there.
+It also counted five [uses](/docs/reference/glossary#use), places in the code where a component is used, and tied each one to a component. A use it can't tie to a component is [unmatched](/docs/reference/glossary#unmatched-use). When there are any, the summary counts them on a second line, `Scout couldn't match … more uses to a component.` Ours has none, so that line isn't there.
 
-`Most used` lists up to five components by their occurrences, with where each comes from: its package, or the file that defines it in our repo. `Button` has two occurrences, one in `App` and one in `ProductCard`. `App` and `Checkout` aren't listed because nothing in the repo uses them.
+`Most used` lists up to five components by their uses, with where each comes from: its package, or the file that defines it in our repo. `Button` has two uses, one in `App` and one in `ProductCard`. `App` and `Checkout` aren't listed because nothing in the repo uses them.
 
 The last line says the scan wrote `scout-scan.json` and didn't upload it.
 

@@ -14,7 +14,7 @@ For example, with the tags `acme-ui` and `acme-ui-legacy` in place, one saved ch
 Select **charts** in the top navigation. The page has three parts:
 
 - **Migrations**: one row per migration, such as `LegacyButton · @acme/ui-legacy` to `Button · @acme/ui`, reading **N% migrated** with the change since the last scan.
-- **Retirements**: one row per retirement, reading **N remaining**, the [occurrences](/docs/reference/glossary#occurrence) still in use.
+- **Retirements**: one row per retirement, reading **N remaining**, the [uses](/docs/reference/glossary#use) that remain.
 - **Saved charts**: one row per chart someone has saved, with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
 
 The change is green when the work moved forward and red when it moved back. Active rows come first, the most remaining at the top. Finished ones sit behind **Show N complete**.
@@ -42,7 +42,7 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 2. Type a name into **Name**, for example `acme-ui vs acme-ui-legacy`. You can also add a **Description**, which shows under the chart's name on its page.
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
-5. Under **Metric**, keep **Count** to chart occurrences, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **Share** when you pick it.
+5. Under **Metric**, keep **Count** to chart uses, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **Share** when you pick it.
 6. In the **Series** panel, on the **Tags** tab, press `acme-ui`, then `acme-ui-legacy`. Each gets a `✓` and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
 7. Press **Save chart**. The chart opens on its own page and appears under **Saved charts**.
 
@@ -85,7 +85,7 @@ A chart leaves off any series the dashboard can no longer find, and its row on t
 
 ## Migration and retirement charts
 
-You don't build these. Each comes from a lifecycle record on the **governance** page, and shows occurrences over time across every repo: the deprecated side and its successor for a migration, the retired side alone for a retirement. A record only gets a row once a scan has used what it names.
+You don't build these. Each comes from a lifecycle record on the **governance** page, and shows uses over time across every repo: the deprecated side and its successor for a migration, the retired side alone for a retirement. A record only gets a row once a scan has used what it names.
 
 These charts have no **Edit** or **Delete**. One goes away when its record is deleted. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 

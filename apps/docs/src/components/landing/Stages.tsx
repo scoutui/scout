@@ -29,7 +29,7 @@ function Usage(): React.ReactElement {
       <div className={shared.col}>
         <StageHead id="usage" title="See which props and values teams actually pass" />
         <p className={clsx(shared.body, styles.lead)}>
-          Every call site, with the values it passes, linked to its line of code.
+          Every use, with the values it passes, linked to its line of code.
         </p>
         <UsageFigure />
       </div>

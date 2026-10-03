@@ -24,11 +24,11 @@ The header line gives the repo's git remote, the **commit** and **branch** the s
 Below it, a status line tells you what needs attention:
 
 - **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
-- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [occurrences](/docs/reference/glossary#occurrence). To list just those components, press the **since previous scan** chip above the table. A repo with one scan reads **first scan · nothing to compare**.
+- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table. A repo with one scan reads **first scan · nothing to compare**.
 
 ## Find components in a repo
 
-The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it and its total **Occurrences**. Select a row to open the component's page for this repo.
+The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it and its total **Uses**. Select a row to open the component's page for this repo.
 
 ![The Components tab of vue-vben-admin filtered to the vue-ui-kits tag, with the deprecated chip and the Filter menu open on Package](/img/dashboard/repo-components-tab.png)
 
@@ -36,8 +36,8 @@ To narrow the table:
 
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
-- Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Occurrences** shows the change, for example `49 (+2)`.
-- Press **Filter** to choose by **Origin** (**External** for [from a package](/docs/reference/glossary#from-a-package), **Local** for [defined in the repo](/docs/reference/glossary#defined-in-the-repo)), **Framework**, **Package**, [**Tag**](/docs/reference/glossary#tag) or **Occurrences**. Picking two values in one facet shows components matching either; filters in different facets must all match.
+- Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
+- Press **Filter** to choose by **Origin** (**External** for [from a package](/docs/reference/glossary#from-a-package), **Local** for [defined in the repo](/docs/reference/glossary#defined-in-the-repo)), **Framework**, **Package**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in one facet shows components matching either; filters in different facets must all match.
 
 **Framework** offers **React**, **Vue**, **Web component** and **Tag**, and shows only when the repo has more than one. **Web component** and **Tag** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, **Tag** the ones nothing defines. The separate **Tag** filter picks your library tags.
 
@@ -57,20 +57,20 @@ The tab keeps its search and filters in the page URL, so you can copy the addres
 | `package` | `package=@acme/ui` |
 | `tag` | `tag=acme-ui` |
 | `deprecated` | `deprecated=true`, `deprecated=false` |
-| `occurrences` | `occurrences=gte:10` for 10 or more, `occurrences=lte:10` for 10 or fewer (also `gt:`, `lt:`, or a number alone for exactly that many) |
+| `uses` | `uses=gte:10` for 10 or more, `uses=lte:10` for 10 or fewer (also `gt:`, `lt:`, or a number alone for exactly that many) |
 | `changed` | `changed=true` |
 
 Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. Write a space as `+`. For example:
 
 ```text
-/repos/acme-web?package=@acme/ui-legacy&deprecated=true&occurrences=gte:10
+/repos/acme-web?package=@acme/ui-legacy&deprecated=true&uses=gte:10
 ```
 
 ## Follow adoption in a repo
 
-The **Adoption** tab follows each [migration](/docs/reference/glossary#migration) and [retirement](/docs/reference/glossary#retirement) that touches this repo, counting this repo alone. **Migrations in this repo** shows each one's progress as a share **migrated**, and **Retirements in this repo** as a count of occurrences **remaining**. Finished ones are kept behind **Show N complete**.
+The **Adoption** tab follows each [migration](/docs/reference/glossary#migration) and [retirement](/docs/reference/glossary#retirement) that touches this repo, counting this repo alone. **Migrations in this repo** shows each one's progress as a share **migrated**, and **Retirements in this repo** as a count of uses **remaining**. Finished ones are kept behind **Show N complete**.
 
-Select a row to open its chart: occurrences over time in this repo, scan by scan.
+Select a row to open its chart: uses over time in this repo, scan by scan.
 
 ![The Adoption tab of vue-vben-admin, with the ant-design-vue to antdv-next migration open on its chart and the naive-ui retirement below](/img/dashboard/repo-adoption-tab.png)
 
@@ -94,4 +94,4 @@ If a page shows **Preparing scan data** instead of its content, the dashboard is
 
 ## Next step
 
-Found a component you want to follow across repos? [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used) takes you from its name to every repo and call site that uses it.
+Found a component you want to follow across repos? [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used) takes you from its name to every repo and file that uses it.
