@@ -179,7 +179,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
 
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
   if (files.length === 0) {
-    log.error(noFilesMessage(configPath, cfg.include, await nestedRepositoriesMatched(walkOptions(cfg))));
+    log.error(noFilesMessage(configPath, cfg, await nestedRepositoriesMatched(walkOptions(cfg))));
     return { output: null, upload: "skipped" };
   }
 
@@ -334,14 +334,18 @@ function walkOptions(cfg: ResolvedConfig): WalkOptions {
 }
 
 /**
- * The error for a scan that found no file to read, naming `include` when the config has one, and the nested
- * repositories that hold the only files it would read.
+ * The error for a scan that found no file to read, naming `include` when the config has one, else the config's
+ * folder, and the nested repositories that hold the only files it would read.
  */
-function noFilesMessage(configPath: string, include: readonly string[] | undefined, repositories: readonly string[]): string {
+function noFilesMessage(
+  configPath: string,
+  { configDir, include }: Pick<ResolvedConfig, "configDir" | "include">,
+  repositories: readonly string[],
+): string {
   const patterns = include === undefined ? undefined : `"include" in ${configPath} (${include.join(", ")})`;
   if (repositories.length === 0) {
     return patterns === undefined
-      ? `No .js, .jsx, .ts, .tsx or .vue files to scan in ${dirname(configPath)}. Check "exclude" in ${configPath}, or scan from the folder that holds your source files.`
+      ? `No .js, .jsx, .ts, .tsx or .vue files to scan in ${configDir}. Check "exclude" in ${configPath}, or scan from the folder that holds your source files.`
       : `No files match ${patterns}. Point it at your source files and scan again.`;
   }
   const only = patterns === undefined ? "The only source files here are in" : `${patterns} only matches files in`;

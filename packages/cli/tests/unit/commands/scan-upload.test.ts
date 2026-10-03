@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -143,7 +143,7 @@ describe("runScan upload outcome", () => {
     {
       repositories: [],
       says: (dir: string) =>
-        `No .js, .jsx, .ts, .tsx or .vue files to scan in ${dir}. Check "exclude" in ${join(dir, "scout.config.json")}, or scan from the folder that holds your source files.`,
+        `No .js, .jsx, .ts, .tsx or .vue files to scan in ${realpathSync(dir)}. Check "exclude" in ${join(dir, "scout.config.json")}, or scan from the folder that holds your source files.`,
     },
     {
       repositories: ["vendor/lib"],
@@ -165,6 +165,18 @@ describe("runScan upload outcome", () => {
     const result = await runScan({ configPath: join(dir, "scout.config.json") });
     expect(scanExitCode(result)).toBe(2);
     expect(stderr()).toBe(`Error: ${says(dir)}\n`);
+  });
+
+  it("names the config's folder in full when a config without include, given by a relative path, finds no source files", async () => {
+    const dir = setupConsumer();
+    rmSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ repoId: "upload-test", exclude: [] }));
+    vi.spyOn(process, "cwd").mockReturnValue(dir);
+    const result = await runScan({ configPath: "./scout.config.json" });
+    expect(scanExitCode(result)).toBe(2);
+    expect(stderr()).toBe(
+      `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in ${realpathSync(dir)}. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.\n`,
+    );
   });
 
   it.each([
