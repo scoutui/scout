@@ -105,12 +105,12 @@ The [repo id](/docs/reference/glossary#repo-id) comes from the first of these th
 
 ## Validation errors
 
-A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, apart from the not-found message, where it's the path you gave. `<folder>` is the config folder.
+A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the config path you gave, `./scout.config.json` by default, and `<folder>` is the config folder.
 
 | Problem | Message |
 | --- | --- |
 | No file at the config path | `Couldn't find ./scout.config.json. Run scout init to create one, or pass --config <path>.` With `--config`, it names that path instead. |
-| The file isn't valid JSON | `<path> isn't valid JSON: <parser message>. Fix it and try again.` |
+| The file isn't valid JSON | `<path> isn't valid JSON. Fix it and try again.` With `--debug`, the next line says where the parser stopped. |
 | A top-level `manifests` key | ``<path>: the `manifests` field was removed. Replace with `include` (array of glob patterns for files to scan).`` |
 | A field that isn't in [Fields](#fields), such as a misspelled name | `<path> has a field Scout doesn't use: "<field>". Remove it and try again.` With several, it names every one: `<path> has fields Scout doesn't use: "<field>", "<field>". Remove them and try again.` No other problem is shown until they are gone. |
 | Anything else the schema rejects | `Invalid config at <path>: <problems>` |

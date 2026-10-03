@@ -5,7 +5,12 @@ import { validateConfig } from "./schema.js";
 import { errorMessage } from "../util/errors.js";
 
 export class ConfigError extends Error {
-  constructor(public code: "CONFIG_MISSING" | "CONFIG_INVALID", message: string) {
+  constructor(
+    public code: "CONFIG_MISSING" | "CONFIG_INVALID",
+    message: string,
+    /** What `--debug` adds under the message. */
+    public detail?: string,
+  ) {
     super(message);
   }
 }
@@ -32,7 +37,7 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new ConfigError("CONFIG_INVALID", `${abs} isn't valid JSON: ${errorMessage(err)}. Fix it and try again.`);
+    throw new ConfigError("CONFIG_INVALID", `${configPath} isn't valid JSON. Fix it and try again.`, errorMessage(err));
   }
 
   // A config with the removed `manifests` field is told to use `include`
@@ -40,7 +45,7 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   if (parsed && typeof parsed === "object" && "manifests" in parsed) {
     throw new ConfigError(
       "CONFIG_INVALID",
-      `${abs}: the \`manifests\` field was removed. Replace with \`include\` (array of glob patterns for files to scan).`
+      `${configPath}: the \`manifests\` field was removed. Replace with \`include\` (array of glob patterns for files to scan).`
     );
   }
 
@@ -52,13 +57,13 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
       return e.keyword === "additionalProperties" && e.instancePath === "" ? [`"${String(additionalProperty)}"`] : [];
     });
     if (unknown.length === 1) {
-      throw new ConfigError("CONFIG_INVALID", `${abs} has a field Scout doesn't use: ${unknown[0]}. Remove it and try again.`);
+      throw new ConfigError("CONFIG_INVALID", `${configPath} has a field Scout doesn't use: ${unknown[0]}. Remove it and try again.`);
     }
     if (unknown.length > 1) {
-      throw new ConfigError("CONFIG_INVALID", `${abs} has fields Scout doesn't use: ${unknown.join(", ")}. Remove them and try again.`);
+      throw new ConfigError("CONFIG_INVALID", `${configPath} has fields Scout doesn't use: ${unknown.join(", ")}. Remove them and try again.`);
     }
     const issues = errors.map((e) => `${e.instancePath || "<root>"}: ${e.message}`).join("; ");
-    throw new ConfigError("CONFIG_INVALID", `Invalid config at ${abs}: ${issues}`);
+    throw new ConfigError("CONFIG_INVALID", `Invalid config at ${configPath}: ${issues}`);
   }
 
   // parsed is now narrowed to ConfigFile by the typed validator.

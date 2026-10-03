@@ -266,7 +266,7 @@ export async function loadScanConfig(configPath: string, log: Logger): Promise<R
     return await loadConfig(configPath);
   } catch (err) {
     if (err instanceof ConfigError) {
-      log.error(err.message);
+      log.error(err.message, err.detail);
       return null;
     }
     throw err;

@@ -300,7 +300,7 @@ export async function runAuth(argv: string[], deps: AuthDeps = {}): Promise<numb
       } catch (e) {
         if (!(e instanceof ConfigError)) throw e;
         if (e.code === "CONFIG_INVALID") {
-          log.error(e.message);
+          log.error(e.message, e.detail);
           return 2;
         }
       }
