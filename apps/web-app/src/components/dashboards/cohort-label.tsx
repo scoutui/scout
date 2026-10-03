@@ -4,8 +4,8 @@ import { DEPRECATED_ONLY, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 
 /**
- * A cohort label split into the name and its package, muted and a step smaller.
- * The title carries the full label.
+ * A cohort label split into the name and its package, muted and a step smaller, then
+ * `deprecated only` for a deprecated-only series. The title carries the full label.
  */
 export function CohortLabelText({
   label,

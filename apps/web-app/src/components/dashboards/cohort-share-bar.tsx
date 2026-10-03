@@ -1,6 +1,6 @@
 "use client";
 import type { CohortRole } from "@scoutui/web-shared";
-import { formatPct } from "@/lib/dashboard-format";
+import { DEPRECATED_ONLY, formatPct } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
@@ -41,7 +41,7 @@ export function CohortShareBar({
       <div
         className="flex h-5 w-full gap-[2px] overflow-hidden rounded-md"
         role="img"
-        aria-label={segs.map((s) => `${s.label} ${formatPct(s.share)}`).join(", ")}
+        aria-label={segs.map((s) => `${s.label}${s.deprecatedOnly ? ` ${DEPRECATED_ONLY}` : ""} ${formatPct(s.share)}`).join(", ")}
       >
         {/* The min-width and grow floors keep a tiny share visible. A zero share
             gets no segment; the row beneath still lists it at 0%. */}

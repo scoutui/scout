@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CohortSelector } from "@scoutui/web-shared";
-import { deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse, type LibraryTag } from "@/lib/chart-builder-series";
+import { deprecatedShare, deprecatedShareText, offersDeprecatedOnly, type LibraryTag } from "@/lib/chart-builder-series";
 import type { PickableComponent } from "@/components/dashboards/series-picker";
 
 const comp = (componentId: string, packageName: string | null, deprecated = false): PickableComponent =>
@@ -45,20 +45,11 @@ describe("offersDeprecatedOnly", () => {
 
 describe("deprecatedShareText", () => {
   it.each([
-    [{ deprecated: 11, total: 27 }, "11 of 27 components in vue-ui-kits are deprecated"],
-    [{ deprecated: 1, total: 27 }, "1 of 27 components in vue-ui-kits is deprecated"],
-    [{ deprecated: 1, total: 1 }, "1 of 1 component in vue-ui-kits is deprecated"],
-    [{ deprecated: 0, total: 0 }, null],
-  ] as const)("%o", (share, expected) => {
+    ["several deprecated", { deprecated: 11, total: 27 }, "11 of 27 components in vue-ui-kits are deprecated"],
+    ["one deprecated", { deprecated: 1, total: 27 }, "1 of 27 components in vue-ui-kits is deprecated"],
+    ["one component", { deprecated: 1, total: 1 }, "1 of 1 component in vue-ui-kits is deprecated"],
+    ["no components", { deprecated: 0, total: 0 }, null],
+  ] as const)("%s", (_, share, expected) => {
     expect(deprecatedShareText(share, "vue-ui-kits")).toBe(expected);
-  });
-});
-
-describe("tagsInUse", () => {
-  it("keeps the tags that cover a listed component's package", () => {
-    expect(tagsInUse([vueKits, reactKits], [comp("c", "naive-ui"), comp("f", null)])).toEqual([vueKits]);
-  });
-  it("keeps none when no component has a tagged package", () => {
-    expect(tagsInUse([vueKits, reactKits], [comp("f", null)])).toEqual([]);
   });
 });

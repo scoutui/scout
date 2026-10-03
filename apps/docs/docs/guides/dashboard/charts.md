@@ -64,7 +64,7 @@ With one repo picked under **Repos**, the **Tags**, **Packages** and **Component
 
 To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, open the options of a tag or package series in the list at the top of the **Series** panel and choose **Only deprecated components**. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as superseded or retired. If no record covers any of them, the series drops to zero.
 
-A series has these options only when some, but not all, of its components are deprecated. Once it's on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
+A series has this option only when some, but not all, of its components are deprecated. With it on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
 
 ## Change or delete a chart
 

@@ -13,7 +13,7 @@ function inSeries(sel: DeprecatableSelector, packageName: string | null, tags: L
   return tag !== undefined && tagMatchesPackage(tag, packageName);
 }
 
-/** How many of a package's or tag's components the picker lists, and how many of those are deprecated. */
+/** How many of `components` a package or tag series covers, and how many of those are deprecated. */
 export function deprecatedShare(sel: DeprecatableSelector, components: PickableComponent[], tags: LibraryTag[]): DeprecatedShare {
   let deprecated = 0;
   let total = 0;
@@ -35,7 +35,6 @@ export function deprecatedShareText({ deprecated, total }: DeprecatedShare, name
   return `${deprecated} of ${total} ${total === 1 ? "component" : "components"} in ${name} ${deprecated === 1 ? "is" : "are"} deprecated`;
 }
 
-/** The tags that cover at least one listed component's package. */
 export function tagsInUse(tags: LibraryTag[], components: PickableComponent[]): LibraryTag[] {
   const packages = new Set(components.flatMap((c) => (c.packageName === null ? [] : [c.packageName])));
   return tags.filter((t) => [...packages].some((p) => tagMatchesPackage(t, p)));

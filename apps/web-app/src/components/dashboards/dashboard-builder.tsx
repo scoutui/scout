@@ -389,6 +389,7 @@ export function DashboardBuilder({
             <div className="flex items-baseline gap-2">
               <span className="text-label text-muted-foreground">Metric</span>
               <span
+                id="dashboard-metric-hint"
                 className="whitespace-nowrap text-xs leading-none text-muted-foreground"
                 style={effectiveMetric === "share" ? undefined : { visibility: "hidden" }}
               >
@@ -401,6 +402,7 @@ export function DashboardBuilder({
               multiple={false}
               variant="outline"
               aria-label="Metric"
+              aria-describedby={effectiveMetric === "share" ? "dashboard-metric-hint" : undefined}
             >
               <ToggleGroupItem value="count" disabled={chartType === "stacked-share"}>Count</ToggleGroupItem>
               <ToggleGroupItem value="share">Share</ToggleGroupItem>
@@ -408,7 +410,7 @@ export function DashboardBuilder({
           </div>
 
           <div className="ml-auto space-y-1.5 self-end">
-            <p id="dashboard-save-reason" className="min-h-lh text-right text-xs leading-none text-muted-foreground">
+            <p id="dashboard-save-reason" className="empty:hidden text-right text-xs leading-none text-muted-foreground">
               {nameMissing ? "Name the chart to save it." : null}
             </p>
             <div className="flex items-center gap-3">

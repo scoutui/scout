@@ -6,8 +6,7 @@ import { cn } from "@/lib/utils";
  * Identity swatch for a chart key. Tag series get a pill, and package, component
  * and local series a square, keyed off the cohortKey prefix. A deprecated-role
  * series gets the warning triangle in the series colour instead, with the word in
- * an `sr-only` span as `DeprecatedMark` does: cohort labels never carry the word,
- * so the triangle is the only thing naming that series as deprecated.
+ * an `sr-only` span as `DeprecatedMark` does.
  */
 export function CohortSwatch({
   cohortKey,
