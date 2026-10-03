@@ -165,6 +165,51 @@ describe("editing a saved chart", () => {
   });
 });
 
+describe("chart details and saving", () => {
+  const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const };
+
+  it("saves the description, and no description when it is blank", async () => {
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: "Old text", config }} />);
+    expect(screen.getByLabelText("Description")).toHaveValue("Old text");
+    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "  Deprecated parts of our kits.  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ description: "Deprecated parts of our kits." })));
+    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ description: null })));
+  });
+
+  it("cancels back to the chart being edited, or to the charts list for a new one", () => {
+    const { unmount } = render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart 1", name: "Kits", description: null, config }} />);
+    expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts/chart%201");
+    unmount();
+    builder();
+    expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts");
+  });
+
+  it("keeps Metric on Share with Count unavailable while Stacked is chosen", () => {
+    builder();
+    expect(screen.getByText("Share of these series")).not.toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Stacked" }));
+    expect(screen.getByRole("button", { name: "Share" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Count" })).toBeDisabled();
+    expect(screen.getByText("Share of these series")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Trend" }));
+    expect(screen.getByRole("button", { name: "Count" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Share of these series")).not.toBeVisible();
+  });
+
+  it("can't save without a name, and says so", () => {
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config }} />);
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "   " } });
+    expect(screen.getByRole("button", { name: "Save chart" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save chart" })).toHaveAccessibleDescription("Name the chart to save it.");
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Kits" } });
+    expect(screen.getByRole("button", { name: "Save chart" })).toBeEnabled();
+    expect(screen.queryByText("Name the chart to save it.")).toBeNull();
+  });
+});
+
 const vueKits = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: [], exact: ["ant-design-vue", "naive-ui"] } };
 const reactKits = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const kitComponents = [
