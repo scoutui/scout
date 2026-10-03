@@ -248,7 +248,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     log.error(refusal);
   } else {
     try {
-      if (log.motion && !quiet) showUpload("Uploading the scan…");
+      if (log.styled && !quiet) showUpload("Uploading the scan…");
       const result = await uploader
         .upload(JSON.stringify(artifact), { rescan: opts.rescan === true })
         .finally(() => uploadLine?.done());
@@ -404,7 +404,7 @@ export async function scanRepository(input: {
   }
   const isTTY = !!process.stderr.isTTY;
   const { columns } = process.stderr;
-  const motion = log.motion ? log.color : undefined;
+  const motion = log.styled ? log.color : undefined;
   const parseProgress = createProgress({
     total: files.length,
     writer,

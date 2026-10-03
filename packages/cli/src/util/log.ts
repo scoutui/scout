@@ -8,10 +8,8 @@ export type LoggerOptions = {
   debug?: boolean;
   /** The colours to write with (default: `terminalStyle`'s). */
   color?: Colorizer;
-  /** Whether someone is watching in a terminal (default: `terminalStyle`'s). */
-  interactive?: boolean;
-  /** Whether spinners and progress bars may animate (default: `terminalStyle`'s). */
-  motion?: boolean;
+  /** Whether to style output for someone watching: wordmark, symbols and motion (default: `terminalStyle`'s). */
+  styled?: boolean;
   /** Whether stderr is a terminal, where a progress line may be showing (default: stderr's own `isTTY`). */
   isTTY?: boolean;
 };
@@ -38,8 +36,7 @@ export class Logger {
   readonly quiet: boolean;
   readonly debug: boolean;
   readonly color: Colorizer;
-  readonly interactive: boolean;
-  readonly motion: boolean;
+  readonly styled: boolean;
   /** Clears a progress line being rewritten in place, so a warning or error starts on a clean line. */
   private readonly clearLine: string;
 
@@ -49,13 +46,12 @@ export class Logger {
     const isTTY = opts.isTTY ?? Boolean(process.stderr.isTTY);
     const style = terminalStyle();
     this.color = opts.color ?? style.color;
-    this.interactive = opts.interactive ?? style.interactive;
-    this.motion = opts.motion ?? style.motion;
+    this.styled = opts.styled ?? style.styled;
     this.clearLine = isTTY ? "\r\x1b[K" : "";
   }
-  /** The wordmark and a blank line, once per command, when someone is watching in a terminal and not under quiet. */
+  /** The wordmark and a blank line, once per command, when styled and not under quiet. */
   heading(detail?: string): void {
-    if (this.interactive && !this.quiet) process.stderr.write(`${wordmark(this.color, detail)}\n\n`);
+    if (this.styled && !this.quiet) process.stderr.write(`${wordmark(this.color, detail)}\n\n`);
   }
   info(msg: string): void {
     if (!this.quiet) process.stdout.write(`${msg}\n`);

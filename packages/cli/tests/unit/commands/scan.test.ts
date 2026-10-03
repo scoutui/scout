@@ -101,16 +101,16 @@ describe("runScan wordmark", () => {
   const head = (dir: string) => execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { cwd: dir }).toString().trim();
   const { version } = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8")) as { version: string };
 
-  it("starts with the wordmark naming the version, repository and commit, then a blank line, when someone is watching", async () => {
+  it("starts with the wordmark naming the version, repository and commit, then a blank line, when styled", async () => {
     const dir = setupConsumer();
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
-    await runScan({ configPath: join(dir, "scout.config.json"), log: new Logger({ interactive: true, color: createColor({ isTTY: false, env: {} }) }) });
+    await runScan({ configPath: join(dir, "scout.config.json"), log: new Logger({ styled: true, color: createColor({ isTTY: false, env: {} }) }) });
     expect(String(stderr.mock.calls[0]?.[0])).toBe(`scout ${version} · scan-test at ${head(dir)}\n\n`);
   });
 
   it.each([
-    ["no one is watching", () => new Logger({ interactive: false })],
-    ["quiet", () => new Logger({ quiet: true, interactive: true })],
+    ["not styled", () => new Logger({ styled: false })],
+    ["quiet", () => new Logger({ quiet: true, styled: true })],
   ])("prints no wordmark when %s", async (_case, log) => {
     const dir = setupConsumer();
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);

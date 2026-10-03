@@ -60,14 +60,15 @@ describe("terminalStyle", () => {
   const tty = { isTTY: true };
   const piped = { isTTY: false };
   it.each([
-    ["all three streams are terminals", {}, [tty, tty, tty], { interactive: true, color: true, motion: true }],
-    ["CI is set", { CI: "1" }, [tty, tty, tty], { interactive: false, color: false, motion: false }],
-    ["stdout is piped", {}, [tty, piped, tty], { interactive: false, color: false, motion: false }],
-    ["stderr is piped", {}, [tty, tty, piped], { interactive: false, color: false, motion: false }],
-    ["NO_COLOR is set in a terminal", { NO_COLOR: "1" }, [tty, tty, tty], { interactive: true, color: false, motion: false }],
-    ["FORCE_COLOR is set with everything piped", { FORCE_COLOR: "1" }, [piped, piped, piped], { interactive: false, color: true, motion: false }],
+    ["all three streams are terminals", {}, [tty, tty, tty], { styled: true, color: true }],
+    ["CI is set", { CI: "1" }, [tty, tty, tty], { styled: false, color: false }],
+    ["stdin isn't a terminal", {}, [piped, tty, tty], { styled: false, color: false }],
+    ["stdout is piped", {}, [tty, piped, tty], { styled: false, color: false }],
+    ["stderr is piped", {}, [tty, tty, piped], { styled: false, color: false }],
+    ["NO_COLOR is set in a terminal", { NO_COLOR: "1" }, [tty, tty, tty], { styled: false, color: false }],
+    ["FORCE_COLOR is set with everything piped", { FORCE_COLOR: "1" }, [piped, piped, piped], { styled: false, color: true }],
   ] as const)("when %s", (_case, env, [stdin, stdout, stderr], expected) => {
     const style = terminalStyle({ env, stdin, stdout, stderr });
-    expect({ interactive: style.interactive, color: style.color.enabled, motion: style.motion }).toEqual(expected);
+    expect({ styled: style.styled, color: style.color.enabled }).toEqual(expected);
   });
 });

@@ -93,25 +93,22 @@ export function createColor(opts: ColorOptions = {}): Colorizer {
 type Stream = { isTTY?: boolean };
 
 export type TerminalStyle = {
-  /** Someone is watching: not in CI, and stdin, stdout and stderr are all terminals. Commands show the wordmark. */
-  interactive: boolean;
-  /** Spinners and progress bars: interactive, and NO_COLOR isn't set. */
-  motion: boolean;
-  /** Colour when interactive, unless NO_COLOR is set; FORCE_COLOR turns it on anywhere. */
+  /**
+   * Someone is watching in a terminal that takes colour: not in CI, stdin, stdout and stderr all terminals, and
+   * NO_COLOR not set. Commands then show the wordmark, mark results with symbols and animate their progress.
+   */
+  styled: boolean;
+  /** Colour in a terminal, unless NO_COLOR is set; FORCE_COLOR turns it on anywhere. */
   color: Colorizer;
 };
 
-/** How this run writes to the terminal: whether it shows the wordmark, animates and colours its output. */
+/** How this run writes to the terminal: whether it's styled for someone watching, and its colours. */
 export function terminalStyle(
   opts: { env?: NodeJS.ProcessEnv; stdin?: Stream; stdout?: Stream; stderr?: Stream } = {},
 ): TerminalStyle {
   const env = opts.env ?? process.env;
-  const interactive =
+  const watched =
     isInteractive({ env, stdin: opts.stdin ?? process.stdin, stdout: opts.stdout ?? process.stdout }) &&
     Boolean((opts.stderr ?? process.stderr).isTTY);
-  return {
-    interactive,
-    motion: interactive && !noColor(env),
-    color: createColor({ isTTY: interactive, env }),
-  };
+  return { styled: watched && !noColor(env), color: createColor({ isTTY: watched, env }) };
 }
