@@ -243,10 +243,18 @@ describe("series options", () => {
     expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
   });
 
-  it("keeps the menu on a saved deprecated-only series so it can be switched off", async () => {
+  it("switches deprecated only off on a saved series and keeps the option to turn it back on", async () => {
     render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
     fireEvent.click(screen.getByRole("button", { name: "Options for react-ui-kits" }));
-    expect(await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ })).toHaveAttribute("aria-checked", "true");
+    const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
+    expect(item).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(item);
+    await waitFor(() => expect(screen.getByRole("menuitemcheckbox", { name: /Only deprecated components/ })).toHaveAttribute("aria-checked", "false"));
+    expect(screen.queryByText((_, el) => el?.textContent === "· deprecated")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(expect.objectContaining({
+      config: expect.objectContaining({ cohorts: [{ kind: "tag", tagId: "t-react" }] }),
+    })));
   });
 
   it("says deprecated once to screen readers when the preview marks a deprecated-only series deprecated", async () => {

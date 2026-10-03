@@ -8,7 +8,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { seriesCanOverlap } from "@/lib/cohort-overlap";
 import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
-import { type ChartCohort, chartColors, drawnChartCohorts } from "@/lib/dashboard-chart-data";
+import { type ChartCohort, chartColors, deprecatedOnlyKeys, drawnChartCohorts } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
 import { SeriesPicker, type PickableComponent } from "@/components/dashboards/series-picker";
 import { SeriesLegend, type LegendSeries } from "@/components/dashboards/series-legend";
@@ -217,6 +217,8 @@ export function DashboardBuilder({
     [scopeRepoId, cohorts, chartType, effectiveMetric],
   );
 
+  const savedNarrowed = useMemo(() => deprecatedOnlyKeys(saved?.config.cohorts ?? []), [saved]);
+
   // A series in the last landed view takes its label, colour and role from there; any
   // other tag series brings its tag's colour. `chartColors` colours them all in saved
   // order, as the chart does. An unknown series reads by any name the lists or the
@@ -241,7 +243,7 @@ export function DashboardBuilder({
       let deprecatedOnly: LegendSeries["deprecatedOnly"] = null;
       if (sel.kind === "package" || sel.kind === "tag") {
         const share = deprecatedShare(sel, pickable, libraryTags);
-        if (offersDeprecatedOnly(sel, share)) {
+        if (offersDeprecatedOnly(sel, share) || savedNarrowed.has(key)) {
           deprecatedOnly = { on: sel.deprecatedOnly === true, text: deprecatedShareText(share, label) };
         }
       }
@@ -254,7 +256,7 @@ export function DashboardBuilder({
         deprecatedOnly,
       };
     });
-  }, [cohorts, components, libraryTags, landed, pickable]);
+  }, [cohorts, components, libraryTags, landed, pickable, savedNarrowed]);
 
   useEffect(() => {
     const request = { config, retry: previewRetry };
