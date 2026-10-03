@@ -72,6 +72,8 @@ The first number should be close to the number of source files you expect. If it
 Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,vue}). Point it at your source files and scan again.
 ```
 
+Code inside a submodule or another clone isn't scanned, so an `include` pattern that points into one matches no files.
+
 If the summary has lines like these, some of the repo's dependencies aren't installed:
 
 ```

@@ -30,7 +30,7 @@ If it stops with `Error: Couldn't scan: git failed in <path>.`, run `git status`
 
 ## The scan reads 0 files, or fewer than you expect
 
-If the scan stops with `Error: No files match "include"`, or the summary counts fewer files than your repo has, your `include` patterns don't match your code. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
+If the scan stops with `Error: No files match "include"`, or the summary counts fewer files than your repo has, your `include` patterns don't match your code. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files). Code inside a submodule or another clone below the config's folder isn't scanned.
 
 ## A file has syntax errors
 

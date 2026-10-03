@@ -27,7 +27,11 @@ The *config folder* is the folder that holds the config file. Relative paths in 
 | `exclude` | array of non-empty strings | `[]` | Glob patterns for files to leave out, even when `include` matches them. |
 | `repoId` | non-empty string | derived; see [Repo identity](#repo-identity) | The [repo id](/docs/reference/glossary#repo-id) the scan is recorded under. `--repo-id` replaces it. |
 
-Files and folders whose names start with a dot, such as `.next`, are skipped unless an `include` pattern names them, for example `src/.generated/*.tsx`. Files ignored by `.gitignore` are skipped too; see [`gitignore`](#other-fields). A folder below the config folder that holds its own git repository, such as a submodule or another clone, is skipped even when an `include` pattern names it.
+The scan skips:
+
+- files and folders whose names start with a dot, such as `.next`, unless an `include` pattern names them, for example `src/.generated/*.tsx`;
+- files ignored by `.gitignore`; see [`gitignore`](#other-fields);
+- a folder below the config folder that holds its own git repository, such as a submodule or another clone, even when an `include` pattern points into it.
 
 ### Upload fields
 
