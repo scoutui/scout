@@ -114,7 +114,9 @@ A skip you can fix, one of the first six reasons, makes backfill exit `1` when i
 }
 ```
 
-Backfill runs the command with your own tools and downloads nothing for it, so `yarn` or `pnpm` must be installed if the command uses them. For a Nuxt app, the command must also prepare the app, for example `yarn install --immutable && yarn nuxt prepare`, because backfill then doesn't run `nuxt prepare` itself.
+Backfill runs the command with your own tools and doesn't download Yarn or pnpm for it, so if the command uses one of them, it must be installed.
+
+For a Nuxt app, the command must also prepare the app, because backfill then doesn't run `nuxt prepare` itself. For a Nuxt app at the top of the repository, for example, that's `yarn install --immutable && yarn nuxt prepare`. For one in a subfolder, change into it first: `yarn install --immutable && cd apps/web && yarn nuxt prepare`.
 
 `scout scan` ignores `install`. See the [config reference](/docs/reference/config#backfill-fields).
 
@@ -132,6 +134,8 @@ Backfill can stop before it reaches the `--since` date. It then prints where the
 | `Error: Couldn't install the 3 newest commits, so nothing was backfilled.` | Fix what the skip lines above it name, often by setting [`install`](#set-the-install-command), and run backfill again. |
 | `Error: <folder> isn't on <remote>/<branch> yet` | The config's folder is only on a branch that isn't merged yet. Merge it, fetch, and run backfill again. |
 | `Error: Couldn't download Corepack` | Check your connection and your npm registry settings, then run backfill again. Or set [`install`](#set-the-install-command) to the command the repo installs with: backfill then doesn't need Corepack. |
+| `Error: Couldn't scan <commit> (<date>): the scan stopped unexpectedly.` | Run backfill again with `--debug` to see how far the scan got before it stopped. A scan can stop like this when it runs out of memory, for example in a container with a low memory limit. |
+| `Error: Couldn't check out <commit> (<date>) in a temporary folder.` | Run backfill again with `--debug` to read git's error. Fix what it names, for example by freeing disk space, then run backfill again. |
 | An upload error, such as `Error: Couldn't reach <host>.`, followed by `Run scout backfill again to continue: it skips what's already uploaded.` | Fix what the error names, then run backfill again. See [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload). |
 
 Before it scans anything, backfill stops on the same problems as `scout scan`, such as a shallow clone or a missing sign-in, with the same lines. See [An upload is refused or fails](/docs/guides/troubleshoot-a-scan#an-upload-is-refused-or-fails).

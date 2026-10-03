@@ -15,7 +15,7 @@ The smallest valid config:
 }
 ```
 
-The *config folder* is the folder that holds the config file. Relative paths in the config resolve against it, whatever directory you run `scan` from. The one exception is `aliases`; see [Paths](#paths).
+The *config folder* is the folder that holds the config file. Relative paths in the config resolve against it, whatever directory you run `scan` or `backfill` from. The one exception is `aliases`; see [Paths](#paths).
 
 ## Fields
 
@@ -105,7 +105,7 @@ The [repo id](/docs/reference/glossary#repo-id) comes from the first of these th
 
 ## Validation errors
 
-A config error stops `scan` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, and `<folder>` the config folder.
+A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, and `<folder>` the config folder.
 
 | Problem | Message |
 | --- | --- |

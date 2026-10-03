@@ -66,3 +66,8 @@ export function formatDay(iso: string): string {
   const date = new Date(iso);
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
+
+/** The commit as the run's lines name it: its first seven characters and its UTC day, like `a1c9e04 (28 Sep 2026)`. */
+export function commitLabel({ commit, committedAt }: ChainCommit): string {
+  return `${commit.slice(0, 7)} (${formatDay(committedAt)})`;
+}

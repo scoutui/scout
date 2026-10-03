@@ -5,6 +5,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reportError } from "../../src/cli/report.js";
 import { runBackfill } from "../../src/commands/backfill.js";
 import { Logger } from "../../src/util/log.js";
 import { assertValidArtifact } from "../helpers/artifact.js";
@@ -690,6 +691,53 @@ describe("scout backfill", () => {
       expect(stdout()).toBe("");
       expect(code).toBe(1);
       expect(existsSync(dirname(readFileSync(join(stubDir, "out-dir"), "utf8")))).toBe(false);
+    }, 60_000);
+
+    it("stops with the scan's output and a line naming the commit when its scan is killed before writing a result, and exits 1", async () => {
+      const { dir, shas } = pushedRepo([{ date: "2026-06-17T10:00:00Z" }]);
+      const [c1 = ""] = shas;
+      const stubDir = realpathSync(mkdtempSync(join(tmpdir(), "cc-backfill-stub-")));
+      dirs.push(stubDir);
+      const stub = join(stubDir, "scan.cjs");
+      writeFileSync(
+        stub,
+        String.raw`const fs = require("fs"); fs.writeFileSync(require("path").join(__dirname, "out-dir"), process.argv[4]); fs.writeSync(2, "Warning: partial\n"); process.kill(process.pid, "SIGKILL");`,
+      );
+      acceptingDashboard();
+
+      const code = await backfill(dir, { since: "2026-06-01", log: new Logger({ quiet: true }), cliEntry: stub });
+
+      expect(stderr()).toBe(
+        [
+          "Warning: partial\n",
+          `Error: Couldn't scan ${named(c1, "17 Jun 2026")}: the scan stopped unexpectedly. Run scout backfill --debug to see how far it got.\n`,
+        ].join(""),
+      );
+      expect(stdout()).toBe("");
+      expect(code).toBe(1);
+      expect(existsSync(dirname(readFileSync(join(stubDir, "out-dir"), "utf8")))).toBe(false);
+    }, 60_000);
+
+    it("stops with a line naming the commit when git can't check it out, and exits 1", async () => {
+      const { dir, shas } = pushedRepo([
+        { date: "2026-06-10T10:00:00Z", files: { "notes.md": "only in the older commit\n" } },
+        { date: "2026-06-17T10:00:00Z" },
+      ]);
+      const [c1 = ""] = shas;
+      const blob = git(dir, ["rev-parse", `${c1}:notes.md`]).trim();
+      rmSync(join(dir, ".git", "objects", blob.slice(0, 2), blob.slice(2)));
+      const before = { folders: backfillFolders(), worktrees: worktrees(dir) };
+      acceptingDashboard();
+      const log = new Logger({ quiet: true });
+
+      const code = await backfill(dir, { since: "2026-06-01", log }).catch((err: unknown) => reportError(err, log, undefined));
+
+      expect(stderr()).toBe(
+        `Error: Couldn't check out ${named(c1, "10 Jun 2026")} in a temporary folder. Run scout backfill --debug to see git's output.\n`,
+      );
+      expect(stdout()).toBe("");
+      expect(code).toBe(1);
+      expect({ folders: backfillFolders(), worktrees: worktrees(dir) }).toEqual(before);
     }, 60_000);
   });
 });

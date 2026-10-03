@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { posixPath } from "@scoutui/reference-graph";
 import { type AuthedUploader, createAuthedUploader } from "../auth/upload-auth.js";
-import { type ChainCommit, defaultSince, firstParentChain, formatDay, weeklyCommits } from "../backfill/commits.js";
+import { type ChainCommit, commitLabel, defaultSince, firstParentChain, formatDay, weeklyCommits } from "../backfill/commits.js";
 import {
   type Corepack,
   type CorepackPlan,
@@ -178,9 +178,9 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
   let earliest: string | undefined = onDashboard.map(({ committedAt }) => committedAt).sort()[0];
   let fixable = 0;
   const streak = { failures: 0, fixable: 0 };
-  const skip = ({ commit, committedAt }: ChainCommit, reason: string, detail?: string): void => {
+  const skip = (entry: ChainCommit, reason: string, detail?: string): void => {
     counts.skipped++;
-    log.warn(`Skipped ${commit.slice(0, 7)} (${formatDay(committedAt)}): ${reason}`, detail);
+    log.warn(`Skipped ${commitLabel(entry)}: ${reason}`, detail);
   };
   const fail = (entry: ChainCommit, reason: string, canFix: boolean, detail?: string): void => {
     skip(entry, reason, detail);
@@ -208,7 +208,7 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
 
   const runDir = await realpath(await mkdtemp(join(tmpdir(), "scout-backfill-")));
   state.run = { cwd: cfg.configDir, dir: runDir };
-  const checkoutDir = await createWorktree(cfg.configDir, runDir, first.commit);
+  const checkoutDir = await createWorktree(cfg.configDir, runDir, first);
   const work: RunContext = {
     runDir,
     checkout: checkoutDir,
@@ -222,8 +222,8 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
 
   for (const [index, entry] of toScan.entries()) {
     const { commit, committedAt } = entry;
-    progress(`Scanning ${commit.slice(0, 7)} (${formatDay(committedAt)}), ${index + 1} of ${toScan.length}…`);
-    await checkoutCommit(checkoutDir, commit);
+    progress(`Scanning ${commitLabel(entry)}, ${index + 1} of ${toScan.length}…`);
+    await checkoutCommit(checkoutDir, entry);
     if (!(await hasFolder(commit))) {
       let newer: ChainCommit | undefined;
       for (const candidate of picked.slice(0, picked.indexOf(entry)).reverse()) {
@@ -259,10 +259,14 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
           cwd: work.configDir,
         }),
       );
-      log.detail(child.output);
+      const silent = child.output.trim() === "";
+      if (!silent) log.detail(child.output);
       const result = await readCommitScanResult(outDir);
       if (result === null) {
-        if (!log.debug) process.stderr.write(child.output);
+        if (!silent && !log.debug) process.stderr.write(child.output);
+        if (silent || child.code === null) {
+          log.error(`Couldn't scan ${commitLabel(entry)}: the scan stopped unexpectedly. Run scout backfill --debug to see how far it got.`);
+        }
         return 1;
       }
       if (result.kind === "refused") {

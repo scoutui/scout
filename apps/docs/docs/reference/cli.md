@@ -168,6 +168,8 @@ The first seven are *install skips*. Three in a row stop the run (see [Stop line
 | `Error: Couldn't install the 3 newest commits, so nothing was backfilled. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with no commit of the range on the dashboard. | `1` |
 | `Error: <folder> isn't on <remote>/<branch> yet, so there's nothing to backfill.` | The config's folder isn't in the latest commit. | `1` |
 | `Error: Couldn't download Corepack, which Scout needs to install Yarn and pnpm projects. Check your connection and npm registry settings, then run scout backfill again.` | Downloading Corepack failed. `--debug` prints npm's output. | `1` |
+| `Error: Couldn't scan <commit> (<date>): the scan stopped unexpectedly. Run scout backfill --debug to see how far it got.` | The scan of a commit stopped before it finished, for example because it ran out of memory. Any lines the scan printed come first. `--debug` prints the scan's progress up to where it stopped. | `1` |
+| `Error: Couldn't check out <commit> (<date>) in a temporary folder. Run scout backfill --debug to see git's output.` | Git couldn't check out the commit, for example because the disk is full. `--debug` prints git's output. | `1` |
 | An upload error, then `Run scout backfill again to continue: it skips what's already uploaded.` | An upload failed for a reason other than the dashboard refusing that commit, for example the dashboard can't be reached. | `1` |
 | `Stopped. Run scout backfill again to continue: it skips what's already uploaded.` | Ctrl-C, the terminal closed, or the process received SIGTERM. The temporary checkout is removed first. | `130` |
 
