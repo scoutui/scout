@@ -18,14 +18,19 @@ export function buildPackageAliasLayers(
   onWarning?: (message: string) => void,
 ): PackageAliasLayer[] {
   const layers: PackageAliasLayer[] = [];
+  const warned = new Set<string>();
   for (const pkg of graph.packages) {
     const tsconfigPath = resolveTsconfigPath({
       configDir: pkg.absolutePath,
       repoRoot: pkg.absolutePath,
     });
     if (!tsconfigPath) continue;
-    const { entries, baseUrlDir, warnings } = loadTsconfigChain(tsconfigPath);
-    if (onWarning) for (const w of warnings) onWarning(`${pkg.name}: ${w}`);
+    const { entries, baseUrlDir, warnings } = loadTsconfigChain(tsconfigPath, graph.rootPath);
+    for (const w of warnings) {
+      if (warned.has(w)) continue;
+      warned.add(w);
+      onWarning?.(w);
+    }
     if (entries.length === 0 && baseUrlDir === undefined) continue;
     layers.push({ pkgRealPath: safeRealpath(pkg.absolutePath), entries, baseUrlDir });
   }

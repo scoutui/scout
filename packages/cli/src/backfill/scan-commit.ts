@@ -54,7 +54,7 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
   if (uncommitted !== null) return finish({ kind: "refused", reason: "uncommitted", detail: uncommitted.detail });
   if (isPnpProject(cfg.configDir) || isPnpProject(workspaceRoot)) return finish({ kind: "refused", reason: "pnp" });
   const problem = setupProblem(workspaceGraph, files, cfg.configDir);
-  if (problem !== null) return finish({ kind: "refused", reason: problem });
+  if (problem !== null) return finish({ kind: "refused", reason: problem.kind });
 
   const { artifact, stats } = await scanRepository({
     cfg,

@@ -23,7 +23,7 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   } catch {
     throw new ConfigError(
       "CONFIG_MISSING",
-      `Scout config not found at ${abs}. Run \`scout init\` to scaffold one.`
+      `Couldn't find ${configPath}. Run scout init to create one, or pass --config <path>.`
     );
   }
 
@@ -32,7 +32,7 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new ConfigError("CONFIG_INVALID", `${abs} is not valid JSON: ${errorMessage(err)}`);
+    throw new ConfigError("CONFIG_INVALID", `${abs} isn't valid JSON: ${errorMessage(err)}. Fix it and try again.`);
   }
 
   // A config with the removed `manifests` field is told to use `include`

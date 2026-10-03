@@ -30,18 +30,20 @@ Here `@/components` and `~/` are path aliases the scan doesn't know, so `Card` a
 If your config is in one app's folder and that folder is a workspace package, the scan finds the monorepo root on its own and says so:
 
 ```
-[scan] workspace root: /home/dev/acme
+Monorepo root: ../..
 ```
+
+The path is relative to the config's folder.
 
 ## If your aliases are in `tsconfig.json`
 
 The scan reads `compilerOptions.paths`, following `extends`, from `tsconfig.json` or `tsconfig.base.json` in the folder that holds your config, or else in the monorepo root. It prints the one it picked:
 
 ```
-[scan] using tsconfig: tsconfig.json
+Path aliases: tsconfig.json
 ```
 
-If it found none, it prints `[scan] tsconfig: not found (path aliases will not resolve)`.
+If it found none, it prints `Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.`
 
 If the tsconfig it picked only references other projects (`"files": []` with a `"references"` list, as Nuxt 4 and Vite's templates create), the scan reads the aliases from those projects. When two of them define the same alias, the first one listed wins. Aliases in that tsconfig itself, or in a file it extends, apply when none of those projects defines them. In a Nuxt 4 app the referenced projects are generated under `.nuxt/`, so run `nuxt prepare` before you scan.
 
@@ -51,9 +53,9 @@ If your tsconfig has another name, such as `tsconfig.app.json`, set `tsconfigPat
 "tsconfigPath": "./tsconfig.app.json"
 ```
 
-If that file doesn't exist, the scan runs without it. The `using tsconfig` line still names the file, so look for a `tsconfig not readable` warning just above it.
+If that file doesn't exist, the scan runs without it. The `Path aliases` line still names the file, so look for a warning just above it: `Warning: <path> doesn't exist, so its path aliases aren't followed.` The same kind of warning names a file that a tsconfig's `extends` points to and that doesn't exist.
 
-Each workspace package's own `tsconfig.json` or `tsconfig.base.json` also applies to that package's files, so two apps can each map `@/*` to their own `src/`. When you scan the whole monorepo from the root, the `tsconfig: not found` line can still appear; check the list of unresolved imports instead.
+Each workspace package's own `tsconfig.json` or `tsconfig.base.json` also applies to that package's files, so two apps can each map `@/*` to their own `src/`. When you scan the whole monorepo from the root, the `no tsconfig.json found` line can still appear; check the list of unresolved imports instead.
 
 ## If your aliases are only in a bundler config
 
@@ -66,7 +68,7 @@ Aliases that live only in a Vite, Webpack or Metro config aren't in any tsconfig
 ```
 
 :::warning
-When the scan prints `[scan] workspace root:`, alias paths are relative to that monorepo root, not to your config's folder. In `apps/storefront/scout.config.json`, `"~/*": ["./src/*"]` doesn't resolve. Write the path from the root:
+When the scan prints `Monorepo root:`, alias paths are relative to that monorepo root, not to your config's folder. In `apps/storefront/scout.config.json`, `"~/*": ["./src/*"]` doesn't resolve. Write the path from the root:
 
 ```json
 "aliases": { "~/*": ["./apps/storefront/src/*"] }

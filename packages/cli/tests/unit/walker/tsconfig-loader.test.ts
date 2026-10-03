@@ -160,8 +160,10 @@ describe("loadTsconfigChain: extends", () => {
       join(root, "b.json"),
       JSON.stringify({ extends: "./a.json" }),
     );
-    const { entries, warnings } = loadTsconfigChain(join(root, "a.json"));
-    expect(warnings.some((w) => w.includes("a.json") && /cycle/.test(w))).toBe(true);
+    const { entries, warnings } = loadTsconfigChain(join(root, "a.json"), root);
+    expect(warnings).toEqual([
+      '"extends" loops back to a.json, so path aliases past it aren\'t followed. Fix "extends" and scan again.',
+    ]);
     // Whatever resolved before the cycle hit should still be present.
     expect(entries).toHaveLength(1);
     expect(entries[0]?.targets).toEqual(["src/a/*"]);

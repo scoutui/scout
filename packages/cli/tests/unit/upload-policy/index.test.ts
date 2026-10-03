@@ -62,8 +62,8 @@ const nuxtApp = (files: Record<string, string> = {}) =>
     ...files,
   });
 
-const DEPENDENCIES_NOT_INSTALLED =
-  "Couldn't upload the scan: some dependencies aren't installed. Install them and try again.";
+const notInstalled = (packageName: string, declaredIn: string) =>
+  `Couldn't upload the scan: ${packageName} is listed in ${declaredIn} but isn't installed. Install your dependencies and try again.`;
 const NUXT_NOT_PREPARED =
   "Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.";
 
@@ -92,7 +92,7 @@ describe("an upload's refusal", () => {
     expect(result.upload).toBe("failed");
     expect(scanExitCode(result)).toBe(1);
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
-    expect(stderr()).toContain(DEPENDENCIES_NOT_INSTALLED);
+    expect(stderr()).toContain(notInstalled("@example/ui", "package.json"));
   });
 
   it("refuses before scanning when a dependency that only registers tags is not installed", async () => {
@@ -107,7 +107,7 @@ describe("an upload's refusal", () => {
     expect(result.upload).toBe("failed");
     expect(scanExitCode(result)).toBe(1);
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
-    expect(stderr()).toContain(DEPENDENCIES_NOT_INSTALLED);
+    expect(stderr()).toContain(notInstalled("@example/web-button", "package.json"));
   });
 
   it("refuses before scanning a Nuxt app that hasn't been prepared", async () => {
@@ -133,7 +133,7 @@ describe("an upload's refusal", () => {
     expect(result.output).toBeNull();
     expect(scanExitCode(result)).toBe(1);
     expect(existsSync(join(dir, "app", "scout-scan.json"))).toBe(false);
-    expect(stderr()).toContain(DEPENDENCIES_NOT_INSTALLED);
+    expect(stderr()).toContain(notInstalled("@example/web-button", "app/package.json"));
   });
 
   it("names the missing dependencies, not the Nuxt preparation, when a Nuxt app has nothing installed", async () => {
@@ -144,7 +144,7 @@ describe("an upload's refusal", () => {
     });
     const result = await runScan({ cwd: dir, quiet: true, upload: true });
     expect(scanExitCode(result)).toBe(1);
-    expect(stderr()).toContain(DEPENDENCIES_NOT_INSTALLED);
+    expect(stderr()).toContain(notInstalled("nuxt", "package.json"));
     expect(stderr()).not.toContain(NUXT_NOT_PREPARED);
   });
 

@@ -320,7 +320,7 @@ export async function runAuth(argv: string[], deps: AuthDeps = {}): Promise<numb
             );
             resolved = normalizeHost(entered);
           } else {
-            log.error("Specify a host: `scout auth login --host <url>` (or set SCOUTUI_HOST).");
+            log.error("Couldn't sign in: no dashboard address is set. Run scout auth login --host <url>, or set SCOUTUI_HOST.");
             return 2;
           }
         }

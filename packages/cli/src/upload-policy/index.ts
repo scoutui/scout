@@ -1,39 +1,39 @@
 import type { ScanStats } from "../artifact/scan-stats.js";
 import { nuxtAppUnprepared } from "../scan/global-components.js";
-import { declaredDependenciesInstalled } from "../workspace/declared-deps.js";
+import { relative } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
+import { missingDependency } from "../workspace/declared-deps.js";
 import type { WorkspaceGraph } from "../workspace/types.js";
 
-const DEPENDENCIES_NOT_INSTALLED =
-  "Couldn't upload the scan: some dependencies aren't installed. Install them and try again.";
+/** What stops an upload before scanning, as `setupProblem` finds it. */
+export type SetupProblem =
+  | { kind: "dependencies-missing"; packageName: string; declaredIn: string }
+  | { kind: "nuxt-unprepared" };
 
-/**
- * Why an upload must stop before scanning, or null when it may scan:
- * a package that the workspace root's `package.json`, or that of a member
- * owning one of `files`, lists in `dependencies` or `devDependencies` is not
- * installed; else the scan root declares `nuxt` and the app hasn't been
- * prepared.
- */
+/** Why an upload must stop before scanning, as the line it prints, or null when it may scan. See `setupProblem`. */
 export function setupRefusal(graph: WorkspaceGraph, files: readonly string[], scanRoot: string): string | null {
   const problem = setupProblem(graph, files, scanRoot);
-  if (problem === "dependencies-missing") return DEPENDENCIES_NOT_INSTALLED;
-  if (problem === "nuxt-unprepared") {
+  if (problem?.kind === "dependencies-missing") {
+    return `Couldn't upload the scan: ${problem.packageName} is listed in ${problem.declaredIn} but isn't installed. Install your dependencies and try again.`;
+  }
+  if (problem?.kind === "nuxt-unprepared") {
     return "Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.";
   }
   return null;
 }
 
 /**
- * What stops an upload before scanning: `dependencies-missing` when a package that the workspace root's `package.json`, or
- * that of a member owning one of `files`, lists in `dependencies` or `devDependencies` isn't installed; else
- * `nuxt-unprepared` when the scan root declares `nuxt` and the app hasn't been prepared; null when neither.
+ * What stops an upload before scanning: `dependencies-missing`, naming the package and the workspace-relative
+ * `package.json` that lists it, when a package that the workspace root's `package.json`, or that of a member owning one of
+ * `files`, lists in `dependencies` or `devDependencies` isn't installed; else `nuxt-unprepared` when the scan root declares
+ * `nuxt` and the app hasn't been prepared; null when neither.
  */
-export function setupProblem(
-  graph: WorkspaceGraph,
-  files: readonly string[],
-  scanRoot: string,
-): "dependencies-missing" | "nuxt-unprepared" | null {
-  if (!declaredDependenciesInstalled(graph, files)) return "dependencies-missing";
-  if (nuxtAppUnprepared(scanRoot)) return "nuxt-unprepared";
+export function setupProblem(graph: WorkspaceGraph, files: readonly string[], scanRoot: string): SetupProblem | null {
+  const missing = missingDependency(graph, files);
+  if (missing !== null) {
+    return { kind: "dependencies-missing", packageName: missing.packageName, declaredIn: posixPath(relative(graph.rootPath, missing.manifest)) };
+  }
+  if (nuxtAppUnprepared(scanRoot)) return { kind: "nuxt-unprepared" };
   return null;
 }
 

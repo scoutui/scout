@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, isAbsolute, join, resolve as pathResolve } from "node:path";
-import { parse as parseJsonc, printParseErrorCode, type ParseError } from "jsonc-parser";
+import { dirname, isAbsolute, join, relative, resolve as pathResolve, sep } from "node:path";
+import { parse as parseJsonc, type ParseError } from "jsonc-parser";
 
 /** Compiled alias record consumed by `createImportResolver`. */
 export type AliasEntry = {
@@ -57,14 +57,17 @@ const REGEX_META = /[.+?^${}()|[\]\\]/g;
  * sets `baseUrlDir`. A referenced project that doesn't exist, such as a
  * framework's generated tsconfig before its codegen has run, contributes
  * nothing.
+ *
+ * Warnings name files relative to `root` when it's given and holds them.
  */
-export function loadTsconfigChain(absPath: string): LoadTsconfigChainResult {
+export function loadTsconfigChain(absPath: string, root?: string): LoadTsconfigChainResult {
   const warnings: string[] = [];
+  const show = (path: string) => shownPath(path, root);
   const entries: AliasEntry[] = [];
   const declared = new Set<string>();
   let baseUrlDir: string | undefined;
   for (const project of solutionProjects(absPath)) {
-    const merged = loadChainInner(project, new Set<string>(), warnings);
+    const merged = loadChainInner(project, undefined, new Set<string>(), warnings, show);
     if (!merged) continue;
     baseUrlDir ??= merged.baseUrlDir;
     for (const [pattern, targets] of Object.entries(merged.paths ?? {})) {
@@ -82,7 +85,7 @@ export function loadTsconfigChain(absPath: string): LoadTsconfigChainResult {
 
 /** The existing projects a solution-style tsconfig references, then the tsconfig itself; or just the tsconfig. */
 function solutionProjects(absPath: string): string[] {
-  const parsed = readAndParse(absPath, []);
+  const parsed = readAndParse(absPath, undefined, [], (path) => path);
   if (parsed?.files?.length !== 0 || parsed.include !== undefined || !parsed.references?.length) return [absPath];
   const references = parsed.references.map((ref) => referencedTsconfig(absPath, ref.path)).filter((path) => existsSync(path));
   return [...references, absPath];
@@ -102,18 +105,28 @@ type MergedPaths = {
   baseUrlDir: string | undefined;
 };
 
+/** `path` relative to `root`, with `/` separators, when `root` holds it; otherwise `path`. */
+function shownPath(path: string, root: string | undefined): string {
+  if (root === undefined) return path;
+  const rel = relative(root, path);
+  return rel === "" || rel.startsWith("..") || isAbsolute(rel) ? path : rel.split(sep).join("/");
+}
+
+/** The merged paths of `absPath` and its `extends` chain. `from` is the tsconfig that extends `absPath`, if any. */
 function loadChainInner(
   absPath: string,
+  from: string | undefined,
   seen: Set<string>,
   warnings: string[],
+  show: (path: string) => string,
 ): MergedPaths | null {
   if (seen.has(absPath)) {
-    warnings.push(`tsconfig extends cycle at ${absPath}; ignoring this hop`);
+    warnings.push(`"extends" loops back to ${show(absPath)}, so path aliases past it aren't followed. Fix "extends" and scan again.`);
     return null;
   }
   seen.add(absPath);
 
-  const parsed = readAndParse(absPath, warnings);
+  const parsed = readAndParse(absPath, from, warnings, show);
   if (!parsed) return null;
 
   // Resolve parents first, then apply this file's overrides on top.
@@ -121,9 +134,9 @@ function loadChainInner(
   if (parsed.extends) {
     const parents = Array.isArray(parsed.extends) ? parsed.extends : [parsed.extends];
     for (const ext of parents) {
-      const parentAbs = resolveExtends(absPath, ext, warnings);
+      const parentAbs = resolveExtends(absPath, ext, warnings, show);
       if (!parentAbs) continue;
-      const parentResult = loadChainInner(parentAbs, seen, warnings);
+      const parentResult = loadChainInner(parentAbs, absPath, seen, warnings, show);
       if (!parentResult) continue;
       inherited = mergeOverride(inherited, parentResult);
     }
@@ -138,12 +151,24 @@ function loadChainInner(
   return mergeOverride(inherited, own);
 }
 
-function readAndParse(absPath: string, warnings: string[]): ParsedTsconfig | null {
+function readAndParse(
+  absPath: string,
+  from: string | undefined,
+  warnings: string[],
+  show: (path: string) => string,
+): ParsedTsconfig | null {
   let raw: string;
   try {
     raw = readFileSync(absPath, "utf8");
   } catch (err) {
-    warnings.push(`tsconfig not readable at ${absPath}: ${(err as Error).message}`);
+    const code = (err as NodeJS.ErrnoException).code;
+    warnings.push(
+      code !== "ENOENT"
+        ? `Couldn't read ${show(absPath)} (${code ?? (err as Error).message}), so its path aliases aren't followed. Check the file and scan again.`
+        : from !== undefined
+          ? `${show(from)} points to ${show(absPath)}, which doesn't exist, so its path aliases aren't followed. Fix the path, or for Nuxt run npx nuxt prepare, and scan again.`
+          : `${show(absPath)} doesn't exist, so its path aliases aren't followed. Check "tsconfigPath" in scout.config.json and scan again.`,
+    );
     return null;
   }
   const errors: ParseError[] = [];
@@ -152,12 +177,11 @@ function readAndParse(absPath: string, warnings: string[]): ParsedTsconfig | nul
     disallowComments: false,
   });
   if (errors.length > 0) {
-    const messages = errors.map((e) => printParseErrorCode(e.error)).join(", ");
-    warnings.push(`tsconfig parse errors in ${absPath}: ${messages}`);
+    warnings.push(`${show(absPath)} has JSON syntax errors, so some of its path aliases may be missing. Fix them and scan again.`);
     if (parsed === undefined) return null;
   }
   if (parsed === null || typeof parsed !== "object") {
-    warnings.push(`tsconfig at ${absPath} did not produce an object`);
+    warnings.push(`${show(absPath)} isn't a JSON object, so its path aliases aren't followed. Fix it and scan again.`);
     return null;
   }
   return parsed as ParsedTsconfig;
@@ -167,6 +191,7 @@ function resolveExtends(
   fromAbs: string,
   spec: string,
   warnings: string[],
+  show: (path: string) => string,
 ): string | null {
   // Relative paths resolve from the importing file's directory. Bare specs
   // (e.g. "@tsconfig/node20/tsconfig.json") go through Node module resolution
@@ -182,7 +207,7 @@ function resolveExtends(
     const req = createRequire(fromAbs);
     return req.resolve(spec);
   } catch (err) {
-    warnings.push(`tsconfig extends "${spec}" from ${fromAbs} did not resolve`);
+    warnings.push(`${show(fromAbs)} extends "${spec}", which isn't installed, so its path aliases aren't followed. Install your dependencies and scan again.`);
     return null;
   }
 }

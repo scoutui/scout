@@ -122,7 +122,7 @@ npx scout scan --dry-run
 When it finishes, we see:
 
 ```
-[scan] using tsconfig: tsconfig.json
+Path aliases: tsconfig.json
 Scanned 3 files in 0.1s: 6 components, 5 occurrences.
 
 Most used:
@@ -135,7 +135,7 @@ Wrote scout-scan.json (not uploaded).
 ```
 
 :::note
-A repo without a `tsconfig.json` prints `[scan] tsconfig: not found (path aliases will not resolve)` instead. The scan still runs; it just can't follow import aliases such as `@/components`.
+A repo without a `tsconfig.json` prints `Path aliases: no tsconfig.json found.` instead, with how to name one that has another name. The scan still runs; it just can't follow import aliases such as `@/components`.
 :::
 
 The summary's first line says the scan read our three files and found six components. Three come from packages: `Button`, `Card` and `LegacyButton`. The other three, `App`, `ProductCard` and `Checkout`, are defined in the repo.

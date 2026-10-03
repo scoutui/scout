@@ -42,9 +42,20 @@ describe("loadConfig", () => {
     expect(cfg.aliases).toBeUndefined();
   });
 
-  it("rejects when file missing", async () => {
+  it("rejects when file missing, saying how to create one or point at another", async () => {
     await expect(loadConfig("/nonexistent/path.json")).rejects.toMatchObject({
       code: "CONFIG_MISSING",
+      message: "Couldn't find /nonexistent/path.json. Run scout init to create one, or pass --config <path>.",
+    });
+  });
+
+  it("rejects a file that isn't JSON, naming where the parser stopped and what to do", async () => {
+    const dir = tmp();
+    const path = join(dir, "scout.config.json");
+    writeFileSync(path, '{ "include": ["src/**"]\n');
+    await expect(loadConfig(path)).rejects.toMatchObject({
+      code: "CONFIG_INVALID",
+      message: expect.stringMatching(new RegExp(`^${realpathSync(path)} isn't valid JSON: .*\\(line 2 column 1\\)\\. Fix it and try again\\.$`)),
     });
   });
 

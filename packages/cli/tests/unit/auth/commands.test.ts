@@ -489,8 +489,10 @@ describe("runAuth dispatcher", () => {
     expect(await runAuth(argv, { env: {}, store: { filePath: file } })).toBe(2);
     expect(errors.join("")).toBe(line);
   });
-  it("requires a host for login", async () => {
+  it("requires a host for login, and says how to give one", async () => {
+    const errors = captureStderr();
     expect(await runAuth(["login"], { env: {}, store: { filePath: file } })).toBe(2);
+    expect(errors.join("")).toBe("Error: Couldn't sign in: no dashboard address is set. Run scout auth login --host <url>, or set SCOUTUI_HOST.\n");
   });
 
   it("refuses to sign in to a plain http host and says why", async () => {

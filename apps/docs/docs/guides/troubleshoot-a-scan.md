@@ -15,8 +15,8 @@ The scan prints one line starting with `Error:` and writes nothing. Match the st
 
 | Message starts with | Fix |
 | --- | --- |
-| `Scout config not found at <path>` | Run the scan from the folder that holds the config, or pass its path with `--config <path>`. If there is no config yet, run `scout init`. |
-| `<path> is not valid JSON:` | Fix the syntax at the line and column the message names. Comments and trailing commas also cause this. |
+| `Couldn't find <path>` | Run the scan from the folder that holds the config, or pass its path with `--config <path>`. If there is no config yet, run `scout init`. |
+| `<path> isn't valid JSON:` | Fix the syntax at the line and column the message names. Comments and trailing commas also cause this. |
 | `<path> has a field Scout doesn't use:` or `<path> has fields Scout doesn't use:` | Remove each field the line names, such as `output`. If it's a misspelling of a field you need, such as `exlude` for `exclude`, correct the name instead. The [config reference](/docs/reference/config#fields) lists every field. |
 | `Invalid config at <path>:` | Fix each problem it lists as `<field>: <problem>`, such as `/include: must be array`. Check each against the [config reference](/docs/reference/config). |
 | `scout-scan.json in <folder> links to a file outside that folder` | Delete the link and scan again. |
@@ -100,13 +100,14 @@ jq -r '.diagnostics[] | select(.code == "late-bound-render" or .code == "unresol
 | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>.` | Check out the tracked branch and scan again. A commit that came into the branch through a merge doesn't count, even though the branch contains it: scan the merge commit instead. |
 | `Error: Couldn't upload the scan: this checkout doesn't have the full history.` | Run `git fetch --unshallow`, then scan again. In CI, see [Fetch full history](/docs/guides/run-in-ci#fetch-full-history). |
 | `Error: Couldn't upload the scan: you have uncommitted changes.` | Commit or stash them. A change to any tracked file counts, and so does a new file the scan would read. Add `--debug` to list the files. |
-| `Error: Couldn't upload the scan: some dependencies aren't installed.` | [Install dependencies](#dependencies-arent-installed), then scan again. |
+| `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed.` | [Install dependencies](#dependencies-arent-installed), then scan again. |
 | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared.` | Run `npx nuxt prepare`, then scan again. |
 | `Error: Couldn't upload the scan: no components were found.` | The scan read no components. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files). |
 | `Error: Couldn't upload the scan: this CLI is newer than the dashboard.` or `… is too old for the dashboard.` | See [If the CLI is newer or older than the dashboard](/docs/guides/upgrade-scout#version-messages). |
 | `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI` | Run the `npx` command the line names, such as `npx @scoutui/cli@<version> scan --rescan`, or upgrade the CLI to that version. |
 | <Link id="repository-from-another-remote" />`Error: Couldn't upload the scan: <repoId> on the dashboard comes from <address>.` | Another repository already uploads under this `repoId`. Scan a clone of the repository the message names, or set a different `repoId` in `scout.config.json`. If the repository was renamed or moved, ask your dashboard administrator to [reset its remote](/docs/guides/deploy-the-dashboard#reset-a-repositorys-remote). |
 | `Error: Couldn't upload the scan: it comes from a CLI this dashboard no longer accepts.` | [Install `@scoutui/cli`](/docs/guides/install), then scan again. |
+| `Error: Couldn't upload the scan: <host> didn't answer like a Scout dashboard.` | The address isn't the dashboard's. Check `host` in `scout.config.json`, `--host` or `SCOUTUI_HOST`, whichever you set. |
 | Any other `Error:` line about the upload | In CI, see [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload). On your own machine, run `scout auth status --host <url>` to check you are signed in, and see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads). Add `--debug` to see the detail behind the line, such as the dashboard's reply. |
 
 Some lines end with `See <url>`: the page that explains that problem.

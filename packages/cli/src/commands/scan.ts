@@ -298,7 +298,7 @@ export async function readWorkspace(
   // scan of a monorepo subfolder resolves against the hoisted node_modules and tsconfig.
   const workspaceRoot = findWorkspaceRoot(cfg.configDir, outputRoot) ?? cfg.configDir;
   if (workspaceRoot !== cfg.configDir) {
-    writer(`[scan] workspace root: ${workspaceRoot}\n`);
+    writer(`Monorepo root: ${posixPath(relative(cfg.configDir, workspaceRoot))}\n`);
   }
 
   // Clear caches from an earlier scan in the same process, in case the filesystem changed.
@@ -379,10 +379,9 @@ export async function scanRepository(input: {
 
 
   if (tsconfigPath) {
-    const rel = relative(cfg.configDir, tsconfigPath);
-    writer(`[scan] using tsconfig: ${rel || tsconfigPath}\n`);
+    writer(`Path aliases: ${posixPath(relative(cfg.configDir, tsconfigPath))}\n`);
   } else {
-    writer("[scan] tsconfig: not found (path aliases will not resolve)\n");
+    writer('Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.\n');
   }
   const isTTY = !!process.stderr.isTTY;
   const { columns } = process.stderr;

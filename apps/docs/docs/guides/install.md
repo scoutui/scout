@@ -21,7 +21,7 @@ npm install --save-dev @scoutui/cli
 The scan needs all of the repo's dependencies installed, not just the CLI. Without them, it can't find the components those packages provide, and `scan` refuses with:
 
 ```
-Error: Couldn't upload the scan: some dependencies aren't installed. Install them and try again.
+Error: Couldn't upload the scan: @acme/ui is listed in package.json but isn't installed. Install your dependencies and try again.
 ```
 
 In a fresh clone or a CI job, run your package manager's install (`npm ci`, `yarn install` or `pnpm install`) before you scan.

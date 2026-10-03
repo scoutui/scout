@@ -52,7 +52,7 @@ Rarely needed. Set these only when imports go through path aliases the scan can'
 
 | Field | Type | Default | Behavior |
 | --- | --- | --- | --- |
-| `tsconfigPath` | non-empty string | none: the scan looks for a tsconfig itself | tsconfig whose `compilerOptions.paths` are used, following `extends`. Absolute, or relative to the config folder. If the file can't be read, the scan prints a `[scan] tsconfig:` warning and carries on without it. |
+| `tsconfigPath` | non-empty string | none: the scan looks for a tsconfig itself | tsconfig whose `compilerOptions.paths` are used, following `extends`. Absolute, or relative to the config folder. If the file can't be read, the scan prints a warning naming it and carries on without it. |
 | `aliases` | object: each key an import pattern, each value an array of non-empty strings | none | Import aliases that aren't in a tsconfig, such as ones only in a bundler config. |
 
 How `aliases` entries match:
@@ -86,9 +86,9 @@ What each path in the config is relative to:
 | --- | --- |
 | `include`, `exclude` | The config folder. |
 | `tsconfigPath` | The config folder. |
-| `aliases` values | The monorepo root when `scan` prints `[scan] workspace root: <dir>`, otherwise the config folder. |
+| `aliases` values | The monorepo root when `scan` prints `Monorepo root: <dir>`, otherwise the config folder. |
 
-`scan` prints `[scan] workspace root:` when the config folder is one of a monorepo's workspace packages. [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo#if-your-aliases-are-only-in-a-bundler-config) shows the same alias written both ways.
+`scan` prints `Monorepo root:` when the config folder is one of a monorepo's workspace packages. [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo#if-your-aliases-are-only-in-a-bundler-config) shows the same alias written both ways.
 
 ## Repo identity
 
@@ -105,12 +105,12 @@ The [repo id](/docs/reference/glossary#repo-id) comes from the first of these th
 
 ## Validation errors
 
-A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, and `<folder>` the config folder.
+A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the absolute path of the config file, apart from the first message, where it's the path you gave (`./scout.config.json` by default). `<folder>` is the config folder.
 
 | Problem | Message |
 | --- | --- |
-| No file at the config path | ``Scout config not found at <path>. Run `scout init` to scaffold one.`` |
-| The file isn't valid JSON | `<path> is not valid JSON: <parser message>` |
+| No file at the config path | `Couldn't find <path>. Run scout init to create one, or pass --config <path>.` |
+| The file isn't valid JSON | `<path> isn't valid JSON: <parser message>. Fix it and try again.` |
 | A top-level `manifests` key | ``<path>: the `manifests` field was removed. Replace with `include` (array of glob patterns for files to scan).`` |
 | A field that isn't in [Fields](#fields), such as a misspelled name | `<path> has a field Scout doesn't use: "<field>". Remove it and try again.` With several, it names every one: `<path> has fields Scout doesn't use: "<field>", "<field>". Remove them and try again.` No other problem is shown until they are gone. |
 | Anything else the schema rejects | `Invalid config at <path>: <problems>` |

@@ -281,6 +281,16 @@ function isNetworkError(err: unknown): boolean {
   return err instanceof TypeError && err.message === "fetch failed";
 }
 
+/** Whether `body` is JSON, as every reply from a Scout dashboard is. */
+function isJson(body: string | undefined): boolean {
+  try {
+    JSON.parse(body ?? "");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function replyDetail(err: UploadError): string {
   return `The dashboard replied: HTTP ${err.code}${err.body ? ` ${err.body}` : ""}`;
 }
@@ -337,6 +347,12 @@ export function describeUploadError(err: unknown, host: string | undefined): { m
     }
     if (err.code === 429 || err.code === 503) {
       return { message: "Couldn't upload the scan: the dashboard is busy. Try again in a few minutes.", detail: replyDetail(err) };
+    }
+    if (err.code < 500 && !isJson(err.body)) {
+      return {
+        message: `Couldn't upload the scan: ${host ?? "the address"} didn't answer like a Scout dashboard. Check the dashboard address and try again.`,
+        detail: replyDetail(err),
+      };
     }
     return { message: DASHBOARD_ERROR, detail: replyDetail(err) };
   }
