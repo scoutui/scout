@@ -40,8 +40,12 @@ export function setupProblem(
   return null;
 }
 
-/** Why an upload must not upload what the scan found, or null when it may: the scan found no uses. */
-export function emptyScanRefusal(stats: ScanStats, paths: { configPath: string }): string | null {
+/**
+ * Why an upload must not upload what the scan found, or null when it may: the scan found no uses. It names
+ * `include`, or `exclude` when the config has no `include`.
+ */
+export function emptyScanRefusal(stats: ScanStats, paths: { configPath: string; include?: readonly string[] }): string | null {
   if (stats.occurrenceCount > 0) return null;
-  return `Couldn't upload the scan: no uses were found. Check "include" in ${paths.configPath} and try again.`;
+  const field = paths.include === undefined ? "exclude" : "include";
+  return `Couldn't upload the scan: no uses were found. Check "${field}" in ${paths.configPath} and try again.`;
 }

@@ -44,10 +44,10 @@ const aliasOnly = () =>
     "src/App.tsx": `import { Button } from "@/components/Button";\nexport function App() { return <Button />; }\n`,
   });
 
-const noComponents = () =>
+const noComponents = (scoutConfig = config(["src/**/*.ts"])) =>
   stage({
     "package.json": JSON.stringify({ name: "no-components", private: true }),
-    "scout.config.json": config(["src/**/*.ts"]),
+    "scout.config.json": scoutConfig,
     "src/format.ts": "export const format = (n: number) => n.toFixed(2);\n",
   });
 
@@ -230,8 +230,11 @@ describe("an upload's refusal", () => {
     });
   });
 
-  it("refuses to upload a scan that found no occurrences, naming include and the config", async () => {
-    const dir = noComponents();
+  it.each([
+    { field: "include", scoutConfig: config(["src/**/*.ts"]) },
+    { field: "exclude", scoutConfig: JSON.stringify({ repoId: "upload-policy", exclude: [] }) },
+  ])("refuses to upload a scan that found no occurrences, naming $field and the config", async ({ field, scoutConfig }) => {
+    const dir = noComponents(scoutConfig);
     const result = await runScan({ cwd: dir, quiet: true, upload: true });
     expect(result.output?.occurrences).toEqual([]);
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
@@ -239,7 +242,7 @@ describe("an upload's refusal", () => {
     expect(result.upload).toBe("failed");
     expect(scanExitCode(result)).toBe(1);
     expect(stderr()).toContain(
-      `Couldn't upload the scan: no uses were found. Check "include" in ${join(dir, "scout.config.json")} and try again.`,
+      `Couldn't upload the scan: no uses were found. Check "${field}" in ${join(dir, "scout.config.json")} and try again.`,
     );
   });
 

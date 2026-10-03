@@ -66,7 +66,8 @@ export async function runCommitScan(args: string[], log: Logger): Promise<number
     log: scanLog,
     startedAt,
   });
-  if (emptyScanRefusal(stats, { configPath: cfg.configPath }) !== null) return finish({ kind: "empty" });
+  const refusal = emptyScanRefusal(stats, { configPath: cfg.configPath, ...(cfg.include !== undefined ? { include: cfg.include } : {}) });
+  if (refusal !== null) return finish({ kind: "empty" });
   await writeFile(join(outDir, COMMIT_SCAN_FILE), JSON.stringify(artifact));
   return finish({ kind: "scanned" });
 }

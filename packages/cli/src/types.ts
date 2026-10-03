@@ -4,7 +4,7 @@ export type ResolvedConfig = {
   repoId?: string;
   host?: string;
   branch?: string;
-  include: string[];
+  include?: string[];
   exclude: string[];
   gitignore: boolean;
   tsconfigPath?: string;

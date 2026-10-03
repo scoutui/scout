@@ -71,12 +71,12 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   const resolved: ResolvedConfig = {
     configPath: abs,
     configDir: dirname(abs),
-    include: parsed.include,
     exclude: parsed.exclude ?? [],
     gitignore: parsed.gitignore ?? true,
   };
   // Optional fields are assigned only when present, for
   // `exactOptionalPropertyTypes` (undefined ≠ absent).
+  if (parsed.include !== undefined) resolved.include = parsed.include;
   if (parsed.repoId !== undefined) resolved.repoId = parsed.repoId;
   if (parsed.host !== undefined) resolved.host = parsed.host;
   if (parsed.branch !== undefined) resolved.branch = parsed.branch;

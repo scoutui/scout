@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { walkFiles } from "../../../src/walker/files.js";
 
 let root: string;
@@ -113,6 +113,29 @@ describe("walkFiles: gitignore / dot / exclude semantics", () => {
         gitignore: true,
       });
       expect(files.some((f) => f.endsWith("b.tsx"))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("walkFiles: built-in leave-out list", () => {
+  it.each([
+    "src/a.test.tsx",
+    "src/a.spec.ts",
+    "src/a.stories.tsx",
+    "src/__tests__/b.tsx",
+    "src/types.d.ts",
+    "node_modules/x/c.tsx",
+  ])("leaves out %s even when include matches it and exclude is empty", async (leftOut) => {
+    const dir = mkdtempSync(join(tmpdir(), "cc-walker-left-out-"));
+    try {
+      for (const file of ["src/a.tsx", leftOut]) {
+        mkdirSync(dirname(join(dir, file)), { recursive: true });
+        writeFileSync(join(dir, file), "");
+      }
+      const files = await walkFiles({ root: dir, include: ["**/*.{ts,tsx}"], exclude: [], gitignore: false });
+      expect(files).toEqual([join(dir, "src/a.tsx")]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
