@@ -500,15 +500,14 @@ export async function scanRepository(input: {
       }
     } else if (parsed.kind === "vue") {
       try {
-        localDefs.push(
-          ...emitVueFile({
-            graphBuilder,
-            graphKey: relPath,
-            definitionPath: outRel,
-            parsed,
-            ...(autoImports !== null ? { resolveAutoImport: autoImports.lookup } : {}),
-          }),
-        );
+        emitVueFile({
+          graphBuilder,
+          graphKey: relPath,
+          definitionPath: outRel,
+          parsed,
+          onDefinitions: (definitions) => localDefs.push(...definitions),
+          ...(autoImports !== null ? { resolveAutoImport: autoImports.lookup } : {}),
+        });
       } catch (err) {
         log.warn(`Couldn't finish reading ${file} (${errorMessage(err)}), so some occurrences in it may be missing.`, errorStack(err));
       }

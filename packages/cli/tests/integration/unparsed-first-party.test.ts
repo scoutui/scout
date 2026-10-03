@@ -87,11 +87,11 @@ describe("integration: a single-package repo importing a file its include exclud
     await rm(dir, { recursive: true, force: true });
   });
 
-  /** Every component row declared in `filePath`, with its render count. */
+  /** Every component row declared in `filePath`, with its render count and definition position. */
   function rowsIn(filePath: string) {
     return components
       .filter((c) => c.identity.kind === "repository-declaration" && c.identity.filePath === filePath)
-      .map((c) => ({ identity: c.identity, renders: c.stats.occurrenceCount }));
+      .map((c) => ({ identity: c.identity, renders: c.stats.occurrenceCount, definition: c.definition }));
   }
 
   it("credits an alias import of the excluded file as a local row pinned to that file", () => {
@@ -106,11 +106,12 @@ describe("integration: a single-package repo importing a file its include exclud
     expect(sheet?.stats.occurrenceCount).toBe(1);
   });
 
-  it("names a Vue component an excluded barrel imports and exports again after its file, as a scan of the barrel does", () => {
+  it("names a Vue component after its file when an excluded barrel imports and exports it again", () => {
     expect(rowsIn("src/skip/Tile.vue")).toEqual([
       {
         identity: { kind: "repository-declaration", repoId: "single-app", filePath: "src/skip/Tile.vue", exportName: "Tile" },
         renders: 1,
+        definition: undefined,
       },
     ]);
   });
@@ -120,6 +121,7 @@ describe("integration: a single-package repo importing a file its include exclud
       {
         identity: { kind: "repository-declaration", repoId: "single-app", filePath: "src/skip/Badge.vue", exportName: "StatusBadge" },
         renders: 1,
+        definition: undefined,
       },
     ]);
   });

@@ -36,7 +36,8 @@ export type BoundedDefinitionResolver = {
   /** The graph's `resolveLocalDefinition` hook: the definition file and
    *  export name an unparsed file's import lands on and the member path left
    *  past it, with where that export, followed down that path, is declared
-   *  there; the package export it leaves first-party code through; or null. */
+   *  there unless the file is a Vue SFC; the package export it leaves
+   *  first-party code through; or null. */
   resolveDefinition: NonNullable<Graph["resolveLocalDefinition"]>;
   /** The registry's `declarationOf` over the files this resolver parsed. */
   declarationOf: (absFile: string, exportName: string) => ReturnType<typeof declarationOf>;
@@ -61,6 +62,7 @@ export function createBoundedDefinitionResolver(opts: {
   // leaf, as the whole-graph walk does.
   const builder = createGraphBuilder({ moduleResolver: opts.moduleResolver, lazyReExportResolution: true });
   const parsed = new Set<string>();
+  const sfcFiles = new Set<string>();
   const shadowGraph = (): Graph => builder.build({ firstParty: opts.firstParty });
 
   const tryParse = (absFile: string): boolean => {
@@ -81,6 +83,7 @@ export function createBoundedDefinitionResolver(opts: {
     try {
       if (file.kind === "vue") {
         emitVueFile({ graphBuilder: builder, graphKey: absFile, definitionPath: absFile, parsed: file });
+        sfcFiles.add(absFile);
       } else {
         const fb = builder.beginFile(absFile);
         emitReact({ file: absFile, source, ast: file.ast, fileBuilder: fb });
@@ -153,7 +156,8 @@ export function createBoundedDefinitionResolver(opts: {
 
   const resolveDefinition: BoundedDefinitionResolver["resolveDefinition"] = (absTarget, imported, path) => {
     const pinned = pin(absTarget, imported, path);
-    if (pinned === null || "specifier" in pinned) return pinned;
+    // An SFC is declared at a placeholder position, so a pin into one carries no definition.
+    if (pinned === null || "specifier" in pinned || sfcFiles.has(pinned.absFile)) return pinned;
     const definition = declarationPositionIn(shadowGraph(), pinned.absFile, pinned.exportName, pinned.path);
     return definition === undefined ? pinned : { ...pinned, definition };
   };
