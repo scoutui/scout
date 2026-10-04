@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   barRowLabel,
   deltaDirection,
-  formatDeltaFrom,
+  formatChange,
   formatDayTick,
   formatPct,
   formatMetric,
+  formatReposAdded,
   formatScanStamp,
 } from "@/lib/dashboard-format";
 
@@ -51,57 +52,37 @@ describe("formatMetric", () => {
   });
 });
 
-describe("formatDeltaFrom", () => {
-  it("phrases a migration Δ as the previous share level", () => {
-    // current 49% with a +14.2pp move ⇒ it was 34.8% at the previous scan.
-    expect(formatDeltaFrom("migration", 0.49, 14.2)).toBe("up from 34.8% previously");
-    expect(formatDeltaFrom("migration", 0.45, -15)).toBe("down from 60% previously");
+describe("formatChange", () => {
+  it.each([
+    [-6, "6 fewer"],
+    [2, "2 more"],
+    [1234, "1,234 more"],
+    [0, "no change"],
+    [null, "—"],
+  ] as const)("reads %s as %s", (delta, text) => {
+    expect(formatChange(delta)).toBe(text);
   });
+});
 
-  it("phrases a retirement Δ as the previous remaining count", () => {
-    expect(formatDeltaFrom("retirement", 821, 121)).toBe("up from 700 previously");
-    expect(formatDeltaFrom("retirement", 700, -1400)).toBe("down from 2,100 previously");
-  });
-
-  it("keeps the unitless ±0 inside deltaDirection's band", () => {
-    expect(formatDeltaFrom("migration", 0.49, 0.04)).toBe("±0 since previous scan");
-    expect(formatDeltaFrom("retirement", 821, 0)).toBe("±0 since previous scan");
-  });
-
-  it("reads an em dash when either endpoint is unknowable", () => {
-    expect(formatDeltaFrom("migration", 0.49, null)).toBe("—");
-    expect(formatDeltaFrom("migration", null, 14.2)).toBe("—");
+describe("formatReposAdded", () => {
+  it.each([
+    [1, "1 repo added"],
+    [3, "3 repos added"],
+    [0, null],
+  ] as const)("reads %s as %s", (count, text) => {
+    expect(formatReposAdded(count)).toBe(text);
   });
 });
 
 describe("deltaDirection", () => {
-  // The sign inverts by row kind.
-  it("reads a falling migration as backward and a rising one as forward", () => {
-    expect(deltaDirection("migration", -15)).toBe("backward");
-    expect(deltaDirection("migration", 15)).toBe("forward");
-  });
-
-  it("reads a rising retirement as backward: up is bad when work should be going away", () => {
-    expect(deltaDirection("retirement", 37)).toBe("backward");
-    expect(deltaDirection("retirement", -37)).toBe("forward");
-  });
-
-  it("flags a single new occurrence of a retired component", () => {
-    expect(deltaDirection("retirement", 1)).toBe("backward");
-  });
-
-  it("never contradicts a rendered ±0, in either direction", () => {
-    // formatDeltaFrom renders "±0" exactly on this band, so no colour may fire inside it.
-    expect(deltaDirection("migration", -0.04)).toBe("none");
-    expect(deltaDirection("migration", 0.04)).toBe("none");
-    expect(deltaDirection("migration", -0.05)).toBe("backward");
-    expect(deltaDirection("migration", 0.05)).toBe("forward");
-    expect(deltaDirection("retirement", 0)).toBe("none");
-  });
-
-  it("is neutral when there is no previous scan to compare against", () => {
-    expect(deltaDirection("migration", null)).toBe("none");
-    expect(deltaDirection("retirement", null)).toBe("none");
+  it.each([
+    [-37, "forward"],
+    [37, "backward"],
+    [1, "backward"],
+    [0, "none"],
+    [null, "none"],
+  ] as const)("reads a change of %s in what is left as %s", (delta, direction) => {
+    expect(deltaDirection(delta)).toBe(direction);
   });
 });
 

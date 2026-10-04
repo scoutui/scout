@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const live = (occurrenceCount: number) =>
   component(packageExport("legacy-ds", "Button"), { stats: { occurrenceCount, fileCount: 1 }, usage: "direct" });
 
+const asOf = "2026-02-01T00:00:00Z";
 const digests: DigestScan[] = [
   {
     meta: { scanId: "s1", committedAt: "2026-01-01T00:00:00Z", arrivedAt: "2026-01-01T00:00:00Z", repo: { id: "r1" } },
@@ -77,10 +78,10 @@ describe("RepoAdoptionPanel governance tracking", () => {
   it("keeps completed migrations in the collapsed ledger instead of dropping them", async () => {
     // A finished migration still shows here, as it does on /charts.
     const governance = [record("g-live", "Button"), record("g-done", "OldThing")];
-    const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" });
+    const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" }, asOf);
     render(<RepoAdoptionPanel tracking={tracking} notice={null} canEdit />);
 
-    expect(screen.getByText("Migrations in this repo · 1 in progress · 1 complete")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 in progress · 1 complete · change since previous scan")).toBeDefined();
     expect(screen.getByText("Show 1 complete")).toBeDefined();
   });
 
@@ -92,9 +93,9 @@ describe("RepoAdoptionPanel governance tracking", () => {
 
   it("renders the failed state above the stored tracking sections", () => {
     const governance = [record("g-live", "Button")];
-    const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" });
+    const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" }, asOf);
     render(<RepoAdoptionPanel tracking={tracking} notice={{ state: "failed", scans: [{ scanId: "s2", repoId: "r1", commit: "0123456789" }], retryable: false }} canEdit />);
     expect(screen.getByText("Numbers may be out of date")).toBeDefined();
-    expect(screen.getByText("Migrations in this repo · 1 in progress")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 in progress · change since previous scan")).toBeDefined();
   });
 });

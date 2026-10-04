@@ -87,11 +87,15 @@ export async function repairScanJobs(pool: Pool, scanIds: string[] | null): Prom
   }
 }
 
-/** Enqueues a results job when the stored chart results are missing or were built by an older version and none is queued; true when a row was written. */
+/**
+ * Enqueues a results job when the stored chart results are missing, were built by an older version or are more than
+ * a day old, and none is queued; true when a row was written.
+ */
 export async function reconcileChartResults(pool: Pool): Promise<boolean> {
   const { rows: [row] } = await pool.query<{ stale: boolean }>(`
     SELECT (NOT EXISTS (SELECT 1 FROM chart_results WHERE key = $1)
-        OR EXISTS (SELECT 1 FROM chart_results WHERE results_version < $2 OR format_version <> $3))
+        OR EXISTS (SELECT 1 FROM chart_results WHERE results_version < $2 OR format_version <> $3
+          OR snapshot_at < now() - interval '1 day'))
       AND NOT EXISTS (SELECT 1 FROM scan_jobs WHERE kind = 'results' AND state = 'queued') AS stale`,
   [chartResultKey.registry, CHART_RESULTS_VERSION, CHART_RESULTS_FORMAT_VERSION]);
   return Boolean(row?.stale) && await enqueueChartResults(pool);

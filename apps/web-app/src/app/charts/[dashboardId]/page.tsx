@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { DashboardMetricToggle } from "@/components/dashboards/dashboard-metric-toggle";
 import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-button";
+import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
 import { isEmptyView } from "@/lib/dashboard-chart-data";
@@ -148,6 +149,11 @@ export default async function DashboardViewPage({
               dashboard.name
             )}
           </h1>
+          {derivedEntry ? (
+            <div className="mt-1">
+              <TrackingReadout entry={derivedEntry} />
+            </div>
+          ) : null}
           {dashboard.description ? (
             <p className="mt-1 max-w-prose text-sm text-muted-foreground">{dashboard.description}</p>
           ) : null}

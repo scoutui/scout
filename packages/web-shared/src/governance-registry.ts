@@ -41,15 +41,16 @@ export type RegistryStats = {
 export function deriveRecordStats(
   records: GovernanceRecord[],
   scans: DigestScan[],
+  asOf: string,
 ): RegistryStats {
   const estate = new Map(
-    deriveGovernanceTracking(records, scans, { kind: "all" }).map((e) => [e.record.id, e]),
+    deriveGovernanceTracking(records, scans, { kind: "all" }, asOf).map((e) => [e.record.id, e]),
   );
 
   const repoIds = [...new Set(scans.map((d) => d.meta.repo.id))];
   const leftIn = new Map<string, string[]>();
   for (const repoId of repoIds) {
-    for (const e of deriveGovernanceTracking(records, scans, { kind: "repo", repoId })) {
+    for (const e of deriveGovernanceTracking(records, scans, { kind: "repo", repoId }, asOf)) {
       if (e.active) leftIn.set(e.record.id, [...(leftIn.get(e.record.id) ?? []), repoId]);
     }
   }

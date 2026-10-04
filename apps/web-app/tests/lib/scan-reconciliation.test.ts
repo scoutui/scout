@@ -209,4 +209,13 @@ describe.skipIf(!databaseUrl)("chart results reconciliation", { timeout: 30_000 
     expect(await reconcileChartResults(pool)).toBe(true);
     expect(await resultsJobCount(pool)).toBe(1);
   });
+
+  it("enqueues one results job when the stored results are more than a day old", async () => {
+    await writeCurrentResults();
+    await pool.query("UPDATE chart_results SET snapshot_at = now() - interval '23 hours'");
+    expect(await reconcileChartResults(pool)).toBe(false);
+    await pool.query("UPDATE chart_results SET snapshot_at = now() - interval '25 hours'");
+    expect(await reconcileChartResults(pool)).toBe(true);
+    expect(await resultsJobCount(pool)).toBe(1);
+  });
 });

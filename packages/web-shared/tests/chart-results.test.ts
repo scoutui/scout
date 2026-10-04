@@ -26,7 +26,8 @@ const repoDashboard = dashboard("repo-bars", { scope: { kind: "repo", repoId: "r
 const missingRepoDashboard = dashboard("gone-repo", { scope: { kind: "repo", repoId: "repo-gone" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "share" });
 const dashboards = [estateDashboard, repoDashboard, missingRepoDashboard];
 
-const input = { digests, tags, governance, dashboards };
+const asOf = "2026-06-03T00:00:00Z";
+const input = { digests, tags, governance, dashboards, asOf };
 
 const DAY1 = "2026-06-01T00:00:00Z";
 const DAY2 = "2026-06-02T00:00:00Z";
@@ -35,22 +36,22 @@ const headline = (tracking: GovernanceTracking[] | undefined) =>
 
 describe("deriveChartResults", () => {
   it("covers migrations, retirements and a never-matched record in the fixture", () => {
-    const tracking = deriveGovernanceTracking(governance, digests, { kind: "all" });
+    const tracking = deriveGovernanceTracking(governance, digests, { kind: "all" }, asOf);
     expect(new Set(tracking.map((t) => t.kind))).toEqual(new Set(["migration", "retirement"]));
-    expect(deriveRecordStats(governance, digests).stats.absent?.status).toBe("unseen");
+    expect(deriveRecordStats(governance, digests, asOf).stats.absent?.status).toBe("unseen");
     expect(repoIds).toEqual(expect.arrayContaining(["repo-a", "repo-b", "repo-empty"]));
   });
 
   it("tracks each record across the estate and per repo", () => {
     const results = deriveChartResults(input);
     expect(results.tracking).toMatchObject([
-      { id: "retirement:package", remaining: 6, progress: null, delta: 3, series: [{ role: "deprecated", points: [{ t: DAY1, value: 3 }, { t: DAY2, value: 6 }] }] },
+      { id: "retirement:package", remaining: 6, progress: null, delta: 0, series: [{ role: "deprecated", points: [{ t: DAY1, value: 3 }, { t: DAY2, value: 6 }] }] },
       {
         id: "migration:exact", remaining: 3, progress: 0, delta: 0,
         series: [{ role: "deprecated", points: [{ t: DAY1, value: 2 }, { t: DAY2, value: 3 }] }, { role: "successor", points: [{ t: DAY1, value: 0 }, { t: DAY2, value: 0 }] }],
       },
       {
-        id: "migration:field", remaining: 2, progress: 0.6, delta: null,
+        id: "migration:field", remaining: 2, progress: 0.6, delta: 1,
         series: [{ role: "deprecated", points: [{ t: DAY2, value: 2 }] }, { role: "successor", points: [{ t: DAY2, value: 3 }] }],
       },
     ]);
@@ -61,7 +62,7 @@ describe("deriveChartResults", () => {
     expect(headline(results.repoTracking["repo-a"])).toEqual([
       { id: "retirement:package", remaining: 3, progress: null, delta: 0 },
       { id: "migration:exact", remaining: 2, progress: 0, delta: 0 },
-      { id: "migration:field", remaining: 1, progress: expect.closeTo(2 / 3), delta: null },
+      { id: "migration:field", remaining: 1, progress: expect.closeTo(2 / 3), delta: 1 },
     ]);
     expect(headline(results.repoTracking["repo-b"])).toEqual([
       { id: "retirement:package", remaining: 3, progress: null, delta: null },

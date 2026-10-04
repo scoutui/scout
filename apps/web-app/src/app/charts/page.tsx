@@ -53,8 +53,6 @@ export default async function DashboardsPage() {
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Charts</h1>
-          {/* The tracking rows below read "since previous scan", so the page says when
-              that was. */}
           <p className="mt-1 text-sm tabular-nums text-muted-foreground">
             {all.length.toLocaleString()} {all.length === 1 ? "chart" : "charts"}
             {latestScan ? ` · latest scan ${relativeTime(latestScan)}` : ""}

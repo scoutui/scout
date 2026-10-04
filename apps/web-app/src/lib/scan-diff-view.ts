@@ -35,13 +35,13 @@ export function deltaOf(mark: DiffMark | undefined, occurrenceCount: number): nu
 }
 
 /** Ink for a signed occurrence Δ. A deprecated component (retired or superseded)
- *  takes the retirement direction from `deltaDirection`: more occurrences is red,
+ *  takes its direction from `deltaDirection`: more occurrences is red,
  *  and fewer stays plain ink, since green beside the orange deprecated marker reads
  *  as a flag. Anything else stays neutral ink, because nothing declares whether up
  *  is good. */
 export function deltaTone(delta: number, deprecated: boolean): string {
   if (!deprecated) return "text-foreground";
-  switch (deltaDirection("retirement", delta)) {
+  switch (deltaDirection(delta)) {
     case "backward":
       return "text-status-err";
     case "forward":

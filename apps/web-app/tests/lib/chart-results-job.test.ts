@@ -54,9 +54,12 @@ async function storedRows(pool: Pool) {
 }
 
 async function expectedRows(pool: Pool) {
+  const { rows: [stored] } = await pool.query<{ snapshot_at: string }>("SELECT snapshot_at::text FROM chart_results LIMIT 1");
+  if (!stored) throw new Error("Expected stored chart results");
   const inputs = await new PostgresDriver(pool).withReadSnapshot(async driver => ({
     digests: await driver.listScanDigests(), tags: await driver.listTags(),
     governance: await driver.listGovernance(), dashboards: await driver.listDashboards(),
+    asOf: new Date(stored.snapshot_at).toISOString(),
   }));
   return chartResultRows(deriveChartResults(inputs))
     .map(row => ({ key: row.key, results_version: CHART_RESULTS_VERSION, format_version: CHART_RESULTS_FORMAT_VERSION, payload: JSON.parse(JSON.stringify(row.payload)) }))

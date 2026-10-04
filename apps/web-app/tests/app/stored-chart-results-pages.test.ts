@@ -226,6 +226,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(stored).toBeDefined();
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
+      expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
       reader = { ...editor, role: "viewer" };

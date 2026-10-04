@@ -85,57 +85,21 @@ export function formatAxisCount(v: number): string {
   return String(v);
 }
 
-/**
- * The change since the previous scan, phrased as the previous level: "up from
- * 34.8% last scan" or "down from 900 last scan". The previous level needs no unit
- * of its own, where a signed share difference would need percentage points
- * ("+14.2%" would read as a relative change). The up or down word follows the
- * value, so colour is never the only signal; whether the move is good is
- * `deltaDirection`'s call, so a retirement going well reads "down from 900" in
- * green.
- *
- * A move under 0.05pp reads "±0 since previous scan" (the same band as
- * `deltaDirection`, so the text can't contradict the colour). With fewer than
- * two scans it reads a bare em dash.
- *
- * `current` is the row's headline value: a migration's progress fraction (0..1,
- * delta in percentage points) or a retirement's remaining count (delta in
- * occurrences).
- */
-export function formatDeltaFrom(
-  kind: "migration" | "retirement",
-  current: number | null,
-  delta: number | null,
-): string {
-  if (delta === null || current === null) return "—";
-  if (deltaDirection(kind, delta) === "none") return "±0 since previous scan";
-  const word = delta > 0 ? "up" : "down";
-  const previous = kind === "migration" ? formatPct(current - delta / 100) : (current - delta).toLocaleString();
-  return `${word} from ${previous} previously`;
+/** A change in what is left: "6 fewer", "2 more", "no change", or an em dash with no reading. */
+export function formatChange(delta: number | null): string {
+  if (delta === null) return "—";
+  if (delta === 0) return "no change";
+  return `${Math.abs(delta).toLocaleString()} ${delta < 0 ? "fewer" : "more"}`;
 }
 
-/**
- * Which way a governance-tracking change moved, by the record's declared intent.
- * The sign means opposite things by row kind: a migration's delta is progress in
- * percentage points (up is good), a retirement's is remaining occurrences (up is
- * bad).
- *
- * The migration band matches `formatDeltaFrom`'s ±0 in both directions, so a
- * colour can't contradict a rendered "±0". Counts have no band: one new call
- * site of a retired component is worth flagging.
- */
-export function deltaDirection(
-  kind: "migration" | "retirement",
-  delta: number | null,
-): "forward" | "backward" | "none" {
-  if (delta === null) return "none";
-  if (kind === "migration") {
-    if (delta >= 0.05) return "forward";
-    if (delta <= -0.05) return "backward";
-    return "none";
-  }
-  if (delta < 0) return "forward";
-  if (delta > 0) return "backward";
-  return "none";
+/** "1 repo added" or "3 repos added"; null when none were. */
+export function formatReposAdded(count: number): string | null {
+  if (count === 0) return null;
+  return `${count.toLocaleString()} ${count === 1 ? "repo" : "repos"} added`;
 }
 
+/** Which way a change in what is left moved: fewer is forward, more is backward. */
+export function deltaDirection(delta: number | null): "forward" | "backward" | "none" {
+  if (delta === null || delta === 0) return "none";
+  return delta < 0 ? "forward" : "backward";
+}

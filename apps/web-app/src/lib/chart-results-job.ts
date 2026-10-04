@@ -34,6 +34,7 @@ async function readSnapshot(pool: Pool): Promise<Snapshot | null> {
       const inputs = {
         digests: await driver.listScanDigests(), tags: await driver.listTags(),
         governance: await driver.listGovernance(), dashboards: await driver.listDashboards(),
+        asOf: new Date(clock.snapshot_at).toISOString(),
       };
       return await skippedNotices(pool, driver.skippedScans()) ? { snapshotAt: clock.snapshot_at, inputs } : null;
     }, "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
