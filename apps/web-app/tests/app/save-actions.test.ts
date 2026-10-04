@@ -39,6 +39,7 @@ const dashboard = {
   name: "Local usage",
   description: null,
   config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" },
+  visibility: "everyone",
 } as const;
 
 beforeEach(() => {
@@ -57,7 +58,7 @@ describe("save actions", () => {
     expect(storage.updateGovernance).toHaveBeenCalledWith("gov-2", { id: "gov-2", ...governance }, "user-1");
 
     await saveDashboard(send({ ...dashboard, extra: "dropped" }));
-    expect(storage.upsertDashboard).toHaveBeenCalledWith({ ...dashboard, visibility: "private", createdByUserId: "user-1" });
+    expect(storage.upsertDashboard).toHaveBeenCalledWith({ ...dashboard, createdByUserId: "user-1" });
   });
 
   it("rejects a malformed tag without storing it", async () => {

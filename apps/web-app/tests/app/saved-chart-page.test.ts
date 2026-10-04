@@ -196,7 +196,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     });
   });
 
-  it("names the chart's creator and marks a private chart, and shows anyone else only that it's private", async () => {
+  it("names the chart's creator and says whether it's private or shared, and shows anyone else only that a private chart is private", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const config: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" };
@@ -206,7 +206,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
 
       const own = await open();
       expect(textOf(own)).toContain("Created by Ana Lopez");
-      expect(textOf(own)).toContain("Private");
+      expect(propsOf(own, "ChartVisibilityLabel")).toEqual({ visibility: "private", mine: true });
       expect(propsOf(own, "LinkedDashboardChart")).toBeDefined();
       expect(await generateMetadata({ params: Promise.resolve({ dashboardId: saved.id }) })).toEqual({ title: "Secret rollout" });
 
@@ -219,12 +219,14 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       expect(await generateMetadata({ params: Promise.resolve({ dashboardId: saved.id }) })).toEqual({ title: "Private chart" });
 
       reader = { ...editor, userId: "someone-else", role: "admin" };
-      expect(propsOf(await open(), "LinkedDashboardChart")).toBeDefined();
+      const admins = await open();
+      expect(propsOf(admins, "LinkedDashboardChart")).toBeDefined();
+      expect(propsOf(admins, "ChartVisibilityLabel")).toEqual({ visibility: "private", mine: false });
 
       reader = editor;
-      const everyone = textOf(await renderSaved(config, { createdByUserId: null }));
-      expect(everyone).not.toContain("Created by");
-      expect(everyone).not.toContain("Private");
+      const everyone = await renderSaved(config, { createdByUserId: null });
+      expect(textOf(everyone)).not.toContain("Created by");
+      expect(propsOf(everyone, "ChartVisibilityLabel")).toEqual({ visibility: "everyone", mine: false });
     });
   });
 
@@ -259,7 +261,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const copy = (from: string) => newPage({ searchParams: Promise.resolve({ from }) });
 
       expect(propsOf(await copy(shared.id), "DashboardBuilder")).toMatchObject({
-        saved: { id: shared.id, name: "Copy of Local usage", description: "Kept", config },
+        saved: { id: shared.id, name: "Copy of Local usage", description: "Kept", config, visibility: "private" },
         duplicate: true,
       });
       expect(propsOf(await copy(hidden.id), "DashboardBuilder")).toBeUndefined();
@@ -281,11 +283,11 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
 
       session = { user: { id: "maker" } };
       reader = { ...editor, userId: "maker" };
-      await expect(saveDashboard({ name: "Button rollout", description: "Kept", config: first })).rejects.toThrow("NEXT_REDIRECT");
+      await expect(saveDashboard({ name: "Button rollout", description: "Kept", config: first, visibility: "private" })).rejects.toThrow("NEXT_REDIRECT");
       const [created] = await driver.listDashboards();
       if (!created) throw new Error("Expected the saved chart");
       const edit = () => editPage({ params: Promise.resolve({ dashboardId: created.id }) });
-      expect(propsOf(await edit(), "DashboardBuilder")).toMatchObject({ saved: { id: created.id, name: "Button rollout", description: "Kept", config: first } });
+      expect(propsOf(await edit(), "DashboardBuilder")).toMatchObject({ saved: { id: created.id, name: "Button rollout", description: "Kept", config: first, visibility: "private" } });
 
       reader = editor;
       expect(propsOf(await edit(), "EmptyState")).toEqual({ titleAs: "h1", title: "This chart is private.", description: "Ask Maker to share it with everyone." });
@@ -298,7 +300,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
 
       session = { user: { id: "admin" } };
       reader = { ...editor, userId: "admin", role: "admin" };
-      await expect(saveDashboard({ id: created.id, name: "Button rollout again", description: "Kept", config: edited })).rejects.toThrow("NEXT_REDIRECT");
+      await expect(saveDashboard({ id: created.id, name: "Button rollout again", description: "Kept", config: edited, visibility: "everyone" })).rejects.toThrow("NEXT_REDIRECT");
       expect(await driver.listDashboards()).toHaveLength(1);
       expect(await driver.getDashboard(created.id)).toMatchObject({ name: "Button rollout again", description: "Kept", config: edited, createdByUserId: "maker" });
     });

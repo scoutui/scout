@@ -129,7 +129,7 @@ export default async function DashboardsPage() {
       ) : (
         /* Headed, because these rows look like the tracking rows above. */
         <>
-          {chartSection("Saved charts", shared, false)}
+          {chartSection("Shared charts", shared, false)}
           {chartSection("Private", mine, false)}
           {chartSection("Other people's charts", others, true)}
         </>

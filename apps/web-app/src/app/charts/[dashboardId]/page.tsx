@@ -14,6 +14,7 @@ import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-bad
 import { DashboardMetricToggle } from "@/components/dashboards/dashboard-metric-toggle";
 import { ChartExportProvider } from "@/components/dashboards/chart-export-context";
 import { ChartMenu } from "@/components/dashboards/chart-menu";
+import { ChartVisibilityLabel } from "@/components/dashboards/chart-visibility";
 import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-button";
 import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
@@ -181,8 +182,13 @@ export default async function DashboardViewPage({
             <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
               <span>{CHART_KIND_LABEL[config.chartType]}</span>
               <DashboardScopeBadge scope={config.scope} missing={missingRepo?.missing} />
-              {!derived && dashboard.visibility === "private" ? <span>Private</span> : null}
               {dashboard.createdBy ? <span>Created by {dashboard.createdBy}</span> : null}
+              {derived ? null : (
+                <ChartVisibilityLabel
+                  visibility={dashboard.visibility}
+                  mine={identity?.kind === "person" && identity.userId === dashboard.createdByUserId}
+                />
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

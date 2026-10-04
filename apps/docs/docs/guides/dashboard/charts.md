@@ -15,13 +15,13 @@ Select **charts** in the top navigation. The page has these parts:
 
 - **Migrations**: one row per migration, such as `LegacyButton · @acme/ui-legacy` to `Button · @acme/ui`, reading **N% migrated** and **N left**, the [uses](/docs/reference/glossary#use) of the deprecated side still in the code. Records that name the same replacement share one row.
 - **Retirements**: one row per retirement, reading **N left**, the uses still in the code.
-- **Saved charts**: one row per chart [shared with everyone](#share-a-chart), with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
+- **Shared charts**: one row per chart [shared with everyone](#share-a-chart), with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
 - **Private**: your own charts that aren't shared.
 - **Other people's charts**: for Admins only, everyone else's private charts and who created them.
 
 Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Rows in progress come first, with the most uses left at the top. Complete ones sit behind **Show N complete**.
 
-![The charts list with eight migrations and four retirements in progress, and four saved charts with their previews](/img/dashboard/charts-list.png)
+![The charts list with three migrations and three retirements in progress, and four shared charts with their previews](/img/dashboard/charts-list.png)
 
 Select any row to open its chart.
 
@@ -46,9 +46,10 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 4. Under **Chart type**, pick **Trend**.
 5. Under **Metric**, keep **Uses** to chart uses, or pick **% of uses** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **% of uses** when you pick it.
 6. In the **Series** panel, on the **Tags** tab, press `acme-ui`, then `acme-ui-legacy`. Each gets a `✓` and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
-7. Press **Save chart**. The chart opens on its own page and appears under **Private** on the charts page.
+7. Under **Visibility**, keep **Private** so only you and Admins can open the chart, or pick **Shared** so everyone signed in can.
+8. Press **Save chart**. The chart opens on its own page and appears under **Private** or **Shared charts** on the charts page.
 
-![The new chart builder with All repos, Trend, the vben and payload-ui tags as series, and the live preview](/img/dashboard/chart-builder.png)
+![The new chart builder with All repos, Trend, the vben and payload-ui tags as series, Private picked under Visibility, and the live preview](/img/dashboard/chart-builder.png)
 
 If the preview reads **Trends appear once these repos have been scanned more than once.**, the repos in scope have only been scanned once. Save the chart anyway: it fills in as new scans arrive.
 
@@ -70,15 +71,15 @@ A series has this option only when some, but not all, of its components are depr
 
 ## Share a chart
 
-A new chart is private: only you and Admins can open it. To share it, open it, press **⋯**, then **Share with everyone**. It moves to **Saved charts**, and anyone signed in to the dashboard can open it. **Make private** in the same menu takes it back.
+A private chart opens only for you and Admins. A shared one opens for anyone signed in to the dashboard. A new chart is private unless you pick **Shared** under **Visibility** in the chart builder. To share a saved chart, open it, press **⋯**, then **Share with everyone**. It moves to **Shared charts**. **Make private** in the same menu takes it back. You can also press **Edit**, pick **Private** or **Shared** under **Visibility**, and save.
 
 To send someone a chart, send them its page's address. Someone who can't open a private chart sees **This chart is private.** and who to ask instead.
 
-A chart's page shows who created it under its name.
+A chart's page shows who created it and whether it's **Private** or **Shared** under its name.
 
 ## Duplicate a chart
 
-To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new private chart of your own.
+To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new chart of your own. A copy starts as **Private**, even when the original is shared.
 
 ## Look at a shorter period or one line
 
