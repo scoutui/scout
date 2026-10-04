@@ -108,8 +108,11 @@ describe("CompositionTab", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /^d0, / })).toHaveFocus());
   });
 
-  it("moves focus to the +N more a cleared route's first step folds into", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:q0");
+  it.each([
+    ["the +N more", "pin=up:q0", () => screen.getByRole("button", { name: "Show 2 more components that render F" })],
+    ["the open list's filter", "list=up:F&pin=up:q0", () => screen.getByRole("textbox", { name: "Filter the 2 components" })],
+  ])("moves focus to %s a cleared route's first step folds into", async (_, query, target) => {
+    window.history.replaceState(null, "", `http://localhost:3000/x?${query}`);
     renderTab(
       graph(
         [node("F"), node("q0"), ...Array.from({ length: 12 }, (_, i) => node(`d${i}`))],
@@ -120,7 +123,7 @@ describe("CompositionTab", () => {
     q0.focus();
     fireEvent.keyDown(q0, { key: "Escape" });
     expect(param("pin")).toBeNull();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Show 2 more components that render F" })).toHaveFocus());
+    await waitFor(() => expect(target()).toHaveFocus());
   });
 
   it("keeps focus on a box that stays when Escape clears the route", async () => {

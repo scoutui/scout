@@ -529,15 +529,18 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
   const focusNext = useCallback((key: string) => {
     pendingFocus.current = { key, ifLost: false };
   }, []);
-  // The route's first step, or the "+N more" it folds into once nothing is selected.
+  // The route's first step, or the "+N more" or open list it folds into once nothing is selected.
   const clearPin = useCallback(() => {
     const now = sceneRef.current;
     const first = now.items.find((i): i is ChipItem => i.kind === "chip" && i.steps === 1 && now.pathIds.has(i.id));
     if (first) {
       const next = buildScene(model, focusId, routes, { ...state, pin: null });
+      const group = next.items.find(
+        (i): i is GroupItem => i.kind !== "chip" && i.kind !== "summary" && i.members.some((m) => m.node.id === first.node.id),
+      );
       const key = next.items.some((i) => i.id === first.id)
         ? `chip:${first.id}`
-        : next.items.find((i) => i.kind === "more" && i.members.some((m) => m.node.id === first.node.id))?.id;
+        : group && (group.kind === "list" ? `filter:${group.id}` : group.id);
       if (key) pendingFocus.current = { key, ifLost: true };
     }
     actions.setPin(null);
