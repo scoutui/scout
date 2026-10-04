@@ -64,7 +64,7 @@ describe("ComponentDetailHeader", () => {
   });
 
   it("shows a dash for a component with no package, as the components table does", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "tag" })} />);
+    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "tag" })} canEdit />);
     expect(screen.getByText("—")).toHaveAttribute("title", "no import links this component to a package");
     expect(screen.queryByText(/no package/)).toBeNull();
   });
