@@ -9,7 +9,7 @@ describe.skipIf(!databaseUrl)("chart visibility migration", { timeout: 30_000 },
       await pool.query("ALTER TABLE dashboards DROP CONSTRAINT dashboards_visibility, DROP COLUMN visibility");
       await pool.query(`INSERT INTO dashboards (id, name, config) VALUES ('kits', 'Kits', '{}'), ('rollout', 'Rollout', '{}')`);
 
-      await pool.query(readFileSync(new URL("../../drizzle/migrations/0008_chart_visibility.sql", import.meta.url), "utf8"));
+      await pool.query(readFileSync(new URL("../../drizzle/migrations/0010_chart_visibility.sql", import.meta.url), "utf8"));
 
       expect((await pool.query("SELECT id, visibility FROM dashboards ORDER BY id")).rows).toEqual([
         { id: "kits", visibility: "everyone" },
