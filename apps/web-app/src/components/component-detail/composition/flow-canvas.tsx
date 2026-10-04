@@ -201,7 +201,7 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
 });
 
 const ListNode = memo(function ListNode({ id, data }: NodeProps) {
-  const { item, parentName, dim } = data as unknown as GroupData;
+  const { item, parentName } = data as unknown as GroupData;
   const { toggleList, bring, setPin, focusNext } = useFlow();
   const [query, setQuery] = useState("");
   const tails = useMemo(() => distinctTails(item.members.map((m) => pathValueOf(m.node))), [item.members]);
@@ -228,10 +228,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
         e.stopPropagation();
         close();
       }}
-      className={cn(
-        "relative flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-opacity duration-150",
-        dim && "opacity-35",
-      )}
+      className="relative flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm"
       style={{ width: item.w, height: item.h }}
     >
       <Handle type="target" position={Position.Left} className="!pointer-events-none !opacity-0" />

@@ -126,9 +126,9 @@ describe("CompositionTab", () => {
     expect(param("pin")).toBe("down:Z");
   });
 
-  it("lights a hovered box's route without dimming the rest, and dims what's off a selected route but not what it opened", async () => {
+  it("lights a hovered box's route without dimming the rest, and dims what's off a selected route but not what it opened or an open list", async () => {
     const { container } = renderTab();
-    const shell = (id: string) => container.querySelector(`.react-flow__node[data-id="${id}"] > div`) as HTMLElement;
+    const shell = (id: string) => container.querySelector(`.react-flow__node[data-id="${id}"] > *`) as HTMLElement;
     await box("d0");
     fireEvent.mouseEnter(container.querySelector('.react-flow__node[data-id="up:d0"]') as Element);
     await waitFor(() => expect(shell("up:d0")).toHaveClass("border-foreground/60"));
@@ -137,6 +137,9 @@ describe("CompositionTab", () => {
     await waitFor(() => expect(shell("up:d1")).toHaveClass("opacity-35"));
     expect(shell("up:d0")).not.toHaveClass("opacity-35");
     expect(shell("up:p0")).not.toHaveClass("opacity-35");
+    expect(shell("more:up:F")).toHaveClass("opacity-35");
+    fireEvent.click(screen.getByRole("button", { name: "Show the other 2 components that render F" }));
+    expect(await screen.findByRole("group", { name: "2 more render F" })).not.toHaveClass("opacity-35");
   });
 
   it("Reset closes everything opened and clears the selection", async () => {

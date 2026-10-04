@@ -105,6 +105,20 @@ describe("buildScene", () => {
     expect(scene(m, { pin: { dir: "up", id: "P" } }).headings.map((h) => h.text)).toEqual(["Directly · 4", "2 steps away · 4"]);
   });
 
+  // F is rendered directly by d0 and d1, and d0 by p0 and p1 (rendered by,
+  // for "down"). Selecting p0 leaves a "+1 more" in each column, both open.
+  it.each(["up", "down"] as const)("%s: overlaps nothing with lists open in neighbouring columns", (dir) => {
+    const pairs: [string, string][] = [["d0", "F"], ["d1", "F"], ["p0", "d0"], ["p1", "d0"]];
+    const m = model(graph(["F", "d0", "d1", "p0", "p1"].map((id) => node(id)), pairs.map(([a, b]) => (dir === "up" ? [a, b] : [b, a]))));
+    const s = scene(m, { pin: { dir, id: "p0" }, lists: new Set([`${dir}:F`, `${dir}:d0`]) });
+    expect(groups(s).map((g) => g.kind)).toEqual(["list", "list"]);
+    s.items.forEach((a, i) => {
+      for (const b of s.items.slice(i + 1)) {
+        const apart = a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+        expect(apart, `${a.id} and ${b.id}`).toBe(true);
+      }
+    });
+  });
 });
 
 describe("a selected route", () => {

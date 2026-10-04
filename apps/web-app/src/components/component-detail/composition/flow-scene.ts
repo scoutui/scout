@@ -318,8 +318,10 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
       const column = side.columns[col] ?? [];
       if (column.length === 0) break;
       // Boxes and "+N more" take the column's width; an open list keeps its
-      // own and lines up with the column's inner edge.
+      // own and lines up with the column's inner edge. The next column starts
+      // past the widest of them.
       const w = Math.max(...column.filter((c) => c.kind !== "list").map((c) => c.w), MIN_W);
+      const span = Math.max(...column.map((c) => c.w), w);
       const left = dir === "up" ? edgeX - w : edgeX;
       for (const item of column) {
         if (item.kind !== "list") item.w = w;
@@ -355,7 +357,7 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
         x: dir === "up" ? left + w : left,
         y: top - HEADING_H,
       });
-      edgeX = dir === "up" ? left - GAP_X : left + w + GAP_X;
+      edgeX = dir === "up" ? edgeX - span - GAP_X : edgeX + span + GAP_X;
     }
   }
   if (pathIds.size > 0) pathIds.add(FOCUS);
