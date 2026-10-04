@@ -84,6 +84,14 @@ describe("init command", () => {
     expect(written()).toMatchObject({ host: "https://scout.example.com", branch: "release" });
   });
 
+  it("saves --exclude as given", async () => {
+    repo(tmp, {});
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runInit({ cwd: tmp, exclude: ["apps/playground"] });
+    vi.restoreAllMocks();
+    expect(written().exclude).toEqual(["apps/playground"]);
+  });
+
   it("saves --branch when it's the remote's default", async () => {
     repo(tmp, { origin: "git@github.com:acme/checkout.git" });
     await runInit({ cwd: tmp, branch: "main" });

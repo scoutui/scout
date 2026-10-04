@@ -1,11 +1,14 @@
-import { writeFile, stat } from "node:fs/promises";
-import { basename, isAbsolute, relative, resolve } from "node:path";
+import { readFile, writeFile, stat } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
-import { assertNotCancelled, type PromptAdapter } from "../prompts/adapter.js";
+import { assertNotCancelled, type PromptAdapter, type SelectOption } from "../prompts/adapter.js";
 import { CliError } from "../cli/parse.js";
 import { InvalidHostError, isValidUrl, normalizeHost } from "../auth/store.js";
 import { probeRepository, readGitBranch, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
 import { Logger } from "../util/log.js";
+import { DEFAULT_INCLUDE, walkFiles } from "../walker/files.js";
+import { detectWorkspacePackages, type DetectWorkspacePackagesInput } from "../workspace/build-graph.js";
 
 export type InitOptions = {
   cwd: string;
@@ -13,12 +16,13 @@ export type InitOptions = {
   repoId?: string;
   host?: string;
   branch?: string;
+  exclude?: string[];
   interactive?: boolean;
   prompts?: PromptAdapter;
   log?: Logger;
 };
 
-type Answers = { repoId: string; host: string | undefined; branch: string | null };
+type Answers = { repoId: string; host: string | undefined; branch: string | null; exclude: string[] };
 
 /** What git suggests for the config: the repository name, the remote's default branch and the checked-out one. */
 type GitDefaults = { repoId: string; defaultBranch: string | null; checkedOut: string | null };
@@ -30,7 +34,7 @@ function buildConfig(answers: Answers) {
     repoId: answers.repoId,
     ...(answers.host !== undefined ? { host: answers.host } : {}),
     ...(answers.branch !== null ? { branch: answers.branch } : {}),
-    exclude: [],
+    exclude: answers.exclude,
   };
 }
 
@@ -49,7 +53,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const done = `Wrote ${relative(cwd, out)}. Run scout scan --dry-run to try it, then scout scan to upload.`;
 
   if (opts.interactive && opts.prompts) {
-    const answers = await runWizard(opts.prompts, defaults, { ...opts, host });
+    const answers = await runWizard(opts.prompts, defaults, { ...opts, host }, dirname(out));
     await writeConfig(out, buildConfig(answers));
     opts.prompts.outro(done);
     return;
@@ -59,6 +63,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     repoId: opts.repoId ?? defaults.repoId,
     host,
     branch: opts.branch ?? defaults.defaultBranch ?? defaults.checkedOut,
+    exclude: opts.exclude ?? [],
   };
   await writeConfig(out, buildConfig(answers));
   log.success(done);
@@ -105,7 +110,8 @@ function savedHost(raw: string): string {
 async function runWizard(
   prompts: PromptAdapter,
   defaults: GitDefaults,
-  given: { host: string | undefined; repoId?: string; branch?: string },
+  given: { host: string | undefined; repoId?: string; branch?: string; exclude?: string[] },
+  configDir: string,
 ): Promise<Answers> {
   let host = given.host;
   if (host === undefined) {
@@ -135,7 +141,53 @@ async function runWizard(
     }),
     prompts,
   ).trim();
-  return { repoId, host, branch };
+  const exclude = given.exclude ?? (await askLeaveOut(prompts, configDir));
+  return { repoId, host, branch, exclude };
+}
+
+/** Asks which of `pickerOptions` to leave out of the scan, or asks nothing when `configDir` has no workspace packages. */
+async function askLeaveOut(prompts: PromptAdapter, configDir: string): Promise<string[]> {
+  const { packages, folders } = await pickerOptions(configDir);
+  if (packages.length === 0) return [];
+  return assertNotCancelled(
+    await prompts.multiselect({
+      message: folders.length > 0 ? "Leave any packages or folders out of the scan?" : "Leave any packages out of the scan?",
+      options: [...packages, ...folders],
+      required: false,
+      maxItems: 10,
+    }),
+    prompts,
+  );
+}
+
+/**
+ * Each workspace package below `configDir`, then each top-level folder that holds no package and holds a file the scan
+ * reads, each group sorted by folder. An option's value is its folder relative to `configDir`.
+ */
+async function pickerOptions(configDir: string): Promise<{ packages: SelectOption<string>[]; folders: SelectOption<string>[] }> {
+  const packages = detectWorkspacePackages(configDir, await readPackageJson(configDir))
+    .map((pkg) => ({ value: posixPath(relative(configDir, pkg.absolutePath)), label: pkg.name }))
+    .filter(({ value }) => value !== "" && value !== ".." && !value.startsWith("../"))
+    .sort((a, b) => (a.value < b.value ? -1 : 1))
+    .map((option) => ({ ...option, hint: option.value }));
+  if (packages.length === 0) return { packages, folders: [] };
+  const files = await walkFiles({ root: configDir, include: [...DEFAULT_INCLUDE], exclude: [], gitignore: true });
+  const folders = new Set<string>();
+  for (const file of files) {
+    const [top, ...below] = posixPath(relative(configDir, file)).split("/");
+    if (top === undefined || below.length === 0) continue;
+    if (!packages.some(({ value }) => value === top || value.startsWith(`${top}/`))) folders.add(top);
+  }
+  return { packages, folders: [...folders].sort().map((folder) => ({ value: folder, label: folder })) };
+}
+
+/** The package.json in `dir`, or an empty one when it's missing or isn't JSON. */
+async function readPackageJson(dir: string): Promise<DetectWorkspacePackagesInput> {
+  try {
+    return JSON.parse(await readFile(join(dir, "package.json"), "utf8")) ?? {};
+  } catch {
+    return {};
+  }
 }
 
 function cannotCreate(out: string, cause: unknown): CliError {

@@ -48,6 +48,7 @@ const INIT_OPTIONS = {
   "repo-id": { type: "string" },
   host: { type: "string" },
   branch: { type: "string" },
+  exclude: { type: "string", multiple: true },
   yes: { type: "boolean", short: "y" },
 } satisfies OptionsConfig;
 const AUTH_OPTIONS = { host: { type: "string" } } satisfies OptionsConfig;

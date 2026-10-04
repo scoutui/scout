@@ -18,6 +18,7 @@ export type PromptAdapter = {
     options: SelectOption<T>[];
     initialValues?: T[];
     required?: boolean;
+    maxItems?: number;
   }): Promise<T[] | symbol>;
   isCancel(value: unknown): value is symbol;
 };
@@ -31,6 +32,7 @@ function clackMultiselect<T>(opts: {
   options: SelectOption<T>[];
   initialValues?: T[];
   required?: boolean;
+  maxItems?: number;
 }): Promise<T[] | symbol> {
   return clack.multiselect(opts as Parameters<typeof clack.multiselect>[0]) as Promise<T[] | symbol>;
 }

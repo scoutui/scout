@@ -130,7 +130,7 @@ async function runBackfillCommand(rest: string[], log: Logger, notice: string | 
 
 async function runInitCommand(rest: string[], log: Logger): Promise<number> {
   const { values } = parseCommand("init", rest);
-  const { yes, output, "repo-id": repoId, host, branch } = values;
+  const { yes, output, "repo-id": repoId, host, branch, exclude } = values;
   const interactive = isInteractive({ yes: Boolean(yes) });
   const initOpts: InitOptions = { cwd: process.cwd(), interactive, log };
   if (interactive) initOpts.prompts = clackAdapter;
@@ -138,6 +138,7 @@ async function runInitCommand(rest: string[], log: Logger): Promise<number> {
   if (typeof repoId === "string") initOpts.repoId = repoId;
   if (typeof host === "string") initOpts.host = host;
   if (typeof branch === "string") initOpts.branch = branch;
+  if (Array.isArray(exclude)) initOpts.exclude = exclude;
   try {
     await runInit(initOpts);
     return 0;

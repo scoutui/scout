@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { runInit } from "../../../src/commands/init.js";
 import { PromptCancelledError, type PromptAdapter } from "../../../src/prompts/adapter.js";
 import { fakeSsh } from "../../helpers/fake-ssh.js";
+import { stageFixture } from "../../helpers/stage-fixture.js";
 
 const CANCEL = Symbol("cancel");
 
@@ -107,5 +108,92 @@ describe("init wizard", () => {
   it("maps a cancelled prompt to PromptCancelledError", async () => {
     const prompts = stubAdapter({ text: async (o) => (o.message === "Dashboard address (optional)" ? CANCEL : (o.initialValue ?? "")) });
     await expect(runInit({ cwd: tmp, interactive: true, prompts })).rejects.toThrow(PromptCancelledError);
+  });
+});
+
+describe("init wizard: what to leave out of the scan", () => {
+  const stages: string[] = [];
+  afterEach(() => {
+    for (const dir of stages.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  /** Stages whole-repo-scope without its config, deleting `remove` and writing `files` over it. */
+  async function stageWholeRepo(over: { remove?: string[]; files?: Record<string, string> } = {}): Promise<string> {
+    const dir = await stageFixture("whole-repo-scope");
+    stages.push(dir);
+    for (const rel of ["scout.config.json", ...(over.remove ?? [])]) rmSync(join(dir, rel), { recursive: true });
+    for (const [rel, content] of Object.entries(over.files ?? {})) writeFileSync(join(dir, rel), content);
+    return dir;
+  }
+
+  type Picker = Parameters<PromptAdapter["multiselect"]>[0];
+
+  /** Runs the wizard in `dir`, ticking the offered options in `ticked`; returns each picker call and the `exclude` written. */
+  async function pick(dir: string, ticked: string[] = [], given: { exclude?: string[] } = {}) {
+    const asked: Picker[] = [];
+    const prompts = stubAdapter({
+      multiselect: async (o) => {
+        asked.push(o);
+        return o.options.filter((option) => ticked.includes(String(option.value))).map((option) => option.value);
+      },
+    });
+    await runInit({ cwd: dir, interactive: true, prompts, ...given });
+    const { exclude } = JSON.parse(readFileSync(join(dir, "scout.config.json"), "utf8"));
+    return { asked, exclude };
+  }
+
+  const withRootPackage = (pkg: object) => ({ files: { "package.json": JSON.stringify({ name: "whole-repo-scope", private: true, ...pkg }) } });
+
+  it("lists each package by name, then each top-level folder outside them, sorted by folder, as a checklist", async () => {
+    const { asked } = await pick(await stageWholeRepo());
+    expect(asked).toEqual([
+      {
+        message: "Leave any packages or folders out of the scan?",
+        options: [
+          { value: "apps/playground", label: "@example/playground", hint: "apps/playground" },
+          { value: "apps/web", label: "@example/web", hint: "apps/web" },
+          { value: "packages/shared-ui", label: "@example/shared-ui", hint: "packages/shared-ui" },
+          { value: "scripts", label: "scripts" },
+        ],
+        required: false,
+        maxItems: 10,
+      },
+    ]);
+  });
+
+  it.each([
+    [[], []],
+    [
+      ["apps/playground", "scripts"],
+      ["apps/playground", "scripts"],
+    ],
+  ])("writes the ticked folders %j to exclude", async (ticked, exclude) => {
+    expect((await pick(await stageWholeRepo(), ticked)).exclude).toEqual(exclude);
+  });
+
+  it("asks only about packages when no top-level folder outside them holds a file the scan reads", async () => {
+    const { asked } = await pick(await stageWholeRepo({ remove: ["scripts"] }));
+    expect(asked.map((call) => [call.message, call.options.map((option) => option.value)])).toEqual([
+      ["Leave any packages out of the scan?", ["apps/playground", "apps/web", "packages/shared-ui"]],
+    ]);
+  });
+
+  it("doesn't offer the config's own folder when the workspaces list it", async () => {
+    const { asked } = await pick(await stageWholeRepo(withRootPackage({ workspaces: [".", "apps/*", "packages/*"] })));
+    expect(asked.map((call) => call.options.map((option) => option.value))).toEqual([
+      ["apps/playground", "apps/web", "packages/shared-ui", "scripts"],
+    ]);
+  });
+
+  it("doesn't ask without workspaces, even with top-level folders", async () => {
+    const { asked, exclude } = await pick(await stageWholeRepo(withRootPackage({})));
+    expect(asked).toEqual([]);
+    expect(exclude).toEqual([]);
+  });
+
+  it("writes --exclude as given, without asking", async () => {
+    const { asked, exclude } = await pick(await stageWholeRepo(), [], { exclude: ["apps/playground"] });
+    expect(asked).toEqual([]);
+    expect(exclude).toEqual(["apps/playground"]);
   });
 });

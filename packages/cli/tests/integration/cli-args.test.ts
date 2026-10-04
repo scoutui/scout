@@ -157,6 +157,13 @@ describe("cli argument handling", () => {
     }
   });
 
+  it("saves each init --exclude to the config", async () => {
+    const dir = emptyDir();
+    const { code } = await run(["init", "--yes", "--exclude", "apps/playground", "--exclude", "scripts"], { cwd: dir });
+    expect(code).toBe(0);
+    expect(JSON.parse(readFileSync(join(dir, "scout.config.json"), "utf8")).exclude).toEqual(["apps/playground", "scripts"]);
+  });
+
   it.each<[label: string, args: (target: string) => string[], env: NodeJS.ProcessEnv]>([
     ["no debug", (target) => ["init", "--yes", "--output", target], {}],
     ["--debug before the command", (target) => ["--debug", "init", "--yes", "--output", target], {}],
