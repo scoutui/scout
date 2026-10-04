@@ -82,7 +82,7 @@ const views: Record<DashboardConfig["chartType"], DashboardView> = {
 
 const TITLE = "Button: adoption";
 const LAST_THREE_MONTHS = [
-  "Committed (UTC)\t'@example/web\tButton · @example/ui",
+  "Committed (UTC)\t@example/web\tButton · @example/ui",
   "2026-06-30 12:00\t30\t",
   "2026-07-01 00:00\t40\t",
   "2026-08-01 00:00\t\t5",

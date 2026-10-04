@@ -56,8 +56,11 @@ export function toTsv(table: ExportTable): string {
   return [table.columns, ...table.rows].map((row) => row.map(field).join("\t")).join("\n");
 }
 
+const SCOPED_PACKAGE = /^@[a-z0-9][a-z0-9._~-]*\/[a-z0-9][a-z0-9._~-]*$/;
+
 function inert(value: string): string {
-  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  const formula = /^[=+\-\t\r]/.test(value) || (value.startsWith("@") && !SCOPED_PACKAGE.test(value));
+  return formula ? `'${value}` : value;
 }
 
 /** A file name for an export: the title without the characters file systems refuse, then `.ext`. */

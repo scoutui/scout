@@ -145,7 +145,8 @@ describe("toCsv", () => {
     ["a field with a quote in quotes, the quote doubled", 'Say "hi"', '"Say ""hi"""'],
     ["a field with a line break in quotes", "two\nlines", '"two\nlines"'],
     ["a field that starts with = behind a quote mark, so it can't run as a formula", "=SUM(A1)", "'=SUM(A1)"],
-    ["a field that starts with @ behind a quote mark", "@cmd", "'@cmd"],
+    ["a field that starts with @ behind a quote mark", "@SUM(A1)", "'@SUM(A1)"],
+    ["a scoped package name as it is", "@example/web-button", "@example/web-button"],
     ["a number as it is", "125", "125"],
   ];
 
