@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 3 * * *" # 03:00 UTC nightly, on the default branch only
   workflow_dispatch:
+    inputs:
+      rescan:
+        description: Scan and upload even when the dashboard already has the commit
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -37,4 +42,8 @@ jobs:
         env:
           SCOUTUI_HOST: ${{ secrets.SCOUTUI_HOST }}
           SCOUTUI_TOKEN: ${{ secrets.SCOUTUI_UPLOAD_TOKEN }}
-        run: yarn workspace consumer-ci run cadence --target "$TARGET" --step scan --work-dir "$RUNNER_TEMP/consumer-ci"
+          RESCAN: ${{ inputs.rescan }}
+        run: |
+          args=(--target "$TARGET" --step scan --work-dir "$RUNNER_TEMP/consumer-ci")
+          if [ "$RESCAN" = "true" ]; then args+=(--rescan); fi
+          yarn workspace consumer-ci run cadence "${args[@]}"

@@ -8,6 +8,7 @@ export interface Args {
   target?: string;
   step?: string;
   workDir?: string;
+  rescan?: boolean;
 }
 
 function flagValue(argv: string[], flag: string): string | undefined {
@@ -15,7 +16,7 @@ function flagValue(argv: string[], flag: string): string | undefined {
   return idx >= 0 ? argv[idx + 1] : undefined;
 }
 
-/** Parse `[--target name] [--step prepare|scan] [--work-dir dir]`. */
+/** Parse `[--target name] [--step prepare|scan] [--work-dir dir] [--rescan]`. */
 export function parseArgs(argv: string[]): Args {
   const target = flagValue(argv, "--target");
   const step = flagValue(argv, "--step");
@@ -24,6 +25,7 @@ export function parseArgs(argv: string[]): Args {
     ...(target !== undefined ? { target } : {}),
     ...(step !== undefined ? { step } : {}),
     ...(workDir !== undefined ? { workDir } : {}),
+    ...(argv.includes("--rescan") ? { rescan: true } : {}),
   };
 }
 
@@ -36,7 +38,7 @@ const cliBin = join(repoRoot, "packages", "cli", "dist", "cli.js");
 
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
-  const { target, step, workDir } = parseArgs(argv);
+  const { target, step, workDir, rescan } = parseArgs(argv);
   // Guard a flag with no value: otherwise a bare `--target` falls through to
   // "run all" and reports a misleading pass against the whole matrix.
   for (const [flag, value] of [["--target", target], ["--step", step], ["--work-dir", workDir]] as const) {
@@ -66,6 +68,7 @@ async function main(): Promise<number> {
     const results = await runTarget(t, cliBin, {
       ...(workDir !== undefined ? { workDir: resolve(workDir, t.name) } : {}),
       ...(step !== undefined && isStep(step) ? { step } : {}),
+      ...(rescan ? { rescan } : {}),
     });
     for (const r of results) {
       if (r.failures.length === 0) {

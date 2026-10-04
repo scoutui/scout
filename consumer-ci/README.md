@@ -20,6 +20,10 @@ code only while that code runs: a process it leaves behind, or a file it
 changes, is still there when the scan step runs. Without `--step`, one run
 does both and removes the work tree afterward.
 
+`--rescan` scans and uploads even when the dashboard already has the commit.
+In CI, tick **rescan** when you run the workflow by hand; the nightly run never
+rescans.
+
 ## Run locally
 
 ```bash

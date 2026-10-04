@@ -57,4 +57,10 @@ describe("scanArgs", () => {
       "scan", "--config", "/c.json",
     ]);
   });
+
+  test("adds --rescan when asked to rescan", () => {
+    expect(scanArgs("/c.json", undefined, true)).toEqual([
+      "scan", "--config", "/c.json", "--rescan",
+    ]);
+  });
 });
