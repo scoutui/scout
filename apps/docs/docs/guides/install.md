@@ -51,7 +51,7 @@ To fix it:
    yarn install
    ```
 
-If the scan still stops with the same error, delete any `.pnp.cjs` or `.pnp.loader.mjs` left in the folder that holds `scout.config.json`.
+If the scan still stops with the same error, delete any `.pnp.cjs` or `.pnp.loader.mjs` left in the folder that holds `scout.config.json`, or at the root of its monorepo.
 
 ## 3. Check the command runs
 

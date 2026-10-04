@@ -58,11 +58,19 @@ describe("runScan hard errors", () => {
     expect(result.output).toBeNull();
   });
 
-  it("stops with one line saying how to switch Yarn off Plug'n'Play", async () => {
+  it.each([
+    ["beside the config", "."],
+    ["at the monorepo root, scanning a workspace package", "apps/web"],
+  ])("stops with one line saying how to switch Yarn off Plug'n'Play, when Yarn's files are %s", async (_, configFolder) => {
     const dir = setupConsumer();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "root", private: true, workspaces: ["apps/*"] }));
+    mkdirSync(join(dir, "apps", "web", "src"), { recursive: true });
+    writeFileSync(join(dir, "apps", "web", "package.json"), JSON.stringify({ name: "web" }));
+    writeFileSync(join(dir, "apps", "web", "src", "Page.tsx"), "export function Page() { return <div />; }\n");
+    writeFileSync(join(dir, "apps", "web", "scout.config.json"), JSON.stringify({ repoId: "web", exclude: [] }));
     writeFileSync(join(dir, ".pnp.cjs"), "");
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
-    const result = await runScan({ configPath: join(dir, "scout.config.json"), quiet: true });
+    const result = await runScan({ configPath: join(dir, configFolder, "scout.config.json"), quiet: true });
     expect(scanExitCode(result)).toBe(2);
     expect(stderr.mock.calls.map(([text]) => String(text)).join("")).toBe(
       "Error: Scout can't read packages installed with Yarn Plug'n'Play. Set nodeLinker: node-modules in .yarnrc.yml, run yarn install, and scan again.\n",
@@ -188,6 +196,24 @@ describe("runScan warnings about files it reads", () => {
     expect(stderrOf(stderr).split("\n")).toContain(
       'Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.',
     );
+  });
+
+  it.each([
+    ["names the tsconfigPath it reads", true, ["Path aliases: config/tsconfig.app.json"]],
+    ["doesn't name a tsconfigPath that doesn't exist", false, []],
+  ])("%s as where path aliases come from", async (_, exists, aliasLines) => {
+    const dir = setupConsumer();
+    writeFileSync(
+      join(dir, "scout.config.json"),
+      JSON.stringify({ repoId: "scan-test", include: ["src/**/*.tsx"], exclude: [], tsconfigPath: "config/tsconfig.app.json" }),
+    );
+    if (exists) {
+      mkdirSync(join(dir, "config"));
+      writeFileSync(join(dir, "config", "tsconfig.app.json"), "{}");
+    }
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await runScan({ configPath: join(dir, "scout.config.json") });
+    expect(stderrOf(stderr).split("\n").filter((l) => l.startsWith("Path aliases:"))).toEqual(aliasLines);
   });
 
   const withAliases = { compilerOptions: { paths: { "@/*": ["./src/*"] } } };

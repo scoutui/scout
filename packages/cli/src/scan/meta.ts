@@ -87,7 +87,7 @@ export function stampMeta(
 
 function deriveId(remote: string | null, cwd: string): string {
   if (remote) {
-    const match = remote.match(/[/:]([^/]+?)(\.git)?$/);
+    const match = remote.match(/[/:]([^/]+?)(\.git)?\/?$/);
     if (match?.[1]) return match[1];
   }
   return basename(cwd);

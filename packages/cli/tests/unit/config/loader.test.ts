@@ -49,6 +49,14 @@ describe("loadConfig", () => {
     });
   });
 
+  it("rejects a folder, saying which file to pass instead", async () => {
+    const dir = tmp();
+    await expect(loadConfig(dir)).rejects.toMatchObject({
+      code: "CONFIG_INVALID",
+      message: `${dir} is a folder. Pass the config file to --config, such as ${join(dir, "scout.config.json")}.`,
+    });
+  });
+
   it("rejects a file that isn't JSON, naming the path as given, with where the parser stopped as the detail", async () => {
     const dir = tmp();
     const path = join(dir, "scout.config.json");

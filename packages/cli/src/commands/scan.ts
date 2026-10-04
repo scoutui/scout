@@ -127,13 +127,6 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   const cfg = await loadScanConfig(configPath, log);
   if (cfg === null) return { output: null, upload: "skipped" };
 
-  if (isPnpProject(cfg.configDir)) {
-    log.error(
-      "Scout can't read packages installed with Yarn Plug'n'Play. Set nodeLinker: node-modules in .yarnrc.yml, run yarn install, and scan again."
-    );
-    return { output: null, upload: "skipped" };
-  }
-
   // Read git once, early: throws if the directory isn't a git work tree, or if
   // git can't give the HEAD commit's date.
   const checkout = await readCheckout(cfg.configDir, log);
@@ -180,6 +173,12 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   }
 
   const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log, meta.repo.id);
+  if (isPnpProject(cfg.configDir) || isPnpProject(workspaceRoot)) {
+    log.error(
+      "Scout can't read packages installed with Yarn Plug'n'Play. Set nodeLinker: node-modules in .yarnrc.yml, run yarn install, and scan again."
+    );
+    return { output: null, upload: "skipped" };
+  }
   if (files.length === 0) {
     log.error(noFilesMessage(configPath, cfg, await nestedRepositoriesMatched(walkOptions(cfg))));
     return { output: null, upload: "skipped" };
@@ -423,13 +422,13 @@ export async function scanRepository(input: {
 
 
   const packageTsconfigs = packageAliases.tsconfigCount;
-  if (tsconfigPath) {
+  if (tsconfigPath && statSync(tsconfigPath, { throwIfNoEntry: false })?.isFile()) {
     writer(`Path aliases: ${posixPath(relative(cfg.configDir, tsconfigPath))}\n`);
   } else if (packageTsconfigs > 0) {
     writer(packageTsconfigs === 1
       ? "Path aliases: a tsconfig file in 1 workspace package\n"
       : `Path aliases: tsconfig files in ${packageTsconfigs} workspace packages\n`);
-  } else {
+  } else if (!tsconfigPath) {
     writer('Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.\n');
   }
   const isTTY = !!process.stderr.isTTY;

@@ -188,6 +188,7 @@ test.each([
     "https://gitlab.com/acme/checkout.git",
     "checkout",
   ],
+  ["a clone URL ending in a slash takes its name from the URL", { origin: "https://github.com/acme/checkout/" }, "https://github.com/acme/checkout/", "checkout"],
 ])("scan: %s", async (_, remotes, gitRemote, repoId) => {
   dirs.push(fakeSsh());
   const dir = await mkdtemp(join(tmpdir(), "cc-remote-meta-"));
