@@ -28,9 +28,9 @@ Below it, a status line tells you what needs attention:
 
 ### Fix what the scan couldn't see
 
-When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, a band under the status line reads **This scan couldn't see everything**. Its numbers leave those uses out, or count them without a package. When some of it is yours to fix, the band adds how many kinds of problem that covers, such as **· 2 things to fix**.
+When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, the repo page says **This scan couldn't see everything**. When some of those problems are yours to fix, it also says how many kinds, such as **2 things to fix**. The repo's numbers leave those uses out, or count them without a package.
 
-Select the band to open it. Each row is one kind of problem: how many there are, the names, paths or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A row whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
+Open **This scan couldn't see everything** to see each kind of problem: how many there are, the names or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A problem whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
 
 ## Find components in a repo
 
