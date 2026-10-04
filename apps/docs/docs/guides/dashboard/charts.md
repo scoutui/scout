@@ -95,7 +95,7 @@ On a chart's page, press **⋯**:
 - **Download data** saves a CSV file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
 - **Copy data** copies the same table, ready to paste into a spreadsheet.
 
-The export covers the period picked above the chart. A **Table** chart offers only **Download data** and **Copy data**, which give its series over time.
+The export covers the period picked above the chart. A **Table** chart offers only **Download data** and **Copy data**, which give its series over time. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
 
 ## Change or delete a chart
 
