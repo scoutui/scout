@@ -1,9 +1,9 @@
 "use client";
-import type { CohortPoint, CohortSeries, RepoCoverage } from "@scoutui/web-shared";
+import type { CohortPoint, DashboardScope } from "@scoutui/web-shared";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { formatMetric } from "@/lib/dashboard-format";
-import { NO_KEYS, repoAddedAtLatest } from "@/lib/dashboard-chart-data";
+import { NO_KEYS } from "@/lib/dashboard-chart-data";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
@@ -15,8 +15,8 @@ function isNoChange(delta: number, metric: "count" | "share"): boolean {
   return delta === 0 || (metric === "share" && Math.abs(delta) * 100 < 0.05);
 }
 
-/** Δ since the previous scan event, formatted per metric: counts as a signed number,
- *  shares as signed percentage points, "0" under 0.05 points. Null when there is no previous scan. */
+/** A change formatted per metric: counts as a signed number, shares as signed percentage points,
+ *  "0" under 0.05 points, and "—" when there is nothing to compare. */
 function formatDelta(delta: number | null, metric: "count" | "share"): string {
   if (delta === null) return "—";
   const abs = Math.abs(delta);
@@ -27,39 +27,30 @@ function formatDelta(delta: number | null, metric: "count" | "share"): string {
 
 /**
  * Sortable cohort table: the name with its series colour, an inline bar
- * proportional to the largest cohort, the metric value, the change since the
- * previous scan in neutral ink (whether up is good depends on the cohort), and the
- * count of distinct used components across the cohort's repos (a component used in
- * N repos counts once).
+ * proportional to the largest cohort, the metric value, its `change` in neutral
+ * ink (whether up is good depends on the cohort), and the count of distinct used
+ * components across the cohort's repos (a component used in N repos counts once).
  */
 export function CohortTable({
   points,
-  series,
-  coverage,
+  change,
+  scope,
   colors,
   deprecatedOnly = NO_KEYS,
   metric,
 }: {
   points: CohortPoint[];
-  series: CohortSeries[];
-  coverage: RepoCoverage;
+  change: Record<string, number | null>;
+  scope: DashboardScope;
   colors: ReadonlyMap<string, string>;
   deprecatedOnly?: ReadonlySet<string>;
   metric: "count" | "share";
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<Key>("value", "desc", NUMERIC);
 
-  const prevByKey = new Map(
-    series.map((s) => [s.cohortKey, s.points.length >= 2 ? (s.points[s.points.length - 2]?.value ?? null) : null]),
-  );
   const maxValue = Math.max(1, ...points.map((p) => p.value));
-  const repoAdded = repoAddedAtLatest(coverage);
-  const withDelta = points.map((p) => {
-    const prev = prevByKey.get(p.cohortKey) ?? null;
-    const delta = prev === null ? null : p.value - prev;
-    return { ...p, seriesColor: colors.get(p.cohortKey) ?? "", delta, repoAdded: repoAdded && delta !== null && !isNoChange(delta, metric) };
-  });
-  const rows = sortRows(withDelta, sortKey, sortDir, (p, k) => (k === "delta" ? (p.repoAdded ? Number.NEGATIVE_INFINITY : (p.delta ?? Number.NEGATIVE_INFINITY)) : p[k]));
+  const withDelta = points.map((p) => ({ ...p, seriesColor: colors.get(p.cohortKey) ?? "", delta: change[p.cohortKey] ?? null }));
+  const rows = sortRows(withDelta, sortKey, sortDir, (p, k) => (k === "delta" ? (p.delta ?? Number.NEGATIVE_INFINITY) : p[k]));
   const hasDelta = withDelta.some((p) => p.delta !== null);
 
   return (
@@ -84,7 +75,7 @@ export function CohortTable({
             <TableHead className="text-right">
               <SortButton
                 label="Change"
-                title="Change since the previous scan"
+                title={scope.kind === "repo" ? "Change since the previous scan" : "Change over the last 30 days"}
                 sortKey="delta"
                 current={sortKey}
                 dir={sortDir}
@@ -125,7 +116,7 @@ export function CohortTable({
             <TableCell className="text-right tabular-nums">{formatMetric(p.value, metric)}</TableCell>
             {hasDelta ? (
               <TableCell className="text-right tabular-nums text-muted-foreground">
-                {p.repoAdded ? "repo added" : formatDelta(p.delta, metric)}
+                {formatDelta(p.delta, metric)}
               </TableCell>
             ) : null}
             <TableCell className="text-right tabular-nums">{p.componentCount.toLocaleString()}</TableCell>

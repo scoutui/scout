@@ -123,7 +123,7 @@ export default async function DashboardViewPage({
     const metricOverride: DashboardMetric =
       metricParam === "share" || metricParam === "count" ? metricParam : dashboard.config.metric;
     dashboard = { ...dashboard, config: { ...dashboard.config, metric: metricOverride } };
-    view = renderDashboard(dashboard.config, digests, tags, governance, names);
+    view = renderDashboard(dashboard.config, digests, tags, new Date().toISOString(), governance, names);
   }
   const notice = derivedEntry ? await chartResultsNotice(getPool(), true) : null;
   const config = dashboard.config;

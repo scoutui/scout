@@ -20,7 +20,7 @@ const coverage = { total: 1, points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, {
 const charts: Array<[DashboardConfig["chartType"], DashboardView]> = [
   ["trend", { kind: "series", series, coverage }],
   ["stacked-share", { kind: "series", series, coverage }],
-  ["table", { kind: "table", points, series, coverage }],
+  ["table", { kind: "table", points, series, coverage, change: {} }],
   ["bars", { kind: "snapshot", points }],
 ];
 
@@ -57,7 +57,7 @@ const kitSeries: CohortSeries[] = [
 const kitCharts: Array<[DashboardConfig["chartType"], DashboardView]> = [
   ["trend", { kind: "series", series: kitSeries, coverage }],
   ["stacked-share", { kind: "series", series: kitSeries, coverage }],
-  ["table", { kind: "table", points: kitPoints, series: kitSeries, coverage }],
+  ["table", { kind: "table", points: kitPoints, series: kitSeries, coverage, change: {} }],
   ["bars", { kind: "snapshot", points: kitPoints }],
 ];
 

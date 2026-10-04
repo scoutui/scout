@@ -118,12 +118,6 @@ export function reposJoiningAt(series: CohortSeries[], ts: number): string | nul
   return repos.length <= 2 ? `${repos.join(" and ")} added` : formatReposAdded(repos.length);
 }
 
-/** True when the latest point is a repo's first scan, so the change since the point before is that repo arriving. */
-export function repoAddedAtLatest(coverage: RepoCoverage): boolean {
-  const [previous, latest] = coverage.points.slice(-2);
-  return previous !== undefined && latest !== undefined && latest.repos > previous.repos;
-}
-
 /**
  * Rescales each row's cohort values to fractions of that row's own total, as
  * recharts' `stackOffset="expand"` would. Done by hand because recharts (3.8.0)

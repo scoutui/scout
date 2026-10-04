@@ -34,5 +34,5 @@ export async function loadDashboardView(config: DashboardConfig): Promise<ReadMo
   }));
   if (result.state !== "ready") return result;
   const { digests, names, tags, governance } = result.value;
-  return { state: "ready", value: renderDashboard(config, digests, tags, governance, names), ...chartSkippedNotices(config, result) };
+  return { state: "ready", value: renderDashboard(config, digests, tags, new Date().toISOString(), governance, names), ...chartSkippedNotices(config, result) };
 }

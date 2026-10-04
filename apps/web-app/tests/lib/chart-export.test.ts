@@ -89,7 +89,7 @@ describe("chartExportTable", () => {
     [
       "a table chart: its series over time",
       config("table", "count"),
-      { kind: "table", points: countPoints, series: countSeries, coverage },
+      { kind: "table", points: countPoints, series: countSeries, coverage, change: {} },
       {
         columns: timeColumns,
         rows: [

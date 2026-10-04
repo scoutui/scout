@@ -194,7 +194,7 @@ function deriveOne(
   const fromLabel = from.label;
   const shortFrom = fromLabel.split(" · ")[0] ?? fromLabel;
   const deprecated: SeriesCohort = { key: `deprecated:${record.id}`, label: fromLabel, color: "", role: "deprecated", occurrences: from.occurrences };
-  const change = scope.kind === "repo" ? sincePreviousScan(scans, from.occurrences) : overWindow(scans, from.occurrences, asOf);
+  const change = changeIn(scans, scope, from.occurrences, asOf);
 
   if (record.disposition.kind === "retired") {
     const config: DashboardConfig = { scope, cohorts: from.cohorts, chartType: "trend", metric: "count" };
@@ -254,6 +254,16 @@ function deriveOne(
 }
 
 type Change = { delta: number | null; reposAdded: number };
+
+/**
+ * The change in a count per scan. Under a repo scope, `scans` are that repo's and the change is since its previous
+ * scan. Across all repos, it is over the 30 days up to `asOf`, each repo compared with itself (from its first scan
+ * when it joined inside the window), and `reposAdded` counts the repos that joined inside the window and still have
+ * the count, when some repo was scanned before it. Null until some repo with the count has two scans.
+ */
+export function changeIn(scans: DigestScan[], scope: DashboardScope, countOf: (scan: DigestScan) => number, asOf: string): Change {
+  return scope.kind === "repo" ? sincePreviousScan(scans, countOf) : overWindow(scans, countOf, asOf);
+}
 
 function scansByRepo(scans: DigestScan[]): DigestScan[][] {
   const byRepo = new Map<string, DigestScan[]>();

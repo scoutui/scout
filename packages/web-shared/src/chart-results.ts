@@ -5,7 +5,7 @@ import { type GovernanceTracking, deriveGovernanceTracking } from "./governance-
 import { type RegistryStats, deriveRecordStats } from "./governance-registry.js";
 import { type GovernanceTarget, listGovernanceTargets } from "./governance.js";
 
-export const CHART_RESULTS_VERSION = 10;
+export const CHART_RESULTS_VERSION = 11;
 export const CHART_RESULTS_FORMAT_VERSION = 7;
 
 export type DashboardPreview = { view: DashboardView; missing: boolean };
@@ -14,7 +14,7 @@ export type StoredPreview = DashboardPreview & { snapshotAt: string };
 export type RegistryResult = RegistryStats & { sources: GovernanceTarget[] };
 /** The stored registry, and when the snapshot it was derived from was read. */
 export type StoredRegistry = RegistryResult & { snapshotAt: string };
-/** `asOf` ends the window the all-repos tracking's change is measured over. */
+/** `asOf` ends the window the all-repos tracking's and tables' change is measured over. */
 export type ChartResultsInput = { digests: DigestScan[]; tags: Tag[]; governance: GovernanceRecord[]; dashboards: Dashboard[]; asOf: string };
 export type ChartResults = {
   tracking: GovernanceTracking[];
@@ -49,7 +49,7 @@ export function deriveChartResults({ digests, tags, governance, dashboards, asOf
       const scope = dashboard.config.scope;
       const scoped = scope.kind === "repo" ? digests.filter((d) => d.meta.repo.id === scope.repoId) : digests;
       const preview: DashboardPreview = {
-        view: renderDashboard(dashboard.config, scoped, tags, governance),
+        view: renderDashboard(dashboard.config, scoped, tags, asOf, governance),
         missing: scope.kind === "repo" && scoped.length === 0,
       };
       return [dashboard.id, preview];

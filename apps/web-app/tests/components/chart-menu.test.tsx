@@ -79,7 +79,7 @@ const views: Record<DashboardConfig["chartType"], DashboardView> = {
   trend: { kind: "series", series, coverage },
   "stacked-share": { kind: "series", series, coverage },
   bars: { kind: "snapshot", points },
-  table: { kind: "table", points, series, coverage },
+  table: { kind: "table", points, series, coverage, change: {} },
 };
 
 const TITLE = "Button: adoption";

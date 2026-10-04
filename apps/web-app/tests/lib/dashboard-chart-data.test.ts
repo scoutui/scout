@@ -311,7 +311,7 @@ describe("date range", () => {
   });
 
   it("draws a table chart whole at any range", () => {
-    const view: DashboardView = { kind: "table", points: [], series, coverage };
+    const view: DashboardView = { kind: "table", points: [], series, coverage, change: {} };
     expect(shown("table", view, "3m")).toEqual({ view, from: null });
   });
 

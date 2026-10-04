@@ -18,8 +18,8 @@ const RANGES: Array<{ value: ChartRange; label: string }> = [
 
 /**
  * Dispatch a (chartType, view) pair to the matching chart. `trend` and
- * `stacked-share` consume the over-time series; `table` joins snapshot + series
- * (for Δ since the previous scan); `bars` consumes the snapshot. Client-side so it
+ * `stacked-share` consume the over-time series; `table` consumes the snapshot and
+ * each cohort's change; `bars` consumes the snapshot. Client-side so it
  * can be rendered both from server pages (view route) and the builder's preview.
  * A chart over time draws `range`; with `onRangeChange` it offers the range presets
  * once its scans span more than the shortest one.
@@ -78,7 +78,7 @@ export function DashboardChart({
     );
   }
   if (config.chartType === "table") {
-    return view.kind === "table" ? <CohortTable points={view.points} series={view.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
+    return view.kind === "table" ? <CohortTable points={view.points} change={view.change} scope={config.scope} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
   }
   if (view.kind !== "snapshot") return <ChartFallback />;
   return config.chartType === "bars" ? <CohortBarChart points={view.points} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
