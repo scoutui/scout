@@ -20,8 +20,6 @@ function repo(dir: string, remotes: Record<string, string>, branch = "main"): vo
   if ("origin" in remotes) git(dir, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main");
 }
 
-const EXCLUDE = ["**/*.{test,spec,stories}.*", "**/node_modules/**"];
-
 describe("init command", () => {
   let tmp: string;
   let ssh: string;
@@ -45,8 +43,7 @@ describe("init command", () => {
     expect(cfg.repoId).toBeDefined();
     expect(typeof cfg.repoId).toBe("string");
     expect(cfg.repoId.length).toBeGreaterThan(0);
-    expect(Array.isArray(cfg.include)).toBe(true);
-    expect(cfg.include.length).toBeGreaterThan(0);
+    expect("include" in cfg).toBe(false);
   });
 
   it("emitted config passes loadConfig validation", async () => {
@@ -54,7 +51,7 @@ describe("init command", () => {
     const { loadConfig } = await import("../../../src/config/loader.js");
     const cfg = await loadConfig(join(tmp, "scout.config.json"));
     expect(cfg.repoId).toBeDefined();
-    expect(cfg.include).toBeDefined();
+    expect(cfg.include).toBeUndefined();
   });
 
   it("refuses to overwrite existing config, and says what to do", async () => {
@@ -77,8 +74,7 @@ describe("init command", () => {
       $schema: "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
       repoId,
       branch: "main",
-      include: ["src/**/*.{ts,tsx,jsx,js,vue}"],
-      exclude: EXCLUDE,
+      exclude: [],
     });
   });
 
@@ -117,7 +113,22 @@ describe("init command", () => {
     expect(stderr).toEqual([
       "Warning: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote github.\n",
     ]);
-    expect(stdout).toEqual([`Wrote ${join(tmp, "scout.config.json")}. Run scout scan to scan the repo and upload the scan.\n`]);
+    expect(stdout).toEqual(["Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.\n"]);
+    expect(written().repoId).toBe(basename(tmp));
+  });
+
+  it("warns that a scan needs a git repository, and still writes the config, outside one", async () => {
+    const stderr: string[] = [];
+    vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      stderr.push(String(chunk));
+      return true;
+    });
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runInit({ cwd: tmp, log: new Logger({ color: createColor({ isTTY: false, env: {} }) }) });
+    vi.restoreAllMocks();
+    expect(stderr).toEqual([
+      "Warning: this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.\n",
+    ]);
     expect(written().repoId).toBe(basename(tmp));
   });
 

@@ -45,7 +45,6 @@ const BACKFILL_OPTIONS = {
 
 const INIT_OPTIONS = {
   output: { type: "string" },
-  framework: { type: "string", multiple: true },
   "repo-id": { type: "string" },
   host: { type: "string" },
   branch: { type: "string" },

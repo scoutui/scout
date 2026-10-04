@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { runInit } from "../../../src/commands/init.js";
-import { walkFiles } from "../../../src/walker/files.js";
 import { PromptCancelledError, type PromptAdapter } from "../../../src/prompts/adapter.js";
 import { fakeSsh } from "../../helpers/fake-ssh.js";
 
@@ -17,7 +16,7 @@ function stubAdapter(over: Partial<PromptAdapter> = {}): PromptAdapter {
     text: async (o) => o.initialValue ?? "",
     confirm: async () => false,
     select: async (o) => o.options[0]!.value,
-    multiselect: async (o) => o.options.filter((option) => String(option.value) === "react").map((option) => option.value),
+    multiselect: async () => [],
     isCancel: (v): v is symbol => v === CANCEL,
     ...over,
   };
@@ -50,11 +49,10 @@ describe("init wizard", () => {
 
   it("writes the same config as --yes when every suggestion is accepted", async () => {
     cloneOfCheckout();
-    writeFileSync(join(tmp, "package.json"), JSON.stringify({ name: "demo", dependencies: { react: "18" } }));
     await runInit({ cwd: tmp, interactive: true, prompts: stubAdapter() });
     const prompted = written();
     rmSync(configPath());
-    await runInit({ cwd: tmp, frameworks: ["react"] });
+    await runInit({ cwd: tmp });
     expect(prompted).toEqual(written());
     expect(prompted.repoId).toBe("acme/checkout");
   });
@@ -107,31 +105,7 @@ describe("init wizard", () => {
   });
 
   it("maps a cancelled prompt to PromptCancelledError", async () => {
-    const prompts = stubAdapter({ multiselect: async () => CANCEL });
+    const prompts = stubAdapter({ text: async (o) => (o.message === "Dashboard address (optional)" ? CANCEL : (o.initialValue ?? "")) });
     await expect(runInit({ cwd: tmp, interactive: true, prompts })).rejects.toThrow(PromptCancelledError);
-  });
-
-  it("non-interactive config includes all supported source extensions", async () => {
-    await runInit({ cwd: tmp });
-    const cfg = JSON.parse(readFileSync(join(tmp, "scout.config.json"), "utf8"));
-    expect(cfg.include).toEqual(["src/**/*.{ts,tsx,jsx,js,vue}"]);
-  });
-
-  it("offers only React and Vue, and picking Vue writes an include that finds .vue and .ts files", async () => {
-    let offered: string[] = [];
-    const prompts = stubAdapter({
-      multiselect: async (o) => {
-        offered = o.options.map((option) => String(option.value));
-        return o.options.filter((option) => String(option.value) === "vue").map((option) => option.value);
-      },
-    });
-    await runInit({ cwd: tmp, interactive: true, prompts });
-    expect(offered).toEqual(["react", "vue"]);
-    const cfg = JSON.parse(readFileSync(join(tmp, "scout.config.json"), "utf8"));
-    mkdirSync(join(tmp, "src", "components"), { recursive: true });
-    writeFileSync(join(tmp, "src", "components", "Button.vue"), "<template><button /></template>\n");
-    writeFileSync(join(tmp, "src", "components", "index.ts"), 'export { default as Button } from "./Button.vue";\n');
-    const files = await walkFiles({ root: tmp, include: cfg.include, exclude: cfg.exclude, gitignore: false });
-    expect(files).toEqual([join(tmp, "src", "components", "Button.vue"), join(tmp, "src", "components", "index.ts")]);
   });
 });

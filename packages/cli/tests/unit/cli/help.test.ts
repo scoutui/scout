@@ -54,9 +54,8 @@ describe("commandHelp", () => {
     expect(out).toContain("  logout  Sign out, ending the session on the dashboard\n");
     expect(out).toContain("  --debug            Show the details behind an error\n");
   });
-  it("lists supported framework choices for init", () => {
+  it("describes init and where it writes the config", () => {
     const out = commandHelp("init");
-    expect(out).toContain("react | vue");
     expect(out).toContain("Create scout.config.json for this repo. Asks for each setting when run in a terminal.\n");
     expect(out).toContain("  --output <path>     Where to write the config (default: ./scout.config.json)\n");
   });

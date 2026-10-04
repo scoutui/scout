@@ -1,13 +1,11 @@
-import { writeFile, stat, readFile } from "node:fs/promises";
-import { basename, isAbsolute, resolve } from "node:path";
+import { writeFile, stat } from "node:fs/promises";
+import { basename, isAbsolute, relative, resolve } from "node:path";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { assertNotCancelled, type PromptAdapter } from "../prompts/adapter.js";
 import { CliError } from "../cli/parse.js";
 import { InvalidHostError, isValidUrl, normalizeHost } from "../auth/store.js";
-import { readGitBranch, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
+import { probeRepository, readGitBranch, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
 import { Logger } from "../util/log.js";
-
-export type Framework = "react" | "vue";
 
 export type InitOptions = {
   cwd: string;
@@ -15,32 +13,12 @@ export type InitOptions = {
   repoId?: string;
   host?: string;
   branch?: string;
-  frameworks?: Framework[];
   interactive?: boolean;
   prompts?: PromptAdapter;
   log?: Logger;
 };
 
-const DEFAULT_INCLUDE = "src/**/*.{ts,tsx,jsx,js,vue}";
-
-const FRAMEWORK_EXTS: Record<Framework, string[]> = {
-  react: ["ts", "tsx", "js", "jsx"],
-  vue: ["ts", "tsx", "js", "jsx", "vue"],
-};
-
-const FRAMEWORK_OPTIONS: { value: Framework; label: string }[] = [
-  { value: "react", label: "React" },
-  { value: "vue", label: "Vue" },
-];
-
-function includeGlob(frameworks: Framework[]): string {
-  const exts = new Set<string>();
-  for (const f of frameworks) for (const e of FRAMEWORK_EXTS[f]) exts.add(e);
-  if (exts.size === 0) return DEFAULT_INCLUDE;
-  return `src/**/*.{${[...exts].sort().join(",")}}`;
-}
-
-type Answers = { repoId: string; host: string | undefined; branch: string | null; include: string };
+type Answers = { repoId: string; host: string | undefined; branch: string | null };
 
 /** What git suggests for the config: the repository name, the remote's default branch and the checked-out one. */
 type GitDefaults = { repoId: string; defaultBranch: string | null; checkedOut: string | null };
@@ -52,8 +30,7 @@ function buildConfig(answers: Answers) {
     repoId: answers.repoId,
     ...(answers.host !== undefined ? { host: answers.host } : {}),
     ...(answers.branch !== null ? { branch: answers.branch } : {}),
-    include: [answers.include],
-    exclude: ["**/*.{test,spec,stories}.*", "**/node_modules/**"],
+    exclude: [],
   };
 }
 
@@ -63,13 +40,16 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const log = opts.log ?? new Logger();
   await assertNoExistingConfig(out);
   const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
+  if ((await probeRepository(cwd)).kind === "outside") {
+    log.warn("this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.");
+  }
   const prompts = opts.interactive ? opts.prompts : undefined;
   prompts?.intro("scout init");
   const defaults = await gitDefaults(cwd, log, prompts);
-  const done = `Wrote ${out}. Run scout scan to scan the repo and upload the scan.`;
+  const done = `Wrote ${relative(cwd, out)}. Run scout scan --dry-run to try it, then scout scan to upload.`;
 
   if (opts.interactive && opts.prompts) {
-    const answers = await runWizard(opts.prompts, cwd, defaults, { ...opts, host });
+    const answers = await runWizard(opts.prompts, defaults, { ...opts, host });
     await writeConfig(out, buildConfig(answers));
     opts.prompts.outro(done);
     return;
@@ -79,7 +59,6 @@ export async function runInit(opts: InitOptions): Promise<void> {
     repoId: opts.repoId ?? defaults.repoId,
     host,
     branch: opts.branch ?? defaults.defaultBranch ?? defaults.checkedOut,
-    include: opts.frameworks && opts.frameworks.length > 0 ? includeGlob(opts.frameworks) : DEFAULT_INCLUDE,
   };
   await writeConfig(out, buildConfig(answers));
   log.success(done);
@@ -125,7 +104,6 @@ function savedHost(raw: string): string {
 
 async function runWizard(
   prompts: PromptAdapter,
-  cwd: string,
   defaults: GitDefaults,
   given: { host: string | undefined; repoId?: string; branch?: string },
 ): Promise<Answers> {
@@ -157,34 +135,7 @@ async function runWizard(
     }),
     prompts,
   ).trim();
-  const detected = await detectFrameworks(cwd);
-  const frameworks = assertNotCancelled(
-    await prompts.multiselect<Framework>({
-      message: "Which frameworks does this repo use?",
-      options: FRAMEWORK_OPTIONS,
-      initialValues: detected,
-      required: true,
-    }),
-    prompts,
-  );
-  return { repoId, host, branch, include: includeGlob(frameworks) };
-}
-
-async function detectFrameworks(cwd: string): Promise<Framework[]> {
-  try {
-    const pkg = JSON.parse(await readFile(resolve(cwd, "package.json"), "utf8")) as {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    const { react, vue } = deps;
-    const out: Framework[] = [];
-    if (react) out.push("react");
-    if (vue) out.push("vue");
-    return out.length > 0 ? out : ["react"];
-  } catch {
-    return ["react"];
-  }
+  return { repoId, host, branch };
 }
 
 function cannotCreate(out: string, cause: unknown): CliError {
