@@ -398,7 +398,7 @@ export function DashboardBuilder({
               aria-describedby={effectiveMetric === "share" ? "dashboard-metric-hint" : undefined}
             >
               <ToggleGroupItem value="count" disabled={chartType === "stacked-share"}>Uses</ToggleGroupItem>
-              <ToggleGroupItem value="share">Share</ToggleGroupItem>
+              <ToggleGroupItem value="share">% of uses</ToggleGroupItem>
             </ToggleGroup>
           </div>
 

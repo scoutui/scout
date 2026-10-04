@@ -82,7 +82,7 @@ describe("chart builder read availability", () => {
     fireEvent.click(screen.getByRole("button", { name: "Local components" }));
     await screen.findByText("Couldn't find the components in this chart.");
     actions.preview.mockResolvedValueOnce({ state: "failed", scans: [{ scanId: "scan-rebuild", repoId: "repo-a", commit: "0123456789" }], retryable: false });
-    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    fireEvent.click(screen.getByRole("button", { name: "% of uses" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("repo-a · 0123456");
     expect(screen.queryByText("Couldn't find the components in this chart.")).toBeNull();
   });
@@ -220,11 +220,11 @@ describe("chart details and saving", () => {
     expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts");
   });
 
-  it("keeps Metric on Share with Count unavailable while Stacked is chosen", () => {
+  it("keeps Metric on % of uses with Count unavailable while Stacked is chosen", () => {
     builder();
     expect(screen.getByText("Share of these series")).not.toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Stacked" }));
-    expect(screen.getByRole("button", { name: "Share" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "% of uses" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Uses" })).toBeDisabled();
     expect(screen.getByText("Share of these series")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Trend" }));

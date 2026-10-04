@@ -44,7 +44,7 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 2. Type a name into **Name**, for example `acme-ui vs acme-ui-legacy`. You can also add a **Description**, which shows under the chart's name on its page.
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
-5. Under **Metric**, keep **Uses** to chart uses, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **Share** when you pick it.
+5. Under **Metric**, keep **Uses** to chart uses, or pick **% of uses** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **% of uses** when you pick it.
 6. In the **Series** panel, on the **Tags** tab, press `acme-ui`, then `acme-ui-legacy`. Each gets a `✓` and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
 7. Press **Save chart**. The chart opens on its own page and appears under **Private** on the charts page.
 
@@ -99,7 +99,7 @@ The export covers the period picked above the chart. A **Table** chart offers on
 
 ## Change or delete a chart
 
-On a chart's page, except for a **Stacked** chart, the **Uses** and **Share** toggle switches the view without changing the saved chart.
+On a chart's page, except for a **Stacked** chart, the **Uses** and **% of uses** toggle switches the view without changing the saved chart.
 
 Only the person who created a chart, or an Admin, can change or delete it, so only they see **Edit** and **Delete**.
 

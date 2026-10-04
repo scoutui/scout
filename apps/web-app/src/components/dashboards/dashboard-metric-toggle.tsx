@@ -32,7 +32,7 @@ export function DashboardMetricToggle({ metric }: { metric: DashboardMetric }) {
       aria-label="Metric"
     >
       <ToggleGroupItem value="count">Uses</ToggleGroupItem>
-      <ToggleGroupItem value="share">Share</ToggleGroupItem>
+      <ToggleGroupItem value="share">% of uses</ToggleGroupItem>
     </ToggleGroup>
   );
 }
