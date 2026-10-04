@@ -356,7 +356,7 @@ export function GroupedIdentityPicker({
                         onClick={() => choose(row)}
                         className={cn(
                           "flex cursor-default items-baseline gap-2 px-2.5 py-1.5",
-                          i === activeIndex ? "bg-muted" : "hover:bg-muted/60",
+                          i === activeIndex ? "bg-muted ring-2 ring-inset ring-ring/50" : "hover:bg-muted/60",
                           refused && "text-muted-foreground",
                         )}
                       >
