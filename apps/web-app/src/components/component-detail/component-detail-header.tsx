@@ -20,7 +20,7 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
         </Link>
       </div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-        <h1 className="font-mono text-2xl font-semibold tracking-tight">{detail.displayName}</h1>
+        <h1 className="font-mono text-2xl font-semibold">{detail.displayName}</h1>
         <Badge variant={detail.scope === "local" ? "outline" : "secondary"} title={ORIGIN_DESCRIPTION[detail.scope]}>
           {ORIGIN_LABEL[detail.scope]}
         </Badge>

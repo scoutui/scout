@@ -24,7 +24,7 @@ export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponen
           </Link>
         ) : null}
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="font-mono text-2xl font-semibold tracking-tight">{detail.displayName}</h1>
+          <h1 className="font-mono text-2xl font-semibold">{detail.displayName}</h1>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>{frameworkLabel(detail.kind)}</span>

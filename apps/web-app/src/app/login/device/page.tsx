@@ -74,7 +74,7 @@ export default async function DevicePage({
         <div className="font-wordmark text-2xl font-semibold">Scout</div>
         <div className="flex w-full flex-col gap-4 rounded-lg border bg-card p-6 text-card-foreground">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            <span className="text-label text-muted-foreground">
               Device code
             </span>
             <span className="font-mono text-lg font-semibold tracking-widest">{code}</span>
@@ -110,13 +110,13 @@ export default async function DevicePage({
       <div className="font-wordmark text-2xl font-semibold">Scout</div>
       <div className="flex w-full flex-col gap-4 rounded-lg border bg-card p-6 text-card-foreground">
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          <span className="text-label text-muted-foreground">
             Signed in as
           </span>
           <span className="min-w-0 break-words text-sm">{session?.user?.email}</span>
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          <span className="text-label text-muted-foreground">
             Device code
           </span>
           <span className="break-all font-mono text-lg font-semibold tracking-widest">{code}</span>

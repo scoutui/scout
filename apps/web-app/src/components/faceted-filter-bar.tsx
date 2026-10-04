@@ -92,7 +92,7 @@ export function FacetedFilterBar({
             value={search.value}
             onChange={(e) => search.onChange(e.target.value)}
             placeholder={search.placeholder}
-            className="h-8 pl-8 pr-8 font-mono text-xs placeholder:font-sans"
+            className="h-8 pl-8 pr-8 font-mono text-base placeholder:font-sans sm:text-xs"
           />
           {search.value ? (
             <button
@@ -280,7 +280,7 @@ function ValueList({ facet }: { facet: ListFacet }) {
     <div className="flex flex-col">
       {offered.length > 8 ? (
         <div className="border-b p-1.5">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={facet.searchPlaceholder} className="h-7 text-xs" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={facet.searchPlaceholder} className="h-7 text-base sm:text-xs" />
         </div>
       ) : null}
       <ul className="flex max-h-64 flex-col overflow-y-auto py-1">

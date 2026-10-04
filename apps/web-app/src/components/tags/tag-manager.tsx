@@ -155,7 +155,7 @@ export function TagEditor({
               aria-labelledby={TAG_COLUMN_ID.name}
               aria-describedby={nameMissing ? "tag-name-error" : undefined}
               aria-invalid={nameMissing || undefined}
-              className="h-8 font-mono text-xs md:text-xs"
+              className="h-8 font-mono text-base sm:text-xs md:text-xs"
               autoFocus
             />
             {nameMissing ? (
@@ -200,15 +200,15 @@ export function TagEditor({
               rows={3}
               aria-labelledby={TAG_COLUMN_ID.packages}
               aria-describedby="tag-packages-hint"
-              className="w-full resize-y rounded-lg border border-control bg-transparent px-2.5 py-1.5 font-mono text-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              className="w-full resize-y rounded-lg border border-control bg-transparent px-2.5 py-1.5 font-mono text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:text-xs dark:bg-input/30"
             />
-            <p id="tag-packages-hint" className="text-[0.6875rem] text-muted-foreground">
+            <p id="tag-packages-hint" className="text-xs text-muted-foreground">
               One package name or pattern per line. <span className="font-mono">*</span> matches anything.
             </p>
           </div>
 
           {matches ? (
-            <p aria-live="polite" className="min-w-0 text-[0.8125rem] leading-5 tabular-nums md:col-span-2 md:px-3 md:pt-1.5">
+            <p aria-live="polite" className="min-w-0 text-xs leading-5 tabular-nums md:col-span-2 md:px-3 md:pt-1.5">
               {matches.length === 0 ? (
                 "Matches no scanned package"
               ) : (
@@ -238,7 +238,7 @@ export function TagEditor({
             {tag ? (
               <div className="flex flex-wrap items-center gap-2">
                 {confirmingDelete ? (
-                  <span id="tag-delete-prompt" className="text-[0.8rem]">
+                  <span id="tag-delete-prompt" className="text-xs">
                     {`Delete ${tag.value}? Charts that use it lose that line.`}
                   </span>
                 ) : null}

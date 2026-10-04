@@ -71,7 +71,7 @@ export function CohortShareOverTime({
             tickLine={false}
             axisLine={false}
             tickFormatter={formatDayTick}
-            tick={{ fontSize: 10, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
             minTickGap={32}
           />
           <YAxis
@@ -81,7 +81,7 @@ export function CohortShareOverTime({
             domain={[0, 1]}
             ticks={[0, 0.25, 0.5, 0.75, 1]}
             tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            tick={{ fontSize: 10, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
           />
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}

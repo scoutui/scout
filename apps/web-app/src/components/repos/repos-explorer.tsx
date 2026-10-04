@@ -50,7 +50,7 @@ export function ReposExplorer({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={`Search ${plural(rows.length, "repo")}…`}
-            className="h-8 pl-8 font-mono text-xs placeholder:font-sans"
+            className="h-8 pl-8 font-mono text-base placeholder:font-sans sm:text-xs"
           />
           {text ? (
             <button

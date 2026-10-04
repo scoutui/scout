@@ -18,7 +18,7 @@ export default async function ReposPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Repos</h1>
+        <h1 className="text-3xl font-semibold tracking-display">Repos</h1>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="tabular-nums">{rows.length.toLocaleString()} {rows.length === 1 ? "repo" : "repos"}</span>
           <Sep />

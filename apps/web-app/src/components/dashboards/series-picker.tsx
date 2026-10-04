@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 
 export type PickableComponent = {
   componentId: string;
@@ -133,7 +134,7 @@ export function SeriesPicker({
             {TABS.map((t) => (
               <ToggleGroupItem key={t.value} value={t.value} className="flex-auto justify-center gap-1.5">
                 {t.label}
-                <span className="text-[0.6875rem] tabular-nums opacity-60">{formatCount(counts[t.value])}</span>
+                <span className="text-xs tabular-nums opacity-60">{formatCount(counts[t.value])}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
@@ -156,7 +157,7 @@ export function SeriesPicker({
                       onClick={() => pick(sel)}
                       className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
                     >
-                      <span className="min-w-0 flex-1 truncate font-mono text-xs">{g.label}</span>
+                      <span className={cn("min-w-0 flex-1 truncate text-xs", sel.kind !== "local" && "font-mono")}>{g.label}</span>
                       {added ? <span aria-hidden className="shrink-0 text-xs text-muted-foreground">✓</span> : null}
                     </button>
                   </li>

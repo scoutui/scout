@@ -98,7 +98,7 @@ function LegendDot({
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
       <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${className}`} />
       <span className={mono ? "font-mono tabular-nums text-muted-foreground" : "text-muted-foreground"}>{label}</span>
-      <span className="font-mono tabular-nums text-foreground">{value.toLocaleString()}</span>
+      <span className="tabular-nums text-foreground">{value.toLocaleString()}</span>
     </span>
   );
 }

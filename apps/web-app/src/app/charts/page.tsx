@@ -52,7 +52,7 @@ export default async function DashboardsPage() {
     <div>
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Charts</h1>
+          <h1 className="text-3xl font-semibold tracking-display">Charts</h1>
           <p className="mt-1 text-sm tabular-nums text-muted-foreground">
             {all.length.toLocaleString()} {all.length === 1 ? "chart" : "charts"}
             {latestScan ? ` · latest scan ${relativeTime(latestScan)}` : ""}

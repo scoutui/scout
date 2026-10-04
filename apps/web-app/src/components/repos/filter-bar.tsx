@@ -305,7 +305,7 @@ function OccurrencePicker({ facets, onChange }: { facets: FacetState; onChange: 
             apply(op, v);
           }}
           placeholder="count"
-          className="h-7 flex-1 text-xs tabular-nums"
+          className="h-7 flex-1 text-base tabular-nums sm:text-xs"
         />
       </div>
     </div>

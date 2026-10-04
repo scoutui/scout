@@ -152,7 +152,7 @@ function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[
       <td className={cn(CELL, "max-md:col-span-full max-md:row-start-2")}>
         <TagPackages tag={tag} />
       </td>
-      <td className={cn(CELL, "text-[0.8125rem] max-md:col-span-full max-md:row-start-3 max-md:text-muted-foreground")}>
+      <td className={cn(CELL, "text-xs max-md:col-span-full max-md:row-start-3 max-md:text-muted-foreground")}>
         {matchText}
       </td>
       <td className={cn(CELL, "text-right max-md:col-start-2 max-md:row-start-1")}>
@@ -190,7 +190,7 @@ function TagPackages({ tag }: { tag: Tag }) {
           aria-expanded={open}
           aria-label={open ? undefined : `Show ${hidden.toLocaleString()} more packages in ${tag.value}`}
           onClick={() => setOpen(!open)}
-          className="inline-flex h-5 cursor-pointer items-center rounded-sm border border-border px-2 font-sans text-[0.6875rem] leading-none whitespace-nowrap text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+          className="inline-flex h-5 cursor-pointer items-center rounded-sm border border-border px-2 font-sans text-xs leading-none whitespace-nowrap text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
         >
           {open ? "Show fewer" : `+${hidden.toLocaleString()} more`}
         </button>
