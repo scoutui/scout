@@ -91,7 +91,7 @@ export function LinkedDashboardChart({ config, view, range: initial }: { config:
     setRange(next);
     const url = new URL(window.location.href);
     url.searchParams.set("range", next);
-    window.history.replaceState(window.history.state, "", url);
+    window.history.replaceState(null, "", url);
   };
   return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} />;
 }
