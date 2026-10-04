@@ -1,5 +1,5 @@
 ---
-description: "See which components each repo uses, what changed since its previous scan, and how to filter, share and look back through a repo's scans."
+description: "See which components each repo uses, what changed since its previous scan, how to filter, share and look back through a repo's scans, and how Admins remove a scan or delete a repo."
 sidebar_label: "Repos"
 ---
 
@@ -98,6 +98,15 @@ If a page shows **Preparing scan data** instead of its content, the dashboard is
 
 **Scan data can't be read** means the dashboard can't read a stored scan the page needs. See [Scan data can't be read](/docs/explanation/cli-and-dashboard#scan-cant-be-read).
 :::
+
+## Remove a scan or delete a repo
+
+[Admins](/docs/guides/manage-people-and-roles) can remove a scan that shouldn't count, such as a test run or a scan of the wrong branch, and delete a repo.
+
+- **Remove a scan.** On the repo's **Scan history**, press **⋯** at the end of the scan's row, select **Remove scan**, then press **Remove**. If it was the latest scan, the scan before it becomes the latest. This can't be undone. On a repo's only scan the menu offers **Delete repo…** instead.
+- **Delete a repo.** On the repo page, press **⋯** beside the repo's name and select **Delete repo…**. Type the repo's id, then press **Delete repo**. The repo and all its scans are deleted, and the repos list opens. The repo comes back the next time a scan of it is uploaded.
+
+Charts leave out what you removed, earlier points included. A saved chart about a deleted repo stays, and its scope reads **storefront · missing**. **History** on the **Settings** page records who removed or deleted what.
 
 ## Next step
 
