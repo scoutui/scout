@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { createDiagnosticCollector } from "@scoutui/reference-graph";
 import { runVueScan } from "./test-utils.js";
 
 /**
@@ -141,6 +142,37 @@ import Foo from "./Foo.vue";
     expect(occurrences.map((o) => o.rawComponentId)).toEqual([
       { kind: "vue-component", export: "default", source: { type: "external", package: "fake-select" } },
     ]);
+  });
+
+  it("a component imported in the plain <script> beside <script setup> is credited at its PascalCase and kebab-case tags", () => {
+    const collector = createDiagnosticCollector();
+    const { occurrences } = runVueScan({
+      source: `<template><LineItem /><line-item /></template>
+<script lang="ts">
+import LineItem from "./LineItem.vue";
+export default { inheritAttrs: false };
+</script>
+<script setup lang="ts">
+const title = "x";
+</script>`,
+      file: "src/Page.vue",
+      sfcSymbol: "Page",
+      repoRoot: "/repo",
+      moduleResolver: (_from, spec) => (spec === "./LineItem.vue" ? "/repo/src/LineItem.vue" : null),
+      extraFiles: [{ file: "src/LineItem.vue", source: "<template><li><slot /></li></template>", sfcSymbol: "LineItem" }],
+      collector,
+    });
+    const lineItem = { kind: "vue-component", export: "LineItem", source: { type: "local", filePath: "src/LineItem.vue" } };
+    const via = { kind: "vue-template", specifier: "./LineItem.vue", import: "default" };
+    expect(occurrences.map((o) => [o.column, o.rawComponentId, o.via])).toEqual([
+      [11, lineItem, via],
+      [23, lineItem, via],
+    ]);
+    expect(occurrences.map((o) => o.rawOwnerComponentId)).toMatchObject([
+      { export: "Page", source: { filePath: "src/Page.vue" } },
+      { export: "Page", source: { filePath: "src/Page.vue" } },
+    ]);
+    expect(collector.drain()).toEqual([]);
   });
 
   it("a component imported under a lowercase name in an Options API script is credited at its tag through the import binding", () => {
