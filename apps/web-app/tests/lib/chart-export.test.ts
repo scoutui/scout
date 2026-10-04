@@ -109,7 +109,7 @@ describe("chartExportTable", () => {
       "bars of shares",
       config("bars", "share"),
       { kind: "snapshot", points: sharePoints },
-      { columns: ["Series", "Share"], rows: [["Button · @example/ui", "75.0%"], ["@example/web", "25.0%"]] },
+      { columns: ["Series", "% of uses"], rows: [["Button · @example/ui", "75.0%"], ["@example/web", "25.0%"]] },
     ],
   ];
 

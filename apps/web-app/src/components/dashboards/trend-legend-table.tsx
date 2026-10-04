@@ -45,7 +45,7 @@ export function TrendLegendTable({
           </TableHead>
           <TableHead className="text-right" aria-sort={ariaSort("value", sortKey, sortDir)}>
             <SortButton
-              label={metric === "share" ? "Share" : "Uses"}
+              label={metric === "share" ? "% of uses" : "Uses"}
               sortKey="value"
               current={sortKey}
               dir={sortDir}

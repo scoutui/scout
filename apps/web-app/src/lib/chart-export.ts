@@ -19,7 +19,7 @@ export function chartExportTable(config: DashboardConfig, view: DashboardView, r
   const cell = (value: number) => (share ? `${(value * 100).toFixed(1)}%` : String(value));
   if (view.kind === "snapshot") {
     return {
-      columns: ["Series", share ? "Share" : "Uses"],
+      columns: ["Series", share ? "% of uses" : "Uses"],
       rows: barOrder(view.points).map((p) => [exportLabel(p, deprecatedOnly), cell(p.value)]),
     };
   }
