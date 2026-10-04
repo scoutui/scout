@@ -12,6 +12,7 @@ import { LinkedDashboardChart } from "@/components/dashboards/dashboard-chart";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { DashboardMetricToggle } from "@/components/dashboards/dashboard-metric-toggle";
+import { ChartExportProvider } from "@/components/dashboards/chart-export-context";
 import { ChartMenu } from "@/components/dashboards/chart-menu";
 import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-button";
 import { privateChart } from "@/components/dashboards/private-chart";
@@ -133,6 +134,9 @@ export default async function DashboardViewPage({
   const canEdit = can(identity, "edit");
   const canChange = !derived && can(identity, "edit", { chart: dashboard });
   const showMetricToggle = !governancePage && config.chartType !== "stacked-share";
+  const title = derivedEntry
+    ? `${derivedEntry.kind === "migration" ? "Migration" : "Retirement"}: ${derivedEntry.fromLabel}${derivedEntry.toLabel ? ` → ${derivedEntry.toLabel}` : ""}`
+    : dashboard.name;
 
   return (
     <div>
@@ -144,95 +148,102 @@ export default async function DashboardViewPage({
         <span className="max-w-[24rem] truncate">{dashboard.name}</span>
       </div>
 
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-headline sm:text-2xl">
+      <ChartExportProvider title={title}>
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold tracking-headline sm:text-2xl">
+              {derivedEntry ? (
+                <>
+                  {derivedEntry.kind === "migration" ? "Migration: " : "Retirement: "}
+                  <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.fromLabel} /></span>
+                  {derivedEntry.toLabel ? (
+                    <>
+                      <span className="sr-only"> replaced by </span>
+                      <span aria-hidden className="text-muted-foreground">
+                        {" → "}
+                      </span>
+                      <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.toLabel} /></span>
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                dashboard.name
+              )}
+            </h1>
             {derivedEntry ? (
-              <>
-                {derivedEntry.kind === "migration" ? "Migration: " : "Retirement: "}
-                <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.fromLabel} /></span>
-                {derivedEntry.toLabel ? (
-                  <>
-                    <span className="sr-only"> replaced by </span>
-                    <span aria-hidden className="text-muted-foreground">
-                      {" → "}
-                    </span>
-                    <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.toLabel} /></span>
-                  </>
-                ) : null}
-              </>
-            ) : (
-              dashboard.name
-            )}
-          </h1>
-          {derivedEntry ? (
-            <div className="mt-1">
-              <TrackingReadout entry={derivedEntry} />
+              <div className="mt-1">
+                <TrackingReadout entry={derivedEntry} />
+              </div>
+            ) : null}
+            {dashboard.description ? (
+              <p className="mt-1 max-w-prose text-sm text-muted-foreground">{dashboard.description}</p>
+            ) : null}
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{CHART_KIND_LABEL[config.chartType]}</span>
+              <DashboardScopeBadge scope={config.scope} missing={missingRepo?.missing} />
+              {!derived && dashboard.visibility === "private" ? <span>Private</span> : null}
+              {dashboard.createdBy ? <span>Created by {dashboard.createdBy}</span> : null}
             </div>
-          ) : null}
-          {dashboard.description ? (
-            <p className="mt-1 max-w-prose text-sm text-muted-foreground">{dashboard.description}</p>
-          ) : null}
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{CHART_KIND_LABEL[config.chartType]}</span>
-            <DashboardScopeBadge scope={config.scope} missing={missingRepo?.missing} />
-            {!derived && dashboard.visibility === "private" ? <span>Private</span> : null}
-            {dashboard.createdBy ? <span>Created by {dashboard.createdBy}</span> : null}
+          </div>
+          <div className="flex items-center gap-2">
+            {showMetricToggle ? <DashboardMetricToggle metric={metric} /> : null}
+            {canChange ? (
+              <>
+                <Link href={`/charts/${encodeURIComponent(dashboard.id)}/edit`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                  Edit
+                </Link>
+                <DeleteDashboardButton id={dashboard.id} />
+              </>
+            ) : null}
+            <ChartMenu
+              id={dashboard.id}
+              canDuplicate={!derived && canEdit}
+              visibility={canChange ? dashboard.visibility : null}
+              exportSubmenu={!derived}
+            />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {showMetricToggle ? <DashboardMetricToggle metric={metric} /> : null}
-          {canChange ? (
-            <>
-              <Link href={`/charts/${encodeURIComponent(dashboard.id)}/edit`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-                Edit
-              </Link>
-              <DeleteDashboardButton id={dashboard.id} />
-            </>
-          ) : null}
-          {derived || !canEdit ? null : <ChartMenu id={dashboard.id} canDuplicate={canEdit} visibility={canChange ? dashboard.visibility : null} />}
-        </div>
-      </div>
 
-      {notice ? (
-        <div className="mb-6">
-          <ChartResultsState notice={notice} besideNumbers />
-        </div>
-      ) : null}
-      {skipped.gaps.length || skipped.fallbacks.length ? (
-        <div className="mb-6">
-          <SkippedScansNotice {...skipped} />
-        </div>
-      ) : null}
+        {notice ? (
+          <div className="mb-6">
+            <ChartResultsState notice={notice} besideNumbers />
+          </div>
+        ) : null}
+        {skipped.gaps.length || skipped.fallbacks.length ? (
+          <div className="mb-6">
+            <SkippedScansNotice {...skipped} />
+          </div>
+        ) : null}
 
-      {missingRepo?.missing === "scans" ? (
-        <EmptyState
-          icon={<Clock className="size-6" />}
-          title="This chart's repo has no scans yet."
-          description={`This chart fills in once the first scan of ${missingRepo.repoId} is uploaded.`}
-        />
-      ) : missingRepo?.missing === "repo" ? (
-        <EmptyState
-          icon={<AlertTriangle className="size-6" />}
-          title="This chart's repo no longer exists."
-          description={
-            canChange
-              ? `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.`
-              : `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted.`
-          }
-        />
-      ) : isEmptyView(view) ? (
-        <EmptyState
-          icon={<SearchX className="size-6" />}
-          title="Couldn't find the components in this chart."
-          description={canChange ? "Edit the chart to pick them again." : undefined}
-        />
-      ) : (
-        /* A table runs flush to the panel edge; plotted charts sit inset. */
-        <div className={config.chartType === "table" ? "panel overflow-hidden" : "panel p-4"}>
-          <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} />
-        </div>
-      )}
+        {missingRepo?.missing === "scans" ? (
+          <EmptyState
+            icon={<Clock className="size-6" />}
+            title="This chart's repo has no scans yet."
+            description={`This chart fills in once the first scan of ${missingRepo.repoId} is uploaded.`}
+          />
+        ) : missingRepo?.missing === "repo" ? (
+          <EmptyState
+            icon={<AlertTriangle className="size-6" />}
+            title="This chart's repo no longer exists."
+            description={
+              canChange
+                ? `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.`
+                : `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted.`
+            }
+          />
+        ) : isEmptyView(view) ? (
+          <EmptyState
+            icon={<SearchX className="size-6" />}
+            title="Couldn't find the components in this chart."
+            description={canChange ? "Edit the chart to pick them again." : undefined}
+          />
+        ) : (
+          /* A table runs flush to the panel edge; plotted charts sit inset. */
+          <div className={config.chartType === "table" ? "panel overflow-hidden" : "panel p-4"}>
+            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} />
+          </div>
+        )}
+      </ChartExportProvider>
 
       {derivedEntry && canEdit ? (
         <p className="mt-3 text-xs text-muted-foreground">

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { CohortRole, CohortSelector, CohortSeries } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, rangeStart, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesFrom, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
+import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, rangeStart, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesFrom, seriesWashes, tooltipRowTimestamp, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -297,6 +297,22 @@ describe("date range", () => {
   it("keeps a point that falls on the start, and nothing before it", () => {
     const from = Date.parse("2026-07-01T00:00:00Z");
     expect(seriesFrom(series, from)[0]?.points.map((p) => p.t)).toEqual(["2026-07-01T00:00:00Z", "2026-09-30T12:00:00Z"]);
+  });
+
+  const coverage = { total: 1, points: [] };
+  const shown = (chartType: DashboardConfig["chartType"], view: DashboardView, range: ChartRange) =>
+    visibleView({ scope: { kind: "all" }, cohorts: [], chartType, metric: "count" }, view, range);
+
+  it.each(["trend", "stacked-share"] as const)("draws a %s chart from the range's start, and whole at All", (chartType) => {
+    const view: DashboardView = { kind: "series", series, coverage };
+    const from = Date.parse("2026-06-30T12:00:00Z");
+    expect(shown(chartType, view, "3m")).toEqual({ view: { ...view, series: seriesFrom(series, from) }, from });
+    expect(shown(chartType, view, "all")).toEqual({ view, from: null });
+  });
+
+  it("draws a table chart whole at any range", () => {
+    const view: DashboardView = { kind: "table", points: [], series, coverage };
+    expect(shown("table", view, "3m")).toEqual({ view, from: null });
   });
 
   it.each([

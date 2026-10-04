@@ -2,7 +2,8 @@
 import { useState } from "react";
 import type { ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, rangeStart, savedChartCohorts, seriesFrom } from "@/lib/dashboard-chart-data";
+import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, rangeStart, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
+import { useShowChart } from "./chart-export-context";
 import { CohortBarChart } from "./cohort-bar-chart";
 import { CohortShareOverTime } from "./cohort-share-over-time";
 import { CohortTable } from "./cohort-table";
@@ -43,8 +44,7 @@ export function DashboardChart({
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   if (config.chartType === "trend" || config.chartType === "stacked-share") {
     if (view.kind !== "series") return <ChartFallback />;
-    const from = rangeStart(view.series, range);
-    const series = from === null ? view.series : seriesFrom(view.series, from);
+    const { view: visible, from } = visibleView(config, view, range);
     const presets = onRangeChange && rangeStart(view.series, "3m") !== null;
     return (
       <div>
@@ -70,9 +70,9 @@ export function DashboardChart({
           </div>
         ) : null}
         {config.chartType === "trend" ? (
-          <CohortTrendChart series={series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} />
+          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} />
         ) : (
-          <CohortShareOverTime series={series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} from={from} />
+          <CohortShareOverTime series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} from={from} />
         )}
       </div>
     );
@@ -84,9 +84,13 @@ export function DashboardChart({
   return config.chartType === "bars" ? <CohortBarChart points={view.points} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
 }
 
-/** A DashboardChart on a chart's own page: it opens at `range`, and a picked range goes into the page's link. */
+/**
+ * A DashboardChart on a chart's own page: it opens at `range`, a picked range goes into the page's link, and the chart
+ * at the range on screen is offered for export.
+ */
 export function LinkedDashboardChart({ config, view, range: initial }: { config: DashboardConfig; view: DashboardView; range: ChartRange }) {
   const [range, setRange] = useState(initial);
+  useShowChart({ config, view, range });
   const pick = (next: ChartRange) => {
     setRange(next);
     const url = new URL(window.location.href);

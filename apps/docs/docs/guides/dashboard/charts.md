@@ -76,7 +76,7 @@ To send someone a chart, send them its page's address. Someone who can't open a 
 
 A chart's page shows who created it under its name.
 
-## Copy a chart
+## Duplicate a chart
 
 To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new private chart of your own.
 
@@ -85,6 +85,17 @@ To start from a chart someone else made, open it, press **⋯**, then **Duplicat
 On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan, and the chart's scale fits the period. The link keeps your pick, so whoever you send it to sees the same period.
 
 To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. A chart with six or more lines lists them in a table under the chart, with each line's latest uses or share. Press a column heading to sort it, and press a name to see that line on its own.
+
+## Export a chart
+
+On a saved chart's page, press **⋯**, then **Export**. On a migration or retirement chart, the same items are in the **⋯** menu itself.
+
+- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value. The image is always light, whichever theme you use.
+- **Download CSV** saves a file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
+- **Copy image** copies the same image as **Download PNG**, ready to paste. Browsers that can't copy images don't show it.
+- **Copy table** copies the same table as **Download CSV**, ready to paste into a spreadsheet.
+
+The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**, which give its series over time. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
 
 ## Change or delete a chart
 
@@ -109,7 +120,7 @@ A chart leaves off any series the dashboard can no longer find, and its row on t
 
 You don't build these. Each comes from a lifecycle record on the **governance** page, and shows uses over time across every repo: the deprecated side and its replacement for a migration, the retired side alone for a retirement. A record only gets a row once a scan has used what it names.
 
-These charts have no **Edit** or **Delete**. One goes away when its record is deleted. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
+These charts have no **Edit** or **Delete**, but you can [export](#export-a-chart) them. One goes away when its record is deleted. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## Good to know
 
