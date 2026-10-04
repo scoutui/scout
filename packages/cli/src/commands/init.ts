@@ -1,4 +1,5 @@
-import { writeFile, stat } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { realpath, writeFile, stat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { posixPath } from "@scoutui/reference-graph";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
@@ -46,14 +47,10 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const log = opts.log ?? new Logger();
   const prompts = opts.interactive ? opts.prompts : undefined;
   const rootConfig = opts.outputPath === undefined ? await suggestedRootConfig(cwd) : null;
-  if (rootConfig !== null) {
-    await assertNoExistingConfig(
-      rootConfig,
-      `This repository already has a config: ${relative(cwd, rootConfig)}. Run scout scan in ${relative(cwd, dirname(rootConfig))} to use it.`,
-    );
-  }
+  await assertNoExistingConfig(out);
+  const above = opts.outputPath === undefined ? await configAbove(cwd) : null;
+  if (above !== null) throw new CliError(`This repository already has a config: ${above}. Run scout scan in ${dirname(above)} to use it.`, 1);
   const asksRoot = prompts !== undefined && rootConfig !== null;
-  if (!asksRoot) await assertNoExistingConfig(out);
   const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
   const outsideGit = (await probeRepository(cwd)).kind === "outside";
   if (outsideGit) {
@@ -96,6 +93,19 @@ export async function runInit(opts: InitOptions): Promise<void> {
 async function suggestedRootConfig(cwd: string): Promise<string | null> {
   const root = findWorkspaceRoot(cwd, (await readGitToplevel(cwd)) ?? undefined);
   return root === null ? null : join(root, "scout.config.json");
+}
+
+/** The nearest config in a folder above `cwd`, up to the git root, as a path from `cwd`; else null. */
+async function configAbove(cwd: string): Promise<string | null> {
+  const top = await readGitToplevel(cwd);
+  if (top === null) return null;
+  const from = await realpath(cwd);
+  for (let dir = from; dir !== top && dirname(dir) !== dir; ) {
+    dir = dirname(dir);
+    const config = join(dir, "scout.config.json");
+    if (existsSync(config)) return relative(from, config);
+  }
+  return null;
 }
 
 /** The repository name the remote gives, else the name of the folder that holds the config. */
@@ -219,14 +229,14 @@ function cannotCreate(out: string, cause: unknown): CliError {
   return new CliError(`Couldn't create ${out}. Check that its folder exists and that you can write to it.`, 1, { cause });
 }
 
-async function assertNoExistingConfig(out: string, message = `${out} already exists. Edit it, or delete it and run scout init again.`): Promise<void> {
+async function assertNoExistingConfig(out: string): Promise<void> {
   try {
     await stat(out);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return;
     throw cannotCreate(out, err);
   }
-  throw new CliError(message, 1);
+  throw new CliError(`${out} already exists. Edit it, or delete it and run scout init again.`, 1);
 }
 
 async function writeConfig(out: string, cfg: ReturnType<typeof buildConfig>): Promise<void> {
