@@ -77,4 +77,15 @@ describe("presentIdentity", () => {
     expect(presentIdentity(card).packageName).toBeNull();
     expect(governanceKey(card)).toBeNull();
   });
+
+  const inRepo = (filePath: string): AttributionTarget => ({ kind: "repository", repoId: "repo-a", filePath, exportName: "Card" });
+  const fromPackage = (packageName: string): AttributionTarget => ({ kind: "package", packageName });
+  it.each([
+    ["two files in the repo", "local", [inRepo("src/a.ts"), inRepo("src/b.ts")]],
+    ["a package and a file in the repo", "external", [fromPackage("@example/ui"), inRepo("src/a.ts")]],
+    ["two packages", "external", [fromPackage("@example/ui"), fromPackage("@example/other")]],
+  ])("presents a tag that %s claim as %s, with no package or file", (_, scope, candidates) => {
+    const card = component(tag("x-card"), { attribution: { status: "conflict", strongestClass: "observed", candidates, evidence: [] } });
+    expect(presentIdentity(card)).toMatchObject({ scope, packageName: null, filePath: null });
+  });
 });

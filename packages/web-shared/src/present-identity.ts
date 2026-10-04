@@ -5,7 +5,7 @@ export type PresentableComponent = Pick<Component, "identity" | "framework" | "a
 
 /** A scan-file identity in the UI's vocabulary. */
 export type Presented = {
-  /** Local: a repository declaration, or a tag this scan resolves to a repository. */
+  /** Local: a repository declaration, or a tag this scan resolves to a repository or that only repository files claim. */
   scope: "local" | "external";
   kind: "react-component" | "vue-component" | "custom-element" | "tag";
   /** The package export's package, a repository declaration's package (its workspace package, or the root package), or the package this scan resolves a tag to. */
@@ -36,8 +36,9 @@ export function presentIdentity(component: PresentableComponent): Presented {
     case "tag": {
       const attribution = component.attribution;
       const target = attribution?.status === "resolved" ? attribution.target : undefined;
+      const inRepo = target ? target.kind === "repository" : attribution?.status === "conflict" && attribution.candidates.every(candidate => candidate.kind === "repository");
       return {
-        scope: target?.kind === "repository" ? "local" : "external",
+        scope: inRepo ? "local" : "external",
         kind: attribution?.evidence.some(record => DEFINES_ELEMENT.has(record.source)) ? "custom-element" : "tag",
         packageName: target?.kind === "package" ? target.packageName : null,
         exportName: null,
