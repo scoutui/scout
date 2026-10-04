@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "alias-into-installed-package",
+  "include": [
+    "src/**/*.{ts,tsx}"
+  ],
+  "exclude": [
+    "**/*.{test,spec,stories}.*",
+    "**/node_modules/**"
+  ]
+}

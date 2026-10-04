@@ -276,6 +276,7 @@ export function createGraphBuilder(opts: CreateGraphBuilderOptions): GraphBuilde
           : {}),
         ...(hooks?.isDeclaredDependency !== undefined ? { isDeclaredDependency: hooks.isDeclaredDependency } : {}),
         ...(hooks?.isInstalledPackage !== undefined ? { isInstalledPackage: hooks.isInstalledPackage } : {}),
+        ...(hooks?.inInstalledPackage !== undefined ? { inInstalledPackage: hooks.inInstalledPackage } : {}),
       };
 
       if (opts.repoRoot) {
