@@ -146,7 +146,9 @@ export class PostgresDriver implements StorageDriver {
       const tags = await snapshot.listTags();
       const governance = await snapshot.listGovernance();
       const digests = await reader.digests(scans);
-      return reduceRepoDetail(fact, { scanCount: selected.scan_count, digests, tags }, governance);
+      const [view] = await reader.repos([selected]);
+      if (!view) return null;
+      return reduceRepoDetail(fact, { scanCount: selected.scan_count, digests, tags, findings: view.findings }, governance);
     });
   }
 

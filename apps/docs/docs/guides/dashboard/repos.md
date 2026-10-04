@@ -1,5 +1,5 @@
 ---
-description: "See which components each repo uses, what changed since its previous scan, how to filter, share and look back through a repo's scans, and how Admins remove a scan or delete a repo."
+description: "See which components each repo uses, what changed since its previous scan, what the scan couldn't see, how to filter, share and look back through a repo's scans, and how Admins remove a scan or delete a repo."
 sidebar_label: "Repos"
 ---
 
@@ -25,6 +25,12 @@ Below it, a status line tells you what needs attention:
 
 - **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
 - **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table. A repo with one scan reads **first scan · nothing to compare**.
+
+### Fix what the scan couldn't see
+
+When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, the repo page says **This scan couldn't see everything**. When some of those problems are yours to fix, it also says how many kinds, such as **2 things to fix**. The repo's numbers leave those uses out, or count them without a package.
+
+Open **This scan couldn't see everything** to see each kind of problem: how many there are, the names or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A problem whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
 
 ## Find components in a repo
 

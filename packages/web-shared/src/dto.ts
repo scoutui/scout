@@ -124,6 +124,22 @@ export const RepoSummarySchema = z.object({
 });
 export type RepoSummary = z.infer<typeof RepoSummarySchema>;
 
+// ---- What a scan couldn't see ----
+export const ScanFindingKind = z.enum([
+  "package-not-installed", "not-scanned", "import-not-found", "not-imported", "auto-import-missing", "undefined-element", "lazy-import",
+  "package-exports", "not-matched", "passed-in",
+]);
+export type ScanFindingKind = z.infer<typeof ScanFindingKind>;
+// `count` is how many of the kind the scan reported; `examples` are its three
+// most frequent package names, paths, names or tags, and `more` how many others.
+export const ScanFindingSchema = z.object({
+  kind: ScanFindingKind,
+  count: z.number().int().positive(),
+  examples: z.array(z.object({ text: z.string(), count: z.number().int().positive() })),
+  more: z.number().int().nonnegative(),
+});
+export type ScanFinding = z.infer<typeof ScanFindingSchema>;
+
 // ---- Repo detail (one repo full page payload) ----
 export const RepoDetailSchema = RepoSummarySchema.extend({
   initialCommit: z.string().nullable(),
@@ -135,6 +151,8 @@ export const RepoDetailSchema = RepoSummarySchema.extend({
   diff: ScanDiffSchema.nullable(),
   // What the shown scan covered; null for a scan that doesn't record it.
   scope: z.custom<ScanScope>().nullable(),
+  // What the shown scan couldn't see; empty when it reported nothing.
+  findings: z.array(ScanFindingSchema),
 });
 export type RepoDetail = z.infer<typeof RepoDetailSchema>;
 

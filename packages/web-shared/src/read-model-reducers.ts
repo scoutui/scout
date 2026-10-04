@@ -1,6 +1,7 @@
 import type {
   RepoSummary,
   RepoDetail,
+  ScanFinding,
   ComponentRow,
   PackageSummary,
   PackageDetail,
@@ -144,7 +145,7 @@ export function reduceRepoSummary(
 
 export function reduceRepoDetail(
   artifact: FactScan<RepoFact>,
-  ctx: { scanCount: number; digests: DigestScan[]; tags: Tag[] },
+  ctx: { scanCount: number; digests: DigestScan[]; tags: Tag[]; findings: ScanFinding[] },
   governance: GovernanceRecord[] = [],
 ): RepoDetail {
   // Baseline is the scan immediately before the shown scan, so an older
@@ -163,6 +164,7 @@ export function reduceRepoDetail(
     scannerVersion: artifact.meta.scannerVersion,
     diff,
     scope: artifact.meta.scope ?? null,
+    findings: ctx.findings,
   };
 }
 
