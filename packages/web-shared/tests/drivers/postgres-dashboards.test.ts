@@ -51,10 +51,10 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver dashboards", () => {
     expect((await db.driver.getDashboard(created.id))?.config).toEqual(cfg);
   });
 
-  it("keeps the stored creator and visibility when a dashboard is saved over", async () => {
+  it("keeps the stored creator and takes the new visibility when a dashboard is saved over", async () => {
     const created = await db.driver.upsertDashboard({ ...baseInput, createdByUserId: CREATOR });
     const updated = await db.driver.upsertDashboard({ ...baseInput, id: created.id, name: "x", visibility: "everyone", createdByUserId: "attacker" });
-    expect(updated).toMatchObject({ name: "x", createdByUserId: CREATOR, visibility: "private" });
+    expect(updated).toMatchObject({ name: "x", createdByUserId: CREATOR, visibility: "everyone" });
   });
 
   it("names its creator, by email when they have no name, and nobody once they're deleted", async () => {

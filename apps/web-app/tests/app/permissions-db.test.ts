@@ -85,7 +85,7 @@ describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
       signInAs(editor);
       await saveDashboard(dashboard);
       const { rows } = await pool.query("SELECT id, visibility FROM dashboards");
-      expect(rows).toEqual([{ id: expect.any(String), visibility: "private" }]);
+      expect(rows).toEqual([{ id: expect.any(String), visibility: "everyone" }]);
       expect(navigation.redirect).toHaveBeenCalledExactlyOnceWith(`/charts/${rows[0].id}`);
     });
 
@@ -106,19 +106,18 @@ describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
       expect(await count("dashboards")).toBe(0);
     });
 
-    it("refuses another Editor's save over a chart and their delete, and allows both for an Admin", async () => {
+    it("refuses another Editor's save over a chart, and who can see it with it, and their delete, and allows them for an Admin", async () => {
       const other = await insertPerson(pool, { email: "cy@example.com", role: "editor" });
       const admin = await insertPerson(pool, { email: "di@example.com", role: "admin" });
-      const { id } = await getStorage().upsertDashboard({ ...dashboard, createdByUserId: editor });
+      const { id } = await getStorage().upsertDashboard({ ...dashboard, visibility: "private", createdByUserId: editor });
 
       signInAs(other);
       expect(await saveDashboard({ ...dashboard, id, name: "Taken over" })).toEqual({ ok: false, error: CHART_REFUSAL });
       expect(await deleteDashboard(id)).toEqual({ ok: false, error: CHART_REFUSAL });
-      expect(await getStorage().getDashboard(id)).toMatchObject({ name: "Local usage" });
+      expect(await getStorage().getDashboard(id)).toMatchObject({ name: "Local usage", visibility: "private" });
 
       signInAs(admin);
-      const madePrivate: DashboardInput = { ...dashboard, visibility: "private" };
-      await saveDashboard({ ...madePrivate, id, name: "Renamed by an Admin" });
+      await saveDashboard({ ...dashboard, id, name: "Renamed by an Admin" });
       expect(await getStorage().getDashboard(id)).toMatchObject({ name: "Renamed by an Admin", createdByUserId: editor, visibility: "everyone" });
       expect(await deleteDashboard(id)).toEqual({ ok: true });
       expect(await count("dashboards")).toBe(0);

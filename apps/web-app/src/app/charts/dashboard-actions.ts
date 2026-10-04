@@ -11,10 +11,10 @@ import { isDerivedId } from "@/lib/derived-dashboards";
 import { loadDashboardView, type DashboardView } from "@/lib/dashboard-load";
 import type { PickableComponent } from "@/components/dashboards/series-picker";
 
-const ChartFormSchema = DashboardInputSchema.omit({ visibility: true, createdByUserId: true });
+const ChartFormSchema = DashboardInputSchema.omit({ createdByUserId: true });
 
-/** Creates a private chart, or saves over one, keeping who can open it. */
-export async function saveDashboard(untrusted: Omit<DashboardInput, "visibility">): Promise<{ ok: false; error: string }> {
+/** Creates a chart, or saves over one, with who can open it. */
+export async function saveDashboard(untrusted: Omit<DashboardInput, "createdByUserId">): Promise<{ ok: false; error: string }> {
   const gate = await requireEditor();
   if (!gate.ok) return gate;
   const parsed = ChartFormSchema.safeParse(untrusted);
@@ -29,7 +29,7 @@ export async function saveDashboard(untrusted: Omit<DashboardInput, "visibility"
       if (!can(await identify({ browser: true }), "edit", { chart: stored })) return { ok: false, error: CHART_REFUSAL };
     }
     // Server owns createdByUserId on create; on update the driver preserves the original creator.
-    const saved = await getStorage().upsertDashboard({ ...input, visibility: "private", createdByUserId: gate.userId });
+    const saved = await getStorage().upsertDashboard({ ...input, createdByUserId: gate.userId });
     savedId = saved.id;
   } catch (err) {
     console.error("saveDashboard failed:", err);

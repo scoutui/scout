@@ -49,7 +49,7 @@ export default async function NewDashboardPage({
       {source ? (
         <DashboardBuilder
           {...options}
-          saved={{ id: source.id, name: `Copy of ${source.name}`, description: source.description, config: source.config }}
+          saved={{ id: source.id, name: `Copy of ${source.name}`, description: source.description, config: source.config, visibility: "private" }}
           duplicate
         />
       ) : (

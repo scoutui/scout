@@ -151,20 +151,20 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
 
       const creatorTree = await page();
       expect(sections(creatorTree)).toEqual([
-        { heading: "Saved charts · 1", links: [link(saved)] },
+        { heading: "Shared charts · 1", links: [link(saved)] },
         { heading: "Private · 1", links: [link(mine)] },
       ]);
       expect(textOf(creatorTree)).toContain("2 charts");
 
       reader = { ...editor, userId: "someone-else" };
       const otherTree = await page();
-      expect(sections(otherTree)).toEqual([{ heading: "Saved charts · 1", links: [link(saved)] }]);
+      expect(sections(otherTree)).toEqual([{ heading: "Shared charts · 1", links: [link(saved)] }]);
       expect(textOf(otherTree)).toContain("1 chart");
 
       reader = { ...editor, userId: "someone-else", role: "admin" };
       const adminTree = await page();
       expect(sections(adminTree)).toEqual([
-        { heading: "Saved charts · 1", links: [link(saved)] },
+        { heading: "Shared charts · 1", links: [link(saved)] },
         { heading: "Other people's charts · 2", links: [link(mine), link(theirs)] },
       ]);
       expect(textOf(adminTree)).toContain("Created by Bo Chen");
@@ -277,6 +277,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Retirement: @sample/core", children: expect.anything() }]);
       expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `retirement:${retired.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
+      expect(allPropsFor(tree, "ChartVisibilityLabel")).toEqual([]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
       reader = { ...editor, role: "viewer" };

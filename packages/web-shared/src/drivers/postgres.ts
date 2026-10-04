@@ -384,7 +384,7 @@ export class PostgresDriver implements StorageDriver {
         INSERT INTO dashboards (id, name, description, config, visibility, created_by_user_id, updated_at)
         VALUES (${id}, ${input.name}, ${input.description}, ${configJson}::jsonb, ${input.visibility}, ${input.createdByUserId ?? null}, now())
         ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name, description = EXCLUDED.description, config = EXCLUDED.config, updated_at = now()
+          name = EXCLUDED.name, description = EXCLUDED.description, config = EXCLUDED.config, visibility = EXCLUDED.visibility, updated_at = now()
       `);
       const stored = await new PostgresDriver(this.pool, client).getDashboard(id);
       if (!stored) throw new Error(`upsertDashboard: row ${id} missing after write`);

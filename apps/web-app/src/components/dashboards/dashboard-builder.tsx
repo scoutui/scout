@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CircleX } from "lucide-react";
-import type { ChartRange, ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
+import type { ChartRange, ChartType, ChartVisibility, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
@@ -17,6 +17,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
+import { VISIBILITY, visibilityTitle } from "@/components/dashboards/chart-visibility";
 import { ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
 import { pickableForRepo, previewDashboard, saveDashboard } from "@/app/charts/dashboard-actions";
 
@@ -66,12 +67,12 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; glyph: React.ReactNo
 ];
 
 /**
- * Chart builder. A controls strip holds the name, scope, chart type, metric, Cancel,
- * Save and description; a series rail beside the chart lists the current series
- * (remove, or narrow a package or tag series to its deprecated components from the
- * row menu) above an always-open picker. Controls build a DashboardConfig, and the
- * preview re-projects it through previewDashboard, keeping only the latest request's
- * result.
+ * Chart builder. A controls strip holds the name, scope, chart type and metric, then
+ * the description, who can see the chart, Cancel and Save; a series rail beside the
+ * chart lists the current series (remove, or narrow a package or tag series to its
+ * deprecated components from the row menu) above an always-open picker. Controls build a
+ * DashboardConfig, and the preview re-projects it through previewDashboard, keeping
+ * only the latest request's result.
  */
 
 /** A selector's name from the estate and picker lists, mirroring the engine's cohortIdentity; undefined when they don't hold it. */
@@ -125,7 +126,7 @@ export function DashboardBuilder({
   components: PickableComponent[];
   packages: string[];
   /** A saved chart to edit: the builder opens with it and saves back to it, or with `duplicate`, saves a new chart. */
-  saved?: Pick<Dashboard, "id" | "name" | "description" | "config">;
+  saved?: Pick<Dashboard, "id" | "name" | "description" | "config" | "visibility">;
   duplicate?: boolean;
 }) {
   const [name, setName] = useState(saved?.name ?? "");
@@ -137,6 +138,7 @@ export function DashboardBuilder({
   const [chartType, setChartType] = useState<ChartType>(saved?.config.chartType ?? "trend");
   const [metric, setMetric] = useState<DashboardMetric>(saved?.config.metric ?? "count");
   const [range, setRange] = useState<ChartRange>(saved?.config.range ?? "all");
+  const [visibility, setVisibility] = useState<ChartVisibility>(saved?.visibility ?? "private");
   const [preview, setPreview] = useState<{ config: DashboardConfig; view: DashboardView; skipped: SkippedNotices } | null>(null);
   // The last preview that landed, and the keys of the series its config held that its view left out.
   const [landed, setLanded] = useState<{ view: DashboardView; unknown: ReadonlySet<string> } | null>(null);
@@ -311,6 +313,7 @@ export function DashboardBuilder({
       name: name.trim(),
       description: description.trim() || null,
       config: range !== "all" && (chartType === "trend" || chartType === "stacked-share") ? { ...config, range } : config,
+      visibility,
     });
     setSaving(false);
     setError(actionErrorMessage(res?.error, "save this chart", "Couldn't save the chart. Try again."));
@@ -401,6 +404,41 @@ export function DashboardBuilder({
               <ToggleGroupItem value="share">% of uses</ToggleGroupItem>
             </ToggleGroup>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[16rem] flex-1 space-y-1.5">
+            <label htmlFor="dashboard-description" className="block text-label text-muted-foreground">
+              Description
+            </label>
+            <Input
+              id="dashboard-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional. Shown under the chart's name."
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="block text-label text-muted-foreground">Visibility</span>
+            <ToggleGroup
+              value={[visibility]}
+              onValueChange={(v) => v[0] && setVisibility(v[0] as ChartVisibility)}
+              multiple={false}
+              variant="outline"
+              aria-label="Visibility"
+            >
+              {(["private", "everyone"] as const).map((v) => {
+                const { label, icon: Icon } = VISIBILITY[v];
+                return (
+                  <ToggleGroupItem key={v} value={v} className="gap-1.5" title={visibilityTitle(v, !saved || duplicate)}>
+                    <Icon aria-hidden className="size-3.5" />
+                    {label}
+                  </ToggleGroupItem>
+                );
+              })}
+            </ToggleGroup>
+          </div>
 
           <div className="ml-auto space-y-1.5 self-end">
             <p id="dashboard-save-reason" className="empty:hidden text-right text-xs leading-none text-muted-foreground">
@@ -423,18 +461,6 @@ export function DashboardBuilder({
               </Button>
             </div>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="dashboard-description" className="block text-label text-muted-foreground">
-            Description
-          </label>
-          <Input
-            id="dashboard-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Optional. Shown under the chart's name."
-          />
         </div>
       </div>
 

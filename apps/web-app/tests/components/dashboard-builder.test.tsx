@@ -125,13 +125,13 @@ describe("editing a saved chart", () => {
         repos={["repo-a"]}
         components={[]}
         packages={[]}
-        saved={{ id: "chart-1", name: "Button rollout", description: "Kept as it was", config }}
+        saved={{ id: "chart-1", name: "Button rollout", description: "Kept as it was", config, visibility: "private" }}
       />,
     );
     expect(screen.getByLabelText("Name")).toHaveValue("Button rollout");
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Button rollout again" } });
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
-    await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ id: "chart-1", name: "Button rollout again", description: "Kept as it was", config }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ id: "chart-1", name: "Button rollout again", description: "Kept as it was", config, visibility: "private" }));
   });
 
   it("saves a copy of the saved chart as a new chart", async () => {
@@ -142,12 +142,12 @@ describe("editing a saved chart", () => {
         repos={["repo-a"]}
         components={[]}
         packages={[]}
-        saved={{ id: "chart-1", name: "Copy of Button rollout", description: null, config }}
+        saved={{ id: "chart-1", name: "Copy of Button rollout", description: null, config, visibility: "private" }}
         duplicate
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
-    await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ name: "Copy of Button rollout", description: null, config }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ name: "Copy of Button rollout", description: null, config, visibility: "private" }));
   });
 
   it("opens at the chart's saved range and saves the range picked in the preview", async () => {
@@ -155,7 +155,7 @@ describe("editing a saved chart", () => {
     const series = [{ cohortKey: "local", label: "Local components", color: "", points: months.map((t, i) => ({ t, value: i })) }];
     actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series, coverage: { total: 1, points: months.map((t) => ({ t, repos: 1 })) } } });
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const, range: "6m" as const };
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Local", description: null, config }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Local", description: null, config, visibility: "private" }} />);
     expect(await screen.findByRole("button", { name: "6 months" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "3 months" }));
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
@@ -171,7 +171,7 @@ describe("editing a saved chart", () => {
     const componentId = "3f1c9a0b7d2e4c65";
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "component" as const, componentId }], chartType: "trend" as const, metric: "count" as const };
     const { container } = render(
-      <DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config }} />,
+      <DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config, visibility: "private" }} />,
     );
     expect(container.innerHTML).not.toContain(componentId);
     expect(screen.queryByText("Unknown component")).toBeNull();
@@ -192,7 +192,7 @@ describe("editing a saved chart", () => {
       { cohortKey: "component:old", label: "OldButton", color: "", role: "deprecated", points },
       { cohortKey: "component:new", label: "NewButton", color: "", points },
     ] } });
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config, visibility: "private" }} />);
     expect((await screen.findByText("deprecated")).closest("li")).toHaveTextContent("OldButton");
     expect(screen.getAllByText("deprecated")).toHaveLength(1);
   });
@@ -202,7 +202,7 @@ describe("chart details and saving", () => {
   const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const };
 
   it("saves the description, and no description when it is blank", async () => {
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: "Old text", config }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: "Old text", config, visibility: "private" }} />);
     expect(screen.getByLabelText("Description")).toHaveValue("Old text");
     fireEvent.change(screen.getByLabelText("Description"), { target: { value: "  Deprecated parts of our kits.  " } });
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
@@ -213,11 +213,24 @@ describe("chart details and saving", () => {
   });
 
   it("cancels back to the chart being edited, or to the charts list for a new one", () => {
-    const { unmount } = render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart 1", name: "Kits", description: null, config }} />);
+    const { unmount } = render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart 1", name: "Kits", description: null, config, visibility: "private" }} />);
     expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts/chart%201");
     unmount();
     builder();
     expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts");
+  });
+
+  it("starts a new chart private, opens a saved chart on its own visibility, and saves the one picked", async () => {
+    const { unmount } = builder();
+    expect(screen.getByRole("button", { name: "Private" })).toHaveAttribute("aria-pressed", "true");
+    unmount();
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "everyone" }} />);
+    expect(screen.getByRole("button", { name: "Shared" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ visibility: "everyone" })));
+    fireEvent.click(screen.getByRole("button", { name: "Private" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ visibility: "private" })));
   });
 
   it("keeps Metric on % of uses with Count unavailable while Stacked is chosen", () => {
@@ -233,7 +246,7 @@ describe("chart details and saving", () => {
   });
 
   it("can't save without a name, and says so", () => {
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "private" }} />);
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "   " } });
     expect(screen.getByRole("button", { name: "Save chart" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Save chart" })).toHaveAccessibleDescription("Name the chart to save it.");
@@ -253,6 +266,7 @@ const kitComponents = [
 const savedWith = (cohorts: CohortSelector[]) => ({
   id: "chart-1", name: "Old kits", description: null,
   config: { scope: { kind: "all" as const }, cohorts, chartType: "trend" as const, metric: "count" as const },
+  visibility: "private" as const,
 });
 const spokenDeprecated = () => screen.getAllByText("deprecated").filter((el) => !el.closest('[aria-hidden="true"]'));
 
