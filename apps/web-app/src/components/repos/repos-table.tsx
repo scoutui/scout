@@ -96,7 +96,7 @@ function RepoRow({ row: r }: { row: RepoSummary }) {
           <Link
             href={href}
             title={r.repoId}
-            className="block max-w-full font-mono text-sm font-medium text-foreground outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring/50"
+            className="block max-w-full font-mono text-sm font-medium text-foreground focus-row after:absolute after:inset-0 after:content-['']"
           >
             <span className="block truncate">{r.repoId}</span>
           </Link>

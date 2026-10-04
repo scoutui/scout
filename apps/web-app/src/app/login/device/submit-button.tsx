@@ -28,7 +28,7 @@ export function DeviceSubmitButton({ intent }: { intent: keyof typeof choices })
     <button
       type="submit"
       disabled={pending}
-      className={`min-h-10 w-full rounded-md px-4 py-2 text-sm font-medium whitespace-normal transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-50 ${choice.className}`}
+      className={`min-h-10 w-full rounded-md px-4 py-2 text-sm font-medium whitespace-normal transition-colors disabled:cursor-wait disabled:opacity-50 ${choice.className}`}
     >
       <span aria-live="polite">{pending ? choice.pendingLabel : choice.label}</span>
     </button>

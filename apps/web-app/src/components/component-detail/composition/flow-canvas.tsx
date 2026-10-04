@@ -155,8 +155,7 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         }}
         onBlur={() => hover(null)}
         className={cn(
-          "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-          pinned && "focus-visible:ring-offset-2 focus-visible:ring-offset-foreground",
+          "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left",
           isFocus ? "cursor-default" : "cursor-pointer",
         )}
       >
@@ -196,7 +195,7 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
           focusNext(`filter:${groupId("list", item.dir, item.parentRealId)}`);
           toggleList(item.dir, item.parentRealId);
         }}
-        className="flex size-full cursor-pointer items-center justify-between gap-2 rounded-md border border-dashed bg-muted px-2 text-xs text-muted-foreground transition-[color,background-color,scale] duration-150 hover:bg-card hover:text-foreground active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex size-full cursor-pointer items-center justify-between gap-2 rounded-md border border-dashed bg-muted px-2 text-xs text-muted-foreground transition-[color,background-color,scale] duration-150 hover:bg-card hover:text-foreground active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <span className={cn("font-medium", !dim && "text-foreground")}>{`+${n.toLocaleString()} more`}</span>
         <span>Show</span>
@@ -251,7 +250,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
           aria-label="Close this list"
           onFocus={revealOnKeyboard}
           onClick={close}
-          className="nodrag shrink-0 cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="nodrag shrink-0 cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
         >
           <X aria-hidden className="size-3.5" strokeWidth={1.5} />
         </button>
@@ -264,7 +263,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter by name or file"
           aria-label={`Filter the ${componentsWord(n)}`}
-          className="h-7 w-full rounded-md border border-control bg-transparent px-2 font-mono text-base placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
+          className="h-7 w-full rounded-md border border-control bg-transparent px-2 font-mono text-base placeholder:font-sans placeholder:text-muted-foreground sm:text-xs"
         />
       </div>
       <ul className="nowheel nodrag nopan min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain">
@@ -279,7 +278,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
               }}
               onFocus={revealOnKeyboard}
               aria-label={`${m.node.displayName}, ${pathValueOf(m.node)}, ${usesWord(m.uses)}. Show it in the diagram.`}
-              className="flex w-full cursor-pointer flex-col gap-0.5 px-2.5 py-1.5 text-left hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
+              className="flex w-full cursor-pointer flex-col gap-0.5 px-2.5 py-1.5 text-left hover:bg-muted/60 focus-inset"
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <ScopeGlyph scope={m.node.scope} />
@@ -321,7 +320,7 @@ const SummaryNode = memo(function SummaryNode({ data }: NodeProps) {
         type="button"
         onClick={() => setPin(null)}
         aria-label={`${what} ${item.direct.toLocaleString()} directly, ${item.total.toLocaleString()} in total. Clear the route to show them.`}
-        className="flex size-full cursor-pointer flex-col items-start justify-center rounded-md border border-dashed bg-muted px-2.5 text-left text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex size-full cursor-pointer flex-col items-start justify-center rounded-md border border-dashed bg-muted px-2.5 text-left text-xs text-muted-foreground hover:text-foreground"
       >
         <span className="text-label">{what}</span>
         <span>{counts}</span>
@@ -686,7 +685,7 @@ function RouteBar({
         <Link
           href={componentHref(repoId, row.node.id)}
           prefetch={false}
-          className="font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="font-medium underline-offset-2 hover:underline"
         >
           {`Open ${row.node.displayName}`}
         </Link>
@@ -694,7 +693,7 @@ function RouteBar({
           type="button"
           onClick={onClear}
           aria-label="Clear the route (Escape)"
-          className="cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
         >
           <X aria-hidden className="size-3.5" strokeWidth={1.5} />
         </button>
@@ -810,7 +809,7 @@ function FindBox({
               setOpen(false);
             }
           }}
-          className="h-8 w-full rounded-lg border border-control bg-card px-2.5 font-mono text-base shadow-sm placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
+          className="h-8 w-full rounded-lg border border-control bg-card px-2.5 font-mono text-base shadow-sm placeholder:font-sans placeholder:text-muted-foreground sm:text-xs"
         />
       </div>
       {open ? (
@@ -866,7 +865,7 @@ function FindBox({
                         onMouseEnter={() => setActive(i)}
                         className={cn(
                           "flex scroll-mt-6 cursor-pointer flex-col gap-0.5 px-2.5 py-1.5",
-                          i === active && "bg-muted ring-2 ring-inset ring-ring/50",
+                          i === active && "focus-current bg-muted",
                         )}
                       >
                         <span className="flex min-w-0 items-center gap-1.5">
@@ -950,7 +949,7 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
   const clearPin = () => (controlsRef.current ? controlsRef.current.clearPin() : actions.setPin(null));
   const empty = !state.pin && state.lists.size === 0 && state.brought.size === 0;
   const control =
-    "cursor-pointer rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-[color,scale] duration-150 hover:text-foreground active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+    "cursor-pointer rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-[color,scale] duration-150 hover:text-foreground active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100";
 
   return (
     <ReactFlowProvider>

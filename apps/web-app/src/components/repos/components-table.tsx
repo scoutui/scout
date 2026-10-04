@@ -227,7 +227,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
               href={href}
               prefetch={false}
               title={deprecated ? `${r.displayName} (deprecated)` : r.displayName}
-              className="truncate font-mono font-medium outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring/50"
+              className="truncate font-mono font-medium focus-row after:absolute after:inset-0 after:content-['']"
             >
               {r.displayName}
             </Link>

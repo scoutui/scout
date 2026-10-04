@@ -77,7 +77,7 @@
   --border: var(--pal-neutral-hairline);
   --input: var(--pal-neutral-hairline);
   --control: var(--pal-neutral-control); /* form-control borders */
-  --ring: var(--pal-neutral-ink); /* one neutral focus ring; ≥ 3:1 at the /50 it is painted at */
+  --ring: var(--pal-neutral-ink); /* the focus ring */
   --selected: var(--pal-neutral-hover);
   --selected-edge: var(--pal-neutral-edge);
   --scrollbar-thumb: var(--pal-neutral-edge);
@@ -106,7 +106,16 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  /* Keyboard focus: a 2px ink line 2px outside the control, or on a text
+     field's own edge. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  :is(input:not([type="checkbox"], [type="radio"]), textarea, select):focus-visible {
+    outline-offset: -1px;
   }
   body {
     @apply bg-background text-foreground;
@@ -136,6 +145,43 @@
 @utility selected {
   background-color: var(--selected);
   border-color: var(--selected-edge);
+}
+
+/* Keyboard focus inside a container that clips: list rows and menu items. */
+@utility focus-inset {
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
+/* The current option of a list the arrow keys move through while focus stays
+   in its text field. */
+@utility focus-current {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+/* Keyboard focus for a link stretched over its table row with ::after. */
+@utility focus-row {
+  &:focus-visible {
+    outline: none;
+  }
+  &:focus-visible::after {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+}
+
+/* Keyboard focus for a bordered box around a text field, such as a search box
+   with an icon. */
+@utility focus-field {
+  &:has(:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: -1px;
+  }
+  & :focus-visible {
+    outline: none;
+  }
 }
 
 /* Label role for column headers and tag keys. */

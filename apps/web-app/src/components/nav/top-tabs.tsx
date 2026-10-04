@@ -41,7 +41,7 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative -mb-px inline-flex h-full shrink-0 items-center border-b-2 px-3.5 text-sm transition-colors",
-                  "focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  "focus-visible:rounded-sm",
                   active
                     ? "border-foreground font-medium text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",

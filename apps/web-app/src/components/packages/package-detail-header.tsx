@@ -28,7 +28,7 @@ export function PackageDetailHeader({
       <div className="space-y-2">
         <Link
           href="/packages"
-          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft aria-hidden className="size-3" />
           Packages

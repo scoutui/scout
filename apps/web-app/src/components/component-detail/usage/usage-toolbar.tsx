@@ -10,7 +10,7 @@ const WIDE_PX = 560;
 
 /** A text link, or a button that reads as one. */
 export const LINK =
-  "cursor-pointer rounded-sm text-foreground underline decoration-muted-foreground/60 underline-offset-2 transition-colors duration-150 ease-out hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none";
+  "cursor-pointer rounded-sm text-foreground underline decoration-muted-foreground/60 underline-offset-2 transition-colors duration-150 ease-out hover:decoration-foreground motion-reduce:transition-none";
 
 /**
  * The file list's toolbar, pinned under the top nav on one line: the search, the Filter button below lg, Clear filters
@@ -103,7 +103,7 @@ function SearchBox({ inputRef, find, onFind, wide }: { inputRef: RefObject<HTMLI
   };
 
   return (
-    <label className="@container flex h-8 min-w-0 flex-1 cursor-text items-center gap-2 rounded-md border border-control bg-background px-2.5 transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 motion-reduce:transition-none sm:max-w-64">
+    <label className="@container focus-field flex h-8 min-w-0 flex-1 cursor-text items-center gap-2 rounded-md border border-control bg-background px-2.5 sm:max-w-64">
       <Search aria-hidden className="size-4 shrink-0 text-muted-foreground" />
       <input
         ref={inputRef}
@@ -120,7 +120,7 @@ function SearchBox({ inputRef, find, onFind, wide }: { inputRef: RefObject<HTMLI
         aria-label="Search files and props"
         aria-keyshortcuts="/"
         placeholder={wide ? "Search files and props" : "Search"}
-        className="w-full min-w-0 bg-transparent font-mono text-base outline-none placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground @max-[4.5rem]:placeholder:text-transparent sm:text-xs"
+        className="w-full min-w-0 bg-transparent font-mono text-base placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground @max-[4.5rem]:placeholder:text-transparent sm:text-xs"
       />
       {draft ? (
         <button
@@ -130,7 +130,7 @@ function SearchBox({ inputRef, find, onFind, wide }: { inputRef: RefObject<HTMLI
             change("");
             inputRef.current?.focus();
           }}
-          className="-mr-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none"
+          className="-mr-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground motion-reduce:transition-none"
         >
           <X aria-hidden className="size-3.5" />
         </button>
@@ -291,7 +291,7 @@ function Pill({ label, title, onRemove, children }: { label: string; title?: str
         onClick={onRemove}
         aria-label={label}
         title="Remove filter"
-        className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:bg-accent motion-reduce:transition-none"
+        className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground active:bg-accent motion-reduce:transition-none"
       >
         <X aria-hidden className="size-3.5" />
       </button>

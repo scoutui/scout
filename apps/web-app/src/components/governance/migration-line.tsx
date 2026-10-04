@@ -32,7 +32,7 @@ export function MigrationLine({
     <p className="text-xs text-muted-foreground">
       <Link
         href={`/governance#record-${recordId}`}
-        className="rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
+        className="rounded-sm underline-offset-4 hover:text-foreground hover:underline"
       >
         {body}
       </Link>

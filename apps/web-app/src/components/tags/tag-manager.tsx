@@ -172,7 +172,7 @@ export function TagEditor({
                   value={c}
                   aria-label={tagColourName(c)}
                   title={tagColourName(c)}
-                  className="group/swatch flex size-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out outline-none not-data-checked:hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+                  className="group/swatch flex size-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out not-data-checked:hover:bg-muted motion-reduce:transition-none"
                 >
                   <TagSwatch
                     color={c}
@@ -194,7 +194,7 @@ export function TagEditor({
               rows={3}
               aria-labelledby={TAG_COLUMN_ID.packages}
               aria-describedby="tag-packages-hint"
-              className="w-full resize-y rounded-lg border border-control bg-transparent px-2.5 py-1.5 font-mono text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:text-xs dark:bg-input/30"
+              className="w-full resize-y rounded-lg border border-control bg-transparent px-2.5 py-1.5 font-mono text-base transition-colors sm:text-xs dark:bg-input/30"
             />
             <p id="tag-packages-hint" className="text-xs text-muted-foreground">
               One package name or pattern per line. <span className="font-mono">*</span> matches anything.

@@ -124,7 +124,7 @@ export function SkippedScansNotice({ fallbacks = [], gaps = [], ownPage = false,
       {rows.slice(0, SHOWN_ROWS).map(fallback => <FallbackRow key={fallback.repoId} fallback={fallback} ownPage={ownPage} />)}
       {rows.length > SHOWN_ROWS ? (
         <details>
-          <summary className="w-fit cursor-pointer rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50">
+          <summary className="w-fit cursor-pointer rounded-sm text-xs text-muted-foreground hover:text-foreground">
             {rows.length - SHOWN_ROWS === 1 ? "1 more repo" : `${rows.length - SHOWN_ROWS} more repos`}
           </summary>
           <div className="mt-2 space-y-2">
@@ -169,7 +169,7 @@ export function ReadModelState({ state, scans, retryable, heading, embedded = fa
           {heading.back ? (
             <Link
               href={heading.back.href}
-              className={cn("inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50", heading.back.code && "font-mono")}
+              className={cn("inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground", heading.back.code && "font-mono")}
             >
               <ChevronLeft aria-hidden className="size-3" />
               {heading.back.label}

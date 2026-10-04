@@ -258,10 +258,10 @@ export function GroupedIdentityPicker({
         setOpen(true);
       }}
       className={cn(
-        "relative flex h-8 w-full min-w-0 items-center gap-1.5 rounded-lg border bg-transparent px-2.5 text-sm transition-colors focus-within:ring-3 dark:bg-input/30",
+        "focus-field relative flex h-8 w-full min-w-0 items-center gap-1.5 rounded-lg border bg-transparent px-2.5 text-sm transition-colors dark:bg-input/30",
         invalid
           ? "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
-          : "border-control focus-within:border-ring focus-within:ring-ring/50",
+          : "border-control",
         scope !== null && !showValue && "pl-1",
         disabled && "cursor-not-allowed opacity-50",
       )}
@@ -280,7 +280,7 @@ export function GroupedIdentityPicker({
               onScopeChange(null);
               inputRef.current?.focus();
             }}
-            className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none after:absolute after:-inset-1 hover:bg-accent hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground after:absolute after:-inset-1 hover:bg-accent hover:text-foreground"
           >
             <X aria-hidden className="size-3" strokeWidth={1.5} />
           </button>
@@ -310,7 +310,7 @@ export function GroupedIdentityPicker({
         onBlur={dismiss}
         onKeyDown={onKeyDown}
         className={cn(
-          "h-full min-w-0 flex-1 bg-transparent font-mono text-base outline-none placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed sm:text-xs",
+          "h-full min-w-0 flex-1 bg-transparent font-mono text-base placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed sm:text-xs",
           showValue && "text-transparent caret-foreground",
         )}
       />
@@ -356,7 +356,7 @@ export function GroupedIdentityPicker({
                         onClick={() => choose(row)}
                         className={cn(
                           "flex cursor-default items-baseline gap-2 px-2.5 py-1.5",
-                          i === activeIndex ? "bg-muted ring-2 ring-inset ring-ring/50" : "hover:bg-muted/60",
+                          i === activeIndex ? "focus-current bg-muted" : "hover:bg-muted/60",
                           refused && "text-muted-foreground",
                         )}
                       >

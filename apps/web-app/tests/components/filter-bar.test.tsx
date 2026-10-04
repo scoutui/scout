@@ -204,14 +204,6 @@ describe.each(PAGES)("the filter bar on the $page", ({ renderTags, oneValueFacet
 });
 
 describe("FilterBar status chips", () => {
-  it("gives the deprecated chip the same keyboard focus ring as the Filter trigger", () => {
-    renderBar();
-    const chip = screen.getByRole("button", { name: /deprecated/i });
-    expect(chip).toHaveAttribute("aria-pressed", "false");
-    expect(chip.className).toMatch(/focus-visible:ring-3/);
-    expect(chip.className).toMatch(/focus-visible:ring-ring\//);
-  });
-
   it("a pressed status chip the other filters leave at 0 stays, so it can be unpressed", () => {
     const onChange = renderBar({ ...options, deprecatedCount: 0, changedCount: 0 }, { ...emptyFacets(), deprecated: true, changed: true });
     const deprecated = screen.getByRole("button", { name: /^deprecated/ });
@@ -385,7 +377,7 @@ describe("FilterBar since-previous-scan chip", () => {
     expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), changed: true });
   });
 
-  it("pressed, it takes the neutral selected state and the deprecated chip's focus ring, and adds no pill", () => {
+  it("pressed, it takes the neutral selected state and adds no pill", () => {
     renderBar(withChanged, { ...emptyFacets(), changed: true });
     const chip = screen.getByRole("button", { name: /^since previous scan/ });
     expect(chip).toHaveAttribute("aria-pressed", "true");
@@ -394,8 +386,6 @@ describe("FilterBar since-previous-scan chip", () => {
     // Pressed keeps the idle weight, so toggling never widens the chip.
     expect(chip.className).not.toMatch(/(^|\s)font-medium(\s|$)/);
     expect(chip.className).not.toMatch(/destructive/);
-    expect(chip.className).toMatch(/focus-visible:ring-3/);
-    expect(chip.className).toMatch(/focus-visible:ring-ring\//);
     expect(screen.queryByRole("button", { name: /^Remove / })).toBeNull();
     expect(screen.queryByText("Clear all")).toBeNull();
   });

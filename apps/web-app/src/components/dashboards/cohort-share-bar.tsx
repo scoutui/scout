@@ -71,7 +71,7 @@ export function CohortShareBar({
               onBlur={() => onHover(null)}
               className={cn(
                 "inline-flex cursor-default items-center gap-1.5 whitespace-nowrap transition-opacity duration-200",
-                "rounded-sm outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                "rounded-sm",
                 hovered !== null && hovered !== s.key && "opacity-40",
               )}
             >
