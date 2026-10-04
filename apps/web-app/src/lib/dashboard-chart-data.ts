@@ -1,5 +1,5 @@
-import type { CohortRole, CohortSelector, CohortSeries, DashboardView, RepoCoverage } from "@scoutui/web-shared";
-import { cohortKey } from "@scoutui/web-shared/client";
+import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardView, RepoCoverage } from "@scoutui/web-shared";
+import { ChartRangeSchema, cohortKey } from "@scoutui/web-shared/client";
 import { CHART_ORDER, looksAlike, paletteToken } from "@/lib/chart-palette";
 import { formatReposAdded } from "@/lib/dashboard-format";
 import type { ChartConfig } from "@/components/ui/chart";
@@ -22,6 +22,38 @@ export function seriesToRows(series: CohortSeries[]): Array<Record<string, strin
   // Sort by the map key (the timestamp): reading `.t` off each row would need
   // bracket notation, which the linter flags.
   return [...byT.entries()].sort(([ka], [kb]) => ka.localeCompare(kb)).map(([, row]) => row);
+}
+
+const RANGE_MONTHS: Record<Exclude<ChartRange, "all">, number> = { "3m": 3, "6m": 6, "1y": 12 };
+
+/** A range named in a link's `range` parameter, or null when it names none. */
+export function chartRange(raw: string | readonly string[] | undefined): ChartRange | null {
+  const parsed = ChartRangeSchema.safeParse(Array.isArray(raw) ? raw[0] : raw);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Where `range` starts, in epoch ms, counting back from the latest point of any series.
+ * Null for All, and when every point already falls inside the range.
+ */
+export function rangeStart(series: CohortSeries[], range: ChartRange): number | null {
+  if (range === "all") return null;
+  const times = series.flatMap((s) => s.points.map((p) => Date.parse(p.t)));
+  if (times.length === 0) return null;
+  const start = new Date(Math.max(...times));
+  start.setUTCMonth(start.getUTCMonth() - RANGE_MONTHS[range]);
+  return Math.min(...times) < start.getTime() ? start.getTime() : null;
+}
+
+/** Each series from `from` on. A series with points before `from` starts at `from`, with its value then. */
+export function seriesFrom(series: CohortSeries[], from: number): CohortSeries[] {
+  return series.map((s) => {
+    const before = s.points.filter((p) => Date.parse(p.t) < from);
+    const after = s.points.filter((p) => Date.parse(p.t) >= from);
+    const carried = before[before.length - 1];
+    const onEdge = after[0] !== undefined && Date.parse(after[0].t) === from;
+    return { ...s, points: carried && !onEdge ? [{ t: new Date(from).toISOString(), value: carried.value }, ...after] : after };
+  });
 }
 
 /** One x tick per distinct day (the day's first scan), in epoch ms for the numeric time axis. */

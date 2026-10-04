@@ -57,10 +57,10 @@ async function seed(pool: Pool) {
   database = pool;
 }
 
-async function renderSaved(config: DashboardConfig, chart: Partial<DashboardInput> = {}) {
+async function renderSaved(config: DashboardConfig, chart: Partial<DashboardInput> = {}, searchParams: Record<string, string> = {}) {
   const saved = await driver.upsertDashboard({ visibility: "everyone", name: "Saved", description: null, config, createdByUserId: "reader", ...chart });
   const { default: page } = await import("@/app/charts/[dashboardId]/page");
-  return page({ params: Promise.resolve({ dashboardId: saved.id }), searchParams: Promise.resolve({}) });
+  return page({ params: Promise.resolve({ dashboardId: saved.id }), searchParams: Promise.resolve(searchParams) });
 }
 
 describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
@@ -81,7 +81,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
         title: "Couldn't find the components in this chart.",
         description: "Edit the chart to pick them again.",
       });
-      expect(propsOf(missing, "DashboardChart")).toBeUndefined();
+      expect(propsOf(missing, "LinkedDashboardChart")).toBeUndefined();
       expect(propsOf(partly, "EmptyState")).toBeUndefined();
       expect(textOf(partly)).toBe(textOf(current));
     });
@@ -98,7 +98,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const digests = vi.spyOn(PostgresDriver.prototype, "listScanDigests");
       const tree = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: retired.id }], chartType: "bars", metric: "count" });
       expect(propsOf(tree, "EmptyState")).toBeUndefined();
-      expect(propsOf(tree, "DashboardChart")).toMatchObject({ view: {
+      expect(propsOf(tree, "LinkedDashboardChart")).toMatchObject({ view: {
         kind: "snapshot",
         points: [{ cohortKey: `component:${retired.id}`, label: "RetiredBadge · @sample/core", color: "", value: 0, componentCount: 0 }],
       } });
@@ -174,6 +174,17 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     });
   });
 
+  it("opens a chart at the range in its link, else at its saved range, else at All", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const config: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" };
+      expect(propsOf(await renderSaved(config), "LinkedDashboardChart")).toMatchObject({ range: "all" });
+      expect(propsOf(await renderSaved({ ...config, range: "6m" }), "LinkedDashboardChart")).toMatchObject({ range: "6m" });
+      expect(propsOf(await renderSaved({ ...config, range: "6m" }, {}, { range: "1y" }), "LinkedDashboardChart")).toMatchObject({ range: "1y" });
+      expect(propsOf(await renderSaved({ ...config, range: "6m" }, {}, { range: "2y" }), "LinkedDashboardChart")).toMatchObject({ range: "6m" });
+    });
+  });
+
   it("names the chart's creator and marks a private chart, and shows anyone else only that it's private", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
@@ -185,19 +196,19 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const own = await open();
       expect(textOf(own)).toContain("Created by Ana Lopez");
       expect(textOf(own)).toContain("Private");
-      expect(propsOf(own, "DashboardChart")).toBeDefined();
+      expect(propsOf(own, "LinkedDashboardChart")).toBeDefined();
       expect(await generateMetadata({ params: Promise.resolve({ dashboardId: saved.id }) })).toEqual({ title: "Secret rollout" });
 
       reader = { ...editor, userId: "someone-else" };
       const theirs = await open();
-      expect(propsOf(theirs, "DashboardChart")).toBeUndefined();
+      expect(propsOf(theirs, "LinkedDashboardChart")).toBeUndefined();
       expect(propsOf(theirs, "ChartMenu")).toBeUndefined();
       expect(propsOf(theirs, "EmptyState")).toEqual({ titleAs: "h1", title: "This chart is private.", description: "Ask Ana Lopez to share it with everyone." });
       expect(textOf(theirs)).not.toContain("Secret rollout");
       expect(await generateMetadata({ params: Promise.resolve({ dashboardId: saved.id }) })).toEqual({ title: "Private chart" });
 
       reader = { ...editor, userId: "someone-else", role: "admin" };
-      expect(propsOf(await open(), "DashboardChart")).toBeDefined();
+      expect(propsOf(await open(), "LinkedDashboardChart")).toBeDefined();
 
       reader = editor;
       const everyone = textOf(await renderSaved(config, { createdByUserId: null }));
@@ -255,7 +266,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const { default: editPage } = await import("@/app/charts/[dashboardId]/edit/page");
       const button = componentKey(packageExport("@sample/core", "Button"));
       const first: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" };
-      const edited: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "local" }, { kind: "component", componentId: button }], chartType: "bars", metric: "share" };
+      const edited: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "local" }, { kind: "component", componentId: button }], chartType: "trend", metric: "share", range: "6m" };
 
       session = { user: { id: "maker" } };
       reader = { ...editor, userId: "maker" };

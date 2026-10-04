@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CohortPoint, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { DashboardChart } from "@/components/dashboards/dashboard-chart";
+import { DashboardChart, LinkedDashboardChart } from "@/components/dashboards/dashboard-chart";
 
 const oldButton = { cohortKey: "component:old", label: "OldButton", color: "", role: "deprecated" as const };
 const newButton = { cohortKey: "component:new", label: "NewButton", color: "" };
@@ -101,5 +101,126 @@ describe("DashboardChart deprecated-only series", () => {
     const dateTops = [...container.querySelectorAll(".recharts-xAxis-tick-labels text")].map((t) => Number(t.getAttribute("y")));
     expect(dateTops.length).toBeGreaterThan(0);
     expect(baseline).toBeLessThan(Math.min(...dateTops));
+  });
+});
+
+const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(2025, 9 + i, 1)).toISOString());
+const monthly = (name: string, value: (i: number) => number): CohortSeries => ({
+  cohortKey: `package:${name}`,
+  label: name,
+  color: "",
+  points: months.map((t, i) => ({ t, value: value(i) })),
+});
+const yearCoverage = { total: 1, points: months.map((t) => ({ t, repos: 1 })) };
+const trendOf = (series: CohortSeries[], range?: DashboardConfig["range"]): [DashboardConfig, DashboardView] => [
+  {
+    scope: { kind: "all" },
+    cohorts: series.map((s) => ({ kind: "package" as const, packageName: s.label })),
+    chartType: "trend",
+    metric: "count",
+    ...(range ? { range } : {}),
+  },
+  { kind: "series", series, coverage: yearCoverage },
+];
+const oldUi = monthly("old-ui", (i) => (i < 6 ? 600 : 40));
+const newUi = monthly("new-ui", (i) => 5 + i);
+const yTop = (container: HTMLElement) =>
+  Math.max(...[...container.querySelectorAll(".recharts-yAxis-tick-labels text")].map((t) => Number(t.textContent)));
+const lines = (container: HTMLElement) => container.querySelectorAll(".recharts-area-curve").length;
+
+describe("DashboardChart date range", () => {
+  it("offers 3 months, 6 months, 1 year and All once the scans span more than 3 months", () => {
+    const [config, view] = trendOf([oldUi, newUi]);
+    render(<DashboardChart config={config} view={view} range="all" onRangeChange={() => {}} />);
+    const group = screen.getByRole("group", { name: "Date range" });
+    expect(within(group).getAllByRole("button").map((b) => b.textContent)).toEqual(["3 months", "6 months", "1 year", "All"]);
+  });
+
+  it("offers no range while the scans span 3 months or less", () => {
+    const [config] = trendOf([oldUi, newUi]);
+    render(<DashboardChart config={config} view={{ kind: "series", series, coverage }} range="all" onRangeChange={() => {}} />);
+    expect(screen.queryByRole("group", { name: "Date range" })).toBeNull();
+  });
+
+  it("rescales the y-axis to the scans inside the range", () => {
+    const [config, view] = trendOf([oldUi, newUi]);
+    const { container, rerender } = render(<DashboardChart config={config} view={view} range="all" onRangeChange={() => {}} />);
+    expect(yTop(container)).toBeGreaterThanOrEqual(600);
+    rerender(<DashboardChart config={config} view={view} range="3m" onRangeChange={() => {}} />);
+    expect(yTop(container)).toBeLessThan(100);
+  });
+
+  it("reports the picked preset", () => {
+    const [config, view] = trendOf([oldUi, newUi]);
+    const onRangeChange = vi.fn();
+    render(<DashboardChart config={config} view={view} range="all" onRangeChange={onRangeChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "6 months" }));
+    expect(onRangeChange).toHaveBeenCalledWith("6m");
+  });
+
+  it("opens a saved chart at its saved range and keeps a picked range in the link, beside the metric", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/charts/c1?metric=count");
+    const [config, view] = trendOf([oldUi, newUi], "3m");
+    const { container } = render(<LinkedDashboardChart config={config} view={view} range="3m" />);
+    expect(screen.getByRole("button", { name: "3 months" })).toHaveAttribute("aria-pressed", "true");
+    expect(yTop(container)).toBeLessThan(100);
+    fireEvent.click(screen.getByRole("button", { name: "1 year" }));
+    expect(new URLSearchParams(window.location.search).get("range")).toBe("1y");
+    expect(new URLSearchParams(window.location.search).get("metric")).toBe("count");
+    expect(yTop(container)).toBeGreaterThanOrEqual(600);
+  });
+});
+
+describe("DashboardChart legend", () => {
+  it("shows only the clicked series, and every series again on a second click", () => {
+    const [config, view] = trendOf([oldUi, newUi]);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    const entry = screen.getByRole("button", { name: "new-ui" });
+    fireEvent.click(entry);
+    expect(entry).toHaveAttribute("aria-pressed", "true");
+    expect(lines(container)).toBe(1);
+    expect(yTop(container)).toBeLessThan(100);
+    fireEvent.click(entry);
+    expect(entry).toHaveAttribute("aria-pressed", "false");
+    expect(lines(container)).toBe(2);
+  });
+
+  const names = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"];
+  const latest = [30, 70, 10, 50, 20, 60];
+  const many = names.map((name, n) => monthly(name, (i) => (i === 11 ? (latest[n] ?? 0) : 1)));
+  const rowNames = (table: HTMLElement) => within(table).getAllByRole("row").slice(1).map((r) => within(r).getByRole("button").textContent);
+
+  it("draws five lines as one chart with an entry for each", () => {
+    const [config, view] = trendOf(many.slice(0, 5));
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    expect(container.querySelectorAll(".recharts-wrapper")).toHaveLength(1);
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.getByRole("button", { name: "echo" })).toBeInTheDocument();
+  });
+
+  it("lists six lines in a table, most uses first, as one chart", () => {
+    const [config, view] = trendOf(many);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    expect(container.querySelectorAll(".recharts-wrapper")).toHaveLength(1);
+    const table = screen.getByRole("table");
+    expect(rowNames(table)).toEqual(["bravo", "foxtrot", "delta", "alpha", "echo", "charlie"]);
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent("70");
+  });
+
+  it("sorts the table by name", () => {
+    const [config, view] = trendOf(many);
+    render(<DashboardChart config={config} view={view} />);
+    const table = screen.getByRole("table");
+    fireEvent.click(within(table).getByRole("button", { name: "Name" }));
+    expect(rowNames(table)).toEqual(names);
+  });
+
+  it("shows only the line whose table row is clicked", () => {
+    const [config, view] = trendOf(many);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    const row = within(screen.getByRole("table")).getByRole("button", { name: "delta" });
+    fireEvent.click(row);
+    expect(row).toHaveAttribute("aria-pressed", "true");
+    expect(lines(container)).toBe(1);
   });
 });
