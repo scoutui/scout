@@ -378,7 +378,7 @@ A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a 
 
 ### Root package {#root-package}
 
-The *root package* is the package in the config folder, or at the monorepo root when `scan` prints `Monorepo root:`. Its name is the `name` in that folder's `package.json`, or the [repo id](/docs/reference/glossary#repo-id) when there is none. A file below that folder that is in no workspace package belongs to the root package, so in a repo that isn't a monorepo, every scanned file does.
+The *root package* is the package in the config's folder or, when the config's folder is a workspace package of a monorepo, the package at the monorepo's root. Its name is the `name` in that folder's `package.json`, or the [repo id](/docs/reference/glossary#repo-id) when there is none. A file below that folder that is in no workspace package belongs to the root package, so in a repo that isn't a monorepo, every scanned file does.
 
 ## `diagnostics[]` {#diagnostics}
 

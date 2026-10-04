@@ -100,7 +100,7 @@ When a commit can't be scanned, backfill skips it, says why, and carries on with
 | `nuxt prepare failed.` | Run backfill again with `--debug` to read the output. If you set `install`, the command must prepare the Nuxt app too, because backfill then runs only that command. |
 | `there's no lockfile to install from.` | Backfill installs from a `package-lock.json`, `yarn.lock` or `pnpm-lock.yaml` in the config's folder or a folder above it. For any other package manager, set `install`. |
 | `it installs with Yarn Plug'n'Play, which Scout can't read.` | Nothing: that commit can't be scanned. Commits from after the repo [switched Yarn to `node_modules`](/docs/guides/install#2-switch-yarn-off-plugnplay) can. |
-| `the scan found no components.` | Usually nothing: the code that `include` matches wasn't there yet at that commit. |
+| `the scan found no components.` | Usually nothing: at that commit, the files the scan reads held no components yet. |
 | Anything else | The dashboard refused that commit's scan. The line says why. |
 
 Backfill uses the Yarn or pnpm version each commit pins. If older commits pin none and fail with `yarn install failed.`, set [`install`](#set-the-install-command). The [CLI reference](/docs/reference/cli#how-it-installs-each-commit) lists where backfill looks for a pin.
