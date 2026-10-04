@@ -44,9 +44,9 @@ describe("parseByExt", () => {
     // oxc-parser emits errors[] but returns a partial program rather than
     // throwing, so partially-broken files don't tank the scan.
     const reported: string[] = [];
-    const parsed = parseByExt("src/A.ts", "const x = 1 const y = 2", (path, messages) => reported.push(syntaxErrorWarning(path, messages)));
+    const parsed = parseByExt("src/A.ts", "const x;\nexport const y = 1;", (path, messages) => reported.push(syntaxErrorWarning(path, messages)));
     expect(parsed.kind).toBe("babel");
-    expect(reported).toEqual(["src/A.ts has syntax errors (Expected a semicolon or an implicit semicolon after a statement, but found none), so the scan read what it could."]);
+    expect(reported).toEqual(["src/A.ts has syntax errors (Missing initializer in const declaration), so the scan read what it could."]);
   });
 
   it("reports a Vue file's script syntax errors under the .vue file's path", () => {

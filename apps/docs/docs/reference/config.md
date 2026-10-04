@@ -21,13 +21,13 @@ The *config folder* is the folder that holds the config file. Relative paths in 
 
 | Field | Type | Default | Behavior |
 | --- | --- | --- | --- |
-| `include` | array of non-empty strings, at least one | `["**/*.{js,jsx,ts,tsx,vue}"]`: every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder | Glob patterns for the files to scan. |
+| `include` | array of non-empty strings, at least one | `["**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,vue}"]`: every `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts` and `.vue` file below the config folder | Glob patterns for the files to scan. |
 | `exclude` | array of non-empty strings | `[]` | Glob patterns for files to leave out, even when `include` matches them. A path with no glob characters, such as `apps/playground`, leaves out that folder or file. |
 | `repoId` | non-empty string | derived; see [Repo identity](#repo-identity) | The [repo id](/docs/reference/glossary#repo-id) the scan is recorded under. `--repo-id` replaces it. |
 
 The scan skips:
 
-- test, spec and story files (`*.test.*`, `*.spec.*`, `*.stories.*`), files in `__tests__` folders, type declaration files (`*.d.ts`) and anything in `node_modules`, even when an `include` pattern names them;
+- test, spec and story files (`*.test.*`, `*.spec.*`, `*.stories.*`), files in `__tests__` folders, type declaration files (`*.d.ts`, `*.d.mts`, `*.d.cts`) and anything in `node_modules`, even when an `include` pattern names them;
 - files and folders whose names start with a dot, such as `.next`, unless an `include` pattern names them, for example `src/.generated/*.tsx`;
 - files ignored by `.gitignore`, unless [`gitignore`](#other-fields) is `false`;
 - a folder below the config folder that holds its own git repository, such as a submodule or another clone, even when an `include` pattern points into it.

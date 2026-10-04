@@ -9,7 +9,7 @@ import { extractReactDeclaredProps } from "../local-index/declared-props.js";
 import { detectVueComponents } from "../local-index/detect-vue.js";
 import { detectWebComponents } from "../local-index/detect-wc.js";
 import type { LocalDefinition } from "../local-index/types.js";
-import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
+import { isParsable, parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
 import { emitVueFile } from "../emit-vue-file.js";
 import { createProgress, startPhase } from "../util/progress.js";
 import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
@@ -27,7 +27,7 @@ import { buildScanScope } from "../scan/scope.js";
 import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
-import { Logger } from "../util/log.js";
+import { Logger, oneLine } from "../util/log.js";
 import type { Colorizer } from "../util/style.js";
 import { describeUploadError, UploadRefusedError, uploadPending } from "../upload.js";
 import type { AuthedUploader } from "../auth/upload-auth.js";
@@ -347,7 +347,7 @@ function noFilesMessage(
   const patterns = include === undefined ? undefined : `"include" in ${configPath} (${include.join(", ")})`;
   if (repositories.length === 0) {
     return patterns === undefined
-      ? `No .js, .jsx, .ts, .tsx or .vue files to scan in ${configDir}. Check "exclude" in ${configPath}, or scan from the folder that holds your source files.`
+      ? `No JavaScript, TypeScript or Vue files to scan in ${configDir}. Check "exclude" in ${configPath}, or scan from the folder that holds your source files.`
       : `No files match ${patterns}. Point it at your source files and scan again.`;
   }
   const only = patterns === undefined ? "The only source files here are in" : `${patterns} only matches files in`;
@@ -488,23 +488,9 @@ export async function scanRepository(input: {
   }
 
   // ── Phase 1: read + parse + emit local definitions ──────────────────────
+  let filesScanned = 0;
   for (const file of files) {
-    const source = await readFile(file, "utf8").catch(() => "");
-    if (!source) {
-      parseProgress.tick();
-      continue;
-    }
-    let parsed: ParsedFile;
-    try {
-      parsed = parseByExt(file, source, reportSyntaxErrors);
-    } catch (err) {
-      // parseByExt throws on unrecoverable syntax (EOF mid-expression, malformed
-      // SFC). Warn and skip the file so one broken file can't tank the scan.
-      log.warn(`Skipped ${file}: couldn't parse it (${errorMessage(err)}).`, errorStack(err));
-      parseProgress.tick();
-      continue;
-    }
-    if (parsed.kind === "unsupported") {
+    if (!isParsable(file)) {
       parseProgress.tick();
       continue;
     }
@@ -512,6 +498,33 @@ export async function scanRepository(input: {
     // Detectors get outputRoot-relative POSIX paths, the form seeds and
     // occurrences use, so their ids join without another normalisation step.
     const outRel = rebase(relPath);
+    let source: string;
+    try {
+      source = await readFile(file, "utf8");
+    } catch {
+      collector.emit({ code: "file-not-parsed", severity: "warning", filePath: outRel, reason: "couldn't read it" });
+      parseProgress.tick();
+      continue;
+    }
+    if (!source) {
+      filesScanned++;
+      parseProgress.tick();
+      continue;
+    }
+    let parsed: ParsedFile;
+    try {
+      parsed = parseByExt(file, source, reportSyntaxErrors);
+    } catch (err) {
+      collector.emit({
+        code: "file-not-parsed",
+        severity: "warning",
+        filePath: outRel,
+        reason: `couldn't parse it (${oneLine(errorMessage(err))})`,
+      });
+      parseProgress.tick();
+      continue;
+    }
+    filesScanned++;
     if (parsed.kind === "babel") {
       declaredByFile.set(outRel, extractReactDeclaredProps(parsed.ast));
       localDefs.push(...detectWebComponents(parsed.ast, source, outRel));
@@ -750,7 +763,7 @@ export async function scanRepository(input: {
 
   matching.done();
   const stats = buildScanStats({
-    filesScanned: files.length,
+    filesScanned,
     scanDurationMs: Math.round(t1 - startedAt),
     components: artifact.components,
     occurrences: artifact.occurrences,

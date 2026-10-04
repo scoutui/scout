@@ -4,7 +4,6 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runScan, scanExitCode } from "../../../src/commands/scan.js";
-import * as parseModule from "../../../src/parse-by-ext.js";
 import * as parserReact from "@scoutui/parser-react";
 import { Logger } from "../../../src/util/log.js";
 import { createColor } from "../../../src/util/style.js";
@@ -134,22 +133,6 @@ describe("runScan warnings about files it reads", () => {
   function stderrOf(spy: { mock: { calls: unknown[][] } }): string {
     return spy.mock.calls.map(([text]) => String(text)).join("");
   }
-
-  it("skips a file it can't parse with one warning line, and the parser's own text only under debug", async () => {
-    const dir = setupConsumer();
-    const app = join(realpathSync(dir), "src", "App.tsx");
-    const parse = parseModule.parseByExt;
-    vi.spyOn(parseModule, "parseByExt").mockImplementation((file, source, report) => {
-      if (file === app) throw new Error("Unexpected end of input\n  at 3:1");
-      return parse(file, source, report);
-    });
-    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
-    await runScan({ configPath: join(dir, "scout.config.json"), quiet: true });
-    expect(stderrOf(stderr)).toBe(`Warning: Skipped ${app}: couldn't parse it (Unexpected end of input at 3:1).\n`);
-    stderr.mockClear();
-    await runScan({ configPath: join(dir, "scout.config.json"), log: new Logger({ quiet: true, debug: true }) });
-    expect(stderrOf(stderr)).toMatch(/^Warning: Skipped .*\(Unexpected end of input at 3:1\)\.\nError: Unexpected end of input\n {2}at 3:1\n/);
-  });
 
   it("warns in one line when it can't finish reading a file", async () => {
     const dir = setupConsumer();

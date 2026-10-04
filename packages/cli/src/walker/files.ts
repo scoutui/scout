@@ -11,10 +11,10 @@ export type WalkOptions = {
 };
 
 /** The files a config without `include` scans: every file the parsers read. */
-export const DEFAULT_INCLUDE: readonly string[] = ["**/*.{js,jsx,ts,tsx,vue}"];
+export const DEFAULT_INCLUDE: readonly string[] = ["**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,vue}"];
 
 /** Files every scan leaves out, whatever the config says. */
-export const LEFT_OUT: readonly string[] = ["**/*.{test,spec,stories}.*", "**/__tests__/**", "**/*.d.ts", "**/node_modules/**"];
+export const LEFT_OUT: readonly string[] = ["**/*.{test,spec,stories}.*", "**/__tests__/**", "**/*.d.{ts,mts,cts}", "**/node_modules/**"];
 
 /**
  * Whether `dir`, whose entries are `entries`, is a nested repository to skip:

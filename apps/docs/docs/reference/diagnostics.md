@@ -31,6 +31,7 @@ Every code except `dependency-not-installed` also has `filePath`, the file the d
 | `code` | Severity | Reported when |
 | --- | --- | --- |
 | [`dependency-not-installed`](#dependency-not-installed) | `warning` | A package your `package.json` declares isn't installed, and your code uses its components. |
+| [`file-not-parsed`](#file-not-parsed) | `warning` | The scan couldn't read or parse a file it matched, so it skipped it. |
 | [`late-bound-render`](#late-bound-render) | `info` | A tag renders a component that arrives as a prop, a parameter or the result of a hook from a package. |
 | [`unresolved-reference`](#unresolved-reference) | `info` | A tag names something the scan can't follow to a component, for any other reason. |
 | [`lazy-import-unsupported`](#lazy-import-unsupported) | `warning` | A component loaded with `import()` is written in a shape the scan can't follow. |
@@ -66,6 +67,25 @@ Error: Couldn't upload the scan: @acme/ui is listed in package.json but isn't in
 ```
 
 A package listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with that package's uses unmatched.
+
+## File code
+
+### `file-not-parsed`
+
+**Severity:** `warning`
+
+The scan couldn't read a file it matched, or the file has a syntax error the parser can't recover from. The scan skips the file, so uses in it aren't counted, and the summary doesn't count it as scanned. A file with syntax errors the parser can recover from is still read and reports no diagnostic: the scan warns while it reads it instead (see [A file has syntax errors](/docs/guides/troubleshoot-a-scan#a-file-has-syntax-errors)).
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `filePath` | string | The skipped file. |
+| `reason` | string | `couldn't read it`, or `couldn't parse it` followed by the parser's message in brackets. |
+
+```text
+Warning: Skipped src/Checkout.tsx: couldn't parse it (Unexpected token).
+```
+
+**What to do:** fix the syntax error, or for a file the scan couldn't read, check its permissions, then scan again. If the file isn't code you want counted, add it to `exclude` in the config.
 
 ## Render codes
 
