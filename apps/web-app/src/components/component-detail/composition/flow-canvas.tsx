@@ -296,7 +296,9 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
           </li>
         ))}
         {rows.length === 0 ? (
-          <li className="px-3 py-4 text-center text-xs text-muted-foreground">{`No matches for “${query.trim()}”.`}</li>
+          <li className="px-3 py-4 text-center text-xs text-muted-foreground">
+            No matches for “<span className="font-mono">{query.trim()}</span>”.
+          </li>
         ) : null}
       </ul>
       <div className="shrink-0 border-t px-2.5 py-1 text-xs text-muted-foreground">
@@ -877,7 +879,13 @@ function FindBox({
             ))}
             {rows.length === 0 ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                {query.trim() ? `No matches for “${query.trim()}”.` : "No matches."}
+                {query.trim() ? (
+                  <>
+                    No matches for “<span className="font-mono">{query.trim()}</span>”.
+                  </>
+                ) : (
+                  "No matches."
+                )}
               </div>
             ) : null}
           </div>

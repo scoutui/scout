@@ -143,7 +143,7 @@ describe("CompositionTab", () => {
     fireEvent.change(filter, { target: { value: "d11" } });
     expect(screen.getByText("1 of 2")).toBeInTheDocument();
     fireEvent.change(filter, { target: { value: "zzz" } });
-    expect(screen.getByText("No matches for “zzz”.")).toBeInTheDocument();
+    expect(screen.getByText("zzz").closest("li")).toHaveTextContent(/^No matches for “zzz”\.$/);
     fireEvent.change(filter, { target: { value: "d11" } });
     fireEvent.click(screen.getByRole("button", { name: /^d11, src\/d11\.tsx, 1 use\./ }));
     expect(param("bring")).toBe("up:d11");
