@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { writeFile, stat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { posixPath } from "@scoutui/reference-graph";
@@ -25,8 +26,8 @@ export type InitOptions = {
 
 type Answers = { repoId: string; host: string | undefined; branch: string | null; exclude: string[] };
 
-/** What git suggests for the config: the repository name, the remote's default branch and the checked-out one. */
-type GitDefaults = { repoId: string; defaultBranch: string | null; checkedOut: string | null };
+/** What git suggests for the config: the repository name the remote gives, the remote's default branch and the checked-out one. */
+type GitDefaults = { repoId: string | null; defaultBranch: string | null; checkedOut: string | null };
 
 function buildConfig(answers: Answers) {
   // `branch` is written whenever a branch is known.
@@ -44,16 +45,16 @@ export async function runInit(opts: InitOptions): Promise<void> {
   let out = opts.outputPath ?? resolve(cwd, "scout.config.json");
   const log = opts.log ?? new Logger();
   const prompts = opts.interactive ? opts.prompts : undefined;
-  const root = opts.outputPath === undefined ? findWorkspaceRoot(cwd, (await readGitToplevel(cwd)) ?? undefined) : null;
-  const rootConfig = root === null ? undefined : join(root, "scout.config.json");
-  if (rootConfig === undefined || prompts === undefined) await assertNoExistingConfig(out);
+  const rootConfig = opts.outputPath === undefined ? await suggestedRootConfig(cwd) : null;
+  const asksRoot = prompts !== undefined && rootConfig !== null;
+  if (!asksRoot) await assertNoExistingConfig(out);
   const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
   if ((await probeRepository(cwd)).kind === "outside") {
     log.warn("this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.");
   }
   prompts?.intro("scout init");
   const defaults = await gitDefaults(cwd, log, prompts);
-  if (prompts && rootConfig !== undefined) {
+  if (asksRoot) {
     const whole = assertNotCancelled(
       await prompts.confirm({ message: "Scan the whole repository instead of only this package?", initialValue: true }),
       prompts,
@@ -71,14 +72,27 @@ export async function runInit(opts: InitOptions): Promise<void> {
   }
 
   const answers: Answers = {
-    repoId: opts.repoId ?? defaults.repoId,
+    repoId: opts.repoId ?? suggestedRepoId(defaults, dirname(out)),
     host,
     branch: opts.branch ?? defaults.defaultBranch ?? defaults.checkedOut,
     exclude: opts.exclude ?? [],
   };
   await writeConfig(out, buildConfig(answers));
   log.success(done);
-  if (rootConfig !== undefined) log.info(`To scan the whole repository, run scout init --output ${relative(cwd, rootConfig)}.`);
+  if (rootConfig !== null) log.info(`To scan the whole repository, run scout init --output ${relative(cwd, rootConfig)}.`);
+}
+
+/** The workspace root's config path when `cwd` is a workspace package and the root has no config yet, else null. */
+async function suggestedRootConfig(cwd: string): Promise<string | null> {
+  const root = findWorkspaceRoot(cwd, (await readGitToplevel(cwd)) ?? undefined);
+  if (root === null) return null;
+  const config = join(root, "scout.config.json");
+  return existsSync(config) ? null : config;
+}
+
+/** The repository name the remote gives, else the name of the folder that holds the config. */
+function suggestedRepoId(defaults: GitDefaults, configDir: string): string {
+  return defaults.repoId ?? (basename(configDir) || "unknown");
 }
 
 async function gitDefaults(cwd: string, log: Logger, prompts: PromptAdapter | undefined): Promise<GitDefaults> {
@@ -104,7 +118,7 @@ async function gitDefaults(cwd: string, log: Logger, prompts: PromptAdapter | un
   const chosen = remote.kind === "ok" ? remote : undefined;
   return {
     // Azure DevOps paths put `_git` between the project and the repository.
-    repoId: (chosen && parseGitRemote(chosen.url)?.path.replace("/_git/", "/")) || basename(cwd) || "unknown",
+    repoId: (chosen && parseGitRemote(chosen.url)?.path.replace("/_git/", "/")) || null,
     defaultBranch: chosen ? await remoteDefaultBranch(cwd, chosen.name) : null,
     checkedOut: await readGitBranch(cwd),
   };
@@ -140,7 +154,7 @@ async function runWizard(
   const repoId = given.repoId ?? assertNotCancelled(
     await prompts.text({
       message: "Repository name on the dashboard",
-      initialValue: defaults.repoId,
+      initialValue: suggestedRepoId(defaults, configDir),
       validate: (value) => (value?.trim() ? undefined : "Enter a repository name."),
     }),
     prompts,

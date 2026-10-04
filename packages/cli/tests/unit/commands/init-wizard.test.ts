@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { runInit } from "../../../src/commands/init.js";
@@ -109,8 +109,33 @@ describe("init wizard", () => {
     const prompts = stubAdapter({ text: async (o) => (o.message === "Dashboard address (optional)" ? CANCEL : (o.initialValue ?? "")) });
     await expect(runInit({ cwd: tmp, interactive: true, prompts })).rejects.toThrow(PromptCancelledError);
   });
+
+  it("refuses a config that's already there before asking anything", async () => {
+    const root = await stageWholeRepo({ files: { "scout.config.json": existingConfig } });
+    const asked: string[] = [];
+    const prompts = stubAdapter({
+      intro: () => {
+        asked.push("intro");
+      },
+      confirm: async (o) => {
+        asked.push(o.message);
+        return true;
+      },
+      text: async (o) => {
+        asked.push(o.message);
+        return o.initialValue ?? "";
+      },
+    });
+    await expect(runInit({ cwd: root, interactive: true, prompts })).rejects.toMatchObject({
+      message: `${join(root, "scout.config.json")} already exists. Edit it, or delete it and run scout init again.`,
+      exitCode: 1,
+    });
+    expect(asked).toEqual([]);
+    expect(readFileSync(join(root, "scout.config.json"), "utf8")).toBe(existingConfig);
+  });
 });
 
+const existingConfig = '{ "repoId": "acme/kept" }\n';
 const stages: string[] = [];
 afterEach(() => {
   for (const dir of stages.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -223,13 +248,13 @@ describe("init wizard: run inside a workspace package", () => {
     return { confirms, pickers, outros };
   }
 
-  it("writes the config at the repository root on Yes, and asks what to leave out there", async () => {
+  it("writes the config at the repository root on Yes, named after the root's folder, and asks what to leave out there", async () => {
     const root = await stageWholeRepo();
     const { confirms, pickers, outros } = await runFrom(join(root, "apps/web"), true);
     expect(confirms).toEqual([rootQuestion]);
     expect(pickers).toEqual([["apps/playground", "apps/web", "packages/shared-ui", "scripts"]]);
     expect(outros).toEqual(["Wrote ../../scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload."]);
-    expect(existsSync(join(root, "scout.config.json"))).toBe(true);
+    expect(JSON.parse(readFileSync(join(root, "scout.config.json"), "utf8")).repoId).toBe(basename(root));
     expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
   });
 
@@ -243,15 +268,14 @@ describe("init wizard: run inside a workspace package", () => {
     expect(existsSync(join(root, "scout.config.json"))).toBe(false);
   });
 
-  it("refuses to write over a config already at the repository root on Yes", async () => {
-    const kept = '{ "repoId": "acme/kept" }\n';
-    const root = await stageWholeRepo({ files: { "scout.config.json": kept } });
-    await expect(runFrom(join(root, "apps/web"), true)).rejects.toMatchObject({
-      message: `${join(root, "scout.config.json")} already exists. Edit it, or delete it and run scout init again.`,
+  it("refuses to write over a config already in the package on No", async () => {
+    const root = await stageWholeRepo({ files: { "apps/web/scout.config.json": existingConfig } });
+    await expect(runFrom(join(root, "apps/web"), false)).rejects.toMatchObject({
+      message: `${join(root, "apps/web/scout.config.json")} already exists. Edit it, or delete it and run scout init again.`,
       exitCode: 1,
     });
-    expect(readFileSync(join(root, "scout.config.json"), "utf8")).toBe(kept);
-    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
+    expect(readFileSync(join(root, "apps/web/scout.config.json"), "utf8")).toBe(existingConfig);
+    expect(existsSync(join(root, "scout.config.json"))).toBe(false);
   });
 
   it("writes nothing when the root question is cancelled", async () => {
@@ -264,6 +288,13 @@ describe("init wizard: run inside a workspace package", () => {
   it("doesn't ask about the repository root when run from it", async () => {
     const root = await stageWholeRepo();
     expect((await runFrom(root, true)).confirms).toEqual([]);
+  });
+
+  it("doesn't ask about the repository root when it already has a config", async () => {
+    const root = await stageWholeRepo({ files: { "scout.config.json": existingConfig } });
+    expect((await runFrom(join(root, "apps/web"), true)).confirms).toEqual([]);
+    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(true);
+    expect(readFileSync(join(root, "scout.config.json"), "utf8")).toBe(existingConfig);
   });
 
   it("doesn't ask about the repository root when --output is given", async () => {

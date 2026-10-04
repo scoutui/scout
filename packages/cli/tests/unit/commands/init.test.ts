@@ -118,10 +118,24 @@ describe("init command", () => {
     expect(written().repoId).toBe(basename(tmp));
   });
 
-  it("writes the config in a workspace package, then says how to scan the whole repository instead", async () => {
+  it.each([
+    [
+      "then says how to scan the whole repository instead",
+      false,
+      [
+        "Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.\n",
+        "To scan the whole repository, run scout init --output ../../scout.config.json.\n",
+      ],
+    ],
+    [
+      "and nothing more when the repository root already has a config",
+      true,
+      ["Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.\n"],
+    ],
+  ])("writes the config in a workspace package, %s", async (_, rootHasConfig, lines) => {
     const root = await stageFixture("whole-repo-scope");
     try {
-      rmSync(join(root, "scout.config.json"));
+      if (!rootHasConfig) rmSync(join(root, "scout.config.json"));
       const stdout: string[] = [];
       vi.spyOn(process.stderr, "write").mockImplementation(() => true);
       vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
@@ -130,12 +144,9 @@ describe("init command", () => {
       });
       await runInit({ cwd: join(root, "apps/web"), log: new Logger({ color: createColor({ isTTY: false, env: {} }) }) });
       vi.restoreAllMocks();
-      expect(stdout).toEqual([
-        "Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.\n",
-        "To scan the whole repository, run scout init --output ../../scout.config.json.\n",
-      ]);
+      expect(stdout).toEqual(lines);
       expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(true);
-      expect(existsSync(join(root, "scout.config.json"))).toBe(false);
+      expect(existsSync(join(root, "scout.config.json"))).toBe(rootHasConfig);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
