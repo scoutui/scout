@@ -80,13 +80,19 @@ A chart's page shows who created it under its name.
 
 To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new private chart of your own.
 
+## Look at a shorter period or one line
+
+On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan, and the chart's scale fits the period. The link keeps your pick, so whoever you send it to sees the same period.
+
+To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. A chart with six or more lines lists them in a table under the chart, with each line's latest uses or share. Press a column heading to sort it, and press a name to see that line on its own.
+
 ## Change or delete a chart
 
 On a chart's page, except for a **Stacked** chart, the **Uses** and **Share** toggle switches the view without changing the saved chart.
 
 Only the person who created a chart, or an Admin, can change or delete it, so only they see **Edit** and **Delete**.
 
-To change the chart itself, press **Edit**. The chart builder opens with the chart's name, repos, chart type, metric and series. Make your changes and press **Save chart** to update the same chart, or **Cancel** to leave without saving.
+To change the chart itself, press **Edit**. The chart builder opens with the chart's name, repos, chart type, metric and series. Make your changes and press **Save chart** to update the same chart, or **Cancel** to leave without saving. The period picked above the preview when you save is the one the chart opens at.
 
 To delete a chart, open it, press **Delete**, then **Delete chart**. Deleting can't be undone.
 

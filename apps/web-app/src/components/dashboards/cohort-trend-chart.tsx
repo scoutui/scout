@@ -116,7 +116,6 @@ export function CohortTrendChart({
             dataKey="ts"
             type="number"
             domain={[from ?? "dataMin", "dataMax"]}
-            allowDataOverflow={from !== null}
             ticks={ticks}
             tickLine={false}
             axisLine={false}
@@ -133,8 +132,11 @@ export function CohortTrendChart({
           />
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-            content={
+            content={(props) => (
               <ChartTooltipContent
+                active={props.active && tooltipRowTimestamp(props.payload) !== from}
+                payload={props.payload}
+                label={props.label}
                 labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, series)}
                 formatter={(value, name, item) => (
                   <>
@@ -151,7 +153,7 @@ export function CohortTrendChart({
                   </>
                 )}
               />
-            }
+            )}
           />
           {series.map((s, i) => {
             const color = colors.get(s.cohortKey) ?? "";

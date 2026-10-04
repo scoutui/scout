@@ -45,13 +45,14 @@ export function rangeStart(series: CohortSeries[], range: ChartRange): number | 
   return Math.min(...times) < start.getTime() ? start.getTime() : null;
 }
 
-/** Each series from `from` on, plus its last point before `from` so its line enters from the plot's edge. */
+/** Each series from `from` on. A series with points before `from` starts at `from`, with its value then. */
 export function seriesFrom(series: CohortSeries[], from: number): CohortSeries[] {
   return series.map((s) => {
-    const first = s.points.findIndex((p) => Date.parse(p.t) >= from);
-    const onEdge = first !== -1 && Date.parse(s.points[first]?.t ?? "") === from;
-    const start = first === -1 ? s.points.length - 1 : onEdge ? first : Math.max(0, first - 1);
-    return { ...s, points: s.points.slice(start) };
+    const before = s.points.filter((p) => Date.parse(p.t) < from);
+    const after = s.points.filter((p) => Date.parse(p.t) >= from);
+    const carried = before[before.length - 1];
+    const onEdge = after[0] !== undefined && Date.parse(after[0].t) === from;
+    return { ...s, points: carried && !onEdge ? [{ t: new Date(from).toISOString(), value: carried.value }, ...after] : after };
   });
 }
 

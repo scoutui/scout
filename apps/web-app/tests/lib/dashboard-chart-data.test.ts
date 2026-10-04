@@ -286,11 +286,11 @@ describe("date range", () => {
     expect(rangeStart([line("a", ["2026-06-15T00:00:00Z", "2026-09-30T00:00:00Z"])], "3m")).not.toBeNull();
   });
 
-  it("keeps each line's points from the last one before the start", () => {
+  it("starts each line at the start with its value then, and a line that starts later where it starts", () => {
     const from = Date.parse("2026-06-30T12:00:00Z");
-    expect(seriesFrom(series, from).map((s) => s.points.map((p) => p.t))).toEqual([
-      ["2026-03-10T00:00:00Z", "2026-07-01T00:00:00Z", "2026-09-30T12:00:00Z"],
-      ["2026-08-20T00:00:00Z", "2026-09-30T12:00:00Z"],
+    expect(seriesFrom(series, from).map((s) => s.points)).toEqual([
+      [{ t: "2026-06-30T12:00:00.000Z", value: 2 }, { t: "2026-07-01T00:00:00Z", value: 3 }, { t: "2026-09-30T12:00:00Z", value: 4 }],
+      [{ t: "2026-08-20T00:00:00Z", value: 1 }, { t: "2026-09-30T12:00:00Z", value: 2 }],
     ]);
   });
 
