@@ -1,15 +1,15 @@
 import { displayNameOf, type Component, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
-import type { ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PropUsage, ReferenceSource, WrittenValue } from "./dto.js";
+import type { ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, WrittenValue } from "./dto.js";
 import { type ComponentDigest, toComponentDigest } from "./digest.js";
 import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-graph.js";
 import { shownWrittenName } from "./display-name.js";
 import { governanceIdentity, presentIdentity, type GovernanceIdentity } from "./present-identity.js";
-import { createComponentProjectionContext, displayNameCollisionKey, type ComponentProjectionContext, type ProjectionContext } from "./projection-context.js";
+import { createComponentProjectionContext, displayNameCollisionKey, type ComponentProjectionContext, type OccurrenceStatistics, type ProjectionContext } from "./projection-context.js";
 import { usedComponentKey, isUsed } from "./usage.js";
 
 // A stored-format change increments READ_MODEL_FORMAT_VERSION and PROJECTION_VERSION together.
-export const PROJECTION_VERSION: number = 6;
-export const READ_MODEL_FORMAT_VERSION: number = 4;
+export const PROJECTION_VERSION: number = 7;
+export const READ_MODEL_FORMAT_VERSION: number = 5;
 
 export type ImmutableDetailHead = Omit<ComponentDetailHead, "deprecated" | "migrationStatus" | "governedByRecordId">;
 export type ComponentFact = Pick<Component, "id" | "identity" | "framework" | "attribution" | "owningPackage" | "stats" | "usage" | "version"> & {
@@ -20,6 +20,8 @@ export type ComponentFact = Pick<Component, "id" | "identity" | "framework" | "a
   disambiguator: string | null;
   usedIdentityKey: string | null;
   digest: ComponentDigest;
+  /** Uses and files per package the uses sit in; absent when the scan records no package on the component's uses. */
+  usedIn?: Record<string, PackageCounts>;
 };
 /** A stored scan's meta as pages read it: the scan file's, with the commit date and arrival time of its `scans` row in place of the file's `scannedAt`. */
 export type StoredScanMeta = Omit<ScanArtifact["meta"], "scannedAt"> & { committedAt: string; arrivedAt: string };
@@ -47,7 +49,7 @@ export type GraphRow = RowKey & (
 );
 export type ReadModelRow = RepoViewRow | ComponentFactRow | PackageContributionRow | DetailRow | OccurrenceModelRow | GraphRow;
 
-function deriveComponentFact(context: ComponentProjectionContext, component: Component): ComponentFact {
+function deriveComponentFact(context: ComponentProjectionContext, component: Component, stats?: OccurrenceStatistics): ComponentFact {
   const presented = presentIdentity(component);
   const displayName = context.names.get(component.id) ?? displayNameOf(component);
   const collides = (context.collisions.get(displayNameCollisionKey(presented.packageName, displayName)) ?? 0) > 1;
@@ -66,6 +68,9 @@ function deriveComponentFact(context: ComponentProjectionContext, component: Com
     disambiguator: collides ? (presented.scope === "external" ? presented.publicEntry : presented.filePath) : null,
     usedIdentityKey: isUsed(component) ? usedComponentKey(component) : null,
     digest: toComponentDigest(component),
+    ...(stats?.byPackage.size
+      ? { usedIn: Object.fromEntries([...stats.byPackage].map(([name, inPackage]) => [name, { occurrenceCount: inPackage.count, fileCount: inPackage.files.size }])) }
+      : {}),
   };
 }
 
@@ -95,6 +100,7 @@ export function deriveOccurrenceRow(occurrence: ResolvedOccurrence, names: Reado
     occurrenceId: occurrence.occurrenceId, filePath: occurrence.filePath, line: occurrence.line, column: occurrence.column,
     credit: occurrence.credit, trace: occurrence.trace, ...(writtenName !== undefined ? { writtenName } : {}),
     ...(ownerId !== undefined && ownerName !== undefined ? { owner: { componentId: ownerId, displayName: ownerName } } : {}),
+    ...(occurrence.usedIn !== undefined ? { usedIn: occurrence.usedIn } : {}),
     props, events: occurrence.events ?? [],
   };
 }
@@ -104,7 +110,7 @@ export function* deriveReadModelRows(artifact: ScanArtifact, context: Projection
   const scanId = artifact.meta.scanId;
   yield deriveRepoView(artifact);
   for (const [ordinal, component] of artifact.components.entries()) {
-    const fact = deriveComponentFact(context, component);
+    const fact = deriveComponentFact(context, component, context.occurrenceStatistics.get(component.id));
     yield { kind: "component", scanId, ordinal, componentId: component.id, fact };
     for (const contribution of fact.packages) {
       yield { kind: "package", scanId, ordinal, componentId: component.id, ...contribution, usedIdentityKey: fact.usedIdentityKey, occurrenceCount: component.stats.occurrenceCount, governanceTarget: governanceIdentity(component) };

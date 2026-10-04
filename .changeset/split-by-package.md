@@ -1,0 +1,10 @@
+---
+"@scoutui/web-app": minor
+---
+
+In a monorepo, the dashboard now shows which package each use sits in:
+
+- The Components table's **Used in** filter shows only the components used in one package, with that package's uses and files. Its link keeps the package in `used-in=`; after a package is renamed, a saved link matches nothing until you pick the new name. Opening a component while a package is picked keeps it picked on the component's Usage tab.
+- A component's Usage tab lists its uses by package when they sit in more than one.
+
+Scans uploaded by older CLI versions show none of these. A component's page now also names its package after **From**, as in **From** `@acme/ui`. For a few minutes after upgrading, while the dashboard prepares every stored scan again, pages read **Preparing scan data**.

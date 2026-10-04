@@ -59,7 +59,7 @@ The tag's `attribution` is `resolved` to your package, and its `version` is set:
 }
 ```
 
-Once you upload a scan with `npx scout scan`, open the tag's page in the dashboard. A badge beside its name reads **Web component**, and the line under the name shows `@acme/elements · v2.1.0` in place of a dash. The tag is also listed in the **Components** table of the package's page (see [Read a package page](/docs/guides/dashboard/packages#read-a-package-page)), and a lifecycle record on `@acme/elements` now covers it.
+Once you upload a scan with `npx scout scan`, open the tag's page in the dashboard. A badge beside its name reads **Web component**, and the line under the name now gives your package and version: **From** `@acme/elements · v2.1.0`. The tag is also listed in the **Components** table of the package's page (see [Read a package page](/docs/guides/dashboard/packages#read-a-package-page)), and a lifecycle record on `@acme/elements` now covers it.
 
 :::note
 The manifest only tells the scan which package a tag belongs to. Descriptions, props, events and deprecation notes in it don't reach the scan or the dashboard. A tag's props and events are counted from what each place in the code passes, and only a lifecycle record marks it [deprecated](/docs/reference/glossary#deprecated).

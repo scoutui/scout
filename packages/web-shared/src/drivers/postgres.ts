@@ -36,7 +36,7 @@ function toDashboard(r: DashboardDbRow): Dashboard {
 
 const identityFields = ["identity", "framework", "attribution", "owningPackage"] as const;
 const repoFields = ["id", ...identityFields, "stats", "usage"] as const;
-const rowFields = [...repoFields, "displayName", "writtenNames", "disambiguator", "version"] as const;
+const rowFields = [...repoFields, "displayName", "writtenNames", "disambiguator", "version", "usedIn"] as const;
 const summaryFields = [...repoFields, "displayName"] as const;
 const packageFields = [...summaryFields, "version", "usedIdentityKey"] as const;
 

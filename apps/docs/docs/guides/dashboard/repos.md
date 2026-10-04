@@ -37,9 +37,15 @@ To narrow the table:
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
 - Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
-- Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in one facet shows components matching either; filters in different facets must all match.
+- Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
 **Type** offers **React**, **Vue**, **Web component** and **Undefined element**, and shows only when the repo has more than one. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
+
+**Used in** shows when more than one of the repo's packages uses components, as in a monorepo. It lists those packages, each with its folder, or **repo root** for the package at the top of the repo. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
+
+Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. Selecting a row then opens the component's **Usage** tab with that package picked, when the component's uses sit in more than one package.
+
+You can pick one package at a time, and the **since previous scan** chip is hidden while you do. Scans uploaded by older CLI versions don't record which package each use sits in, so they don't offer **Used in**.
 
 Each active filter shows as a pill you can remove, and **Clear all** removes them all.
 
@@ -58,9 +64,10 @@ The tab keeps its search and filters in the page URL, so you can copy the addres
 | `tag` | `tag=acme-ui` |
 | `deprecated` | `deprecated=true`, `deprecated=false` |
 | `uses` | `uses=gte:10` for 10 or more, `uses=lte:10` for 10 or fewer (also `gt:`, `lt:`, or a number alone for exactly that many) |
+| `used-in` | `used-in=@acme/web`, which keeps the components used in that package |
 | `changed` | `changed=true` |
 
-Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. Write a space as `+`. For example:
+Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. A `used-in` package the scan doesn't have, such as one renamed since the link was made, matches no components. Write a space as `+`. For example:
 
 ```text
 /repos/acme-web?package=@acme/ui-legacy&deprecated=true&uses=gte:10

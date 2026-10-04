@@ -81,9 +81,9 @@ export default async function RepoDetailPage({
               <EmptyState
                 icon={<Layers className="size-6" />}
                 title="No components found"
-                description="This scan found no components. Check the include patterns in scout.config.json, then scan again."
+                description={'This scan found no components. Check "include" and "exclude" in scout.config.json, then scan again.'}
               />
-            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} canEdit={canEdit} />}
+            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} packages={detail.scope?.packages ?? []} canEdit={canEdit} />}
           </div>
         }
         adoption={

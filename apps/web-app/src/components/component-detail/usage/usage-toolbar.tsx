@@ -168,8 +168,8 @@ function CountText({ view, due }: { view: UsageView; due: UsageDue | null }) {
 }
 
 /**
- * Copies a list of files: the toolbar's copies every file in view, a folder heading's (`folder` is its label) only
- * that folder's. It reads "Copied" while `copied`.
+ * Copies a list of files: the toolbar's copies every file in view, a folder or package heading's (`folder` is its
+ * label) only that folder's or package's. It reads "Copied" while `copied`.
  */
 export function CopyListButton({ files, folder, disabled = false, copied, onCopy }: { files: number; folder: string | null; disabled?: boolean; copied: boolean; onCopy: () => void }) {
   const label = folder === null ? `Copy the list of ${plural(files, "file")}` : `Copy the list of ${plural(files, "file")} in ${folder}`;
@@ -204,8 +204,8 @@ function SwapIcon({ on, from, to }: { on: boolean; from: ReactNode; to: ReactNod
 }
 
 /**
- * One pill per filtered prop, in the order first picked, then the folder; below sm, Clear filters after them. Each
- * pill's × removes that filter and tells `onRemoving` its position first.
+ * One pill per filtered prop, in the order first picked, then the package or folder; below sm, Clear filters after
+ * them. Each pill's × removes that filter and tells `onRemoving` its position first.
  */
 export function FilterPills({
   view,
@@ -252,13 +252,13 @@ export function FilterPills({
       })}
       {area ? (
         <Pill
-          label={`Remove the filter folder ${area.label}`}
+          label={`Remove the filter ${view.byPackage ? "package" : "folder"} ${area.label}`}
           onRemove={() => {
             onRemoving(groups.length);
             onRemoveArea();
           }}
         >
-          <span className="text-muted-foreground">Folder</span>
+          <span className="text-muted-foreground">{view.byPackage ? "Package" : "Folder"}</span>
           <span className="truncate font-mono font-medium">{area.label}</span>
         </Pill>
       ) : null}

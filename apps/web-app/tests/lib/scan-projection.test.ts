@@ -6,6 +6,7 @@ import { PostgresDriver, PROJECTION_VERSION, READ_MODEL_FORMAT_VERSION } from "@
 import { claimScanJob, type ClaimedScanJob } from "@/lib/scan-jobs";
 import { publishScan, republishScan, type PublishOptions } from "@/lib/scan-projection";
 import { reconcileScanJobs } from "@/lib/scan-reconciliation";
+import { baseline } from "../helpers/cli-baseline";
 import { withReadModelDatabase } from "../helpers/read-model-db";
 import { receiveArtifact, sampleArtifact } from "../helpers/scan-artifact";
 import { artifact as v2Artifact, component, packageExport, repoDeclaration } from "../../../../packages/web-shared/tests/helpers/builders.js";
@@ -386,6 +387,62 @@ describe.skipIf(!databaseUrl)("atomic scan publication", { timeout: 30_000 }, ()
         { filePath: "src/helper-multi-caller-mixed/build.tsx", line: 4, column: 43, owner: { componentId: id("src/helper-multi-caller-mixed/Views.tsx", "ViewA"), displayName: "ViewA" } },
         { filePath: "src/helper-multi-caller-mixed/build.tsx", line: 4, column: 43, owner: undefined },
       ]);
+    });
+  });
+});
+
+describe.skipIf(!databaseUrl)("workspace packages in the read model", { timeout: 30_000 }, () => {
+  const id = (filePath: string, exportName: string) => componentKey(repoDeclaration("whole-repo-scope", filePath, exportName));
+  const sharedButton = id("packages/shared-ui/src/SharedButton.tsx", "SharedButton");
+
+  it("keeps each use's package, each component's uses per package and the scan's scope", async () => {
+    await withReadModelDatabase(async pool => {
+      await publishScan(pool, baseline("whole-repo-scope"), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      const rows = await driver.listComponentsForRepo("whole-repo-scope", "");
+      expect(Object.fromEntries(rows.map(r => [r.displayName, r.usedIn]))).toEqual({
+        App: undefined, Demo: undefined, Preview: undefined,
+        Button: { "@example/web": { occurrenceCount: 1, fileCount: 1 }, "@example/shared-ui": { occurrenceCount: 1, fileCount: 1 } },
+        SharedButton: {
+          "@example/playground": { occurrenceCount: 1, fileCount: 1 },
+          "@example/web": { occurrenceCount: 2, fileCount: 1 },
+          "whole-repo-scope": { occurrenceCount: 1, fileCount: 1 },
+        },
+      });
+      expect((await driver.getComponentUsage("whole-repo-scope", sharedButton)).map(({ filePath, line, usedIn }) => ({ filePath, line, usedIn }))).toEqual([
+        { filePath: "apps/playground/src/Demo.tsx", line: 4, usedIn: "@example/playground" },
+        { filePath: "apps/web/src/App.tsx", line: 6, usedIn: "@example/web" },
+        { filePath: "apps/web/src/App.tsx", line: 7, usedIn: "@example/web" },
+        { filePath: "scripts/preview.tsx", line: 4, usedIn: "whole-repo-scope" },
+      ]);
+      expect((await driver.getRepo("whole-repo-scope"))?.scope).toEqual({
+        folder: "", exclude: [],
+        packages: [
+          { name: "whole-repo-scope", folder: "" },
+          { name: "@example/playground", folder: "apps/playground" },
+          { name: "@example/web", folder: "apps/web" },
+          { name: "@example/shared-ui", folder: "packages/shared-ui" },
+        ],
+      });
+    });
+  });
+
+  it("reads a scan with no scope and no packages on its uses", async () => {
+    const { meta: { scope: _scope, ...meta }, occurrences, ...rest } = baseline("whole-repo-scope");
+    const scan: ScanArtifact = { ...rest, meta, occurrences: occurrences.map(({ usedIn: _usedIn, ...call }) => call) };
+    await withReadModelDatabase(async pool => {
+      await publishScan(pool, scan, { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      expect(Object.fromEntries((await driver.listComponentsForRepo("whole-repo-scope", "")).map(r => [r.displayName, r.usedIn]))).toStrictEqual({
+        App: undefined, Button: undefined, Demo: undefined, Preview: undefined, SharedButton: undefined,
+      });
+      expect((await driver.getComponentUsage("whole-repo-scope", sharedButton)).map(({ filePath, line, usedIn }) => ({ filePath, line, usedIn }))).toEqual([
+        { filePath: "apps/playground/src/Demo.tsx", line: 4, usedIn: undefined },
+        { filePath: "apps/web/src/App.tsx", line: 6, usedIn: undefined },
+        { filePath: "apps/web/src/App.tsx", line: 7, usedIn: undefined },
+        { filePath: "scripts/preview.tsx", line: 4, usedIn: undefined },
+      ]);
+      expect((await driver.getRepo("whole-repo-scope"))?.scope).toBeNull();
     });
   });
 });

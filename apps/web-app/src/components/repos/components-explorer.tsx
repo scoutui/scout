@@ -15,6 +15,8 @@ import {
   filterRows,
   isFiltering,
   paramsToFacets,
+  rowsUsedIn,
+  usedInOptions,
   type FacetState,
 } from "@/lib/component-facets";
 
@@ -30,6 +32,7 @@ export function ComponentsExplorer({
   notInLatest,
   deprecatedTotal,
   diff,
+  packages,
   canEdit,
 }: {
   repoId: string;
@@ -39,26 +42,34 @@ export function ComponentsExplorer({
   deprecatedTotal: number;
   /** The shown scan vs the one before; null on a first scan. */
   diff: ScanDiff | null;
+  /** The scan's packages, each with its folder. */
+  packages: ReadonlyArray<{ name: string; folder: string }>;
   canEdit: boolean;
 }) {
   const notInLatestIds = useMemo(() => new Set(notInLatest), [notInLatest]);
   const [facets, setFacets] = useQueryParamsState<FacetState>(FACET_PARAMS, paramsToFacets, facetsToParams);
 
+  // `usedIn` narrows the rows to one package's, with that package's uses and
+  // files, before every other facet, count and sort.
+  const scoped = useMemo(() => (facets.usedIn ? rowsUsedIn(rows, facets.usedIn) : rows), [rows, facets.usedIn]);
   // `changed` swaps the candidates for the marked current rows plus the
   // previous scan's removed rows, and every other facet applies on top. On a
-  // first scan or a deprecated-only move it narrows nothing, as on `/repos`.
+  // first scan or a deprecated-only move it narrows nothing, as on `/repos`,
+  // and under `usedIn` there is no changed view.
   const changedRows = useMemo(
     () =>
-      diff === null || scanDiffRowCount(diff) === 0
+      facets.usedIn || diff === null || scanDiffRowCount(diff) === 0
         ? null
         : [...rows.filter((r) => diff.marks[r.componentId] !== undefined), ...diff.removedRows.map(ghostRow)],
-    [rows, diff],
+    [rows, diff, facets.usedIn],
   );
   const changedActive = facets.changed && changedRows !== null;
-  const candidates = facets.changed ? (changedRows ?? rows) : rows;
+  const candidates = facets.changed && changedRows !== null ? changedRows : scoped;
   // Counted over what the table filters, under every other active filter.
-  const options = useMemo(() => facetOptions(rows, changedRows, facets), [rows, changedRows, facets]);
+  const options = useMemo(() => facetOptions(scoped, changedRows, facets), [scoped, changedRows, facets]);
+  const usedIn = useMemo(() => usedInOptions(rows, facets), [rows, facets]);
   const filtered = useMemo(() => filterRows(candidates, facets), [candidates, facets]);
+  const packageFolders = useMemo(() => new Map(packages.map((p) => [p.name, p.folder])), [packages]);
   // The changed view's toolbar breakdown, `12 of 29 moved · 2 removed ·
   // 10 changed`, counted from the shown rows' marks.
   const diffShown = useMemo(() => {
@@ -77,11 +88,13 @@ export function ComponentsExplorer({
         facets={facets}
         onChange={setFacets}
         options={options}
+        usedIn={usedIn}
+        packageFolders={packageFolders}
         resultCount={filtered.length}
-        total={rows.length}
-        deprecatedTotal={deprecatedTotal}
+        total={scoped.length}
+        deprecatedTotal={facets.usedIn ? scoped.filter((r) => r.deprecated).length : deprecatedTotal}
         diffShown={diffShown}
-        filtering={isFiltering({ ...facets, changed: false })}
+        filtering={isFiltering({ ...facets, changed: false, usedIn: null })}
         canEdit={canEdit}
       />
       {filtered.length === 0 ? (
@@ -103,6 +116,7 @@ export function ComponentsExplorer({
           marks={changedActive && diff !== null ? diff.marks : undefined}
           notInLatest={notInLatestIds}
           search={facets.text}
+          usedIn={facets.usedIn}
         />
       )}
     </div>

@@ -11,7 +11,7 @@ function makeDetail(overrides?: Partial<RepoDetail>): RepoDetail {
     externalComponentCount: 3, localComponentCount: 2, packageCount: 2,
     deprecatedCount: 0, totalOccurrences: 9, frameworkCounts: [],
     initialCommit: null, scanId: "S1", arrivedAt: "2026-05-15T12:05:00Z", scannerVersion: "v0",
-    delta: null, diff: null,
+    delta: null, diff: null, scope: null,
     ...overrides,
   };
 }

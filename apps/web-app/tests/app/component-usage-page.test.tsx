@@ -58,9 +58,14 @@ const badge = component(packageExport("@example/ui", "Badge"));
 const badgeCalls = [resolvedAt(badge, "src/home/Hero.tsx", 4), resolvedAt(badge, "src/home/Hero.tsx", 8), resolvedAt(badge, "src/settings/Panel.tsx", 2)];
 const oldButton = component(packageExport("@example/ui", "OldButton"));
 const oldCalls = Array.from({ length: 6 }, (_, n) => resolvedAt(oldButton, `src/legacy/Old${n}.tsx`, 1));
+const link = component(packageExport("@example/ui", "Link"));
+const linkCalls = [
+  ...Array.from({ length: 4 }, (_, n) => resolvedAt(link, `apps/web/src/Page${n}.tsx`, 1, { usedIn: "@example/web" })),
+  ...Array.from({ length: 2 }, (_, n) => resolvedAt(link, `apps/admin/src/Page${n}.tsx`, 1, { usedIn: "@example/admin" })),
+];
 /** Every component the page tests open. */
-const components: Component[] = [button, tag, card, payForm, payDialog, panel, unused, badge, oldButton];
-const occurrences = [...buttonCalls, ...tagCalls, ...cardCalls, ...badgeCalls, ...oldCalls];
+const components: Component[] = [button, tag, card, payForm, payDialog, panel, unused, badge, oldButton, link];
+const occurrences = [...buttonCalls, ...tagCalls, ...cardCalls, ...badgeCalls, ...oldCalls, ...linkCalls];
 
 async function show(componentId: string, search = "") {
   window.history.replaceState(null, "", `/repos/shop/components/${encodeURIComponent(componentId)}${search}`);
@@ -238,7 +243,18 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("lists where it's used with each folder's calls", async () => {
     await show(button.id);
+    expect(screen.getByRole("heading", { name: "Where it’s used" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder checkout, 3 uses", "Folder settings, 3 uses", "Folder home, 1 use"]);
+  });
+
+  it("lists the packages it's used in when its calls span more than one, and filters by one", async () => {
+    await show(link.id);
+    expect(screen.getByRole("heading", { name: "Used in" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Package / }).map(row => row.getAttribute("aria-label"))).toEqual(["Package @example/web, 4 uses", "Package @example/admin, 2 uses"]);
+    expect(screen.getByRole("button", { name: "Package @example/admin, 2 uses" })).toHaveAttribute("title", "@example/admin");
+    fireEvent.click(screen.getByRole("button", { name: "Package @example/admin, 2 uses" }));
+    expect(query().get("area")).toBe("@example/admin");
+    expect(screen.getByRole("button", { name: "Remove the filter package @example/admin" })).toBeInTheDocument();
   });
 
   it("opens every file row from Expand all rows", async () => {
@@ -251,6 +267,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     await show(button.id);
     fireEvent.click(screen.getByRole("button", { name: "Folder home, 1 use" }));
     expect([query().get("area"), fileButtons()]).toEqual(["src/home", ["Uses in src/home/Hero.tsx"]]);
+    expect(screen.getByRole("button", { name: "Remove the filter folder home" })).toBeInTheDocument();
   });
 
   it("focuses the one-folder sentence when unpicking a folder leaves one folder in view", async () => {

@@ -26,6 +26,8 @@ export function FilterBar({
   facets,
   onChange,
   options,
+  usedIn,
+  packageFolders,
   resultCount,
   total,
   deprecatedTotal,
@@ -36,6 +38,10 @@ export function FilterBar({
   facets: FacetState;
   onChange: (next: FacetState) => void;
   options: FacetOptions;
+  /** Each package the rows are used in, with its count under the other filters. */
+  usedIn: { value: string; count: number }[];
+  /** Each package's folder, by package name. */
+  packageFolders: ReadonlyMap<string, string>;
   resultCount: number;
   total: number;
   deprecatedTotal: number;
@@ -45,16 +51,16 @@ export function FilterBar({
    *  10 changed`, zero parts omitted. It replaces `N of M components` because
    *  removed rows come from the previous scan. */
   diffShown: { total: number; added: number; removed: number; changed: number } | null;
-  /** Whether anything besides `changed` narrows the rows, i.e. whether the
-   *  count reads `N of M`. `facets`, and every write through `onChange`, keep
-   *  the real state. */
+  /** Whether anything besides `changed` and `usedIn` narrows the rows, i.e.
+   *  whether the count reads `N of M`. `facets`, and every write through
+   *  `onChange`, keep the real state. */
   filtering: boolean;
   canEdit: boolean;
 }) {
   const diffParts = diffShown === null ? [] : movementParts(diffShown);
   const inkCount = (n: number) => <span className="font-medium text-foreground">{n.toLocaleString()}</span>;
   const setTags = (tags: string[]) => onChange({ ...facets, tags });
-  const othersOn = diffShown === null && isFiltering({ ...facets, deprecated: null, changed: false });
+  const othersOn = diffShown === null && isFiltering({ ...facets, deprecated: null, changed: false, usedIn: null });
 
   // Deprecation and "since previous scan" are statuses, not facets: each is a
   // StatusFilterChip beside the Filter menu.
@@ -90,6 +96,20 @@ export function FilterBar({
       searchPlaceholder: "Search packages…",
       empty: "No packages.",
     },
+    {
+      key: "used-in",
+      label: "Used in",
+      values: usedIn.map((u) => {
+        const description = folderLabel(packageFolders.get(u.value));
+        return { ...u, ...(description !== undefined ? { description } : {}) };
+      }),
+      selected: facets.usedIn ? [facets.usedIn] : [],
+      onSelect: ([pkg]) => onChange({ ...facets, usedIn: pkg ?? null }),
+      single: true,
+      mono: true,
+      searchPlaceholder: "Search packages…",
+      dropsWithOneValue: true,
+    },
     tagFacet(options.tags, facets.tags, setTags, canEdit),
     {
       key: "occurrences",
@@ -116,6 +136,9 @@ export function FilterBar({
       mono: true,
       onRemove: () => onChange({ ...facets, packages: facets.packages.filter((x) => x !== p) }),
     })),
+    ...(facets.usedIn
+      ? [{ key: "used-in", field: "used in", value: facets.usedIn, mono: true, onRemove: () => onChange({ ...facets, usedIn: null }) }]
+      : []),
     ...tagPills(options.tags, facets.tags, setTags),
     // Only `deprecated: false` gets a pill: `true` shows as the chip's pressed
     // state, while `false` arrives only from a pasted URL and needs a way to be
@@ -197,6 +220,10 @@ export function FilterBar({
       onClearAll={() => onChange(emptyFacets())}
     />
   );
+}
+
+function folderLabel(folder: string | undefined): string | undefined {
+  return folder === undefined ? undefined : folder === "" ? "repo root" : folder;
 }
 
 function changesLabel(n: number): string {

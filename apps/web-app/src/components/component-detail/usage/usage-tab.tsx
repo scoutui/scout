@@ -181,7 +181,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
   const [copied, setCopied] = useState<Copied | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
-  /** Copies `sections`: every section in view from the toolbar, or one folder's from its heading. */
+  /** Copies `sections`: every section in view from the toolbar, or one folder's or package's from its heading. */
   const copyList = (sections: readonly UsageSection[], folder: string | null) => {
     const text = copyListText({
       sections,
@@ -189,8 +189,9 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
       repoId: detail.repoId,
       deprecated: detail.deprecated,
       migrationStatus: detail.migrationStatus,
+      byPackage: view.byPackage,
       folderKey: folder,
-      filters: filterText(filters.picks, filters.area, filters.find),
+      filters: filterText(filters.picks, filters.area, filters.find, undefined, view.byPackage),
       href: window.location.href,
       urlFor: (path, line) => (source ? sourceFileUrl(source.remote, source.commit, path, line) : null),
     });
