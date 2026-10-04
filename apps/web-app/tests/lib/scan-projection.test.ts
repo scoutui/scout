@@ -447,6 +447,24 @@ describe.skipIf(!databaseUrl)("workspace packages in the read model", { timeout:
   });
 });
 
+describe.skipIf(!databaseUrl)("what a scan couldn't see", { timeout: 30_000 }, () => {
+  it.each([
+    ["react-shapes", [
+      { kind: "import-not-found", count: 2, examples: [{ text: "ds-icons", count: 2 }], more: 0 },
+      { kind: "not-imported", count: 1, examples: [{ text: "Disclosure", count: 1 }], more: 0 },
+      { kind: "not-matched", count: 2, examples: [{ text: "Shown", count: 1 }, { text: "StyledButton", count: 1 }], more: 0 },
+      { kind: "passed-in", count: 5, examples: [{ text: "C", count: 2 }, { text: "Child", count: 1 }, { text: "Component", count: 1 }], more: 1 },
+    ]],
+    ["unresolved-install", [{ kind: "package-not-installed", count: 1, examples: [{ text: "@example/ui", count: 1 }], more: 0 }]],
+    ["design-system-upgrade", [{ kind: "package-exports", count: 1, examples: [{ text: "@example/loop-kit", count: 1 }], more: 0 }]],
+  ])("reads back what the %s scan couldn't see", async (name, findings) => {
+    await withReadModelDatabase(async pool => {
+      await publishScan(pool, baseline(name), { uploadedByUserId: null });
+      expect((await new PostgresDriver(pool).getRepo(name))?.findings).toEqual(findings);
+    });
+  });
+});
+
 describe.skipIf(!databaseUrl)("large scan publication", { timeout: 30_000 }, () => {
   it("publishes every row of a scan past a single insert's bind-parameter and call-stack limits", async () => {
     await withReadModelDatabase(async pool => {

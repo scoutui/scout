@@ -1,15 +1,16 @@
 import { displayNameOf, type Component, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
-import type { ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, WrittenValue } from "./dto.js";
+import type { ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, ScanFinding, WrittenValue } from "./dto.js";
 import { type ComponentDigest, toComponentDigest } from "./digest.js";
 import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-graph.js";
 import { shownWrittenName } from "./display-name.js";
 import { disambiguatorOf, governanceIdentity, presentIdentity, type GovernanceIdentity } from "./present-identity.js";
+import { deriveScanFindings } from "./scan-findings.js";
 import { createComponentProjectionContext, displayNameCollisionKey, type ComponentProjectionContext, type OccurrenceStatistics, type ProjectionContext } from "./projection-context.js";
 import { usedComponentKey, isUsed } from "./usage.js";
 
 // A stored-format change increments READ_MODEL_FORMAT_VERSION and PROJECTION_VERSION together.
-export const PROJECTION_VERSION: number = 8;
-export const READ_MODEL_FORMAT_VERSION: number = 5;
+export const PROJECTION_VERSION: number = 9;
+export const READ_MODEL_FORMAT_VERSION: number = 6;
 
 export type ImmutableDetailHead = Omit<ComponentDetailHead, "claimedBy" | "deprecated" | "migrationStatus" | "governedByRecordId">;
 export type ComponentFact = Pick<Component, "id" | "identity" | "framework" | "attribution" | "owningPackage" | "stats" | "usage" | "version"> & {
@@ -30,7 +31,7 @@ export type FactScan<T = ComponentFact> = {
   components: T[];
 };
 type RowKey = { scanId: string; ordinal: number };
-export type RepoViewRow = RowKey & { kind: "repo"; meta: ScanArtifact["meta"] };
+export type RepoViewRow = RowKey & { kind: "repo"; meta: ScanArtifact["meta"]; findings: ScanFinding[] };
 export type ComponentFactRow = RowKey & { kind: "component"; componentId: string; fact: ComponentFact };
 export type PackageContributionRow = RowKey & {
   kind: "package";
@@ -75,12 +76,11 @@ function deriveComponentFact(context: ComponentProjectionContext, component: Com
 }
 
 function deriveRepoView(artifact: ScanArtifact): RepoViewRow {
-  return { kind: "repo", scanId: artifact.meta.scanId, ordinal: 0, meta: artifact.meta };
+  return { kind: "repo", scanId: artifact.meta.scanId, ordinal: 0, meta: artifact.meta, findings: deriveScanFindings(artifact) };
 }
 
 export function deriveFactScan(artifact: ScanArtifact, context = createComponentProjectionContext(artifact)): { meta: ScanArtifact["meta"]; components: ComponentFact[] } {
-  const repo = deriveRepoView(artifact);
-  return { meta: repo.meta, components: artifact.components.map(component => deriveComponentFact(context, component)) };
+  return { meta: artifact.meta, components: artifact.components.map(component => deriveComponentFact(context, component)) };
 }
 
 /**
