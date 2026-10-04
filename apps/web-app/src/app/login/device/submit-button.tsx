@@ -11,7 +11,7 @@ const choices = {
   deny: {
     label: "Deny",
     pendingLabel: "Denying…",
-    className: "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20",
+    className: "border border-destructive/30 bg-destructive/6 text-[color-mix(in_oklab,var(--destructive)_85%,var(--foreground))] hover:bg-destructive/8 dark:bg-destructive/10 dark:hover:bg-destructive/15",
   },
   switch: {
     label: "Use another account",

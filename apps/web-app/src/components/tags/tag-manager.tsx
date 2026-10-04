@@ -200,7 +200,7 @@ export function TagEditor({
               rows={3}
               aria-labelledby={TAG_COLUMN_ID.packages}
               aria-describedby="tag-packages-hint"
-              className="w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 font-mono text-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              className="w-full resize-y rounded-lg border border-control bg-transparent px-2.5 py-1.5 font-mono text-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
             <p id="tag-packages-hint" className="text-[0.6875rem] text-muted-foreground">
               One package name or pattern per line. <span className="font-mono">*</span> matches anything.

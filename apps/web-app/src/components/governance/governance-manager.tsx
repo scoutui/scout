@@ -677,7 +677,12 @@ function RecordRow({
       </td>
       <td className="min-w-0 px-3 max-md:col-span-full max-md:row-start-2 max-md:pl-8">
         {record.disposition.kind === "superseded" ? (
-          <SuccessorCell by={record.disposition.by} deprecated={stat?.successorDeprecated === true} nextHop={nextHop} />
+          <SuccessorCell
+            by={record.disposition.by}
+            deprecated={stat?.successorDeprecated === true}
+            nextHop={nextHop}
+            selected={highlighted}
+          />
         ) : (
           <span
             title={record.disposition.reason}
@@ -719,10 +724,13 @@ function SuccessorCell({
   by,
   deprecated,
   nextHop,
+  selected,
 }: {
   by: Successor;
   deprecated: boolean;
   nextHop: Successor | null;
+  /** On the selected fill, the warn words mix in some ink. */
+  selected: boolean;
 }) {
   const successor = successorLabel(by);
   return (
@@ -738,7 +746,7 @@ function SuccessorCell({
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
       </span>
       {deprecated ? (
-        <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] text-status-warn-text">
+        <span className={cn("flex shrink-0 items-center gap-1 text-[0.6875rem]", selected ? WARN_TEXT_SELECTED : "text-status-warn-text")}>
           <TriangleAlert aria-hidden strokeWidth={1.5} className="size-3 shrink-0" />
           Replacement deprecated
         </span>
@@ -752,6 +760,8 @@ function SuccessorCell({
   );
 }
 
+const WARN_TEXT_SELECTED = "text-[color-mix(in_oklab,var(--status-warn-text)_85%,var(--foreground))]";
+
 /** The number right-aligned in its slot, then the words; a record's count links to its trend. */
 function Occurrences({
   left,
@@ -762,7 +772,7 @@ function Occurrences({
   left: Left;
   repoCount: number;
   trend: { href: string; name: string } | null;
-  /** On the selected fill, None left mixes in some ink. */
+  /** On the selected fill, None left and the warn words mix in some ink. */
   selected: boolean;
 }) {
   const t = leftText(left, repoCount);
@@ -789,7 +799,7 @@ function Occurrences({
     wordsClass = ok;
   } else if (t.kind === "unseen") {
     glyph = <TriangleAlert aria-hidden strokeWidth={1.5} className="size-3.5 text-status-warn" />;
-    wordsClass = "text-status-warn-text";
+    wordsClass = selected ? WARN_TEXT_SELECTED : "text-status-warn-text";
   } else {
     wordsClass = "text-muted-foreground";
   }

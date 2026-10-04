@@ -6,25 +6,25 @@ import chartColorData from "@scoutui/palette/chart-colors.json";
  *
  * A tag picked from the palette stores one of these sRGB hex values.
  * `paletteToken` renders each of them through its theme token, so a
- * palette-picked tag follows dark mode and any palette change. The values are
- * the sRGB renderings of the `--viz-cat-*` hues, at a lightness that reads on
- * both the light and the near-black dark chart surfaces.
+ * palette-picked tag follows dark mode and any palette change. Each value is a
+ * stored key; the light-mode value of the token it renders through is noted
+ * beside it.
  *
  * The status hues (red, orange, green) are left out, so a cohort dot can't be
  * misread as an error, as deprecated or as gain.
  *
  * Violet and blue sit at different lightness (0.62 vs 0.50), not just hue: at
- * equal lightness the pair collapses under deuteranopia (ΔE 1.9). As stepped,
- * the worst adjacent pair clears CVD ΔE 8.1 and normal-vision ΔE 15.5 on both
+ * equal lightness the pair collapses under deuteranopia (ΔE 1.5). As stepped,
+ * the worst adjacent pair clears CVD ΔE 8.0 and normal-vision ΔE 17.0 on both
  * the white and near-black chart surfaces (dataviz validator). Grey sits below
  * the validator's chroma floor on purpose: it is the legacy and "other"
  * neutral, and `CHART_ORDER` leaves it out.
  */
 export const CHART_SERIES_PALETTE = [
-  "#009598", // teal    (viz-primary)  oklch(0.60 0.12 196)
+  "#009598", // teal    (viz-primary)  oklch(0.60 0.10 196)
   "#9b6bce", // violet  (viz-cat-2)    oklch(0.62 0.15 305)
   "#2863ab", // blue    (viz-cat-3)    oklch(0.50 0.13 255)
-  "#7d8088", // grey    (viz-legacy)   oklch(0.60 0.012 265), the legacy and "other" neutral
+  "#7d8088", // grey    (viz-legacy)   oklch(0.66 0.01 265), the legacy and "other" neutral
 ] as const;
 
 /**

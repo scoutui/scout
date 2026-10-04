@@ -63,7 +63,7 @@ function DropdownMenuCheckboxItem({
     >
       <span
         data-slot="dropdown-menu-checkbox-item-indicator"
-        className="pointer-events-none mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input transition-colors dark:bg-input/30 in-data-checked:border-primary in-data-checked:bg-primary in-data-checked:text-primary-foreground dark:in-data-checked:bg-primary"
+        className="pointer-events-none mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-control transition-colors dark:bg-input/30 in-data-checked:border-primary in-data-checked:bg-primary in-data-checked:text-primary-foreground dark:in-data-checked:bg-primary"
       >
         <MenuPrimitive.CheckboxItemIndicator>
           <CheckIcon className="size-3.5" />

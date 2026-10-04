@@ -57,7 +57,7 @@ export function DevSignInForm({ callbackUrl }: { callbackUrl: string }) {
           id="dev-sign-in-role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+          className="h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
         >
           <option value="viewer">Viewer</option>
           <option value="editor">Editor</option>

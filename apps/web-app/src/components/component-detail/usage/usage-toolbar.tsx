@@ -103,7 +103,7 @@ function SearchBox({ inputRef, find, onFind, wide }: { inputRef: RefObject<HTMLI
   };
 
   return (
-    <label className="@container flex h-8 min-w-0 flex-1 cursor-text items-center gap-2 rounded-md border bg-background px-2.5 transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 motion-reduce:transition-none sm:max-w-64">
+    <label className="@container flex h-8 min-w-0 flex-1 cursor-text items-center gap-2 rounded-md border border-control bg-background px-2.5 transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 motion-reduce:transition-none sm:max-w-64">
       <Search aria-hidden className="size-4 shrink-0 text-muted-foreground" />
       <input
         ref={inputRef}

@@ -13,6 +13,7 @@
   --pal-neutral-hover: oklch(0.93 0.004 265);
   --pal-neutral-hairline: oklch(0.905 0.004 265);
   --pal-neutral-edge: oklch(0.82 0.005 265);
+  --pal-neutral-control: oklch(0.74 0.005 265);
   --pal-neutral-faint: oklch(0.53 0.005 265);
   --pal-neutral-muted: oklch(0.475 0.006 265);
   --pal-neutral-ink: oklch(0.215 0.006 265);
@@ -43,6 +44,7 @@
   --pal-neutral-hover: oklch(0.245 0.006 265);
   --pal-neutral-hairline: oklch(0.255 0.006 265);
   --pal-neutral-edge: oklch(0.4 0.008 265);
+  --pal-neutral-control: oklch(0.6 0.008 265);
   --pal-neutral-faint: oklch(0.6 0.008 265);
   --pal-neutral-muted: oklch(0.68 0.008 265);
   --pal-neutral-ink: oklch(0.965 0.005 265);
