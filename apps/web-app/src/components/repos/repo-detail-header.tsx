@@ -73,7 +73,17 @@ export function RepoDetailHeader({
             gitRemote={detail.gitRemote}
           />
         </div>
-        {scanned ? <p className="text-xs text-muted-foreground">{scanned}</p> : null}
+        {scanned ? (
+          <p className="text-xs text-muted-foreground">
+            {scanned.map((part, i) =>
+              "path" in part ? (
+                <span key={`${i}:${part.path}`} className="font-mono">{part.path}</span>
+              ) : (
+                <span key={`${i}:${part.text}`} title={part.title}>{part.text}</span>
+              ),
+            )}
+          </p>
+        ) : null}
       </div>
 
       {/* Framework split */}

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
 import { RepoDetailHeader } from "@/components/repos/repo-detail-header";
 
@@ -133,13 +133,15 @@ describe("RepoDetailHeader package count", () => {
 });
 
 describe("RepoDetailHeader scanned line", () => {
-  it("says which folders the scan left out", () => {
+  it("says which folders the scan left out, in mono, and lists its glob patterns in the count's title", () => {
     render(
       <RepoDetailHeader
-        detail={makeDetail({ scope: { folder: "", exclude: ["apps/playground"], packages: [] } })}
+        detail={makeDetail({ scope: { folder: "", exclude: ["apps/playground", "**/*.test.*"], packages: [] } })}
         recentScans={[]}
       />,
     );
-    expect(screen.getByText("Scanned: everything except apps/playground.")).toBeInTheDocument();
+    const line = screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "Scanned: everything except apps/playground/, and files matching 1 pattern.");
+    expect(within(line).getByText("apps/playground/")).toHaveClass("font-mono");
+    expect(within(line).getByText("files matching 1 pattern")).toHaveAttribute("title", "**/*.test.*");
   });
 });

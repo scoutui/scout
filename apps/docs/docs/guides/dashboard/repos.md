@@ -23,11 +23,12 @@ The header line gives the repo's git remote, the **commit** and **branch** the s
 
 When the scan left part of the repo out, a line under the header says what it covered, with paths from the repo root:
 
-- **Scanned: everything except apps/playground.** The config's `exclude` names `apps/playground`.
-- **Scanned: apps/web only.** The config is in `apps/web` and has no `include`.
+- **Scanned: everything except `apps/playground/`.** The config's `exclude` names `apps/playground`.
+- **Scanned: everything except `test/`, `examples/`, and files matching 2 patterns.** The config's `exclude` names the `test` and `examples` folders and two glob patterns, such as `**/*.stories.*`.
+- **Scanned: `apps/web/` only.** The config is in `apps/web` and has no `include`.
 - **Scanned:** `src/**/*.{ts,tsx,jsx,js,vue}` **only.** The config's `include` has a pattern such as the one `init` writes.
 
-The line names the folders and files `exclude` leaves out, not its glob patterns. A scan of the whole repo has no line, and neither does a scan uploaded by an older CLI version. To change what's scanned, see [Configure a scan](/docs/guides/configure-a-scan).
+The line names the folders `exclude` leaves out and counts its glob patterns. To see the patterns, hover over the count. A scan of the whole repo has no line, and neither does a scan uploaded by an older CLI version. To change what's scanned, see [Configure a scan](/docs/guides/configure-a-scan).
 
 Above the tabs, a status line tells you what needs attention:
 

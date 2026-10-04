@@ -4,7 +4,7 @@
 
 The dashboard now shows what a scan covered and, in a monorepo, which package each use sits in:
 
-- A repo page says what the scan covered when it left something out, such as **Scanned: everything except apps/playground.** or **Scanned: apps/web only.**
+- A repo page says what the scan covered when it left something out, such as **Scanned: everything except `apps/playground/`.** or **Scanned: `apps/web/` only.**
 - The Components table's **Used in** filter shows only the components used in one package, with that package's uses and files. Its link keeps the package in `used-in=`; after a package is renamed, a saved link matches nothing until you pick the new name. Opening a component while a package is picked keeps it picked on the component's Usage tab.
 - A component's Usage tab lists its uses by package when they sit in more than one.
 
