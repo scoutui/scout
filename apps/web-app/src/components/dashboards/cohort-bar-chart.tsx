@@ -61,7 +61,7 @@ function BarTick({
             <tspan x={x} dy={-2} fontSize={11} fill="var(--foreground)">
               {name}
             </tspan>
-            <tspan x={x} dy={12} fontSize={10} fill="var(--muted-foreground)">
+            <tspan x={x} dy={12} fontSize={11} fill="var(--muted-foreground)">
               {attribution}
               {attribution && qualifier ? " · " : null}
               {qualifier ? <tspan fontFamily="var(--font-sans)">{qualifier}</tspan> : null}

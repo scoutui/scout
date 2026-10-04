@@ -61,7 +61,7 @@ export function QuickTag({
       />
       <PopoverContent align="end" className="w-60 gap-0 p-0">
         <div className="px-2.5 py-2">
-          <span className="text-[0.6875rem] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+          <span className="text-label text-muted-foreground">
             Tag this package
           </span>
         </div>
@@ -89,7 +89,7 @@ export function QuickTag({
                     style={{ backgroundColor: paletteToken(tag.color) }}
                   />
                   <span className="min-w-0 flex-1 truncate font-mono text-xs">{tag.value}</span>
-                  {viaRule ? <span className="shrink-0 text-[0.6875rem] text-muted-foreground">via rule</span> : null}
+                  {viaRule ? <span className="shrink-0 text-xs text-muted-foreground">via rule</span> : null}
                 </button>
               </li>
             );

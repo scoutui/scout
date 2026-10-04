@@ -12,6 +12,8 @@
   --font-mono: "Monaspace Neon", ui-monospace, monospace;
   --font-heading: var(--font-mona-sans), system-ui, sans-serif;
   --font-wordmark: "Geologica", var(--font-mona-sans), system-ui, sans-serif;
+  --tracking-display: -0.015em;
+  --tracking-headline: -0.01em;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-control: var(--control);

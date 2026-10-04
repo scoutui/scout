@@ -27,7 +27,7 @@ export function RecordSearch({
           className="pl-8"
         />
       </div>
-      <p aria-live="polite" className="text-[0.6875rem] tabular-nums text-muted-foreground">
+      <p aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
         {value.trim() && count > 0
           ? `${count.toLocaleString()} ${count === 1 ? "record" : "records"} match`
           : " "}

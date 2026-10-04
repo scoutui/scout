@@ -52,11 +52,11 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
     <div className="flex min-w-0 flex-1 flex-col gap-1 xl:flex-row xl:items-center xl:gap-4">
       {/* What is going away, then, for a migration, its successor on a quieter second
           line. Two lines at every width, so each half gets the full row width before
-          it truncates. */}
+          it wraps (below `sm`) or truncates. */}
       <div className="flex min-w-0 flex-col gap-0.5 font-mono text-sm xl:flex-1">
-        <span className="truncate">{entry.fromLabel}</span>
+        <span className="wrap-anywhere sm:truncate">{entry.fromLabel}</span>
         {entry.toLabel ? (
-          <span className="truncate text-muted-foreground">
+          <span className="wrap-anywhere text-muted-foreground sm:truncate">
             <span className="font-sans text-xs">to</span> {entry.toLabel}
           </span>
         ) : null}

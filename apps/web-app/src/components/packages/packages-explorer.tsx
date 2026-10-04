@@ -42,7 +42,7 @@ export function PackagesExplorer({
           <button
             type="button"
             onClick={() => setFacets(emptyPackageFacets())}
-            className="inline-flex h-7 items-center rounded-md px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-medium transition-colors hover:bg-muted hover:text-foreground"
           >
             Clear filters
           </button>

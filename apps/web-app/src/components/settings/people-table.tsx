@@ -81,7 +81,7 @@ export function PeopleTable({ people }: { people: PersonListing[] }) {
                         value={person.role}
                         disabled={pending}
                         onChange={(e) => pickRole(person.userId, e.target.value as Role)}
-                        className="h-7 rounded-lg border border-control bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+                        className="h-7 rounded-lg border border-control bg-transparent px-2.5 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 sm:text-sm dark:bg-input/30"
                       >
                         {ROLES.map((role) => (
                           <option key={role} value={role}>{ROLE_NAMES[role]}</option>
@@ -111,7 +111,7 @@ function RemoveButton({ email, pending, onRemove }: { email: string; pending: bo
   const promptId = useId();
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
-      {confirming ? <span id={promptId} className="text-right text-[0.8rem] wrap-anywhere">{`Remove ${email}?`}</span> : null}
+      {confirming ? <span id={promptId} className="text-right text-xs wrap-anywhere">{`Remove ${email}?`}</span> : null}
       <div className="flex items-center gap-2">
         <Button
           ref={removeRef}

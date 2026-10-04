@@ -59,7 +59,7 @@ export default async function RepoScansPage({
           <ChevronLeft aria-hidden className="size-3" />
           {repoId}
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-semibold tracking-headline">
           Scan history
           <span className="ml-2 text-sm tabular-nums text-muted-foreground">
             {scans.length.toLocaleString()}

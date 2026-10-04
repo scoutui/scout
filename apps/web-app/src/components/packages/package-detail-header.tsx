@@ -34,7 +34,7 @@ export function PackageDetailHeader({
           Packages
         </Link>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 className="font-mono text-2xl font-semibold tracking-tight">{detail.packageName}</h1>
+          <h1 className="font-mono text-2xl font-semibold">{detail.packageName}</h1>
           <span className="flex items-center gap-1.5">
             {detail.tags?.length ? <TagChips tags={detail.tags} max={4} /> : null}
             {canEdit ? <QuickTag packageName={detail.packageName} allTags={allTags} /> : null}

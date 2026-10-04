@@ -116,7 +116,7 @@ export function CohortTrendChart({
             tickLine={false}
             axisLine={false}
             tickFormatter={formatDayTick}
-            tick={{ fontSize: 10, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
             minTickGap={32}
           />
           <YAxis
@@ -124,7 +124,7 @@ export function CohortTrendChart({
             axisLine={false}
             width={40}
             tickFormatter={(v: number) => (metric === "share" ? `${Math.round(v * 100)}%` : formatAxisCount(v))}
-            tick={{ fontSize: 10, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
           />
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
@@ -187,7 +187,7 @@ export function CohortTrendChart({
                         >
                           {distinctiveLabel(s.label)}
                           {deprecatedOnly.has(s.cohortKey) ? (
-                            <tspan x={cx + 9} dy={12} fontSize={10} fontFamily="var(--font-sans)">
+                            <tspan x={cx + 9} dy={12} fontSize={11} fontFamily="var(--font-sans)">
                               {DEPRECATED_ONLY}
                             </tspan>
                           ) : null}

@@ -43,7 +43,7 @@ function marked(name: string, ranges: Array<[number, number]>): ReactNode[] {
 }
 
 function Refusal({ text }: { text: string | null }) {
-  return text ? <span className="shrink-0 text-[0.6875rem] text-muted-foreground">{text}</span> : null;
+  return text ? <span className="shrink-0 text-xs text-muted-foreground">{text}</span> : null;
 }
 
 function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean; narrowed: boolean }) {
@@ -51,11 +51,11 @@ function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean
     return (
       <>
         <span className="min-w-0 truncate font-mono text-xs">{row.packageName}</span>
-        <span className="shrink-0 text-[0.6875rem] text-muted-foreground">
+        <span className="shrink-0 text-xs text-muted-foreground">
           {row.matches === null ? components(row.components) : matches(row.matches)}
         </span>
         {active ? (
-          <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-4 text-[0.6875rem] text-muted-foreground">
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-4 text-xs text-muted-foreground">
             <kbd aria-hidden className="inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-sans">
               ↵
             </kbd>
@@ -310,12 +310,12 @@ export function GroupedIdentityPicker({
         onBlur={dismiss}
         onKeyDown={onKeyDown}
         className={cn(
-          "h-full min-w-0 flex-1 bg-transparent font-mono text-xs outline-none placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed",
+          "h-full min-w-0 flex-1 bg-transparent font-mono text-base outline-none placeholder:font-sans placeholder:text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed sm:text-xs",
           showValue && "text-transparent caret-foreground",
         )}
       />
       {showValue && value ? (
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-8 left-2.5 flex items-center font-mono text-xs">
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-8 left-2.5 flex items-center font-mono text-base sm:text-xs">
           <span className="truncate">
             {value.exportName ? (
               <>

@@ -35,41 +35,49 @@ export function RepoDetailHeader({
           <ChevronLeft aria-hidden className="size-3" />
           Repos
         </Link>
-        <h1 className="font-mono text-2xl font-semibold tracking-tight">{detail.repoId}</h1>
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {remote ? (
-            <a href={remote.href} className={`font-mono ${META_LINK}`}>
-              {remote.display}
-            </a>
-          ) : (
-            <span>no git remote</span>
-          )}
-          <Sep />
-          <span>
-            commit{" "}
-            {commitHref ? (
-              <a href={commitHref} className={`font-mono ${META_LINK}`}>
-                {detail.commit.slice(0, 8)}
-              </a>
-            ) : (
-              <span className="font-mono">{detail.commit.slice(0, 8)}</span>
-            )}
-          </span>
-          {detail.branch ? (<><Sep /><span>branch <span className="font-mono">{detail.branch}</span></span></>) : null}
-          <Sep />
-          <span>
-            committed <span title={formatAbsoluteUtc(detail.committedAt)}>{relativeTime(detail.committedAt)}</span>
-          </span>
-          <Sep />
-          <span className="tabular-nums">{detail.packageCount.toLocaleString()} {detail.packageCount === 1 ? "package" : "packages"}</span>
-          <Sep />
-          <ScanSwitcher
-            repoId={detail.repoId}
-            currentScanId={detail.scanId}
-            recentScans={recentScans}
-            totalScanCount={detail.scanCount}
-            gitRemote={detail.gitRemote}
-          />
+        <h1 className="font-mono text-2xl font-semibold">{detail.repoId}</h1>
+        {/* Each item leads with its separator, and the row starts one separator's
+            width to the left, so the clip hides the separator at the start of a line. */}
+        <div className="-m-1 overflow-hidden p-1">
+          <div className="-ml-7 flex flex-wrap items-baseline gap-y-1 text-xs text-muted-foreground">
+            <span>
+              <Sep />
+              {remote ? (
+                <a href={remote.href} className={`font-mono ${META_LINK}`}>
+                  {remote.display}
+                </a>
+              ) : (
+                "no git remote"
+              )}
+            </span>
+            <span>
+              <Sep />
+              commit{" "}
+              {commitHref ? (
+                <a href={commitHref} className={`font-mono ${META_LINK}`}>
+                  {detail.commit.slice(0, 8)}
+                </a>
+              ) : (
+                <span className="font-mono">{detail.commit.slice(0, 8)}</span>
+              )}
+            </span>
+            {detail.branch ? (<span><Sep />branch <span className="font-mono">{detail.branch}</span></span>) : null}
+            <span>
+              <Sep />
+              committed <span title={formatAbsoluteUtc(detail.committedAt)}>{relativeTime(detail.committedAt)}</span>
+            </span>
+            <span className="tabular-nums"><Sep />{detail.packageCount.toLocaleString()} {detail.packageCount === 1 ? "package" : "packages"}</span>
+            <span>
+              <Sep />
+              <ScanSwitcher
+                repoId={detail.repoId}
+                currentScanId={detail.scanId}
+                recentScans={recentScans}
+                totalScanCount={detail.scanCount}
+                gitRemote={detail.gitRemote}
+              />
+            </span>
+          </div>
         </div>
       </div>
 
@@ -127,7 +135,7 @@ export function RepoDetailHeader({
 }
 
 function Sep() {
-  return <span aria-hidden className="text-border">·</span>;
+  return <span aria-hidden className="inline-block w-7 text-center text-border">·</span>;
 }
 
 /** `2 fewer than the previous scan` / `3 more than the previous scan`. The count

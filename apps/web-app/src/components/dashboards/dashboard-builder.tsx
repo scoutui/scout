@@ -343,7 +343,7 @@ export function DashboardBuilder({
               value={scopeRepoId ?? ""}
               onChange={(e) => setScopeRepoId(e.target.value || null)}
               className={cn(
-                "h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
+                "h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:text-sm dark:bg-input/30",
                 scopeRepoId ? "font-mono" : "font-sans",
               )}
             >

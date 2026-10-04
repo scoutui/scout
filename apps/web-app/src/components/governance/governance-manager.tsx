@@ -344,7 +344,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
       <header className="space-y-3">
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-4">
-            <h1 className="text-3xl font-semibold tracking-tight">Governance</h1>
+            <h1 className="text-3xl font-semibold tracking-display">Governance</h1>
             <Button ref={addRecordRef} size="sm" onClick={openNew} disabled={formOpen && !form.id}>
               <Plus />
               Add record
@@ -746,13 +746,13 @@ function SuccessorCell({
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
       </span>
       {deprecated ? (
-        <span className={cn("flex shrink-0 items-center gap-1 text-[0.6875rem]", selected ? WARN_TEXT_SELECTED : "text-status-warn-text")}>
+        <span className={cn("flex shrink-0 items-center gap-1 text-xs", selected ? WARN_TEXT_SELECTED : "text-status-warn-text")}>
           <TriangleAlert aria-hidden strokeWidth={1.5} className="size-3 shrink-0" />
           Replacement deprecated
         </span>
       ) : null}
       {nextHop ? (
-        <span className="min-w-0 font-mono text-[0.6875rem] text-muted-foreground wrap-anywhere md:flex-1 md:truncate">
+        <span className="min-w-0 font-mono text-xs text-muted-foreground wrap-anywhere md:flex-1 md:truncate">
           {`→ ${pickLabel(nextHop)}`}
         </span>
       ) : null}
@@ -1069,7 +1069,7 @@ function RecordForm({
         />
         <FieldError id="gov-source-error" message={fieldErrors.source} />
         {form.grain === "package" && form.targetPackage ? (
-          <p className="text-[0.6875rem] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {reachLine(form.targetPackage, componentCounts(sources).get(form.targetPackage) ?? 0)}
           </p>
         ) : null}
@@ -1086,7 +1086,7 @@ function RecordForm({
             labelledBy="gov-type-label"
             describedBy="gov-type-hint"
           />
-          <p id="gov-type-hint" className="text-[0.6875rem] text-muted-foreground">
+          <p id="gov-type-hint" className="text-xs text-muted-foreground">
             {KIND_HINT[form.dispositionKind]}
           </p>
         </div>
@@ -1118,7 +1118,7 @@ function RecordForm({
             />
             <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
             {form.supersededByPackage && !form.supersededByExport ? (
-              <p className="text-[0.6875rem] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 The whole package is the replacement.
               </p>
             ) : null}
@@ -1139,7 +1139,7 @@ function RecordForm({
               aria-invalid={fieldErrors.reason ? true : undefined}
             />
             <FieldError id="gov-reason-error" message={fieldErrors.reason} />
-            <p id="gov-reason-hint" className="text-[0.6875rem] text-muted-foreground">
+            <p id="gov-reason-hint" className="text-xs text-muted-foreground">
               Shown on the record, for example why there's no replacement.
             </p>
           </div>
@@ -1169,7 +1169,7 @@ function RecordForm({
         {isEdit ? (
           <div className="flex items-center gap-2">
             {confirmingDelete ? (
-              <span id="gov-delete-prompt" className="text-[0.8rem]">
+              <span id="gov-delete-prompt" className="text-xs">
                 Delete this record?
               </span>
             ) : null}

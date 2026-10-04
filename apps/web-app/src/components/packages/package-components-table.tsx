@@ -64,7 +64,7 @@ export function PackageComponentsTable({
             value={filters.text}
             onChange={(e) => setFilters({ ...filters, text: e.target.value })}
             placeholder={`Search ${plural(components.length, "component")} by name…`}
-            className="h-8 pl-8 font-mono text-xs placeholder:font-sans"
+            className="h-8 pl-8 font-mono text-base placeholder:font-sans sm:text-xs"
           />
           {filters.text ? (
             <button
@@ -100,7 +100,7 @@ export function PackageComponentsTable({
           <button
             type="button"
             onClick={() => setFilters({ text: "", deprecated: false })}
-            className="inline-flex h-7 items-center rounded-md px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-medium transition-colors hover:bg-muted hover:text-foreground"
           >
             Clear filters
           </button>

@@ -25,7 +25,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
-      <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+      <h1 className="text-3xl font-semibold tracking-display">Settings</h1>
 
       <section aria-labelledby="people-title" className="space-y-3">
         <h2 id="people-title" className="text-base font-medium">People</h2>

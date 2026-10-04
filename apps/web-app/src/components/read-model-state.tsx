@@ -175,7 +175,7 @@ export function ReadModelState({ state, scans, retryable, heading, embedded = fa
               {heading.back.label}
             </Link>
           ) : null}
-          <h1 className={cn(heading.back ? "text-2xl" : "text-3xl", "font-semibold tracking-tight", heading.code && "font-mono")}>
+          <h1 className={cn(heading.back ? "text-2xl" : "text-3xl", "font-semibold", heading.code ? "font-mono" : heading.back ? "tracking-headline" : "tracking-display")}>
             {heading.title}
           </h1>
         </header>

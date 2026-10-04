@@ -7,6 +7,7 @@ import { getStorage } from "@/lib/storage";
 import { chartResultsNotice, chartResultsUnavailable } from "@/lib/read-model-progress";
 import { readModelPage, readModelTitle } from "@/lib/read-model-page";
 import { ChartResultsState, ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
+import { ChartTitleLabel } from "@/components/dashboards/chart-title-label";
 import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
@@ -132,18 +133,18 @@ export default async function DashboardViewPage({
 
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-headline sm:text-2xl">
             {derivedEntry ? (
               <>
                 {derivedEntry.kind === "migration" ? "Migration: " : "Retirement: "}
-                <span className="font-mono">{derivedEntry.fromLabel}</span>
+                <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.fromLabel} /></span>
                 {derivedEntry.toLabel ? (
                   <>
                     <span className="sr-only"> replaced by </span>
                     <span aria-hidden className="text-muted-foreground">
                       {" → "}
                     </span>
-                    <span className="font-mono">{derivedEntry.toLabel}</span>
+                    <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.toLabel} /></span>
                   </>
                 ) : null}
               </>

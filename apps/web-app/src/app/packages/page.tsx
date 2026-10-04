@@ -26,7 +26,7 @@ export default async function PackagesPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Packages</h1>
+        <h1 className="text-3xl font-semibold tracking-display">Packages</h1>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="tabular-nums">{decorated.length.toLocaleString()} {decorated.length === 1 ? "package" : "packages"}</span>
           {multiVersion > 0 ? (

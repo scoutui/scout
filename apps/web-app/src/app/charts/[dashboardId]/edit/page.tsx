@@ -41,7 +41,7 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
         <span aria-hidden>/</span>
         <span>Edit</span>
       </div>
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Edit chart</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-headline">Edit chart</h1>
       <DashboardBuilder
         {...options}
         saved={{ id: dashboard.id, name: dashboard.name, description: dashboard.description, config: dashboard.config }}

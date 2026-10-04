@@ -28,7 +28,7 @@ export default async function NewDashboardPage() {
         <span aria-hidden>/</span>
         <span>New chart</span>
       </div>
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">New chart</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-headline">New chart</h1>
       <DashboardBuilder libraryTags={libraryTags} repos={repos} components={components} packages={packages} />
     </div>
   );
