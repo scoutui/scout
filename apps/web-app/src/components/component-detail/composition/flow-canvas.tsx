@@ -264,7 +264,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter by name or file"
           aria-label={`Filter the ${componentsWord(n)}`}
-          className="h-7 w-full rounded-md border bg-transparent px-2 font-mono text-base placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
+          className="h-7 w-full rounded-md border border-control bg-transparent px-2 font-mono text-base placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
         />
       </div>
       <ul className="nowheel nodrag nopan min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain">
@@ -810,7 +810,7 @@ function FindBox({
               setOpen(false);
             }
           }}
-          className="h-8 w-full rounded-lg border bg-card px-2.5 font-mono text-base shadow-sm placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
+          className="h-8 w-full rounded-lg border border-control bg-card px-2.5 font-mono text-base shadow-sm placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
         />
       </div>
       {open ? (
