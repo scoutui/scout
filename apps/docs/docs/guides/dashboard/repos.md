@@ -28,7 +28,7 @@ When the scan left part of the repo out, a line under the header says what it co
 - **Scanned: `apps/web/` only.** The config is in `apps/web` and has no `include`.
 - **Scanned:** `src/**/*.{ts,tsx,jsx,js,vue}` **only.** The config's `include` has a pattern such as the one `init` writes.
 
-The line names the folders `exclude` leaves out and counts its glob patterns. To see the patterns, hover over the count. A scan of the whole repo has no line, and neither does a scan uploaded by an older CLI version. To change what's scanned, see [Configure a scan](/docs/guides/configure-a-scan).
+The line names the folders and files `exclude` leaves out and counts its glob patterns. To see the patterns, hover over the count. A scan of the whole repo has no line, and neither does a scan uploaded by an older CLI version. To change what's scanned, see [Configure a scan](/docs/guides/configure-a-scan).
 
 Above the tabs, a status line tells you what needs attention:
 
