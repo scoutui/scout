@@ -36,7 +36,7 @@ A component [defined in the repo](/docs/reference/glossary#local) is listed unde
 1. Select **repos** in the top navigation and open the repo.
 2. On the **Components** tab, search for `Button` and select its row. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
 
-Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. The line below gives its package, or a dash when it has none, the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version, and, for a component defined in the repo, the file and line where it is defined.
+Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. The line below gives its package after **From**, as in **From** `@acme/ui`, or a dash when it has none, then the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version, and, for a component defined in the repo, the file and line where it is defined.
 
 The page always shows the repo's latest scan, even when the repo page is showing an [older scan](/docs/guides/dashboard/repos#look-at-an-older-scan).
 
@@ -48,11 +48,11 @@ It has two tabs: **Usage** (the default) and **Composition**. The tab you pick, 
 
 The **Usage** tab has a column of filters beside the list of files that use the component. On a narrow window the filters fold away above the list: press **Filter**, or **Where it’s used and prop values**, to show them.
 
-### Filter by folder
+### Filter by package or folder
 
-**Where it’s used** lists the folders the uses are in, with how many uses each holds. When every use sits under one folder, the heading says so, as in **under** `src/`, and the list starts one level below it.
+**Where it’s used** lists the folders the uses are in, with how many uses each holds. When every use sits under one folder, the heading says so, as in **under** `src/`, and the list starts one level below it. When the uses sit in more than one of the repo's packages, as in a monorepo, the list is headed **Used in** and lists those packages instead, such as `@acme/web` and `@acme/admin`.
 
-Press a folder to keep only its uses, and press it again to remove the filter. For a [deprecated](/docs/reference/glossary#deprecated) component the heading reads **Where it’s still used**.
+Press a folder or package to keep only its uses, and press it again to remove the filter. For a [deprecated](/docs/reference/glossary#deprecated) component the heading reads **Where it’s still used**, or **Still used in** for packages.
 
 ### Filter by prop value
 
@@ -82,7 +82,7 @@ Each filter shows as a pill above the list, such as `variant = secondary`. Press
 
 The list has one row per file, the file with most uses first. Each row shows the file's name. A parent folder shows before it, faint, only when two files share a name or the name says little on its own, such as `index.tsx`.
 
-A long list that spans several folders is grouped under a heading for each folder, the folder with most uses first. Sorting by another column, or filtering by a folder, shows one list again.
+A long list that spans several packages or folders is grouped under a heading for each, the one with most uses first. Sorting by another column, or filtering by a package or folder, shows one list again.
 
 Press a file's row to open it. It lists one line per use, in line order, with the props written there, such as `:42 variant="secondary" size="sm"`. A line can also show:
 
@@ -96,7 +96,7 @@ On a wider window, the props most uses set get a column each, showing each file'
 
 ### Copy the list
 
-**Copy list** copies the uses in view as text: the component and repo, the filters, each file with its line numbers and a link to its first use, and a link back to this view. When a long list is grouped by folder, each folder's heading has its own **Copy**.
+**Copy list** copies the uses in view as text: the component and repo, the filters, each file with its line numbers and a link to its first use, and a link back to this view. When a long list is grouped, each package's or folder's heading has its own **Copy**.
 
 ## Composition
 
