@@ -19,7 +19,7 @@ People who sign in for the first time are Viewers. Everyone who had signed in be
 
 The dashboard needs at least one admin setting, or it won't start. Name your admins by email, by a group in your sign-in provider, or both.
 
-Admins named either way show on **People** as **Admin (set at install)** or **Admin (from SSO group)**, and you can't change or remove them there. To change them, change the setting or the group.
+Admins named either way show on **People** as **Admin (set at install)** or **Admin (from SSO group)**, and you can't change their role there. To change it, change the setting or the group. You can [remove](#remove-someone) a group Admin, but not one named by email.
 
 ### By email
 
@@ -47,7 +47,7 @@ With your own chart, set `SCOUTUI_ADMIN_GROUP` on the web server to the group's 
 
 Members of the group are Admins. The dashboard reads a person's groups from the `groups` field of the provider's userinfo response, so the provider must include that field for the scopes in [step 1 of Deploy the dashboard](/docs/guides/deploy-the-dashboard#1-register-the-dashboard-with-your-identity-provider).
 
-The dashboard checks the group each time someone signs in to it in a browser. Someone you add to the group becomes an Admin at their next browser sign-in. Someone you take out of it stays an Admin until their next browser sign-in.
+The dashboard checks the group each time someone signs in to it in a browser. Someone you add to the group becomes an Admin at their next browser sign-in. Someone you take out of it stops being one at their next browser sign-in, or straight away if an Admin also [removes them](#remove-someone) on **People**.
 
 ### If someone you named isn't an Admin {#if-someone-you-named-isnt-an-admin}
 
@@ -69,23 +69,20 @@ People appear on the list once they have signed in. You can't change or remove y
 
 ## Remove someone
 
-Press **Remove** on the person's row and confirm. Removing someone signs them out everywhere, in the browser and the CLI, and takes them off the list.
+Press **Remove** on the person's row and confirm. Removing someone signs them out everywhere, in the browser and the CLI, and takes them off the list. You can remove group Admins too, but not Admins named by email.
 
-If your sign-in provider still lets them in, they come back as a Viewer the next time they sign in. To keep someone out, first stop your provider letting them in, or [restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), then remove them.
+If your sign-in provider still lets them in, they come back the next time they sign in: as a Viewer, or as an Admin if they're still in the admin group. To keep someone out, first stop your provider letting them in, or [restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), then remove them.
 
 ## When someone leaves
 
 Once your provider stops letting someone in, they can't sign in to the dashboard again. Sessions they already have keep working, though: a browser session for up to 12 hours, and a CLI sign-in for up to 90 days, or until it goes 30 days unused. Their access ends sooner when:
 
-- an Admin removes them on **People**, or
+- an Admin removes them on **People**, group Admins included, or
 - your sign-in provider's sign-out notification for them reaches the dashboard.
 
 Set up sign-out notifications, so that a leaver's access ends without anyone having to remove them: see [End sessions when people sign out of the provider](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider).
 
-An Admin you named can't be removed on **People**:
-
-- **Named by email:** take their address out of `auth.admins` or `SCOUTUI_ADMINS` and redeploy, then remove them.
-- **From the group:** they stay an Admin, because the dashboard checks the group only at a browser sign-in. Only a sign-out notification, or their sign-in running out, ends a CLI sign-in they already have.
+An Admin named by email can't be removed on **People**: take their address out of `auth.admins` or `SCOUTUI_ADMINS` and redeploy, then remove them.
 
 ## See who changed what
 
