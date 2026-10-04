@@ -19,7 +19,7 @@ Select **charts** in the top navigation. The page has three parts:
 
 The change is green when the work moved forward and red when it moved back. Rows in progress come first, with the most uses left at the top. Complete ones sit behind **Show N complete**.
 
-![The charts list with three migrations, three retirements and four saved charts with their previews](/img/dashboard/charts-list.png)
+![The charts list with eight migrations and four retirements in progress, and four saved charts with their previews](/img/dashboard/charts-list.png)
 
 Select any row to open its chart.
 
