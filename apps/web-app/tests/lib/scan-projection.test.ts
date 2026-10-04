@@ -390,6 +390,61 @@ describe.skipIf(!databaseUrl)("atomic scan publication", { timeout: 30_000 }, ()
   });
 });
 
+function baseline(name: string): ScanArtifact {
+  const validated = validateArtifact(JSON.parse(readFileSync(new URL(`../../../../packages/cli/tests/integration/__baselines__/current/${name}.json`, import.meta.url), "utf8")));
+  if (!validated.ok) throw new Error(`${name}.json is not a valid scan: ${validated.reason}`);
+  return validated.artifact;
+}
+
+describe.skipIf(!databaseUrl)("workspace packages in the read model", { timeout: 30_000 }, () => {
+  const id = (filePath: string, exportName: string) => componentKey(repoDeclaration("whole-repo-scope", filePath, exportName));
+  const sharedButton = id("packages/shared-ui/src/SharedButton.tsx", "SharedButton");
+
+  it("keeps each use's package, each component's uses per package and the scan's scope", async () => {
+    await withReadModelDatabase(async pool => {
+      await publishScan(pool, baseline("whole-repo-scope"), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      const rows = await driver.listComponentsForRepo("whole-repo-scope", "");
+      expect(Object.fromEntries(rows.map(r => [r.displayName, r.usedIn]))).toEqual({
+        App: undefined, Demo: undefined, Preview: undefined,
+        Button: { "@example/web": { occurrenceCount: 1, fileCount: 1 }, "@example/shared-ui": { occurrenceCount: 1, fileCount: 1 } },
+        SharedButton: {
+          "@example/playground": { occurrenceCount: 1, fileCount: 1 },
+          "@example/web": { occurrenceCount: 2, fileCount: 1 },
+          "whole-repo-scope": { occurrenceCount: 1, fileCount: 1 },
+        },
+      });
+      expect((await driver.getComponentUsage("whole-repo-scope", sharedButton)).map(({ filePath, line, usedIn }) => ({ filePath, line, usedIn }))).toEqual([
+        { filePath: "apps/playground/src/Demo.tsx", line: 4, usedIn: "@example/playground" },
+        { filePath: "apps/web/src/App.tsx", line: 6, usedIn: "@example/web" },
+        { filePath: "apps/web/src/App.tsx", line: 7, usedIn: "@example/web" },
+        { filePath: "scripts/preview.tsx", line: 4, usedIn: "whole-repo-scope" },
+      ]);
+      expect((await driver.getRepo("whole-repo-scope"))?.scope).toEqual({
+        folder: "", exclude: [],
+        packages: [
+          { name: "whole-repo-scope", folder: "" },
+          { name: "@example/playground", folder: "apps/playground" },
+          { name: "@example/web", folder: "apps/web" },
+          { name: "@example/shared-ui", folder: "packages/shared-ui" },
+        ],
+      });
+    });
+  });
+
+  it("reads a scan with no scope and no packages on its uses", async () => {
+    const { meta: { scope: _scope, ...meta }, occurrences, ...rest } = baseline("whole-repo-scope");
+    const scan: ScanArtifact = { ...rest, meta, occurrences: occurrences.map(({ usedIn: _usedIn, ...call }) => call) };
+    await withReadModelDatabase(async pool => {
+      await publishScan(pool, scan, { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      expect((await driver.listComponentsForRepo("whole-repo-scope", "")).every(r => r.usedIn === undefined)).toBe(true);
+      expect((await driver.getComponentUsage("whole-repo-scope", sharedButton)).every(r => r.usedIn === undefined)).toBe(true);
+      expect((await driver.getRepo("whole-repo-scope"))?.scope).toBeNull();
+    });
+  });
+});
+
 describe.skipIf(!databaseUrl)("large scan publication", { timeout: 30_000 }, () => {
   it("publishes every row of a scan past a single insert's bind-parameter and call-stack limits", async () => {
     await withReadModelDatabase(async pool => {

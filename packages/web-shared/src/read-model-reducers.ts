@@ -30,7 +30,7 @@ import type { CompositionGraph } from "./composition-graph.js";
 /** The fact fields `presentIdentity` reads. */
 type IdentityFact = Pick<ComponentFact, keyof PresentableComponent>;
 export type RepoFact = IdentityFact & Pick<ComponentFact, "id" | "stats" | "usage">;
-export type ComponentRowFact = RepoFact & Pick<ComponentFact, "displayName" | "writtenNames" | "disambiguator" | "version">;
+export type ComponentRowFact = RepoFact & Pick<ComponentFact, "displayName" | "writtenNames" | "disambiguator" | "version" | "usedIn">;
 export type SummaryFact = RepoFact & Pick<ComponentFact, "displayName">;
 export type PackageDetailFact = SummaryFact & Pick<ComponentFact, "version" | "usedIdentityKey">;
 export type CrossRepoFact = IdentityFact & Pick<ComponentFact, "id" | "stats" | "displayName" | "version">;
@@ -147,6 +147,7 @@ export function reduceRepoDetail(
     arrivedAt: artifact.meta.arrivedAt,
     scannerVersion: artifact.meta.scannerVersion,
     diff,
+    scope: artifact.meta.scope ?? null,
   };
 }
 
@@ -175,6 +176,7 @@ export function reduceComponentRows(
       version: c.version ?? null,
       occurrenceCount: c.stats.occurrenceCount,
       fileCount: c.stats.fileCount,
+      ...(c.usedIn != null ? { usedIn: c.usedIn } : {}),
       deprecated: componentDeprecated(c, governance),
       tags: resolveTags(packageName, tags),
     });

@@ -4,6 +4,8 @@ import { presentIdentity } from "./present-identity.js";
 export type OccurrenceStatistics = {
   count: number;
   files: Set<string>;
+  /** Uses and files per package the uses sit in, for uses the scan records a package on. */
+  byPackage: Map<string, { count: number; files: Set<string> }>;
 };
 
 export type ComponentProjectionContext = {
@@ -48,9 +50,15 @@ export function createProjectionContext(artifact: ScanArtifact): ProjectionConte
     const componentOccurrences = occurrencesByComponent.get(componentId) ?? [];
     componentOccurrences.push(occurrence);
     occurrencesByComponent.set(componentId, componentOccurrences);
-    const stats = occurrenceStatistics.get(componentId) ?? { count: 0, files: new Set<string>() };
+    const stats = occurrenceStatistics.get(componentId) ?? { count: 0, files: new Set<string>(), byPackage: new Map() };
     stats.count++;
     stats.files.add(occurrence.filePath);
+    if (occurrence.usedIn !== undefined) {
+      const inPackage = stats.byPackage.get(occurrence.usedIn) ?? { count: 0, files: new Set<string>() };
+      inPackage.count++;
+      inPackage.files.add(occurrence.filePath);
+      stats.byPackage.set(occurrence.usedIn, inPackage);
+    }
     occurrenceStatistics.set(componentId, stats);
   }
   return { ...context, occurrences, occurrencesByComponent, occurrenceStatistics };

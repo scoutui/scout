@@ -1,4 +1,4 @@
-import type { Credit, TraceStep } from "@scoutui/scan-format";
+import type { Credit, ScanScope, TraceStep } from "@scoutui/scan-format";
 import { z } from "zod";
 
 // ---- Identity enums (referenced across summary + detail shapes) ----
@@ -129,6 +129,8 @@ export const RepoDetailSchema = RepoSummarySchema.extend({
   scannerVersion: z.string(),
   // The shown scan vs the scan immediately before it; null on a first scan.
   diff: ScanDiffSchema.nullable(),
+  // What the shown scan covered; null for a scan that doesn't record it.
+  scope: z.custom<ScanScope>().nullable(),
 });
 export type RepoDetail = z.infer<typeof RepoDetailSchema>;
 
@@ -236,6 +238,9 @@ export const CohortSeriesSchema = z.object({
 export type CohortSeries = z.infer<typeof CohortSeriesSchema>;
 
 // ---- Component row (repo detail table) ----
+export const PackageCountsSchema = z.object({ occurrenceCount: z.number().int().nonnegative(), fileCount: z.number().int().nonnegative() });
+export type PackageCounts = z.infer<typeof PackageCountsSchema>;
+
 export const ComponentRowSchema = z.object({
   componentId: z.string(),
   kind: ComponentKind,
@@ -247,6 +252,7 @@ export const ComponentRowSchema = z.object({
   version: z.string().nullable(),
   occurrenceCount: z.number().int().nonnegative(),
   fileCount: z.number().int().nonnegative(),
+  usedIn: z.record(z.string(), PackageCountsSchema).optional(), // uses and files per package; absent when the scan records none
   deprecated: z.boolean(),
   tags: z.array(TagRefSchema).optional(),
 });
@@ -417,6 +423,8 @@ export const OccurrenceRowSchema = z.object({
   writtenName: z.string().optional(),
   /** The component whose code contains this call; absent when the call is outside any component. */
   owner: z.object({ componentId: z.string(), displayName: z.string() }).optional(),
+  /** The package the call's file sits in; absent when the scan covers one package. */
+  usedIn: z.string().optional(),
   props: z.array(OccurrencePropChipSchema),
   events: z.array(z.string()).default([]),
 });

@@ -8,7 +8,7 @@ export type Presented = {
   /** Local: a repository declaration, or a tag this scan resolves to a repository. */
   scope: "local" | "external";
   kind: "react-component" | "vue-component" | "custom-element" | "tag";
-  /** The package export's package, a repository declaration's workspace package, or the package this scan resolves a tag to. */
+  /** The package export's package, a repository declaration's package (its workspace package, or the root package), or the package this scan resolves a tag to. */
   packageName: string | null;
   exportName: string | null;
   tagName: string | null;
