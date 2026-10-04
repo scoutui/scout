@@ -228,7 +228,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
             selected={area.picked}
             dim={filtered && !area.picked}
             ariaLabel={`${view.byPackage ? "Package" : "Folder"} ${area.label}, ${plural(area.count, "use")}`}
-            title={area.key === area.label || area.key === "." ? undefined : area.key}
+            title={view.byPackage ? area.label : area.key === area.label || area.key === "." ? undefined : area.key}
             onClick={() => onArea(area.picked ? null : area.key)}
           />
         </li>

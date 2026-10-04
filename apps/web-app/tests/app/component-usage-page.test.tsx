@@ -251,6 +251,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     await show(link.id);
     expect(screen.getByRole("heading", { name: "Used in" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Package / }).map(row => row.getAttribute("aria-label"))).toEqual(["Package @example/web, 4 uses", "Package @example/admin, 2 uses"]);
+    expect(screen.getByRole("button", { name: "Package @example/admin, 2 uses" })).toHaveAttribute("title", "@example/admin");
     fireEvent.click(screen.getByRole("button", { name: "Package @example/admin, 2 uses" }));
     expect(query().get("area")).toBe("@example/admin");
     expect(screen.getByRole("button", { name: "Remove the filter package @example/admin" })).toBeInTheDocument();
