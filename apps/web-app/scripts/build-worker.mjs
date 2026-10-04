@@ -9,6 +9,6 @@ await build({
   format: "cjs",
   external: ["pg-native"],
   footer: {
-    js: 'if (require.main === module) module.exports.main().catch((err) => { console.error(`[worker] couldn\'t start: ${err instanceof Error ? err.message : String(err)}`); process.exitCode = 1; });',
+    js: 'if (require.main === module) module.exports.main().catch((err) => { console.error(`[worker] couldn\'t start: ${module.exports.errorReason(err)}`); process.exitCode = 1; });',
   },
 });

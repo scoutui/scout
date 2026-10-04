@@ -22,9 +22,9 @@ describe("worker bundle", { timeout: 30_000 }, () => {
       { env: { NODE_ENV: "production" }, timeout: 5000 })).rejects.toMatchObject({ code: 1, stderr: "[worker] couldn't start: DATABASE_URL is required\n" });
   });
 
-  it("prints why it couldn't start without printing the database password", async () => {
+  it.each(["127.0.0.1", "localhost"])("prints why it couldn't reach the database at %s without printing the password", async (host) => {
     const failure = await promisify(execFile)(process.execPath, ["dist/worker.cjs"],
-      { env: { NODE_ENV: "production", DATABASE_URL: "postgres://scout:hunter2-secret@127.0.0.1:1/scout" }, timeout: 5000 })
+      { env: { NODE_ENV: "production", DATABASE_URL: `postgres://scout:hunter2-secret@${host}:1/scout` }, timeout: 5000 })
       .then(() => { throw new Error("Expected the worker to fail"); }, (err: { code: number; stderr: string }) => err);
     expect(failure.code).toBe(1);
     expect(failure.stderr).toMatch(/^\[worker\] couldn't start: .*ECONNREFUSED/);
