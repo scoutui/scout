@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import type { ScanArtifact } from "@scoutui/scan-format";
 import { assertValidArtifact } from "../helpers/artifact.js";
 
@@ -208,6 +208,33 @@ describe("integration: CEM discovery is bounded by the repository root", () => {
       target: { kind: "package", packageName: leaf },
       confidence: "declared",
     });
+    expect(tagNamed(artifact, "leaf-button")?.version).toBe("1.0.0");
+  });
+
+  it("warns once for each package whose manifest is missing or isn't valid JSON in every install, and links its tags to nothing", () => {
+    const repo = join(stage, "unreadable-manifest");
+    writeFiles(repo, {
+      "package.json": JSON.stringify({ name: "unreadable", private: true, version: "0.0.0" }),
+      "scout.config.json": JSON.stringify({ repoId: "unreadable", include: ["src/**/*.vue"] }),
+      "src/App.vue": "<template>\n  <gone-tag></gone-tag>\n  <broken-tag></broken-tag>\n  <good-tag></good-tag>\n</template>\n",
+      "node_modules/@example/gone/package.json": JSON.stringify({ name: "@example/gone", version: "1.0.0", customElements: "dist/custom-elements.json" }),
+      "node_modules/@example/broken/package.json": JSON.stringify({ name: "@example/broken", version: "1.0.0", customElements: "custom-elements.json" }),
+      "node_modules/@example/broken/custom-elements.json": "{ not json",
+      ...cemPackage("node_modules/@example/good", "@example/good", ["good-tag"]),
+      "node_modules/@example/shell/node_modules/@example/good/package.json": JSON.stringify({ name: "@example/good", version: "0.9.0", customElements: "custom-elements.json" }),
+    });
+    commit(repo);
+    const run = spawnSync("node", [CLI, "scan", "--dry-run"], { cwd: repo, encoding: "utf8" });
+    expect(run.status).toBe(0);
+    const lines = run.stderr.split("\n").filter((line) => line.includes("Custom Elements Manifest"));
+    expect(lines).toEqual([
+      expect.stringContaining("Couldn't read the Custom Elements Manifest of @example/broken (custom-elements.json isn't valid JSON), so its tags aren't linked to it."),
+      expect.stringContaining("Couldn't read the Custom Elements Manifest of @example/gone (dist/custom-elements.json is missing), so its tags aren't linked to it."),
+    ]);
+    const artifact = assertValidArtifact(JSON.parse(readFileSync(join(repo, "scout-scan.json"), "utf8")));
+    expect(tagNamed(artifact, "gone-tag")?.attribution).toEqual({ status: "unknown", reason: "absent", evidence: [] });
+    expect(tagNamed(artifact, "broken-tag")?.attribution).toEqual({ status: "unknown", reason: "absent", evidence: [] });
+    expect(tagNamed(artifact, "good-tag")?.attribution).toMatchObject({ status: "resolved", target: { kind: "package", packageName: "@example/good" } });
   });
 });
 

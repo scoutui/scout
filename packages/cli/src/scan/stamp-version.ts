@@ -30,8 +30,10 @@ export function installedVersionReader(root: string): PackageVersionReader {
  * The components with the installed `version` of the package each comes
  * from (a package export's package, or a tag's attributed package). The
  * version is read from where the package's first occurrence is
- * (`readVersion`), once per package. Repository declarations and tags
- * attributed to no package keep `version: null`.
+ * (`readVersion`), once per package. A tag whose package isn't installed on
+ * that file's lookup path takes the version its manifest evidence records.
+ * Repository declarations and tags attributed to no package keep
+ * `version: null`.
  */
 export async function withInstalledVersions(
   components: readonly Component[],
@@ -62,8 +64,18 @@ export async function withInstalledVersions(
 
   return components.map((c) => {
     const pkg = packageOf(c);
-    return { ...c, version: pkg ? (versionByPackage.get(pkg) ?? null) : null };
+    return { ...c, version: pkg ? (versionByPackage.get(pkg) ?? manifestVersion(c, pkg)) : null };
   });
+}
+
+/** The version a tag's Custom Elements Manifest evidence records for `packageName`, or null. */
+function manifestVersion(c: Component, packageName: string): string | null {
+  for (const e of c.attribution?.evidence ?? []) {
+    if (e.source === "cem" && "packageName" in e.locator && e.locator.packageName === packageName && e.locator.version !== null) {
+      return e.locator.version;
+    }
+  }
+  return null;
 }
 
 /**
