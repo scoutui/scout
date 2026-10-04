@@ -11,7 +11,7 @@ import { usedComponentKey, isUsed } from "./usage.js";
 export const PROJECTION_VERSION: number = 7;
 export const READ_MODEL_FORMAT_VERSION: number = 5;
 
-export type ImmutableDetailHead = Omit<ComponentDetailHead, "deprecated" | "migrationStatus" | "governedByRecordId">;
+export type ImmutableDetailHead = Omit<ComponentDetailHead, "claimedBy" | "deprecated" | "migrationStatus" | "governedByRecordId">;
 export type ComponentFact = Pick<Component, "id" | "identity" | "framework" | "attribution" | "owningPackage" | "stats" | "usage" | "version"> & {
   displayName: string;
   /** The other names files render this component under, most used first. */

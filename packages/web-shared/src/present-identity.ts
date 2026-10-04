@@ -49,6 +49,13 @@ export function presentIdentity(component: PresentableComponent): Presented {
   }
 }
 
+/** Each package or repository file that claims a tag the scan found more than one definition for; empty otherwise. */
+export function tagClaimants(component: Pick<Component, "attribution">): string[] {
+  const { attribution } = component;
+  if (attribution?.status !== "conflict") return [];
+  return attribution.candidates.map(target => (target.kind === "package" ? target.packageName : target.filePath));
+}
+
 /**
  * The governance key: the presented package and name (export or tag) of a component, so a
  * repository declaration counts under its package. Null when ungovernable: a component

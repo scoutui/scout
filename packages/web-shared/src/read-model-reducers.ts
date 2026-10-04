@@ -21,7 +21,7 @@ import { resolveGovernance, isDeprecated, governingRecord, componentDeprecated, 
 import { parseQuery, matchesQuery } from "./query.js";
 import { strongerUsage } from "./usage.js";
 import type { DigestScan } from "./digest.js";
-import { governanceKey, presentIdentity, type GovernanceIdentity, type PresentableComponent } from "./present-identity.js";
+import { governanceKey, presentIdentity, tagClaimants, type GovernanceIdentity, type PresentableComponent } from "./present-identity.js";
 import { representativeUsage } from "./representative.js";
 import { diffForScan, repoDelta } from "./scan-diff.js";
 import type { ComponentFact, FactScan, DetailRow, OccurrenceModelRow, GraphRow } from "./read-models.js";
@@ -54,10 +54,10 @@ function presentAcrossScans(usages: ScanUsage<IdentityFact & Pick<ComponentFact,
 /** Totals for one component id across scans. */
 type CrossScanBucket<C> = { totalOccurrences: number; deprecated: boolean; repoIds: Set<string>; usage: ComponentFact["usage"]; usages: ScanUsage<C>[] };
 
-export function reduceComponentDetailHead(row: DetailRow, governance: GovernanceRecord[] = []): ComponentDetailHead {
+export function reduceComponentDetailHead(row: DetailRow, governance: GovernanceRecord[] = [], fact?: Pick<ComponentFact, "attribution">): ComponentDetailHead {
   const lookup = storedLookup(row.governanceTarget);
   const status = resolveGovernance(lookup, governance);
-  return { ...row.head, deprecated: isDeprecated(status), migrationStatus: status, governedByRecordId: governingRecord(lookup, governance)?.id ?? null };
+  return { ...row.head, claimedBy: fact ? tagClaimants(fact) : [], deprecated: isDeprecated(status), migrationStatus: status, governedByRecordId: governingRecord(lookup, governance)?.id ?? null };
 }
 
 export function reduceOccurrences(rows: Iterable<OccurrenceModelRow>, componentId: string): OccurrenceRow[] {
