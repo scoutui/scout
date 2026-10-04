@@ -42,7 +42,7 @@ The scan then reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file there. To
 
 ## Scan only some folders
 
-Keep `include` and point it at the folders you want. Patterns are globs, relative to the folder that holds the config file.
+Add `include` and point it at the folders you want. Patterns are globs, relative to the folder that holds the config file.
 
 For a repo that keeps its code in `app/` and `components/`, list both folders:
 
