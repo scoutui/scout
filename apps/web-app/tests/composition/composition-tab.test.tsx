@@ -132,14 +132,15 @@ describe("CompositionTab", () => {
     await box("d0");
     fireEvent.mouseEnter(container.querySelector('.react-flow__node[data-id="up:d0"]') as Element);
     await waitFor(() => expect(shell("up:d0")).toHaveClass("border-foreground/60"));
-    expect(shell("up:d1")).not.toHaveClass("opacity-35");
+    expect(shell("up:d1")).not.toHaveClass("text-muted-foreground");
+    expect(screen.getByText("+2 more")).toHaveClass("text-foreground");
     fireEvent.click(await box("d0"));
-    await waitFor(() => expect(shell("up:d1")).toHaveClass("opacity-35"));
-    expect(shell("up:d0")).not.toHaveClass("opacity-35");
-    expect(shell("up:p0")).not.toHaveClass("opacity-35");
-    expect(shell("more:up:F")).toHaveClass("opacity-35");
+    await waitFor(() => expect(shell("up:d1")).toHaveClass("text-muted-foreground"));
+    expect(shell("up:d0")).not.toHaveClass("text-muted-foreground");
+    expect(shell("up:p0")).not.toHaveClass("text-muted-foreground");
+    expect(screen.getByText("+2 more")).not.toHaveClass("text-foreground");
     fireEvent.click(screen.getByRole("button", { name: "Show the other 2 components that render F" }));
-    expect(await screen.findByRole("group", { name: "2 more render F" })).not.toHaveClass("opacity-35");
+    expect(await screen.findByRole("group", { name: "2 more render F" })).not.toHaveClass("text-muted-foreground");
   });
 
   it("Reset closes everything opened and clears the selection", async () => {

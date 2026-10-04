@@ -1,6 +1,7 @@
 "use client";
 import {
   createContext,
+  type FocusEvent,
   memo,
   type RefObject,
   useCallback,
@@ -123,10 +124,10 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-md border bg-card shadow-xs transition-[opacity,border-color] duration-150",
+        "relative flex items-center rounded-md border bg-card shadow-xs transition-[color,border-color] duration-150",
         (isFocus || pinned) && "border-foreground ring-1 ring-foreground",
         lit && !pinned && !isFocus && "border-foreground/60",
-        dim && "opacity-35",
+        dim && "text-muted-foreground",
       )}
       style={{ width: item.w, height: item.h }}
     >
@@ -177,7 +178,7 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
       ? `Show the other ${componentsWord(n)} that ${n === 1 ? "renders" : "render"} ${parentName}`
       : `Show the other ${componentsWord(n)} ${parentName} renders`;
   return (
-    <div className={cn("relative transition-opacity duration-150", dim && "opacity-35")} style={{ width: item.w, height: item.h }}>
+    <div className="relative" style={{ width: item.w, height: item.h }}>
       <Handle type="target" position={Position.Left} className="!pointer-events-none !opacity-0" />
       <button
         type="button"
@@ -192,7 +193,7 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
         }}
         className="flex size-full cursor-pointer items-center justify-between gap-2 rounded-md border border-dashed bg-muted px-2 text-xs text-muted-foreground transition-[color,background-color,scale] duration-150 hover:bg-card hover:text-foreground active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
-        <span className="font-medium text-foreground">{`+${n.toLocaleString()} more`}</span>
+        <span className={cn("font-medium", !dim && "text-foreground")}>{`+${n.toLocaleString()} more`}</span>
         <span>Show</span>
       </button>
       <Handle type="source" position={Position.Right} className="!pointer-events-none !opacity-0" />
@@ -202,7 +203,7 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
 
 const ListNode = memo(function ListNode({ id, data }: NodeProps) {
   const { item, parentName } = data as unknown as GroupData;
-  const { toggleList, bring, setPin, focusNext } = useFlow();
+  const { toggleList, bring, setPin, focusNext, reveal } = useFlow();
   const [query, setQuery] = useState("");
   const tails = useMemo(() => distinctTails(item.members.map((m) => pathValueOf(m.node))), [item.members]);
   const rows = useMemo(() => {
@@ -219,6 +220,9 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
   const close = () => {
     focusNext(groupId("more", item.dir, item.parentRealId));
     toggleList(item.dir, item.parentRealId);
+  };
+  const revealOnKeyboard = (e: FocusEvent<HTMLElement>) => {
+    if (e.currentTarget.matches(":focus-visible")) reveal(id);
   };
   return (
     <fieldset
@@ -240,6 +244,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
         <button
           type="button"
           aria-label="Close this list"
+          onFocus={revealOnKeyboard}
           onClick={close}
           className="nodrag shrink-0 cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
@@ -267,6 +272,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
                 bring(item.dir, m.node.id);
                 setPin({ dir: item.dir, id: m.node.id });
               }}
+              onFocus={revealOnKeyboard}
               aria-label={`${m.node.displayName}, ${pathValueOf(m.node)}, ${usesWord(m.uses)}. Show it in the diagram.`}
               className="flex w-full cursor-pointer flex-col gap-0.5 px-2.5 py-1.5 text-left hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50"
             >
@@ -352,10 +358,16 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
     }
     return m;
   }, [scene]);
-  // What the selected box opened: the column one step further out from it.
+  // What the selected box opened, the column one step further out from it,
+  // and every open list.
   const revealed = useMemo(
-    () => new Set(pinFlowId ? [...innerOf].filter(([, inner]) => inner === pinFlowId).map(([id]) => id) : []),
-    [innerOf, pinFlowId],
+    () =>
+      new Set(
+        scene.items
+          .filter((i) => i.kind === "list" || (pinFlowId !== null && innerOf.get(i.id) === pinFlowId))
+          .map((i) => i.id),
+      ),
+    [scene, innerOf, pinFlowId],
   );
   const innerOfRef = useRef(innerOf);
   innerOfRef.current = innerOf;
@@ -476,13 +488,16 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
       frame(null, duration, READABLE_ZOOM);
       return;
     }
+    const opened = justOpened.current;
+    justOpened.current = null;
     if (selected) {
-      const around = scene.items.filter((i) => i.kind === "summary" || (pinFlowId !== null && innerOf.get(i.id) === pinFlowId));
+      const around = scene.items.filter(
+        (i) => i.kind === "summary" || (pinFlowId !== null && innerOf.get(i.id) === pinFlowId) || opened?.includes(i.id),
+      );
       frame([...scene.pathIds, ...around.map((i) => i.id)], duration, READABLE_ZOOM);
       return;
     }
-    const target = justOpened.current ?? scene.items.filter((i) => i.kind === "list").map((i) => i.id);
-    justOpened.current = null;
+    const target = opened ?? scene.items.filter((i) => i.kind === "list").map((i) => i.id);
     if (target.length > 0) {
       const near = scene.items.filter((i) => target.includes(i.id) || target.includes(innerOf.get(i.id) ?? "")).map((i) => i.id);
       const inner = target.map((t) => innerOf.get(t)).filter((t): t is string => t !== undefined);
