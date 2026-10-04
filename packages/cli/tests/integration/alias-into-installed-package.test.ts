@@ -26,11 +26,11 @@ describe("integration: alias-into-installed-package fixture", () => {
         trace: o.trace,
       })),
     ).toEqual([
-      { at: "app/src/App.tsx:9:6", component: button, trace: [{ kind: "import", specifier: "@ds", name: "Button" }] },
-      { at: "app/src/App.tsx:10:6", component: button, trace: [{ kind: "import", specifier: "dsx", name: "Button" }] },
-      { at: "app/src/App.tsx:11:6", component: button, trace: [{ kind: "import", specifier: "@ds/ui", name: "Button" }] },
+      { at: "app/src/App.tsx:9:7", component: button, trace: [{ kind: "import", specifier: "@ds", name: "Button" }] },
+      { at: "app/src/App.tsx:10:7", component: button, trace: [{ kind: "import", specifier: "dsx", name: "Button" }] },
+      { at: "app/src/App.tsx:11:7", component: button, trace: [{ kind: "import", specifier: "@ds/ui", name: "Button" }] },
       {
-        at: "app/src/App.tsx:12:6",
+        at: "app/src/App.tsx:12:7",
         component: { status: "unresolved", reason: { kind: "module-not-found" } },
         trace: [{ kind: "import", specifier: "@shared", name: "Button" }],
       },
