@@ -14,7 +14,7 @@ export class ReloginRequiredError extends Error {
 
 export class SessionChangedError extends Error {
   constructor(public host: string) {
-    super(`Your sign-in changed during the upload. Try again.`);
+    super("Your sign-in changed during the upload. Try again.");
   }
 }
 
