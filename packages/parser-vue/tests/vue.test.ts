@@ -113,6 +113,28 @@ import Foo from "./Foo.vue";
     });
   });
 
+  function scanUnparsedDefaultImport(specifier: string, target: string) {
+    return runVueScan({
+      source: `<script setup>\nimport Logo from "${specifier}";\n</script>\n<template><Logo /></template>`,
+      file: "src/Page.vue",
+      moduleResolver: () => target,
+      repoRoot: "/repo",
+      firstParty: (abs) => abs.startsWith("/repo/"),
+    });
+  }
+
+  it("a tag bound to an import of a repo file that isn't code (`./logo.svg`) is not credited", () => {
+    const { occurrences } = scanUnparsedDefaultImport("./logo.svg", "/repo/src/logo.svg");
+    expect(occurrences).toEqual([]);
+  });
+
+  it("a tag bound to an import of a repo `.vue` file the scan didn't parse is credited to that file", () => {
+    const { occurrences } = scanUnparsedDefaultImport("./Logo.vue", "/repo/src/Logo.vue");
+    expect(occurrences.map((o) => o.rawComponentId)).toEqual([
+      { kind: "vue-component", export: "default", source: { type: "local", filePath: "/repo/src/Logo.vue" } },
+    ]);
+  });
+
   it("a component imported under a lowercase camelCase name is credited at its kebab-case tag", () => {
     const sfc = `<script setup>\nimport vSelect from "fake-select";\n</script>\n<template><v-select :options="opts" /></template>`;
     const { occurrences } = runVueScan({ source: sfc, file: "Page.vue" });
