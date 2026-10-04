@@ -34,7 +34,7 @@ export default async function NewDashboardPage({
   if (page.state !== "ready") return <ReadModelState {...page} />;
   const { options, source } = page.value;
   if (from !== undefined && !source) notFound();
-  if (source && !can(identity, "view", { chart: source })) return privateChart(source.createdBy);
+  if (source && !can(identity, "view", { chart: source })) return privateChart(source);
 
   return (
     <div>

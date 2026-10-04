@@ -23,20 +23,20 @@ import { ReadModelReader, scanModelReady, type ScanModelHeader } from "./read-mo
 
 type DashboardDbRow = {
   id: string; name: string; description: string | null; config: DashboardConfig; visibility: ChartVisibility;
-  created_by_user_id: string | null; creator_name: string | null; creator_email: string | null;
+  created_by_user_id: string | null; creator_name: string | null; creator_email: string | null; creator_removed: boolean;
   created_at: string | Date; updated_at: string | Date;
 };
 
 const dashboardColumns = sql`
   dashboards.id, dashboards.name, dashboards.description, dashboards.config, dashboards.visibility,
   dashboards.created_by_user_id, creator.name AS creator_name, creator.email AS creator_email,
-  dashboards.created_at, dashboards.updated_at
+  (creator.id IS NOT NULL AND creator.role IS NULL) AS creator_removed, dashboards.created_at, dashboards.updated_at
   FROM dashboards LEFT JOIN "user" creator ON creator.id = dashboards.created_by_user_id`;
 
 function toDashboard(r: DashboardDbRow): Dashboard {
   return {
     id: r.id, name: r.name, description: r.description, config: r.config, visibility: r.visibility,
-    createdByUserId: r.created_by_user_id, createdBy: r.creator_name ?? r.creator_email,
+    createdByUserId: r.created_by_user_id, createdBy: r.creator_name ?? r.creator_email, creatorRemoved: r.creator_removed,
     createdAt: new Date(r.created_at).toISOString(), updatedAt: new Date(r.updated_at).toISOString(),
   };
 }

@@ -206,6 +206,26 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     });
   });
 
+  it("tells anyone else to ask an Admin once the creator was removed or deleted, and still names a removed creator", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const config: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" };
+      const saved = await driver.upsertDashboard({ visibility: "private", name: "Secret rollout", description: null, config, createdByUserId: "reader" });
+      const open = async () => (await import("@/app/charts/[dashboardId]/page")).default({ params: Promise.resolve({ dashboardId: saved.id }), searchParams: Promise.resolve({}) });
+      const askAnAdmin = { titleAs: "h1", title: "This chart is private.", description: "Ask an Admin to share it with everyone." };
+
+      await pool.query(`UPDATE "user" SET role = NULL WHERE id = 'reader'`);
+      reader = { ...editor, userId: "someone-else" };
+      expect(propsOf(await open(), "EmptyState")).toEqual(askAnAdmin);
+      reader = { ...editor, userId: "someone-else", role: "admin" };
+      expect(textOf(await open())).toContain("Created by Ana Lopez");
+
+      await pool.query(`DELETE FROM "user" WHERE id = 'reader'`);
+      reader = { ...editor, userId: "someone-else" };
+      expect(propsOf(await open(), "EmptyState")).toEqual(askAnAdmin);
+    });
+  });
+
   it("opens a copy of a chart in the builder for someone who can open it, and shows anyone else only that it's private", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);

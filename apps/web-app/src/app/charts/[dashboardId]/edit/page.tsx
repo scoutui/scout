@@ -31,7 +31,7 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
   if (page.state !== "ready") return <ReadModelState {...page} />;
   if (!page.value) notFound();
   const { dashboard, options } = page.value;
-  if (!can(identity, "view", { chart: dashboard })) return privateChart(dashboard.createdBy);
+  if (!can(identity, "view", { chart: dashboard })) return privateChart(dashboard);
   if (!can(identity, "edit", { chart: dashboard })) {
     return (
       <EmptyState

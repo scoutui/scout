@@ -65,7 +65,7 @@ export default async function DashboardViewPage({
     }
     const dashboard = await snapshot.getDashboard(id);
     if (!dashboard) return null;
-    if (!can(identity, "view", { chart: dashboard })) return { kind: "private" as const, createdBy: dashboard.createdBy };
+    if (!can(identity, "view", { chart: dashboard })) return { kind: "private" as const, createdBy: dashboard.createdBy, creatorRemoved: dashboard.creatorRemoved };
     const repoId = dashboard.config.scope.kind === "repo" ? dashboard.config.scope.repoId : undefined;
     return {
       kind: "saved" as const,
@@ -80,7 +80,7 @@ export default async function DashboardViewPage({
   });
   if (page.state !== "ready") return <ReadModelState {...page} />;
   if (!page.value) notFound();
-  if (page.value.kind === "private") return privateChart(page.value.createdBy);
+  if (page.value.kind === "private") return privateChart(page.value);
   let dashboard: Dashboard;
   let view: DashboardView;
   let derivedEntry: GovernanceTracking | null = null;
@@ -107,6 +107,7 @@ export default async function DashboardViewPage({
       visibility: "everyone",
       createdByUserId: null,
       createdBy: null,
+      creatorRemoved: false,
       createdAt: "1970-01-01T00:00:00.000Z",
       updatedAt: "1970-01-01T00:00:00.000Z",
     };

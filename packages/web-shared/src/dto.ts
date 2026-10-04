@@ -207,6 +207,8 @@ export const DashboardSchema = z.object({
   createdByUserId: z.string().nullable(),
   /** The creator's name, or their email when they have none. */
   createdBy: z.string().nullable(),
+  /** Whether the creator was removed from the dashboard. Their name stays in `createdBy`. */
+  creatorRemoved: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

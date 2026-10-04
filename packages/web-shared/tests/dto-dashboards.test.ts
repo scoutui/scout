@@ -66,6 +66,7 @@ describe("DashboardSchema", () => {
       visibility: "everyone",
       createdByUserId: null,
       createdBy: null,
+      creatorRemoved: false,
       createdAt: "2026-06-04T00:00:00Z",
       updatedAt: "2026-06-04T00:00:00Z",
     });
