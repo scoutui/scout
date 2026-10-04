@@ -320,7 +320,7 @@ const SummaryNode = memo(function SummaryNode({ data }: NodeProps) {
       <button
         type="button"
         onClick={() => setPin(null)}
-        aria-label={`${what} ${item.direct.toLocaleString()} directly, ${item.total.toLocaleString()} in total. Clear the selection to show them.`}
+        aria-label={`${what} ${item.direct.toLocaleString()} directly, ${item.total.toLocaleString()} in total. Clear the route to show them.`}
         className="flex size-full cursor-pointer flex-col items-start justify-center rounded-md border border-dashed bg-muted px-2.5 text-left text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <span className="text-label">{what}</span>
@@ -693,7 +693,7 @@ function RouteBar({
         <button
           type="button"
           onClick={onClear}
-          aria-label="Clear the selection (Escape)"
+          aria-label="Clear the route (Escape)"
           className="cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <X aria-hidden className="size-3.5" strokeWidth={1.5} />
@@ -753,6 +753,10 @@ function FindBox({
     else groups.push({ title, rows: [r] });
   }
   const totalOf = (dir: Dir, steps: number) => (dir === "up" ? up : down).filter((r) => r.steps === steps).length;
+  const move = (next: number) => {
+    setActive(next);
+    document.getElementById(`find-${next}`)?.scrollIntoView({ block: "nearest" });
+  };
   const pick = (r: FindRow) => {
     onPick(r);
     setOpen(false);
@@ -779,7 +783,7 @@ function FindBox({
           type="text"
           role="combobox"
           aria-expanded={open}
-          aria-controls="composition-find-list"
+          aria-controls={open ? "composition-find-list" : undefined}
           aria-activedescendant={open && rows[active] ? `find-${active}` : undefined}
           aria-label={`Find a component that renders ${focusName} or that it renders`}
           placeholder="Find a component or a file…"
@@ -794,10 +798,10 @@ function FindBox({
             if (e.key === "ArrowDown") {
               e.preventDefault();
               setOpen(true);
-              setActive((a) => Math.min(a + 1, rows.length - 1));
+              move(Math.min(active + 1, rows.length - 1));
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
-              setActive((a) => Math.max(a - 1, 0));
+              move(Math.max(active - 1, 0));
             } else if (e.key === "Enter" && open && rows[active]) {
               e.preventDefault();
               pick(rows[active] as FindRow);
@@ -825,6 +829,7 @@ function FindBox({
             id="composition-find-list"
             // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox list of rich rows
             role="listbox"
+            aria-label={`Components that render ${focusName} or that it renders`}
             tabIndex={-1}
             className={cn("nowheel overflow-y-auto overscroll-contain", inline ? "min-h-0 flex-1" : "max-h-80")}
           >
@@ -859,7 +864,10 @@ function FindBox({
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => pick(r)}
                         onMouseEnter={() => setActive(i)}
-                        className={cn("flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5", i === active && "bg-muted")}
+                        className={cn(
+                          "flex scroll-mt-6 cursor-pointer flex-col gap-0.5 px-2.5 py-1.5",
+                          i === active && "bg-muted ring-2 ring-inset ring-ring/50",
+                        )}
                       >
                         <span className="flex min-w-0 items-center gap-1.5">
                           <ScopeGlyph scope={r.node.scope} />

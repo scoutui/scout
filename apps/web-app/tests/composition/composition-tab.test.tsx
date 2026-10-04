@@ -70,7 +70,7 @@ describe("CompositionTab", () => {
     expect(screen.getByText("· src/p0.tsx")).toBeInTheDocument();
     expect(screen.getByText("p0 renders d0 once, and d0 renders F 12 times. Nothing in this repo renders p0.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open p0" })).toHaveAttribute("href", "/repos/r%2Fx/components/p0?tab=composition");
-    fireEvent.click(screen.getByRole("button", { name: "Clear the selection (Escape)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear the route (Escape)" }));
     expect(param("pin")).toBeNull();
     expect(await screen.findByText("Route cleared")).toBeInTheDocument();
   });
@@ -91,7 +91,10 @@ describe("CompositionTab", () => {
   it("closes Find when focus leaves it, and keeps it open while focus moves into its list", async () => {
     renderTab();
     const find = await screen.findByRole("combobox");
+    expect(find).not.toHaveAttribute("aria-controls");
     fireEvent.focus(find);
+    const list = screen.getByRole("listbox", { name: "Components that render F or that it renders" });
+    expect(find).toHaveAttribute("aria-controls", list.id);
     fireEvent.blur(find, { relatedTarget: screen.getByRole("listbox") });
     expect(screen.getByRole("listbox")).toBeInTheDocument();
     fireEvent.blur(find, { relatedTarget: await box("d0") });
@@ -102,7 +105,7 @@ describe("CompositionTab", () => {
   it("moves focus to the route's first step when the bar clears the route", async () => {
     window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:p0");
     renderTab();
-    const clear = await screen.findByRole("button", { name: "Clear the selection (Escape)" });
+    const clear = await screen.findByRole("button", { name: "Clear the route (Escape)" });
     clear.focus();
     fireEvent.click(clear);
     await waitFor(() => expect(screen.getByRole("button", { name: /^d0, / })).toHaveFocus());
@@ -160,6 +163,23 @@ describe("CompositionTab", () => {
     fireEvent.keyDown(await screen.findByRole("textbox", { name: "Filter the 2 components" }), { key: "Escape" });
     expect(param("list")).toBeNull();
     expect(param("pin")).toBe("up:d0");
+  });
+
+  it("scrolls Find's active option into view as the arrow keys move it", async () => {
+    const scroll = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      renderTab();
+      const find = await screen.findByRole("combobox");
+      fireEvent.focus(find);
+      for (let i = 0; i < 3; i++) fireEvent.keyDown(find, { key: "ArrowDown" });
+      const active = screen.getByRole("option", { selected: true });
+      expect(active).toHaveAttribute("id", "find-3");
+      expect(scroll.mock.contexts.at(-1)).toBe(active);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 
   it("selects the component picked in Find", async () => {
