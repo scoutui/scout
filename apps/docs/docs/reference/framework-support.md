@@ -53,7 +53,7 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 
 - Components registered globally and missing from the list of auto-imports, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unmatched use](/docs/reference/glossary#unmatched-use). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Type** filter shows as **Undefined element**. Import the component in the file's script to have it matched.
 - A list of auto-imports at any other path is not read, for example when `unplugin-vue-components`'s `dts` option writes it to `types/components.d.ts`. Set `dts` to `true` or `src/components.d.ts` to have it read.
-- In a file with both `<script>` and `<script setup>`, a component imported in the plain `<script>` is not matched. Written `<LineItem>`, its tag is not counted at all. Written `<line-item>`, it is counted as a web component with no package. Move the import into `<script setup>`.
+- A component the file's own script declares, such as `const LazyPanel = defineAsyncComponent(() => import("./Panel.vue"))`, is not counted, written either way (`<LazyPanel>` or `<lazy-panel>`). Declare it in a file of its own and import it to have it matched. A component registered in `components:` under a name other than its import's isn't counted either.
 
 ## Web components
 

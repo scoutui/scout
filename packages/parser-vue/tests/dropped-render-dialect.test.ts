@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createDiagnosticCollector } from "@scoutui/reference-graph";
 import { runVueScan } from "./test-utils.js";
 
-describe("dropped-render reporting is React-only", () => {
+describe("parser-vue: a tag bound to an import the scan can't load", () => {
   it("an authored <select> bound to an import outside the graph is observed and reports no unresolved-reference", () => {
     const collector = createDiagnosticCollector();
     const { occurrences, fileGraph } = runVueScan({

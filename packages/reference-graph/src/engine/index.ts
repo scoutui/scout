@@ -270,7 +270,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
       }
       const writtenName = [usage.ref.symbol, ...usage.ref.memberChain].join(".");
       const credited = stampComposition(lengthBefore, "jsx", usageIdx, writtenName);
-      if (credited === 0) reportDroppedRender(opts, filePath, fileGraph.dialect, usage, evaluated);
+      if (credited === 0) reportDroppedRender(opts, filePath, usage, evaluated);
     }
 
     // Tag-usage resolution for Vue template references.
@@ -1063,13 +1063,11 @@ function emitTagCredits(
  * component reports nothing, a value supplied elsewhere reports
  * `late-bound-render`, and anything else reports `unresolved-reference`,
  * including a credit the registry's judge, its tagged membership or admission
- * rejected (a render gives one occurrence or one diagnostic). A non-react
- * dialect reports only `lazy-import-unsupported`.
+ * rejected (a render gives one occurrence or one diagnostic).
  */
 function reportDroppedRender(
   opts: ResolveOpts | undefined,
   filePath: string,
-  dialect: Dialect,
   usage: JsxUsage,
   outcome: TagEvaluation,
 ): void {
@@ -1093,7 +1091,6 @@ function reportDroppedRender(
   }
   const decided = renderOutcome(outcome.evaluation);
   if (decided.kind === "silent") return;
-  if (dialect !== "react") return;
   if (decided.kind === "credit") {
     collector.emit({ code: "unresolved-reference", severity: "info", ...positional });
     return;

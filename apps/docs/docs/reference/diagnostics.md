@@ -69,7 +69,7 @@ A package listed only in `peerDependencies` or `optionalDependencies` doesn't st
 
 ## Render codes
 
-A *render* is one JSX tag that names a component, such as `<Button>` or `<Card.Header>`. When the tag's name is bound to something the scan can't follow to a component, the render isn't counted as a [use](/docs/reference/glossary#use) and reports one of these codes instead, unless it is one of the [renders that report nothing](#renders-that-report-nothing).
+A *render* is one tag in JSX or a Vue template that names a component, such as `<Button>` or `<Card.Header>`. When the tag's name is bound to something the scan can't follow to a component, the render isn't counted as a [use](/docs/reference/glossary#use) and reports one of these codes instead, unless it is one of the [renders that report nothing](#renders-that-report-nothing).
 
 ### `late-bound-render`
 
@@ -220,7 +220,7 @@ These tags aren't counted as uses and report no diagnostic:
 - A JSX tag bound to a string, such as `const Tag = as ?? "span";` then `<Tag>`.
 - A React context used as a provider or consumer, such as `<ThemeContext.Provider>`.
 - A Vue built-in tag, such as `<Transition>`.
-- A Vue template tag whose script binds it to something the scan can't follow to a component, such as the result of a call (`const Panel = pickPanel();`).
+- A Vue template tag naming something the file's own script declares, such as `const LazyPanel = pickPanel();` with `<LazyPanel>` or `<lazy-panel>`.
 
 ## Terminal output
 

@@ -1,24 +1,17 @@
 import type { BindingPattern, Expression, ObjectExpression, Program } from "@oxc-project/types";
 import type { VueParseWrapper } from "./parse-sfc.js";
-import { extractScriptImports } from "./script-imports.js";
 
 /**
  * Names an SFC's script binds that the graph holds no binding for: every
  * script block's top-level variable, function and class declarations and its
- * `components:` registrations, plus the imports of a plain `<script>` beside
- * `<script setup>` (the graph holds the `scriptProgram`'s imports only).
+ * `components:` registrations.
  */
-export function scriptOnlyBindings(file: string, wrapper: VueParseWrapper): Set<string> {
+export function scriptOnlyBindings(wrapper: VueParseWrapper): Set<string> {
   const names = new Set<string>();
   for (const program of [wrapper.scriptProgram, wrapper.plainScriptProgram]) {
     if (program === undefined) continue;
     for (const name of declaredNames(program)) names.add(name);
     for (const name of registeredComponents(program)) names.add(name);
-  }
-  if (wrapper.plainScriptProgram !== undefined) {
-    for (const spec of extractScriptImports({ file, program: wrapper.plainScriptProgram }).importSpecs) {
-      names.add(spec.local);
-    }
   }
   return names;
 }
