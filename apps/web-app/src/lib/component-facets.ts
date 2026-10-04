@@ -21,10 +21,11 @@ export type FacetState = {
   deprecated: boolean | null; // true = only deprecated, false = only not-deprecated, null = any
   changed: boolean; // true = only rows that moved since the last scan (needs the diff's marks; applied by the explorer)
   occurrences: { op: OccurrenceOp; value: number } | null;
+  usedIn: string | null; // one package; every count becomes that package's
 };
 
 export function emptyFacets(): FacetState {
-  return { text: "", origin: null, kinds: [], packages: [], tags: [], deprecated: null, changed: false, occurrences: null };
+  return { text: "", origin: null, kinds: [], packages: [], tags: [], deprecated: null, changed: false, occurrences: null, usedIn: null };
 }
 
 export const KIND_LABEL: Record<KindValue, string> = {
@@ -56,6 +57,7 @@ export function isFiltering(f: FacetState): boolean {
     f.tags.length > 0 ||
     f.deprecated !== null ||
     f.occurrences !== null ||
+    f.usedIn !== null ||
     f.changed
   );
 }
@@ -93,9 +95,27 @@ function matchesRow(r: ComponentRow, f: FacetState): boolean {
   return true;
 }
 
-/** Apply the facet state to the full row set. Pure; memoise at the call site. */
+/** Apply the facet state to the full row set. Pure; memoise at the call site.
+ *  `usedIn` is the explorer's to apply first, through `rowsUsedIn`; this never reads it. */
 export function filterRows(rows: ComponentRow[], f: FacetState): ComponentRow[] {
   return rows.filter((r) => matchesRow(r, f));
+}
+
+/** The rows used in `pkg`, each with that package's uses and files. */
+export function rowsUsedIn(rows: readonly ComponentRow[], pkg: string): ComponentRow[] {
+  return rows.flatMap((r) => {
+    const counts = r.usedIn?.[pkg];
+    return counts ? [{ ...r, ...counts }] : [];
+  });
+}
+
+/** Each package the rows are used in, with how many rows the other filters keep there; a selected package stays listed. */
+export function usedInOptions(rows: readonly ComponentRow[], f: FacetState): { value: string; count: number }[] {
+  const names = new Set(rows.flatMap((r) => Object.keys(r.usedIn ?? {})));
+  if (f.usedIn) names.add(f.usedIn);
+  return [...names]
+    .map((value) => ({ value, count: filterRows(rowsUsedIn(rows, value), { ...f, usedIn: null }).length }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
 }
 
 /** What the Filter menu and the status chips offer, each value with its count. */
@@ -196,7 +216,7 @@ export function facetOptions(
 // --- URL params ---------------------------------------------------------------
 
 /** The params the components table keeps its facets in. */
-export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "changed"];
+export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "used-in", "changed"];
 
 const KINDS: readonly KindValue[] = ["react", "vue", "wc", "undefined-element"];
 const OCCURRENCE_WORDS: Record<OccurrenceOp, string> = { ">=": "gte:", ">": "gt:", "<=": "lte:", "<": "lt:", "=": "" };
@@ -217,6 +237,7 @@ export function facetsToParams(f: FacetState): QueryParams {
   for (const tag of f.tags) params.push(["tag", tag]);
   if (f.deprecated !== null) params.push(["deprecated", String(f.deprecated)]);
   if (f.occurrences) params.push(["uses", `${OCCURRENCE_WORDS[f.occurrences.op]}${f.occurrences.value}`]);
+  if (f.usedIn) params.push(["used-in", f.usedIn]);
   if (f.changed) params.push(["changed", "true"]);
   return params;
 }
@@ -232,6 +253,7 @@ export function paramsToFacets(params: URLSearchParams): FacetState {
   f.tags = [...new Set(params.getAll("tag"))].filter(Boolean);
   const deprecated = params.get("deprecated");
   if (deprecated === "true" || deprecated === "false") f.deprecated = deprecated === "true";
+  f.usedIn = params.get("used-in") || null;
   f.changed = params.get("changed") === "true";
   const om = OCCURRENCE_RE.exec(params.get("uses") ?? "");
   if (om) {

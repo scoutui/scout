@@ -20,13 +20,23 @@ const options: FacetOptions = {
   changedMax: 0,
 };
 
-function renderBar(opts: FacetOptions = options, facets: FacetState = emptyFacets(), deprecatedTotal = 2, canEdit = true) {
+type UsedInProps = Pick<React.ComponentProps<typeof FilterBar>, "usedIn" | "packageFolders">;
+
+function renderBar(
+  opts: FacetOptions = options,
+  facets: FacetState = emptyFacets(),
+  deprecatedTotal = 2,
+  canEdit = true,
+  { usedIn, packageFolders }: UsedInProps = { usedIn: [], packageFolders: new Map() },
+) {
   const onChange = vi.fn();
   render(
     <FilterBar
       facets={facets}
       onChange={onChange}
       options={opts}
+      usedIn={usedIn}
+      packageFolders={packageFolders}
       resultCount={4}
       total={4}
       deprecatedTotal={deprecatedTotal}
@@ -295,6 +305,32 @@ describe("FilterBar pills", () => {
   });
 });
 
+describe("FilterBar Used in facet", () => {
+  const usedIn = [{ value: "@example/web", count: 2 }, { value: "whole-repo-scope", count: 1 }];
+  const packageFolders = new Map([["@example/web", "apps/web"], ["whole-repo-scope", ""]]);
+
+  it("lists each package with its folder, and the repo root for a package at the top of the repo", async () => {
+    renderBar(options, emptyFacets(), 2, true, { usedIn, packageFolders });
+    await openFacet(/^used in/i);
+    expect(within(await screen.findByRole("button", { name: /^@example\/web/ })).getByText("apps/web")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: /^whole-repo-scope/ })).getByText("repo root")).toBeInTheDocument();
+  });
+
+  it("leaves the menu when the rows are used in one package", async () => {
+    renderBar(options, emptyFacets(), 2, true, { usedIn: [{ value: "@example/web", count: 2 }], packageFolders });
+    fireEvent.click(screen.getByRole("button", { name: /^filter/i }));
+    await screen.findByRole("button", { name: /^tag/i });
+    expect(screen.queryByRole("button", { name: /^used in/i })).toBeNull();
+  });
+
+  it("shows a selected package as a used in pill whose remove button clears it", () => {
+    const onChange = renderBar(options, { ...emptyFacets(), usedIn: "@example/web" }, 2, true, { usedIn, packageFolders });
+    expect(screen.getByText("used in")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove used in @example/web" }));
+    expect(onChange).toHaveBeenCalledWith(emptyFacets());
+  });
+});
+
 describe("FilterBar Origin facet", () => {
   it("says under each value where its components come from", async () => {
     renderBar();
@@ -329,6 +365,8 @@ describe("FilterBar since-previous-scan chip", () => {
         facets={emptyFacets()}
         onChange={onChange}
         options={withChanged}
+        usedIn={[]}
+        packageFolders={new Map()}
         resultCount={4}
         total={4}
         deprecatedTotal={2}
@@ -386,6 +424,8 @@ describe("FilterBar result count in the changed view", () => {
         facets={{ ...emptyFacets(), changed: diffShown !== null, tags: filtering ? ["primitives"] : [] }}
         onChange={vi.fn()}
         options={{ ...options, changedCount: resultCount }}
+        usedIn={[]}
+        packageFolders={new Map()}
         resultCount={resultCount}
         total={1879}
         deprecatedTotal={2}

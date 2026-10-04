@@ -83,7 +83,7 @@ export default async function RepoDetailPage({
                 title="No components found"
                 description={'This scan found no components. Check "include" and "exclude" in scout.config.json, then scan again.'}
               />
-            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} canEdit={canEdit} />}
+            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} packages={detail.scope?.packages ?? []} canEdit={canEdit} />}
           </div>
         }
         adoption={

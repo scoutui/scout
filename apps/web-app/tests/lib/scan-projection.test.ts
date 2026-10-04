@@ -6,6 +6,7 @@ import { PostgresDriver, PROJECTION_VERSION, READ_MODEL_FORMAT_VERSION } from "@
 import { claimScanJob, type ClaimedScanJob } from "@/lib/scan-jobs";
 import { publishScan, republishScan, type PublishOptions } from "@/lib/scan-projection";
 import { reconcileScanJobs } from "@/lib/scan-reconciliation";
+import { baseline } from "../helpers/cli-baseline";
 import { withReadModelDatabase } from "../helpers/read-model-db";
 import { receiveArtifact, sampleArtifact } from "../helpers/scan-artifact";
 import { artifact as v2Artifact, component, packageExport, repoDeclaration } from "../../../../packages/web-shared/tests/helpers/builders.js";
@@ -389,12 +390,6 @@ describe.skipIf(!databaseUrl)("atomic scan publication", { timeout: 30_000 }, ()
     });
   });
 });
-
-function baseline(name: string): ScanArtifact {
-  const validated = validateArtifact(JSON.parse(readFileSync(new URL(`../../../../packages/cli/tests/integration/__baselines__/current/${name}.json`, import.meta.url), "utf8")));
-  if (!validated.ok) throw new Error(`${name}.json is not a valid scan: ${validated.reason}`);
-  return validated.artifact;
-}
 
 describe.skipIf(!databaseUrl)("workspace packages in the read model", { timeout: 30_000 }, () => {
   const id = (filePath: string, exportName: string) => componentKey(repoDeclaration("whole-repo-scope", filePath, exportName));

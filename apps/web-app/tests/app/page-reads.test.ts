@@ -14,6 +14,7 @@ import { claimScanJob, enqueueScanJob, failScanJob, SCAN_JOB_PRIORITY } from "..
 import { publishScan } from "../../src/lib/scan-projection.ts";
 import { readModelPage } from "../../src/lib/read-model-page.ts";
 import type { Person } from "../../src/lib/access.ts";
+import { baseline } from "../helpers/cli-baseline.ts";
 import { withReadModelDatabase } from "../helpers/read-model-db.ts";
 
 const { DATABASE_URL: databaseUrl } = process.env;
@@ -63,7 +64,7 @@ function recordQueries(allowUsage = false) {
   };
 }
 
-type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown };
+type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown };
 
 /** A read of every component fact in a scan, not one component's. */
 const readsEveryComponent = (query: string) => /\bscan_component_facts\b/.test(query) && !/\bcomponent_id = \$2\b/.test(query);
@@ -249,6 +250,23 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(propsFor(older, "ComponentsExplorer")?.notInLatest).toEqual([field]);
       const latest = await page({ ...repoParams, searchParams });
       expect(propsFor(latest, "ComponentsExplorer")?.notInLatest).toEqual([]);
+    });
+  });
+
+  it("gives the components table the scan's packages and the header the scan's scope", async () => {
+    await withReadModelDatabase(async pool => {
+      await publishScan(pool, baseline("whole-repo-scope"), { uploadedByUserId: null });
+      driver = new PostgresDriver(pool);
+      database = pool;
+      const { default: page } = await import("@/app/repos/[repoId]/page");
+      const tree = await page({ params: Promise.resolve({ repoId: "whole-repo-scope" }), searchParams });
+      expect(propsFor(tree, "ComponentsExplorer")?.packages).toEqual([
+        { name: "whole-repo-scope", folder: "" },
+        { name: "@example/playground", folder: "apps/playground" },
+        { name: "@example/web", folder: "apps/web" },
+        { name: "@example/shared-ui", folder: "packages/shared-ui" },
+      ]);
+      expect(propsFor(tree, "RepoDetailHeader")?.detail).toMatchObject({ scope: { folder: "" } });
     });
   });
 

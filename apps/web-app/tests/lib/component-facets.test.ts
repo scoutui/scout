@@ -6,6 +6,8 @@ import {
   facetsToParams,
   filterRows,
   paramsToFacets,
+  rowsUsedIn,
+  usedInOptions,
   writtenNameMatch,
   type FacetState,
 } from "@/lib/component-facets";
@@ -101,6 +103,40 @@ describe("facetOptions: every count follows the other filters", () => {
   });
 });
 
+describe("Used in", () => {
+  const base: ComponentRow = {
+    componentId: "", kind: "react-component", scope: "local", packageName: null,
+    displayName: "", disambiguator: null, version: null,
+    occurrenceCount: 0, fileCount: 0, deprecated: false, tags: [],
+  };
+  const row = (r: Partial<ComponentRow>): ComponentRow => ({ ...base, ...r });
+  const counts = (occurrenceCount: number, fileCount: number) => ({ occurrenceCount, fileCount });
+  const shared = row({ componentId: "a", displayName: "SharedButton", occurrenceCount: 4, fileCount: 3,
+    usedIn: { "@example/web": counts(2, 1), "@example/playground": counts(1, 1), "whole-repo-scope": counts(1, 1) } });
+  const button = row({ componentId: "b", displayName: "Button", occurrenceCount: 2, fileCount: 2,
+    usedIn: { "@example/web": counts(1, 1), "@example/shared-ui": counts(1, 1) } });
+  const unused = row({ componentId: "c", displayName: "Demo", occurrenceCount: 0, fileCount: 0 });
+
+  it("keeps the rows used in the package, with that package's uses and files", () => {
+    expect(rowsUsedIn([shared, button, unused], "@example/web").map(r => [r.displayName, r.occurrenceCount, r.fileCount]))
+      .toEqual([["SharedButton", 2, 1], ["Button", 1, 1]]);
+  });
+
+  it("matches no row for a package no row is used in", () => {
+    expect(rowsUsedIn([shared, button], "@example/renamed")).toEqual([]);
+  });
+
+  it("offers each package with its rows under the other filters, and keeps a selected package the rows don't have", () => {
+    expect(usedInOptions([shared, button, unused], { ...emptyFacets(), text: "shared", usedIn: "@example/renamed" })).toEqual([
+      { value: "@example/playground", count: 1 },
+      { value: "@example/web", count: 1 },
+      { value: "whole-repo-scope", count: 1 },
+      { value: "@example/renamed", count: 0 },
+      { value: "@example/shared-ui", count: 0 },
+    ]);
+  });
+});
+
 describe("URL params", () => {
   it.each<[string, Partial<FacetState>, string]>([
     ["search text", { text: "date picker" }, "q=date+picker"],
@@ -116,6 +152,7 @@ describe("URL params", () => {
     ["at most N uses", { occurrences: { op: "<=", value: 10 } }, "uses=lte:10"],
     ["fewer than N uses", { occurrences: { op: "<", value: 10 } }, "uses=lt:10"],
     ["exactly N uses", { occurrences: { op: "=", value: 10 } }, "uses=10"],
+    ["used in one package", { usedIn: "@example/web" }, "used-in=@example/web"],
     ["changed since the previous scan", { changed: true }, "changed=true"],
   ])("writes and reads %s", (_case, facets, written) => {
     const f = { ...emptyFacets(), ...facets };
