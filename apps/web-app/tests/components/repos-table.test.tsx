@@ -130,6 +130,14 @@ describe("ReposExplorer", () => {
   // seed the next one.
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos"));
 
+  it.each([
+    [rows.slice(0, 1), "Search 1 repo…"],
+    [rows, "Search 3 repos…"],
+  ])("counts the repos in the search box's placeholder", (given, placeholder) => {
+    render(<ReposExplorer rows={given} />);
+    expect(screen.getByPlaceholderText(placeholder)).toBeInTheDocument();
+  });
+
   it("filters rows by repo id (substring, case-insensitive)", () => {
     render(<ReposExplorer rows={rows} />);
     fireEvent.change(screen.getByPlaceholderText(/search .* repos/i), { target: { value: "ACME" } });

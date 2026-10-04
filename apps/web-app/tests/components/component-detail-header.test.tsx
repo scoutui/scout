@@ -62,6 +62,12 @@ describe("ComponentDetailHeader", () => {
     expect(identityLine()).toBe("@example/ui·defined at src/components/Button.tsx:4:16");
   });
 
+  it("shows a dash for a component with no package, as the components table does", () => {
+    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "tag" })} />);
+    expect(screen.getByText("—")).toHaveAttribute("title", "no import links this component to a package");
+    expect(screen.queryByText(/no package/)).toBeNull();
+  });
+
   it("names the origin in its badge, with what it means as the badge's title", () => {
     render(<ComponentDetailHeader detail={makeDetail({ scope: "local" })} />);
     expect(screen.getByText("Local")).toHaveAttribute("title", "Defined in this repo");

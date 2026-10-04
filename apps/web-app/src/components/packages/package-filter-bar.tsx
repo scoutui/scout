@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@scoutui/web-shared/client";
 import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
 import { FacetedFilterBar, tagFacet, tagPills, type Facet, type FilterPill } from "@/components/faceted-filter-bar";
 import {
@@ -58,7 +59,7 @@ export function PackageFilterBar({
         value: facets.text,
         onChange: (text) => onChange({ ...facets, text }),
         label: "Search packages by name",
-        placeholder: `Search ${options.total.toLocaleString()} packages by name…`,
+        placeholder: `Search ${plural(options.total, "package")} by name…`,
       }}
       chips={
         options.deprecatedMax > 0 || facets.deprecated === true ? (

@@ -81,7 +81,7 @@ The summary also reads `3 of them are from a package that isn't installed.` The 
 
 ## A web component has no package
 
-A tag such as `<acme-button>` shows `<no package>` on its page in the dashboard, and in the scan file its `attribution.status` is `unknown` or `conflict`. It has no version, and lifecycle records can't cover it. If the tag comes from your design system, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
+A tag such as `<acme-button>` shows a dash in place of a package on its page in the dashboard, and in the scan file its `attribution.status` is `unknown` or `conflict`. It has no version, and lifecycle records can't cover it. If the tag comes from your design system, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 
 ## Some renders aren't counted
 

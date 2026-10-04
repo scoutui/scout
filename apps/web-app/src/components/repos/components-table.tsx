@@ -9,13 +9,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DeprecatedMark } from "@/components/deprecated-mark";
 import { SortButton, ariaSort, sortRows, useSort, type SortDir } from "@/components/ui/sortable";
-import { writtenNameMatch } from "@/lib/component-facets";
+import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { compareVersions } from "@/lib/version-order";
 
 const COLUMN_COUNT = 5;
-
-const NO_PACKAGE_TITLE = "no import links this component to a package";
 
 /** The outline badge for `added` and `removed` rows. Its border clears the 3:1
  *  non-text minimum on the panel (3.3:1 light, 3.8:1 dark); the default

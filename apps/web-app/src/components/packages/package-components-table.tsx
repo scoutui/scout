@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
 import type { PackageComponentRow } from "@scoutui/web-shared";
+import { plural } from "@scoutui/web-shared/client";
 import {
   Table,
   TableBody,
@@ -62,7 +63,7 @@ export function PackageComponentsTable({
             aria-label="Search components by name"
             value={filters.text}
             onChange={(e) => setFilters({ ...filters, text: e.target.value })}
-            placeholder={`Search ${components.length.toLocaleString()} components by name…`}
+            placeholder={`Search ${plural(components.length, "component")} by name…`}
             className="h-8 pl-8 font-mono text-xs placeholder:font-sans"
           />
           {filters.text ? (

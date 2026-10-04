@@ -59,7 +59,7 @@ The **Origin** filter and a component's badge call it **Local**. In the JSON its
 
 ## Web component
 
-A tag with a hyphen in its name, such as `<acme-button>`, in React JSX or a Vue template. The scan counts it as a component even though nothing imports it. It belongs to your repo when your code defines and registers it, or to a package when your code registers a class imported from that package or the package's [Custom Elements Manifest](#custom-elements-manifest) declares the tag. Otherwise it has no package. Either way, a tag is one component across every repo that uses it.
+A tag with a hyphen in its name, such as `<acme-button>`, in React JSX or a Vue template. The scan counts it as a component even though nothing imports it. It belongs to your repo when your code defines and registers it, or to a package when your code registers a class imported from that package or the package's [Custom Elements Manifest](#custom-elements-manifest) declares the tag. In every case, a tag is one component across every repo that uses it.
 
 The **Type** filter splits web components in two: **Web component** when a manifest or your code defines the tag, and [**Undefined element**](#undefined-element) when nothing does. In the JSON its `identity.kind` is `"tag"`.
 
