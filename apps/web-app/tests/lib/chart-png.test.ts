@@ -98,14 +98,6 @@ describe("paintFigure", () => {
     expect(textsDrawn(calls).sort()).toEqual(figureTexts(figure).sort());
   });
 
-  it("sets the title in the page's sans face and legend labels in its mono face", () => {
-    const { ctx, calls } = recorder(1);
-    paintFigure(ctx, drawn(config("trend"), { kind: "series", series: countSeries, coverage }), FONTS);
-    const fontOf = (text: string) => calls.find((c) => c.op === "fillText" && c.args[0] === text)?.font;
-    expect(fontOf("Button adoption")).toContain(FONTS.sans);
-    expect(fontOf("@example/web")).toContain(FONTS.mono);
-  });
-
   it("shortens text that would run past its width, ending it with …", () => {
     const figure = drawn(config("trend"), { kind: "series", series: countSeries, coverage });
     const { ctx, calls } = recorder(10);

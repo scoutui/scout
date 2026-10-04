@@ -204,6 +204,7 @@ describe("chartFigure", () => {
     const result = drawn(config("stacked-share"), stackedView);
     if (result.marks.kind !== "areas") throw new Error("expected areas");
     const [first, last] = result.marks.areas;
+    expect(first?.bottom).toHaveLength(3);
     for (const p of first?.bottom ?? []) expect(p.y).toBeCloseTo(result.plot.y + result.plot.height);
     for (const p of last?.top ?? []) expect(p.y).toBeCloseTo(result.plot.y);
     expect(last?.top).toHaveLength(3);
