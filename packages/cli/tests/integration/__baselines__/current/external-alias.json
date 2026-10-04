@@ -12,6 +12,22 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "src/**/*.{ts,tsx}"
+      ],
+      "exclude": [
+        "**/*.{test,spec,stories}.*",
+        "**/node_modules/**"
+      ],
+      "packages": [
+        {
+          "name": "external-alias",
+          "folder": ""
+        }
+      ]
     }
   },
   "components": [
@@ -34,6 +50,7 @@
         "line": 5,
         "column": 7
       },
+      "owningPackage": "external-alias",
       "version": null,
       "composition": {
         "rendersByCount": {

@@ -20,6 +20,7 @@ export type {
   ResolvedOccurrence,
   ScanArtifact,
   ScanMeta,
+  ScanScope,
   TagAttribution,
   TraceStep,
   UnresolvedReason,

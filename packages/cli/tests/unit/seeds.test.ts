@@ -80,7 +80,7 @@ describe("buildComponentSeeds: workspace owningPackage enrichment", () => {
     expect(seeds[0]?.owningPackage).toBe("@a/foo");
   });
 
-  it("omits owningPackage for local file outside any workspace package", () => {
+  it("credits a local file outside every workspace package to the root package", () => {
     const workspaceGraph: WorkspaceGraph = {
       packageManager: "yarn",
       rootPath: "/repo",
@@ -89,7 +89,7 @@ describe("buildComponentSeeds: workspace owningPackage enrichment", () => {
     };
     const seeds = buildComponentSeeds(undefined, undefined, workspaceGraph, rosterOf(entry("src/App.tsx", "App")));
     expect(seeds).toHaveLength(1);
-    expect(seeds[0]?.owningPackage).toBeUndefined();
+    expect(seeds[0]?.owningPackage).toBe("root");
   });
 });
 

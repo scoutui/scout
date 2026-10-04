@@ -12,6 +12,22 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "src/**/*.{ts,vue}"
+      ],
+      "exclude": [
+        "**/*.{test,spec,stories}.*",
+        "**/node_modules/**"
+      ],
+      "packages": [
+        {
+          "name": "vue-app",
+          "folder": ""
+        }
+      ]
     }
   },
   "components": [
@@ -51,6 +67,7 @@
         },
         "hasRest": false
       },
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -76,6 +93,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -101,6 +119,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -126,6 +145,7 @@
       },
       "usage": "direct",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -153,6 +173,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -189,6 +210,7 @@
         },
         "hasRest": false
       },
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -216,6 +238,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -262,6 +285,7 @@
         },
         "hasRest": false
       },
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -287,6 +311,7 @@
       },
       "usage": "direct",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -312,6 +337,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -359,6 +385,7 @@
         },
         "hasRest": false
       },
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -384,6 +411,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -409,6 +437,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-app",
       "version": null,
       "composition": {
         "rendersByCount": {

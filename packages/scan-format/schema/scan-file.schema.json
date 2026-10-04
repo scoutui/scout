@@ -68,6 +68,54 @@
             "branch"
           ],
           "additionalProperties": true
+        },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "folder": {
+              "type": "string"
+            },
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "packages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "folder": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "folder"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "folder",
+            "exclude",
+            "packages"
+          ],
+          "additionalProperties": true
         }
       },
       "required": [
@@ -938,6 +986,10 @@
           },
           "filePath": {
             "type": "string"
+          },
+          "usedIn": {
+            "type": "string",
+            "minLength": 1
           },
           "line": {
             "type": "number"

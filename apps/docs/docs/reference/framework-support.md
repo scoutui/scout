@@ -5,7 +5,7 @@ sidebar_label: "Framework support"
 
 # Framework support reference
 
-A scan reads React and Vue. This page lists, for each, which files are read, how a [component](/docs/reference/glossary#component) is recognised, what else is recorded, and what is not found. [Web components](#web-components) such as `<acme-button>` are counted in both. A file is only read when your config's `include` patterns match it; see [Config reference](/docs/reference/config).
+A scan reads React and Vue. This page lists, for each, which files are read, how a [component](/docs/reference/glossary#component) is recognised, what else is recorded, and what is not found. [Web components](#web-components) such as `<acme-button>` are counted in both. A file is only read when your config's `include` patterns match it, or when the config has no `include`; see [Config reference](/docs/reference/config).
 
 HTML files and Lit templates are not read.
 

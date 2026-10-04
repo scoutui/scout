@@ -12,6 +12,22 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "src/**/*.tsx"
+      ],
+      "exclude": [
+        "**/*.{test,spec,stories}.*",
+        "**/node_modules/**"
+      ],
+      "packages": [
+        {
+          "name": "design-system-upgrade",
+          "folder": ""
+        }
+      ]
     }
   },
   "components": [
@@ -34,6 +50,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "design-system-upgrade",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -63,6 +80,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "design-system-upgrade",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -92,6 +110,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "design-system-upgrade",
       "version": null,
       "composition": {
         "rendersByCount": {
@@ -121,6 +140,7 @@
         "line": 3,
         "column": 7
       },
+      "owningPackage": "design-system-upgrade",
       "version": null,
       "composition": {
         "rendersByCount": {},

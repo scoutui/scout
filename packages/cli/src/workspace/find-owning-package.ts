@@ -47,10 +47,20 @@ export function findOwningPackage(
  * `node_modules` segment after it).
  */
 export function isFirstPartyPath(graph: WorkspaceGraph, filePath: string): boolean {
-  if (findOwningPackage(graph, filePath) !== null) return true;
+  return findPackageOrRoot(graph, filePath) !== null;
+}
+
+/** The package `filePath` belongs to: the deepest workspace package holding it, else the root package when the file is the root's own source (under `graph.rootPath`, outside `node_modules`). Null otherwise. */
+export function findPackageOrRoot(
+  graph: WorkspaceGraph,
+  filePath: string,
+): { name: string; absolutePath: string } | null {
+  const owner = findOwningPackage(graph, filePath);
+  if (owner !== null) return owner;
   const resolved = resolveRealpath(filePath);
   const root = resolveRealpath(graph.rootPath);
-  return isPathPrefix(root, resolved) && !resolved.slice(root.length).includes("/node_modules/");
+  if (!isPathPrefix(root, resolved) || resolved.slice(root.length).includes("/node_modules/")) return null;
+  return { name: graph.rootPackageName, absolutePath: graph.rootPath };
 }
 
 /**

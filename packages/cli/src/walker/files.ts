@@ -1,6 +1,6 @@
-import type { Dirent } from "node:fs";
+import { existsSync, type Dirent } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { convertPathToPattern, globby } from "globby";
 
 export type WalkOptions = {
@@ -9,6 +9,12 @@ export type WalkOptions = {
   exclude: string[];
   gitignore: boolean;
 };
+
+/** The files a config without `include` scans: every file the parsers read. */
+export const DEFAULT_INCLUDE: readonly string[] = ["**/*.{js,jsx,ts,tsx,vue}"];
+
+/** Files every scan leaves out, whatever the config says. */
+export const LEFT_OUT: readonly string[] = ["**/*.{test,spec,stories}.*", "**/__tests__/**", "**/*.d.ts", "**/node_modules/**"];
 
 /**
  * Whether `dir`, whose entries are `entries`, is a nested repository to skip:
@@ -79,14 +85,22 @@ export async function nestedRepositoriesMatched(opts: WalkOptions): Promise<stri
     .sort();
 }
 
-/** The files `include` matches below `root`, leaving out `exclude` and `ignore`. */
+/**
+ * The `exclude` entries with no glob characters whose path, resolved from
+ * `root`, doesn't exist, in config order.
+ */
+export function excludeEntriesMatchingNothing(root: string, exclude: readonly string[]): string[] {
+  return exclude.filter((entry) => !/[*?[\]{}!]/.test(entry) && !existsSync(resolve(root, entry)));
+}
+
+/** The files `include` matches below `root`, leaving out `LEFT_OUT`, `exclude` and `ignore`. */
 function globFiles(opts: WalkOptions, ignore: string[]): Promise<string[]> {
   // `dot: false` skips `.next/`, `.nuxt/`, `.turbo/` and the like unless the
   // user globs them in. `suppressErrors` skips unreadable directories (EACCES)
   // instead of failing.
   return globby(opts.include, {
     cwd: opts.root,
-    ignore: [...opts.exclude, ...ignore],
+    ignore: [...LEFT_OUT, ...opts.exclude, ...ignore],
     gitignore: opts.gitignore,
     dot: false,
     absolute: true,

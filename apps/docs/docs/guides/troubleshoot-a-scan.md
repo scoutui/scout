@@ -30,9 +30,17 @@ If it stops with `Error: Couldn't scan: git failed in <path>.`, run `git status`
 
 ## The scan reads 0 files, or fewer than you expect
 
-If the scan stops with `Error: No files match "include"`, or the summary counts fewer files than your repo has, your `include` patterns don't match your code. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
+If the scan stops with `Error: No files match "include"`, your `include` patterns don't match your code. If the summary counts fewer files than your repo has, `include` or `exclude` leaves some of them out. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
 
-The scan skips code inside a submodule or another clone below the config's folder. If `include` only matches files in one, the scan stops with `Error: "include" in <path> (<patterns>) only matches files in <folder>, which is a separate git repository.` Run the scan from that folder instead.
+If your config has no `include`, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder. When there are none, it stops with `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront.` Run the scan from the folder that holds your source files, or check that `exclude` doesn't leave them all out.
+
+The scan always leaves out test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`) and `node_modules`, even when `include` names them. Their usages aren't counted.
+
+The scan skips code inside a submodule or another clone below the config's folder. If `include` only matches files in one, the scan stops with `Error: "include" in <path> (<patterns>) only matches files in <folder>, which is a separate git repository.` With no `include`, the message is `Error: The only source files here are in <folder>, which is a separate git repository.` Run the scan from that folder instead.
+
+## The scan warns that an `exclude` entry matches nothing
+
+A line such as `Warning: "apps/playground" in exclude matches nothing. Update or remove it in ./scout.config.json.` means nothing exists at that path below the config's folder, often because the folder was renamed or moved. The scan carries on. Fix the path in `exclude`, or remove the entry.
 
 ## A file has syntax errors
 
