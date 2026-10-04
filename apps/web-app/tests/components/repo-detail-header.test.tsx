@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
 import { RepoDetailHeader } from "@/components/repos/repo-detail-header";
+
+vi.mock("@/app/repos/repo-actions", () => ({ deleteRepo: vi.fn() }));
 
 function makeDetail(overrides?: Partial<RepoDetail>): RepoDetail {
   return {
@@ -129,5 +131,14 @@ describe("RepoDetailHeader package count", () => {
   it("counts a single package in the singular", () => {
     render(<RepoDetailHeader detail={makeDetail({ packageCount: 1 })} recentScans={[]} />);
     expect(screen.getByText("1 package")).toBeInTheDocument();
+  });
+});
+
+describe("RepoDetailHeader repo actions", () => {
+  it("shows the repo actions menu to someone who can manage repos and to nobody else", () => {
+    const { rerender } = render(<RepoDetailHeader detail={makeDetail()} recentScans={[]} canManage />);
+    expect(screen.getByRole("button", { name: "Repo actions" })).toBeInTheDocument();
+    rerender(<RepoDetailHeader detail={makeDetail()} recentScans={[]} canManage={false} />);
+    expect(screen.queryByRole("button", { name: "Repo actions" })).toBeNull();
   });
 });
