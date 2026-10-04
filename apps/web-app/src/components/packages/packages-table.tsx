@@ -91,19 +91,19 @@ export function PackagesTable({
                   </span>
                 ) : null}
               </CellLink>
-              <CellLink href={href} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
+              <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
                 {p.consumerCount.toLocaleString()}
               </CellLink>
-              <CellLink href={href} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
+              <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
                 {p.componentCount.toLocaleString()}
               </CellLink>
-              <CellLink href={href} cellClassName="hidden sm:table-cell" className="text-right">
+              <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="text-right">
                 <VersionCell pkg={p} />
               </CellLink>
-              <CellLink href={href} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
+              <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
                 {p.totalOccurrences.toLocaleString()}
               </CellLink>
-              <CellLink href={href} cellClassName="hidden sm:table-cell" className={`text-right tabular-nums ${p.deprecatedCount > 0 ? "font-medium text-status-warn-text" : "text-muted-foreground"}`}>
+              <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className={`text-right tabular-nums ${p.deprecatedCount > 0 ? "font-medium text-status-warn-text" : "text-muted-foreground"}`}>
                 {p.deprecatedCount.toLocaleString()}
               </CellLink>
             </TableRow>

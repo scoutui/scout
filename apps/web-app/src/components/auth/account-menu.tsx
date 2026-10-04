@@ -25,7 +25,7 @@ export function AccountMenu({ person }: { person: Person | null }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Account"
-        className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent"
       >
         {initials(person)}
       </DropdownMenuTrigger>

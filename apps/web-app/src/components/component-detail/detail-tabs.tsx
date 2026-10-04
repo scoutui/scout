@@ -74,7 +74,7 @@ export function DetailTabs({
               tabIndex={active ? 0 : -1}
               onClick={() => selectTab(t.value)}
               className={cn(
-                "relative -mb-px inline-flex shrink-0 cursor-pointer items-baseline gap-1.5 whitespace-nowrap border-b-2 py-3 text-sm transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none",
+                "relative -mb-px inline-flex shrink-0 cursor-pointer items-baseline gap-1.5 whitespace-nowrap border-b-2 py-3 text-sm transition-colors duration-150 ease-out motion-reduce:transition-none",
                 active
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",

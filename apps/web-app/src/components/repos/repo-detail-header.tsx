@@ -14,7 +14,7 @@ import { ScanSwitcher } from "./scan-switcher";
 /** Quiet meta-line link: inherits the muted colour, lifts to ink on hover, and
  *  wears the focus ring on keyboard focus. */
 const META_LINK =
-  "rounded-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+  "rounded-sm underline-offset-4 hover:text-foreground hover:underline";
 
 export function RepoDetailHeader({
   detail,
@@ -33,7 +33,7 @@ export function RepoDetailHeader({
       <div className="space-y-2">
         <Link
           href="/repos"
-          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft aria-hidden className="size-3" />
           Repos

@@ -70,7 +70,7 @@ export function TrendLegendTable({
                 onClick={() => onToggle(s.cohortKey)}
                 onFocus={() => onHover(s.cohortKey)}
                 onBlur={() => onHover(null)}
-                className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm text-left outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm text-left"
               >
                 <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
                 <CohortLabelText label={s.label} deprecatedOnly={deprecatedOnly.has(s.cohortKey)} className="text-xs" />

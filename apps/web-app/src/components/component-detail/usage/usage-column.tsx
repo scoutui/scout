@@ -29,13 +29,13 @@ const ROW_GRID = "grid-cols-[minmax(0,1fr)_3.5rem_2.5rem_0.75rem]";
 // The 1px border, for the selected state, comes out of the padding, so a value row's label, bar and count line up with a
 // prop line's, which has no border.
 const ROW =
-  "group/row grid w-full cursor-pointer items-center gap-2 rounded-md border border-transparent px-[calc(0.375rem-1px)] py-[calc(0.25rem-1px)] text-left text-xs transition-[background-color,border-color] duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:bg-accent motion-reduce:transition-none";
+  "group/row focus-inset grid w-full cursor-pointer items-center gap-2 rounded-md border border-transparent px-[calc(0.375rem-1px)] py-[calc(0.25rem-1px)] text-left text-xs transition-[background-color,border-color] duration-150 ease-out hover:bg-muted active:bg-accent motion-reduce:transition-none";
 /** A prop line: chevron, name, bar, count and an end column that lines up with the values' filter cue. */
 const PROP_ROW = "grid w-full grid-cols-[0.875rem_minmax(0,1fr)_3.5rem_2.5rem_0.75rem] items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs";
 const PROP_ROW_BUTTON =
-  "cursor-pointer transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:bg-accent motion-reduce:transition-none";
+  "focus-inset cursor-pointer transition-colors duration-150 ease-out hover:bg-muted active:bg-accent motion-reduce:transition-none";
 /** A section heading: the chevron in a prop line's chevron column, then the heading as a label. */
-const SECTION_ROW = "text-label grid min-h-6 w-full grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-2 rounded-md px-1.5 py-1 text-left text-muted-foreground hover:text-foreground";
+const SECTION_ROW = "text-label focus-inset grid min-h-6 w-full grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-2 rounded-md px-1.5 py-1 text-left text-muted-foreground hover:text-foreground";
 const CHEVRON = "size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none";
 /** One level of nesting: a chevron and the space after it, so a level starts where its parent's name does. */
 const NEST = "ps-[1.375rem]";
@@ -43,7 +43,7 @@ const NEST = "ps-[1.375rem]";
 const BELOW_PIN = { scrollMarginTop: "calc(var(--pin-top, 3.5rem) + 0.5rem)" };
 // 16px below sm, so a phone doesn't zoom in when it's focused.
 const FIND_INPUT =
-  "h-7 w-full rounded-md border border-control bg-background px-2 font-mono text-base outline-none sm:text-xs placeholder:font-sans placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "h-7 w-full rounded-md border border-control bg-background px-2 font-mono text-base sm:text-xs placeholder:font-sans placeholder:text-muted-foreground";
 
 /** The `data-filter` of a folder or package row. */
 export const areaFilterKey = (area: string) => `area:${area}`;
@@ -90,7 +90,7 @@ export function UsageColumn({
           onClick={() => onOpenChange(!open)}
           aria-expanded={open}
           aria-controls="usage-column-body"
-          className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 motion-reduce:transition-none lg:hidden"
+          className="focus-inset flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted/50 hover:text-foreground motion-reduce:transition-none lg:hidden"
         >
           <ChevronRight aria-hidden className={cn(CHEVRON, open && "rotate-90")} />
           Where it’s used and prop values
@@ -209,7 +209,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
   if (sentence) {
     return (
       // Takes focus in place of a folder or package row that unpicking replaced with this sentence.
-      <p tabIndex={-1} data-filter={areaFilterKey("")} className="px-1.5 text-xs text-muted-foreground outline-none">
+      <p tabIndex={-1} data-filter={areaFilterKey("")} className="px-1.5 text-xs text-muted-foreground">
         {sentence.lead} <span className="font-mono text-foreground">{sentence.label}</span>.
       </p>
     );

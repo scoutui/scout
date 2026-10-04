@@ -58,7 +58,7 @@ export default async function RepoScansPage({
       <div className="space-y-3">
         <Link
           href={`/repos/${encodeURIComponent(repoId)}`}
-          className="inline-flex items-center gap-1 rounded-sm font-mono text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex items-center gap-1 rounded-sm font-mono text-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft aria-hidden className="size-3" />
           {repoId}

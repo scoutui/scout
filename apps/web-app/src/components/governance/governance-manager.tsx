@@ -410,7 +410,7 @@ const ROW =
 const OCC_CELL = "flex min-w-0 items-center pl-3";
 const EDIT_CELL = "flex min-w-0 justify-end pr-3";
 const LINK =
-  "rounded-sm underline-offset-4 outline-none hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring";
+  "rounded-sm underline-offset-4 hover:underline focus-visible:underline";
 const CHEVRON = "size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ease-out motion-reduce:transition-none";
 
 const rowsOf = (group: PackageGroup) => (group.kind === "whole" ? [group.row] : group.rows);
@@ -542,7 +542,7 @@ function RecordTable({
                     type="button"
                     aria-expanded={completeShown}
                     onClick={onToggleComplete}
-                    className="group/toggle flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring"
+                    className="group/toggle focus-inset flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left"
                   >
                     {completeLabel}
                   </button>
@@ -591,7 +591,7 @@ function GroupHeader({
               onClick={onFold}
               className={cn(
                 gutter,
-                "group/fold cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring",
+                "group/fold cursor-pointer",
               )}
             >
               {chevron}
@@ -655,7 +655,7 @@ function RecordRow({
       aria-current={highlighted ? "true" : undefined}
       className={cn(
         ROW,
-        "group/row min-h-9 scroll-mt-24 py-1.5 outline-none transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring motion-reduce:transition-none max-md:gap-y-1 max-md:py-2",
+        "group/row focus-inset min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out motion-reduce:transition-none max-md:gap-y-1 max-md:py-2",
         standalone && "py-[0.6875rem] max-md:py-3",
         highlighted
           ? "selected shadow-[inset_0_1px_0_var(--selected-edge),inset_0_-1px_0_var(--selected-edge)]"
@@ -820,7 +820,7 @@ function Occurrences({
       href={trend.href}
       className={cn(
         look,
-        "rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring [&:focus-visible>*]:underline [&:hover>*]:underline",
+        "rounded-sm [&:focus-visible>*]:underline [&:hover>*]:underline",
       )}
     >
       {content}
@@ -1157,7 +1157,7 @@ function RecordForm({
                 e.preventDefault();
                 onJumpToRecord(conflictId);
               }}
-              className="inline-block rounded-sm underline underline-offset-4 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring"
+              className="inline-block rounded-sm underline underline-offset-4"
             >
               Go to the existing record
             </a>

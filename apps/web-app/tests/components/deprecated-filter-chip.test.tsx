@@ -5,7 +5,7 @@ import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
 
 // The pressed state has no `font-medium`, so a toggle never shifts the toolbar.
 const BASE =
-  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-50";
 
 describe("DeprecatedFilterChip", () => {
   it("renders the warning glyph, the word and the count, idle and pressed", () => {

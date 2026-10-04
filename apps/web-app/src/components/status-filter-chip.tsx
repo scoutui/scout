@@ -45,7 +45,7 @@ export function StatusFilterChip({
       disabled={count <= 0 && !active}
       onClick={onToggle}
       className={cn(
-        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-50",
         active ? PRESSED[tone] : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
         className,
       )}

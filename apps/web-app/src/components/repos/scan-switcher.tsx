@@ -43,7 +43,7 @@ export function ScanSwitcher({
         title={currentScanId}
         className={cn(
           "group inline-flex items-baseline gap-1 rounded-sm text-xs text-muted-foreground",
-          "transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          "transition-colors hover:text-foreground",
         )}
       >
         <span>scan <span className="font-mono">{shortScanId(currentScanId)}</span></span>
@@ -79,7 +79,7 @@ export function ScanSwitcher({
                 <Link
                   href={href}
                   aria-current={isCurrent ? "page" : undefined}
-                  className="flex min-w-0 flex-1 items-center gap-2 focus-visible:outline-none"
+                  className="flex min-w-0 flex-1 items-center gap-2"
                 >
                   <Check
                     aria-hidden
@@ -129,7 +129,7 @@ function CommitRef({ gitRemote, sha }: { gitRemote: string | null; sha: string }
     <a
       href={href}
       title={sha}
-      className={`${width} rounded-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50`}
+      className={`${width} rounded-sm underline-offset-4 hover:text-foreground hover:underline`}
     >
       {short}
     </a>

@@ -190,7 +190,7 @@ function TagPackages({ tag }: { tag: Tag }) {
           aria-expanded={open}
           aria-label={open ? undefined : `Show ${hidden.toLocaleString()} more packages in ${tag.value}`}
           onClick={() => setOpen(!open)}
-          className="inline-flex h-5 cursor-pointer items-center rounded-sm border border-border px-2 font-sans text-xs leading-none whitespace-nowrap text-muted-foreground transition-colors duration-150 ease-out outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+          className="inline-flex h-5 cursor-pointer items-center rounded-sm border border-border px-2 font-sans text-xs leading-none whitespace-nowrap text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground motion-reduce:transition-none"
         >
           {open ? "Show fewer" : `+${hidden.toLocaleString()} more`}
         </button>

@@ -13,7 +13,7 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
       <div className="text-xs text-muted-foreground">
         <Link
           href={`/repos/${encodeURIComponent(detail.repoId)}`}
-          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft aria-hidden className="size-3" />
           <span className="font-mono">{detail.repoId}</span>

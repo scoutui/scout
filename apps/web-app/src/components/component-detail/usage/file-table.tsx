@@ -15,7 +15,7 @@ const PROP_MAX = 40;
 
 const TH = "h-9 border-b bg-muted px-3 text-left align-middle font-medium text-muted-foreground";
 const SORT_TH =
-  "[&_button]:min-h-6 [&_button]:cursor-pointer [&_button]:rounded-sm [&_button]:outline-none [&_button]:transition-colors [&_button]:duration-150 [&_button]:ease-out [&_button]:motion-reduce:transition-none [&_button:hover]:text-foreground [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-ring/50";
+  "[&_button]:min-h-6 [&_button]:cursor-pointer [&_button]:rounded-sm [&_button]:transition-colors [&_button]:duration-150 [&_button]:ease-out [&_button]:motion-reduce:transition-none [&_button:hover]:text-foreground";
 const HEAD_TOP = { top: "calc(var(--pin-top, 3.5rem) + var(--bar-h, 3rem))" };
 const SECTION_TOP = { top: "calc(var(--pin-top, 3.5rem) + var(--bar-h, 3rem) + var(--head-h, 0px))" };
 
@@ -91,7 +91,7 @@ export function FileTable({
               }}
               aria-label={base ? "Collapse all rows" : "Expand all rows"}
               title={base ? "Collapse all rows" : "Expand all rows"}
-              className="flex size-6 cursor-pointer items-center justify-center rounded-sm transition-colors duration-150 ease-out hover:bg-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="flex size-6 cursor-pointer items-center justify-center rounded-sm transition-colors duration-150 ease-out hover:bg-card hover:text-foreground motion-reduce:transition-none"
             >
               <ChevronsUpDown aria-hidden className="size-3.5" />
             </button>
@@ -219,7 +219,7 @@ function FileRow({
             onClick={onToggle}
             aria-expanded={open}
             aria-label={`Uses in ${file.path}`}
-            className="flex size-6 cursor-pointer items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none"
+            className="flex size-6 cursor-pointer items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground motion-reduce:transition-none"
           >
             <ChevronRight aria-hidden className={cn("size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none", open && "rotate-90")} />
           </button>
@@ -231,7 +231,7 @@ function FileRow({
               target="_blank"
               rel="noopener noreferrer"
               title={`Open ${file.path} at line ${firstLine.line}`}
-              className="group/link relative inline-flex max-w-full shrink-0 items-center gap-1 rounded-sm font-mono text-sm leading-6 text-foreground decoration-muted-foreground/60 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="group/link relative inline-flex max-w-full shrink-0 items-center gap-1 rounded-sm font-mono text-sm leading-6 text-foreground decoration-muted-foreground/60 underline-offset-2 hover:underline"
             >
               <FileName file={file} />
               <ArrowUpRight
@@ -391,7 +391,7 @@ function CallRow({
               rel="noopener noreferrer"
               aria-label={`Open ${path} at line ${line.line}`}
               title={`Open ${path} at line ${line.line}`}
-              className="w-[5ch] shrink-0 cursor-pointer rounded-sm py-0.5 tabular-nums text-muted-foreground underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-out hover:text-foreground hover:decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="w-[5ch] shrink-0 cursor-pointer rounded-sm py-0.5 tabular-nums text-muted-foreground underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-out hover:text-foreground hover:decoration-solid motion-reduce:transition-none"
             >
               :{line.line}
             </a>
@@ -462,7 +462,7 @@ function Owners({ owners, hrefWith }: { owners: readonly UsageOwner[]; hrefWith:
             pushQuery(params);
             window.scrollTo({ top: 0 });
           }}
-          className="cursor-pointer rounded-sm font-mono text-muted-foreground underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-out hover:text-foreground hover:decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none"
+          className="cursor-pointer rounded-sm font-mono text-muted-foreground underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-out hover:text-foreground hover:decoration-solid motion-reduce:transition-none"
         >
           {owner.displayName}
         </a>

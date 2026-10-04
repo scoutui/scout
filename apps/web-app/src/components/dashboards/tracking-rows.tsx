@@ -9,14 +9,9 @@ import { cn } from "@/lib/utils";
 
 const ROW_CAP = 5;
 
-/** Row affordance: an inset outline, so the ring is never clipped by the panel's
- *  `overflow-hidden` the way a `ring-*` box-shadow would be. */
-const ROW_FOCUS =
-  "outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring";
-
 /** Disclosure controls use a muted band with an always-visible chevron, so they
  *  can't be mistaken for tracking rows. */
-const DISCLOSURE_BAND = `flex cursor-pointer list-none items-center gap-1.5 bg-muted px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground dark:hover:bg-accent [&::-webkit-details-marker]:hidden ${ROW_FOCUS}`;
+const DISCLOSURE_BAND = "flex cursor-pointer list-none items-center gap-1.5 bg-muted px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground dark:hover:bg-accent [&::-webkit-details-marker]:hidden focus-inset";
 
 /**
  * The shared summary for governance-tracking rows. An estate row links to the
@@ -138,7 +133,7 @@ function EstateRow({ entry, archived = false }: { entry: GovernanceTracking; arc
       href={`/charts/${encodeURIComponent(entry.id)}`}
       className={cn(
         "flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent",
-        ROW_FOCUS,
+        "focus-inset",
       )}
     >
       <TrackingSummary entry={entry} uid={entry.id} archived={archived} />
@@ -152,7 +147,7 @@ function RepoRow({ entry, defaultOpen }: { entry: GovernanceTracking; defaultOpe
       <summary
         className={cn(
           "flex cursor-pointer list-none items-center gap-3 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent [&::-webkit-details-marker]:hidden",
-          ROW_FOCUS,
+          "focus-inset",
         )}
       >
         <TrackingSummary entry={entry} uid={`repo-${entry.id}`} />

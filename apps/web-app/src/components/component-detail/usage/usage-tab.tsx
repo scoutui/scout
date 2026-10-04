@@ -209,7 +209,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
     <div ref={rootRef} className="panel overflow-clip [overflow-anchor:none]">
       <a
         href="#usage-files"
-        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:z-40 focus-visible:m-2 focus-visible:rounded-md focus-visible:bg-card focus-visible:px-2 focus-visible:py-1 focus-visible:text-xs focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:z-40 focus-visible:m-2 focus-visible:rounded-md focus-visible:bg-card focus-visible:px-2 focus-visible:py-1 focus-visible:text-xs"
       >
         Skip to files
       </a>
@@ -226,7 +226,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
           columnRef={columnRef}
           spacerRef={spacerRef}
         />
-        <div ref={filesRef} id="usage-files" tabIndex={-1} className="min-w-0 outline-none lg:border-l" style={{ scrollMarginTop: "var(--pin-top, 3.5rem)" }}>
+        <div ref={filesRef} id="usage-files" tabIndex={-1} className="min-w-0 lg:border-l" style={{ scrollMarginTop: "var(--pin-top, 3.5rem)" }}>
           <h2 className="sr-only">Files</h2>
           {/* Ten characters of the face the value columns are set in, to measure the width of one. */}
           <span ref={probeRef} aria-hidden className="pointer-events-none invisible absolute whitespace-nowrap font-mono text-xs">

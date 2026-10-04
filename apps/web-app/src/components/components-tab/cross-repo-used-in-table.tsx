@@ -1,15 +1,14 @@
 "use client";
 import { useMemo } from "react";
-import Link from "next/link";
 import type { CrossRepoUsage } from "@scoutui/web-shared";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CellLink } from "@/components/ui/cell-link";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { computeVersionShare, latestVersion } from "@/components/viz/version-composition";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
@@ -68,7 +67,7 @@ export function CrossRepoUsedInTable({
                 <CellLink href={href} cellClassName="w-full max-w-0" className="truncate text-code" title={u.repoId}>
                   {u.repoId}
                 </CellLink>
-                <CellLink href={href} className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted-foreground">
+                <CellLink href={href} tabIndex={-1} className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted-foreground">
                   {latest !== null ? (
                     <span
                       aria-hidden
@@ -77,17 +76,19 @@ export function CrossRepoUsedInTable({
                   ) : null}
                   {u.version ?? "—"}
                 </CellLink>
-                <CellLink href={href} className="text-right tabular-nums">
+                <CellLink href={href} tabIndex={-1} className="text-right tabular-nums">
                   {u.occurrenceCount.toLocaleString()}
                 </CellLink>
                 <CellLink
                   href={href}
+                  tabIndex={-1}
                   className={`text-right text-xs ${u.deprecated ? "font-medium text-status-warn-text" : "text-muted-foreground"}`}
                 >
                   {u.deprecated ? "deprecated" : "—"}
                 </CellLink>
                 <CellLink
                   href={href}
+                  tabIndex={-1}
                   cellClassName="pr-1"
                   className="text-right text-xs text-muted-foreground"
                   title={formatAbsoluteUtc(u.committedAt)}
@@ -100,29 +101,5 @@ export function CrossRepoUsedInTable({
         </TableBody>
       </Table>
     </div>
-  );
-}
-
-// Every cell is the same link, so a click anywhere in the row opens that
-// repo's detail for the component.
-function CellLink({
-  href,
-  className,
-  cellClassName,
-  title,
-  children,
-}: {
-  href: string;
-  className?: string;
-  cellClassName?: string;
-  title?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <TableCell className={`p-0 ${cellClassName ?? ""}`}>
-      <Link href={href} title={title} className={`block px-3 py-2 ${className ?? ""}`}>
-        {children}
-      </Link>
-    </TableCell>
   );
 }
