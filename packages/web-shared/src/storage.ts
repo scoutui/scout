@@ -162,7 +162,7 @@ export interface StorageDriver {
   /** One dashboard by id, or null if absent. */
   getDashboard(id: string): Promise<Dashboard | null>;
 
-  /** Create (no id) or update (matching id). Returns the stored dashboard. */
+  /** Create (no id) or update (matching id), keeping the stored creator and visibility. Returns the stored dashboard. */
   upsertDashboard(input: DashboardInput): Promise<Dashboard>;
 
   /** Delete by id. No-op if absent. */

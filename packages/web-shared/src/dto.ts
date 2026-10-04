@@ -214,7 +214,7 @@ export type Dashboard = z.infer<typeof DashboardSchema>;
 
 // Create-or-update payload: the driver generates id on create and sets the
 // timestamps. The server action sets createdByUserId from the session and never
-// trusts a client-supplied value; the driver stores it on create only.
+// trusts a client-supplied value; the driver stores it and visibility on create only.
 export const DashboardInputSchema = z.object({
   id: z.string().optional(),
   name: z.string(),

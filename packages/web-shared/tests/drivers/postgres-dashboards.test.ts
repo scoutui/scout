@@ -33,7 +33,6 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver dashboards", () => {
     const updated = await db.driver.upsertDashboard({ id: created.id, name: "renamed", description: "d", config: baseInput.config, visibility: "everyone" });
     expect(updated.name).toBe("renamed");
     expect(updated.description).toBe("d");
-    expect(updated.visibility).toBe("everyone");
     expect(updated.createdAt).toBe(created.createdAt); // ON CONFLICT preserves created_at
 
     await db.driver.withReadSnapshot(async snapshot => {
@@ -52,10 +51,10 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver dashboards", () => {
     expect((await db.driver.getDashboard(created.id))?.config).toEqual(cfg);
   });
 
-  it("update cannot overwrite createdByUserId (immutable creator)", async () => {
+  it("keeps the stored creator and visibility when a dashboard is saved over", async () => {
     const created = await db.driver.upsertDashboard({ ...baseInput, createdByUserId: CREATOR });
-    const updated = await db.driver.upsertDashboard({ ...baseInput, id: created.id, name: "x", createdByUserId: "attacker" });
-    expect(updated.createdByUserId).toBe(CREATOR);
+    const updated = await db.driver.upsertDashboard({ ...baseInput, id: created.id, name: "x", visibility: "everyone", createdByUserId: "attacker" });
+    expect(updated).toMatchObject({ name: "x", createdByUserId: CREATOR, visibility: "private" });
   });
 
   it("names its creator, by email when they have no name, and nobody once they're deleted", async () => {

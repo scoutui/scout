@@ -23,10 +23,13 @@ export async function saveDashboard(untrusted: Omit<DashboardInput, "visibility"
   if (input.id && isDerivedId(input.id)) return { ok: false, error: "cannot_edit_derived" };
   let savedId: string;
   try {
-    const stored = input.id ? await getStorage().getDashboard(input.id) : null;
-    if (stored && !can(await identify({ browser: true }), "edit", { chart: stored })) return { ok: false, error: CHART_REFUSAL };
+    if (input.id) {
+      const stored = await getStorage().getDashboard(input.id);
+      if (!stored) return { ok: false, error: "This chart was deleted." };
+      if (!can(await identify({ browser: true }), "edit", { chart: stored })) return { ok: false, error: CHART_REFUSAL };
+    }
     // Server owns createdByUserId on create; on update the driver preserves the original creator.
-    const saved = await getStorage().upsertDashboard({ ...input, visibility: stored?.visibility ?? "private", createdByUserId: gate.userId });
+    const saved = await getStorage().upsertDashboard({ ...input, visibility: "private", createdByUserId: gate.userId });
     savedId = saved.id;
   } catch (err) {
     console.error("saveDashboard failed:", err);

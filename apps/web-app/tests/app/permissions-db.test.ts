@@ -89,6 +89,12 @@ describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
       expect(navigation.redirect).toHaveBeenCalledExactlyOnceWith(`/charts/${rows[0].id}`);
     });
 
+    it("refuses an Editor's save over a chart that no longer exists, and stores nothing", async () => {
+      signInAs(editor);
+      expect(await saveDashboard({ ...dashboard, id: "deleted-chart" })).toEqual({ ok: false, error: "This chart was deleted." });
+      expect(await count("dashboards")).toBe(0);
+    });
+
     it("refuses a Viewer's delete and keeps the chart, and deletes it for the Editor who made it", async () => {
       const { id } = await getStorage().upsertDashboard({ ...dashboard, createdByUserId: editor });
       signInAs(viewer);
