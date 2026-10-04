@@ -139,7 +139,7 @@ Before it scans, `scan` checks these, in this order, and stops at the first that
 
 When a check before the scan fails, nothing is uploaded and no file is written.
 
-After the scan, `scan` refuses a scan that found no components: `Error: Couldn't upload the scan: no components were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
+After the scan, `scan` refuses a scan that found no uses: `Error: Couldn't upload the scan: no uses were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
 
 If the dashboard already has a scan of this commit, `scan` prints `Commit <commit> is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and exits `0` without scanning, unless the dashboard couldn't prepare that scan: then the upload replaces it. Some error lines end with `See <url>`: the page that explains that problem.
 

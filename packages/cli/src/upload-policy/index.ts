@@ -40,8 +40,8 @@ export function setupProblem(
   return null;
 }
 
-/** Why an upload must not upload what the scan found, or null when it may: the scan found no components. */
+/** Why an upload must not upload what the scan found, or null when it may: the scan found no uses. */
 export function emptyScanRefusal(stats: ScanStats, paths: { configPath: string }): string | null {
   if (stats.occurrenceCount > 0) return null;
-  return `Couldn't upload the scan: no components were found. Check "include" in ${paths.configPath} and try again.`;
+  return `Couldn't upload the scan: no uses were found. Check "include" in ${paths.configPath} and try again.`;
 }

@@ -53,11 +53,11 @@ describe("diagnosticLogLines", () => {
     ).toEqual({
       warnings: [],
       counts: [
-        "2 uses couldn't be matched to a component and weren't counted.",
+        "2 renders couldn't be followed to a component and weren't counted as uses.",
         "1 component passed in as a prop or argument wasn't counted.",
       ],
     });
-    expect(diagnosticLogLines([ref(1)]).counts).toEqual(["1 use couldn't be matched to a component and wasn't counted."]);
+    expect(diagnosticLogLines([ref(1)]).counts).toEqual(["1 render couldn't be followed to a component and wasn't counted as a use."]);
   });
 
   it("prints nothing for no diagnostics", () => {

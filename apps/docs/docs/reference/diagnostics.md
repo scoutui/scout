@@ -236,7 +236,7 @@ The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): 
 
 ```text
 1 component passed in as a prop or argument wasn't counted.
-5 uses couldn't be matched to a component and weren't counted.
+5 renders couldn't be followed to a component and weren't counted as uses.
 ```
 
 The artifact records each diagnostic once. `cycle-detected` and `chain-too-deep` appear once per package file and export, however many of your files import the component.

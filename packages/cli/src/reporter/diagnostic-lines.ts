@@ -34,8 +34,8 @@ function countLine(code: Info["code"], n: number): string {
   switch (code) {
     case "unresolved-reference":
       return n === 1
-        ? "1 use couldn't be matched to a component and wasn't counted."
-        : `${n} uses couldn't be matched to a component and weren't counted.`;
+        ? "1 render couldn't be followed to a component and wasn't counted as a use."
+        : `${n} renders couldn't be followed to a component and weren't counted as uses.`;
     case "late-bound-render":
       return n === 1
         ? "1 component passed in as a prop or argument wasn't counted."
