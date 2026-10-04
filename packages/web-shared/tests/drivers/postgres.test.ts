@@ -328,7 +328,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
         { packageName: "@example/icons", consumerCount: 1, componentCount: 1, totalOccurrences: 2, deprecatedCount: 0, distinctVersionCount: 1, soleVersion: "2.0.0" },
       ]);
       const row = (exportName: string, totalOccurrences: number, consumerCount: number, usage: Component["usage"]) => ({
-        componentId: componentKey(packageExport("@example/ui", exportName)), displayName: exportName, kind: "react-component", totalOccurrences, consumerCount, deprecated: false, usage,
+        componentId: componentKey(packageExport("@example/ui", exportName)), displayName: exportName, kind: "react-component", disambiguator: null, totalOccurrences, consumerCount, deprecated: false, usage,
       });
       expect(await driver.getPackage("@example/ui")).toEqual({
         ...uiTotals,

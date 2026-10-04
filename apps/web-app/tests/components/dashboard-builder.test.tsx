@@ -246,15 +246,27 @@ describe("chart details and saving", () => {
 const vueKits = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: [], exact: ["ant-design-vue", "naive-ui"] } };
 const reactKits = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const kitComponents = [
-  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", deprecated: true },
-  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", deprecated: false },
-  { componentId: "c", displayName: "NButton", packageName: "naive-ui", deprecated: false },
+  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", disambiguator: null, deprecated: true },
+  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", disambiguator: null, deprecated: false },
+  { componentId: "c", displayName: "NButton", packageName: "naive-ui", disambiguator: null, deprecated: false },
 ];
 const savedWith = (cohorts: CohortSelector[]) => ({
   id: "chart-1", name: "Old kits", description: null,
   config: { scope: { kind: "all" as const }, cohorts, chartType: "trend" as const, metric: "count" as const },
 });
 const spokenDeprecated = () => screen.getAllByText("deprecated").filter((el) => !el.closest('[aria-hidden="true"]'));
+
+describe("series picker", () => {
+  it("shows the entry point under components that share a name", () => {
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[
+      { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false },
+      { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false },
+    ]} packages={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: /Components/ }));
+    expect(screen.getByRole("button", { name: "Button @example/ui" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Button @example/ui · …/button/index" })).toBeInTheDocument();
+  });
+});
 
 describe("series options", () => {
   it("narrows a library to its deprecated components from the row menu", async () => {
@@ -272,7 +284,7 @@ describe("series options", () => {
   });
 
   it("offers no menu for a library with nothing deprecated", () => {
-    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", deprecated: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
     expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
   });
 

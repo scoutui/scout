@@ -52,6 +52,8 @@ Select a row to open that repo's **Components** tab filtered to this package. Se
 
 The table also lists components with no uses, so it can have more rows than the header's component count.
 
+The same name can appear on two rows when repos import a component through two entry points, such as `@acme/ui` and `@acme/ui/button`. They are two components, and the subpath row shows `button` under the name.
+
 Select a component to open its page across repos. See [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
 
 ## Tag a package from its page

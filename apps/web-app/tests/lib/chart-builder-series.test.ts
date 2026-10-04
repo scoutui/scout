@@ -4,7 +4,7 @@ import { deprecatedShare, deprecatedShareText, offersDeprecatedOnly, type Librar
 import type { PickableComponent } from "@/components/dashboards/series-picker";
 
 const comp = (componentId: string, packageName: string | null, deprecated = false): PickableComponent =>
-  ({ componentId, displayName: componentId, packageName, deprecated });
+  ({ componentId, displayName: componentId, packageName, disambiguator: null, deprecated });
 const vueKits: LibraryTag = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: ["ant-design-vue*"], exact: ["naive-ui"] } };
 const reactKits: LibraryTag = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const components = [

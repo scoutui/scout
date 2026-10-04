@@ -308,6 +308,7 @@ export const PackageComponentRowSchema = z.object({
   componentId: z.string(),
   displayName: z.string(),
   kind: ComponentKind,
+  disambiguator: z.string().nullable(),        // publicEntry (external) or filePath (local) when another row shares the package and name
   totalOccurrences: z.number().int().nonnegative(),
   consumerCount: z.number().int().nonnegative(),
   deprecated: z.boolean(),
@@ -330,6 +331,7 @@ export const ComponentSummarySchema = z.object({
   displayName: z.string(),
   packageName: z.string().nullable(),
   scope: ComponentScope,
+  disambiguator: z.string().nullable(),        // publicEntry (external) or filePath (local) when another row shares the package and name
   totalOccurrences: z.number().int().nonnegative(),
   repoCount: z.number().int().nonnegative(),
   repoId: z.string().nullable(),   // sole repo when repoCount === 1; null when it spans many

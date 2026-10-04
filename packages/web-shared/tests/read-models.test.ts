@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { componentKey } from "@scoutui/scan-format";
 import type { GovernanceRecord } from "../src/dto.js";
-import { createProjectionContext, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows, reduceComponentRows, reduceRepoSummary } from "../src/index.js";
+import {
+  createProjectionContext, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows, reduceComponentRows, reduceComponentsAcrossScans,
+  reducePackageDetail, reducePackagesAcrossScans, reduceRepoSummary,
+} from "../src/index.js";
 import { projectCompositionGraph } from "./helpers/composition-graph.js";
 import { genericArtifacts } from "./helpers/fixtures.ts";
 import { artifact, component, packageExport, received, repoDeclaration, resolvedAt, unresolvedAt } from "./helpers/builders.js";
@@ -63,5 +66,38 @@ describe("immutable read models", () => {
     const rows = reduceComponentRows(fact, "", governance).filter(row => row.deprecated);
     expect(rows.map(row => row.componentId)).toEqual([button.id]);
     expect(reduceRepoSummary(fact, { scanCount: 1, delta: null }, governance).deprecatedCount).toBe(rows.length);
+  });
+
+  it("counts a deprecated component used in several repos once in a package's totals, as its component rows do", () => {
+    const button = component(packageExport("@example/ui", "Button"));
+    const card = component(packageExport("@example/ui", "Card"));
+    const facts = ["repo-a", "repo-b", "repo-c"].map(repoId => {
+      const scan = artifact({ scanId: `scan-${repoId}`, repoId, components: [button, card], occurrences: [resolvedAt(button, "src/App.tsx"), resolvedAt(card, "src/App.tsx", 2)] });
+      return { ...deriveFactScan(scan), meta: received(scan).meta };
+    });
+    const t = "2026-01-01T00:00:00Z";
+    const governance: GovernanceRecord[] = [{
+      id: "retire-button", grain: "component", targetPackage: "@example/ui", targetExport: "Button",
+      disposition: { kind: "retired", reason: "replaced" }, createdAt: t, updatedAt: t,
+    }];
+    const detail = reducePackageDetail(facts, "@example/ui", governance);
+    expect(detail?.components.filter(row => row.deprecated).map(row => row.componentId)).toEqual([button.id]);
+    expect(detail?.deprecatedCount).toBe(1);
+    expect(reducePackagesAcrossScans(facts, governance).find(row => row.packageName === "@example/ui")?.deprecatedCount).toBe(1);
+  });
+
+  it("gives components that share a package and a name, in any repo, their entry point to tell them apart", () => {
+    const button = component(packageExport("@example/ui", "Button"));
+    const buttonEntry = component(packageExport("@example/ui", "Button", "dist/button/index"));
+    const card = component(packageExport("@example/ui", "Card"));
+    const facts = [
+      artifact({ scanId: "scan-a", repoId: "repo-a", components: [button, card], occurrences: [resolvedAt(button, "src/App.tsx"), resolvedAt(card, "src/App.tsx", 2)] }),
+      artifact({ scanId: "scan-b", repoId: "repo-b", components: [buttonEntry], occurrences: [resolvedAt(buttonEntry, "src/App.tsx")] }),
+    ].map(scan => ({ ...deriveFactScan(scan), meta: received(scan).meta }));
+    const disambiguators = (rows: { componentId: string; disambiguator: string | null }[]) =>
+      Object.fromEntries(rows.map(row => [row.componentId, row.disambiguator]));
+    const expected = { [button.id]: "", [buttonEntry.id]: "dist/button/index", [card.id]: null };
+    expect(disambiguators(reducePackageDetail(facts, "@example/ui")?.components ?? [])).toEqual(expected);
+    expect(disambiguators(reduceComponentsAcrossScans(facts))).toEqual(expected);
   });
 });
