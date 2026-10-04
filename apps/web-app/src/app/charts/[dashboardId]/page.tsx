@@ -100,6 +100,7 @@ export default async function DashboardViewPage({
       }
       notFound();
     }
+    if (!governance.some((r) => entry.recordIds.includes(r.id))) notFound();
     derivedEntry = entry;
     dashboard = {
       id,
