@@ -245,10 +245,13 @@ describe("chartFigure", () => {
     expect(result.marks.kind === "lines" ? result.marks.endLabels.map((l) => l.text) : null).toEqual(labels);
   });
 
+  const scannedOnce: CohortSeries[] = countSeries.map((s) => ({ ...s, points: s.points.slice(-1) }));
   const notDrawn: Array<[string, DashboardConfig, DashboardView]> = [
     ["a table chart", config("table"), { kind: "table", points, series: countSeries, coverage }],
     ["a trend given a snapshot", config("trend"), barsView],
     ["a chart with nothing to draw", config("trend"), { kind: "series", series: [], coverage }],
+    ["a trend scanned once", config("trend"), { kind: "series", series: scannedOnce, coverage }],
+    ["a stacked chart scanned once", config("stacked-share"), { kind: "series", series: scannedOnce, coverage }],
   ];
 
   it.each(notDrawn)("gives no figure for %s", (_, chartConfig, view) => {

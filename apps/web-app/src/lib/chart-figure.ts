@@ -77,11 +77,11 @@ export type ChartFigureInput = {
   nameWidth: (name: string) => number;
 };
 
-/** True when a chart has an image to export: a trend, stacked or bar chart with something to draw. */
+/** True when a chart has an image to export: a bar chart with bars, or a trend or stacked chart scanned more than once. */
 export function hasFigure(config: DashboardConfig, view: DashboardView): boolean {
   if (isEmptyView(view)) return false;
   if (config.chartType === "bars") return view.kind === "snapshot";
-  return (config.chartType === "trend" || config.chartType === "stacked-share") && view.kind === "series";
+  return (config.chartType === "trend" || config.chartType === "stacked-share") && view.kind === "series" && seriesToRows(view.series).length > 1;
 }
 
 /**
