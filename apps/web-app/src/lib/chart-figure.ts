@@ -34,8 +34,10 @@ const END_LABEL_OFFSET = 10;
 const END_LABEL_LINE = 18;
 const NAME_COLUMN = 300;
 const VALUE_COLUMN = 96;
-const BAR_ROW_MAX = 48;
-const BAR_MAX = 24;
+const BAR_ROW_MAX = 64;
+const BAR_MAX = 36;
+/** The size of a bar's name and value, in layout units. Mono glyphs advance 0.6 of it. */
+export const BAR_TEXT_SIZE = 15;
 const TEXT_GAP = 8;
 
 export type FigurePoint = { x: number; y: number };
@@ -184,10 +186,12 @@ function seriesLayout(series: CohortSeries[], metric: "count" | "share", stacked
 
 function barsLayout(points: CohortPoint[], metric: "count" | "share", style: SeriesStyle, subtitle: string): Layout {
   const bars = barOrder(points);
+  const names = bars.map((p) => exportLabel(p, style.deprecatedOnly));
+  const nameColumn = Math.min(NAME_COLUMN, Math.max(...names.map((n) => n.length)) * BAR_TEXT_SIZE * 0.6 + 2 * TEXT_GAP);
   const plot: FigureRect = {
-    x: PAD + NAME_COLUMN,
+    x: PAD + nameColumn,
     y: PLOT_TOP,
-    width: FIGURE_WIDTH - PAD - VALUE_COLUMN - (PAD + NAME_COLUMN),
+    width: FIGURE_WIDTH - PAD - VALUE_COLUMN - (PAD + nameColumn),
     height: LEGEND_BOTTOM - PLOT_TOP,
   };
   const rowHeight = Math.min(BAR_ROW_MAX, plot.height / bars.length);
@@ -207,7 +211,7 @@ function barsLayout(points: CohortPoint[], metric: "count" | "share", style: Ser
         return {
           color: style.seriesColor(p.cohortKey),
           rect: { x: plot.x, y: middle - thickness / 2, width, height: thickness },
-          name: text(exportLabel(p, style.deprecatedOnly), PAD, middle, "left", NAME_COLUMN - 2 * TEXT_GAP),
+          name: text(names[i] ?? "", PAD, middle, "left", nameColumn - 2 * TEXT_GAP),
           value: text(formatMetric(p.value, metric), plot.x + width + TEXT_GAP, middle, "left", VALUE_COLUMN - TEXT_GAP),
         };
       }),

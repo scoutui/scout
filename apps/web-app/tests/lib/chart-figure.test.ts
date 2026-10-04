@@ -219,6 +219,18 @@ describe("chartFigure", () => {
     expect(result.marks.bars[1]?.rect.width).toBeCloseTo((result.marks.bars[0]?.rect.width ?? 0) * 0.4);
   });
 
+  const nameColumns: Array<[string, string, number]> = [
+    ["just past the longest name", "Button · @example/ui", 20 * 9 + 16],
+    ["at most 300 units in, however long the name", "x".repeat(60), 300],
+  ];
+
+  it.each(nameColumns)("starts the bars %s", (_, label, gap) => {
+    const view: DashboardView = { kind: "snapshot", points: [{ ...button, label, value: 125, componentCount: 1 }] };
+    const result = drawn(config("bars"), view);
+    if (result.marks.kind !== "bars") throw new Error("expected bars");
+    expect(result.plot.x - (result.marks.bars[0]?.name.x ?? 0)).toBe(gap);
+  });
+
   const endLabels: Array<[string, number, string[]]> = [
     ["labels each line's end when the labels stand apart", 5, ["50", "5"]],
     ["labels no line's end when two labels would overlap", 49, []],

@@ -1,5 +1,6 @@
 import chartColorData from "@scoutui/palette/chart-colors.json";
 import {
+  BAR_TEXT_SIZE,
   type ChartFigure,
   type ChartFigureInput,
   chartFigure,
@@ -179,8 +180,8 @@ export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: Figu
     for (const bar of marks.bars) {
       ctx.fillStyle = bar.color;
       ctx.fillRect(bar.rect.x, bar.rect.y, bar.rect.width, bar.rect.height);
-      write(ctx, bar.name, mono(15), palette.ink);
-      write(ctx, bar.value, mono(15), palette.ink);
+      write(ctx, bar.name, mono(BAR_TEXT_SIZE), palette.ink);
+      write(ctx, bar.value, mono(BAR_TEXT_SIZE), palette.ink);
     }
   }
 
