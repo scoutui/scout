@@ -1,5 +1,9 @@
 # scout chart
 
+## 0.5.0
+
+- Run web app 0.3.0 by default.
+
 ## 0.4.0
 
 - Removed: `auth.requiredGroup`. Take it out of your values before upgrading, or the upgrade fails. To limit who signs in, assign people to the dashboard's application in your sign-in provider, or set `auth.oidc.allowedDomains`.
