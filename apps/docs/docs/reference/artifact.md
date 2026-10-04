@@ -1,11 +1,11 @@
 ---
 description: "Every field in the JSON file scout scan uploads and scout scan --dry-run writes: meta, components, occurrences and diagnostics."
-sidebar_label: "Scan artifact"
+sidebar_label: "Scan file"
 ---
 
-# Scan artifact reference
+# Scan file reference
 
-Every scan is one JSON file, the [artifact](/docs/reference/glossary#artifact). [`scout scan --dry-run`](/docs/reference/cli#scan) writes it to `scout-scan.json` next to the config; an upload sends it to the dashboard without writing it. This page lists every field in it.
+Every scan is one JSON file, the [scan file](/docs/reference/glossary#scan-file). [`scout scan --dry-run`](/docs/reference/cli#scan) writes it to `scout-scan.json` next to the config; an upload sends it to the dashboard without writing it. This page lists every field in it.
 
 ## Top-level shape {#top-level-shape}
 
@@ -88,8 +88,8 @@ These fields are less often needed:
 
 | `kind` | Fields | What it is |
 | --- | --- | --- |
-| `package-export` | `packageName`, `publicEntry`, `exportName` | A component imported from an installed package, such as `Button` from `@acme/ui`. See [From a package](/docs/reference/glossary#from-a-package). |
-| `repository-declaration` | `repoId`, `filePath`, `exportName` | A component defined in the scanned repo, including one in another workspace package of the same repo. See [Defined in the repo](/docs/reference/glossary#defined-in-the-repo). |
+| `package-export` | `packageName`, `publicEntry`, `exportName` | A component imported from an installed package, such as `Button` from `@acme/ui`. See [From a package](/docs/reference/glossary#external). |
+| `repository-declaration` | `repoId`, `filePath`, `exportName` | A component defined in the scanned repo, including one in another workspace package of the same repo. See [Defined in the repo](/docs/reference/glossary#local). |
 | `tag` | `tagName` | A [web component](/docs/reference/glossary#web-component), such as `<acme-badge>`, whichever package or file defines it. Any tag with a hyphen in its name that nothing imports counts, so a Vue component registered globally at runtime, such as vue-i18n's `<i18n-t>`, is a tag too. The few SVG and MathML elements with a hyphen, such as `<font-face>`, are not. |
 
 | Field | In | Description |
@@ -217,7 +217,7 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `occurrenceId` | `string` | 16-character id computed from what the use names, its position and its owner. Unique within the artifact. |
+| `occurrenceId` | `string` | 16-character id computed from what the use names, its position and its owner. Unique within the scan file. |
 | `resolution` | object | Which component this is, or why the scan couldn't tell. See [`resolution`](#resolution). |
 | `filePath` | `string` | The file the use is in. |
 | `line` | `number` | Line of the use, counted from 1. |

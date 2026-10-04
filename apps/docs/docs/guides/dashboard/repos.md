@@ -5,11 +5,11 @@ sidebar_label: "Repos"
 
 # Repos
 
-The repos area shows every repo the dashboard has a [scan](/docs/reference/glossary#scan) for, and what its latest scan found. Use it to check how a repo uses your design system, spot [deprecated](/docs/reference/glossary#deprecated) components, and see what moved since the last scan. For example, open `storefront` to see that it still uses `LegacyButton` from `@acme/ui-legacy`, how many files use it, and whether the latest scan used it less than the one before.
+The repos area shows every repo the dashboard has a [scan](/docs/reference/glossary#scan) for, and what its latest scan found. Use it to check how a repo uses your design system, spot [deprecated](/docs/reference/glossary#deprecated) components, and see what changed since the previous scan. For example, open `storefront` to see that it still uses `LegacyButton` from `@acme/ui-legacy`, how many files use it, and whether the latest scan used it less than the one before.
 
 ## Find a repo
 
-Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, with **Updated** (the date of the commit its numbers come from), how many **Components** its latest scan found, how many are **Deprecated**, and **Δ components**: what was added, removed or changed since its previous scan.
+Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, with **Committed** (the date of the commit its numbers come from), how many **Components** its latest scan found, how many are **Deprecated**, and **Δ components**: what was added, removed or changed since its previous scan.
 
 ![The repos list with four repos, the search box and the since previous scan chip](/img/dashboard/repos-list.png)
 
@@ -37,9 +37,9 @@ To narrow the table:
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
 - Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
-- Press **Filter** to choose by **Origin** (**External** for [from a package](/docs/reference/glossary#from-a-package), **Local** for [defined in the repo](/docs/reference/glossary#defined-in-the-repo)), **Framework**, **Package**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in one facet shows components matching either; filters in different facets must all match.
+- Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in one facet shows components matching either; filters in different facets must all match.
 
-**Framework** offers **React**, **Vue**, **Web component** and **Tag**, and shows only when the repo has more than one. **Web component** and **Tag** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, **Tag** the ones nothing defines. The separate **Tag** filter picks your library tags.
+**Type** offers **React**, **Vue**, **Web component** and **Undefined element**, and shows only when the repo has more than one. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
 
 Each active filter shows as a pill you can remove, and **Clear all** removes them all.
 
@@ -53,7 +53,7 @@ The tab keeps its search and filters in the page URL, so you can copy the addres
 | --- | --- |
 | `q` | `q=Button`, which searches component names |
 | `origin` | `origin=external`, `origin=local` |
-| `kind` | `kind=react`, `kind=vue`, `kind=wc`, `kind=tag` |
+| `kind` | `kind=react`, `kind=vue`, `kind=wc`, `kind=undefined-element` |
 | `package` | `package=@acme/ui` |
 | `tag` | `tag=acme-ui` |
 | `deprecated` | `deprecated=true`, `deprecated=false` |
@@ -68,7 +68,7 @@ Different parameters must all match. Repeating `kind`, `package` or `tag` matche
 
 ## Follow adoption in a repo
 
-The **Adoption** tab follows each [migration](/docs/reference/glossary#migration) and [retirement](/docs/reference/glossary#retirement) that touches this repo, counting this repo alone. **Migrations in this repo** shows each one's progress as a share **migrated**, and **Retirements in this repo** as a count of uses **remaining**. Finished ones are kept behind **Show N complete**.
+The **Adoption** tab follows each [migration](/docs/reference/glossary#migration) and [retirement](/docs/reference/glossary#retirement) that touches this repo, counting this repo alone. **Migrations in this repo** shows each one's progress as a share **migrated**, and **Retirements in this repo** as a count of uses **left**. Complete ones are kept behind **Show N complete**.
 
 Select a row to open its chart: uses over time in this repo, scan by scan.
 

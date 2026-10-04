@@ -17,7 +17,7 @@ This page assumes the dashboard already has scans uploaded. If it has none, star
 
 ![The page for components.Option from react-select across repos, with the version bar, deprecated in 2 of 2 repos, the Retired line and the Used in table](/img/dashboard/component-across-repos.png)
 
-The header gives the framework, how many repos use the component and its total [uses](/docs/reference/glossary#use). If the component is [deprecated](/docs/reference/glossary#deprecated), the header says so, for example **deprecated in 5 of 5 repos**, with a line naming its successor or reading **Retired**.
+The header gives the component's type, how many repos use it and its total [uses](/docs/reference/glossary#use). If the component is [deprecated](/docs/reference/glossary#deprecated), the header says so, for example **deprecated in 5 of 5 repos**, with a line naming its replacement or reading **Retired**.
 
 The version bar splits the component's uses by [version](/docs/reference/glossary#version), summed across repos. The highest version is teal and every lower one is grey. "Highest" means the highest version found in these scans, not the newest one published.
 
@@ -25,18 +25,18 @@ The **Used in** table has one row per repo whose latest scan includes the compon
 
 - **Version**: a teal dot marks repos on the highest version, so a grey dot is a repo that is behind.
 - **Deprecated**: whether a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the component.
-- **Updated**: the date of the commit that repo's numbers come from.
+- **Committed**: the date of the commit that repo's numbers come from.
 
 Select a row to open the component's page for that repo.
 
-A component [defined in the repo](/docs/reference/glossary#defined-in-the-repo), with no package, is not listed under any package. Open it from the repo instead.
+A component [defined in the repo](/docs/reference/glossary#local), with no package, is not listed under any package. Open it from the repo instead.
 
 ## Open a component in one repo
 
 1. Select **repos** in the top navigation and open the repo.
 2. On the **Components** tab, search for `Button` and select its row. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
 
-Badges beside the name show its origin (**external** or **local**), its framework (**React**, **Vue**, **Web component** or **Tag**), and **deprecated** when a lifecycle record covers it. The line below gives its package, or `<no package>`, the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version, and, for a component defined in the repo, the file and line where it is defined.
+Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. The line below gives its package, or `<no package>`, the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version, and, for a component defined in the repo, the file and line where it is defined.
 
 The page always shows the repo's latest scan, even when the repo page is showing an [older scan](/docs/guides/dashboard/repos#look-at-an-older-scan).
 
@@ -88,7 +88,7 @@ Press a file's row to open it. It lists one line per use, in line order, with th
 
 - **Rendered by** and the component whose code renders it, or each one when several do. Select a name to draw its path on **Composition**.
 - **Imported as** and the name the file gives the component, as in `import { Button as ShopButton } from "@acme/ui"`.
-- **via** and a name, when the code doesn't render the component by its own name: the function it's passed to, as `makeControl` in `makeControl(Input)`, or a wrapper such as `memo`. The [artifact reference](/docs/reference/artifact#trace) describes each.
+- **via** and a name, when the code doesn't render the component by its own name: the function it's passed to, as `makeControl` in `makeControl(Input)`, or a wrapper such as `memo`. The [scan file reference](/docs/reference/artifact#trace) describes each.
 
 Select a line number such as `:42` to open that line in the repo's git host, at the commit that was scanned. A file's name opens the file at its first use. When the scan recorded no git remote, or one the dashboard can't read, both are plain text.
 
@@ -114,4 +114,4 @@ A **Rendered by** link on **Usage** opens **Composition** with that component's 
 
 ## Next step
 
-Found repos still using a component you want to replace? [Track a migration](/docs/guides/dashboard/track-a-migration) follows each repo's progress to its successor.
+Found repos still using a component you want to replace? [Track a migration](/docs/guides/dashboard/track-a-migration) follows each repo's progress to its replacement.

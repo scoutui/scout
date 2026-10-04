@@ -9,7 +9,7 @@ The words Scout uses on screen and in a scan's JSON. The examples use invented n
 
 ## Component
 
-One distinct thing your code uses: a component [from a package](#from-a-package) such as `Button` from `@acme/ui`, a `Card` your repo [defines itself](#defined-in-the-repo), or a [web component](#web-component) such as `<acme-button>`.
+One distinct thing your code uses: a component [from a package](#external) such as `Button` from `@acme/ui`, a `Card` your repo [defines itself](#local), or a [web component](#web-component) such as `<acme-button>`.
 
 You see components in the **Components** table on each repo page and package page, and in the `components` array of the JSON. See [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
 
@@ -31,11 +31,11 @@ One run of `scout scan` over one repo at one commit. The dashboard keeps each up
 
 A repo page's **scan** button and its **Scan history** list the older scans. See [Look at an older scan](/docs/guides/dashboard/repos#look-at-an-older-scan).
 
-## Artifact
+## Scan file
 
 The JSON file that holds one scan. `scout scan` sends it to the dashboard, and `scout scan --dry-run` writes it to `scout-scan.json` next to the config instead, so you can read it on its own with `jq` or your own scripts.
 
-The [Scan artifact reference](/docs/reference/artifact) lists every field in it.
+The [Scan file reference](/docs/reference/artifact) lists every field in it.
 
 ## Repo id
 
@@ -43,25 +43,29 @@ The name a scan is recorded under, such as `storefront`. It comes from `--repo-i
 
 It heads the repo page and is `meta.repo.id` in the JSON. [Repo identity](/docs/reference/config#repo-identity) gives the full order.
 
-## From a package
+## External
 
-A component imported from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package's [Custom Elements Manifest](#custom-elements-manifest) declares it or your code registers a class imported from it.
+Installed from a package. An external component is one your code imports from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package's [Custom Elements Manifest](#custom-elements-manifest) declares it or your code registers a class imported from it.
 
-The **Origin** filter on a repo page calls it **External**. In the JSON its `identity.kind` is `"package-export"`. See the [artifact reference](/docs/reference/artifact).
+The **Origin** filter on a repo page and a component's badge call it **External**. In the JSON its `identity.kind` is `"package-export"`. See the [scan file reference](/docs/reference/artifact).
 
-## Defined in the repo
+## Local
 
-A component whose code lives in the scanned repo, such as `Card` in `src/components/Card.tsx`, including one in another workspace package of the same monorepo. A `Card` in `storefront` and a `Card` in `checkout` are two different components, even when their files look alike.
+Defined in this repo. A local component is one whose code lives in the scanned repo, such as `Card` in `src/components/Card.tsx`, including one in another workspace package of the same monorepo. A `Card` in `storefront` and a `Card` in `checkout` are two different components, even when their files look alike.
 
 A web component that your repo defines and registers, with `customElements.define()` or `@customElement()`, counts as local too.
 
-The **Origin** filter calls it **Local**. In the JSON its `identity.kind` is `"repository-declaration"`.
+The **Origin** filter and a component's badge call it **Local**. In the JSON its `identity.kind` is `"repository-declaration"`.
 
 ## Web component
 
 A tag with a hyphen in its name, such as `<acme-button>`, in React JSX or a Vue template. The scan counts it as a component even though nothing imports it. It belongs to your repo when your code defines and registers it, or to a package when your code registers a class imported from that package or the package's [Custom Elements Manifest](#custom-elements-manifest) declares the tag. Otherwise it has no package. Either way, a tag is one component across every repo that uses it.
 
-The **Framework** filter splits web components in two: **Web component** when a manifest or your code defines the tag, and **Tag** when nothing does. In the JSON its `identity.kind` is `"tag"`.
+The **Type** filter splits web components in two: **Web component** when a manifest or your code defines the tag, and [**Undefined element**](#undefined-element) when nothing does. In the JSON its `identity.kind` is `"tag"`.
+
+## Undefined element
+
+A [web component](#web-component) that nothing in the scan defines: no package's [Custom Elements Manifest](#custom-elements-manifest) declares it and no code registers it. It has no package and no version. The **Type** filter on a repo page lists it as **Undefined element**.
 
 ## Version
 
@@ -77,15 +81,15 @@ See [Link web components to your package](/docs/guides/link-web-components-to-yo
 
 ## Tag
 
-A name you give a set of packages in the dashboard, such as `acme-ui` for `@acme/ui` and `acme-ui-legacy` for `@acme/ui-legacy`. It matches package names by exact names, or by glob patterns such as `@acme/icons*`. Tags let you filter by library and compare libraries in charts. They are not the same as the **Tag** value of the **Framework** filter, which marks a [web component](#web-component) that nothing defines.
+A name you give a set of packages in the dashboard, such as `acme-ui` for `@acme/ui` and `acme-ui-legacy` for `@acme/ui-legacy`. It matches package names by exact names, or by glob patterns such as `@acme/icons*`. Tags let you filter by library and compare libraries in charts.
 
 You create tags in the **Tags** section of the **governance** page. See [Tags](/docs/guides/dashboard/tag-your-libraries).
 
 ## Lifecycle record
 
-An entry on the **governance** page that says a package or component is superseded by something else, or retired. For example: `LegacyButton` from `@acme/ui-legacy` is superseded by `Button` from `@acme/ui`. A record applies to every repo at once, including scans already uploaded, so no rescan is needed.
+An entry on the **governance** page that says a package or component is replaced by something else, or retired. For example: `LegacyButton` from `@acme/ui-legacy` is replaced by `Button` from `@acme/ui`. A record applies to every repo at once, including scans already uploaded, so no rescan is needed.
 
-A superseded record tracks a [migration](#migration) and a retired one a [retirement](#retirement). See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
+A **Replaced** record tracks a [migration](#migration) and a **Retired** one a [retirement](#retirement). See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## Deprecated
 
@@ -95,12 +99,12 @@ Deprecated components carry a warning icon, and the **deprecated** chip and **De
 
 ## Migration
 
-The move from a superseded package or component to its successor, tracked by a lifecycle record. Its progress reads **N% migrated**: the successor's uses as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**.
+The move from a replaced package or component to its replacement, tracked by a lifecycle record. Its progress reads **N% migrated**: the replacement's uses as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**.
 
 You see migrations under **Migrations** on the **charts** page and under **Migrations in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## Retirement
 
-The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no successor to compare against, its progress reads **N remaining**: the uses that remain. Its record reads **None left** on the **governance** page once no repo's latest scan uses it.
+The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no replacement to compare against, its progress reads **N left**: the uses still in the code. Its record reads **None left** on the **governance** page once no repo's latest scan uses it.
 
 You see retirements under **Retirements** on the **charts** page and under **Retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration#record-a-retirement).

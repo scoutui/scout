@@ -16,7 +16,7 @@ type Row = {
   occurrences: number;
   /** Occurrences gained or lost since the previous scan. */
   delta: number;
-  /** Superseded or retired. */
+  /** Replaced or retired. */
   deprecated?: boolean;
   mark?: "added" | "removed";
   selected?: boolean;
@@ -46,7 +46,7 @@ function describeRow(r: Row): string {
   return `${r.name} from ${r.pkg}${r.deprecated ? " (deprecated)" : ""}, ${state}, ${change}`;
 }
 
-const SUMMARY = `Example repo page for partner-portal, showing what changed since the previous scan: 6 deprecated components in use; 2 added, 4 removed and 11 changed since the previous scan. The table lists the 17 components that moved: ${ROWS.map(describeRow).join("; ")}; and more. Lifted out of the first row, the top of the Button's page in partner-portal: an external React component from @acme/ui version 4.2.0, open on its Usage tab with 38 uses.`;
+const SUMMARY = `Example repo page for partner-portal, showing what changed since the previous scan: 6 deprecated components in use; 2 added, 4 removed and 11 changed since the previous scan. The table lists the 17 components that changed: ${ROWS.map(describeRow).join("; ")}; and more. Lifted out of the first row, the top of the Button's page in partner-portal: an external React component from @acme/ui version 4.2.0, open on its Usage tab with 38 uses.`;
 
 function Sep({ className }: { className?: string }): React.ReactElement {
   return <span className={clsx(styles.sep, className)}>·</span>;
@@ -74,7 +74,7 @@ function TableRow({ r }: { r: Row }): React.ReactElement {
         <span className={styles.nameLine}>
           <Code className={styles.rowName}>{r.name}</Code>
           {r.deprecated ? <TriangleAlert className={styles.rowWarn} /> : null}
-          {r.mark ? <span className={styles.markBadge}>{r.mark}</span> : null}
+          {r.mark ? <span className={styles.markBadge}>{r.mark === "added" ? "Added" : "Removed"}</span> : null}
         </span>
         <span className={styles.tier}>
           <Code>{r.pkg}</Code>
@@ -126,7 +126,7 @@ function ComponentHeader(): React.ReactElement {
       </p>
       <p className={styles.liftIdentity}>
         <Code className={styles.liftName}>Button</Code>
-        <span className={clsx(styles.badge, styles.badgeSecondary)}>external</span>
+        <span className={clsx(styles.badge, styles.badgeSecondary)}>External</span>
         <span className={clsx(styles.badge, styles.badgeOutline)}>React</span>
       </p>
       <p className={styles.liftMeta}>
@@ -140,7 +140,6 @@ function ComponentHeader(): React.ReactElement {
           <span className={clsx(styles.liftTabCount, shared.num)}>38</span>
         </span>
         <span className={styles.liftTab}>Composition</span>
-        <span className={styles.liftTab}>Events</span>
       </p>
     </div>
   );
@@ -196,7 +195,7 @@ function ProductView(): React.ReactElement {
           <div className={styles.panel}>
             <div className={styles.filterBar}>
               <span className={styles.statusChip}>since previous scan</span>
-              <span className={clsx(styles.count, shared.num)}>17 moved</span>
+              <span className={clsx(styles.count, shared.num)}>17 changes</span>
             </div>
 
             <div className={styles.table}>

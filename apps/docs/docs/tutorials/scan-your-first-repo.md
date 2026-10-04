@@ -237,4 +237,4 @@ We've run a real scan and followed one component from its summary to the line wh
 
 ## Next
 
-To upload this scan and read it in the dashboard, continue with [Explore the dashboard](/docs/tutorials/explore-the-dashboard). To set the scan up for your own repo's layout, see [Configure a scan](/docs/guides/configure-a-scan), and to scan on every push, see [Run a scan and upload in CI](/docs/guides/run-in-ci). The [artifact reference](/docs/reference/artifact) describes every field in the file, and [How components are found](/docs/explanation/mental-model) explains what the scan counts as a component.
+To upload this scan and read it in the dashboard, continue with [Explore the dashboard](/docs/tutorials/explore-the-dashboard). To set the scan up for your own repo's layout, see [Configure a scan](/docs/guides/configure-a-scan), and to scan on every push, see [Run a scan and upload in CI](/docs/guides/run-in-ci). The [scan file reference](/docs/reference/artifact) describes every field in the file, and [How components are found](/docs/explanation/mental-model) explains what the scan counts as a component.

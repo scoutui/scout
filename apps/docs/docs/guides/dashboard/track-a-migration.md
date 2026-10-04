@@ -1,13 +1,13 @@
 ---
-description: "Record that a package or component is superseded or retired, see it marked deprecated in every repo, and follow each repo's progress until no one uses it."
+description: "Record that a package or component is replaced or retired, see it marked deprecated in every repo, and follow each repo's progress until no one uses it."
 sidebar_label: "Migrations and retirements"
 ---
 
 # Migrations and retirements
 
-When your design system replaces or removes a component, record it once on the **governance** page and the dashboard follows it across every repo. For example, record that `LegacyButton` from `@acme/ui-legacy` is superseded by `Button` from `@acme/ui`. Every use of `LegacyButton` is then marked [deprecated](/docs/reference/glossary#deprecated), and a chart shows repos moving to `Button` scan by scan.
+When your design system replaces or removes a component, record it once on the **governance** page and the dashboard follows it across every repo. For example, record that `LegacyButton` from `@acme/ui-legacy` is replaced by `Button` from `@acme/ui`. Every use of `LegacyButton` is then marked [deprecated](/docs/reference/glossary#deprecated), and a chart shows repos moving to `Button` scan by scan.
 
-What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record). A superseded record tracks a [migration](/docs/reference/glossary#migration); a retired one tracks a [retirement](/docs/reference/glossary#retirement), for a component that goes with no replacement.
+What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record). A **Replaced** record tracks a [migration](/docs/reference/glossary#migration); a **Retired** one tracks a [retirement](/docs/reference/glossary#retirement), for a component that goes with no replacement.
 
 ## Record a migration
 
@@ -16,15 +16,15 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 3. Pick what the record covers:
    - `LegacyButton` from `@acme/ui-legacy`, for that component, or
    - every component in `@acme/ui-legacy`: search for `legacy` instead, pick `@acme/ui-legacy`, then pick **All of @acme/ui-legacy**.
-4. Leave **Type** on **Superseded**.
-5. In **Superseded by**, type `button` and pick `Button` from `@acme/ui`. To make the whole of `@acme/ui` the replacement, search for `@acme/ui` instead, pick it, then pick **All of @acme/ui**.
+4. Leave **Type** on **Replaced**.
+5. In **Replaced by**, type `button` and pick `Button` from `@acme/ui`. To make the whole of `@acme/ui` the replacement, search for `@acme/ui` instead, pick it, then pick **All of @acme/ui**.
 6. Press **Create**.
 
-![The New record form, filled in to record VxeButton from vxe-pc-ui as superseded by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
+![The New record form, filled in to record VxeButton from vxe-pc-ui as replaced by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
 
-If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too, after the installed packages. Its components are listed once you search in it: type `legacy` and pick `@acme/ui-legacy`. Or type `button`: after the results, `@acme/ui-legacy` is listed with how many of its components match, and picking it keeps `button` as the search. A component [defined in the repo](/docs/reference/glossary#defined-in-the-repo) outside any workspace package is never offered.
+If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too, after the installed packages. Its components are listed once you search in it: type `legacy` and pick `@acme/ui-legacy`. Or type `button`: after the results, `@acme/ui-legacy` is listed with how many of its components match, and picking it keeps `button` as the search. A component [defined in the repo](/docs/reference/glossary#local) outside any workspace package is never offered.
 
 A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered under a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 
@@ -55,11 +55,11 @@ The **governance** page then shows how much of each record's package or componen
 
 ## Follow progress
 
-On the **governance** page, select a record's count to open its chart: uses over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the successor side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
+On the **governance** page, select a record's count to open its chart: uses over time of `LegacyButton` and `Button`, added up across every repo. Each side counts its component from every import path, together with its parts. If no scan the chart covers has `Button` yet, the replacement side counts all of `@acme/ui` instead and is labelled with the package name. A retirement's chart shows the retired component alone.
 
 To see where a record's component or package is still used, select the record's name.
 
-The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N remaining**, the uses that remain. See [Charts](/docs/guides/dashboard/charts).
+The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N left**, the uses still in the code. See [Charts](/docs/guides/dashboard/charts).
 
 To follow one repo, open it from **repos** and go to its **Adoption** tab. **Migrations in this repo** and **Retirements in this repo** count that repo alone, so their numbers can differ from the charts page. A repo that never used `LegacyButton` has no row for it. See [Follow adoption in a repo](/docs/guides/dashboard/repos#follow-adoption-in-a-repo).
 

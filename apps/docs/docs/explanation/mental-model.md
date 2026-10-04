@@ -19,8 +19,8 @@ The scan doesn't know which packages make up your design system. It records ever
 
 Every component is one of three kinds. For an imported component, the scan works out which from where the import points:
 
-- **[From a package](/docs/reference/glossary#from-a-package):** the import leads to an installed package, such as `import { Button } from "@acme/ui"`.
-- **[Defined in the repo](/docs/reference/glossary#defined-in-the-repo):** the import leads to a file in the repo, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is defined in the repo too: it is still your repo's code.
+- **[From a package](/docs/reference/glossary#external):** the import leads to an installed package, such as `import { Button } from "@acme/ui"`.
+- **[Defined in the repo](/docs/reference/glossary#local):** the import leads to a file in the repo, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is defined in the repo too: it is still your repo's code.
 - **[Web component](/docs/reference/glossary#web-component):** a tag with a hyphen, such as `<acme-button>`, which nothing imports. A registration in your code or a package's Custom Elements Manifest decides which repo or package it belongs to. Otherwise it has no package. [Framework support](/docs/reference/framework-support#web-components) gives the order.
 
 A [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) only tells the scan which package a tag belongs to. To ship one with your package, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
@@ -57,7 +57,7 @@ A scan records usage at two levels of detail:
 - **One entry per component**, with the totals: how many places use it, in how many files, and which values each prop was given.
 - **One entry per [use](/docs/reference/glossary#use)**, the place in the code where the component is used: the file, the line, and the props written there.
 
-The totals answer "how much is this used, and how?". The uses answer "where do I go to change it?". A component's page in the dashboard shows both: the totals, and each use, file by file and line by line. In the JSON they are the `components` and `occurrences` arrays; the [artifact reference](/docs/reference/artifact) lists their fields.
+The totals answer "how much is this used, and how?". The uses answer "where do I go to change it?". A component's page in the dashboard shows both: the totals, and each use, file by file and line by line. In the JSON they are the `components` and `occurrences` arrays; the [scan file reference](/docs/reference/artifact) lists their fields.
 
 A compound component such as `<Dialog.Popup>` gets its own entry, named `Dialog.Popup`, separate from `Dialog`. When `Dialog` is defined in your repo and `Popup` points at a component declared elsewhere in your code, such as `Popup: DialogPopup`, the entry is `DialogPopup` instead.
 

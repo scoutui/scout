@@ -43,7 +43,7 @@ export default function UsageFigure(): React.ReactElement {
       <div className={clsx(shared.panel, styles.frame)} dir="ltr">
         <div className={styles.values}>
           <p className={styles.band}>
-            <span className={shared.label}>Props &amp; values</span>
+            <span className={shared.label}>Prop values</span>
           </p>
           <div className={styles.facet}>
             <p className={styles.facetHead}>

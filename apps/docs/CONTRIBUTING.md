@@ -13,10 +13,10 @@ so leave out:
 - **Source-file paths and internal names** of functions, modules, symbols or
   seams (for example `emitReact`, `sfcOwnerRef`, `resolve(graph)`). Describe
   what the reader can observe, not the code that produces it.
-- **Internal field names** that don't appear in the JSON artifact. Document
+- **Internal field names** that don't appear in the scan file. Document
   only the fields readers see in their own output (for example
   `ownerComponentId`, not `rawOwnerComponentId`).
-- **Internals that never reach the artifact**, such as a type that's declared
+- **Internals that never reach the scan file**, such as a type that's declared
   but never populated.
 - **History and roadmap** ("early versions did X", "not built yet"), and
   references to test suites or GitHub issues. They help maintainers, not

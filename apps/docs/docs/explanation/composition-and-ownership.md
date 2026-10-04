@@ -54,6 +54,6 @@ A component can be used and still show **Nothing in this repo renders** it. That
 
 ## In the JSON
 
-Each component's `composition` holds the direct links only: which components it renders and which render it, with how many times each. The dashboard works out the longer chains from these. The [artifact reference](/docs/reference/artifact#composition) lists the fields.
+Each component's `composition` holds the direct links only: which components it renders and which render it, with how many times each. The dashboard works out the longer chains from these. The [scan file reference](/docs/reference/artifact#composition) lists the fields.
 
 Each use also records how the component was reached, such as through a helper function or a wrapper, in [`trace`](/docs/reference/artifact#trace).

@@ -22,7 +22,7 @@ HTML files and Lit templates are not read.
 
 Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, are skipped even when `include` matches them.
 
-*Renders and rendered by* is what the dashboard's **Composition** tab shows and what `composition` holds in the [artifact](/docs/reference/artifact#composition): which components a component's own code renders, and which components render it. [Composition](/docs/explanation/composition-and-ownership) explains it.
+*Renders and rendered by* is what the dashboard's **Composition** tab shows and what `composition` holds in the [scan file](/docs/reference/artifact#composition): which components a component's own code renders, and which components render it. [Composition](/docs/explanation/composition-and-ownership) explains it.
 
 ## React
 
@@ -51,7 +51,7 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 
 **Known gaps:**
 
-- Components registered globally and missing from the list of auto-imports, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unmatched use](/docs/reference/glossary#unmatched-use). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Framework** filter shows as **Tag**. Import the component in the file's script to have it matched.
+- Components registered globally and missing from the list of auto-imports, for example with `app.component()`, are not matched to their definition. Written with a capital letter (`<PromoBanner>`), the tag is an [unmatched use](/docs/reference/glossary#unmatched-use). Written with a hyphen (`<promo-banner>`), it is counted as a web component with no package, which the dashboard's **Type** filter shows as **Undefined element**. Import the component in the file's script to have it matched.
 - A list of auto-imports at any other path is not read, for example when `unplugin-vue-components`'s `dts` option writes it to `types/components.d.ts`. Set `dts` to `true` or `src/components.d.ts` to have it read.
 - In a file with both `<script>` and `<script setup>`, a component imported in the plain `<script>` is not matched. Written `<LineItem>`, its tag is not counted at all. Written `<line-item>`, it is counted as a web component with no package. Move the import into `<script setup>`.
 
@@ -63,7 +63,7 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 
 1. Your repo, when one of its files registers the tag with `customElements.define("…", …)` or `@customElement("…")`. When the registered class is imported from a package, the tag belongs to that package instead.
 2. The package whose [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) declares the tag. The package must be installed, and its `package.json` must point at the manifest with a `customElements` field. See [Link web components to your package](/docs/guides/link-web-components-to-your-package).
-3. No package, when neither applies. The tag is still counted, and the dashboard's **Framework** filter shows it as **Tag**.
+3. No package, when neither applies. The tag is still counted, and the dashboard's **Type** filter shows it as **Undefined element**.
 
 **Renders and rendered by:** a web component counts for the React or Vue component whose code contains it. Its own **Renders** list is always empty, because what a web component draws inside itself isn't read.
 

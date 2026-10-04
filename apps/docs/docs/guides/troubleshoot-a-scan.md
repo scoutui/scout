@@ -54,7 +54,7 @@ package-not-installed  src/App.tsx:7  @acme/ui
 unbound-name  src/App.tsx:9  PromoBanner
 ```
 
-Fix each reason as follows. The [artifact reference](/docs/reference/artifact#unresolved-occurrences) describes them in full.
+Fix each reason as follows. The [scan file reference](/docs/reference/artifact#unresolved-occurrences) describes them in full.
 
 | Reason | Fix |
 | --- | --- |
@@ -73,7 +73,7 @@ The summary also reads `3 of them are from a package that isn't installed.` The 
 
 ## A web component has no package
 
-A tag such as `<acme-button>` shows `<no package>` on its page in the dashboard, and in the artifact its `attribution.status` is `unknown` or `conflict`. It has no version, and lifecycle records can't cover it. If the tag comes from your design system, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
+A tag such as `<acme-button>` shows `<no package>` on its page in the dashboard, and in the scan file its `attribution.status` is `unknown` or `conflict`. It has no version, and lifecycle records can't cover it. If the tag comes from your design system, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 
 ## Some renders aren't counted
 

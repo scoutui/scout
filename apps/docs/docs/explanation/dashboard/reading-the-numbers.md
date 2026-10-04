@@ -42,8 +42,8 @@ Tables list every component the scan recorded, including ones with no uses, such
 
 Whether a component counts once across all your repos, or once per repo, depends on its kind, as [How components are found](/docs/explanation/mental-model) explains:
 
-- **A component [from a package](/docs/reference/glossary#from-a-package), or a [web component](/docs/reference/glossary#web-component), is the same component in every repo.** `Button` from `@acme/ui` used in `storefront` and `checkout` counts as one component across both, and so does `<acme-button>`.
-- **A component [defined in the repo](/docs/reference/glossary#defined-in-the-repo) belongs to that repo.** A `Card` in `storefront` and a `Card` in `checkout` are separate code, even when their files look alike, so they count as two.
+- **A component [from a package](/docs/reference/glossary#external), or a [web component](/docs/reference/glossary#web-component), is the same component in every repo.** `Button` from `@acme/ui` used in `storefront` and `checkout` counts as one component across both, and so does `<acme-button>`.
+- **A component [defined in the repo](/docs/reference/glossary#local) belongs to that repo.** A `Card` in `storefront` and a `Card` in `checkout` are separate code, even when their files look alike, so they count as two.
 
 ## Versions
 
@@ -55,7 +55,7 @@ The dashboard doesn't check what is published on npm, so "highest" can be behind
 
 ## Where "deprecated" comes from
 
-A component is [deprecated](/docs/reference/glossary#deprecated) in the dashboard only when a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks it superseded or retired: a record on the component itself, on the component it is part of (a record on `Card` covers `Card.Header`), or on its whole package.
+A component is [deprecated](/docs/reference/glossary#deprecated) in the dashboard only when a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks it replaced or retired: a record on the component itself, on the component it is part of (a record on `Card` covers `Card.Header`), or on its whole package.
 
 A record names a package, so it covers that package wherever a scan finds it: components imported from the package, web components the scan links to it, and components defined in a monorepo's workspace package of that name. A record on `@acme/ui` covers `Button` in the repos that install `@acme/ui` and in the monorepo where `@acme/ui` is written. Two repos whose workspace packages share a name, such as `@repo/ui`, share its records too. A component defined in the repo outside any workspace package belongs to no package, so it can't be deprecated.
 
@@ -68,23 +68,23 @@ Deprecated counts differ by page. A repo page counts each deprecated component o
 
 ## How a migration's progress is counted
 
-A superseded record names a deprecated side and a successor, each a component or a whole package. A side that names a component counts it from every entry point, such as `@acme/ui` and `@acme/ui/card`, together with its parts, such as `Card.Header` for `Card`, unless a part has a record of its own. Progress reads **N% migrated**:
+A **Replaced** record names a deprecated side and its replacement, each a component or a whole package. A side that names a component counts it from every entry point, such as `@acme/ui` and `@acme/ui/card`, together with its parts, such as `Card.Header` for `Card`, unless a part has a record of its own. Progress reads **N% migrated**:
 
 ```text
-N% migrated = successor uses ÷ (deprecated-side uses + successor uses)
+N% migrated = replacement uses ÷ (deprecated-side uses + replacement uses)
 ```
 
-If `checkout` has 30 uses of `LegacyButton` and 90 of its successor `Button`, it reads **75% migrated**.
+If `checkout` has 30 uses of `LegacyButton` and 90 of its replacement `Button`, it reads **75% migrated**.
 
 The denominator is the pair, not every use in the repo. A migration asks how much of the old one is left and how much of the new one has arrived, so the rest of the repo doesn't dilute it. A repo that also uses a charting library and a router shows the same progress as a repo that uses nothing else.
 
-The successor side counts every use of the successor within the scope, including uses that never replaced anything. On a repo's **Adoption** tab the scope is that repo; on the **charts** page it is every repo. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page reads **94.2% migrated** (490 ÷ 520), while `checkout`'s **Adoption** tab still reads 75%.
+The replacement side counts every use of the replacement within the scope, including uses that never replaced anything. On a repo's **Adoption** tab the scope is that repo; on the **charts** page it is every repo. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page reads **94.2% migrated** (490 ÷ 520), while `checkout`'s **Adoption** tab still reads 75%.
 
-If no scan within the scope has the successor component yet, the successor side counts every component of its package instead, and the row names the package rather than the component.
+If no scan within the scope has the replacement component yet, the replacement side counts every component of its package instead, and the row names the package rather than the component.
 
-A retirement has no successor, so there is nothing to divide. It reads **N remaining**, the uses that remain.
+A retirement has no replacement, so there is nothing to divide. It reads **N left**, the uses still in the code.
 
-A record is complete when the deprecated side has no uses in any latest scan within the scope. So a migration can be complete on one repo's **Adoption** tab and still active on the **charts** page. A repo that never used `LegacyButton` has no row for it on its **Adoption** tab.
+A record is complete when the deprecated side has no uses in any latest scan within the scope. So a migration can be complete on one repo's **Adoption** tab and still in progress on the **charts** page. A repo that never used `LegacyButton` has no row for it on its **Adoption** tab.
 
 ## Why there is no single adoption percentage
 

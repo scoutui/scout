@@ -5,11 +5,11 @@ sidebar_label: "Diagnostics"
 
 # Diagnostics reference
 
-A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints its warnings to the terminal at the end of the run ([the rest with `--debug`](#terminal-output)) and writes every diagnostic to the artifact's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array.
+A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints its warnings to the terminal at the end of the run ([the rest with `--debug`](#terminal-output)) and writes every diagnostic to the scan file's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array.
 
 A use whose import points at a missing file, whose package isn't installed, or whose name nothing imports isn't a diagnostic. The scan keeps it in `occurrences[]` as an [unmatched use](/docs/reference/artifact#unresolved-occurrences), with the reason.
 
-On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), a scan with diagnostics still writes the artifact and exits `0`.
+On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), a scan with diagnostics still writes the scan file and exits `0`.
 
 To work out why a component is missing from your results, start with [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan). This page lists every code.
 
@@ -224,19 +224,19 @@ These tags aren't counted as uses and report no diagnostic:
 
 ## Terminal output
 
-At the end of a scan, before the summary, the scan prints each `warning` to stderr on its own line, starting `Warning:`. `dependency-not-installed` lines come last. The terminal lines don't show the codes; the artifact does.
+At the end of a scan, before the summary, the scan prints each `warning` to stderr on its own line, starting `Warning:`. `dependency-not-installed` lines come last. The terminal lines don't show the codes; the scan file does.
 
 ```text
 Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this use isn't counted.
 ```
 
-[`--quiet`](/docs/reference/cli#scan) turns off these lines. The artifact still lists every diagnostic. `auto-import-manifest-missing` prints once, as the scan starts, so it shows even with `--quiet`.
+[`--quiet`](/docs/reference/cli#scan) turns off these lines. The scan file still lists every diagnostic. `auto-import-manifest-missing` prints once, as the scan starts, so it shows even with `--quiet`.
 
-The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): one line per code, with a count. The individual entries are only in the artifact.
+The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): one line per code, with a count. The individual entries are only in the scan file.
 
 ```text
 1 component passed in as a prop or argument wasn't counted.
 5 renders couldn't be followed to a component and weren't counted as uses.
 ```
 
-The artifact records each diagnostic once. `cycle-detected` and `chain-too-deep` appear once per package file and export, however many of your files import the component.
+The scan file records each diagnostic once. `cycle-detected` and `chain-too-deep` appear once per package file and export, however many of your files import the component.

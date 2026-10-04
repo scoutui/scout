@@ -62,8 +62,8 @@ function Migration(): React.ReactElement {
       <div className={shared.col}>
         <StageHead id="migration" title="Mark what's replacing what, and watch the move" />
         <p className={clsx(shared.body, styles.lead)}>
-          Supersede a whole package or a single component, and every scan shows how much has moved to its
-          replacement.
+          Mark a whole package or a single component as replaced, and every scan shows how much has moved to
+          its replacement.
         </p>
         <MigrationChart />
       </div>

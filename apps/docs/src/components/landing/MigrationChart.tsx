@@ -23,7 +23,7 @@ const x = (i: number) => `${(i / (MONTHS.length - 1)) * 100}%`;
 const lastLegacy = LEGACY[LEGACY.length - 1];
 const lastSuccessor = SUCCESSOR[SUCCESSOR.length - 1];
 
-const SUMMARY = `Two migrations. The whole @acme/legacy-ui package, superseded by @acme/ui: ${PACKAGE_MIGRATION.now} migrated, ${PACKAGE_MIGRATION.delta}. Its chart shows uses of @acme/legacy-ui falling while uses of @acme/ui rose, over twelve monthly scans across all repos. One component, the legacy Button, superseded by the Button from @acme/ui: ${BUTTON_MIGRATION.now} migrated, ${BUTTON_MIGRATION.delta}.`;
+const SUMMARY = `Two migrations. The whole @acme/legacy-ui package, replaced by @acme/ui: ${PACKAGE_MIGRATION.now} migrated, ${PACKAGE_MIGRATION.delta}. Its chart shows uses of @acme/legacy-ui falling while uses of @acme/ui rose, over twelve monthly scans across all repos. One component, the legacy Button, replaced by the Button from @acme/ui: ${BUTTON_MIGRATION.now} migrated, ${BUTTON_MIGRATION.delta}.`;
 
 /* The package migration's pair, keyed as its chart draws them. */
 const PACKAGE_FROM = (
@@ -48,7 +48,7 @@ export default function MigrationChart(): React.ReactElement {
   const draw = useDrawOnView<HTMLElement>();
   return (
     <figure ref={draw.ref} className={styles.figure} dir="ltr" data-draw={draw.state}>
-      <TrackingHeading>Migrations · 2 active</TrackingHeading>
+      <TrackingHeading>Migrations · 2 in progress</TrackingHeading>
       <div className={clsx(shared.panel, styles.panel)} role="img" aria-label={SUMMARY}>
         <TrackingRow
           label={PACKAGE_FROM}

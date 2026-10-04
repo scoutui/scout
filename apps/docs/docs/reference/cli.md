@@ -13,7 +13,7 @@ scout <command> [options]
 
 | Command | What it does |
 | --- | --- |
-| [`scan`](#scan) | Scans the repo and uploads the scan to the dashboard. With `--dry-run`, writes the [artifact](/docs/reference/glossary#artifact) to `scout-scan.json` instead. |
+| [`scan`](#scan) | Scans the repo and uploads the scan to the dashboard. With `--dry-run`, writes the [scan file](/docs/reference/glossary#scan-file) to `scout-scan.json` instead. |
 | [`backfill`](#backfill) | Scans past commits on the tracked branch, one a week, and uploads them to the dashboard. |
 | [`init`](#init) | Writes a starter `scout.config.json`. |
 | [`auth`](#auth) | Signs in to a dashboard, signs out, or shows who you are signed in as. Takes a subcommand: `login`, `logout` or `status`. |
@@ -95,7 +95,7 @@ Most runs need no flags: `scout scan` reads `scout.config.json` in the current d
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
-| `--dry-run` | none | off | Scans without uploading, and writes the artifact to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
+| `--dry-run` | none | off | Scans without uploading, and writes the scan file to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
 | `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
 
 After the scan, a summary counts the files read, the components found and their uses. On a dry run in a terminal, it also lists up to five of the most used components, with the package or file each comes from. An upload, or output that isn't a terminal, such as a CI job's log, leaves the list out.
@@ -147,8 +147,8 @@ If the dashboard already has a scan of this commit, `scan` prints `Commit <commi
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
-| `--repo-id <value>` | string | the config's `repoId`, else derived from the git remote (see [Repo identity](/docs/reference/config#repo-identity)) | [Repo id](/docs/reference/glossary#repo-id) written into the artifact. Replaces the config's `repoId`. |
-| `--repo-root <dir>` | path | the top of the git repository that holds the config file | Folder that file paths in the artifact are relative to. Relative to the current directory. |
+| `--repo-id <value>` | string | the config's `repoId`, else derived from the git remote (see [Repo identity](/docs/reference/config#repo-identity)) | [Repo id](/docs/reference/glossary#repo-id) written into the scan file. Replaces the config's `repoId`. |
+| `--repo-root <dir>` | path | the top of the git repository that holds the config file | Folder that file paths in the scan file are relative to. Relative to the current directory. |
 
 ## `backfill`
 

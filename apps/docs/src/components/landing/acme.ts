@@ -56,16 +56,16 @@ export const BUTTON_LEGACY: readonly number[] = [612, 612, 598, 580, 580, 522, 5
 function migration(successor: readonly number[], legacy: readonly number[]): { now: string; delta: string } {
   const share = (i: number) => successor[i] / (successor[i] + legacy[i]);
   const last = successor.length - 1;
-  return { now: formatPct(share(last)), delta: `up from ${formatPct(share(last - 1))} last scan` };
+  return { now: formatPct(share(last)), delta: `up from ${formatPct(share(last - 1))} previously` };
 }
 
-/** `@acme/legacy-ui` superseded by `@acme/ui`, the whole package. */
+/** `@acme/legacy-ui` replaced by `@acme/ui`, the whole package. */
 export const PACKAGE_MIGRATION = migration(
   SCANS.map((s) => s.ui),
   SCANS.map((s) => s.legacy),
 );
 
-/** The legacy `Button` superseded by `@acme/ui`'s `Button`, one component. */
+/** The legacy `Button` replaced by `@acme/ui`'s `Button`, one component. */
 export const BUTTON_MIGRATION = migration(BUTTON_UI, BUTTON_LEGACY);
 
 /** Uses of the retired `Carousel` from `@acme/legacy-ui` left in each scan, across all repos. The last 31 are in 2 repos. */
@@ -73,4 +73,4 @@ export const CAROUSEL_REMAINING: readonly number[] = [118, 118, 112, 104, 104, 9
 
 /** The retirement readout and its change, in the web app's words. */
 export const RETIRED_NOW = CAROUSEL_REMAINING[CAROUSEL_REMAINING.length - 1];
-export const RETIRED_DELTA = `down from ${CAROUSEL_REMAINING[CAROUSEL_REMAINING.length - 2]} last scan`;
+export const RETIRED_DELTA = `down from ${CAROUSEL_REMAINING[CAROUSEL_REMAINING.length - 2]} previously`;
