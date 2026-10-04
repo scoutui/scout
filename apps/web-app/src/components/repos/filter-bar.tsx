@@ -60,7 +60,7 @@ export function FilterBar({
   const diffParts = diffShown === null ? [] : movementParts(diffShown);
   const inkCount = (n: number) => <span className="font-medium text-foreground">{n.toLocaleString()}</span>;
   const setTags = (tags: string[]) => onChange({ ...facets, tags });
-  const othersOn = diffShown === null && isFiltering({ ...facets, deprecated: null, changed: false });
+  const othersOn = diffShown === null && isFiltering({ ...facets, deprecated: null, changed: false, usedIn: null });
 
   // Deprecation and "since previous scan" are statuses, not facets: each is a
   // StatusFilterChip beside the Filter menu.

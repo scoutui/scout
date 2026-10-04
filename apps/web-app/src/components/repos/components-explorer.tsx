@@ -92,7 +92,7 @@ export function ComponentsExplorer({
         packageFolders={packageFolders}
         resultCount={filtered.length}
         total={scoped.length}
-        deprecatedTotal={deprecatedTotal}
+        deprecatedTotal={facets.usedIn ? scoped.filter((r) => r.deprecated).length : deprecatedTotal}
         diffShown={diffShown}
         filtering={isFiltering({ ...facets, changed: false, usedIn: null })}
         canEdit={canEdit}

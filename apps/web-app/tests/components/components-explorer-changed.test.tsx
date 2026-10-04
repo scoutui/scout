@@ -259,6 +259,18 @@ describe("ComponentsExplorer ?used-in", () => {
     expect(screen.getByText(sentence("1 of 2 components"))).toBeInTheDocument();
   });
 
+  // Every row is deprecated: the repo has 3, @example/web has 2, and `q=shared` leaves 1.
+  it.each([
+    { when: "Used in and a search", query: "used-in=@example/web&q=shared", text: "deprecated1 of 2" },
+    { when: "only Used in", query: "used-in=@example/web", text: "deprecated2" },
+    { when: "only a search", query: "q=shared", text: "deprecated1 of 3" },
+  ])("with $when, the deprecated chip reads $text", ({ query, text }) => {
+    window.history.replaceState(null, "", `http://localhost:3000/repos/r1?${query}`);
+    const deprecatedRows = usedInRows.map((r) => ({ ...r, deprecated: true }));
+    render(<ComponentsExplorer repoId="r1" rows={deprecatedRows} deprecatedTotal={3} diff={usedInDiff} packages={packages} canEdit />);
+    expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe(text);
+  });
+
   it("keeps the pill of a package the scan doesn't have and says no components match", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?used-in=@example/renamed");
     renderExplorer();
