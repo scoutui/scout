@@ -19,18 +19,9 @@ If the list reads **No repos scanned yet.**, no scan has been uploaded. The page
 
 ## Read a repo page
 
-The header line gives the repo's git remote, the **commit** and **branch** the scan ran on, the date of that commit (after **committed**), and how many packages its components come from. When the remote is on GitHub or GitLab, the commit links to it there. When the repo uses more than one framework, another line counts its components per framework.
+The header line gives the repo's git remote, the **commit** and **branch** the scan ran on, the date of that commit (after **committed**), and how many packages its components come from. When the remote is on GitHub or GitLab, the commit links to it there. When the repo uses more than one framework, a second line counts its components per framework.
 
-When the scan left part of the repo out, a line under the header says what it covered, with paths from the repo root:
-
-- **Scanned: everything except `apps/playground/`.** The config's `exclude` names `apps/playground`.
-- **Scanned: everything except `test/`, `examples/`, and files matching 2 patterns.** The config's `exclude` names the `test` and `examples` folders and two glob patterns, such as `**/*.stories.*`.
-- **Scanned: `apps/web/` only.** The config is in `apps/web` and has no `include`.
-- **Scanned:** `src/**/*.{ts,tsx,jsx,js,vue}` **only.** The config's `include` has a pattern such as the one `init` writes.
-
-The line names the folders and files `exclude` leaves out and counts its glob patterns. To see the patterns, hover over the count. A scan of the whole repo has no line, and neither does a scan uploaded by an older CLI version. To change what's scanned, see [Configure a scan](/docs/guides/configure-a-scan).
-
-Above the tabs, a status line tells you what needs attention:
+Below it, a status line tells you what needs attention:
 
 - **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
 - **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table. A repo with one scan reads **first scan · nothing to compare**.

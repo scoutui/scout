@@ -253,7 +253,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
     });
   });
 
-  it("gives the components table the scan's packages and the header the scan's scope", async () => {
+  it("gives the components table the scan's packages", async () => {
     await withReadModelDatabase(async pool => {
       await publishScan(pool, baseline("whole-repo-scope"), { uploadedByUserId: null });
       driver = new PostgresDriver(pool);
@@ -266,7 +266,6 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
         { name: "@example/web", folder: "apps/web" },
         { name: "@example/shared-ui", folder: "packages/shared-ui" },
       ]);
-      expect(propsFor(tree, "RepoDetailHeader")?.detail).toMatchObject({ scope: { folder: "" } });
     });
   });
 

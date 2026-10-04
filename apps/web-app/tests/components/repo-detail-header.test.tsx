@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
 import { RepoDetailHeader } from "@/components/repos/repo-detail-header";
 
@@ -129,21 +129,5 @@ describe("RepoDetailHeader package count", () => {
   it("counts a single package in the singular", () => {
     render(<RepoDetailHeader detail={makeDetail({ packageCount: 1 })} recentScans={[]} />);
     expect(screen.getByText("1 package")).toBeInTheDocument();
-  });
-});
-
-describe("RepoDetailHeader scanned line", () => {
-  it("says which folders the scan left out, in mono, and lists its glob patterns in the dotted count's title", () => {
-    render(
-      <RepoDetailHeader
-        detail={makeDetail({ scope: { folder: "", exclude: ["apps/playground", "**/*.test.*"], packages: [] } })}
-        recentScans={[]}
-      />,
-    );
-    const line = screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "Scanned: everything except apps/playground/, and files matching 1 pattern.");
-    expect(within(line).getByText("apps/playground/")).toHaveClass("font-mono");
-    const count = within(line).getByText("files matching 1 pattern");
-    expect(count).toHaveAttribute("title", "**/*.test.*");
-    expect(count).toHaveClass("decoration-dotted");
   });
 });
