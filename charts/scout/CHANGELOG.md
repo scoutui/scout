@@ -1,5 +1,9 @@
 # scout chart
 
+## 0.3.0
+
+- New: `auth.admins` (emails of people who are always Admins) and `auth.adminGroup` (a sign-in provider group whose members are Admins). Set at least one before upgrading, or the install fails with a message saying so. An email counts only when your provider marks it verified.
+
 ## 0.2.0
 
 - Run web app 0.2.0 by default.

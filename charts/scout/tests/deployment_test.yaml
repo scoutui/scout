@@ -7,6 +7,7 @@ set:
   auth.url: https://scout.example.com
   auth.oidc.issuerUrl: https://auth.example.com/application/o/scout/
   auth.oidc.clientId: scout
+  auth.admins: [admin@example.com]
 tests:
   - it: deployment reads the selected database password key alongside auth secrets
     template: deployment.yaml

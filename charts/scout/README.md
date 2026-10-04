@@ -19,6 +19,7 @@ Before you upgrade, read the entries in [`CHANGELOG.md`](CHANGELOG.md) newer tha
 | `auth.url` | The address people reach the dashboard on |
 | `auth.sessionSecretRef` | The Secret that holds the session key |
 | `auth.oidc.issuerUrl`, `auth.oidc.clientId`, `auth.oidc.clientSecretRef` | Sign-in through your OpenID Connect provider |
+| `auth.admins` or `auth.adminGroup` | Who is an Admin: their email addresses, or a group in your sign-in provider. Set at least one |
 | `ingress` | How traffic reaches the web server |
 | `postgresql.enabled` or `database.host` | The bundled Postgres, or your own |
 | `auth.requiredGroup`, `auth.oidc.allowedDomains` | Who may sign in, when your provider doesn't decide that itself |

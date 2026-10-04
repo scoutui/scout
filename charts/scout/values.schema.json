@@ -189,7 +189,9 @@
             "allowedDomains": { "type": "string" }
           }
         },
-        "requiredGroup": { "type": "string" }
+        "requiredGroup": { "type": "string" },
+        "admins": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "adminGroup": { "type": "string" }
       }
     },
     "database": {
