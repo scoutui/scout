@@ -17,8 +17,9 @@ describe("ChartMenu", () => {
   ])("offers $item on a $visibility chart and saves it as $next", async ({ visibility, item, absent, next }) => {
     render(<ChartMenu id="chart 1" canDuplicate={false} visibility={visibility} />);
     open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: item }));
+    const offered = await screen.findByRole("menuitem", { name: item });
     expect(screen.queryByRole("menuitem", { name: absent })).toBeNull();
+    fireEvent.click(offered);
     await waitFor(() => expect(actions.setDashboardVisibility).toHaveBeenCalledWith("chart 1", next));
   });
 

@@ -350,7 +350,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       open: async () => (await import("@/app/governance/page")).default(),
     },
     {
-      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an Admin for access.",
+      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can make charts. Ask an Admin for access.",
       open: async () => (await import("@/app/charts/new/page")).default({ searchParams: Promise.resolve({}) }),
     },
     {

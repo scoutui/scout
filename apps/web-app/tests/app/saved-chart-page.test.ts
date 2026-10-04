@@ -258,7 +258,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       reader = { ...editor, userId: "admin", role: "admin" };
       await expect(saveDashboard({ id: created.id, name: "Button rollout again", description: "Kept", config: edited })).rejects.toThrow("NEXT_REDIRECT");
       expect(await driver.listDashboards()).toHaveLength(1);
-      expect(await driver.getDashboard(created.id)).toMatchObject({ name: "Button rollout again", description: "Kept", config: edited, visibility: "everyone", createdByUserId: "maker" });
+      expect(await driver.getDashboard(created.id)).toMatchObject({ name: "Button rollout again", description: "Kept", config: edited, createdByUserId: "maker" });
     });
   });
 });

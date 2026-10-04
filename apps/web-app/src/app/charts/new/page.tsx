@@ -22,7 +22,7 @@ export default async function NewDashboardPage({
 }) {
   const identity = await identify({ browser: true });
   if (!can(identity, "edit")) {
-    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an Admin for access." />;
+    return <EmptyState titleAs="h1" title="Only Editors can make charts. Ask an Admin for access." />;
   }
   const rawFrom = (await searchParams).from;
   const from = Array.isArray(rawFrom) ? rawFrom[0] : rawFrom;
