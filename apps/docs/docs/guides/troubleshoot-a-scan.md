@@ -30,7 +30,7 @@ If it stops with `Error: Couldn't scan: git failed in <path>.`, run `git status`
 
 ## The scan reads 0 files, or fewer than you expect
 
-If the scan stops with `Error: No files match "include"`, or the summary counts fewer files than your repo has, your `include` patterns don't match your code. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
+If the scan stops with `Error: No files match "include"`, your `include` patterns don't match your code. If the summary counts fewer files than your repo has, `include` or `exclude` leaves some of them out. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
 
 If your config has no `include`, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder. When there are none, it stops with `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront.` Run the scan from the folder that holds your source files, or check that `exclude` doesn't leave them all out.
 

@@ -96,10 +96,16 @@ The summary counts the files it read:
 Scanned 3 files in 0.1s: 6 components, 5 uses.
 ```
 
-The first number should be close to the number of source files you expect. If it's too low, widen `include` or narrow `exclude`. If it's too high, add to `exclude`. If `include` matches no files at all, the scan stops before reading anything:
+The first number should be close to the number of source files you expect. If it's too low, narrow `exclude`, or widen `include` if your config has one. If it's too high, add to `exclude`. If there are no files to scan at all, the scan stops before reading anything. When `include` matches no files:
 
 ```
 Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,vue}). Point it at your source files and scan again.
+```
+
+When the config has no `include`, and the config's folder holds no source files or `exclude` leaves them all out:
+
+```
+Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.
 ```
 
 Code inside a submodule or another clone below the config's folder isn't scanned, so an `include` pattern that points into one matches no files.

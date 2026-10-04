@@ -82,7 +82,7 @@ A package page's **Components** table keeps its search and **deprecated** chip i
 ## Good to know
 
 - A package that only re-exports components from another package isn't listed. If your code imports `Button` through `@acme/all`, which re-exports it from `@acme/ui`, `Button` counts under `@acme/ui`, at the version of `@acme/ui` that is installed.
-- A dash (`—`) in **Version** means no version was recorded: a workspace package holding components [defined in the repo](/docs/reference/glossary#local), or an installed package whose version the scan could not read.
+- A dash (`—`) in **Version** means no version was recorded: a package of components [defined in the repo](/docs/reference/glossary#local) (a workspace package, or the repo's [root package](/docs/reference/artifact#root-package)), or an installed package whose version the scan could not read.
 - A [web component](/docs/reference/glossary#web-component) is listed under a package only when the scan links the tag to it. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 - Deprecated counts add up across repos. On the packages list and a package page, a deprecated component used in three repos counts three times. See [Where "deprecated" comes from](/docs/explanation/dashboard/reading-the-numbers#where-deprecated-comes-from).
 

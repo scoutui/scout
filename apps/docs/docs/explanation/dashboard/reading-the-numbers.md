@@ -106,5 +106,6 @@ Each series counts its own uses without checking the others. When one component 
 - Two tags match the same package.
 - A chart holds a tag and a package under it, or a package and a component from it.
 - A component defined in the repo lives in a workspace package that a tag or a package series matches. It counts there and under **local**.
+- A tag or a package series matches the repo's [root package](/docs/reference/artifact#root-package). The repo's components outside every workspace package count there and under **local**.
 
 On a share chart, the chart builder warns when series can share components. Where series can overlap, read their shares as a comparison between series, not a breakdown of the code. For a clean breakdown, pick series that can't contain each other, such as library tags whose patterns match different packages.
