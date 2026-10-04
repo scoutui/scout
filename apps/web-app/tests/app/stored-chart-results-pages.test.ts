@@ -154,7 +154,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const editorTree = await page();
       expect(hrefsIn(editorTree)).toContain("/charts/new");
       const [governanceEmpty, chartsEmpty] = allPropsFor(editorTree, "EmptyState");
-      expect(governanceEmpty?.description).toBe("Mark a component as superseded or retired in Governance to track its progress here.");
+      expect(governanceEmpty?.description).toBe("Mark a component as replaced or retired in Governance to track its progress here.");
       expect(hrefsIn(governanceEmpty?.action)).toEqual(["/governance"]);
       expect(chartsEmpty?.description).toBe("Compare libraries, packages or components across scans.");
       expect(hrefsIn(chartsEmpty?.action)).toEqual(["/charts/new"]);
