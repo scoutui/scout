@@ -19,7 +19,7 @@ const governance: GovernanceRecord[] = [
 ];
 
 const dashboard = (id: string, config: DashboardConfig): Dashboard => ({
-  id, name: id, description: null, config, createdByUserId: null, createdAt: "2026-01-01", updatedAt: "2026-01-01",
+  id, name: id, description: null, config, visibility: "everyone", createdByUserId: null, createdBy: null, createdAt: "2026-01-01", updatedAt: "2026-01-01",
 });
 const estateDashboard = dashboard("estate-trend", { scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "core" }, { kind: "local" }], chartType: "trend", metric: "count" });
 const repoDashboard = dashboard("repo-bars", { scope: { kind: "repo", repoId: "repo-a" }, cohorts: [{ kind: "package", packageName: "@sample/core" }], chartType: "bars", metric: "count" });

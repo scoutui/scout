@@ -40,8 +40,8 @@ describe.skipIf(!process.env.DATABASE_URL)("stored chart results", { timeout: 30
     await withReadModelDatabase(async pool => {
       const driver = new PostgresDriver(pool);
       await driver.createGovernance({ grain: "package", targetPackage: "@x/wc", targetExport: null, disposition: { kind: "retired", reason: "Retired" } });
-      const estate = await driver.upsertDashboard({ name: "Estate", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
-      const repo = await driver.upsertDashboard({ name: "Repo", description: null, config: { scope: { kind: "repo", repoId: "repo-b" }, cohorts: [{ kind: "package", packageName: "@x/wc" }], chartType: "trend", metric: "count" } });
+      const estate = await driver.upsertDashboard({ name: "Estate", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, visibility: "everyone" });
+      const repo = await driver.upsertDashboard({ name: "Repo", description: null, config: { scope: { kind: "repo", repoId: "repo-b" }, cohorts: [{ kind: "package", packageName: "@x/wc" }], chartType: "trend", metric: "count" }, visibility: "everyone" });
       await publishScan(pool, tinyArtifact({ repoId: "repo-a", scanId: "scan-a", scannedAt: "2026-09-20T10:00:00.000Z" }), { uploadedByUserId: null });
       await publishScan(pool, tinyArtifact({ repoId: "repo-b", scanId: "scan-b", scannedAt: "2026-09-21T10:00:00.000Z" }), { uploadedByUserId: null });
       await buildResults(pool);
@@ -62,8 +62,8 @@ describe.skipIf(!process.env.DATABASE_URL)("stored chart results", { timeout: 30
   it("treats rows stored in another format as absent", async () => {
     await withReadModelDatabase(async pool => {
       const driver = new PostgresDriver(pool);
-      const kept = await driver.upsertDashboard({ name: "Kept", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
-      await driver.upsertDashboard({ name: "Stale", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      const kept = await driver.upsertDashboard({ name: "Kept", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, visibility: "everyone" });
+      await driver.upsertDashboard({ name: "Stale", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, visibility: "everyone" });
       await publishScan(pool, tinyArtifact({ repoId: "repo-a", scanId: "scan-a" }), { uploadedByUserId: null });
       await buildResults(pool);
       await pool.query("UPDATE chart_results SET format_version = format_version + 1 WHERE key <> $1", [chartResultKey.preview(kept.id)]);

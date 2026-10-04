@@ -4,7 +4,7 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { GovernanceTargetConflictError, ReadModelUnavailableError, type ScanFallback, type SkippedScans, type StorageDriver } from "../storage.js";
 import type {
-  Tag, TagColour, TagInput, Dashboard, DashboardInput, DashboardConfig, DashboardScope,
+  Tag, TagColour, TagInput, Dashboard, DashboardInput, DashboardConfig, DashboardScope, ChartVisibility,
   GovernanceRecord, GovernanceInput, Disposition,
 } from "../dto.js";
 import {
@@ -22,14 +22,21 @@ import { newestScanFirst, newestScanFirstSql } from "../scan-order.js";
 import { ReadModelReader, scanModelReady, type ScanModelHeader } from "./read-model-reader.js";
 
 type DashboardDbRow = {
-  id: string; name: string; description: string | null; config: DashboardConfig;
-  created_by_user_id: string | null; created_at: string | Date; updated_at: string | Date;
+  id: string; name: string; description: string | null; config: DashboardConfig; visibility: ChartVisibility;
+  created_by_user_id: string | null; creator_name: string | null; creator_email: string | null;
+  created_at: string | Date; updated_at: string | Date;
 };
+
+const dashboardColumns = sql`
+  dashboards.id, dashboards.name, dashboards.description, dashboards.config, dashboards.visibility,
+  dashboards.created_by_user_id, creator.name AS creator_name, creator.email AS creator_email,
+  dashboards.created_at, dashboards.updated_at
+  FROM dashboards LEFT JOIN "user" creator ON creator.id = dashboards.created_by_user_id`;
 
 function toDashboard(r: DashboardDbRow): Dashboard {
   return {
-    id: r.id, name: r.name, description: r.description, config: r.config,
-    createdByUserId: r.created_by_user_id,
+    id: r.id, name: r.name, description: r.description, config: r.config, visibility: r.visibility,
+    createdByUserId: r.created_by_user_id, createdBy: r.creator_name ?? r.creator_email,
     createdAt: new Date(r.created_at).toISOString(), updatedAt: new Date(r.updated_at).toISOString(),
   };
 }
@@ -356,14 +363,12 @@ export class PostgresDriver implements StorageDriver {
   // ---- Dashboards ----
 
   async listDashboards(): Promise<Dashboard[]> {
-    const result = await this.db.execute(sql<DashboardDbRow>`
-      SELECT id, name, description, config, created_by_user_id, created_at, updated_at FROM dashboards ORDER BY name`);
+    const result = await this.db.execute(sql<DashboardDbRow>`SELECT ${dashboardColumns} ORDER BY dashboards.name`);
     return (result.rows as DashboardDbRow[]).map(toDashboard);
   }
 
   async getDashboard(id: string): Promise<Dashboard | null> {
-    const result = await this.db.execute(sql<DashboardDbRow>`
-      SELECT id, name, description, config, created_by_user_id, created_at, updated_at FROM dashboards WHERE id = ${id}`);
+    const result = await this.db.execute(sql<DashboardDbRow>`SELECT ${dashboardColumns} WHERE dashboards.id = ${id}`);
     const row = (result.rows as DashboardDbRow[])[0];
     return row ? toDashboard(row) : null;
   }
@@ -373,10 +378,11 @@ export class PostgresDriver implements StorageDriver {
     const configJson = JSON.stringify(input.config);
     return this.writeWithResults(async (db, client) => {
       await db.execute(sql`
-        INSERT INTO dashboards (id, name, description, config, created_by_user_id, updated_at)
-        VALUES (${id}, ${input.name}, ${input.description}, ${configJson}::jsonb, ${input.createdByUserId ?? null}, now())
+        INSERT INTO dashboards (id, name, description, config, visibility, created_by_user_id, updated_at)
+        VALUES (${id}, ${input.name}, ${input.description}, ${configJson}::jsonb, ${input.visibility}, ${input.createdByUserId ?? null}, now())
         ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name, description = EXCLUDED.description, config = EXCLUDED.config, updated_at = now()
+          name = EXCLUDED.name, description = EXCLUDED.description, config = EXCLUDED.config,
+          visibility = EXCLUDED.visibility, updated_at = now()
       `);
       const stored = await new PostgresDriver(this.pool, client).getDashboard(id);
       if (!stored) throw new Error(`upsertDashboard: row ${id} missing after write`);

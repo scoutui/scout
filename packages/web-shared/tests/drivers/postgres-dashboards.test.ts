@@ -6,6 +6,7 @@ const baseInput: DashboardInput = {
   name: "web vs legacy",
   description: null,
   config: { scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "trend", metric: "count" },
+  visibility: "only-me",
 };
 
 /** Seeded per test: the FK on created_by_user_id is real once migrated. */
@@ -29,9 +30,10 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver dashboards", () => {
     expect(await db.driver.getDashboard(created.id)).toEqual(created);
     expect(created.createdByUserId).toBeNull();
 
-    const updated = await db.driver.upsertDashboard({ id: created.id, name: "renamed", description: "d", config: baseInput.config });
+    const updated = await db.driver.upsertDashboard({ id: created.id, name: "renamed", description: "d", config: baseInput.config, visibility: "everyone" });
     expect(updated.name).toBe("renamed");
     expect(updated.description).toBe("d");
+    expect(updated.visibility).toBe("everyone");
     expect(updated.createdAt).toBe(created.createdAt); // ON CONFLICT preserves created_at
 
     await db.driver.withReadSnapshot(async snapshot => {
@@ -46,14 +48,24 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver dashboards", () => {
 
   it("round-trips the config jsonb structurally", async () => {
     const cfg = { scope: { kind: "repo" as const, repoId: "example-web" }, cohorts: [{ kind: "tag" as const, tagId: "web" }, { kind: "local" as const }], chartType: "stacked-share" as const, metric: "share" as const };
-    const created = await db.driver.upsertDashboard({ name: "mix", description: null, config: cfg });
+    const created = await db.driver.upsertDashboard({ name: "mix", description: null, config: cfg, visibility: "everyone" });
     expect((await db.driver.getDashboard(created.id))?.config).toEqual(cfg);
   });
 
   it("update cannot overwrite createdByUserId (immutable creator)", async () => {
     const created = await db.driver.upsertDashboard({ ...baseInput, createdByUserId: CREATOR });
-    const updated = await db.driver.upsertDashboard({ id: created.id, name: "x", description: null, config: baseInput.config, createdByUserId: "attacker" });
+    const updated = await db.driver.upsertDashboard({ ...baseInput, id: created.id, name: "x", createdByUserId: "attacker" });
     expect(updated.createdByUserId).toBe(CREATOR);
+  });
+
+  it("names its creator, by email when they have no name, and nobody once they're deleted", async () => {
+    await db.pool.query(`INSERT INTO "user" (id, email) VALUES ('u2', 'no-name-dashboards-test@example.com') ON CONFLICT (id) DO NOTHING`);
+    const named = await db.driver.upsertDashboard({ ...baseInput, createdByUserId: CREATOR });
+    const unnamed = await db.driver.upsertDashboard({ ...baseInput, name: "unnamed", createdByUserId: "u2" });
+    expect(named.createdBy).toBe("Creator");
+    expect(unnamed.createdBy).toBe("no-name-dashboards-test@example.com");
+    await db.pool.query(`DELETE FROM "user" WHERE id = 'u2'`);
+    expect(await db.driver.getDashboard(unnamed.id)).toMatchObject({ createdByUserId: null, createdBy: null });
   });
 
   it("queues one chart results job with each upsert and delete", async () => {

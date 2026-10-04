@@ -50,6 +50,7 @@ describe("DashboardInputSchema", () => {
       name: "web vs legacy",
       description: null,
       config: { scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "trend", metric: "count" },
+      visibility: "only-me",
     });
     expect(input.id).toBeUndefined();
   });
@@ -62,7 +63,9 @@ describe("DashboardSchema", () => {
       name: "web vs legacy",
       description: null,
       config: { scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "trend", metric: "count" },
+      visibility: "everyone",
       createdByUserId: null,
+      createdBy: null,
       createdAt: "2026-06-04T00:00:00Z",
       updatedAt: "2026-06-04T00:00:00Z",
     });

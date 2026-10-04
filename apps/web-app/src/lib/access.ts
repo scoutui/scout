@@ -1,3 +1,5 @@
+import type { Dashboard } from "@scoutui/web-shared";
+
 export const ROLES = ["viewer", "editor", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 export const ROLE_NAMES: Record<Role, string> = { viewer: "Viewer", editor: "Editor", admin: "Admin" };
@@ -6,7 +8,11 @@ export type RoleSource = "people" | "install" | "group";
 export type Person = { kind: "person"; userId: string; email: string; name: string | null; role: Role; roleSource: RoleSource };
 /** Who is asking, with their role as it stands for this request. `ci` is the install-wide upload secret. */
 export type Identity = Person | { kind: "ci" };
-export type Action = "view" | "edit" | "upload" | "manage-people" | "manage-repos";
+export type Action = "view" | "list" | "edit" | "upload" | "manage-people" | "manage-repos";
+/** The parts of a saved chart its access depends on. */
+export type ChartTarget = Pick<Dashboard, "createdByUserId" | "visibility">;
+/** What an action is about: a repo, or a saved chart. */
+export type Target = { repoId: string } | { chart: ChartTarget };
 
 export const EDIT_REFUSAL = "Only Editors can make changes. Ask an Admin for access.";
 export const UPLOAD_REFUSAL = {
@@ -15,16 +21,24 @@ export const UPLOAD_REFUSAL = {
 } as const;
 export const ADMIN_REFUSAL = "Only Admins can change roles. Ask an Admin for access.";
 export const REPO_ADMIN_REFUSAL = "Only Admins can remove scans and delete repos. Ask an Admin for access.";
+export const CHART_REFUSAL = "Only the chart's creator or an Admin can change it.";
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
-const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin", "manage-repos": "admin" };
+const NEEDS: Record<Exclude<Action, "view" | "list">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin", "manage-repos": "admin" };
 
-/** Whether `identity` may do `action`. `repoId` is the repo the action is about, when there is one. */
-export function can(identity: Identity | null, action: Action, _repoId?: string): boolean {
+/**
+ * Whether `identity` may do `action` to `target`. Anyone signed in may view a saved chart. It's listed for everyone,
+ * or only for its creator and Admins. Only its creator or an Admin may edit or delete it.
+ */
+export function can(identity: Identity | null, action: Action, target?: Target): boolean {
   if (identity === null) return false;
   if (identity.kind === "ci") return action === "upload";
   if (action === "view") return true;
-  return RANK[identity.role] >= RANK[NEEDS[action]];
+  const chart = target && "chart" in target ? target.chart : null;
+  const ownsOrAdmin = chart === null || chart.createdByUserId === identity.userId || identity.role === "admin";
+  if (action === "list") return chart?.visibility === "everyone" || ownsOrAdmin;
+  if (RANK[identity.role] < RANK[NEEDS[action]]) return false;
+  return action !== "edit" || ownsOrAdmin;
 }
 
 export type AdminSettings = { emails: ReadonlySet<string>; group: string | null };
