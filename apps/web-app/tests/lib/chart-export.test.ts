@@ -114,7 +114,17 @@ describe("chartExportTable", () => {
   ];
 
   it.each(cases)("%s", (_, chartConfig, view, expected) => {
-    expect(chartExportTable(chartConfig, view)).toEqual(expected);
+    expect(chartExportTable(chartConfig, view, "all")).toEqual(expected);
+  });
+
+  it("gives only the scans inside the range on screen", () => {
+    const series: CohortSeries[] = [
+      { ...web, points: [{ t: "2026-04-01T00:00:00Z", value: 30 }, { t: "2026-07-01T00:00:00Z", value: 40 }, { t: "2026-09-30T12:00:00Z", value: 50 }] },
+    ];
+    expect(chartExportTable(config("trend", "count"), { kind: "series", series, coverage }, "3m").rows).toEqual([
+      ["2026-07-01 00:00", "40"],
+      ["2026-09-30 12:00", "50"],
+    ]);
   });
 
   it("names a deprecated-only series as the chart does, and only that series", () => {
@@ -131,7 +141,7 @@ describe("chartExportTable", () => {
         { cohortKey: "package:element-plus", label: "element-plus", color: "", value: 32, componentCount: 20 },
       ],
     };
-    expect(chartExportTable(kitConfig, view).rows).toEqual([
+    expect(chartExportTable(kitConfig, view, "all").rows).toEqual([
       ["vue-ui-kits · deprecated only", "51"],
       ["element-plus", "32"],
     ]);

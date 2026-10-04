@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Ellipsis } from "lucide-react";
-import type { ChartVisibility, DashboardConfig, DashboardView } from "@scoutui/web-shared";
+import type { ChartVisibility, DashboardView } from "@scoutui/web-shared";
 import { setDashboardVisibility } from "@/app/charts/dashboard-actions";
 import { actionErrorMessage } from "@/lib/action-error";
 import { chartExportTable, exportFileName, toCsv, toTsv } from "@/lib/chart-export";
@@ -19,12 +19,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useChartExport } from "./chart-export-context";
+import { type ShownChart, useChartExport } from "./chart-export-context";
 
 /** How long "Image copied" and "Data copied" show. */
 const COPIED_MS = 1800;
 
-type ExportedChart = { title: string; config: DashboardConfig; view: DashboardView };
+type ExportedChart = ShownChart & { title: string; drawn: DashboardView };
 
 /**
  * A chart's "⋯" menu: its image and data for the chart on screen, Duplicate for people who can make charts, and sharing
@@ -41,9 +41,9 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
   const chart = useMemo<ExportedChart | null>(
     () =>
       exported && {
+        ...exported.chart,
         title: exported.title,
-        config: exported.chart.config,
-        view: visibleView(exported.chart.config, exported.chart.view, exported.chart.range).view,
+        drawn: visibleView(exported.chart.config, exported.chart.view, exported.chart.range).view,
       },
     [exported],
   );
@@ -79,10 +79,10 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
       () => showError("Couldn't copy the image. Try again."),
     );
   const downloadData = (shown: ExportedChart) =>
-    save(new Blob([toCsv(chartExportTable(shown.config, shown.view))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
+    save(new Blob([toCsv(chartExportTable(shown.config, shown.view, shown.range))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
   const copyData = (shown: ExportedChart) => {
     try {
-      navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view))).then(
+      navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range))).then(
         () => showCopied("Data copied"),
         () => showError("Couldn't copy the data. Try again."),
       );
@@ -93,7 +93,7 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
 
   const sharing = visibility === "private" || visibility === "everyone";
   if (!chart && !sharing && !canDuplicate) return null;
-  const image = chart !== null && hasFigure(chart.config, chart.view);
+  const image = chart !== null && hasFigure(chart.config, chart.drawn);
   const canCopyImage = image && typeof ClipboardItem !== "undefined" && typeof navigator.clipboard?.write === "function";
 
   return (
@@ -132,7 +132,7 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
 }
 
 function imageOf(shown: ExportedChart): Promise<Blob> {
-  return chartPng({ ...shown, host: window.location.host, exportedAt: new Date() });
+  return chartPng({ title: shown.title, config: shown.config, view: shown.drawn, host: window.location.host, exportedAt: new Date() });
 }
 
 function save(blob: Blob, fileName: string): void {

@@ -1,5 +1,5 @@
-import type { DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { barOrder, deprecatedOnlyKeys, expandRowShares, seriesToRows } from "@/lib/dashboard-chart-data";
+import type { ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
+import { barOrder, deprecatedOnlyKeys, expandRowShares, seriesToRows, visibleView } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY } from "@/lib/dashboard-format";
 
 export type ExportTable = { columns: string[]; rows: string[][] };
@@ -10,10 +10,10 @@ export function exportLabel(cohort: { cohortKey: string; label: string }, deprec
 }
 
 /**
- * The data a chart draws as a table: for a chart over time, one row per scan time and one column per series; for bars,
- * one row per bar in the order the chart draws them.
+ * The data a chart draws as a table: for a chart over time, one row per scan time inside `range` and one column per
+ * series; for bars, one row per bar in the order the chart draws them.
  */
-export function chartExportTable(config: DashboardConfig, view: DashboardView): ExportTable {
+export function chartExportTable(config: DashboardConfig, view: DashboardView, range: ChartRange): ExportTable {
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   const share = config.metric === "share" || config.chartType === "stacked-share";
   const cell = (value: number) => (share ? `${(value * 100).toFixed(1)}%` : String(value));
@@ -24,7 +24,8 @@ export function chartExportTable(config: DashboardConfig, view: DashboardView): 
     };
   }
   const keys = view.series.map((s) => s.cohortKey);
-  const rows = seriesToRows(view.series);
+  const { from } = visibleView(config, view, range);
+  const rows = seriesToRows(view.series).filter(({ ts }) => from === null || Number(ts) >= from);
   const values = config.chartType === "stacked-share" ? expandRowShares(rows, keys) : rows;
   return {
     columns: ["Committed (UTC)", ...view.series.map((s) => exportLabel(s, deprecatedOnly))],
