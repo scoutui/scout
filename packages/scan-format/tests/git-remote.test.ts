@@ -110,6 +110,17 @@ describe("parseGitRemote", () => {
     );
   });
 
+  it("strips several trailing slashes", () => {
+    expect(parseGitRemote("git@github.com:example-org/example.app///")?.path).toBe("example-org/example.app");
+  });
+
+  it("keeps a long run of slashes inside the path, quickly", () => {
+    const start = performance.now();
+    const parsed = parseGitRemote(`git@github.com:a${"/".repeat(40_000)}b`);
+    expect(performance.now() - start).toBeLessThan(500);
+    expect(parsed?.path).toBe(`a${"/".repeat(40_000)}b`);
+  });
+
   it("trims leading whitespace", () => {
     expect(parseGitRemote("  https://github.com/example-org/example.app  ")?.display).toBe(
       "github.com/example-org/example.app",

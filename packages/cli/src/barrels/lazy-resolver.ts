@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, relative } from "node:path";
 import { parse as babelParse, type ParserPlugin } from "@babel/parser";
 import {
@@ -300,7 +300,6 @@ export function findPackageRoot(absFile: string): { name: string; dir: string } 
 
 function safeReadFile(path: string): string | null {
   try {
-    if (!statSync(path).isFile()) return null;
     return readFileSync(path, "utf8");
   } catch {
     return null;

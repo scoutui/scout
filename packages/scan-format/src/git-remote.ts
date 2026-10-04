@@ -70,7 +70,10 @@ export function parseGitRemote(input: string | null | undefined): ParsedRemote |
   host = host.replace(/^[^@]*@/, "");
   if (!host) return null;
 
-  path = path.replace(/\.git$/, "").replace(/\/+$/, "");
+  path = path.replace(/\.git$/, "");
+  let end = path.length;
+  while (path[end - 1] === "/") end--;
+  path = path.slice(0, end);
   if (!path) return null;
 
   let href: string | undefined;
