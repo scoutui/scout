@@ -4,7 +4,7 @@ import type { ComponentDetail } from "@scoutui/web-shared";
 import { friendlyKind } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
 import { MigrationLine } from "@/components/governance/migration-line";
-import { KIND_LABEL, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
+import { KIND_LABEL, NO_PACKAGE_TITLE, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
 import { cn } from "@/lib/utils";
 
 export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
@@ -35,7 +35,7 @@ export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
         ) : null}
       </div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <span className="font-mono">{detail.packageName ?? "<no package>"}</span>
+        <span className="font-mono" title={detail.packageName ? undefined : NO_PACKAGE_TITLE}>{detail.packageName ?? "—"}</span>
         {detail.publicEntry ? (<><Sep /><span className="font-mono">{detail.publicEntry}</span></>) : null}
         {detail.version ? (<><Sep /><span className="font-mono">v{detail.version}</span></>) : null}
         {detail.definedAt ? (

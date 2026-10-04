@@ -39,6 +39,8 @@ export const ORIGIN_LABEL: Record<OriginValue, string> = {
   local: "Local",
 };
 
+export const NO_PACKAGE_TITLE = "no import links this component to a package";
+
 export const ORIGIN_DESCRIPTION: Record<OriginValue, string> = {
   external: "From outside this repo",
   local: "Defined in this repo",

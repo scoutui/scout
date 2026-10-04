@@ -49,7 +49,7 @@ export function ReposExplorer({
             aria-label="Search repos by id, remote, or branch"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Search ${rows.length.toLocaleString()} repos…`}
+            placeholder={`Search ${rows.length.toLocaleString()} ${rows.length === 1 ? "repo" : "repos"}…`}
             className="h-8 pl-8 font-mono text-xs placeholder:font-sans"
           />
           {text ? (
