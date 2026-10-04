@@ -298,10 +298,28 @@ describe("init wizard: run inside a workspace package", () => {
     expect((await runFrom(root, true)).confirms).toEqual([]);
   });
 
-  it("doesn't ask about the repository root when it already has a config", async () => {
+  it("refuses before asking anything when the repository root already has a config, and says to scan from the root", async () => {
     const root = await stageWholeRepo({ files: { "scout.config.json": existingConfig } });
-    expect((await runFrom(join(root, "apps/web"), true)).confirms).toEqual([]);
-    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(true);
+    const asked: string[] = [];
+    const prompts = stubAdapter({
+      intro: () => {
+        asked.push("intro");
+      },
+      confirm: async (o) => {
+        asked.push(o.message);
+        return true;
+      },
+      text: async (o) => {
+        asked.push(o.message);
+        return o.initialValue ?? "";
+      },
+    });
+    await expect(runInit({ cwd: join(root, "apps/web"), interactive: true, prompts })).rejects.toMatchObject({
+      message: "This repository already has a config: ../../scout.config.json. Run scout scan in ../.. to use it.",
+      exitCode: 1,
+    });
+    expect(asked).toEqual([]);
+    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
     expect(readFileSync(join(root, "scout.config.json"), "utf8")).toBe(existingConfig);
   });
 

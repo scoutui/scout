@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import { writeFile, stat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { posixPath } from "@scoutui/reference-graph";
@@ -47,6 +46,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const log = opts.log ?? new Logger();
   const prompts = opts.interactive ? opts.prompts : undefined;
   const rootConfig = opts.outputPath === undefined ? await suggestedRootConfig(cwd) : null;
+  if (rootConfig !== null) {
+    await assertNoExistingConfig(
+      rootConfig,
+      `This repository already has a config: ${relative(cwd, rootConfig)}. Run scout scan in ${relative(cwd, dirname(rootConfig))} to use it.`,
+    );
+  }
   const asksRoot = prompts !== undefined && rootConfig !== null;
   if (!asksRoot) await assertNoExistingConfig(out);
   const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
@@ -87,12 +92,10 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (rootConfig !== null) log.info(`To scan the whole repository, run scout init --output ${relative(cwd, rootConfig)}.`);
 }
 
-/** The workspace root's config path when `cwd` is a workspace package and the root has no config yet, else null. */
+/** The workspace root's config path when `cwd` is a workspace package, else null. */
 async function suggestedRootConfig(cwd: string): Promise<string | null> {
   const root = findWorkspaceRoot(cwd, (await readGitToplevel(cwd)) ?? undefined);
-  if (root === null) return null;
-  const config = join(root, "scout.config.json");
-  return existsSync(config) ? null : config;
+  return root === null ? null : join(root, "scout.config.json");
 }
 
 /** The repository name the remote gives, else the name of the folder that holds the config. */
@@ -216,14 +219,14 @@ function cannotCreate(out: string, cause: unknown): CliError {
   return new CliError(`Couldn't create ${out}. Check that its folder exists and that you can write to it.`, 1, { cause });
 }
 
-async function assertNoExistingConfig(out: string): Promise<void> {
+async function assertNoExistingConfig(out: string, message = `${out} already exists. Edit it, or delete it and run scout init again.`): Promise<void> {
   try {
     await stat(out);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return;
     throw cannotCreate(out, err);
   }
-  throw new CliError(`${out} already exists. Edit it, or delete it and run scout init again.`, 1);
+  throw new CliError(message, 1);
 }
 
 async function writeConfig(out: string, cfg: ReturnType<typeof buildConfig>): Promise<void> {
