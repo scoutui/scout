@@ -23,6 +23,8 @@ import { type ShownChart, useChartExport } from "./chart-export-context";
 
 /** How long "Image copied" and "Data copied" show. */
 const COPIED_MS = 1800;
+/** Starts a CSV file so spreadsheet apps read it as UTF-8. */
+const UTF8_BOM = "\uFEFF";
 
 type ExportedChart = ShownChart & { title: string; drawn: DashboardView };
 
@@ -79,7 +81,7 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
       () => showError("Couldn't copy the image. Try again."),
     );
   const downloadData = (shown: ExportedChart) =>
-    save(new Blob([toCsv(chartExportTable(shown.config, shown.view, shown.range))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
+    save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
   const copyData = (shown: ExportedChart) => {
     try {
       navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range))).then(

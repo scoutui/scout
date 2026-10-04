@@ -108,6 +108,14 @@ function readBlob(blob: Blob): Promise<string> {
   });
 }
 
+function readBytes(blob: Blob): Promise<Uint8Array> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
 class FakeClipboardItem {
   constructor(readonly items: Record<string, Promise<Blob>>) {}
 }
@@ -185,13 +193,14 @@ describe("ChartMenu export", () => {
     expect(clipboard.writeText.mock.lastCall?.[0].split("\n")[1]).toBe("2025-10-01 00:00\t10\t");
   });
 
-  it("downloads the data of the range on screen as a CSV file named after the chart", async () => {
+  it("downloads the data of the range on screen as a CSV file named after the chart, marked as UTF-8 for spreadsheets", async () => {
     renderChart("trend", "3m");
     open();
     fireEvent.click(await screen.findByRole("menuitem", { name: "Download data" }));
     expect(saved).toEqual([{ download: "Button adoption.csv", href: "blob:export" }]);
     const csv = vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob;
     expect(csv.type).toBe("text/csv;charset=utf-8");
+    expect([...(await readBytes(csv)).slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
     expect((await readBlob(csv)).split("\r\n").slice(0, 2)).toEqual(["Committed (UTC),@example/web,Button · @example/ui", "2026-07-01 00:00,40,"]);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:export");
   });
