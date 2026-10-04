@@ -25,7 +25,7 @@ const rowOf = (email: string) => screen.getByRole("row", { name: new RegExp(emai
 beforeEach(() => vi.clearAllMocks());
 
 describe("PeopleTable", () => {
-  it("shows your own row and an Admin set at install as text with no Remove, and gives anyone else a role picker and Remove", () => {
+  it("shows your own row and an Admin set at install as text with no Remove, and gives a role set on the People page a role picker and Remove", () => {
     render(<PeopleTable people={people} currentUserId="ana" />);
     for (const [email, role] of [
       ["ana@example.com", "Admin"],

@@ -13,6 +13,7 @@ export const UPLOAD_REFUSAL = {
   code: "upload_not_allowed",
   message: "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.",
 } as const;
+export const ADMIN_REFUSAL = "Only Admins can change roles.";
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
 const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin" };
