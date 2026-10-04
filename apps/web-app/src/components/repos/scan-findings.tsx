@@ -17,6 +17,12 @@ const KINDS: Record<ScanFindingKind, { label: [string, string]; fix: ReactNode; 
     docs: "guides/troubleshoot-a-scan#dependencies-arent-installed",
     toFix: true,
   },
+  "not-scanned": {
+    label: ["file couldn't be scanned", "files couldn't be scanned"],
+    fix: <>Fix the syntax errors, or add the files to <Code>exclude</Code> in <Code>scout.config.json</Code>.</>,
+    docs: "reference/diagnostics#file-not-parsed",
+    toFix: true,
+  },
   "import-not-found": {
     label: ["use imports a path that couldn't be found", "uses import a path that couldn't be found"],
     fix: <>Fix the import path, or declare its alias in <Code>tsconfig.json</Code> or <Code>scout.config.json</Code>.</>,

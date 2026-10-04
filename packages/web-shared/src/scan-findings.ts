@@ -23,9 +23,9 @@ function importedSpecifier(trace: TraceStep[]): string | undefined {
 }
 
 /**
- * What a scan couldn't see, one finding per kind it reported, in `ScanFindingKind` order: the uses it couldn't match,
- * grouped by reason, its web components that no package or code defines, and the renders and lazy loads it couldn't
- * follow. A diagnostic that repeats what unmatched uses already report (a package that isn't installed, a package's
+ * What a scan couldn't see, one finding per kind it reported, in `ScanFindingKind` order: the files it skipped, the
+ * uses it couldn't match, grouped by reason, its web components that no package or code defines, and the renders and
+ * lazy loads it couldn't follow. A diagnostic that repeats what unmatched uses already report (a package that isn't installed, a package's
  * re-exports it couldn't follow) adds nothing.
  */
 export function deriveScanFindings(artifact: ScanArtifact): ScanFinding[] {
@@ -51,7 +51,8 @@ export function deriveScanFindings(artifact: ScanArtifact): ScanFinding[] {
     }
   }
   for (const diagnostic of artifact.diagnostics) {
-    if (diagnostic.code === "auto-import-stale-entry") add("auto-import-missing", field(diagnostic, "componentName"));
+    if (diagnostic.code === "file-not-parsed") add("not-scanned", field(diagnostic, "filePath"));
+    else if (diagnostic.code === "auto-import-stale-entry") add("auto-import-missing", field(diagnostic, "componentName"));
     else if (diagnostic.code === "lazy-import-unsupported") add("lazy-import", field(diagnostic, "filePath"));
     else if (diagnostic.code === "unresolved-reference") add("not-matched", renderedName(diagnostic));
     else if (diagnostic.code === "late-bound-render") add("passed-in", renderedName(diagnostic));

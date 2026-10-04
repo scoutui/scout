@@ -126,7 +126,7 @@ export type RepoSummary = z.infer<typeof RepoSummarySchema>;
 
 // ---- What a scan couldn't see ----
 export const ScanFindingKind = z.enum([
-  "package-not-installed", "import-not-found", "not-imported", "auto-import-missing", "undefined-element", "lazy-import",
+  "package-not-installed", "not-scanned", "import-not-found", "not-imported", "auto-import-missing", "undefined-element", "lazy-import",
   "package-exports", "not-matched", "passed-in",
 ]);
 export type ScanFindingKind = z.infer<typeof ScanFindingKind>;

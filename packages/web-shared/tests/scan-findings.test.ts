@@ -35,9 +35,10 @@ describe("what a scan couldn't see", () => {
   });
 
   it.each([
-    ["lazy-import-unsupported", { filePath: "src/Routes.tsx", line: 4, column: 7, specifier: "./Panel", detail: "" }, "lazy-import", "src/Routes.tsx"],
-    ["auto-import-stale-entry", { filePath: ".nuxt/components.d.ts", componentName: "PromoBanner", target: "components/PromoBanner.vue" }, "auto-import-missing", "PromoBanner"],
-  ])("reports %s as %s", (code, fields, kind, text) => {
+    ["file-not-parsed", "not-scanned", "src/Checkout.tsx", { filePath: "src/Checkout.tsx", reason: "couldn't parse it (Unexpected token)" }],
+    ["lazy-import-unsupported", "lazy-import", "src/Routes.tsx", { filePath: "src/Routes.tsx", line: 4, column: 7, specifier: "./Panel", detail: "" }],
+    ["auto-import-stale-entry", "auto-import-missing", "PromoBanner", { filePath: ".nuxt/components.d.ts", componentName: "PromoBanner", target: "components/PromoBanner.vue" }],
+  ])("reports %s as %s", (code, kind, text, fields) => {
     expect(findingsOf(withDiagnostics([{ code, severity: "warning", ...fields }]))).toEqual([{ kind, count: 1, examples: [{ text, count: 1 }], more: 0 }]);
   });
 
