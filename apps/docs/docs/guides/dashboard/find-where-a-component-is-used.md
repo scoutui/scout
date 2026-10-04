@@ -29,7 +29,7 @@ The **Used in** table has one row per repo whose latest scan includes the compon
 
 Select a row to open the component's page for that repo.
 
-A component [defined in the repo](/docs/reference/glossary#local), with no package, is not listed under any package. Open it from the repo instead.
+A component [defined in the repo](/docs/reference/glossary#local) is listed under its workspace package, or under the repo's [root package](/docs/reference/artifact#root-package) when it is outside every workspace package. A scan from an older CLI version records no package for a component outside every workspace package, so it isn't listed under any package. Open it from the repo instead.
 
 ## Open a component in one repo
 
