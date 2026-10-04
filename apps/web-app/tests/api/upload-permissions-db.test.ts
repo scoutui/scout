@@ -14,7 +14,8 @@ import { insertPerson } from "../helpers/people";
 import { openReadModelDatabase } from "../helpers/read-model-db";
 import { receiveArtifact, sampleArtifact } from "../helpers/scan-artifact";
 
-vi.mock("@/auth", () => ({ auth: vi.fn(async () => null) }));
+const session = vi.hoisted(() => ({ current: null as { user: { id: string } } | null }));
+vi.mock("@/auth", () => ({ auth: vi.fn(async () => session.current) }));
 
 // biome-ignore lint/complexity/useLiteralKeys: env access
 const RUN_DB = process.env["DATABASE_URL"] != null;
@@ -25,9 +26,9 @@ const check = {
   commits: ["a1c9e04d2f", "0b5d7e1f3a"],
 };
 
-function post(path: string, bearer: string, body: BodyInit) {
+function post(path: string, bearer: string | null, body: BodyInit) {
   return new Request(`http://x${path}`, {
-    method: "POST", headers: { Authorization: `Bearer ${bearer}`, "Content-Type": "application/json" }, body, duplex: "half",
+    method: "POST", headers: { ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}), "Content-Type": "application/json" }, body, duplex: "half",
   } as RequestInit);
 }
 
@@ -83,6 +84,7 @@ describe.skipIf(!RUN_DB)("who may upload scans, against PostgreSQL", () => {
     vi.stubEnv("SCOUTUI_ADMINS", undefined);
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", undefined);
     vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", CI_SECRET);
+    session.current = null;
     resetRateLimitState();
   });
 
@@ -135,6 +137,14 @@ describe.skipIf(!RUN_DB)("who may upload scans, against PostgreSQL", () => {
     expect((await upload(post("/api/scans", token, "{}"))).status).toBe(202);
     await pool.query('UPDATE "user" SET role = NULL WHERE id = $1', [id]);
     expect((await upload(post("/api/scans", token, "{}"))).status).toBe(401);
+  });
+
+  it("refuses an upload and a pre-scan check that bring only an Editor's browser session, which can still read an upload's status", async () => {
+    session.current = { user: { id: await insertPerson(pool, { email: "ana@example.com", role: "editor" }) } };
+    const uploadId = await receiveArtifact(pool, sampleArtifact());
+    expect((await upload(post("/api/scans", null, "{}"))).status).toBe(401);
+    expect((await preflight(post("/api/scans/preflight", null, JSON.stringify(check)))).status).toBe(401);
+    expect((await uploadStatus(get(`/api/scans/uploads/${uploadId}`, null), { params: Promise.resolve({ uploadId }) })).status).toBe(200);
   });
 
   it("shows an upload's status to a Viewer and the CI upload secret, and to nobody without credentials", async () => {

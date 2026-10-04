@@ -84,7 +84,7 @@ async function pollDeviceCode(rawDeviceCode: string): Promise<Response> {
 
     const session = await consumeApprovedDeviceCode(id, approvedUserId);
     if (!session) return NextResponse.json({ error: "expired_token" }, { status: 400 });
-    const identity = await identify({ bearer: `Bearer ${session.token}` });
+    const identity = await identify({ bearer: `Bearer ${session.token}` }).catch(() => null);
 
     return NextResponse.json({
       access_token: session.token,

@@ -9,7 +9,7 @@ import { recordSignIn } from "@/lib/people";
 import { insertPerson } from "../helpers/people";
 import { openReadModelDatabase } from "../helpers/read-model-db";
 
-const session = vi.hoisted(() => ({ current: null as { user: { id: string; role?: string } } | null }));
+const session = vi.hoisted(() => ({ current: null as { user: { id?: string; role?: string } } | null }));
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => session.current) }));
 
 // biome-ignore lint/complexity/useLiteralKeys: env access
@@ -52,8 +52,10 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     await database.close();
   });
 
-  it("gives a stored Editor's browser session the Editor role, and nobody without a session", async () => {
+  it("gives a stored Editor's browser session the Editor role, and nobody without a session or with one that has no user id", async () => {
     const id = await insertPerson(pool, { email: "ana@example.com", name: "Ana", role: "editor" });
+    expect(await browser()).toBeNull();
+    session.current = { user: {} };
     expect(await browser()).toBeNull();
     signInAs(id);
     expect(await browser()).toEqual({
