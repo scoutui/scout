@@ -22,7 +22,7 @@ Every diagnostic has these two fields, plus the fields listed under its code:
 | `code` | string | One of the codes below. |
 | `severity` | `"warning"` or `"info"` | `warning`: something you can usually fix, or a shape the scan doesn't support. `info`: a render the scan couldn't tie to a component, usually with nothing to fix. |
 
-Every code except `dependency-not-installed` also has `filePath`, the file the diagnostic is about, relative to the repository root. `cycle-detected` and `chain-too-deep` use a different base folder; see [Package re-export codes](#package-re-export-codes).
+Every code except `dependency-not-installed` also has `filePath`, the file the diagnostic is about, relative to the repository root.
 
 `line` starts at 1. `column` starts at 0 in React files and at 1 in Vue files, the same as in [`occurrences[]`](/docs/reference/artifact#occurrences).
 
@@ -163,7 +163,7 @@ The list of auto-imported components, which Nuxt or `unplugin-vue-components` wr
 | --- | --- | --- |
 | `filePath` | string | The components file the entry was read from. |
 | `componentName` | string | The component name the entry declares. |
-| `target` | string | The missing file, relative to the folder that holds the config. |
+| `target` | string | The missing file, relative to the repository root. |
 
 ```text
 Warning: /home/dev/checkout/.nuxt/components.d.ts lists PromoBanner at components/PromoBanner.vue, which no longer exists. Regenerate that file (for Nuxt, run npx nuxt prepare) and scan again.
@@ -175,7 +175,7 @@ Warning: /home/dev/checkout/.nuxt/components.d.ts lists PromoBanner at component
 
 These two describe files inside an installed package, not your code. While following the package's re-exports (`export * from "./widgets.js"`) to the file that defines a component, the scan gave up. Every use of that component is [unmatched](/docs/reference/artifact#unresolved-occurrences), with the reason `chain-bailed` and the same code.
 
-For both codes, `filePath` is the package file, such as `node_modules/@acme/ui/index.js`. It is relative to your monorepo root, or to the folder that holds the config when the scanned folder isn't part of a monorepo.
+For both codes, `filePath` is the package file, such as `node_modules/@acme/ui/index.js`.
 
 ### `cycle-detected`
 
