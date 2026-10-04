@@ -79,7 +79,7 @@ export function ScanFindings({ findings }: { findings: ScanFinding[] }) {
         <Info aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="flex flex-wrap items-baseline gap-x-1.5">
           <span className="font-medium text-foreground">This scan couldn&apos;t see everything</span>
-          {toFix > 0 ? <> <span className="text-muted-foreground"><Dot /> {counted(toFix, "thing to fix", "things to fix")}</span></> : null}
+          {toFix > 0 ? <> <span className="flex items-baseline gap-x-1.5 text-muted-foreground"><Dot /> {counted(toFix, "thing to fix", "things to fix")}</span></> : null}
         </span>
         <ChevronDown aria-hidden className="ml-auto size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-180 motion-reduce:transition-none" />
       </summary>
@@ -101,7 +101,7 @@ export function ScanFindings({ findings }: { findings: ScanFinding[] }) {
                     <span className="tabular-nums">{example.count.toLocaleString()}</span>{" "}
                   </span>
                 ))}
-                {finding.more > 0 ? <span className="whitespace-nowrap"><Dot /> {finding.more.toLocaleString()} more</span> : null}
+                {finding.more > 0 ? <span className="flex items-baseline gap-x-1.5 whitespace-nowrap"><Dot /> {finding.more.toLocaleString()} more</span> : null}
               </p>
               <p className="text-muted-foreground">
                 {kind.fix}{" "}
