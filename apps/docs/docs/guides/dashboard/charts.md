@@ -76,7 +76,7 @@ To send someone a chart, send them its page's address. Someone who can't open a 
 
 A chart's page shows who created it under its name.
 
-## Copy a chart
+## Duplicate a chart
 
 To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new private chart of your own.
 
@@ -88,14 +88,14 @@ To see one line of a **Trend** chart on its own, press its name under the chart.
 
 ## Export a chart
 
-On a chart's page, press **⋯**:
+On a saved chart's page, press **⋯**, then **Export**. On a migration or retirement chart, the same items are in the **⋯** menu itself.
 
-- **Download image** saves the chart as a PNG to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value. The image is always light, whichever theme you use.
-- **Copy image** copies the same image, ready to paste. Browsers that can't copy images don't show it.
-- **Download data** saves a CSV file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
-- **Copy data** copies the same table, ready to paste into a spreadsheet.
+- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value. The image is always light, whichever theme you use.
+- **Download CSV** saves a file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
+- **Copy image** copies the same image as **Download PNG**, ready to paste. Browsers that can't copy images don't show it.
+- **Copy table** copies the same table as **Download CSV**, ready to paste into a spreadsheet.
 
-The export covers the period picked above the chart. A **Table** chart offers only **Download data** and **Copy data**, which give its series over time. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
+The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**, which give its series over time. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
 
 ## Change or delete a chart
 
