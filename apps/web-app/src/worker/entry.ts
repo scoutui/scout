@@ -8,6 +8,8 @@ import { migrateOnStart, migrateOnStartEnabled, resolveMigrationsDir, schemaIsRe
 import { startWorkerHealthServer } from "./health";
 import { runScanJobs } from "./runner";
 
+export { errorReason } from "../lib/error-reason";
+
 type Env = Record<string, string | undefined>;
 
 export function readWorkerConfig(env: Env) {

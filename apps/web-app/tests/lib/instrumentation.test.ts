@@ -64,6 +64,15 @@ describe("register", () => {
     expect(exit).toHaveBeenCalledWith(1);
   });
 
+  it("logs each refused address when the database at localhost refuses the connection", async () => {
+    // biome-ignore lint/complexity/useLiteralKeys: env access
+    process.env["NEXT_RUNTIME"] = "nodejs";
+    runStartup.mockRejectedValue(new AggregateError([new Error("connect ECONNREFUSED ::1:5432"), new Error("connect ECONNREFUSED 127.0.0.1:5432")], ""));
+    const register = await load();
+    await register();
+    expect(error).toHaveBeenCalledWith("[startup] failed:", "connect ECONNREFUSED ::1:5432; connect ECONNREFUSED 127.0.0.1:5432");
+  });
+
   it("exits the process when the startup module fails to load", async () => {
     // biome-ignore lint/complexity/useLiteralKeys: env access
     process.env["NEXT_RUNTIME"] = "nodejs";

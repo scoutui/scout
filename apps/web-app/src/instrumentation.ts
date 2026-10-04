@@ -1,3 +1,5 @@
+import { errorReason } from "./lib/error-reason";
+
 /**
  * Runs once per server start, before the first request is answered. A pod
  * that cannot finish this must restart rather than stay up failing every
@@ -16,7 +18,7 @@ export async function register(): Promise<void> {
       const { runStartup } = await import("./lib/startup");
       await runStartup(process.env);
     } catch (err) {
-      console.error("[startup] failed:", err instanceof Error ? err.message : String(err));
+      console.error("[startup] failed:", errorReason(err));
       process.exit(1);
     }
   }
