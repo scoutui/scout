@@ -65,7 +65,7 @@ Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, ar
 2. The package whose [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) declares the tag. The package must be installed, and its `package.json` must point at the manifest with a `customElements` field. See [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 3. No package, when neither applies. The tag is still counted, and the dashboard's **Type** filter shows it as **Undefined element**.
 
-**Renders and rendered by:** a web component counts for the React or Vue component whose code contains it. Its own **Renders** list is always empty, because what a web component draws inside itself isn't read.
+**Renders and rendered by:** a web component counts for the React or Vue component whose code contains it. On its **Composition** tab it renders nothing, because what a web component draws inside itself isn't read.
 
 **Known gaps:**
 

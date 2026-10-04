@@ -86,7 +86,7 @@ A long list that spans several folders is grouped under a heading for each folde
 
 Press a file's row to open it. It lists one line per use, in line order, with the props written there, such as `:42 variant="secondary" size="sm"`. A line can also show:
 
-- **Rendered by** and the component whose code renders it, or each one when several do. Select a name to draw its path on **Composition**.
+- **Rendered by** and the component whose code renders it, or each one when several do. Select a name to draw its route on **Composition**.
 - **Imported as** and the name the file gives the component, as in `import { Button as ShopButton } from "@acme/ui"`.
 - **via** and a name, when the code doesn't render the component by its own name: the function it's passed to, as `makeControl` in `makeControl(Input)`, or a wrapper such as `memo`. The [scan file reference](/docs/reference/artifact#trace) describes each.
 
@@ -100,9 +100,21 @@ On a wider window, the props most uses set get a column each, showing each file'
 
 ## Composition
 
-**Composition** shows what renders this component and what it renders, anywhere in the repo, as two lists and a render tree. Press a row in a list to draw its path on the tree. [Composition and ownership](/docs/explanation/composition-and-ownership) explains how this is worked out.
+**Composition** shows what renders this component and what it renders, anywhere in the repo, as a diagram. [Composition and ownership](/docs/explanation/composition-and-ownership) explains how this is worked out.
 
-A **Rendered by** link on **Usage** opens **Composition** with that component's path drawn. Your browser's Back button then returns to **Usage** with the same search, filters and sort, the same files and props open, and the list scrolled to where you left it.
+### Read the diagram
+
+What renders the component is on its left, and what it renders on its right, with a column for each number of steps away: **Directly · 200**, **2 steps away · 107** and so on. Each column lists the components with the most uses first. Press a box such as **+190 more** to open the rest as a list you can filter, and pick a row to select it.
+
+### Follow a route
+
+Press a box to select it: its route to this component is drawn, and the components one step further out from it appear. Press it again to hide them. To select one that isn't on screen, type its name or file into **Find a component or a file…** and pick it.
+
+A bar above the diagram shows the selected component's file and its route as a sentence, such as `ProductCard renders Button 5 times.` **Open ProductCard** goes to its page. Press Escape or the bar's × to clear the selection.
+
+**Reset** closes everything you opened and clears the selection. Scroll or pinch to zoom, and drag to pan. On a phone, the tab opens on a list of the same components: press **Diagram** to see the diagram.
+
+The selection is kept in the page's link, so a copied link opens with the same route drawn. A **Rendered by** link on **Usage** opens **Composition** with that component selected. Your browser's Back button then returns to **Usage** with the same search, filters and sort, the same files and props open, and the list scrolled to where you left it.
 
 ## Good to know
 

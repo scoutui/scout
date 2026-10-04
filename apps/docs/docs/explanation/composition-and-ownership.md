@@ -36,20 +36,20 @@ Composition is recorded for React and Vue, the two frameworks a scan reads.
 - **React:** Each component records what its own code renders, so the chain follows your components through as many levels as your code has. A file that defines several components records each one separately.
 - **Vue:** Each `.vue` file is one component, and every component tag in its template is rendered by that file's component, however deeply the tag is nested. The chain then continues through the components that file uses.
 
-A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` counts for the component whose code uses it, in either framework. Its own **Renders** list is always empty, because what a web component draws inside itself isn't read. The [framework support reference](/docs/reference/framework-support) has the full picture per framework.
+A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` counts for the component whose code uses it, in either framework. On its **Composition** tab it renders nothing, because what a web component draws inside itself isn't read. The [framework support reference](/docs/reference/framework-support) has the full picture per framework.
 
 ## On the Composition tab
 
 In the dashboard, open a component from a repo's **Components** table and choose the **Composition** tab. Everything on it is within that one repo.
 
-- **Rendered by** lists every component that renders this one, directly or further up the chain, nearest first. The number on each row is how many steps away it is.
-- **Renders** lists everything this component ends up rendering, nearest first, counted the same way.
-- **Render tree** draws the same picture as a graph. Its caption says how many components render this one directly and how many depend on it in total, and the same for what it renders.
+The tab draws the component in a diagram, with what renders it to its left and what it renders to its right. Each column is one step further away: on the left, the components that render it directly, then the components that render those, and so on up the chain. A component that can be reached by more than one route is drawn once, in the column nearest the component.
 
-Press a row in either list to draw its path on the tree, and press it again to clear it. The drawn path is kept in the page's link, so a copied link opens with it drawn. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#see-how-it-is-used) covers the **Usage** tab.
+The caption counts both sides, as in `Rendered directly by 200 components, and by 400 in total.` *Directly* is the first column, and *in total* is every component on that side, however many steps away.
+
+Selecting a component draws its route to the component, says how many times each component on the route renders the next, and shows the components one step further out. The selection is kept in the page's link, so a copied link opens with that route drawn. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#composition) shows how to use the tab.
 
 :::note
-A component can be used and still show **Nothing in this repo renders** it. That is expected when every use sits outside a component. For example, an `App` that `main.tsx` mounts with `createRoot(root).render(<App />)` is used, but no component renders it. Those uses count on the **Usage** tab.
+A component can have uses and still have nothing that renders it. That is expected when every use sits outside a component. For example, an `App` that `main.tsx` mounts with `createRoot(root).render(<App />)` is used, but no component renders it. Those uses count on the **Usage** tab.
 :::
 
 ## In the JSON

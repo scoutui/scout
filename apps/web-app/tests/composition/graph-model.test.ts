@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CompositionGraph, CompositionGraphNode } from "@scoutui/web-shared";
 import {
-  buildGraphModel, closureOf, pathBetween, pathValueOf,
+  buildGraphModel, chipFaceFragments, distinctTails, findRows, pathValueOf, routeIds, routesFrom, type GraphModel,
 } from "@/components/component-detail/composition/graph-model";
 
 const node = (id: string, o?: Partial<CompositionGraphNode>): CompositionGraphNode => ({
@@ -21,15 +21,16 @@ describe("buildGraphModel", () => {
   });
 });
 
-describe("pathBetween", () => {
+describe("routeIds", () => {
   const m = buildGraphModel(graph(
     [node("a"), node("b"), node("c"), node("d")],
     [["a", "b"], ["b", "c"], ["c", "d"]],
   ));
-  it("returns from→to inclusive, null when unreachable", () => {
-    expect(pathBetween(m, "a", "c", m.childrenOf)).toEqual(["a", "b", "c"]);
-    expect(pathBetween(m, "c", "a", m.childrenOf)).toBeNull();
-    expect(pathBetween(m, "a", "a", m.childrenOf)).toEqual(["a"]);
+  it("runs from the component to the focus inclusive, empty when unreachable", () => {
+    const down = routesFrom(m, "a", "down");
+    expect(routeIds(down, "a", "c")).toEqual(["c", "b", "a"]);
+    expect(routeIds(down, "a", "a")).toEqual(["a"]);
+    expect(routeIds(routesFrom(m, "c", "down"), "c", "a")).toEqual([]);
   });
 });
 
@@ -57,11 +58,12 @@ describe("pathValueOf", () => {
   });
 });
 
-describe("closureOf", () => {
+const rows = (m: GraphModel, dir: "up" | "down") => findRows(m, "F", routesFrom(m, "F", dir), dir);
+
+describe("findRows", () => {
   // root → mid → F; root2 → F (3 call sites); root3 → F (1 call site).
-  // root2 and root3 tie on steps, so the call-site count against F decides
-  // their order, not their repo-wide occurrence counts, which run the other
-  // way (root3: 9 > root2: 5).
+  // root2 and root3 tie on steps, so their uses of F decide their order, not
+  // their repo-wide uses, which run the other way (root3: 9 > root2: 5).
   const m = buildGraphModel(graph(
     [node("root"), node("root2", { occurrenceCount: 5 }), node("root3", { occurrenceCount: 9 }),
      node("mid"), node("F"), node("kid"), node("grandkid")],
@@ -69,25 +71,25 @@ describe("closureOf", () => {
      ["F", "kid"], ["kid", "grandkid"]],
   ));
 
-  it("up: the whole upward closure, nearest first, call sites against the focus deciding a tie", () => {
-    expect(closureOf(m, "F", "up").map((e) => [e.node.id, e.hops])).toEqual([
+  it("up: everything that renders the focus, nearest first, uses of the focus deciding a tie", () => {
+    expect(rows(m, "up").map((r) => [r.node.id, r.steps])).toEqual([
       ["root2", 1], ["root3", 1], ["mid", 1], ["root", 2],
     ]);
   });
 
-  it("down: the whole downward closure, nearest first", () => {
-    expect(closureOf(m, "F", "down").map((e) => [e.node.id, e.hops])).toEqual([
+  it("down: everything the focus renders, nearest first", () => {
+    expect(rows(m, "down").map((r) => [r.node.id, r.steps])).toEqual([
       ["kid", 1], ["grandkid", 2],
     ]);
   });
 
-  it("falls through to occurrence count, then name, when call sites tie", () => {
+  it("falls through to repo-wide uses, then name, when uses of the focus tie", () => {
     const m2 = buildGraphModel(graph(
       [node("F"), node("b", { occurrenceCount: 9 }), node("c", { occurrenceCount: 2 }),
        node("a", { occurrenceCount: 2 })],
       [["b", "F"], ["c", "F"], ["a", "F"]],
     ));
-    expect(closureOf(m2, "F", "up").map((e) => e.node.id)).toEqual(["b", "a", "c"]);
+    expect(rows(m2, "up").map((r) => r.node.id)).toEqual(["b", "a", "c"]);
   });
 
   it("terminates on a cycle, settling each node at its shortest distance", () => {
@@ -96,13 +98,97 @@ describe("closureOf", () => {
       [node("F"), node("Z"), node("W")],
       [["F", "Z"], ["Z", "W"], ["W", "F"]],
     ));
-    expect(closureOf(m2, "F", "up").map((e) => [e.node.id, e.hops])).toEqual([["W", 1], ["Z", 2]]);
-    expect(closureOf(m2, "F", "down").map((e) => [e.node.id, e.hops])).toEqual([["Z", 1], ["W", 2]]);
+    expect(rows(m2, "up").map((r) => [r.node.id, r.steps])).toEqual([["W", 1], ["Z", 2]]);
+    expect(rows(m2, "down").map((r) => [r.node.id, r.steps])).toEqual([["Z", 1], ["W", 2]]);
   });
 
-  it("never lists the focus in its own closure, even with a self-render edge", () => {
+  it("never lists the focus, even with a self-render edge", () => {
     const m2 = buildGraphModel(graph([node("F")], [["F", "F"]]));
-    expect(closureOf(m2, "F", "up")).toEqual([]);
-    expect(closureOf(m2, "F", "down")).toEqual([]);
+    expect(rows(m2, "up")).toEqual([]);
+    expect(rows(m2, "down")).toEqual([]);
+  });
+
+  it("writes each route in render order, the outermost component first, with the uses at each step", () => {
+    const m2 = buildGraphModel(graph(
+      [node("F"), node("mid"), node("root"), node("kid")],
+      [["root", "mid", 3], ["mid", "F", 5], ["F", "kid", 2]],
+    ));
+    expect(rows(m2, "up").map((r) => [r.chain, r.uses])).toEqual([[["mid", "F"], [5]], [["root", "mid", "F"], [3, 5]]]);
+    expect(rows(m2, "down").map((r) => [r.chain, r.uses])).toEqual([[["F", "kid"], [2]]]);
+  });
+});
+
+describe("distinctTails", () => {
+  const VIDEO = [
+    "apps/web/app/(use-page-wrapper)/video/meeting-not-started/[uid]/page.tsx",
+    "apps/web/app/(use-page-wrapper)/video/meeting-ended/[uid]/page.tsx",
+    "apps/web/app/(use-page-wrapper)/video/[uid]/page.tsx",
+  ];
+
+  it("grows the tail until every row is distinguishable", () => {
+    const out = distinctTails(VIDEO);
+    expect(new Set(out).size).toBe(3);
+  });
+
+  it("keeps short tails for paths that are already unique", () => {
+    const out = distinctTails(["packages/ui/components/button/Button.tsx", "apps/web/modules/shell/Shell.tsx"]);
+    expect(out).toEqual(["…/button/Button.tsx", "…/shell/Shell.tsx"]);
+  });
+
+  it("is index-aligned with its input", () => {
+    expect(distinctTails(VIDEO)).toHaveLength(VIDEO.length);
+  });
+
+  it("leaves genuinely identical paths identical", () => {
+    expect(distinctTails(["a/b/c.tsx", "a/b/c.tsx"])).toEqual(["…/b/c.tsx", "…/b/c.tsx"]);
+  });
+
+  it("handles empty and single inputs", () => {
+    expect(distinctTails([])).toEqual([]);
+    expect(distinctTails(["x/y/z.tsx"])).toEqual(["…/y/z.tsx"]);
+  });
+
+  it("returns a short path unchanged", () => {
+    expect(distinctTails(["Button.tsx"])).toEqual(["Button.tsx"]);
+  });
+});
+
+describe("chipFaceFragments", () => {
+  it("leaves unique names alone", () => {
+    expect(chipFaceFragments([{ name: "A", path: "src/a.tsx" }, { name: "B", path: "src/b.tsx" }])).toEqual([
+      null,
+      null,
+    ]);
+  });
+  it("gives the distinguishing directory when two chips share a name and a file name; an unrelated name gets null", () => {
+    expect(
+      chipFaceFragments([
+        { name: "ServerPage", path: "apps/web/app/(use)/[type]/page.tsx" },
+        { name: "ServerPage", path: "apps/web/app/(use)/[id]/page.tsx" },
+        { name: "Other", path: "src/o.tsx" },
+      ]),
+    ).toEqual(["[type]", "[id]", null]);
+  });
+  it("keeps the file name when that is what differs", () => {
+    expect(
+      chipFaceFragments([
+        { name: "Page", path: "src/x/Page.tsx" },
+        { name: "Page", path: "src/x/page.tsx" },
+      ]),
+    ).toEqual(["x/Page.tsx", "x/page.tsx"]);
+  });
+  it("identical paths stay bare: they are the same file", () => {
+    expect(chipFaceFragments([{ name: "A", path: "src/a.tsx" }, { name: "A", path: "src/a.tsx" }])).toEqual([
+      null,
+      null,
+    ]);
+  });
+  it("a collider with an empty path gets null while its sibling with a real path gets a fragment", () => {
+    expect(
+      chipFaceFragments([
+        { name: "A", path: "" },
+        { name: "A", path: "src/a.tsx" },
+      ]),
+    ).toEqual([null, "src/a.tsx"]);
   });
 });

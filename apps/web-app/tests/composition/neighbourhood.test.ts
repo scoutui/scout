@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { validateArtifact } from "@scoutui/scan-format";
 import { compositionNeighbourhood, type CompositionGraph } from "@scoutui/web-shared";
-import { buildGraphModel, closureOf, pathBetween } from "@/components/component-detail/composition/graph-model";
-import { computeLayout } from "@/components/component-detail/composition/graph-layout";
+import { bothRoutes, buildGraphModel, findRows } from "@/components/component-detail/composition/graph-model";
+import { buildScene } from "@/components/component-detail/composition/flow-scene";
 import { projectCompositionGraph } from "../../../../packages/web-shared/tests/helpers/composition-graph.ts";
 
 const baselines = new URL("../../../../packages/cli/tests/integration/__baselines__/current/", import.meta.url);
@@ -14,21 +14,20 @@ function graphOf(file: string): CompositionGraph {
   return projectCompositionGraph(validated.artifact);
 }
 
-/** What the composition tab reads for one focus: its direct neighbours, both
- *  rail lists, each row's path and the canvas, unpinned and pinned to each row. */
+/** What the composition tab reads for one focus: its direct neighbours, Find's
+ *  rows with their routes, and the diagram, with nothing selected and with each
+ *  row selected. */
 function tabView(graph: CompositionGraph, focusId: string) {
   const model = buildGraphModel(graph);
-  const rows = (["up", "down"] as const).flatMap(dir => closureOf(model, focusId, dir).map(row => ({ dir, row })));
+  const routes = bothRoutes(model, focusId);
+  const rows = (["up", "down"] as const).flatMap((dir) => findRows(model, focusId, routes[dir], dir));
+  const none = { lists: new Set<string>(), brought: new Set<string>(), pin: null };
   return {
     parents: model.parentsOf.get(focusId),
     children: model.childrenOf.get(focusId),
     rows,
-    layout: computeLayout(model, focusId, { pinned: null }),
-    pinned: rows.map(({ dir, row }) => {
-      const path = pathBetween(model, focusId, row.node.id, dir === "up" ? model.parentsOf : model.childrenOf);
-      const pinned = path?.map((id, i) => ({ id, level: dir === "up" ? -i : i })) ?? null;
-      return { path, layout: computeLayout(model, focusId, { pinned }) };
-    }),
+    scene: buildScene(model, focusId, routes, none),
+    selected: rows.map((row) => buildScene(model, focusId, routes, { ...none, pin: { dir: row.dir, id: row.node.id } })),
   };
 }
 
@@ -49,7 +48,7 @@ describe("compositionNeighbourhood", () => {
       const model = buildGraphModel(graph);
       for (const { id } of graph.nodes) {
         for (const dir of ["up", "down"] as const) {
-          for (const { hops } of closureOf(model, id, dir)) deepest[dir] = Math.max(deepest[dir], hops);
+          for (const steps of bothRoutes(model, id)[dir].steps.values()) deepest[dir] = Math.max(deepest[dir], steps);
         }
       }
     }
