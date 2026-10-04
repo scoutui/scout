@@ -175,11 +175,11 @@
 /* Keyboard focus for a bordered box around a text field, such as a search box
    with an icon. */
 @utility focus-field {
-  &:has(:focus-visible) {
+  &:has(input:focus-visible) {
     outline: 2px solid var(--ring);
     outline-offset: -1px;
   }
-  & :focus-visible {
+  & input:focus-visible {
     outline: none;
   }
 }

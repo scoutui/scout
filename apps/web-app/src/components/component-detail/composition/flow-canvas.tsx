@@ -862,10 +862,9 @@ function FindBox({
                         tabIndex={-1}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => pick(r)}
-                        onMouseEnter={() => setActive(i)}
                         className={cn(
                           "flex scroll-mt-6 cursor-pointer flex-col gap-0.5 px-2.5 py-1.5",
-                          i === active && "focus-current bg-muted",
+                          i === active ? "focus-current bg-muted" : "hover:bg-muted/60",
                         )}
                       >
                         <span className="flex min-w-0 items-center gap-1.5">
