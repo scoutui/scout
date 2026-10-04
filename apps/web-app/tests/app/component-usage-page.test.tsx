@@ -266,6 +266,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     await show(button.id);
     fireEvent.click(screen.getByRole("button", { name: "Folder home, 1 use" }));
     expect([query().get("area"), fileButtons()]).toEqual(["src/home", ["Uses in src/home/Hero.tsx"]]);
+    expect(screen.getByRole("button", { name: "Remove the filter folder home" })).toBeInTheDocument();
   });
 
   it("focuses the one-folder sentence when unpicking a folder leaves one folder in view", async () => {

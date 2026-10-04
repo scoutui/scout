@@ -181,7 +181,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
   const [copied, setCopied] = useState<Copied | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
-  /** Copies `sections`: every section in view from the toolbar, or one folder's from its heading. */
+  /** Copies `sections`: every section in view from the toolbar, or one folder's or package's from its heading. */
   const copyList = (sections: readonly UsageSection[], folder: string | null) => {
     const text = copyListText({
       sections,

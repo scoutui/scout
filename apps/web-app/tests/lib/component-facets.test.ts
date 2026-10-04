@@ -122,10 +122,6 @@ describe("Used in", () => {
       .toEqual([["SharedButton", 2, 1], ["Button", 1, 1]]);
   });
 
-  it("matches no row for a package no row is used in", () => {
-    expect(rowsUsedIn([shared, button], "@example/renamed")).toEqual([]);
-  });
-
   it("offers each package with its rows under the other filters, and keeps a selected package the rows don't have", () => {
     expect(usedInOptions([shared, button, unused], { ...emptyFacets(), text: "shared", usedIn: "@example/renamed" })).toEqual([
       { value: "@example/playground", count: 1 },

@@ -51,9 +51,9 @@ export function FilterBar({
    *  10 changed`, zero parts omitted. It replaces `N of M components` because
    *  removed rows come from the previous scan. */
   diffShown: { total: number; added: number; removed: number; changed: number } | null;
-  /** Whether anything besides `changed` narrows the rows, i.e. whether the
-   *  count reads `N of M`. `facets`, and every write through `onChange`, keep
-   *  the real state. */
+  /** Whether anything besides `changed` and `usedIn` narrows the rows, i.e.
+   *  whether the count reads `N of M`. `facets`, and every write through
+   *  `onChange`, keep the real state. */
   filtering: boolean;
   canEdit: boolean;
 }) {

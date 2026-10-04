@@ -433,8 +433,15 @@ describe.skipIf(!databaseUrl)("workspace packages in the read model", { timeout:
     await withReadModelDatabase(async pool => {
       await publishScan(pool, scan, { uploadedByUserId: null });
       const driver = new PostgresDriver(pool);
-      expect((await driver.listComponentsForRepo("whole-repo-scope", "")).every(r => r.usedIn === undefined)).toBe(true);
-      expect((await driver.getComponentUsage("whole-repo-scope", sharedButton)).every(r => r.usedIn === undefined)).toBe(true);
+      expect(Object.fromEntries((await driver.listComponentsForRepo("whole-repo-scope", "")).map(r => [r.displayName, r.usedIn]))).toStrictEqual({
+        App: undefined, Button: undefined, Demo: undefined, Preview: undefined, SharedButton: undefined,
+      });
+      expect((await driver.getComponentUsage("whole-repo-scope", sharedButton)).map(({ filePath, line, usedIn }) => ({ filePath, line, usedIn }))).toEqual([
+        { filePath: "apps/playground/src/Demo.tsx", line: 4, usedIn: undefined },
+        { filePath: "apps/web/src/App.tsx", line: 6, usedIn: undefined },
+        { filePath: "apps/web/src/App.tsx", line: 7, usedIn: undefined },
+        { filePath: "scripts/preview.tsx", line: 4, usedIn: undefined },
+      ]);
       expect((await driver.getRepo("whole-repo-scope"))?.scope).toBeNull();
     });
   });

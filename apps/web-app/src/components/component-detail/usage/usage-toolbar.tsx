@@ -168,8 +168,8 @@ function CountText({ view, due }: { view: UsageView; due: UsageDue | null }) {
 }
 
 /**
- * Copies a list of files: the toolbar's copies every file in view, a folder heading's (`folder` is its label) only
- * that folder's. It reads "Copied" while `copied`.
+ * Copies a list of files: the toolbar's copies every file in view, a folder or package heading's (`folder` is its
+ * label) only that folder's or package's. It reads "Copied" while `copied`.
  */
 export function CopyListButton({ files, folder, disabled = false, copied, onCopy }: { files: number; folder: string | null; disabled?: boolean; copied: boolean; onCopy: () => void }) {
   const label = folder === null ? `Copy the list of ${plural(files, "file")}` : `Copy the list of ${plural(files, "file")} in ${folder}`;

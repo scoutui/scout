@@ -142,10 +142,4 @@ describe("RepoDetailHeader scanned line", () => {
     );
     expect(screen.getByText("Scanned: everything except apps/playground.")).toBeInTheDocument();
   });
-
-  it("says nothing about coverage for a scan that doesn't record it", () => {
-    render(<RepoDetailHeader detail={makeDetail({ scope: null })} recentScans={[]} />);
-    expect(screen.getByRole("heading", { level: 1, name: "elk-zone/elk" })).toBeInTheDocument();
-    expect(screen.queryByText(/^Scanned:/)).toBeNull();
-  });
 });

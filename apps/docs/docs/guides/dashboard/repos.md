@@ -25,7 +25,7 @@ When the scan left part of the repo out, a line under the header says what it co
 
 - **Scanned: everything except apps/playground.** The config's `exclude` names `apps/playground`.
 - **Scanned: apps/web only.** The config is in `apps/web` and has no `include`.
-- **Scanned:** `src/**/*.{ts,tsx,jsx,js,vue}` **only.** The config's `include` has the pattern `init` writes.
+- **Scanned:** `src/**/*.{ts,tsx,jsx,js,vue}` **only.** The config's `include` has a pattern such as the one `init` writes.
 
 The line names the folders and files `exclude` leaves out, not its glob patterns. A scan of the whole repo has no line, and neither does a scan uploaded by an older CLI version. To change what's scanned, see [Configure a scan](/docs/guides/configure-a-scan).
 

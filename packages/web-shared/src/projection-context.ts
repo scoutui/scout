@@ -50,7 +50,7 @@ export function createProjectionContext(artifact: ScanArtifact): ProjectionConte
     const componentOccurrences = occurrencesByComponent.get(componentId) ?? [];
     componentOccurrences.push(occurrence);
     occurrencesByComponent.set(componentId, componentOccurrences);
-    const stats = occurrenceStatistics.get(componentId) ?? { count: 0, files: new Set<string>(), byPackage: new Map() };
+    const stats = occurrenceStatistics.get(componentId) ?? { count: 0, files: new Set<string>(), byPackage: new Map<string, { count: number; files: Set<string> }>() };
     stats.count++;
     stats.files.add(occurrence.filePath);
     if (occurrence.usedIn !== undefined) {

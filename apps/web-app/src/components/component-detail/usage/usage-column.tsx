@@ -45,7 +45,7 @@ const BELOW_PIN = { scrollMarginTop: "calc(var(--pin-top, 3.5rem) + 0.5rem)" };
 const FIND_INPUT =
   "h-7 w-full rounded-md border bg-background px-2 font-mono text-base outline-none sm:text-xs placeholder:font-sans placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-/** The `data-filter` of a folder row. */
+/** The `data-filter` of a folder or package row. */
 export const areaFilterKey = (area: string) => `area:${area}`;
 /** The `data-filter` of a prop line. */
 export const propFilterKey = (prop: string) => `prop:${prop}`;
@@ -106,7 +106,7 @@ export function UsageColumn({
               : "max-lg:hidden",
           )}
         >
-          {/* While no calls match and no folder is filtered, there are no folders to count. */}
+          {/* While no calls match and no folder or package is filtered, there are no folders or packages to count. */}
           {view.areas.length > 0 ? (
             <section aria-labelledby="usage-where">
               <div className="mb-1 flex items-baseline gap-2 px-1.5">
@@ -208,7 +208,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
   const sentence = oneFolderText(view);
   if (sentence) {
     return (
-      // Takes focus in place of a folder row that unpicking replaced with this sentence.
+      // Takes focus in place of a folder or package row that unpicking replaced with this sentence.
       <p tabIndex={-1} data-filter={areaFilterKey("")} className="px-1.5 text-xs text-muted-foreground outline-none">
         {sentence.lead} <span className="font-mono text-foreground">{sentence.label}</span>.
       </p>
