@@ -152,7 +152,7 @@ describe("init command", () => {
     }
   });
 
-  it("warns that a scan needs a git repository, then writes the config and says only where, outside one", async () => {
+  it("warns that a scan needs a git repository, then writes the config named after its folder with no branch and says only where, outside one", async () => {
     const stderr: string[] = [];
     const stdout: string[] = [];
     vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
@@ -169,14 +169,8 @@ describe("init command", () => {
       "Warning: this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.\n",
     ]);
     expect(stdout).toEqual(["Wrote scout.config.json.\n"]);
-    expect(written().repoId).toBe(basename(tmp));
-  });
-
-  it("falls back to the folder name, and writes no branch, outside a git repository", async () => {
-    await runInit({ cwd: tmp });
-    const cfg = JSON.parse(readFileSync(join(tmp, "scout.config.json"), "utf8"));
-    // tmp dir basename starts with "cc-init-"
-    expect(cfg.repoId).toMatch(/^cc-init-/);
+    const cfg = written();
+    expect(cfg.repoId).toBe(basename(tmp));
     expect("branch" in cfg).toBe(false);
   });
 });

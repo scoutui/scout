@@ -44,7 +44,7 @@ With prompts off, a command never waits for input. It uses its flags and default
 
 In a terminal, the output is *styled* for the person watching it:
 
-- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id.
+- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id. `init` opens its questions with `scout <version> · init`.
 - Colour picks out numbers, links, and the commands and flags in help. Secondary text, such as where a component comes from, is dimmer.
 - A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`. A warning starts with `!`, and an error with `✗`.
 - Progress turns a spinner, with a bar wherever the total is known.
@@ -55,7 +55,7 @@ Output is styled when all of these hold:
 - `CI` is unset, empty, `false` or `0`.
 - `NO_COLOR` is unset or empty.
 
-Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `auth login` still ends with `✓ Signed in as <email> to <host> as <role>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
+Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `init`'s questions still open with `scout <version> · init` when [prompts](#prompts) are on, and `auth login` still ends with `✓ Signed in as <email> to <host> as <role>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
 
 ## New versions
 
