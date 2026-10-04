@@ -11,11 +11,13 @@ For example, with the tags `acme-ui` and `acme-ui-legacy` in place, one saved ch
 
 ## Read the charts list
 
-Select **charts** in the top navigation. The page has three parts:
+Select **charts** in the top navigation. The page has these parts:
 
 - **Migrations**: one row per migration, such as `LegacyButton · @acme/ui-legacy` to `Button · @acme/ui`, reading **N% migrated** and **N left**, the [uses](/docs/reference/glossary#use) of the deprecated side still in the code. Records that name the same replacement share one row.
 - **Retirements**: one row per retirement, reading **N left**, the uses still in the code.
-- **Saved charts**: one row per chart someone has saved, with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
+- **Saved charts**: one row per chart [shared with everyone](#share-a-chart), with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
+- **Private**: your own charts that aren't shared.
+- **Other people's charts**: for Admins only, everyone else's private charts and who created them.
 
 Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Rows in progress come first, with the most uses left at the top. Complete ones sit behind **Show N complete**.
 
@@ -44,7 +46,7 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 4. Under **Chart type**, pick **Trend**.
 5. Under **Metric**, keep **Uses** to chart uses, or pick **Share** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **Share** when you pick it.
 6. In the **Series** panel, on the **Tags** tab, press `acme-ui`, then `acme-ui-legacy`. Each gets a `✓` and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
-7. Press **Save chart**. The chart opens on its own page and appears under **Saved charts**.
+7. Press **Save chart**. The chart opens on its own page and appears under **Private** on the charts page.
 
 ![The new chart builder with All repos, Trend, the vben and payload-ui tags as series, and the live preview](/img/dashboard/chart-builder.png)
 
@@ -66,13 +68,27 @@ To see how much [deprecated](/docs/reference/glossary#deprecated) code a library
 
 A series has this option only when some, but not all, of its components are deprecated. With it on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
 
+## Share a chart
+
+A new chart is private: only you and Admins can open it. To share it, open it, press **⋯**, then **Share with everyone**. It moves to **Saved charts**, and anyone signed in to the dashboard can open it. **Make private** in the same menu takes it back.
+
+To send someone a chart, press **⋯**, then **Copy link**. Someone who can't open a private chart sees **This chart is private.** and who to ask instead.
+
+A chart's page shows who created it under its name.
+
+## Copy a chart
+
+To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new private chart of your own.
+
 ## Change or delete a chart
 
 On a chart's page, except for a **Stacked** chart, the **Uses** and **Share** toggle switches the view without changing the saved chart.
 
+Only the person who created a chart, or an Admin, can change or delete it, so only they see **Edit** and **Delete**.
+
 To change the chart itself, press **Edit**. The chart builder opens with the chart's name, repos, chart type, metric and series. Make your changes and press **Save chart** to update the same chart, or **Cancel** to leave without saving.
 
-To delete a chart, open it, press **Delete**, then **Delete chart**. Deleting can't be undone, and any Editor or Admin can delete any saved chart.
+To delete a chart, open it, press **Delete**, then **Delete chart**. Deleting can't be undone.
 
 ### Fix a chart with missing components
 
