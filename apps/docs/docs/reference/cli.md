@@ -44,7 +44,7 @@ With prompts off, a command never waits for input. It uses its flags and default
 
 In a terminal, the output is *styled* for the person watching it:
 
-- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id.
+- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id. `init` opens its questions with `scout <version> · init`.
 - Colour picks out numbers, links, and the commands and flags in help. Secondary text, such as where a component comes from, is dimmer.
 - A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`. A warning starts with `!`, and an error with `✗`.
 - Progress turns a spinner, with a bar wherever the total is known.
@@ -55,7 +55,7 @@ Output is styled when all of these hold:
 - `CI` is unset, empty, `false` or `0`.
 - `NO_COLOR` is unset or empty.
 
-Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `auth login` still ends with `✓ Signed in as <email> to <host> as <role>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
+Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `init`'s questions still open with `scout <version> · init` when [prompts](#prompts) are on, and `auth login` still ends with `✓ Signed in as <email> to <host> as <role>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
 
 ## New versions
 
@@ -66,7 +66,7 @@ scout 0.2.0 · acme/storefront at 1a2b3c4
 Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.
 ```
 
-When a command shows no wordmark, such as `--version`, `init` or `auth`, or when output isn't [styled](#terminal-output), the line comes first.
+When a command shows no wordmark, such as `--version` or `auth`, or when output isn't [styled](#terminal-output), the line comes first. `init` prints it first too, above its questions.
 
 The command follows your repo:
 
@@ -273,40 +273,37 @@ When a skip marked *Exit `1`* makes the run exit `1`, the last line is followed 
 scout init [options]
 ```
 
-Writes a config file with `$schema`, `repoId`, `include` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. `init` never overwrites: if the file already exists, it exits `1`. When it's done, it prints `Wrote <path>. Run scout scan to scan the repo and upload the scan.`
+Writes a config file with `$schema`, `repoId` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. It writes no `include`, so the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder, apart from those it [always skips](/docs/reference/config#common-fields). `exclude` lists the folders you leave out, and is `[]` when you leave none out. `init` never overwrites: if a config already exists where it would write one, it exits `1`.
+
+When it's done, it prints `Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.` When the config is in another folder, the line gives its path from the current directory and says where to run the scan: `Wrote ../../scout.config.json. Run scout scan --dry-run in ../.. to try it, then scout scan to upload.`
+
+Outside a git repository, `init` still writes the config, but warns first: `Warning: this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.` It then ends with only `Wrote scout.config.json.`
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
 | `--output <path>` | path | `./scout.config.json` | Where to write the config file. Relative to the current directory. |
-| `--repo-id <name>` | string | the owner and name from the git remote, such as `acme/checkout`, else the current directory's name | Value written to `repoId`. |
+| `--repo-id <name>` | string | the owner and name from the git remote, such as `acme/checkout`, else the name of the config's folder | Value written to `repoId`. |
 | `--host <url>` | URL | none | Dashboard address written to `host`, with `https://` added when it has no scheme. It must use `https://`, apart from `http://` on `localhost`, `127.0.0.1` and `[::1]`; any other `http://` address exits `2`. |
 | `--branch <name>` | string | the remote's default branch | Branch the dashboard tracks. Written to `branch`. |
-| `--framework <name>` | `react` or `vue` | none | Sets which file extensions `include` matches. Repeat the flag for both. Only used without prompts; with prompts, you pick frameworks in the prompt. |
+| `--exclude <folder>` | path | none | Folder to leave out of the scan, written to `exclude` as given. Relative to the config's folder. Repeat the flag for more than one. |
 | `-y`, `--yes` | none | off | Runs without prompts. |
 
 ### With and without prompts
 
-See [Prompts](#prompts) for when prompts are on.
+See [Prompts](#prompts) for when prompts are on. With prompts on, the questions open with `scout <version> · init`.
 
 | | With prompts | Without prompts |
 | --- | --- | --- |
+| Where the config goes | In a workspace package's own folder, without `--output`, and when the monorepo root has no config yet: asks `Scan the whole repository instead of only this package?`, with Yes selected. Yes writes the config at the monorepo root, No in the current folder. | Writes the config at `--output`, else in the current folder. Under the same conditions, it then prints `To scan the whole repository, run scout init --output ../../scout.config.json.`, with the path to the root's config. |
 | `host` | Asks `Dashboard address (optional)`. Leave it empty to write no `host`. | Taken from `--host`, else not written. |
 | `repoId` | Asks `Repository name on the dashboard`, filled in with the `--repo-id` default. | Taken from `--repo-id`, else its default. |
 | `branch` | Asks `Branch the dashboard tracks`, filled in with the remote's default branch, else the checked-out branch. | Taken from `--branch`, else the same default without asking. |
-| Frameworks | Asks `Which frameworks does this repo use?`, pre-selecting whichever of `react` and `vue` your `package.json` depends on (`react` if neither). | Taken from `--framework`. |
-| `include` | `src/**/*.{…}`, with the extensions of the chosen frameworks | `src/**/*.{…}`, with the extensions of the `--framework` values. With no `--framework`: `src/**/*.{ts,tsx,jsx,js,vue}`. |
+| `exclude` | When the config's folder is a monorepo root, with workspace packages listed in `workspaces` in its `package.json` or in `pnpm-workspace.yaml`, asks `Leave any packages or folders out of the scan?`. The list holds each workspace package below the config's folder, by name, then each top-level folder that holds no package but holds files the scan reads. When there are no such folders, the question is `Leave any packages out of the scan?`. Each one you pick is written to `exclude` as its folder. Without workspace packages, asks nothing and writes `[]`. | Taken from `--exclude`, else `[]`. |
 
 A flag you pass skips its question. The remote `init` reads is the one `git config scout.remote` names, else `upstream` when there is one, else the only remote, else `origin`. With several remotes and none of them called `origin` or `upstream`:
 
 - With prompts on, `init` asks `Which remote does the dashboard follow?` and saves your answer in this checkout's git config as `scout.remote`. It isn't in `scout.config.json`, because remote names can differ from one clone to the next.
-- With prompts off, it warns `Warning: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote github.` and uses the directory's name.
-
-Extensions each framework adds to `include`:
-
-| Framework | Extensions |
-| --- | --- |
-| `react` | `ts`, `tsx`, `js`, `jsx` |
-| `vue` | `vue` |
+- With prompts off, it warns `Warning: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote github.` and names the repository after the config's folder.
 
 ## `auth`
 
@@ -363,7 +360,7 @@ A host without a scheme gets `https://`. A host must use `https://`; plain `http
 | --- | --- |
 | `0` | Success, including `auth logout` when you weren't signed in. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
 | `1` | The command ran but failed: `scan` [refused the scan](#upload-flags), the upload failed or didn't finish in time, the config for `scan` isn't in a git repository with a commit or git can't read that repository, `init` found an existing config, `auth login` or `auth status` failed, or `auth logout` couldn't end the session on the dashboard. Also any unexpected error. |
-| `2` | Usage or config error: unknown command, flag or `auth` subcommand, a malformed flag, an extra argument, `--rescan` with `--dry-run`, an unknown `--framework` value, a missing or invalid config file, a config field Scout doesn't use, no files to scan (an `include` that matches no files, or no source files in the config folder), a `--repo-root` that isn't a folder, Yarn Plug'n'Play detected, `auth login` with no host and prompts off, or an `auth` or `init --host` address that isn't `https://`. On a dry run, also a `scout-scan.json` that links to a file outside the config's folder: `Error: scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
+| `2` | Usage or config error: unknown command, flag or `auth` subcommand, a malformed flag, an extra argument, `--rescan` with `--dry-run`, a missing or invalid config file, a config field Scout doesn't use, no files to scan (an `include` that matches no files, or no source files in the config folder), a `--repo-root` that isn't a folder, Yarn Plug'n'Play detected, `auth login` with no host and prompts off, or an `auth` or `init --host` address that isn't `https://`. On a dry run, also a `scout-scan.json` that links to a file outside the config's folder: `Error: scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
 | `130` | You cancelled a prompt in `init` or `auth`, or stopped `backfill`. |
 
 [Run a scan and upload in CI](/docs/guides/run-in-ci#fix-a-failed-upload) lists the upload errors behind exit code `1`. `backfill` uses the same codes for its own outcomes: see [its exit codes](#backfill-exit-codes).

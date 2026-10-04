@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { isInteractive } from "./util/interactive.js";
 import { keepScanFormats, startUpdateCheck, updateCachePath, updateCheckWanted, updateNotice } from "./update-check.js";
 import { clackAdapter, PromptCancelledError } from "./prompts/adapter.js";
-import type { Framework, InitOptions } from "./commands/init.js";
+import type { InitOptions } from "./commands/init.js";
 
 function isKnownCommand(cmd: string): cmd is (typeof KNOWN_COMMANDS)[number] {
   return (KNOWN_COMMANDS as readonly string[]).includes(cmd);
@@ -130,7 +130,7 @@ async function runBackfillCommand(rest: string[], log: Logger, notice: string | 
 
 async function runInitCommand(rest: string[], log: Logger): Promise<number> {
   const { values } = parseCommand("init", rest);
-  const { yes, output, "repo-id": repoId, host, branch, framework } = values;
+  const { yes, output, "repo-id": repoId, host, branch, exclude } = values;
   const interactive = isInteractive({ yes: Boolean(yes) });
   const initOpts: InitOptions = { cwd: process.cwd(), interactive, log };
   if (interactive) initOpts.prompts = clackAdapter;
@@ -138,8 +138,7 @@ async function runInitCommand(rest: string[], log: Logger): Promise<number> {
   if (typeof repoId === "string") initOpts.repoId = repoId;
   if (typeof host === "string") initOpts.host = host;
   if (typeof branch === "string") initOpts.branch = branch;
-  const frameworks = parseFrameworks(framework);
-  if (frameworks) initOpts.frameworks = frameworks;
+  if (Array.isArray(exclude)) initOpts.exclude = exclude;
   try {
     await runInit(initOpts);
     return 0;
@@ -150,18 +149,6 @@ async function runInitCommand(rest: string[], log: Logger): Promise<number> {
     }
     throw err;
   }
-}
-
-const VALID_FRAMEWORKS: Framework[] = ["react", "vue"];
-
-function parseFrameworks(raw: string | boolean | string[] | undefined): Framework[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const out: Framework[] = [];
-  for (const r of raw) {
-    if ((VALID_FRAMEWORKS as string[]).includes(r)) out.push(r as Framework);
-    else throw new CliError(`Unknown --framework '${r}'. Valid: ${VALID_FRAMEWORKS.join(", ")}.`);
-  }
-  return out;
 }
 
 const argv = process.argv.slice(2);

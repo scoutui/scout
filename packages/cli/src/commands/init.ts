@@ -1,13 +1,17 @@
-import { writeFile, stat, readFile } from "node:fs/promises";
-import { basename, isAbsolute, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { writeFile, stat } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { posixPath } from "@scoutui/reference-graph";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
-import { assertNotCancelled, type PromptAdapter } from "../prompts/adapter.js";
+import { assertNotCancelled, type PromptAdapter, type SelectOption } from "../prompts/adapter.js";
 import { CliError } from "../cli/parse.js";
 import { InvalidHostError, isValidUrl, normalizeHost } from "../auth/store.js";
-import { readGitBranch, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
+import { probeRepository, readGitBranch, readGitToplevel, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
 import { Logger } from "../util/log.js";
-
-export type Framework = "react" | "vue";
+import { wordmark } from "../util/style.js";
+import { DEFAULT_INCLUDE, walkFiles } from "../walker/files.js";
+import { detectWorkspacePackages, readJsonSafely } from "../workspace/build-graph.js";
+import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 
 export type InitOptions = {
   cwd: string;
@@ -15,35 +19,16 @@ export type InitOptions = {
   repoId?: string;
   host?: string;
   branch?: string;
-  frameworks?: Framework[];
+  exclude?: string[];
   interactive?: boolean;
   prompts?: PromptAdapter;
   log?: Logger;
 };
 
-const DEFAULT_INCLUDE = "src/**/*.{ts,tsx,jsx,js,vue}";
+type Answers = { repoId: string; host: string | undefined; branch: string | null; exclude: string[] };
 
-const FRAMEWORK_EXTS: Record<Framework, string[]> = {
-  react: ["ts", "tsx", "js", "jsx"],
-  vue: ["ts", "tsx", "js", "jsx", "vue"],
-};
-
-const FRAMEWORK_OPTIONS: { value: Framework; label: string }[] = [
-  { value: "react", label: "React" },
-  { value: "vue", label: "Vue" },
-];
-
-function includeGlob(frameworks: Framework[]): string {
-  const exts = new Set<string>();
-  for (const f of frameworks) for (const e of FRAMEWORK_EXTS[f]) exts.add(e);
-  if (exts.size === 0) return DEFAULT_INCLUDE;
-  return `src/**/*.{${[...exts].sort().join(",")}}`;
-}
-
-type Answers = { repoId: string; host: string | undefined; branch: string | null; include: string };
-
-/** What git suggests for the config: the repository name, the remote's default branch and the checked-out one. */
-type GitDefaults = { repoId: string; defaultBranch: string | null; checkedOut: string | null };
+/** What git suggests for the config: the repository name the remote gives, the remote's default branch and the checked-out one. */
+type GitDefaults = { repoId: string | null; defaultBranch: string | null; checkedOut: string | null };
 
 function buildConfig(answers: Answers) {
   // `branch` is written whenever a branch is known.
@@ -52,37 +37,67 @@ function buildConfig(answers: Answers) {
     repoId: answers.repoId,
     ...(answers.host !== undefined ? { host: answers.host } : {}),
     ...(answers.branch !== null ? { branch: answers.branch } : {}),
-    include: [answers.include],
-    exclude: ["**/*.{test,spec,stories}.*", "**/node_modules/**"],
+    exclude: answers.exclude,
   };
 }
 
 export async function runInit(opts: InitOptions): Promise<void> {
   const cwd = isAbsolute(opts.cwd) ? opts.cwd : resolve(opts.cwd);
-  const out = opts.outputPath ?? resolve(cwd, "scout.config.json");
+  let out = opts.outputPath ?? resolve(cwd, "scout.config.json");
   const log = opts.log ?? new Logger();
-  await assertNoExistingConfig(out);
-  const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
   const prompts = opts.interactive ? opts.prompts : undefined;
-  prompts?.intro("scout init");
+  const rootConfig = opts.outputPath === undefined ? await suggestedRootConfig(cwd) : null;
+  const asksRoot = prompts !== undefined && rootConfig !== null;
+  if (!asksRoot) await assertNoExistingConfig(out);
+  const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
+  const outsideGit = (await probeRepository(cwd)).kind === "outside";
+  if (outsideGit) {
+    log.warn("this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.");
+  }
+  prompts?.intro(wordmark(log.color, "init"));
   const defaults = await gitDefaults(cwd, log, prompts);
-  const done = `Wrote ${out}. Run scout scan to scan the repo and upload the scan.`;
+  if (asksRoot) {
+    const whole = assertNotCancelled(
+      await prompts.confirm({ message: "Scan the whole repository instead of only this package?", initialValue: true }),
+      prompts,
+    );
+    if (whole) out = rootConfig;
+    await assertNoExistingConfig(out);
+  }
+  const runIn = relative(cwd, dirname(out));
+  const done = outsideGit
+    ? `Wrote ${relative(cwd, out)}.`
+    : `Wrote ${relative(cwd, out)}. Run scout scan --dry-run${runIn === "" ? "" : ` in ${runIn}`} to try it, then scout scan to upload.`;
 
   if (opts.interactive && opts.prompts) {
-    const answers = await runWizard(opts.prompts, cwd, defaults, { ...opts, host });
+    const answers = await runWizard(opts.prompts, defaults, { ...opts, host }, dirname(out));
     await writeConfig(out, buildConfig(answers));
     opts.prompts.outro(done);
     return;
   }
 
   const answers: Answers = {
-    repoId: opts.repoId ?? defaults.repoId,
+    repoId: opts.repoId ?? suggestedRepoId(defaults, dirname(out)),
     host,
     branch: opts.branch ?? defaults.defaultBranch ?? defaults.checkedOut,
-    include: opts.frameworks && opts.frameworks.length > 0 ? includeGlob(opts.frameworks) : DEFAULT_INCLUDE,
+    exclude: opts.exclude ?? [],
   };
   await writeConfig(out, buildConfig(answers));
   log.success(done);
+  if (rootConfig !== null) log.info(`To scan the whole repository, run scout init --output ${relative(cwd, rootConfig)}.`);
+}
+
+/** The workspace root's config path when `cwd` is a workspace package and the root has no config yet, else null. */
+async function suggestedRootConfig(cwd: string): Promise<string | null> {
+  const root = findWorkspaceRoot(cwd, (await readGitToplevel(cwd)) ?? undefined);
+  if (root === null) return null;
+  const config = join(root, "scout.config.json");
+  return existsSync(config) ? null : config;
+}
+
+/** The repository name the remote gives, else the name of the folder that holds the config. */
+function suggestedRepoId(defaults: GitDefaults, configDir: string): string {
+  return defaults.repoId ?? (basename(configDir) || "unknown");
 }
 
 async function gitDefaults(cwd: string, log: Logger, prompts: PromptAdapter | undefined): Promise<GitDefaults> {
@@ -108,7 +123,7 @@ async function gitDefaults(cwd: string, log: Logger, prompts: PromptAdapter | un
   const chosen = remote.kind === "ok" ? remote : undefined;
   return {
     // Azure DevOps paths put `_git` between the project and the repository.
-    repoId: (chosen && parseGitRemote(chosen.url)?.path.replace("/_git/", "/")) || basename(cwd) || "unknown",
+    repoId: (chosen && parseGitRemote(chosen.url)?.path.replace("/_git/", "/")) || null,
     defaultBranch: chosen ? await remoteDefaultBranch(cwd, chosen.name) : null,
     checkedOut: await readGitBranch(cwd),
   };
@@ -125,9 +140,9 @@ function savedHost(raw: string): string {
 
 async function runWizard(
   prompts: PromptAdapter,
-  cwd: string,
   defaults: GitDefaults,
-  given: { host: string | undefined; repoId?: string; branch?: string },
+  given: { host: string | undefined; repoId?: string; branch?: string; exclude?: string[] },
+  configDir: string,
 ): Promise<Answers> {
   let host = given.host;
   if (host === undefined) {
@@ -144,7 +159,7 @@ async function runWizard(
   const repoId = given.repoId ?? assertNotCancelled(
     await prompts.text({
       message: "Repository name on the dashboard",
-      initialValue: defaults.repoId,
+      initialValue: suggestedRepoId(defaults, configDir),
       validate: (value) => (value?.trim() ? undefined : "Enter a repository name."),
     }),
     prompts,
@@ -157,34 +172,44 @@ async function runWizard(
     }),
     prompts,
   ).trim();
-  const detected = await detectFrameworks(cwd);
-  const frameworks = assertNotCancelled(
-    await prompts.multiselect<Framework>({
-      message: "Which frameworks does this repo use?",
-      options: FRAMEWORK_OPTIONS,
-      initialValues: detected,
-      required: true,
+  const exclude = given.exclude ?? (await askLeaveOut(prompts, configDir));
+  return { repoId, host, branch, exclude };
+}
+
+/** Asks which of `pickerOptions` to leave out of the scan, or asks nothing when `configDir` has no workspace packages. */
+async function askLeaveOut(prompts: PromptAdapter, configDir: string): Promise<string[]> {
+  const { packages, folders } = await pickerOptions(configDir);
+  if (packages.length === 0) return [];
+  return assertNotCancelled(
+    await prompts.multiselect({
+      message: folders.length > 0 ? "Leave any packages or folders out of the scan?" : "Leave any packages out of the scan?",
+      options: [...packages, ...folders],
+      required: false,
+      maxItems: 10,
     }),
     prompts,
   );
-  return { repoId, host, branch, include: includeGlob(frameworks) };
 }
 
-async function detectFrameworks(cwd: string): Promise<Framework[]> {
-  try {
-    const pkg = JSON.parse(await readFile(resolve(cwd, "package.json"), "utf8")) as {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    const { react, vue } = deps;
-    const out: Framework[] = [];
-    if (react) out.push("react");
-    if (vue) out.push("vue");
-    return out.length > 0 ? out : ["react"];
-  } catch {
-    return ["react"];
+/**
+ * Each workspace package below `configDir`, then each top-level folder that holds no package and holds a file the scan
+ * reads, each group sorted by folder. An option's value is its folder relative to `configDir`.
+ */
+async function pickerOptions(configDir: string): Promise<{ packages: SelectOption<string>[]; folders: SelectOption<string>[] }> {
+  const packages = detectWorkspacePackages(configDir, readJsonSafely(join(configDir, "package.json")) ?? {})
+    .map((pkg) => ({ value: posixPath(relative(configDir, pkg.absolutePath)), label: pkg.name }))
+    .filter(({ value }) => value !== "" && value !== ".." && !value.startsWith("../"))
+    .sort((a, b) => (a.value < b.value ? -1 : 1))
+    .map((option) => ({ ...option, hint: option.value }));
+  if (packages.length === 0) return { packages, folders: [] };
+  const files = await walkFiles({ root: configDir, include: [...DEFAULT_INCLUDE], exclude: [], gitignore: true });
+  const folders = new Set<string>();
+  for (const file of files) {
+    const [top, ...below] = posixPath(relative(configDir, file)).split("/");
+    if (top === undefined || below.length === 0) continue;
+    if (!packages.some(({ value }) => value === top || value.startsWith(`${top}/`))) folders.add(top);
   }
+  return { packages, folders: [...folders].sort().map((folder) => ({ value: folder, label: folder })) };
 }
 
 function cannotCreate(out: string, cause: unknown): CliError {

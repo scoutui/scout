@@ -33,7 +33,7 @@ If your config is in one app's folder and that folder is a workspace package, th
 Monorepo root: ../..
 ```
 
-The path is relative to the config's folder.
+The path is relative to the config's folder. Run in such a folder, `npx scout init` offers to write the config at the monorepo root instead, so the scan covers every package.
 
 ## If your aliases are in `tsconfig.json`
 

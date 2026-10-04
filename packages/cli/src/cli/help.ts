@@ -57,10 +57,10 @@ Create scout.config.json for this repo. Asks for each setting when run in a term
 
 Options:
   --output <path>     Where to write the config (default: ./scout.config.json)
-  --framework <name>  Pre-select a framework (repeatable): react | vue
   --repo-id <name>    Repository name on the dashboard (default: owner/name from the git remote, else the folder name)
   --host <url>        Dashboard address to save in the config
   --branch <name>     Branch the dashboard tracks (default: the remote's default branch)
+  --exclude <folder>  Folder to leave out of the scan (repeatable). Skips the question
   -y, --yes           Accept defaults without asking
   --debug             Show the details behind an error
 `;
