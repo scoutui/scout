@@ -13,7 +13,7 @@ The file is one JSON object with four keys, written in this order:
 
 | Key | Type | Contents |
 | --- | --- | --- |
-| `meta` | object | Which repo and commit was scanned, when, and by which CLI version. See [`meta`](#meta). |
+| `meta` | object | Which repo and commit was scanned, when, by which CLI version, and what the scan covered. See [`meta`](#meta). |
 | `components` | array | One entry per component. See [`components[]`](#components). |
 | `occurrences` | array | One entry per place a component is used, including places the scan couldn't tie to a component. See [`occurrences[]`](#occurrences). |
 | `diagnostics` | array | Things the scan saw but couldn't follow. See [`diagnostics[]`](#diagnostics). |
@@ -53,7 +53,7 @@ These fields are less often needed:
 | `writtenNames` | `string[]` \| absent | The other names files render the component under: every distinct [`writtenName`](#occurrences) of its uses, most used first. Absent when none has one. |
 | `declared` | object \| absent | Components defined in the repo only: the props the component's own code declares. See [`declared`](#declared). |
 | `definition` | `{ line, column }` \| absent | React components defined in the repo only: where the declaration starts in `identity.filePath`. `line` counts from 1 and `column` from 0. |
-| `owningPackage` | `string` \| absent | Components defined in the repo only: the name of the workspace package whose folder holds the file. Absent when the file isn't in a workspace package. |
+| `owningPackage` | `string` \| absent | Components defined in the repo only: the name of the package the file belongs to. That is the deepest workspace package whose folder holds the file, else the [root package](#root-package). Absent when the file is outside the root package's folder. |
 
 ```json title="A components[] entry"
 {
@@ -220,6 +220,7 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 | `occurrenceId` | `string` | 16-character id computed from what the use names, its position and its owner. Unique within the scan file. |
 | `resolution` | object | Which component this is, or why the scan couldn't tell. See [`resolution`](#resolution). |
 | `filePath` | `string` | The file the use is in. |
+| `usedIn` | `string` \| absent | The name of the package the file belongs to: the deepest package in [`meta.scope.packages`](#meta) whose folder holds it. Present only when `meta.scope.packages` has more than one entry. |
 | `line` | `number` | Line of the use, counted from 1. |
 | `column` | `number` | Column of the use: counted from 0 in React files and from 1 in Vue files. |
 | `credit` | object | Whether the component is rendered here or passed to a call. See [`credit`](#credit). |
@@ -343,6 +344,10 @@ A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a 
 | `repo.branchPosition` | `number` (optional) | In an uploaded scan: how many commits the tracked branch's first-parent history has up to and including `repo.commit`. The dashboard uses it to order scans of commits with the same date. Absent on a dry run. |
 | `repo.initialCommit` | `string \| null` | SHA of the first commit in the history. `null` in a shallow clone, so [fetch full history](/docs/guides/run-in-ci#fetch-full-history) in CI. |
 | `repo.branch` | `string \| null` | In an uploaded scan, the branch the dashboard tracks. On a dry run, the checked-out branch, `null` on a detached HEAD. |
+| `scope.folder` | `string` | The config folder. `""` when it is the repository root. |
+| `scope.include` | `string[]` \| absent | The config's [`include`](/docs/reference/config#common-fields). Absent when the config has none, so the scan read every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder. |
+| `scope.exclude` | `string[]` | The config's `exclude`, `[]` when it has none. |
+| `scope.packages` | array of `{ name, folder }` | Each package that holds a scanned file, sorted by `folder`: workspace packages, and the [root package](#root-package) when a scanned file is outside every workspace package. `folder` is `""` for a package at the repository root. |
 
 ```json title="meta"
 {
@@ -358,9 +363,22 @@ A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a 
     "committedAt": "2026-09-24T14:00:00.000Z",
     "initialCommit": "8676019952a756dacb00ed21a406485f6cd83492",
     "branch": "main"
+  },
+  "scope": {
+    "folder": "",
+    "exclude": ["apps/playground"],
+    "packages": [
+      { "name": "storefront", "folder": "" },
+      { "name": "@acme/web", "folder": "apps/web" },
+      { "name": "@acme/ui", "folder": "packages/ui" }
+    ]
   }
 }
 ```
+
+### Root package {#root-package}
+
+The *root package* is the package in the config's folder or, when the config's folder is a workspace package of a monorepo, the package at the monorepo's root. Its name is the `name` in that folder's `package.json`, or the [repo id](/docs/reference/glossary#repo-id) when there is none. A file below that folder that is in no workspace package belongs to the root package, so in a repo that isn't a monorepo, every scanned file does.
 
 ## `diagnostics[]` {#diagnostics}
 

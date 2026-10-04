@@ -12,6 +12,23 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "app/**/*.{ts,tsx}",
+        "src/**/*.{ts,tsx}"
+      ],
+      "exclude": [
+        "**/*.{test,spec,stories}.*",
+        "**/node_modules/**"
+      ],
+      "packages": [
+        {
+          "name": "baseurl-imports",
+          "folder": ""
+        }
+      ]
     }
   },
   "components": [
@@ -34,6 +51,7 @@
         "line": 1,
         "column": 7
       },
+      "owningPackage": "baseurl-imports",
       "version": null,
       "composition": {
         "rendersByCount": {},
@@ -63,6 +81,7 @@
         "line": 5,
         "column": 13
       },
+      "owningPackage": "baseurl-imports",
       "version": null,
       "composition": {
         "rendersByCount": {

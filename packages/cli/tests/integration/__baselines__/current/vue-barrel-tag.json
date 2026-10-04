@@ -12,6 +12,21 @@
       "committedAt": "1970-01-01T00:00:00.000Z",
       "initialCommit": "baseline",
       "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "include": [
+        "**/*.vue"
+      ],
+      "exclude": [
+        "**/node_modules/**"
+      ],
+      "packages": [
+        {
+          "name": "vue-barrel-tag",
+          "folder": ""
+        }
+      ]
     }
   },
   "components": [
@@ -30,6 +45,7 @@
       },
       "usage": "none",
       "props": {},
+      "owningPackage": "vue-barrel-tag",
       "version": null,
       "composition": {
         "rendersByCount": {

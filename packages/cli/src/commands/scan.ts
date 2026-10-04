@@ -12,7 +12,7 @@ import type { LocalDefinition } from "../local-index/types.js";
 import { parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
 import { emitVueFile } from "../emit-vue-file.js";
 import { createProgress, startPhase } from "../util/progress.js";
-import { nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
+import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
 import { resolveTsconfigPath } from "../walker/tsconfig-discovery.js";
 import { buildPackageAliasLayers } from "../walker/package-alias-layers.js";
@@ -23,6 +23,7 @@ import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../sc
 import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload-policy/git-state.js";
 import { installedVersionReader } from "../scan/stamp-version.js";
 import { buildCemIndex } from "../scan/cem-index.js";
+import { buildScanScope } from "../scan/scope.js";
 import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
@@ -52,6 +53,7 @@ import {
   buildWorkspaceGraph,
   createDeclaredDependencyTest,
   declaredInPath,
+  findPackageOrRoot,
   isFirstPartyPath,
   resetFindOwningPackageCache,
   type WorkspaceGraph,
@@ -157,6 +159,9 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   });
 
   log.heading(`${meta.repo.id} at ${shortCommit(meta.repo.commit)}`);
+  for (const entry of excludeEntriesMatchingNothing(cfg.configDir, cfg.exclude)) {
+    log.warn(`"${entry}" in exclude matches nothing. Update or remove it in ${configPath}.`);
+  }
 
   const outputRoot = await scanOutputRoot(cfg.configDir, opts);
 
@@ -174,9 +179,9 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
     return { output: null, upload: "skipped" };
   }
 
-  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log);
+  const { workspaceRoot, workspaceGraph, files } = await readWorkspace(cfg, outputRoot, log, meta.repo.id);
   if (files.length === 0) {
-    log.error(noFilesMessage(configPath, cfg.include, await nestedRepositoriesMatched(walkOptions(cfg))));
+    log.error(noFilesMessage(configPath, cfg, await nestedRepositoriesMatched(walkOptions(cfg))));
     return { output: null, upload: "skipped" };
   }
 
@@ -247,7 +252,7 @@ export async function runScan(opts: ScanOptions): Promise<ScanResult> {
   }
 
   let upload: UploadOutcome = "skipped";
-  const refusal = emptyScanRefusal(stats, { configPath });
+  const refusal = emptyScanRefusal(stats, { configPath, ...(cfg.include !== undefined ? { include: cfg.include } : {}) });
   if (refusal !== null) {
     upload = "failed";
     log.error(refusal);
@@ -301,11 +306,12 @@ export async function scanOutputRoot(configDir: string, opts: { repoRoot?: strin
         : configDir);
 }
 
-/** The workspace root, its package graph and the files the config includes. */
+/** The workspace root, its package graph (its root package named `repoName` when the root `package.json` has no name) and the files the config includes. */
 export async function readWorkspace(
   cfg: ResolvedConfig,
   outputRoot: string,
   log: Logger,
+  repoName: string,
 ): Promise<{ workspaceRoot: string; workspaceGraph: WorkspaceGraph; files: string[] }> {
   const writer = log.quiet ? () => {} : (s: string) => process.stderr.write(s);
 
@@ -318,26 +324,38 @@ export async function readWorkspace(
 
   // Clear caches from an earlier scan in the same process, in case the filesystem changed.
   resetFindOwningPackageCache();
-  const workspaceGraph = buildWorkspaceGraph(workspaceRoot);
+  const workspaceGraph = buildWorkspaceGraph(workspaceRoot, repoName);
 
   const files = await walkFiles(walkOptions(cfg));
 
   return { workspaceRoot, workspaceGraph, files };
 }
 
-/** The file walk for `cfg`: its include, exclude and gitignore, from the config's folder. */
+/** The file walk for `cfg`: its include (`DEFAULT_INCLUDE` when it has none), exclude and gitignore, from the config's folder. */
 function walkOptions(cfg: ResolvedConfig): WalkOptions {
-  return { root: cfg.configDir, include: cfg.include, exclude: cfg.exclude, gitignore: cfg.gitignore };
+  return { root: cfg.configDir, include: cfg.include ?? [...DEFAULT_INCLUDE], exclude: cfg.exclude, gitignore: cfg.gitignore };
 }
 
-/** The error for an `include` that matches no file, naming the nested repositories it only matches inside. */
-function noFilesMessage(configPath: string, include: readonly string[], repositories: readonly string[]): string {
-  const patterns = `"include" in ${configPath} (${include.join(", ")})`;
-  if (repositories.length === 0) return `No files match ${patterns}. Point it at your source files and scan again.`;
+/**
+ * The error for a scan that found no file to read, naming `include` when the config has one, else the config's
+ * folder, and the nested repositories that hold the only files it would read.
+ */
+function noFilesMessage(
+  configPath: string,
+  { configDir, include }: Pick<ResolvedConfig, "configDir" | "include">,
+  repositories: readonly string[],
+): string {
+  const patterns = include === undefined ? undefined : `"include" in ${configPath} (${include.join(", ")})`;
+  if (repositories.length === 0) {
+    return patterns === undefined
+      ? `No .js, .jsx, .ts, .tsx or .vue files to scan in ${configDir}. Check "exclude" in ${configPath}, or scan from the folder that holds your source files.`
+      : `No files match ${patterns}. Point it at your source files and scan again.`;
+  }
+  const only = patterns === undefined ? "The only source files here are in" : `${patterns} only matches files in`;
   const folders = repositories.map(posixPath);
   return folders.length === 1
-    ? `${patterns} only matches files in ${folders[0]}, which is a separate git repository. Run the scan from that folder instead.`
-    : `${patterns} only matches files in ${folders.slice(0, -1).join(", ")} and ${folders.at(-1)}, which are separate git repositories. Run the scan from each of those folders instead.`;
+    ? `${only} ${folders[0]}, which is a separate git repository. Run the scan from that folder instead.`
+    : `${only} ${folders.slice(0, -1).join(", ")} and ${folders.at(-1)}, which are separate git repositories. Run the scan from each of those folders instead.`;
 }
 
 /** The scan file built from the workspace's files, checked against its format, and its stats. */
@@ -685,8 +703,9 @@ export async function scanRepository(input: {
     },
   };
 
+  const scope = buildScanScope({ cfg, outputRoot, workspaceGraph, files });
   const artifact = await emitArtifact({
-    meta,
+    meta: { ...meta, scope },
     repoId: meta.repo.id,
     seeds: [...seedsById.values()],
     occurrences: outputOccurrences,
@@ -702,6 +721,9 @@ export async function scanRepository(input: {
     // Scan-file paths are outputRoot-relative, so versions are read from
     // outputRoot, not cfg.configDir.
     readVersion: installedVersionReader(outputRoot),
+    ...(scope.packages.length > 1
+      ? { usedIn: (filePath: string) => findPackageOrRoot(workspaceGraph, resolve(outputRoot, filePath))?.name }
+      : {}),
   });
 
   if (!quiet) {

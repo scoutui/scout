@@ -1,0 +1,424 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "scannerName": "@scoutui/cli",
+    "scannerVersion": "0.0.0",
+    "scanId": "baseline",
+    "scannedAt": "1970-01-01T00:00:00.000Z",
+    "repo": {
+      "id": "whole-repo-scope",
+      "gitRemote": null,
+      "commit": "baseline",
+      "committedAt": "1970-01-01T00:00:00.000Z",
+      "initialCommit": "baseline",
+      "branch": "baseline"
+    },
+    "scope": {
+      "folder": "",
+      "exclude": [],
+      "packages": [
+        {
+          "name": "whole-repo-scope",
+          "folder": ""
+        },
+        {
+          "name": "@example/playground",
+          "folder": "apps/playground"
+        },
+        {
+          "name": "@example/web",
+          "folder": "apps/web"
+        },
+        {
+          "name": "@example/shared-ui",
+          "folder": "packages/shared-ui"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "id": "0cdf15c49200d200",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "whole-repo-scope",
+        "filePath": "apps/playground/src/Demo.tsx",
+        "exportName": "Demo"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "owningPackage": "@example/playground",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "24f8ea1330af8464": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4ce9c74153e857a2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "whole-repo-scope",
+        "filePath": "apps/web/src/App.tsx",
+        "exportName": "App"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "owningPackage": "@example/web",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "24f8ea1330af8464": 2,
+          "3e686d99c79a8f96": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "3e686d99c79a8f96",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "whole-repo-scope",
+        "filePath": "packages/shared-ui/src/Button.tsx",
+        "exportName": "Button"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {
+        "label": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "Help",
+              "count": 1
+            },
+            {
+              "provenance": "reference",
+              "ref": "label",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "label": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 5,
+        "column": 7
+      },
+      "owningPackage": "@example/shared-ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4ce9c74153e857a2": 1,
+          "24f8ea1330af8464": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "24f8ea1330af8464",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "whole-repo-scope",
+        "filePath": "packages/shared-ui/src/SharedButton.tsx",
+        "exportName": "SharedButton"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 4,
+        "fileCount": 3
+      },
+      "usage": "direct",
+      "props": {
+        "label": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "Try me",
+              "count": 1
+            },
+            {
+              "provenance": "written",
+              "value": "Save",
+              "count": 1
+            },
+            {
+              "provenance": "written",
+              "value": "Cancel",
+              "count": 1
+            },
+            {
+              "provenance": "written",
+              "value": "Preview",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "label": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 7,
+        "column": 7
+      },
+      "owningPackage": "@example/shared-ui",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "3e686d99c79a8f96": 1
+        },
+        "renderedByCount": {
+          "0cdf15c49200d200": 1,
+          "4ce9c74153e857a2": 2,
+          "7f92dc8bd0cc3a5e": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "7f92dc8bd0cc3a5e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "whole-repo-scope",
+        "filePath": "scripts/preview.tsx",
+        "exportName": "Preview"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 7
+      },
+      "owningPackage": "whole-repo-scope",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "24f8ea1330af8464": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "occurrenceId": "a247a972478df4a2",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "24f8ea1330af8464"
+      },
+      "filePath": "apps/playground/src/Demo.tsx",
+      "usedIn": "@example/playground",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shared-ui",
+          "name": "SharedButton"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Try me"
+        }
+      },
+      "ownerComponentId": "0cdf15c49200d200"
+    },
+    {
+      "occurrenceId": "2b122ee6abf5fb91",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "24f8ea1330af8464"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@example/web",
+      "line": 6,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shared-ui",
+          "name": "SharedButton"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Save"
+        }
+      },
+      "ownerComponentId": "4ce9c74153e857a2"
+    },
+    {
+      "occurrenceId": "5db34216d36ae44c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "24f8ea1330af8464"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@example/web",
+      "line": 7,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shared-ui",
+          "name": "SharedButton"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Cancel"
+        }
+      },
+      "ownerComponentId": "4ce9c74153e857a2"
+    },
+    {
+      "occurrenceId": "9492191bab0aa387",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "3e686d99c79a8f96"
+      },
+      "filePath": "apps/web/src/App.tsx",
+      "usedIn": "@example/web",
+      "line": 8,
+      "column": 6,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shared-ui",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Help"
+        }
+      },
+      "ownerComponentId": "4ce9c74153e857a2"
+    },
+    {
+      "occurrenceId": "7d57d8fb59ad898e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "3e686d99c79a8f96"
+      },
+      "filePath": "packages/shared-ui/src/SharedButton.tsx",
+      "usedIn": "@example/shared-ui",
+      "line": 8,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Button",
+          "name": "Button"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "reference",
+          "ref": "label"
+        }
+      },
+      "ownerComponentId": "24f8ea1330af8464"
+    },
+    {
+      "occurrenceId": "cbe39feb90346e4a",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "24f8ea1330af8464"
+      },
+      "filePath": "scripts/preview.tsx",
+      "usedIn": "whole-repo-scope",
+      "line": 4,
+      "column": 9,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/shared-ui",
+          "name": "SharedButton"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Preview"
+        }
+      },
+      "ownerComponentId": "7f92dc8bd0cc3a5e"
+    }
+  ],
+  "diagnostics": []
+}

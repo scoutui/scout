@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -137,6 +137,68 @@ describe("runScan upload outcome", () => {
     const result = await runScan({ configPath: join(dir, "scout.config.json") });
     expect(scanExitCode(result)).toBe(2);
     expect(stderr()).toBe(`Error: "include" in ${join(dir, "scout.config.json")} (vendor/**/*.tsx) ${says}\n`);
+  });
+
+  it.each([
+    {
+      repositories: [],
+      says: (dir: string) =>
+        `No .js, .jsx, .ts, .tsx or .vue files to scan in ${realpathSync(dir)}. Check "exclude" in ${join(dir, "scout.config.json")}, or scan from the folder that holds your source files.`,
+    },
+    {
+      repositories: ["vendor/lib"],
+      says: () => "The only source files here are in vendor/lib, which is a separate git repository. Run the scan from that folder instead.",
+    },
+    {
+      repositories: ["vendor/a", "vendor/b"],
+      says: () => "The only source files here are in vendor/a and vendor/b, which are separate git repositories. Run the scan from each of those folders instead.",
+    },
+  ])("stops with exit 2 when a config without include finds no source files outside folders that hold their own git repository: $repositories", async ({ repositories, says }) => {
+    const dir = setupConsumer();
+    rmSync(join(dir, "src"), { recursive: true });
+    for (const repository of repositories) {
+      mkdirSync(join(dir, repository, "src"), { recursive: true });
+      writeFileSync(join(dir, repository, ".git"), "gitdir: ../../.git/modules/lib\n");
+      writeFileSync(join(dir, repository, "src/A.tsx"), "export const A = () => <div />;\n");
+    }
+    writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ repoId: "upload-test", exclude: [] }));
+    const result = await runScan({ configPath: join(dir, "scout.config.json") });
+    expect(scanExitCode(result)).toBe(2);
+    expect(stderr()).toBe(`Error: ${says(dir)}\n`);
+  });
+
+  it("names the config's folder in full when a config without include, given by a relative path, finds no source files", async () => {
+    const dir = setupConsumer();
+    rmSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ repoId: "upload-test", exclude: [] }));
+    vi.spyOn(process, "cwd").mockReturnValue(dir);
+    const result = await runScan({ configPath: "./scout.config.json" });
+    expect(scanExitCode(result)).toBe(2);
+    expect(stderr()).toBe(
+      `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in ${realpathSync(dir)}. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.\n`,
+    );
+  });
+
+  it.each([
+    { exclude: ["apps/old-admin"], warned: ["apps/old-admin"] },
+    { exclude: ["**/node_modules/**", "**/*.{test,spec,stories}.*"], warned: [] },
+    { exclude: ["src"], warned: [] },
+    { exclude: ["./src/"], warned: [] },
+    { exclude: ["src/A.tsx"], warned: [] },
+    { exclude: ["packages/legacy", "apps/old-admin"], warned: ["packages/legacy", "apps/old-admin"] },
+  ])("warns once for each folder or file in exclude that doesn't exist, and still scans: $exclude", async ({ exclude, warned }) => {
+    const dir = setupConsumer();
+    const configPath = join(dir, "scout.config.json");
+    writeFileSync(configPath, JSON.stringify({ repoId: "upload-test", include: ["**/*.tsx"], exclude }));
+    writeFileSync(join(dir, "src", "A.tsx"), "export const A = () => <div />;\n");
+    mkdirSync(join(dir, "lib"));
+    writeFileSync(join(dir, "lib", "B.tsx"), "export const B = () => <div />;\n");
+    const result = await runScan({ configPath, quiet: true });
+    expect(stderr()).toBe(
+      warned.map((entry) => `Warning: "${entry}" in exclude matches nothing. Update or remove it in ${configPath}.\n`).join(""),
+    );
+    expect(scanExitCode(result)).toBe(0);
+    expect(existsSync(join(dir, "scout-scan.json"))).toBe(true);
   });
 
   it("says once that it's waiting for the dashboard, then reports the published URL", async () => {

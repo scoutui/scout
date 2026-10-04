@@ -25,9 +25,22 @@ npx scout init -y
 
 `init` won't overwrite an existing config. Edit that file instead, or delete it and run `init` again. Every `init` flag is in the [CLI reference](/docs/reference/cli#init).
 
-## Point `include` at your source files
+## Scan the whole repository
 
-If your code isn't under `src/`, change `include`. Patterns are globs, relative to the folder that holds the config file.
+To scan every app and package below the config's folder, delete `include` from the config. Any `exclude` can stay as it is:
+
+```json title="scout.config.json"
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "storefront"
+}
+```
+
+The scan then reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file there. To leave some of them out, use `exclude`, as below.
+
+## Scan only some folders
+
+Keep `include` and point it at the folders you want. Patterns are globs, relative to the folder that holds the config file.
 
 For a repo that keeps its code in `app/` and `components/`, list both folders:
 
@@ -38,19 +51,36 @@ For a repo that keeps its code in `app/` and `components/`, list both folders:
   "include": [
     "app/**/*.{js,jsx,ts,tsx}",
     "components/**/*.{js,jsx,ts,tsx}"
-  ],
-  "exclude": [
-    "**/*.{test,spec,stories}.*",
-    "**/node_modules/**"
   ]
 }
 ```
 
 ## Leave out files you don't want counted
 
-The `exclude` patterns from `init` skip test, spec and story files, and `node_modules`. Add a pattern to `exclude` for anything else you don't want counted, such as `**/__mocks__/**` for mocks or `src/generated/**` for generated code.
+Add a pattern to `exclude` for anything you don't want counted, such as `**/__mocks__/**` for mocks or `src/generated/**` for generated code. To leave out a whole package of a monorepo, such as a playground app, name its folder:
 
-You don't need to exclude files your `.gitignore` already ignores, or folders whose names start with a dot, such as `.next`. The scan skips both. It also skips a folder below the config's folder that holds its own git repository, such as a submodule, even when an `include` pattern points into it.
+```json title="scout.config.json"
+{
+  "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
+  "repoId": "storefront",
+  "exclude": ["apps/playground"]
+}
+```
+
+If nothing exists at a folder or file you name, for example after it was renamed, the scan warns and carries on:
+
+```
+Warning: "apps/playground" in exclude matches nothing. Update or remove it in ./scout.config.json.
+```
+
+Fix the path, or remove it from `exclude`.
+
+The scan already leaves these out, so you don't need to exclude them:
+
+- test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`) and `node_modules`;
+- files your `.gitignore` ignores;
+- folders whose names start with a dot, such as `.next`;
+- a folder below the config's folder that holds its own git repository, such as a submodule, even when an `include` pattern points into it.
 
 ## Check that the scan reads your files
 
@@ -66,10 +96,16 @@ The summary counts the files it read:
 Scanned 3 files in 0.1s: 6 components, 5 uses.
 ```
 
-The first number should be close to the number of source files you expect. If it's too low, widen `include`. If it's too high, add to `exclude`. If `include` matches no files at all, the scan stops before reading anything:
+The first number should be close to the number of source files you expect. If it's too low, narrow `exclude`, or widen `include` if your config has one. If it's too high, add to `exclude`. If there are no files to scan at all, the scan stops before reading anything. When `include` matches no files:
 
 ```
 Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,vue}). Point it at your source files and scan again.
+```
+
+When the config has no `include`, and the config's folder holds no source files or `exclude` leaves them all out:
+
+```
+Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.
 ```
 
 Code inside a submodule or another clone below the config's folder isn't scanned, so an `include` pattern that points into one matches no files.

@@ -47,7 +47,7 @@ describe("createImportResolver: tsconfig baseUrl", () => {
     write(join(stage, "apps/web/tsconfig.json"), JSON.stringify({ compilerOptions: { baseUrl: "." } }));
     write(join(stage, "apps/web/app/Banner.tsx"), "export const Banner = 2;");
 
-    const graph = buildWorkspaceGraph(stage);
+    const graph = buildWorkspaceGraph(stage, "example-repo");
     const resolveImport = createImportResolver({
       repoRoot: stage,
       tsconfigPath: join(stage, "tsconfig.json"),
