@@ -12,18 +12,12 @@
   --font-mono: "Monaspace Neon", ui-monospace, monospace;
   --font-heading: var(--font-mona-sans), system-ui, sans-serif;
   --font-wordmark: "Geologica", var(--font-mona-sans), system-ui, sans-serif;
-  --color-chart-6: var(--chart-6);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-control: var(--control);
   --color-border: var(--border);
   --color-faint: var(--faint);
   --color-status-ok: var(--status-ok);
-  --color-status-prog: var(--status-prog);
   --color-status-err: var(--status-err);
   --color-status-warn: var(--status-warn);
   --color-status-warn-text: var(--status-warn-text);
@@ -80,6 +74,7 @@
   --accent-foreground: var(--pal-neutral-ink);
   --border: var(--pal-neutral-hairline);
   --input: var(--pal-neutral-hairline);
+  --control: var(--pal-neutral-control); /* form-control borders */
   --ring: var(--pal-neutral-ink); /* one neutral focus ring; ≥ 3:1 at the /50 it is painted at */
   --selected: var(--pal-neutral-hover);
   --selected-edge: var(--pal-neutral-edge);
@@ -87,7 +82,6 @@
 
   /* Status: ok, warn, error. Always shown with a glyph and a word. */
   --status-ok: var(--pal-green-graphic);
-  --status-prog: var(--pal-neutral-muted);
   --status-err: var(--pal-red-graphic); /* failures, destructive, validation, a Δ moving the wrong way */
   --destructive: var(--status-err);
   --status-warn: var(--pal-orange-graphic); /* deprecated, config warnings: glyphs, dots, strokes */
@@ -102,12 +96,6 @@
   --viz-cat-2: var(--pal-violet-graphic);
   --viz-cat-3: var(--pal-blue-graphic);
   --viz-deprecated: var(--status-warn); /* the deprecated series role is warn, not error */
-  --chart-1: var(--viz-primary);
-  --chart-2: var(--viz-cat-2);
-  --chart-3: var(--viz-cat-3);
-  --chart-4: var(--viz-legacy);
-  --chart-5: var(--viz-legacy);
-  --chart-6: var(--viz-legacy);
 
   --radius: 0.625rem;
 }

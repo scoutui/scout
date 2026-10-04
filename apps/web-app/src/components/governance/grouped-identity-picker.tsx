@@ -261,7 +261,7 @@ export function GroupedIdentityPicker({
         "relative flex h-8 w-full min-w-0 items-center gap-1.5 rounded-lg border bg-transparent px-2.5 text-sm transition-colors focus-within:ring-3 dark:bg-input/30",
         invalid
           ? "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
-          : "border-input focus-within:border-ring focus-within:ring-ring/50",
+          : "border-control focus-within:border-ring focus-within:ring-ring/50",
         scope !== null && !showValue && "pl-1",
         disabled && "cursor-not-allowed opacity-50",
       )}

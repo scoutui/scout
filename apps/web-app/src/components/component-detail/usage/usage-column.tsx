@@ -43,7 +43,7 @@ const NEST = "ps-[1.375rem]";
 const BELOW_PIN = { scrollMarginTop: "calc(var(--pin-top, 3.5rem) + 0.5rem)" };
 // 16px below sm, so a phone doesn't zoom in when it's focused.
 const FIND_INPUT =
-  "h-7 w-full rounded-md border bg-background px-2 font-mono text-base outline-none sm:text-xs placeholder:font-sans placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "h-7 w-full rounded-md border border-control bg-background px-2 font-mono text-base outline-none sm:text-xs placeholder:font-sans placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 /** The `data-filter` of a folder or package row. */
 export const areaFilterKey = (area: string) => `area:${area}`;

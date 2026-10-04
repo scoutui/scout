@@ -113,6 +113,23 @@ function blend(fg: Rgb, bg: Rgb, alpha: number): Rgb {
   return f.map((v, i) => decode(alpha * encode(v) + (1 - alpha) * encode(g[i] as number))) as unknown as Rgb;
 }
 
+/** APCA-W3 0.0.98G lightness contrast (Lc) of `fg` on `bg`: positive for dark on light, negative for light on dark. */
+function apca(fg: Rgb, bg: Rgb): number {
+  const y = (c: Rgb) => {
+    const [r, g, b] = clamp(c).map(encode) as unknown as Rgb;
+    const lum = 0.2126729 * r ** 2.4 + 0.7151522 * g ** 2.4 + 0.072175 * b ** 2.4;
+    return lum > 0.022 ? lum : lum + (0.022 - lum) ** Math.SQRT2;
+  };
+  const [t, b] = [y(fg), y(bg)];
+  if (Math.abs(b - t) < 0.0005) return 0;
+  if (b > t) {
+    const s = (b ** 0.56 - t ** 0.57) * 1.14;
+    return s < 0.1 ? 0 : (s - 0.027) * 100;
+  }
+  const s = (b ** 0.65 - t ** 0.62) * 1.14;
+  return s > -0.1 ? 0 : (s + 0.027) * 100;
+}
+
 const rgb = (theme: Theme, name: string) => toLinear(token(theme, name));
 const surfaces = (theme: Theme) => [rgb(theme, "neutral-panel"), rgb(theme, "neutral-canvas")];
 
@@ -122,6 +139,12 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
       for (const surface of surfaces(theme)) {
         expect(contrast(rgb(theme, name), surface), `${name}`).toBeGreaterThanOrEqual(4.5);
       }
+    }
+  });
+
+  it("draws form-control borders at APCA Lc ≥ 30 on panel and canvas", () => {
+    for (const surface of surfaces(theme)) {
+      expect(Math.abs(apca(rgb(theme, "neutral-control"), surface))).toBeGreaterThanOrEqual(30);
     }
   });
 
