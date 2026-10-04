@@ -15,6 +15,8 @@ describe("scannedLine", () => {
     ["left-out folders and glob entries", scope({ exclude: ["test", "**/*.stories.*", "examples", "**/node_modules/**"] }), "Scanned: everything except test/, examples/, and files matching 2 patterns."],
     ["a folder spelled with ./ and a trailing slash", scope({ exclude: ["./apps/old/"] }), "Scanned: everything except apps/old/."],
     ["a folder spelled as folder/**", scope({ exclude: ["apps/old/**"] }), "Scanned: everything except apps/old/."],
+    ["a left-out file", scope({ exclude: ["src/setupTests.ts"] }), "Scanned: everything except src/setupTests.ts."],
+    ["a left-out folder whose name starts with a dot", scope({ exclude: [".storybook"] }), "Scanned: everything except .storybook/."],
     ["a config in a subfolder", scope({ folder: "apps/web" }), "Scanned: apps/web/ only."],
     ["a config in a subfolder that leaves out a folder", scope({ folder: "apps/web", exclude: ["legacy"] }), "Scanned: apps/web/, except apps/web/legacy/."],
     ["a config in a subfolder that leaves out a glob", scope({ folder: "apps/web", exclude: ["**/*.test.*"] }), "Scanned: apps/web/, except files matching 1 pattern."],

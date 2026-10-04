@@ -133,7 +133,7 @@ describe("RepoDetailHeader package count", () => {
 });
 
 describe("RepoDetailHeader scanned line", () => {
-  it("says which folders the scan left out, in mono, and lists its glob patterns in the count's title", () => {
+  it("says which folders the scan left out, in mono, and lists its glob patterns in the dotted count's title", () => {
     render(
       <RepoDetailHeader
         detail={makeDetail({ scope: { folder: "", exclude: ["apps/playground", "**/*.test.*"], packages: [] } })}
@@ -142,6 +142,8 @@ describe("RepoDetailHeader scanned line", () => {
     );
     const line = screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "Scanned: everything except apps/playground/, and files matching 1 pattern.");
     expect(within(line).getByText("apps/playground/")).toHaveClass("font-mono");
-    expect(within(line).getByText("files matching 1 pattern")).toHaveAttribute("title", "**/*.test.*");
+    const count = within(line).getByText("files matching 1 pattern");
+    expect(count).toHaveAttribute("title", "**/*.test.*");
+    expect(count).toHaveClass("decoration-dotted");
   });
 });

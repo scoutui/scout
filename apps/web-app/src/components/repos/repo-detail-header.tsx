@@ -79,7 +79,13 @@ export function RepoDetailHeader({
               "path" in part ? (
                 <span key={`${i}:${part.path}`} className="font-mono">{part.path}</span>
               ) : (
-                <span key={`${i}:${part.text}`} title={part.title}>{part.text}</span>
+                <span
+                  key={`${i}:${part.text}`}
+                  title={part.title}
+                  className={part.title !== undefined ? "cursor-help underline decoration-dotted underline-offset-2" : undefined}
+                >
+                  {part.text}
+                </span>
               ),
             )}
           </p>
