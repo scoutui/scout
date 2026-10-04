@@ -42,10 +42,22 @@ describe("loadConfig", () => {
     expect(cfg.aliases).toBeUndefined();
   });
 
-  it("rejects when file missing, saying how to create one or point at another", async () => {
-    await expect(loadConfig("/nonexistent/path.json")).rejects.toMatchObject({
+  it.each([
+    ["doesn't exist", () => "/nonexistent/path.json"],
+    ["is below a file", () => join(writeConfig(tmp(), {}), "scout.config.json")],
+  ])("rejects a path that %s as missing, saying how to create one or point at another", async (_, path) => {
+    const missing = path();
+    await expect(loadConfig(missing)).rejects.toMatchObject({
       code: "CONFIG_MISSING",
-      message: "Couldn't find /nonexistent/path.json. Run scout init to create one, or pass --config <path>.",
+      message: `Couldn't find ${missing}. Run scout init to create one, or pass --config <path>.`,
+    });
+  });
+
+  it("rejects a folder, saying which file to pass instead", async () => {
+    const dir = tmp();
+    await expect(loadConfig(dir)).rejects.toMatchObject({
+      code: "CONFIG_INVALID",
+      message: `${dir} is a folder. Pass the config file to --config, such as ${join(dir, "scout.config.json")}.`,
     });
   });
 

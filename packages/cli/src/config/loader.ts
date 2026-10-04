@@ -1,5 +1,5 @@
-import { readFile, realpath, stat } from "node:fs/promises";
-import { dirname, isAbsolute, resolve } from "node:path";
+import { readFile, realpath } from "node:fs/promises";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { ResolvedConfig } from "../types.js";
 import type { ErrorObject } from "ajv";
 import { validateConfig } from "./schema.js";
@@ -24,16 +24,25 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   // `identity.filePath`.
   const abs = await realpath(rawAbs).catch(() => rawAbs);
 
+  let raw: string;
   try {
-    await stat(abs);
-  } catch {
-    throw new ConfigError(
-      "CONFIG_MISSING",
-      `Couldn't find ${configPath}. Run scout init to create one, or pass --config <path>.`
-    );
+    raw = await readFile(abs, "utf8");
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "ENOTDIR") {
+      throw new ConfigError(
+        "CONFIG_MISSING",
+        `Couldn't find ${configPath}. Run scout init to create one, or pass --config <path>.`
+      );
+    }
+    if (code === "EISDIR") {
+      throw new ConfigError(
+        "CONFIG_INVALID",
+        `${configPath} is a folder. Pass the config file to --config, such as ${join(configPath, "scout.config.json")}.`
+      );
+    }
+    throw err;
   }
-
-  const raw = await readFile(abs, "utf8");
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
