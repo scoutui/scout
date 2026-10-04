@@ -72,7 +72,7 @@ A series has this option only when some, but not all, of its components are depr
 
 A new chart is private: only you and Admins can open it. To share it, open it, press **⋯**, then **Share with everyone**. It moves to **Saved charts**, and anyone signed in to the dashboard can open it. **Make private** in the same menu takes it back.
 
-To send someone a chart, press **⋯**, then **Copy link**. Someone who can't open a private chart sees **This chart is private.** and who to ask instead.
+To send someone a chart, send them its page's address. Someone who can't open a private chart sees **This chart is private.** and who to ask instead.
 
 A chart's page shows who created it under its name.
 

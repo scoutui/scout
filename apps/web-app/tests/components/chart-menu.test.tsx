@@ -24,21 +24,11 @@ describe("ChartMenu", () => {
   });
 
   it("offers no sharing to someone who can't change the chart", async () => {
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={null} />);
+    render(<ChartMenu id="chart 1" canDuplicate visibility={null} />);
     open();
-    expect(await screen.findByRole("menuitem", { name: "Copy link" })).toBeInTheDocument();
+    expect(await screen.findByRole("menuitem", { name: "Duplicate" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Share with everyone" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "Make private" })).toBeNull();
-  });
-
-  it("copies the chart's link and says so", async () => {
-    const writeText = vi.fn(async () => {});
-    Object.assign(navigator, { clipboard: { writeText } });
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={null} />);
-    open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy link" }));
-    expect(writeText).toHaveBeenCalledExactlyOnceWith(`${window.location.origin}/charts/chart%201`);
-    expect(await screen.findByText("Link copied")).toBeInTheDocument();
   });
 
   it("offers Duplicate only to someone who can make charts", async () => {
@@ -46,9 +36,9 @@ describe("ChartMenu", () => {
     open();
     expect(await screen.findByRole("menuitem", { name: "Duplicate" })).toHaveAttribute("href", "/charts/new?from=chart%201");
     unmount();
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={null} />);
+    render(<ChartMenu id="chart 1" canDuplicate={false} visibility="private" />);
     open();
-    await screen.findByRole("menuitem", { name: "Copy link" });
+    await screen.findByRole("menuitem", { name: "Share with everyone" });
     expect(screen.queryByRole("menuitem", { name: "Duplicate" })).toBeNull();
   });
 });

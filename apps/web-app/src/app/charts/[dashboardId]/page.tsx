@@ -187,7 +187,7 @@ export default async function DashboardViewPage({
               <DeleteDashboardButton id={dashboard.id} />
             </>
           ) : null}
-          {derived ? null : <ChartMenu id={dashboard.id} canDuplicate={canEdit} visibility={canChange ? dashboard.visibility : null} />}
+          {derived || !canEdit ? null : <ChartMenu id={dashboard.id} canDuplicate={canEdit} visibility={canChange ? dashboard.visibility : null} />}
         </div>
       </div>
 

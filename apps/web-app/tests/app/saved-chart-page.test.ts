@@ -143,7 +143,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const viewerGone = await renderSaved(goneRepo, anas);
       expect(editLinks(viewerGone)).toEqual([]);
       expect(propsOf(viewerGone, "DeleteDashboardButton")).toBeUndefined();
-      expect(propsOf(viewerGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null });
+      expect(propsOf(viewerGone, "ChartMenu")).toBeUndefined();
       expect(propsOf(viewerGone, "EmptyState")).toMatchObject({
         title: "This chart's repo no longer exists.",
         description: "There are no scans for repo-gone any more. It may have been renamed or deleted.",
