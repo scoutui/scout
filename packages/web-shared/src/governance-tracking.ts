@@ -218,16 +218,13 @@ function deriveOne(
     };
   }
 
-  // Successor side: the family `by.exportName` would govern, matched like the deprecated side.
+  // Successor side: the component or package `by` names, matched like the deprecated side; 0 uses until a scan in scope holds it.
   const by = record.disposition.by;
-  const named = by.exportName === undefined
-    ? null
-    : sideOf([{ grain: "component", targetPackage: by.packageName, targetExport: by.exportName }], records, scans, "successor");
-  // Falls back to `by`'s whole package when no in-scope scan holds any of that family.
-  const to = named !== null && named.ids.size > 0
-    ? named
-    : sideOf([{ grain: "package", targetPackage: by.packageName, targetExport: null }], records, scans, "successor");
-  const toLabel = to.label;
+  const successorRule: GovernanceRule = by.exportName === undefined
+    ? { grain: "package", targetPackage: by.packageName, targetExport: null }
+    : { grain: "component", targetPackage: by.packageName, targetExport: by.exportName };
+  const to = sideOf([successorRule], records, scans, "successor");
+  const toLabel = labelOf([successorRule]);
   const successor: SeriesCohort = { key: `successor:${record.id}`, label: toLabel, color: "", role: "successor", occurrences: to.occurrences };
 
   // A migration charts two counts over time, like a retirement; its share is a
