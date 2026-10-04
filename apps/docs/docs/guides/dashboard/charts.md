@@ -86,6 +86,17 @@ On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **
 
 To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. A chart with six or more lines lists them in a table under the chart, with each line's latest uses or share. Press a column heading to sort it, and press a name to see that line on its own.
 
+## Export a chart
+
+On a chart's page, press **⋯**:
+
+- **Download image** saves the chart as a PNG to put in a slide or a document. It shows the chart's name, the dates and repos it covers, and each series with its latest value. The image is always light, whichever theme you use.
+- **Copy image** copies the same image, ready to paste. Browsers that can't copy images don't show it.
+- **Download data** saves a CSV file with one row per scanned commit and one column per series, holding the values the chart shows. A **Bars** chart gives one row per bar.
+- **Copy data** copies the same table, ready to paste into a spreadsheet.
+
+The export covers the period picked above the chart. A **Table** chart offers only **Download data** and **Copy data**.
+
 ## Change or delete a chart
 
 On a chart's page, except for a **Stacked** chart, the **Uses** and **Share** toggle switches the view without changing the saved chart.
@@ -109,7 +120,7 @@ A chart leaves off any series the dashboard can no longer find, and its row on t
 
 You don't build these. Each comes from a lifecycle record on the **governance** page, and shows uses over time across every repo: the deprecated side and its replacement for a migration, the retired side alone for a retirement. A record only gets a row once a scan has used what it names.
 
-These charts have no **Edit** or **Delete**. One goes away when its record is deleted. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
+These charts have no **Edit** or **Delete**, but you can [export](#export-a-chart) them. One goes away when its record is deleted. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## Good to know
 
