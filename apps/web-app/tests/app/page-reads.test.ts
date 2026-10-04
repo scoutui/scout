@@ -288,7 +288,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
           published = true;
           await scope.exit(async () => {
             await publishScan(pool, next, { uploadedByUserId: null });
-            await pool.query("INSERT INTO tags (id, value, category, color, rule) VALUES ('new-tag', 'new', 'library', '#123456', '{\"glob\":[],\"exact\":[\"@sample/core\"]}')");
+            await pool.query("INSERT INTO tags (id, value, category, color, rule) VALUES ('new-tag', 'new', 'library', 'teal', '{\"glob\":[],\"exact\":[\"@sample/core\"]}')");
             await pool.query("INSERT INTO governance (id, grain, target_package, target_export, disposition) VALUES ('new-record', 'package', '@sample/core', NULL, '{\"kind\":\"retired\",\"reason\":\"Retired\"}')");
           });
         }
@@ -331,7 +331,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const rebuild = await claimScanJob(pool, "page-reads");
       if (rebuild?.scanId !== "scan-current") throw new Error("Expected the scan rebuild job");
       await failScanJob(pool, rebuild, { code: "projection_failed", message: "Projection failed" });
-      await driver.upsertTag({ id: "editable", value: "editable", category: null, color: "#123456", rule: { glob: [], exact: [] } });
+      await driver.upsertTag({ id: "editable", value: "editable", category: null, color: "teal", rule: { glob: [], exact: [] } });
       await driver.createGovernance({ grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Retired" } });
       const { default: page } = await import("@/app/governance/page");
       const { GET } = await import("@/app/api/health/route");

@@ -6,7 +6,7 @@ import type { identify, requireEditor } from "@/lib/identity";
 
 const storage = vi.hoisted(() => ({
   listTags: vi.fn(async () => [
-    { id: "tag-1", value: "core", category: "library", color: "chart-1", rule: { glob: ["@example/*"], exact: [] } },
+    { id: "tag-1", value: "core", category: "library", color: "teal", rule: { glob: ["@example/*"], exact: [] } },
   ]),
   upsertTag: vi.fn(async () => ({})),
   listGovernance: vi.fn(async () => []),
@@ -28,7 +28,7 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 // the declared parameter types on purpose.
 const send = <T>(input: unknown) => input as T;
 
-const tag = { value: "core", category: "library", color: "chart-1", rule: { glob: ["@example/*"], exact: [] } };
+const tag = { value: "core", category: "library", color: "teal", rule: { glob: ["@example/*"], exact: [] } };
 const governance = {
   grain: "component",
   targetPackage: "@example/old",

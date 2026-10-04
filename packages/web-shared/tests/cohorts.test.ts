@@ -18,8 +18,8 @@ function scan(repoId: string, scannedAt: string, uses: Array<[Component, number]
 const resolvedTo = (packageName: string): TagAttribution => ({ status: "resolved", target: { kind: "package", packageName }, confidence: "observed", evidence: [] });
 const unknown: TagAttribution = { status: "unknown", reason: "absent", evidence: [] };
 
-const webTag: Tag = { id: "web", value: "web", category: "library", color: "#7c3aed", rule: { glob: ["@x/web-*"], exact: [] } };
-const legacyTag: Tag = { id: "legacy", value: "legacy", category: "library", color: "#dc2626", rule: { glob: [], exact: ["legacy-design-system"] } };
+const webTag: Tag = { id: "web", value: "web", category: "library", color: "violet", rule: { glob: ["@x/web-*"], exact: [] } };
+const legacyTag: Tag = { id: "legacy", value: "legacy", category: "library", color: "berry", rule: { glob: [], exact: ["legacy-design-system"] } };
 
 const webButton = component(packageExport("@x/web-webc", "WebButton"));
 const webCard = component(packageExport("@x/web-webc", "WebCard"));
@@ -81,7 +81,7 @@ describe("projectCohortSnapshot", () => {
 
   it("carries tag label + colour and component counts", () => {
     const pts = projectCohortSnapshot([r1], [webTag], [{ kind: "tag", tagId: "web" }], "count");
-    expect(pts[0]).toMatchObject({ cohortKey: "tag:web", label: "web", color: "#7c3aed", value: 10, componentCount: 1 });
+    expect(pts[0]).toMatchObject({ cohortKey: "tag:web", label: "web", color: "violet", value: 10, componentCount: 1 });
   });
 
   it("leaves out a tag series whose tag was deleted", () => {

@@ -161,9 +161,9 @@ export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
     if (fixed) colors.set(c.cohortKey, fixed);
   }
   for (const c of cohorts) {
-    if (colors.has(c.cohortKey) || !c.color) continue;
+    if (colors.has(c.cohortKey)) continue;
     const own = paletteToken(c.color);
-    if (isFree(own)) colors.set(c.cohortKey, own);
+    if (own && isFree(own)) colors.set(c.cohortKey, own);
   }
   for (const c of cohorts) {
     if (colors.has(c.cohortKey)) continue;

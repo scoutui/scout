@@ -123,7 +123,7 @@ describe.each(PAGES)("the filter bar on the $page", ({ renderTags, oneValueFacet
   });
 
   it("draws a palette tag colour through its theme token", async () => {
-    renderTags([{ value: "core", color: "#009598", count: 3 }]);
+    renderTags([{ value: "core", color: "teal", count: 3 }]);
     await openFacet(/^tag/i);
     const option = await screen.findByRole("button", { name: /^core/ });
     expect(option.querySelector("span[style]")?.getAttribute("style")).toContain("var(--viz-primary)");

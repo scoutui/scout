@@ -3,7 +3,7 @@ import type { GovernanceRecord, Tag } from "../src/dto.js";
 import { renderDashboard } from "../src/dashboard-render.js";
 import { artifact, component, packageExport, received, resolvedAt } from "./helpers/builders.js";
 
-const webTag: Tag = { id: "web", value: "web", category: "library", color: "#7c3aed", rule: { glob: ["@x/web-*"], exact: [] } };
+const webTag: Tag = { id: "web", value: "web", category: "library", color: "violet", rule: { glob: ["@x/web-*"], exact: [] } };
 const webButton = component(packageExport("@x/web-webc", "WebButton"));
 
 describe("renderDashboard", () => {

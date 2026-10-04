@@ -39,7 +39,7 @@ const baseDetail: PackageDetail = {
   ],
 };
 
-const coreTag: Tag = { id: "t1", value: "core", category: "library", color: "#0f766e", rule: { glob: [], exact: [] } };
+const coreTag: Tag = { id: "t1", value: "core", category: "library", color: "teal", rule: { glob: [], exact: [] } };
 
 const rowsWithDeadLocal: PackageDetail["components"] = [
   { componentId: "w1", displayName: "FakeButton", kind: "react-component", totalOccurrences: 5, consumerCount: 2, deprecated: false, usage: "direct" },

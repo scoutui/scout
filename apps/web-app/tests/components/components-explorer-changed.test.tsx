@@ -97,7 +97,7 @@ describe("ComponentsExplorer ?changed=true", () => {
   it("keeps a tagged ghost under tag:forms and hides an untagged one; chip and toolbar count what the tag leaves, anchored to the whole view", () => {
     // Ghost tags resolve through resolveTags, not copied off a live row: a
     // removed component's package can still carry a tag.
-    const forms = { id: "t-forms", value: "forms", category: null, color: "#000" };
+    const forms = { id: "t-forms", value: "forms", category: null, color: "teal" as const };
     const tagged: ComponentRow[] = [
       { ...base, componentId: "new-forms", displayName: "FormsNew", packageName: "@x/forms", tags: [forms] },
       { ...base, componentId: "new-other", displayName: "OtherNew" },

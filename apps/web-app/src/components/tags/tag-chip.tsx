@@ -4,11 +4,8 @@ import { paletteToken } from "@/lib/chart-palette"
 import { cn } from "@/lib/utils"
 
 /**
- * A single tag chip. The tag's `color` is an authored hex, so it is a small dot
- * on the neutral chip rather than a tinted background, and the label's contrast
- * never depends on it. A hex that matches a palette swatch renders through
- * `paletteToken` as its theme token, with its dark-mode variant; a custom hex
- * renders as is.
+ * A single tag chip: the tag's colour is a small dot on the neutral chip rather
+ * than a tinted background, so the label's contrast never depends on it.
  */
 export function TagChip({
   tag,
