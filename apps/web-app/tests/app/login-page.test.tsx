@@ -26,14 +26,6 @@ describe("LoginPage", () => {
     expect(screen.getByRole("button", { name: "Sign in with SSO" })).toBeEnabled();
   });
 
-  it("asks the user to retry later when their access couldn't be checked", async () => {
-    render(await LoginPage({ searchParams: Promise.resolve({ error: "AccessCheckUnavailable" }) }));
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "We couldn't check your access just now. Try again in a few minutes.",
-    );
-    expect(screen.getByRole("button", { name: "Sign in with SSO" })).toBeEnabled();
-  });
-
   it("retries the initial device code after an error-only access denial without forcing an IdP prompt", async () => {
     const first = render(<SignInButton callbackUrl="/login/device?code=ABCD-EFGH" />);
     fireEvent.click(screen.getByRole("button", { name: "Sign in with SSO" }));

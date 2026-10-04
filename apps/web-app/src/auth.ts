@@ -1,10 +1,8 @@
-import NextAuth, { type NextAuthResult } from "next-auth";
+import NextAuth, { type NextAuthResult, type Profile } from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@/db/client";
 import { emailDomainDenial } from "@/lib/oidc-domain-gate";
-import { idpGroupDenial } from "@/lib/oidc-group-gate";
-import { ACCESS_CHECK_UNAVAILABLE } from "@/lib/sign-in-errors";
 import { buildProviders } from "@/lib/auth-providers";
 import { recordSignIn } from "@/lib/people";
 import {
@@ -23,6 +21,16 @@ async function isLinked(account: { provider: string; providerAccountId: string }
     columns: { userId: true },
   });
   return linked !== undefined;
+}
+
+/** Whether the provider marked `email` verified. Its mark counts only for the email it sent, compared ignoring case. */
+function providerVerified(email: string | null | undefined, profile: Profile | undefined): boolean {
+  return (
+    typeof email === "string" &&
+    profile?.email_verified === true &&
+    typeof profile.email === "string" &&
+    profile.email.toLowerCase() === email.toLowerCase()
+  );
 }
 
 // Annotated to avoid TS2742 on the `auth` callable, whose inferred type refers
@@ -48,30 +56,18 @@ const nextAuth: NextAuthResult = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Dev bypass: skip the OIDC domain and group gates entirely.
+      // Dev bypass: skip the OIDC domain gate entirely.
       if (account?.provider === "dev") return true;
       if (account && (await nextAuth.auth())?.user && !(await isLinked(account))) return false;
-      const domainDenial = emailDomainDenial(
+      const reason = emailDomainDenial(
         user.email,
         // biome-ignore lint/complexity/useLiteralKeys: env access
         process.env["OIDC_ALLOWED_DOMAINS"],
-        profile?.email_verified,
+        providerVerified(user.email, profile),
       );
-      const groupDenial =
-        domainDenial === null
-          ? await idpGroupDenial(
-              account?.access_token,
-              // biome-ignore lint/complexity/useLiteralKeys: env access
-              process.env["SCOUTUI_REQUIRED_GROUP"],
-            )
-          : null;
-      const reason = domainDenial ?? groupDenial?.reason;
-      if (reason === undefined) return true;
+      if (reason === null) return true;
       console.warn(`[auth] sign-in denied for ${user.email ?? "an account with no email address"}: ${reason}`);
-      // Both outcomes leave the user signed out. A redirect instead of `false`
-      // gives the login page its own error, since Auth.js reports every
-      // `false` as AccessDenied.
-      return groupDenial?.idpUnavailable ? `/login?error=${ACCESS_CHECK_UNAVAILABLE}` : false;
+      return false;
     },
     async jwt({ token, trigger }) {
       // Returning null makes Auth.js clear the session cookie, so an expired
@@ -95,7 +91,7 @@ const nextAuth: NextAuthResult = NextAuth({
         userId: user.id,
         email: user.email,
         provider: account?.provider,
-        emailVerified: profile?.email_verified === true && typeof profile.email === "string" && profile.email.toLowerCase() === user.email.toLowerCase(),
+        emailVerified: providerVerified(user.email, profile),
         accessToken: account?.access_token ?? undefined,
       });
     },

@@ -4,7 +4,6 @@ import { DevSignInForm } from "@/components/auth/dev-sign-in-form";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { isDevAuthEnabled, isOidcConfigured } from "@/lib/auth-providers";
 import { safeCallbackUrl } from "@/lib/callback-url";
-import { ACCESS_CHECK_UNAVAILABLE } from "@/lib/sign-in-errors";
 
 export const metadata = { title: "Sign in" };
 
@@ -45,9 +44,7 @@ export default async function LoginPage({
             <span>
               {error === "AccessDenied"
                 ? "Your account doesn't have access to this dashboard. Ask your dashboard administrator to add you."
-                : error === ACCESS_CHECK_UNAVAILABLE
-                  ? "We couldn't check your access just now. Try again in a few minutes."
-                  : "Sign-in didn't complete. Try again."}
+                : "Sign-in didn't complete. Try again."}
             </span>
           </div>
         ) : null}

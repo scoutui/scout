@@ -74,7 +74,7 @@ Optional settings on the web server:
 | Variable | What it's for |
 | --- | --- |
 | `SCOUTUI_CI_UPLOAD_TOKEN` | A token that CI jobs upload with. See [Let CI upload](/docs/guides/deploy-the-dashboard#let-ci-upload). |
-| `OIDC_ALLOWED_DOMAINS`, `SCOUTUI_REQUIRED_GROUP` | Who may sign in. See [Restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), where they appear as `auth.oidc.allowedDomains` and `auth.requiredGroup`. |
+| `OIDC_ALLOWED_DOMAINS` | Which email domains may sign in. See [Restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), where it appears as `auth.oidc.allowedDomains`. |
 | `SCOUTUI_TRUSTED_PROXY_HOPS` | The number of proxies in front of the dashboard. See [step 6](#6-configure-the-ingress-or-proxy). |
 | `DATABASE_POOL_MAX` | Database connections per web server pod. Default 10. |
 

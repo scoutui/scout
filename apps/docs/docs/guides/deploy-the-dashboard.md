@@ -286,10 +286,9 @@ Set `networkPolicy.enabled: true` to add NetworkPolicies that let traffic reach 
 
 ### Restrict who can sign in
 
-Without a restriction, anyone your provider can authenticate can sign in. That's fine when your provider only lets your people use the application, for example by assigning them to it in Keycloak, authentik or Okta. With a public provider such as Google, it means anyone with a Google account, so set at least one of these:
+Without a restriction, anyone your provider can authenticate can sign in. That's fine when your provider only lets your people use the application, for example by assigning them to it in Keycloak, authentik or Okta. With a public provider such as Google, it means anyone with a Google account.
 
-- `auth.oidc.allowedDomains`: comma-separated email domains, such as `"acme.com,acme.co.uk"`. The provider must mark the email as verified.
-- `auth.requiredGroup`: a group people must belong to. The dashboard reads the person's groups from the `groups` field of the provider's userinfo response, so the provider must include that field for the scopes in step 1. The group is checked only when someone signs in to the dashboard in a browser. Removing a person from the group doesn't end a CLI sign-in they already have.
+To let in only your own email domains, set `auth.oidc.allowedDomains` to them, separated by commas, such as `"acme.com,acme.co.uk"`. The provider must mark the email as verified.
 
 ### Check client addresses behind a proxy
 

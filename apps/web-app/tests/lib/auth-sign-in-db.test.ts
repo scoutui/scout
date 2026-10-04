@@ -44,7 +44,6 @@ describe.skipIf(!RUN_DB)("OIDC sign-in while a browser session exists, against P
 
   beforeEach(async () => {
     vi.stubEnv("DATABASE_URL", pool.options.connectionString);
-    vi.stubEnv("SCOUTUI_REQUIRED_GROUP", undefined);
     vi.stubEnv("OIDC_ALLOWED_DOMAINS", undefined);
     ana = await insertPerson(pool, { email: "ana@example.com", role: "editor" });
     await pool.query(
