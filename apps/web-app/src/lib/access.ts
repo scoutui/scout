@@ -6,7 +6,7 @@ export type RoleSource = "people" | "install" | "group";
 export type Person = { kind: "person"; userId: string; email: string; name: string | null; role: Role; roleSource: RoleSource };
 /** Who is asking, with their role as it stands for this request. `ci` is the install-wide upload secret. */
 export type Identity = Person | { kind: "ci" };
-export type Action = "view" | "edit" | "upload" | "manage-people";
+export type Action = "view" | "edit" | "upload" | "manage-people" | "manage-repos";
 
 export const EDIT_REFUSAL = "Only Editors can make changes. Ask an Admin for access.";
 export const UPLOAD_REFUSAL = {
@@ -14,9 +14,10 @@ export const UPLOAD_REFUSAL = {
   message: "You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.",
 } as const;
 export const ADMIN_REFUSAL = "Only Admins can change roles. Ask an Admin for access.";
+export const REPO_ADMIN_REFUSAL = "Only Admins can remove scans and delete repos. Ask an Admin for access.";
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
-const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin" };
+const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin", "manage-repos": "admin" };
 
 /** Whether `identity` may do `action`. `repoId` is the repo the action is about, when there is one. */
 export function can(identity: Identity | null, action: Action, _repoId?: string): boolean {
