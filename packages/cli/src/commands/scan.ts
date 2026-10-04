@@ -387,7 +387,7 @@ export async function scanRepository(input: {
     log.warn(msg);
   };
   const reportSyntaxErrors = (path: string, messages: string[]) =>
-    log.warn(syntaxErrorWarning(path, messages), messages.join("\n"));
+    log.warn(syntaxErrorWarning(posixPath(relative(outputRoot, path)), messages), messages.join("\n"));
 
   const resolveImportOpts: Parameters<typeof createImportResolver>[0] = {
     repoRoot: workspaceRoot,

@@ -99,7 +99,7 @@ export function createLazyResolver(opts: CreateLazyResolverOptions): LazyResolve
     barrelParseCounts.set(absPath, (barrelParseCounts.get(absPath) ?? 0) + 1);
     const ext = extname(absPath).toLowerCase();
     const plugins: ParserPlugin[] = ["typescript", "decorators-legacy", "classProperties"];
-    if (ext !== ".ts") plugins.push("jsx");
+    if (ext !== ".ts" && ext !== ".mts" && ext !== ".cts") plugins.push("jsx");
     try {
       return parseBarrelTopLevelFromAst(babelParse(source, { sourceType: "module", plugins, errorRecovery: true }));
     } catch {

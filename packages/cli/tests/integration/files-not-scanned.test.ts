@@ -63,6 +63,12 @@ describe("integration: files the scan matches but can't read", () => {
     expect(button?.stats.occurrenceCount).toBe(2);
   });
 
+  it("names a file with syntax errors the parser recovers from by its repository-relative path", () => {
+    expect(stderr).toContain(
+      "Warning: src/Partial.tsx has syntax errors (Missing initializer in const declaration), so the scan read what it could.\n",
+    );
+  });
+
   it("counts only the files it read as scanned, leaving out ones it skipped and ones with an extension it doesn't read", () => {
     expect(stdout).toContain("Scanned 3 files");
   });

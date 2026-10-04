@@ -46,7 +46,7 @@ A line such as `Warning: "apps/playground" in exclude matches nothing. Update or
 
 ## A file has syntax errors
 
-A line such as `Warning: Skipped src/Broken.tsx: couldn't parse it (Unexpected token).` means the scan couldn't parse that file at all, so it skipped it: uses in it aren't counted. A line such as `Warning: /home/dev/storefront/src/Broken.tsx has syntax errors (Missing initializer in const declaration), so the scan read what it could.` means the scan parsed only part of the file: components defined or used in it can be missing from the results. Either way, fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.
+A line such as `Warning: Skipped src/Broken.tsx: couldn't parse it (Unexpected token).` means the scan couldn't parse that file at all, so it skipped it: uses in it aren't counted. A line such as `Warning: src/Broken.tsx has syntax errors (Missing initializer in const declaration), so the scan read what it could.` means the scan parsed only part of the file: components defined or used in it can be missing from the results. Either way, fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.
 
 ## Components are missing: Scout couldn't match some uses {#unresolved-occurrences}
 
