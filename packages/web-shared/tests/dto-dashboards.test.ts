@@ -50,7 +50,7 @@ describe("DashboardInputSchema", () => {
       name: "web vs legacy",
       description: null,
       config: { scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "trend", metric: "count" },
-      visibility: "only-me",
+      visibility: "private",
     });
     expect(input.id).toBeUndefined();
   });

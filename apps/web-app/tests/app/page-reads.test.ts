@@ -360,7 +360,8 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
   ])("shows a Viewer one line instead of $url, and an Editor the page", async ({ page, line, open }) => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
-      const saved = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      await pool.query(`INSERT INTO "user" (id, email) VALUES ('reader', 'ana@example.com')`);
+      const saved = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, createdByUserId: "reader" });
       reader = { ...editor, role: "viewer" };
       expect(propsFor(await open(saved.id), "EmptyState")).toEqual({ titleAs: "h1", title: line });
       reader = editor;
@@ -379,7 +380,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const repo = await import("@/app/repos/[repoId]/page");
       const chart = await import("@/app/charts/new/page");
       const charts = await import("@/app/charts/page");
-      const savedChart = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      const savedChart = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
       const chartDetail = await import("@/app/charts/[dashboardId]/page");
       const chartParams = { params: Promise.resolve({ dashboardId: savedChart.id }) };
       const { pickableForRepo, previewDashboard } = await import("@/app/charts/dashboard-actions");

@@ -221,12 +221,12 @@ export const dashboards = pgTable("dashboards", {
   name: text("name").notNull(),
   description: text("description"),
   config: jsonb("config").$type<DashboardConfig>().notNull(),
-  visibility: text("visibility", { enum: ["only-me", "everyone"] }).notNull().default("only-me"),
+  visibility: text("visibility", { enum: ["private", "everyone"] }).notNull().default("private"),
   createdByUserId: text("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
-  visibility: check("dashboards_visibility", sql`${t.visibility} IN ('only-me', 'everyone')`),
+  visibility: check("dashboards_visibility", sql`${t.visibility} IN ('private', 'everyone')`),
 }));
 
 export type DashboardRow = typeof dashboards.$inferSelect;

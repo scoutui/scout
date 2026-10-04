@@ -63,7 +63,7 @@ async function seed(pool: Pool): Promise<Seeded> {
   return {
     retired: await driver.createGovernance({ grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Retired" } }),
     unseen: await driver.createGovernance({ grain: "package", targetPackage: "@sample/unused", targetExport: null, disposition: { kind: "retired", reason: "Retired" } }),
-    saved: await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } }),
+    saved: await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } }),
   };
 }
 
@@ -87,12 +87,12 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     await withReadModelDatabase(async pool => {
       const { retired, saved } = await seed(pool);
       const unfound = { kind: "component", componentId: "component-in-no-scan" } as const;
-      const gone = await driver.upsertDashboard({ name: "Gone repo", description: null, config: { scope: { kind: "repo", repoId: "repo-gone" }, cohorts: [unfound], chartType: "bars", metric: "count" } });
+      const gone = await driver.upsertDashboard({ visibility: "everyone", name: "Gone repo", description: null, config: { scope: { kind: "repo", repoId: "repo-gone" }, cohorts: [unfound], chartType: "bars", metric: "count" } });
       await pool.query("INSERT INTO repos (repo_id) VALUES ('repo-unscanned')");
-      const unscanned = await driver.upsertDashboard({ name: "Unscanned repo", description: null, config: { scope: { kind: "repo", repoId: "repo-unscanned" }, cohorts: [{ kind: "local" }], chartType: "bars", metric: "count" } });
-      const lost = await driver.upsertDashboard({ name: "Lost component", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }, unfound], chartType: "bars", metric: "count" } });
+      const unscanned = await driver.upsertDashboard({ visibility: "everyone", name: "Unscanned repo", description: null, config: { scope: { kind: "repo", repoId: "repo-unscanned" }, cohorts: [{ kind: "local" }], chartType: "bars", metric: "count" } });
+      const lost = await driver.upsertDashboard({ visibility: "everyone", name: "Lost component", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }, unfound], chartType: "bars", metric: "count" } });
       await storeResults(pool);
-      await driver.upsertDashboard({ id: saved.id, name: saved.name, description: null, config: { ...saved.config, cohorts: [...saved.config.cohorts, unfound] } });
+      await driver.upsertDashboard({ visibility: "everyone", id: saved.id, name: saved.name, description: null, config: { ...saved.config, cohorts: [...saved.config.cohorts, unfound] } });
       const digests = vi.spyOn(PostgresDriver.prototype, "listScanDigests");
       const tags = vi.spyOn(PostgresDriver.prototype, "listTags");
       const { default: page } = await import("@/app/charts/page");
@@ -314,7 +314,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await pool.query("UPDATE scans SET artifact = '{}'::json");
       driver = new PostgresDriver(pool);
       database = pool;
-      const saved = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      const saved = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
       await storeResults(pool);
       const previews = await driver.getStoredPreviews();
       await pool.query("DELETE FROM scan_read_models WHERE scan_id = 'scan-current'");

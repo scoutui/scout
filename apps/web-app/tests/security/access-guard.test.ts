@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 const CHECKED = [
   "charts/dashboard-actions.ts#saveDashboard",
   "charts/dashboard-actions.ts#deleteDashboard",
+  "charts/dashboard-actions.ts#setDashboardVisibility",
   "charts/dashboard-actions.ts#previewDashboard",
   "charts/dashboard-actions.ts#pickableForRepo",
   "governance/governance-actions.ts#saveGovernance",

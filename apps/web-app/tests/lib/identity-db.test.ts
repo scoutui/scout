@@ -243,20 +243,19 @@ describe("can", () => {
     expect(can(identity, action)).toBe(allowed);
   });
 
-  const theirs = (visibility: "only-me" | "everyone") => ({ createdByUserId: "u2", visibility });
-  const mine = (visibility: "only-me" | "everyone") => ({ createdByUserId: "u1", visibility });
+  const theirs = (visibility: "private" | "everyone") => ({ createdByUserId: "u2", visibility });
+  const mine = (visibility: "private" | "everyone") => ({ createdByUserId: "u1", visibility });
   const chartRows: { who: string; identity: Identity | null; action: Action; chart: string; target: ChartTarget; allowed: boolean }[] = [
-    { who: "a Viewer", identity: person("viewer"), action: "view", chart: "someone else's Only me chart", target: theirs("only-me"), allowed: true },
+    { who: "nobody", identity: null, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
     { who: "the CI secret", identity: { kind: "ci" }, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
-    { who: "nobody", identity: null, action: "list", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
-    { who: "a Viewer", identity: person("viewer"), action: "list", chart: "someone else's Everyone chart", target: theirs("everyone"), allowed: true },
-    { who: "an Editor", identity: person("editor"), action: "list", chart: "someone else's Only me chart", target: theirs("only-me"), allowed: false },
-    { who: "an Editor", identity: person("editor"), action: "list", chart: "their own Only me chart", target: mine("only-me"), allowed: true },
-    { who: "an Admin", identity: person("admin"), action: "list", chart: "someone else's Only me chart", target: theirs("only-me"), allowed: true },
+    { who: "a Viewer", identity: person("viewer"), action: "view", chart: "someone else's Everyone chart", target: theirs("everyone"), allowed: true },
+    { who: "an Editor", identity: person("editor"), action: "view", chart: "someone else's private chart", target: theirs("private"), allowed: false },
+    { who: "a Viewer", identity: person("viewer"), action: "view", chart: "their own private chart", target: mine("private"), allowed: true },
+    { who: "an Admin", identity: person("admin"), action: "view", chart: "someone else's private chart", target: theirs("private"), allowed: true },
     { who: "an Editor", identity: person("editor"), action: "edit", chart: "someone else's chart", target: theirs("everyone"), allowed: false },
     { who: "an Editor", identity: person("editor"), action: "edit", chart: "their own chart", target: mine("everyone"), allowed: true },
     { who: "a Viewer", identity: person("viewer"), action: "edit", chart: "their own chart", target: mine("everyone"), allowed: false },
-    { who: "an Admin", identity: person("admin"), action: "edit", chart: "someone else's chart", target: theirs("only-me"), allowed: true },
+    { who: "an Admin", identity: person("admin"), action: "edit", chart: "someone else's chart", target: theirs("private"), allowed: true },
     { who: "an Editor", identity: person("editor"), action: "edit", chart: "a chart with no creator", target: { createdByUserId: null, visibility: "everyone" }, allowed: false },
     { who: "an Admin", identity: person("admin"), action: "edit", chart: "a chart with no creator", target: { createdByUserId: null, visibility: "everyone" }, allowed: true },
   ];

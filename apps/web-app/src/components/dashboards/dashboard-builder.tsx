@@ -118,13 +118,15 @@ export function DashboardBuilder({
   components,
   packages,
   saved,
+  duplicate = false,
 }: {
   libraryTags: LibraryTag[];
   repos: string[];
   components: PickableComponent[];
   packages: string[];
-  /** A saved chart to edit: the builder opens with it and saves back to it. */
+  /** A saved chart to edit: the builder opens with it and saves back to it, or with `duplicate`, saves a new chart. */
   saved?: Pick<Dashboard, "id" | "name" | "description" | "config">;
+  duplicate?: boolean;
 }) {
   const [name, setName] = useState(saved?.name ?? "");
   const [description, setDescription] = useState(saved?.description ?? "");
@@ -304,7 +306,7 @@ export function DashboardBuilder({
     // On success the action redirects to the saved chart, so this only resolves
     // on failure; the button stays "Saving…" while the navigation lands.
     const res = await saveDashboard({
-      ...(saved ? { id: saved.id } : {}),
+      ...(saved && !duplicate ? { id: saved.id } : {}),
       name: name.trim(),
       description: description.trim() || null,
       config,

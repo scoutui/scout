@@ -12,7 +12,9 @@ import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { DashboardMetricToggle } from "@/components/dashboards/dashboard-metric-toggle";
+import { ChartMenu } from "@/components/dashboards/chart-menu";
 import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-button";
+import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
@@ -32,6 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ dashboard
   if (page.state !== "ready") return { title: readModelTitle(page.state) };
   const dashboard = page.value;
   if (!dashboard) notFound();
+  if (!can(await identify({ browser: true }), "view", { chart: dashboard })) return { title: "Private chart" };
   return { title: dashboard.name };
 }
 
@@ -50,6 +53,7 @@ export default async function DashboardViewPage({
   const metricParam = Array.isArray(rawMetric) ? rawMetric[0] : rawMetric;
 
   const governancePage = id.startsWith("migration:") || id.startsWith("retirement:");
+  const identity = await identify({ browser: true });
   const page = await readModelPage(getStorage(), async snapshot => {
     if (governancePage) {
       return {
@@ -61,6 +65,7 @@ export default async function DashboardViewPage({
     }
     const dashboard = await snapshot.getDashboard(id);
     if (!dashboard) return null;
+    if (!can(identity, "view", { chart: dashboard })) return { kind: "private" as const, createdBy: dashboard.createdBy };
     const repoId = dashboard.config.scope.kind === "repo" ? dashboard.config.scope.repoId : undefined;
     return {
       kind: "saved" as const,
@@ -75,6 +80,7 @@ export default async function DashboardViewPage({
   });
   if (page.state !== "ready") return <ReadModelState {...page} />;
   if (!page.value) notFound();
+  if (page.value.kind === "private") return privateChart(page.value.createdBy);
   let dashboard: Dashboard;
   let view: DashboardView;
   let derivedEntry: GovernanceTracking | null = null;
@@ -98,7 +104,9 @@ export default async function DashboardViewPage({
       name: entry.name,
       description: null,
       config: entry.config,
+      visibility: "everyone",
       createdByUserId: null,
+      createdBy: null,
       createdAt: "1970-01-01T00:00:00.000Z",
       updatedAt: "1970-01-01T00:00:00.000Z",
     };
@@ -118,7 +126,8 @@ export default async function DashboardViewPage({
   const skipped = page.value.kind === "saved" ? chartSkippedNotices(config, page) : { fallbacks: [], gaps: [] };
 
   const derived = governancePage;
-  const canEdit = can(await identify({ browser: true }), "edit");
+  const canEdit = can(identity, "edit");
+  const canChange = !derived && can(identity, "edit", { chart: dashboard });
   const showMetricToggle = !governancePage && config.chartType !== "stacked-share";
 
   return (
@@ -163,11 +172,13 @@ export default async function DashboardViewPage({
           <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             <span>{CHART_KIND_LABEL[config.chartType]}</span>
             <DashboardScopeBadge scope={config.scope} missing={missingRepo?.missing} />
+            {!derived && dashboard.visibility === "private" ? <span>Private</span> : null}
+            {dashboard.createdBy ? <span>Created by {dashboard.createdBy}</span> : null}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {showMetricToggle ? <DashboardMetricToggle metric={metric} /> : null}
-          {!derived && canEdit ? (
+          {canChange ? (
             <>
               <Link href={`/charts/${encodeURIComponent(dashboard.id)}/edit`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                 Edit
@@ -175,6 +186,7 @@ export default async function DashboardViewPage({
               <DeleteDashboardButton id={dashboard.id} />
             </>
           ) : null}
+          {derived ? null : <ChartMenu id={dashboard.id} canDuplicate={canEdit} visibility={canChange ? dashboard.visibility : null} />}
         </div>
       </div>
 
@@ -200,7 +212,7 @@ export default async function DashboardViewPage({
           icon={<AlertTriangle className="size-6" />}
           title="This chart's repo no longer exists."
           description={
-            canEdit
+            canChange
               ? `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.`
               : `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted.`
           }
@@ -209,7 +221,7 @@ export default async function DashboardViewPage({
         <EmptyState
           icon={<SearchX className="size-6" />}
           title="Couldn't find the components in this chart."
-          description={canEdit ? "Edit the chart to pick them again." : undefined}
+          description={canChange ? "Edit the chart to pick them again." : undefined}
         />
       ) : (
         /* A table runs flush to the panel edge; plotted charts sit inset. */

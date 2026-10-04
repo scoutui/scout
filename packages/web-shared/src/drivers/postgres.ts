@@ -394,6 +394,10 @@ export class PostgresDriver implements StorageDriver {
     await this.writeWithResults(db => db.execute(sql`DELETE FROM dashboards WHERE id = ${id}`));
   }
 
+  async setDashboardVisibility(id: string, visibility: ChartVisibility): Promise<void> {
+    await this.db.execute(sql`UPDATE dashboards SET visibility = ${visibility} WHERE id = ${id}`);
+  }
+
   // ---- Stored chart results ----
 
   private async storedResult<T>(key: string): Promise<{ payload: T; snapshotAt: string } | null> {

@@ -8,7 +8,7 @@ export type RoleSource = "people" | "install" | "group";
 export type Person = { kind: "person"; userId: string; email: string; name: string | null; role: Role; roleSource: RoleSource };
 /** Who is asking, with their role as it stands for this request. `ci` is the install-wide upload secret. */
 export type Identity = Person | { kind: "ci" };
-export type Action = "view" | "list" | "edit" | "upload" | "manage-people" | "manage-repos";
+export type Action = "view" | "edit" | "upload" | "manage-people" | "manage-repos";
 /** The parts of a saved chart its access depends on. */
 export type ChartTarget = Pick<Dashboard, "createdByUserId" | "visibility">;
 /** What an action is about: a repo, or a saved chart. */
@@ -24,19 +24,18 @@ export const REPO_ADMIN_REFUSAL = "Only Admins can remove scans and delete repos
 export const CHART_REFUSAL = "Only the chart's creator or an Admin can change it.";
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
-const NEEDS: Record<Exclude<Action, "view" | "list">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin", "manage-repos": "admin" };
+const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin", "manage-repos": "admin" };
 
 /**
- * Whether `identity` may do `action` to `target`. Anyone signed in may view a saved chart. It's listed for everyone,
- * or only for its creator and Admins. Only its creator or an Admin may edit or delete it.
+ * Whether `identity` may do `action` to `target`. Everyone signed in may view a chart shared with everyone; only its
+ * creator and Admins may view a private one, or edit or delete any chart.
  */
 export function can(identity: Identity | null, action: Action, target?: Target): boolean {
   if (identity === null) return false;
   if (identity.kind === "ci") return action === "upload";
-  if (action === "view") return true;
   const chart = target && "chart" in target ? target.chart : null;
   const ownsOrAdmin = chart === null || chart.createdByUserId === identity.userId || identity.role === "admin";
-  if (action === "list") return chart?.visibility === "everyone" || ownsOrAdmin;
+  if (action === "view") return chart?.visibility === "everyone" || ownsOrAdmin;
   if (RANK[identity.role] < RANK[NEEDS[action]]) return false;
   return action !== "edit" || ownsOrAdmin;
 }

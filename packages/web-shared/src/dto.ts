@@ -194,8 +194,8 @@ export const DashboardConfigSchema = z.object({
 });
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
-/** Who a saved chart is listed for on the Charts page: its creator alone, or everyone. */
-export const ChartVisibilitySchema = z.enum(["only-me", "everyone"]);
+/** Who can open a saved chart: its creator and Admins, or everyone signed in. */
+export const ChartVisibilitySchema = z.enum(["private", "everyone"]);
 export type ChartVisibility = z.infer<typeof ChartVisibilitySchema>;
 
 export const DashboardSchema = z.object({

@@ -1,8 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { type DashboardConfig, type DashboardInput, DashboardInputSchema } from "@scoutui/web-shared";
-import { can } from "@/lib/access";
+import { type ChartVisibility, ChartVisibilitySchema, type DashboardConfig, type DashboardInput, DashboardInputSchema } from "@scoutui/web-shared";
+import { CHART_REFUSAL, can } from "@/lib/access";
 import { identify, requireEditor } from "@/lib/identity";
 import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
@@ -11,17 +11,22 @@ import { isDerivedId } from "@/lib/derived-dashboards";
 import { loadDashboardView, type DashboardView } from "@/lib/dashboard-load";
 import type { PickableComponent } from "@/components/dashboards/series-picker";
 
-export async function saveDashboard(untrusted: DashboardInput): Promise<{ ok: false; error: string }> {
+const ChartFormSchema = DashboardInputSchema.omit({ visibility: true, createdByUserId: true });
+
+/** Creates a private chart, or saves over one, keeping who can open it. */
+export async function saveDashboard(untrusted: Omit<DashboardInput, "visibility">): Promise<{ ok: false; error: string }> {
   const gate = await requireEditor();
   if (!gate.ok) return gate;
-  const parsed = DashboardInputSchema.safeParse(untrusted);
+  const parsed = ChartFormSchema.safeParse(untrusted);
   if (!parsed.success) return { ok: false, error: "Couldn't save the chart. Reload the page and try again." };
   const input = parsed.data;
   if (input.id && isDerivedId(input.id)) return { ok: false, error: "cannot_edit_derived" };
   let savedId: string;
   try {
+    const stored = input.id ? await getStorage().getDashboard(input.id) : null;
+    if (stored && !can(await identify({ browser: true }), "edit", { chart: stored })) return { ok: false, error: CHART_REFUSAL };
     // Server owns createdByUserId on create; on update the driver preserves the original creator.
-    const saved = await getStorage().upsertDashboard({ ...input, createdByUserId: gate.userId });
+    const saved = await getStorage().upsertDashboard({ ...input, visibility: stored?.visibility ?? "private", createdByUserId: gate.userId });
     savedId = saved.id;
   } catch (err) {
     console.error("saveDashboard failed:", err);
@@ -40,12 +45,31 @@ export async function deleteDashboard(id: string): Promise<{ ok: boolean; error?
   if (!gate.ok) return gate;
   if (isDerivedId(id)) return { ok: false, error: "cannot_delete_derived" };
   try {
+    const stored = await getStorage().getDashboard(id);
+    if (stored && !can(await identify({ browser: true }), "edit", { chart: stored })) return { ok: false, error: CHART_REFUSAL };
     await getStorage().deleteDashboard(id);
     revalidatePath("/charts");
     return { ok: true };
   } catch (err) {
     console.error("deleteDashboard failed:", err);
     return { ok: false, error: "Couldn't delete the chart. Try again." };
+  }
+}
+
+export async function setDashboardVisibility(id: string, visibility: ChartVisibility): Promise<{ ok: boolean; error?: string }> {
+  const gate = await requireEditor();
+  if (!gate.ok) return gate;
+  const parsed = ChartVisibilitySchema.safeParse(visibility);
+  if (!parsed.success || isDerivedId(id)) return { ok: false, error: "Couldn't change who can see the chart. Reload the page and try again." };
+  try {
+    const stored = await getStorage().getDashboard(id);
+    if (stored && !can(await identify({ browser: true }), "edit", { chart: stored })) return { ok: false, error: CHART_REFUSAL };
+    await getStorage().setDashboardVisibility(id, parsed.data);
+    revalidatePath("/charts");
+    return { ok: true };
+  } catch (err) {
+    console.error("setDashboardVisibility failed:", err);
+    return { ok: false, error: "Couldn't change who can see the chart. Try again." };
   }
 }
 
