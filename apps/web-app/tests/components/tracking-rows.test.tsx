@@ -62,7 +62,7 @@ describe("TrackingSection change in what is left", () => {
 
   it.each([
     ["estate", "Migrations · 1 in progress · change over the last 30 days"],
-    ["repo", "Migrations in this repo · 1 in progress · change since previous scan"],
+    ["repo", "Migrations in this repo · 1 in progress · change over the last 30 days"],
   ] as const)("the %s heading names the period the change covers", (surface, heading) => {
     render(<TrackingSection kind="migration" surface={surface} entries={[entry({})]} />);
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(heading);

@@ -93,7 +93,7 @@ describe("renderDashboard: a table's change", () => {
 
   it.each([
     ["across all repos, adds up each repo's change over the 30 days", { kind: "all" } as const, "count", { "package:@x/a": -6, "package:@x/b": 8 }],
-    ["in one repo, is the change since its previous scan", { kind: "repo", repoId: "r1" } as const, "count", { "package:@x/a": -4, "package:@x/b": 6 }],
+    ["in one repo, is that repo's change over the 30 days, though its last two scans match", { kind: "repo", repoId: "r2" } as const, "count", { "package:@x/a": -2, "package:@x/b": 2 }],
   ] as const)("%s", (_, scope, metric, expected) => {
     expect(change(scope, metric)).toEqual(expected);
   });

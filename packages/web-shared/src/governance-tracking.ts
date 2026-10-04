@@ -31,10 +31,9 @@ const trackingMemo = new WeakMap<object, Map<string, GovernanceTracking[]>>();
  * config's cohorts name them: the package for a package-wide side, else one
  * component cohort per component the side governs in some in-scope scan.
  *
- * `delta` is the change in `remaining`: across all repos, over the 30 days up to
- * the derivation's `asOf`, each repo compared with itself (from its first scan
- * when it joined inside the window); under a repo scope, since the repo's
- * previous scan. Null until some repo with old uses has two scans.
+ * `delta` is the change in `remaining` over the 30 days up to the derivation's
+ * `asOf`, each repo in scope compared with itself (from its first scan when it
+ * joined inside the window). Null until some repo with old uses has two scans.
  * `reposAdded` counts the repos that joined inside the window and still have
  * old uses, when some repo was scanned before it.
  */
@@ -92,7 +91,7 @@ function track(
   scope: DashboardScope,
   asOf: string,
 ): GovernanceTracking[] {
-  const scopeKey = scope.kind === "repo" ? `repo:${scope.repoId}` : `all:${Date.parse(asOf)}`;
+  const scopeKey = `${scope.kind === "repo" ? `repo:${scope.repoId}` : "all"}:${Date.parse(asOf)}`;
   const innerKey = `${grouping}::${scopeKey}::gov=${governanceHash(records)}`;
   let perDigests = trackingMemo.get(digests);
   const hit = perDigests?.get(innerKey);
@@ -194,7 +193,7 @@ function deriveOne(
   const fromLabel = from.label;
   const shortFrom = fromLabel.split(" · ")[0] ?? fromLabel;
   const deprecated: SeriesCohort = { key: `deprecated:${record.id}`, label: fromLabel, color: "", role: "deprecated", occurrences: from.occurrences };
-  const change = changeIn(scans, scope, from.occurrences, asOf);
+  const change = changeIn(scans, from.occurrences, asOf);
 
   if (record.disposition.kind === "retired") {
     const config: DashboardConfig = { scope, cohorts: from.cohorts, chartType: "trend", metric: "count" };
@@ -255,16 +254,6 @@ function deriveOne(
 
 type Change = { delta: number | null; reposAdded: number };
 
-/**
- * The change in a count per scan. Under a repo scope, `scans` are that repo's and the change is since its previous
- * scan. Across all repos, it is over the 30 days up to `asOf`, each repo compared with itself (from its first scan
- * when it joined inside the window), and `reposAdded` counts the repos that joined inside the window and still have
- * the count, when some repo was scanned before it. Null until some repo with the count has two scans.
- */
-export function changeIn(scans: DigestScan[], scope: DashboardScope, countOf: (scan: DigestScan) => number, asOf: string): Change {
-  return scope.kind === "repo" ? sincePreviousScan(scans, countOf) : overWindow(scans, countOf, asOf);
-}
-
 function scansByRepo(scans: DigestScan[]): DigestScan[][] {
   const byRepo = new Map<string, DigestScan[]>();
   for (const scan of scans) {
@@ -275,12 +264,13 @@ function scansByRepo(scans: DigestScan[]): DigestScan[][] {
   return [...byRepo.values()].map((repoScans) => repoScans.sort((a, b) => newestScanFirst(a.meta, b.meta)));
 }
 
-function sincePreviousScan(scans: DigestScan[], occurrences: (scan: DigestScan) => number): Change {
-  const [latest, previous] = [...scans].sort((a, b) => newestScanFirst(a.meta, b.meta));
-  return { delta: latest && previous ? occurrences(latest) - occurrences(previous) : null, reposAdded: 0 };
-}
-
-function overWindow(scans: DigestScan[], countOf: (scan: DigestScan) => number, asOf: string): Change {
+/**
+ * The change in a count per scan over the 30 days up to `asOf`: each repo's latest scan compared with its latest scan
+ * on or before the window's start (its first scan when it joined inside the window), added up across repos.
+ * `reposAdded` counts the repos that joined inside the window and still have the count, when some repo was scanned
+ * before it. Null until some repo with the count has two scans.
+ */
+export function changeIn(scans: DigestScan[], countOf: (scan: DigestScan) => number, asOf: string): Change {
   const counts = new Map(scans.map((scan) => [scan.meta.scanId, countOf(scan)]));
   const occurrences = (scan: DigestScan) => counts.get(scan.meta.scanId) ?? 0;
   const start = Date.parse(asOf) - CHANGE_WINDOW_MS;

@@ -5,7 +5,7 @@ import { type GovernanceTracking, deriveGovernanceTracking } from "./governance-
 import { type RegistryStats, deriveRecordStats } from "./governance-registry.js";
 import { type GovernanceTarget, listGovernanceTargets } from "./governance.js";
 
-export const CHART_RESULTS_VERSION = 11;
+export const CHART_RESULTS_VERSION = 12;
 export const CHART_RESULTS_FORMAT_VERSION = 7;
 
 export type DashboardPreview = { view: DashboardView; missing: boolean };
@@ -14,7 +14,7 @@ export type StoredPreview = DashboardPreview & { snapshotAt: string };
 export type RegistryResult = RegistryStats & { sources: GovernanceTarget[] };
 /** The stored registry, and when the snapshot it was derived from was read. */
 export type StoredRegistry = RegistryResult & { snapshotAt: string };
-/** `asOf` ends the window the all-repos tracking's and tables' change is measured over. */
+/** `asOf` ends the window the tracking's and tables' change is measured over. */
 export type ChartResultsInput = { digests: DigestScan[]; tags: Tag[]; governance: GovernanceRecord[]; dashboards: Dashboard[]; asOf: string };
 export type ChartResults = {
   tracking: GovernanceTracking[];

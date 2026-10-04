@@ -81,7 +81,7 @@ describe("RepoAdoptionPanel governance tracking", () => {
     const tracking = deriveGovernanceTracking([record("g-live", "Button"), done], digests, { kind: "repo", repoId: "r1" }, asOf);
     render(<RepoAdoptionPanel tracking={tracking} notice={null} canEdit />);
 
-    expect(screen.getByText("Migrations in this repo · 1 in progress · 1 complete · change since previous scan")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 in progress · 1 complete · change over the last 30 days")).toBeDefined();
     expect(screen.getByText("Show 1 complete")).toBeDefined();
   });
 
@@ -96,6 +96,6 @@ describe("RepoAdoptionPanel governance tracking", () => {
     const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" }, asOf);
     render(<RepoAdoptionPanel tracking={tracking} notice={{ state: "failed", scans: [{ scanId: "s2", repoId: "r1", commit: "0123456789" }], retryable: false }} canEdit />);
     expect(screen.getByText("Numbers may be out of date")).toBeDefined();
-    expect(screen.getByText("Migrations in this repo · 1 in progress · change since previous scan")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 in progress · change over the last 30 days")).toBeDefined();
   });
 });

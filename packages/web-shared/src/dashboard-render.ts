@@ -70,7 +70,7 @@ function tableChange(
     counts.set(scan.meta.scanId, each);
     return each;
   };
-  const changeOf = (countOf: (scan: DigestScan) => number) => changeIn(scans, config.scope, countOf, asOf).delta;
+  const changeOf = (countOf: (scan: DigestScan) => number) => changeIn(scans, countOf, asOf).delta;
   const latest = latestScanPerRepo(scans);
   const atLatest = (countOf: (scan: DigestScan) => number) => latest.reduce((n, scan) => n + countOf(scan), 0);
   const total = (scan: DigestScan) => countsIn(scan).reduce((n, count) => n + count, 0);

@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { CohortPoint, DashboardScope } from "@scoutui/web-shared";
+import type { CohortPoint } from "@scoutui/web-shared";
 import { CohortTable } from "@/components/dashboards/cohort-table";
 
-function shareTable(change: number, scope: DashboardScope = { kind: "all" }) {
+function shareTable(change: number) {
   const points: CohortPoint[] = [{ cohortKey: "local", label: "Local", color: "", value: 0.5, componentCount: 1 }];
-  return render(<CohortTable points={points} change={{ local: change }} scope={scope} colors={new Map()} metric="share" />);
+  return render(<CohortTable points={points} change={{ local: change }} colors={new Map()} metric="share" />);
 }
 
 describe("CohortTable share change", () => {
@@ -23,11 +23,8 @@ describe("CohortTable share change", () => {
 });
 
 describe("CohortTable change title", () => {
-  it.each([
-    [{ kind: "repo", repoId: "storefront" } as const, "Change since the previous scan"],
-    [{ kind: "all" } as const, "Change over the last 30 days"],
-  ])("names what the change compares for %o", (scope, title) => {
-    shareTable(0.142, scope);
-    expect(screen.getByTitle(title)).toBeDefined();
+  it("names the 30 days the change covers", () => {
+    shareTable(0.142);
+    expect(screen.getByTitle("Change over the last 30 days")).toBeDefined();
   });
 });

@@ -205,7 +205,7 @@ export function TrackingSection({
     `${noun}${surface === "repo" ? " in this repo" : ""}`,
     entries.length > 0 ? `${entries.length.toLocaleString()} in progress` : null,
     completeCount > 0 ? `${completeCount.toLocaleString()} complete` : null,
-    entries.length > 0 ? (surface === "repo" ? "change since previous scan" : "change over the last 30 days") : null,
+    entries.length > 0 ? "change over the last 30 days" : null,
   ]
     .filter(Boolean)
     .join(" · ");

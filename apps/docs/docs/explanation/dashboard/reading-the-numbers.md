@@ -92,9 +92,9 @@ Records that name the same replacement, such as one record for each part of a co
 
 Each migration and retirement row shows **N left**, the deprecated side's uses in each repo's latest scan, and how that number changed: **6 fewer**, **2 more** or **no change**. Fewer is progress on every row. Uses of the replacement don't move it, so deleting code that uses the new component never reads as a step back.
 
-On the **charts** page, the change covers the last 30 days, and each repo is compared with itself. A repo scanned for the first time in those 30 days counts from that first scan, so joining isn't a change, and the row says it joined, for example **3 fewer · 1 repo added**. On a repo's **Adoption** tab, the change is since that repo's previous scan.
+The change covers the last 30 days, on the **charts** page and on a repo's **Adoption** tab alike, and each repo is compared with itself. A repo scanned for the first time in those 30 days counts from that first scan, so joining isn't a change, and the row on the **charts** page says it joined, for example **3 fewer · 1 repo added**.
 
-A table chart's **Change** column counts the same way: over the last 30 days for a chart of all repos, and since the previous scan for a chart of one repo. With **% of uses**, the change compares the same repos at both ends, so a repo joining doesn't move it. A series with nothing to compare yet reads **—**.
+A table chart's **Change** column counts the same way, whether the chart covers all repos or one. With **% of uses**, the change compares the same repos at both ends, so a repo joining doesn't move it. A series with nothing to compare yet reads **—**.
 
 A record is complete when the deprecated side has no uses in any latest scan within the scope. So a migration can be complete on one repo's **Adoption** tab and still in progress on the **charts** page. A repo that never used `LegacyButton` has no row for it on its **Adoption** tab.
 

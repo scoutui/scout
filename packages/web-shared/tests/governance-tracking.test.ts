@@ -230,24 +230,27 @@ describe("deriveGovernanceTracking: change over the last 30 days", () => {
     expect(deriveGovernanceTracking([g1], once, { kind: "all" }, march)[0]?.delta).toBeNull();
   });
 
-  it("compares a repo's latest scan with its previous one under a repo scope, whatever the window", () => {
+  it("measures a repo scope over the same 30 days, when its last two scans match", () => {
     const history = [
-      digest("r1", "2025-10-01T00:00:00Z", [[btn, 10]]),
-      digest("r1", "2025-11-01T00:00:00Z", [[btn, 7]]),
-      digest("r1", "2025-12-01T00:00:00Z", [[btn, 4]]),
+      digest("r1", "2026-01-20T00:00:00Z", [[btn, 30]]),
+      digest("r1", "2026-02-20T00:00:00Z", [[btn, 24]]),
+      digest("r1", "2026-02-25T00:00:00Z", [[btn, 24]]),
     ];
     const [m] = deriveGovernanceTracking([g1], history, { kind: "repo", repoId: "r1" }, march);
-    expect(m?.delta).toBe(-3);
+    expect(m?.delta).toBe(-6);
     expect(m?.reposAdded).toBe(0);
   });
 
-  it("recomputes when the window's end changes under the same digest array", () => {
+  it.each([
+    [{ kind: "all" } as const],
+    [{ kind: "repo", repoId: "r1" } as const],
+  ])("recomputes when the window's end changes under the same digest array, scope %o", (scope) => {
     const history = [
       digest("r1", "2026-01-01T00:00:00Z", [[btn, 30]]),
       digest("r1", "2026-02-20T00:00:00Z", [[btn, 24]]),
     ];
-    expect(deriveGovernanceTracking([g1], history, { kind: "all" }, march)[0]?.delta).toBe(-6);
-    expect(deriveGovernanceTracking([g1], history, { kind: "all" }, "2026-04-01T00:00:00Z")[0]?.delta).toBe(0);
+    expect(deriveGovernanceTracking([g1], history, scope, march)[0]?.delta).toBe(-6);
+    expect(deriveGovernanceTracking([g1], history, scope, "2026-04-01T00:00:00Z")[0]?.delta).toBe(0);
   });
 });
 
