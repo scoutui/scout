@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { DeprecatedMark } from "@/components/deprecated-mark";
 import { SortButton, ariaSort, sortRows, useSort, type SortDir } from "@/components/ui/sortable";
 import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
+import { hrefWithQuery } from "@/lib/query-string";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { compareVersions } from "@/lib/version-order";
 
@@ -37,6 +38,7 @@ export function ComponentsTable({
   marks,
   notInLatest,
   search,
+  usedIn,
 }: {
   repoId: string;
   rows: ComponentRow[];
@@ -49,6 +51,8 @@ export function ComponentsTable({
   notInLatest?: ReadonlySet<string> | undefined;
   /** The search box text: a row it finds only by a written name says which. */
   search?: string;
+  /** The Used in package: a row used in more than one package links to its Usage tab with this package picked. */
+  usedIn?: string | null;
 }) {
   // Default: most-used first. The changed view's Occurrences header sorts by
   // the signed Δ instead, biggest drop first.
@@ -164,7 +168,7 @@ export function ComponentsTable({
             >
               <RowCells
                 r={row}
-                href={linked ? hrefFor(repoId, row.componentId) : undefined}
+                href={linked ? hrefFor(repoId, row.componentId, usedIn && Object.keys(row.usedIn ?? {}).length > 1 ? usedIn : null) : undefined}
                 mark={mark}
                 delta={marks ? deltaOf(mark, row.occurrenceCount) : undefined}
                 slotCh={slotCh}
@@ -198,8 +202,9 @@ function sortByVersion(rows: readonly ComponentRow[], dir: SortDir): ComponentRo
   });
 }
 
-function hrefFor(repoId: string, componentId: string): string {
-  return `/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}`;
+/** A component's page, with `area` picked on its Usage tab when given. */
+function hrefFor(repoId: string, componentId: string, area: string | null): string {
+  return hrefWithQuery(`/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}`, area ? [["area", area]] : []);
 }
 
 /** The cells of one component: name and detail link, package, version, files and occurrences. */

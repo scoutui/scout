@@ -51,7 +51,7 @@ To narrow the table:
 
 **Used in** shows when more than one of the repo's packages uses components, as in a monorepo. It lists those packages, each with its folder, or **repo root** for the package at the top of the repo. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
 
-Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components.
+Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. Selecting a row then opens the component's **Usage** tab with that package picked, when the component's uses sit in more than one package.
 
 You can pick one package at a time, and the **since previous scan** chip is hidden while you do. Scans uploaded by older CLI versions don't record which package each use sits in, so they don't offer **Used in**.
 

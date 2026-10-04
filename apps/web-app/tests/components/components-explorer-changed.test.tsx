@@ -259,6 +259,14 @@ describe("ComponentsExplorer ?used-in", () => {
     expect(screen.getByText(sentence("1 of 2 components"))).toBeInTheDocument();
   });
 
+  it("links a component used in more than one package to its Usage tab with the package picked", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?used-in=@example/web");
+    const onlyWeb: ComponentRow = { ...base, componentId: "d", displayName: "Card", occurrenceCount: 3, fileCount: 2, usedIn: { "@example/web": counts(3, 2) } };
+    render(<ComponentsExplorer repoId="r1" rows={[...usedInRows, onlyWeb]} deprecatedTotal={0} diff={usedInDiff} packages={packages} canEdit />);
+    expect(screen.getByRole("link", { name: "Button" })).toHaveAttribute("href", "/repos/r1/components/b?area=@example/web");
+    expect(screen.getByRole("link", { name: "Card" })).toHaveAttribute("href", "/repos/r1/components/d");
+  });
+
   // Every row is deprecated: the repo has 3, @example/web has 2, and `q=shared` leaves 1.
   it.each([
     { when: "Used in and a search", query: "used-in=@example/web&q=shared", text: "deprecated1 of 2" },

@@ -116,6 +116,7 @@ export function ComponentsExplorer({
           marks={changedActive && diff !== null ? diff.marks : undefined}
           notInLatest={notInLatestIds}
           search={facets.text}
+          usedIn={facets.usedIn}
         />
       )}
     </div>
