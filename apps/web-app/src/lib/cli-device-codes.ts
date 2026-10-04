@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { and, eq, gt, lte, or } from "drizzle-orm";
 import { ulid } from "ulid";
 import { getDb, schema } from "@/db/client";
@@ -8,9 +8,8 @@ import { hashToken } from "@/lib/cli-session-tokens";
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function pick(n: number): string {
-  const b = randomBytes(n);
   let s = "";
-  for (let i = 0; i < n; i++) s += ALPHABET[(b[i] as number) % ALPHABET.length];
+  for (let i = 0; i < n; i++) s += ALPHABET[randomInt(ALPHABET.length)];
   return s;
 }
 
