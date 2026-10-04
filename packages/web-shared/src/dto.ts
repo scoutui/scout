@@ -480,6 +480,8 @@ export const ComponentDetailSchema = z.object({
   packageName: z.string().nullable(),
   /** The package export's public entry; null for a repository declaration or a tag. */
   publicEntry: z.string().nullable(),
+  /** For a tag the scan found more than one definition for, each claiming package or repository file. */
+  claimedBy: z.array(z.string()),
   scope: ComponentScope,
   kind: ComponentKind,
   version: z.string().nullable(),

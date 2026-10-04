@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 import type { ComponentDetail } from "@scoutui/web-shared";
@@ -36,7 +37,17 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
       </div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span>
-          From <span className="font-mono" title={detail.packageName ? undefined : NO_PACKAGE_TITLE}>{detail.packageName ?? "—"}</span>
+          From{" "}
+          {detail.claimedBy.length > 0 ? (
+            detail.claimedBy.map((claimant, i) => (
+              <Fragment key={claimant}>
+                {i > 0 ? " or " : null}
+                <span className="font-mono">{claimant}</span>
+              </Fragment>
+            ))
+          ) : (
+            <span className="font-mono" title={detail.packageName ? undefined : NO_PACKAGE_TITLE}>{detail.packageName ?? "—"}</span>
+          )}
         </span>
         {detail.publicEntry ? (<><Sep /><span className="font-mono">{detail.publicEntry}</span></>) : null}
         {detail.version ? (<><Sep /><span className="font-mono">v{detail.version}</span></>) : null}

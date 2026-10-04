@@ -111,6 +111,21 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
     });
   });
 
+  const conflict = (candidates: Extract<TagAttribution, { status: "conflict" }>["candidates"]): TagAttribution => ({ status: "conflict", strongestClass: "declared", candidates, evidence: [] });
+  const inRepo = (filePath: string) => ({ kind: "repository" as const, repoId: "claims", filePath, exportName: "Badge" });
+  it.each([
+    ["two packages", conflict([{ kind: "package", packageName: "@example/ui" }, { kind: "package", packageName: "@other/ui" }]), ["@example/ui", "@other/ui"]],
+    ["two files in the repo", conflict([inRepo("src/a.ts"), inRepo("src/b.ts")]), ["src/a.ts", "src/b.ts"]],
+    ["a package and a file in the repo", conflict([{ kind: "package", packageName: "@example/ui" }, inRepo("src/a.ts")]), ["@example/ui", "src/a.ts"]],
+    ["none for a tag one package resolves to", attributedTo("@example/ui"), []],
+  ])("lists the claimants on a tag's detail head: %s", async (_, attribution, claimedBy) => {
+    await withReadModelDatabase(async pool => {
+      const badge = component(tag("x-badge"), { attribution });
+      await publishScan(pool, scanOf("claims", "2026-06-01T00:00:00.000Z", [[badge, 1]]), { uploadedByUserId: null });
+      expect((await new PostgresDriver(pool).getComponentDetailHead("claims", badge.id))?.claimedBy).toEqual(claimedBy);
+    });
+  });
+
   it("unions identities and consumers across repos while keeping scoped packages", async () => {
     await withReadModelDatabase(async pool => {
       for (const repoId of ["repo-a", "repo-b"]) {

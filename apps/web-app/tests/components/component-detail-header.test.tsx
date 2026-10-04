@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }), use
 
 function makeDetail(overrides?: Partial<ComponentDetail>): ComponentDetail {
   return {
-    componentId: "c", repoId: "r", displayName: "Button", packageName: "@example/ui", publicEntry: "dist/button",
+    componentId: "c", repoId: "r", displayName: "Button", packageName: "@example/ui", publicEntry: "dist/button", claimedBy: [],
     scope: "external", kind: "react-component", version: null, deprecated: false, hasDeclaredApi: false, hasRest: false,
     migrationStatus: { status: "active" }, governedByRecordId: null, definedAt: null, props: [], events: [],
     composition: { renders: [], renderedBy: [], isRootCount: 0, isLeafCount: 0 }, occurrences: [],
@@ -61,6 +61,13 @@ describe("ComponentDetailHeader", () => {
       />,
     );
     expect(identityLine()).toBe("From @example/ui·defined at src/components/Button.tsx:4:16");
+  });
+
+  it("names each claimant of a tag that several definitions claim", () => {
+    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "custom-element", claimedBy: ["@example/ui", "src/badge.ts"] })} canEdit />);
+    expect(screen.getByText("@example/ui").closest("div")?.textContent).toBe("From @example/ui or src/badge.ts");
+    expect(screen.getByText("src/badge.ts")).toHaveClass("font-mono");
+    expect(screen.queryByText("—")).toBeNull();
   });
 
   it("shows a dash for a component with no package, as the components table does", () => {
