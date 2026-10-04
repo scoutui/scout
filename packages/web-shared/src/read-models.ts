@@ -8,7 +8,7 @@ import { createComponentProjectionContext, displayNameCollisionKey, type Compone
 import { usedComponentKey, isUsed } from "./usage.js";
 
 // A stored-format change increments READ_MODEL_FORMAT_VERSION and PROJECTION_VERSION together.
-export const PROJECTION_VERSION: number = 7;
+export const PROJECTION_VERSION: number = 8;
 export const READ_MODEL_FORMAT_VERSION: number = 5;
 
 export type ImmutableDetailHead = Omit<ComponentDetailHead, "claimedBy" | "deprecated" | "migrationStatus" | "governedByRecordId">;
