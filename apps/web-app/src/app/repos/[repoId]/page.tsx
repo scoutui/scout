@@ -62,7 +62,8 @@ export default async function RepoDetailPage({
   if (!page.value) notFound();
   const { detail, recentScans, rows, notInLatest, governance, tracking } = page.value;
   if (!detail) notFound();
-  const canEdit = can(await identify({ browser: true }), "edit");
+  const identity = await identify({ browser: true });
+  const canEdit = can(identity, "edit");
 
   // listScans puts the latest scan first.
   const showOlderScanBanner = isOlderScan(scanId, recentScans[0]?.scanId, detail.scanId);
@@ -72,7 +73,7 @@ export default async function RepoDetailPage({
       {showOlderScanBanner ? (
         <ViewingOlderScanBanner repoId={repoId} committedAt={detail.committedAt} arrivedAt={detail.arrivedAt} />
       ) : null}
-      <RepoDetailHeader detail={detail} recentScans={recentScans} />
+      <RepoDetailHeader detail={detail} recentScans={recentScans} canManage={can(identity, "manage-repos", repoId)} />
       <SkippedScansNotice fallbacks={page.fallbacks} ownPage />
       <RepoTabs
         components={

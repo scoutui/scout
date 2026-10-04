@@ -262,6 +262,18 @@ export const roleChanges = pgTable("role_changes", {
 }));
 export type RoleChangeRow = typeof roleChanges.$inferSelect;
 
+/** A scan an Admin removed (`commit_sha` set) or a repo an Admin deleted (`scan_count` set). */
+export const removals = pgTable("removals", {
+  id: text("id").primaryKey(),
+  removedAt: timestamp("removed_at", { withTimezone: true }).notNull().defaultNow(),
+  actorEmail: text("actor_email").notNull(),
+  repoId: text("repo_id").notNull(),
+  commitSha: text("commit_sha"),
+  scanCount: integer("scan_count"),
+}, (t) => ({
+  removedAt: index("removals_removed_at").on(t.removedAt.desc()),
+}));
+
 export type UserRow = typeof users.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
 

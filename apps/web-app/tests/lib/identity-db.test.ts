@@ -228,11 +228,15 @@ describe("can", () => {
     { who: "an Editor", identity: person("editor"), action: "edit", allowed: true },
     { who: "an Editor", identity: person("editor"), action: "upload", allowed: true },
     { who: "an Editor", identity: person("editor"), action: "manage-people", allowed: false },
+    { who: "a Viewer", identity: person("viewer"), action: "manage-repos", allowed: false },
+    { who: "an Editor", identity: person("editor"), action: "manage-repos", allowed: false },
     { who: "an Admin", identity: person("admin"), action: "manage-people", allowed: true },
+    { who: "an Admin", identity: person("admin"), action: "manage-repos", allowed: true },
     { who: "the CI secret", identity: { kind: "ci" }, action: "upload", allowed: true },
     { who: "the CI secret", identity: { kind: "ci" }, action: "view", allowed: false },
     { who: "the CI secret", identity: { kind: "ci" }, action: "edit", allowed: false },
     { who: "the CI secret", identity: { kind: "ci" }, action: "manage-people", allowed: false },
+    { who: "the CI secret", identity: { kind: "ci" }, action: "manage-repos", allowed: false },
   ];
 
   it.each(rows)("$who may $action: $allowed", ({ identity, action, allowed }) => {

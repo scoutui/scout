@@ -16,6 +16,8 @@ const CHECKED = [
   "packages/tag-actions.ts#quickTagPackage",
   "settings/people-actions.ts#changeRole",
   "settings/people-actions.ts#removeFromPeople",
+  "repos/repo-actions.ts#removeScan",
+  "repos/repo-actions.ts#deleteRepo",
   "login/device/actions.ts#approveDevice",
   "login/device/actions.ts#denyDevice",
   "login/device/actions.ts#switchDeviceAccount",
@@ -214,5 +216,11 @@ describe("access checks", () => {
     expect(filesMatching(/\.insert\(roleChanges\)/)).not.toEqual([]);
     expect(filesMatching(/\.(update|delete)\(\s*(schema\.)?roleChanges/)).toEqual([]);
     expect(filesMatching(/(UPDATE|DELETE FROM)\s+"?role_changes/i)).toEqual([]);
+  });
+
+  it("only adds to and reads the record of removed scans and deleted repos, never updates or deletes it", () => {
+    expect(filesMatching(/INSERT INTO removals/)).not.toEqual([]);
+    expect(filesMatching(/\.(update|delete)\(\s*(schema\.)?removals/)).toEqual([]);
+    expect(filesMatching(/(UPDATE|DELETE FROM)\s+"?removals/i)).toEqual([]);
   });
 });

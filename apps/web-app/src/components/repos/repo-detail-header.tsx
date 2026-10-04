@@ -7,6 +7,7 @@ import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { commitUrl } from "@/lib/git-remote";
 import { relativeTime } from "@/lib/relative-time";
 import { deltaTone } from "@/lib/scan-diff-view";
+import { RepoActionsMenu } from "./repo-actions-menu";
 import { ScanDiffLine } from "./scan-diff-line";
 import { ScanSwitcher } from "./scan-switcher";
 
@@ -18,9 +19,11 @@ const META_LINK =
 export function RepoDetailHeader({
   detail,
   recentScans,
+  canManage = false,
 }: {
   detail: RepoDetail;
   recentScans: ScanSummary[];
+  canManage?: boolean;
 }) {
   const remote = parseGitRemote(detail.gitRemote);
   const commitHref = commitUrl(detail.gitRemote, detail.commit);
@@ -35,7 +38,10 @@ export function RepoDetailHeader({
           <ChevronLeft aria-hidden className="size-3" />
           Repos
         </Link>
-        <h1 className="font-mono text-2xl font-semibold">{detail.repoId}</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-mono text-2xl font-semibold">{detail.repoId}</h1>
+          {canManage ? <RepoActionsMenu repoId={detail.repoId} scanCount={detail.scanCount} /> : null}
+        </div>
         {/* Each item leads with its separator, and the row starts one separator's
             width to the left, so the clip hides the separator at the start of a line. */}
         <div className="-m-1 overflow-hidden p-1">

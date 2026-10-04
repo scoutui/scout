@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { RepoDetail } from "@scoutui/web-shared";
 import { RepoDetailHeader } from "@/components/repos/repo-detail-header";
+
+vi.mock("@/app/repos/repo-actions", () => ({ deleteRepo: vi.fn() }));
 
 function makeDetail(overrides?: Partial<RepoDetail>): RepoDetail {
   return {

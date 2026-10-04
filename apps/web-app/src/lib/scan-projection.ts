@@ -7,6 +7,7 @@ import {
 import { deleteReadModelRows, writeReadModelRows } from "./read-model-write.ts";
 import { commitDecision, storedScans } from "./scan-acceptance.ts";
 import { repoIdentityRefusal } from "./repo-identity.ts";
+import { deleteScans } from "./scan-removal.ts";
 import { readStoredArtifact } from "./stored-artifact.ts";
 import { completeScanJob } from "./scan-jobs.ts";
 import { ScanValidationError } from "./scan-validation.ts";
@@ -46,13 +47,9 @@ function verifyIdentity(stored: ScanRow, meta: ScanArtifact["meta"]): void {
 
 /** Deletes the repo's other scans of this scan's commit, with their uploads and archives, keeping the incoming upload. */
 async function deleteReplacedScans(client: PoolClient, meta: ScanArtifact["meta"], sourceUploadId: string | undefined): Promise<void> {
-  const { rows } = await client.query<{ upload_id: string }>(`WITH replaced AS (
-      DELETE FROM scans WHERE repo_id = $1 AND commit_sha = $2 AND scan_id <> $3 RETURNING scan_id, source_upload_id
-    )
-    SELECT source_upload_id AS upload_id FROM replaced WHERE source_upload_id IS NOT NULL
-    UNION SELECT upload_id FROM scan_uploads WHERE scan_id IN (SELECT scan_id FROM replaced)`, [meta.repo.id, meta.repo.commit, meta.scanId]);
-  const uploadIds = rows.map(row => row.upload_id).filter(uploadId => uploadId !== sourceUploadId);
-  if (uploadIds.length) await client.query("DELETE FROM scan_uploads WHERE upload_id = ANY($1::text[])", [uploadIds]);
+  const { rows } = await client.query<{ scan_id: string }>("SELECT scan_id FROM scans WHERE repo_id = $1 AND commit_sha = $2 AND scan_id <> $3",
+    [meta.repo.id, meta.repo.commit, meta.scanId]);
+  await deleteScans(client, rows.map(row => row.scan_id), sourceUploadId);
 }
 
 const countTables = {

@@ -7,6 +7,9 @@ import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
 import { getReadModelProgress, skippedState } from "@/lib/read-model-progress";
 import { fallbackStates, ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
+import { ScanRowActions } from "@/components/repos/scan-row-actions";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 import { relativeTime } from "@/lib/relative-time";
 import { shortScanId } from "@/lib/scan-id";
 import {
@@ -48,6 +51,7 @@ export default async function RepoScansPage({
   if (!detail) notFound();
   const unready = await getReadModelProgress(getPool(), scans.filter(scan => !scan.ready).map(scan => scan.scanId));
   const states = new Map(unready.map(scan => [scan.scanId, skippedState(scan)]));
+  const canManage = can(await identify({ browser: true }), "manage-repos", repoId);
 
   return (
     <div className="space-y-6">
@@ -91,6 +95,11 @@ export default async function RepoScansPage({
                 const viewHref = isLatest
                   ? `/repos/${encodeURIComponent(repoId)}`
                   : `/repos/${encodeURIComponent(repoId)}?scan=${encodeURIComponent(s.scanId)}`;
+                const viewLink = (
+                  <Link href={viewHref} className="text-xs text-foreground underline-offset-4 hover:underline">
+                    View scan
+                  </Link>
+                );
                 return (
                   <TableRow key={s.scanId}>
                     <TableCell>
@@ -131,12 +140,9 @@ export default async function RepoScansPage({
                       {shortScanId(s.scanId)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link
-                        href={viewHref}
-                        className="text-xs text-foreground underline-offset-4 hover:underline"
-                      >
-                        View scan
-                      </Link>
+                      {canManage ? (
+                        <ScanRowActions repoId={repoId} scanId={s.scanId} scanCount={scans.length}>{viewLink}</ScanRowActions>
+                      ) : viewLink}
                     </TableCell>
                   </TableRow>
                 );

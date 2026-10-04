@@ -11,7 +11,7 @@ Everyone who signs in to the dashboard has a role, which decides what they can c
 | --- | --- |
 | Viewer | Look at repos, packages, components and saved charts. |
 | Editor | Also upload scans, and change charts, governance and tags. |
-| Admin | Also set people's roles and remove people. |
+| Admin | Also set people's roles, remove people, [remove scans and delete repos](/docs/guides/dashboard/repos#remove-a-scan-or-delete-a-repo). |
 
 People who sign in for the first time are Viewers. Everyone who had signed in before you upgraded to a dashboard with roles is an Editor. CI jobs that upload with the dashboard's [upload token](/docs/guides/run-in-ci) don't need a role.
 
@@ -88,4 +88,4 @@ If your sign-in provider still lets them in, they come back the next time they s
 
 ## See who changed what
 
-Once there's been a change or a removal, **History** under **People** lists the 20 most recent role changes and removals, newest first, each with who made it and when. Changes to the admin settings aren't in it.
+Once there's been a change or a removal, **History** on the **Settings** page lists the 20 most recent role changes, people removed, scans removed and repos deleted, newest first, each with who made it and when. Changes to the admin settings aren't in it.

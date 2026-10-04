@@ -64,6 +64,13 @@
       "when": 1791130219477,
       "tag": "0008_tag_colour_names",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791131683004,
+      "tag": "0009_removals",
+      "breakpoints": true
     }
   ]
 }
