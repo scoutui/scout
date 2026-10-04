@@ -18,13 +18,13 @@ export const metadata = { title: "New chart" };
 export default async function NewDashboardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ from?: string | string[] }>;
-} = {}) {
+  searchParams: Promise<{ from?: string | string[] }>;
+}) {
   const identity = await identify({ browser: true });
   if (!can(identity, "edit")) {
     return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an Admin for access." />;
   }
-  const rawFrom = (await searchParams)?.from;
+  const rawFrom = (await searchParams).from;
   const from = Array.isArray(rawFrom) ? rawFrom[0] : rawFrom;
   if (from !== undefined && isDerivedId(from)) notFound();
   const page = await readModelPage(getStorage(), async snapshot => ({
