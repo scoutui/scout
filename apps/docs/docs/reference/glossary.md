@@ -99,7 +99,7 @@ Deprecated components carry a warning icon, and the **deprecated** chip and **De
 
 ## Migration
 
-The move from a replaced package or component to its replacement, tracked by a lifecycle record. Its progress reads **N% migrated**: the replacement's uses as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**.
+The move from a replaced package or component to its replacement, tracked by a lifecycle record. Its progress reads **N% migrated**: the replacement's uses as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**. Records that name the same replacement count as one migration.
 
 You see migrations under **Migrations** on the **charts** page and under **Migrations in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 

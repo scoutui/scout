@@ -13,11 +13,11 @@ For example, with the tags `acme-ui` and `acme-ui-legacy` in place, one saved ch
 
 Select **charts** in the top navigation. The page has three parts:
 
-- **Migrations**: one row per migration, such as `LegacyButton · @acme/ui-legacy` to `Button · @acme/ui`, reading **N% migrated** with the change since the previous scan.
-- **Retirements**: one row per retirement, reading **N left**, the [uses](/docs/reference/glossary#use) still in the code.
+- **Migrations**: one row per migration, such as `LegacyButton · @acme/ui-legacy` to `Button · @acme/ui`, reading **N% migrated** and **N left**, the [uses](/docs/reference/glossary#use) of the deprecated side still in the code. Records that name the same replacement share one row.
+- **Retirements**: one row per retirement, reading **N left**, the uses still in the code.
 - **Saved charts**: one row per chart someone has saved, with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
 
-The change is green when the work moved forward and red when it moved back. Rows in progress come first, with the most uses left at the top. Complete ones sit behind **Show N complete**.
+Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Rows in progress come first, with the most uses left at the top. Complete ones sit behind **Show N complete**.
 
 ![The charts list with eight migrations and four retirements in progress, and four saved charts with their previews](/img/dashboard/charts-list.png)
 
