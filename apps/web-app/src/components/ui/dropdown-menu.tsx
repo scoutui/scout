@@ -1,7 +1,8 @@
 "use client"
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
-import { CheckIcon } from "lucide-react"
+import { CheckIcon, ChevronRightIcon } from "lucide-react"
+import type { ComponentProps } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -100,6 +101,52 @@ function DropdownMenuLinkItem({
   )
 }
 
+function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
+  return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />
+}
+
+function DropdownMenuSubTrigger({
+  className,
+  children,
+  ...props
+}: MenuPrimitive.SubmenuTrigger.Props) {
+  return (
+    <MenuPrimitive.SubmenuTrigger
+      data-slot="dropdown-menu-sub-trigger"
+      className={cn(
+        itemClassName,
+        "data-popup-open:bg-accent data-popup-open:text-accent-foreground",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronRightIcon aria-hidden className="ml-auto size-4" />
+    </MenuPrimitive.SubmenuTrigger>
+  )
+}
+
+function DropdownMenuSubContent({
+  align = "start",
+  alignOffset = -4,
+  side = "right",
+  sideOffset = 0,
+  className,
+  ...props
+}: ComponentProps<typeof DropdownMenuContent>) {
+  return (
+    <DropdownMenuContent
+      data-slot="dropdown-menu-sub-content"
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      className={cn("w-auto", className)}
+      {...props}
+    />
+  )
+}
+
 function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
 }
@@ -139,5 +186,8 @@ export {
   DropdownMenuLabel,
   DropdownMenuLinkItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 }

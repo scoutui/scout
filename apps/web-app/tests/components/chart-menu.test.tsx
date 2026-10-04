@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ChartRange, ChartVisibility, CohortPoint, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 
 const actions = vi.hoisted(() => ({ setDashboardVisibility: vi.fn(async () => ({ ok: true })) }));
@@ -12,6 +12,8 @@ vi.mock("@/lib/chart-png", () => image);
 import { ChartExportProvider } from "@/components/dashboards/chart-export-context";
 import { ChartMenu } from "@/components/dashboards/chart-menu";
 import { LinkedDashboardChart } from "@/components/dashboards/dashboard-chart";
+import { chartExportTable, toCsv, toTsv } from "@/lib/chart-export";
+import { visibleView } from "@/lib/dashboard-chart-data";
 
 const open = () => fireEvent.click(screen.getByRole("button", { name: "More actions" }));
 
@@ -20,7 +22,7 @@ describe("ChartMenu", () => {
     { visibility: "private" as const, item: "Share with everyone", absent: "Make private", next: "everyone" },
     { visibility: "everyone" as const, item: "Make private", absent: "Share with everyone", next: "private" },
   ])("offers $item on a $visibility chart and saves it as $next", async ({ visibility, item, absent, next }) => {
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={visibility} />);
+    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={visibility} exportSubmenu />);
     open();
     const offered = await screen.findByRole("menuitem", { name: item });
     expect(screen.queryByRole("menuitem", { name: absent })).toBeNull();
@@ -29,7 +31,7 @@ describe("ChartMenu", () => {
   });
 
   it("offers no sharing to someone who can't change the chart", async () => {
-    render(<ChartMenu id="chart 1" canDuplicate visibility={null} />);
+    render(<ChartMenu id="chart 1" canDuplicate visibility={null} exportSubmenu />);
     open();
     expect(await screen.findByRole("menuitem", { name: "Duplicate" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Share with everyone" })).toBeNull();
@@ -37,11 +39,11 @@ describe("ChartMenu", () => {
   });
 
   it("offers Duplicate only to someone who can make charts", async () => {
-    const { unmount } = render(<ChartMenu id="chart 1" canDuplicate visibility={null} />);
+    const { unmount } = render(<ChartMenu id="chart 1" canDuplicate visibility={null} exportSubmenu />);
     open();
     expect(await screen.findByRole("menuitem", { name: "Duplicate" })).toHaveAttribute("href", "/charts/new?from=chart%201");
     unmount();
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility="private" />);
+    render(<ChartMenu id="chart 1" canDuplicate={false} visibility="private" exportSubmenu />);
     open();
     await screen.findByRole("menuitem", { name: "Share with everyone" });
     expect(screen.queryByRole("menuitem", { name: "Duplicate" })).toBeNull();
@@ -82,9 +84,9 @@ const views: Record<DashboardConfig["chartType"], DashboardView> = {
 
 const TITLE = "Button: adoption";
 
-type Menu = { canDuplicate: boolean; visibility: ChartVisibility | null };
+type Menu = { canDuplicate: boolean; visibility: ChartVisibility | null; exportSubmenu: boolean };
 
-function renderChart(chartType: DashboardConfig["chartType"], range: ChartRange = "3m", menu: Menu = { canDuplicate: false, visibility: null }) {
+function renderChart(chartType: DashboardConfig["chartType"], range: ChartRange = "3m", menu: Menu = { canDuplicate: false, visibility: null, exportSubmenu: false }) {
   const config: DashboardConfig = { scope: { kind: "all" }, cohorts, chartType, metric: "count" };
   render(
     <ChartExportProvider title={TITLE}>
@@ -98,6 +100,14 @@ function renderChart(chartType: DashboardConfig["chartType"], range: ChartRange 
 async function menuItems(): Promise<string[]> {
   open();
   return (await screen.findAllByRole("menuitem")).map((item) => item.textContent ?? "");
+}
+
+async function exportItems(): Promise<string[]> {
+  fireEvent.click(screen.getByRole("menuitem", { name: "Export" }));
+  await waitFor(() => expect(screen.getAllByRole("menu")).toHaveLength(2));
+  return within(screen.getAllByRole("menu")[1] as HTMLElement)
+    .getAllByRole("menuitem")
+    .map((item) => item.textContent ?? "");
 }
 
 function readBlob(blob: Blob): Promise<string> {
@@ -122,7 +132,7 @@ class FakeClipboardItem {
 
 describe("ChartMenu export", () => {
   const clipboard = { write: vi.fn(async (_items: unknown[]) => {}), writeText: vi.fn(async (_text: string) => {}) };
-  const saved: Array<{ download: string; href: string }> = [];
+  const saved: Array<{ download: string; href: string; onPage: boolean }> = [];
 
   beforeEach(() => {
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 640, 320));
@@ -131,11 +141,12 @@ describe("ChartMenu export", () => {
     Object.assign(URL, { createObjectURL: vi.fn(() => "blob:export"), revokeObjectURL: vi.fn() });
     saved.length = 0;
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      saved.push({ download: this.download, href: this.href });
+      saved.push({ download: this.download, href: this.href, onPage: this.isConnected });
     });
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     clipboard.write.mockReset();
@@ -143,100 +154,109 @@ describe("ChartMenu export", () => {
     image.chartPng.mockClear();
   });
 
+  const ALL_ITEMS = ["Download PNG", "Download CSV", "Copy image", "Copy table"];
+
   it.each([
-    ["trend", ["Download image", "Copy image", "Download data", "Copy data"]],
-    ["stacked-share", ["Download image", "Copy image", "Download data", "Copy data"]],
-    ["bars", ["Download image", "Copy image", "Download data", "Copy data"]],
-    ["table", ["Download data", "Copy data"]],
-  ] as const)("offers a %s chart's export items", async (chartType, items) => {
+    ["trend", ALL_ITEMS],
+    ["stacked-share", ALL_ITEMS],
+    ["bars", ALL_ITEMS],
+    ["table", ["Download CSV", "Copy table"]],
+  ] as const)("lists a %s chart's export items in the menu itself without a submenu", async (chartType, items) => {
     renderChart(chartType);
     expect(await menuItems()).toEqual(items);
-    expect(screen.queryByRole("separator")).toBeNull();
   });
 
   it("offers no Copy image where the browser can't copy images", async () => {
     vi.stubGlobal("ClipboardItem", undefined);
     renderChart("trend");
-    expect(await menuItems()).toEqual(["Download image", "Download data", "Copy data"]);
+    expect(await menuItems()).toEqual(["Download PNG", "Download CSV", "Copy table"]);
   });
 
-  it("offers no Copy image or Copy data where the page has no clipboard", async () => {
+  it("offers no Copy image or Copy table where the page has no clipboard", async () => {
     Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
     renderChart("trend");
-    expect(await menuItems()).toEqual(["Download image", "Download data"]);
+    expect(await menuItems()).toEqual(["Download PNG", "Download CSV"]);
   });
 
-  it("sets sharing and Duplicate apart after the export items", async () => {
-    renderChart("trend", "3m", { canDuplicate: true, visibility: "private" });
-    expect(await menuItems()).toEqual(["Download image", "Copy image", "Download data", "Copy data", "Share with everyone", "Duplicate"]);
-    expect(screen.getAllByRole("separator")).toHaveLength(1);
+  it.each([
+    ["trend", ALL_ITEMS],
+    ["table", ["Download CSV", "Copy table"]],
+  ] as const)("puts a %s chart's export items in an Export submenu, before sharing and Duplicate", async (chartType, items) => {
+    renderChart(chartType, "3m", { canDuplicate: true, visibility: "private", exportSubmenu: true });
+    expect(await menuItems()).toEqual(["Export", "Share with everyone", "Duplicate"]);
+    expect(await exportItems()).toEqual(items);
+  });
+
+  it("downloads from the Export submenu", async () => {
+    renderChart("trend", "3m", { canDuplicate: false, visibility: null, exportSubmenu: true });
+    expect(await menuItems()).toEqual(["Export"]);
+    await exportItems();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Download CSV" }));
+    expect(saved).toEqual([{ download: "Button adoption.csv", href: "blob:export", onPage: true }]);
   });
 
   it("renders nothing when it has no items", () => {
     const { container } = render(
       <ChartExportProvider title={TITLE}>
-        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} />
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu />
       </ChartExportProvider>,
     );
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("copies the data of the range on screen as tab-separated text, and of a range picked after", async () => {
+  it("copies the table of a range picked after the chart shows as tab-separated text, and says so", async () => {
     clipboard.writeText.mockResolvedValue(undefined);
-    renderChart("trend", "3m");
+    const config = renderChart("trend", "all");
+    fireEvent.click(screen.getByRole("button", { name: "3 months" }));
     open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy data" }));
-    expect(clipboard.writeText).toHaveBeenCalledOnce();
-    expect(clipboard.writeText.mock.lastCall?.[0].split("\n").slice(0, 2)).toEqual([
-      "Committed (UTC)\t@example/web\tButton · @example/ui",
-      "2026-07-01 00:00\t40\t",
-    ]);
-    expect(await screen.findByText("Data copied")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "All" }));
-    open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy data" }));
-    expect(clipboard.writeText.mock.lastCall?.[0].split("\n")[1]).toBe("2025-10-01 00:00\t10\t");
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy table" }));
+    expect(clipboard.writeText).toHaveBeenCalledExactlyOnceWith(toTsv(chartExportTable(config, views.trend, "3m")));
+    expect(await screen.findByText("Table copied")).toBeInTheDocument();
   });
 
-  it("downloads the data of the range on screen as a CSV file named after the chart, marked as UTF-8 for spreadsheets", async () => {
-    renderChart("trend", "3m");
+  it("downloads the table as a CSV file named after the chart, marked as UTF-8 for spreadsheets", async () => {
+    const config = renderChart("trend", "3m");
     open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Download data" }));
-    expect(saved).toEqual([{ download: "Button adoption.csv", href: "blob:export" }]);
+    const item = await screen.findByRole("menuitem", { name: "Download CSV" });
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    fireEvent.click(item);
+    expect(saved).toEqual([{ download: "Button adoption.csv", href: "blob:export", onPage: true }]);
+    expect(document.querySelector("a[download]")).toBeNull();
+    vi.advanceTimersByTime(59_000);
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1_000);
+    expect(URL.revokeObjectURL).toHaveBeenCalledExactlyOnceWith("blob:export");
+    vi.useRealTimers();
     const csv = vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob;
     expect(csv.type).toBe("text/csv;charset=utf-8");
     expect([...(await readBytes(csv)).slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
-    expect((await readBlob(csv)).split("\r\n").slice(0, 2)).toEqual(["Committed (UTC),@example/web,Button · @example/ui", "2026-07-01 00:00,40,"]);
-    await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:export"));
+    expect(await readBlob(csv)).toBe(toCsv(chartExportTable(config, views.trend, "3m")));
   });
 
-  it.each(["Download data", "Download image"])("clears a failure message once %s works", async (item) => {
+  it.each(["Download CSV", "Download PNG"])("clears a failure message once %s works", async (item) => {
     clipboard.writeText.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError"));
     renderChart("trend");
     open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy data" }));
-    expect(await screen.findByText("Couldn't copy the data. Try again.")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy table" }));
+    expect(await screen.findByText("Couldn't copy the table. Try again.")).toBeInTheDocument();
     open();
     fireEvent.click(await screen.findByRole("menuitem", { name: item }));
-    await waitFor(() => expect(screen.queryByText("Couldn't copy the data. Try again.")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Couldn't copy the table. Try again.")).toBeNull());
   });
 
-  it("downloads an image of the range on screen named after the chart", async () => {
-    const config = renderChart("trend", "3m");
+  it("downloads an image of a range picked after the chart shows, named after the chart", async () => {
+    const config = renderChart("trend", "all");
+    fireEvent.click(screen.getByRole("button", { name: "3 months" }));
     open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Download image" }));
-    await waitFor(() => expect(saved).toEqual([{ download: "Button adoption.png", href: "blob:export" }]));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download PNG" }));
+    await waitFor(() => expect(saved).toEqual([{ download: "Button adoption.png", href: "blob:export", onPage: true }]));
     expect(image.chartPng).toHaveBeenCalledExactlyOnceWith({
       title: TITLE,
       config,
-      view: expect.objectContaining({ kind: "series" }),
+      view: visibleView(config, views.trend, "3m").view,
       host: window.location.host,
       exportedAt: expect.any(Date),
     });
-    const { view } = image.chartPng.mock.calls[0]?.[0] as { view: { series: CohortSeries[] } };
-    expect(view.series.map((s) => s.points[0]?.t)).toEqual(["2026-06-30T12:00:00.000Z", "2026-08-01T00:00:00Z"]);
   });
 
   it("copies the chart's image as it's clicked, and says so", async () => {
@@ -252,9 +272,9 @@ describe("ChartMenu export", () => {
   });
 
   it.each([
-    ["Download image", "Download image", () => image.chartPng.mockRejectedValueOnce(new Error("no canvas")), "Couldn't make the image. Try again."],
+    ["Download PNG", "Download PNG", () => image.chartPng.mockRejectedValueOnce(new Error("no canvas")), "Couldn't make the image. Try again."],
     ["Copy image", "Copy image", () => clipboard.write.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError")), "Couldn't copy the image. Try again."],
-    ["Copy data", "Copy data", () => clipboard.writeText.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError")), "Couldn't copy the data. Try again."],
+    ["Copy table", "Copy table", () => clipboard.writeText.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError")), "Couldn't copy the table. Try again."],
   ])("says when %s fails", async (_, item, fail, message) => {
     fail();
     renderChart("trend");

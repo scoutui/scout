@@ -16,7 +16,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLinkItem,
-  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type ShownChart, useChartExport } from "./chart-export-context";
@@ -25,14 +27,27 @@ import { type ShownChart, useChartExport } from "./chart-export-context";
 const COPIED_MS = 1800;
 /** The UTF-8 byte order mark, written first in a downloaded CSV. */
 const UTF8_BOM = "\uFEFF";
+/** How long a download's file stays readable after its link is clicked. */
+const DOWNLOAD_URL_MS = 60_000;
 
 type ExportedChart = ShownChart & { title: string; drawn: DashboardView };
 
 /**
- * A chart's "⋯" menu: its image and data for the chart on screen, Duplicate for people who can make charts, and sharing
- * for people who can change the chart, given its `visibility`. It renders nothing when it has no items.
+ * A chart's "⋯" menu: its image and table for the chart on screen, in an Export submenu when `exportSubmenu` is set,
+ * Duplicate for people who can make charts, and sharing for people who can change the chart, given its `visibility`.
+ * It renders nothing when it has no items.
  */
-export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDuplicate: boolean; visibility: ChartVisibility | null }) {
+export function ChartMenu({
+  id,
+  canDuplicate,
+  visibility,
+  exportSubmenu,
+}: {
+  id: string;
+  canDuplicate: boolean;
+  visibility: ChartVisibility | null;
+  exportSubmenu: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +85,7 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
       else setError(actionErrorMessage(res.error, "change who can see this chart", "Couldn't change who can see the chart. Try again."));
     });
 
-  const downloadImage = (shown: ExportedChart) => {
+  const downloadPng = (shown: ExportedChart) => {
     setError(null);
     imageOf(shown).then(
       (blob) => save(blob, exportFileName(shown.title, "png")),
@@ -82,21 +97,29 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
       () => showCopied("Image copied"),
       () => showError("Couldn't copy the image. Try again."),
     );
-  const downloadData = (shown: ExportedChart) => {
+  const downloadCsv = (shown: ExportedChart) => {
     setError(null);
     save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
   };
-  const copyData = (shown: ExportedChart) =>
+  const copyTable = (shown: ExportedChart) =>
     navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range))).then(
-      () => showCopied("Data copied"),
-      () => showError("Couldn't copy the data. Try again."),
+      () => showCopied("Table copied"),
+      () => showError("Couldn't copy the table. Try again."),
     );
 
   const sharing = visibility === "private" || visibility === "everyone";
   if (!chart && !sharing && !canDuplicate) return null;
   const image = chart !== null && hasFigure(chart.config, chart.drawn);
   const canCopyImage = image && typeof ClipboardItem !== "undefined" && typeof navigator.clipboard?.write === "function";
-  const canCopyData = chart !== null && typeof navigator.clipboard?.writeText === "function";
+  const canCopyTable = chart !== null && typeof navigator.clipboard?.writeText === "function";
+  const exportItems = chart ? (
+    <>
+      {image ? <DropdownMenuItem onClick={() => downloadPng(chart)}>Download PNG</DropdownMenuItem> : null}
+      <DropdownMenuItem onClick={() => downloadCsv(chart)}>Download CSV</DropdownMenuItem>
+      {canCopyImage ? <DropdownMenuItem onClick={() => copyImage(chart)}>Copy image</DropdownMenuItem> : null}
+      {canCopyTable ? <DropdownMenuItem onClick={() => copyTable(chart)}>Copy table</DropdownMenuItem> : null}
+    </>
+  ) : null;
 
   return (
     <span className="inline-flex items-center gap-2">
@@ -108,15 +131,14 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
           <Ellipsis aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
-          {chart ? (
-            <>
-              {image ? <DropdownMenuItem onClick={() => downloadImage(chart)}>Download image</DropdownMenuItem> : null}
-              {canCopyImage ? <DropdownMenuItem onClick={() => copyImage(chart)}>Copy image</DropdownMenuItem> : null}
-              <DropdownMenuItem onClick={() => downloadData(chart)}>Download data</DropdownMenuItem>
-              {canCopyData ? <DropdownMenuItem onClick={() => copyData(chart)}>Copy data</DropdownMenuItem> : null}
-              {sharing || canDuplicate ? <DropdownMenuSeparator /> : null}
-            </>
-          ) : null}
+          {exportItems && exportSubmenu ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Export</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>{exportItems}</DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            exportItems
+          )}
           {visibility === "private" ? (
             <DropdownMenuItem disabled={pending} onClick={() => share("everyone")}>Share with everyone</DropdownMenuItem>
           ) : visibility === "everyone" ? (
@@ -142,6 +164,8 @@ function save(blob: Blob, fileName: string): void {
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
+  document.body.append(link);
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url));
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), DOWNLOAD_URL_MS);
 }
