@@ -1,17 +1,11 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { type TagInput, TagInputSchema } from "@scoutui/web-shared";
-import { auth } from "@/auth";
+import { requireEditor } from "@/lib/identity";
 import { getStorage } from "@/lib/storage";
 
-async function requireUser(): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "not_authenticated" };
-  return { ok: true, userId: session.user.id };
-}
-
 export async function saveTag(input: TagInput): Promise<{ ok: boolean; error?: string }> {
-  const gate = await requireUser();
+  const gate = await requireEditor();
   if (!gate.ok) return gate;
   const parsed = TagInputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Couldn't save the tag. Reload the page and try again." };
@@ -23,7 +17,7 @@ export async function saveTag(input: TagInput): Promise<{ ok: boolean; error?: s
 }
 
 export async function deleteTag(id: string): Promise<{ ok: boolean; error?: string }> {
-  const gate = await requireUser();
+  const gate = await requireEditor();
   if (!gate.ok) return gate;
   await getStorage().deleteTag(id);
   revalidatePath("/packages", "layout");
@@ -38,7 +32,7 @@ export async function quickTagPackage(
   packageName: string,
   add: boolean,
 ): Promise<{ ok: boolean; error?: string }> {
-  const gate = await requireUser();
+  const gate = await requireEditor();
   if (!gate.ok) return gate;
   if (typeof packageName !== "string" || packageName.trim() === "") {
     return { ok: false, error: "Couldn't update the tag. Reload the page and try again." };

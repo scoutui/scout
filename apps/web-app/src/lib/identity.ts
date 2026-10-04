@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { auth } from "@/auth";
 import { getDb, schema } from "@/db/client";
-import { adminSettings, type Identity, type Person, personIdentity } from "@/lib/access";
+import { adminSettings, can, EDIT_REFUSAL, type Identity, type Person, personIdentity } from "@/lib/access";
 import { resolveCliSession } from "@/lib/cli-session-store";
 
 /** A request's credentials: the browser's session cookie, or an `Authorization` header. */
@@ -39,4 +39,12 @@ export async function identify(caller: Caller): Promise<Identity | null> {
   if (ciTokenMatches(token)) return { kind: "ci" };
   const session = await resolveCliSession(token);
   return session ? loadPerson(session.userId) : null;
+}
+
+/** The signed-in browser person's id when they may edit, or the error a server action returns. */
+export async function requireEditor(): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
+  const identity = await identify({ browser: true });
+  if (identity?.kind !== "person") return { ok: false, error: "not_authenticated" };
+  if (!can(identity, "edit")) return { ok: false, error: EDIT_REFUSAL };
+  return { ok: true, userId: identity.userId };
 }

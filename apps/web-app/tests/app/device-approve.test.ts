@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Person } from "@/lib/access";
 
-const session = { value: null as null | { user: { id: string; email: string } } };
+const caller = { value: null as null | Person };
 const dc = { row: null as null | { status: string; expiresAt: Date } };
 const approval = { accepted: true };
 const denial = { accepted: true };
 
-vi.mock("@/auth", () => ({
-  auth: vi.fn(async () => session.value),
-  signOut: vi.fn(async () => {}),
-}));
+vi.mock("@/lib/identity", () => ({ identify: vi.fn(async () => caller.value) }));
+vi.mock("@/auth", () => ({ signOut: vi.fn(async () => {}) }));
 vi.mock("@/lib/cli-device-codes", () => ({
   findByUserCode: vi.fn(async () => dc.row),
   markApproved: vi.fn(async () => approval.accepted),
@@ -21,7 +20,7 @@ import { markApproved, markDenied } from "@/lib/cli-device-codes";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  session.value = { user: { id: "u1", email: "alice@example.com" } };
+  caller.value = { kind: "person", userId: "u1", email: "alice@example.com", name: null, role: "viewer", roleSource: "people" };
   dc.row = { status: "pending", expiresAt: new Date(Date.now() + 60_000) };
   approval.accepted = true;
   denial.accepted = true;
@@ -34,7 +33,7 @@ describe("approveDevice", () => {
   });
 
   it("rejects an unauthenticated request", async () => {
-    session.value = null;
+    caller.value = null;
     expect(await approveDevice("ABCD-EFGH")).toEqual({ ok: false, error: "not_authenticated" });
     expect(markApproved).not.toHaveBeenCalled();
   });
@@ -61,7 +60,7 @@ describe("denyDevice", () => {
   });
 
   it("requires a signed-in user", async () => {
-    session.value = null;
+    caller.value = null;
     expect(await denyDevice("ABCD-EFGH")).toEqual({ ok: false, error: "not_authenticated" });
     expect(markDenied).not.toHaveBeenCalled();
   });
@@ -91,7 +90,7 @@ describe("switchDeviceAccount", () => {
   });
 
   it("does not sign out without an authenticated user", async () => {
-    session.value = null;
+    caller.value = null;
     expect(await switchDeviceAccount("ABCD-EFGH")).toEqual({ ok: false, error: "not_authenticated" });
     expect(signOut).not.toHaveBeenCalled();
   });

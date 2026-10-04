@@ -2,7 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type DashboardConfig, type DashboardInput, DashboardInputSchema } from "@scoutui/web-shared";
-import { auth } from "@/auth";
+import { can } from "@/lib/access";
+import { identify, requireEditor } from "@/lib/identity";
 import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
 import type { ReadModelResult } from "@/lib/read-model-state";
@@ -10,14 +11,8 @@ import { isDerivedId } from "@/lib/derived-dashboards";
 import { loadDashboardView, type DashboardView } from "@/lib/dashboard-load";
 import type { PickableComponent } from "@/components/dashboards/series-picker";
 
-async function requireUserId(): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "not_authenticated" };
-  return { ok: true, userId: session.user.id };
-}
-
 export async function saveDashboard(untrusted: DashboardInput): Promise<{ ok: false; error: string }> {
-  const gate = await requireUserId();
+  const gate = await requireEditor();
   if (!gate.ok) return gate;
   const parsed = DashboardInputSchema.safeParse(untrusted);
   if (!parsed.success) return { ok: false, error: "Couldn't save the chart. Reload the page and try again." };
@@ -41,7 +36,7 @@ export async function saveDashboard(untrusted: DashboardInput): Promise<{ ok: fa
 }
 
 export async function deleteDashboard(id: string): Promise<{ ok: boolean; error?: string }> {
-  const gate = await requireUserId();
+  const gate = await requireEditor();
   if (!gate.ok) return gate;
   if (isDerivedId(id)) return { ok: false, error: "cannot_delete_derived" };
   try {
@@ -60,8 +55,7 @@ export async function deleteDashboard(id: string): Promise<{ ok: boolean; error?
  * other failed read does.
  */
 async function requireSignedIn(): Promise<void> {
-  const gate = await requireUserId();
-  if (!gate.ok) throw new Error(gate.error);
+  if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
 }
 
 /**

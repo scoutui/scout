@@ -15,7 +15,9 @@ let database: Pool;
 let session: { user: { id: string } } | null = null;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
-vi.mock("@/auth", () => ({ auth: async () => session }));
+vi.mock("@/lib/identity", () => ({
+  requireEditor: async () => session ? { ok: true, userId: session.user.id } : { ok: false, error: "not_authenticated" },
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 /** The text the page renders itself, joined; child components are not rendered. */

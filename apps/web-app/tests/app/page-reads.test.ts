@@ -21,7 +21,9 @@ let driver: StorageDriver;
 let database: Pool;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
-vi.mock("@/auth", () => ({ auth: async () => ({ user: { id: "reader" } }) }));
+vi.mock("@/lib/identity", () => ({
+  identify: async () => ({ kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "viewer", roleSource: "people" }),
+}));
 
 const scope = new AsyncLocalStorage<{ usage: boolean }>();
 

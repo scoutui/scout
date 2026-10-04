@@ -9,7 +9,10 @@ import { QuickTag } from "@/components/tags/quick-tag";
 import { TagsPanel } from "@/components/tags/tags-panel";
 
 // The real server actions run against a session that has ended.
-vi.mock("@/auth", () => ({ auth: async () => null }));
+vi.mock("@/lib/identity", () => ({
+  identify: async () => null,
+  requireEditor: async () => ({ ok: false, error: "not_authenticated" }),
+}));
 vi.mock("@/lib/storage", () => ({
   getStorage: () => { throw new Error("A signed-out action reached storage"); },
 }));
