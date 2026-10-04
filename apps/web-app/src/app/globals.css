@@ -97,6 +97,8 @@
   --viz-local: var(--pal-grey-soft);
   --viz-cat-2: var(--pal-violet-graphic);
   --viz-cat-3: var(--pal-blue-graphic);
+  --viz-cat-4: var(--pal-berry-graphic);
+  --viz-cat-5: var(--pal-orchid-graphic);
   --viz-deprecated: var(--status-warn); /* the deprecated series role is warn, not error */
 
   --radius: 0.625rem;

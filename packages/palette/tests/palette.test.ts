@@ -131,6 +131,7 @@ function apca(fg: Rgb, bg: Rgb): number {
 }
 
 const rgb = (theme: Theme, name: string) => toLinear(token(theme, name));
+const TAG_COLOURS = ["teal-graphic", "violet-graphic", "blue-graphic", "berry-graphic", "orchid-graphic"];
 const surfaces = (theme: Theme) => [rgb(theme, "neutral-panel"), rgb(theme, "neutral-canvas")];
 
 describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
@@ -152,13 +153,24 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
     expect(contrast(rgb(theme, "orange-text"), rgb(theme, "orange-tint"))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("sets status graphics at ≥ 3:1 on panel and canvas, and the teal role at ≥ 3:1 on panel", () => {
+  it("sets status graphics at ≥ 3:1 on panel and canvas", () => {
     for (const name of ["red-graphic", "orange-graphic", "green-graphic"]) {
       for (const surface of surfaces(theme)) {
         expect(contrast(rgb(theme, name), surface), name).toBeGreaterThanOrEqual(3);
       }
     }
-    expect(contrast(rgb(theme, "teal-graphic"), rgb(theme, "neutral-panel"))).toBeGreaterThanOrEqual(3);
+  });
+
+  it("draws the tag colours at ≥ 3:1 and APCA Lc ≥ 30 on the panel", () => {
+    const panel = rgb(theme, "neutral-panel");
+    for (const name of TAG_COLOURS) {
+      expect(contrast(rgb(theme, name), panel), name).toBeGreaterThanOrEqual(3);
+      expect(Math.abs(apca(rgb(theme, name), panel)), name).toBeGreaterThanOrEqual(30);
+    }
+  });
+
+  it("draws the Local ring and older-version dots at ≥ 3:1 on the panel", () => {
+    expect(contrast(rgb(theme, "grey-graphic"), rgb(theme, "neutral-panel"))).toBeGreaterThanOrEqual(3);
   });
 
   it("keeps status and teal graphics vivid: in sRGB gamut at ≥ 90% of the maximum chroma", () => {
@@ -181,8 +193,8 @@ describe.each(["light", "dark"] as const)("palette (%s)", (theme) => {
     }
   });
 
-  it("keeps teal, violet, blue and the Local line apart: ΔE ≥ 15, and ≥ 6 under deuteranopia and protanopia", () => {
-    const lines = ["teal-graphic", "violet-graphic", "blue-graphic", "grey-soft"];
+  it("keeps the tag colours and the Local line apart: ΔE ≥ 15, and ≥ 6 under deuteranopia and protanopia", () => {
+    const lines = [...TAG_COLOURS, "grey-soft"];
     for (const [i, a] of lines.entries()) {
       for (const b of lines.slice(i + 1)) {
         expect(deltaE(rgb(theme, a), rgb(theme, b)), `${a}/${b}`).toBeGreaterThanOrEqual(15);
