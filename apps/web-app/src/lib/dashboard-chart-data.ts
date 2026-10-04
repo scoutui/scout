@@ -157,6 +157,11 @@ export const NO_KEYS: ReadonlySet<string> = new Set();
 
 export type ChartCohort = { cohortKey: string; color: string; role?: CohortRole | undefined };
 
+/** Bars in the order the bar chart draws them: largest value first. */
+export function barOrder<T extends { value: number }>(bars: T[]): T[] {
+  return [...bars].sort((a, b) => b.value - a.value);
+}
+
 /** The cohorts a view draws, in the view's order. */
 export function drawnChartCohorts(view: DashboardView): Array<ChartCohort & { label: string }> {
   return view.kind === "series" ? view.series : view.points;

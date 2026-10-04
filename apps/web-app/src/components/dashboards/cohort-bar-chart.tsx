@@ -4,7 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { Bar, BarChart, type BarShapeProps, Cell, LabelList, Rectangle, XAxis, YAxis } from "recharts";
 import type { CohortPoint, CohortRole } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, } from "@/lib/dashboard-chart-data";
+import { NO_KEYS, barOrder, cohortChartConfig, } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY, barRowLabel, formatMetric } from "@/lib/dashboard-format";
 import { TooltipSeriesName } from "./cohort-label";
 
@@ -103,9 +103,9 @@ export function CohortBarChart({
   }, []);
   const gradientId = useId();
 
-  const rows: BarRow[] = points
-    .map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "", role: p.role, deprecatedOnly: deprecatedOnly.has(p.cohortKey) }))
-    .sort((a, b) => b.value - a.value);
+  const rows: BarRow[] = barOrder(
+    points.map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "", role: p.role, deprecatedOnly: deprecatedOnly.has(p.cohortKey) })),
+  );
   const config = cohortChartConfig(points);
 
   const labelWidth = Math.min(
