@@ -77,8 +77,8 @@ describe("RepoAdoptionPanel governance tracking", () => {
 
   it("keeps completed migrations in the collapsed ledger instead of dropping them", async () => {
     // A finished migration still shows here, as it does on /charts.
-    const governance = [record("g-live", "Button"), record("g-done", "OldThing")];
-    const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" }, asOf);
+    const done = { ...record("g-done", "OldThing"), disposition: { kind: "superseded" as const, by: { packageName: "@x/other-ds" } } };
+    const tracking = deriveGovernanceTracking([record("g-live", "Button"), done], digests, { kind: "repo", repoId: "r1" }, asOf);
     render(<RepoAdoptionPanel tracking={tracking} notice={null} canEdit />);
 
     expect(screen.getByText("Migrations in this repo · 1 in progress · 1 complete · change since previous scan")).toBeDefined();

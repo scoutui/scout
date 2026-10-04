@@ -243,6 +243,64 @@ describe("deriveGovernanceTracking: change over the last 30 days", () => {
   });
 });
 
+describe("deriveGovernanceTracking: records that share a replacement", () => {
+  const card = component(packageExport("legacy-ds", "Card"));
+  const cardHeader = component(packageExport("legacy-ds", "CardHeader"));
+  const newCard = component(packageExport("@x/new-ds", "Card"));
+  const toCard = { kind: "superseded" as const, by: { packageName: "@x/new-ds", exportName: "Card" } };
+  const older = record("older", { targetExport: "CardHeader", disposition: toCard, createdAt: "2025-12-01T00:00:00Z" });
+  const newer = record("newer", { targetExport: "Card", disposition: toCard });
+  const cards = [
+    digest("r1", "2026-01-01T00:00:00Z", [[card, 12], [cardHeader, 6], [newCard, 1]]),
+    digest("r1", "2026-01-02T00:00:00Z", [[card, 10], [cardHeader, 5], [newCard, 3]]),
+  ];
+
+  it("tracks them as one migration of every part, named after the oldest record", () => {
+    const out = deriveGovernanceTracking([newer, older], cards, { kind: "all" }, asOf);
+    expect(out).toHaveLength(1);
+    const [m] = out;
+    expect(m?.id).toBe("migration:older");
+    expect(m?.recordIds).toEqual(["older", "newer"]);
+    expect(m?.fromLabel).toBe("Card, CardHeader · legacy-ds");
+    expect(m?.toLabel).toBe("Card · @x/new-ds");
+    expect(m?.name).toBe("Migration: Card, CardHeader → Card");
+    expect(m?.remaining).toBe(15);
+    expect(m?.progress).toBeCloseTo(3 / 18);
+    expect(m?.delta).toBe(-3);
+    expect(m?.series.map((s) => s.points.map((p) => p.value))).toEqual([[18, 15], [1, 3]]);
+    expect(m?.config.cohorts).toEqual([
+      { kind: "component", componentId: cardHeader.id },
+      { kind: "component", componentId: card.id },
+      { kind: "component", componentId: newCard.id, role: "successor" },
+    ]);
+  });
+
+  it("keeps one row per record when the replacements differ", () => {
+    const elsewhere = record("elsewhere", { targetExport: "Card", disposition: { kind: "superseded", by: { packageName: "@x/new-ds", exportName: "Panel" } } });
+    expect(deriveGovernanceTracking([elsewhere, older], cards, { kind: "all" }, asOf).map((t) => t.recordIds)).toEqual([["elsewhere"], ["older"]]);
+  });
+
+  it("keeps one row per retirement", () => {
+    const gone = { kind: "retired" as const, reason: "gone" };
+    const retired = [record("a", { targetExport: "Card", disposition: gone }), record("b", { targetExport: "CardHeader", disposition: gone })];
+    expect(deriveGovernanceTracking(retired, cards, { kind: "all" }, asOf)).toHaveLength(2);
+  });
+
+  it("counts each use once when a package record and a record for one of its components share the replacement", () => {
+    const whole = record("whole", { grain: "package", targetExport: null, disposition: toCard, createdAt: "2025-12-01T00:00:00Z" });
+    const [m] = deriveGovernanceTracking([whole, newer], cards, { kind: "all" }, asOf);
+    expect(m?.remaining).toBe(15);
+    expect(m?.fromLabel).toBe("legacy-ds");
+  });
+
+  it("names four parts, then how many more", () => {
+    const parts = ["A", "B", "C", "D", "E", "F"].map((name) => component(packageExport("legacy-ds", name)));
+    const records = parts.map((_, i) => record(`p${i}`, { targetExport: ["A", "B", "C", "D", "E", "F"][i] as string, disposition: toCard }));
+    const scan = digest("r1", "2026-01-02T00:00:00Z", [...parts.map((c) => [c, 1] as [Component, number]), [newCard, 1]]);
+    expect(deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf)[0]?.fromLabel).toBe("A, B, C, D +2 more · legacy-ds");
+  });
+});
+
 describe("deriveGovernanceTracking: ordering", () => {
   it("sorts by remaining desc (most work first)", () => {
     const two = [
@@ -265,7 +323,7 @@ describe("deriveGovernanceTracking: per-digest-set memo", () => {
 
     // Same `scans` reference, different records: a renamed record and a second one.
     const after = deriveGovernanceTracking(
-      [record("g1", {}), record("g2", { grain: "package", targetExport: null })],
+      [record("g1", {}), record("g2", { grain: "package", targetExport: null, disposition: { kind: "superseded", by: { packageName: "@x/other" } } })],
       scans, { kind: "all" }, asOf,
     );
     expect(after.map((t) => t.id).sort()).toEqual(["migration:g1", "migration:g2"]);

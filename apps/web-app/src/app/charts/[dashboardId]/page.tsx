@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Clock, SearchX } from "lucide-react";
 import { renderDashboard, type Dashboard, type DashboardMetric, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
 import { getPool } from "@/db/client";
@@ -84,6 +84,8 @@ export default async function DashboardViewPage({
     if (!entry) {
       const recordId = id.slice(id.indexOf(":") + 1);
       const kind = id.startsWith("migration:") ? "superseded" : "retired";
+      const charting = tracking?.find((t) => id.startsWith(`${t.kind}:`) && t.recordIds.includes(recordId));
+      if (charting) redirect(`/charts/${encodeURIComponent(charting.id)}`);
       if (governance.some((r) => r.id === recordId && r.disposition.kind === kind) && !registry?.stats[recordId]) {
         return <ReadModelState {...await chartResultsUnavailable(getPool())} />;
       }
@@ -217,7 +219,9 @@ export default async function DashboardViewPage({
 
       {derivedEntry && canEdit ? (
         <p className="mt-3 text-xs text-muted-foreground">
-          Created from a Governance record.{" "}
+          {derivedEntry.recordIds.length === 1
+            ? "Created from a Governance record."
+            : `Created from ${derivedEntry.recordIds.length.toLocaleString()} Governance records.`}{" "}
           <Link href={`/governance#record-${derivedEntry.record.id}`} className="underline underline-offset-2 transition-colors hover:text-foreground">
             Manage records
           </Link>{" "}

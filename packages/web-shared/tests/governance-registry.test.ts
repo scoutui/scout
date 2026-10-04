@@ -38,6 +38,15 @@ describe("deriveRecordStats", () => {
     expect(stats.r1?.trackingId).toBe("migration:r1");
   });
 
+  it("keeps each record's own numbers when records share a replacement, and links each to their one chart", () => {
+    const link = component(packageExport("@legacy/ui", "Link"));
+    const records = [rec({ id: "button", createdAt: "2026-01-01" }), rec({ id: "link", targetExport: "Link", createdAt: "2026-01-02" })];
+    const scans = [digest("a", "2026-01-01T00:00:00Z", [[btn, 3], [newBtn, 1]]), digest("b", "2026-01-01T00:00:00Z", [[link, 2]])];
+    const { stats } = deriveRecordStats(records, scans, asOf);
+    expect(stats.button).toMatchObject({ left: 3, leftIn: ["a"], trackingId: "migration:button" });
+    expect(stats.link).toMatchObject({ left: 2, leftIn: ["b"], trackingId: "migration:button" });
+  });
+
   it("counts occurrences left over each repo's latest scan and names the repos still using it", () => {
     const scans = [
       digest("b", "2026-01-01T00:00:00Z", [[btn, 5]]),

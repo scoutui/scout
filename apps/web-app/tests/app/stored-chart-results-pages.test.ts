@@ -242,6 +242,25 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     });
   });
 
+  it("opens the one chart of records that share a replacement from either record's link", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const by = { packageName: "@sample/new", exportName: "Button" };
+      const first = await driver.createGovernance({ grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "superseded", by } });
+      const second = await driver.createGovernance({ grain: "component", targetPackage: "@sample/mixed", targetExport: "Field", disposition: { kind: "superseded", by } });
+      await enqueueChartResults(pool);
+      await storeResults(pool);
+      const { default: page } = await import("@/app/charts/[dashboardId]/page");
+      const merged = `migration:${first.id}`;
+      const tree = await page(trackingParams(merged));
+      expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: expect.objectContaining({ id: merged, recordIds: [first.id, second.id] }) }]);
+      expect(textOf(tree)).toContain("Created from 2 Governance records.");
+      await expect(page(trackingParams(`migration:${second.id}`))).rejects.toMatchObject({
+        digest: expect.stringContaining(`;/charts/${encodeURIComponent(merged)};`),
+      });
+    });
+  });
+
   it("prepares a tracking page when no registry is stored, and 404s an id whose prefix does not match the record", async () => {
     await withReadModelDatabase(async pool => {
       const { retired } = await seed(pool);

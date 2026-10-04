@@ -6,7 +6,7 @@ import type {
   GovernanceRecord,
 } from "./dto.js";
 import type { DigestScan } from "./digest.js";
-import { projectRepoCoverage, projectSeries, type RepoCoverage, type SeriesCohort } from "./cohorts.js";
+import { cohortKey, projectRepoCoverage, projectSeries, type RepoCoverage, type SeriesCohort } from "./cohorts.js";
 import { governanceHash, governedComponentIds, type GovernanceRule } from "./governance.js";
 import { newestScanFirst, scanOrderTime } from "./scan-order.js";
 
@@ -42,6 +42,7 @@ export type GovernanceTracking = {
   id: string;
   kind: "migration" | "retirement";
   record: GovernanceRecord;
+  recordIds: string[];
   name: string;
   fromLabel: string;
   toLabel: string | null;
@@ -60,8 +61,10 @@ export type GovernanceTracking = {
  * first. A record needs no other opt-in to be tracked:
  * `superseded` → migration (count-trend pair, progress = successor ÷ pair),
  * `retired` → retirement (single count-trend, remaining + Δ, and no percent
- * without a pair). Records that govern nothing in any in-scope scan are
- * skipped, so under a repo scope only the records that apply to that repo remain.
+ * without a pair). Superseded records that name the same replacement are one
+ * migration of all their components, with the oldest record's id. Records that
+ * govern nothing in any in-scope scan are skipped, so under a repo scope only the
+ * records that apply to that repo remain.
  */
 export function deriveGovernanceTracking(
   records: GovernanceRecord[],
@@ -69,16 +72,38 @@ export function deriveGovernanceTracking(
   scope: DashboardScope,
   asOf: string,
 ): GovernanceTracking[] {
+  return track("merged", records, digests, scope, asOf);
+}
+
+/** `deriveGovernanceTracking` with one entry per record, never merged. */
+export function deriveRecordTracking(
+  records: GovernanceRecord[],
+  digests: DigestScan[],
+  scope: DashboardScope,
+  asOf: string,
+): GovernanceTracking[] {
+  return track("records", records, digests, scope, asOf);
+}
+
+function track(
+  grouping: "merged" | "records",
+  records: GovernanceRecord[],
+  digests: DigestScan[],
+  scope: DashboardScope,
+  asOf: string,
+): GovernanceTracking[] {
   const scopeKey = scope.kind === "repo" ? `repo:${scope.repoId}` : `all:${Date.parse(asOf)}`;
-  const innerKey = `${scopeKey}::gov=${governanceHash(records)}`;
+  const innerKey = `${grouping}::${scopeKey}::gov=${governanceHash(records)}`;
   let perDigests = trackingMemo.get(digests);
   const hit = perDigests?.get(innerKey);
   if (hit !== undefined) return hit;
 
+  const groups = grouping === "merged" ? byReplacement(records) : records.map((record) => [record]);
+  if (grouping === "merged" && groups.every((group) => group.length === 1)) return track("records", records, digests, scope, asOf);
   const scans = scope.kind === "repo" ? digests.filter((d) => d.meta.repo.id === scope.repoId) : digests;
   const out: GovernanceTracking[] = [];
-  for (const record of records) {
-    const entry = deriveOne(record, records, scans, scope, asOf);
+  for (const members of groups) {
+    const entry = deriveOne(members, records, scans, scope, asOf);
     if (entry) out.push(entry);
   }
   out.sort((a, b) => b.remaining - a.remaining);
@@ -91,43 +116,81 @@ export function deriveGovernanceTracking(
   return out;
 }
 
-/** One side of a tracked record: the components a rule governs in each in-scope scan. */
-type Side = {
+/** Each retired record on its own, and superseded records grouped by the replacement they name, oldest first. */
+function byReplacement(records: GovernanceRecord[]): GovernanceRecord[][] {
+  const groups = new Map<string, GovernanceRecord[]>();
+  for (const record of records) {
+    const by = record.disposition.kind === "superseded" ? record.disposition.by : null;
+    const key = by ? `by:${by.packageName}\u0000${by.exportName ?? ""}` : `record:${record.id}`;
+    groups.set(key, [...(groups.get(key) ?? []), record]);
+  }
+  return [...groups.values()].map((group) =>
+    group.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)));
+}
+
+/** One side of a tracked entry: the rules that govern something in scope, and the components they govern in each scan. */
+type Side<R extends GovernanceRule> = {
+  rules: R[];
   label: string;
   ids: Set<string>;
   cohorts: CohortSelector[];
   occurrences: (scan: DigestScan) => number;
 };
 
-function sideOf(rule: GovernanceRule, records: GovernanceRecord[], scans: DigestScan[], role?: "successor"): Side {
-  const governed = new Map(scans.map((s) => [s.meta.scanId, governedComponentIds(rule, s, records)]));
-  const ids = new Set([...governed.values()].flatMap((members) => [...members]));
-  const name = rule.grain === "component" ? rule.targetExport : null;
+function sideOf<R extends GovernanceRule>(rules: R[], records: GovernanceRecord[], scans: DigestScan[], role?: "successor"): Side<R> {
   const tagged = role ? { role } : {};
-  return {
-    label: name === null ? rule.targetPackage : `${name} · ${rule.targetPackage}`,
-    ids,
-    cohorts: rule.grain === "package"
+  const governing = rules.flatMap((rule) => {
+    const governed = new Map(scans.map((s) => [s.meta.scanId, governedComponentIds(rule, s, records)]));
+    const ids = new Set([...governed.values()].flatMap((members) => [...members]));
+    return ids.size > 0 ? [{ rule, governed, ids }] : [];
+  });
+  const cohorts = new Map<string, CohortSelector>();
+  for (const { rule, ids } of governing) {
+    const selectors: CohortSelector[] = rule.grain === "package"
       ? [{ kind: "package", packageName: rule.targetPackage, ...tagged }]
-      : [...ids].sort().map((componentId) => ({ kind: "component", componentId, ...tagged })),
+      : [...ids].sort().map((componentId) => ({ kind: "component", componentId, ...tagged }));
+    for (const selector of selectors) cohorts.set(cohortKey(selector), selector);
+  }
+  const memberSets = (scanId: string) => governing.map(({ governed }) => governed.get(scanId));
+  return {
+    rules: governing.map(({ rule }) => rule),
+    label: labelOf(governing.map(({ rule }) => rule)),
+    ids: new Set(governing.flatMap(({ ids }) => [...ids])),
+    cohorts: [...cohorts.values()],
     occurrences: (scan) => {
-      const members = governed.get(scan.meta.scanId);
-      return scan.components.reduce((n, c) => (members?.has(c.id) ? n + c.stats.occurrenceCount : n), 0);
+      const members = memberSets(scan.meta.scanId);
+      return scan.components.reduce((n, c) => (members.some((m) => m?.has(c.id)) ? n + c.stats.occurrenceCount : n), 0);
     },
   };
 }
 
+const LABEL_PARTS = 4;
+
+/** "Button · @acme/ui" for one rule; "Card, CardHeader · @acme/ui" for several in one package, then "+N more" past four. */
+function labelOf(rules: GovernanceRule[]): string {
+  const own = (rule: GovernanceRule) => (rule.targetExport === null ? rule.targetPackage : `${rule.targetExport} · ${rule.targetPackage}`);
+  const capped = (parts: string[]) =>
+    `${parts.slice(0, LABEL_PARTS).join(", ")}${parts.length > LABEL_PARTS ? ` +${parts.length - LABEL_PARTS} more` : ""}`;
+  const [first] = rules;
+  if (rules.length === 1 && first) return own(first);
+  const packages = new Set(rules.map((rule) => rule.targetPackage));
+  if (packages.size > 1 || !first) return capped(rules.map(own).sort());
+  if (rules.some((rule) => rule.targetExport === null)) return first.targetPackage;
+  return `${capped(rules.map((rule) => rule.targetExport ?? "").sort())} · ${first.targetPackage}`;
+}
+
 function deriveOne(
-  record: GovernanceRecord,
+  members: GovernanceRecord[],
   records: GovernanceRecord[],
   scans: DigestScan[],
   scope: DashboardScope,
   asOf: string,
 ): GovernanceTracking | null {
-  // The deprecated side follows the record's grain: a component-grain record
+  // The deprecated side follows each record's grain: a component-grain record
   // charts its component, not its whole package.
-  const from = sideOf(record, records, scans);
-  if (from.ids.size === 0) return null;
+  const from = sideOf(members, records, scans);
+  const [record] = from.rules;
+  if (!record) return null;
   const fromLabel = from.label;
   const shortFrom = fromLabel.split(" · ")[0] ?? fromLabel;
   const deprecated: SeriesCohort = { key: `deprecated:${record.id}`, label: fromLabel, color: "", role: "deprecated", occurrences: from.occurrences };
@@ -141,6 +204,7 @@ function deriveOne(
       id: `retirement:${record.id}`,
       kind: "retirement",
       record,
+      recordIds: from.rules.map((r) => r.id),
       name: `Retirement: ${shortFrom}`,
       fromLabel,
       toLabel: null,
@@ -158,11 +222,11 @@ function deriveOne(
   const by = record.disposition.by;
   const named = by.exportName === undefined
     ? null
-    : sideOf({ grain: "component", targetPackage: by.packageName, targetExport: by.exportName }, records, scans, "successor");
+    : sideOf([{ grain: "component", targetPackage: by.packageName, targetExport: by.exportName }], records, scans, "successor");
   // Falls back to `by`'s whole package when no in-scope scan holds any of that family.
   const to = named !== null && named.ids.size > 0
     ? named
-    : sideOf({ grain: "package", targetPackage: by.packageName, targetExport: null }, records, scans, "successor");
+    : sideOf([{ grain: "package", targetPackage: by.packageName, targetExport: null }], records, scans, "successor");
   const toLabel = to.label;
   const successor: SeriesCohort = { key: `successor:${record.id}`, label: toLabel, color: "", role: "successor", occurrences: to.occurrences };
 
@@ -178,6 +242,7 @@ function deriveOne(
     id: `migration:${record.id}`,
     kind: "migration",
     record,
+    recordIds: from.rules.map((r) => r.id),
     name: `Migration: ${shortFrom} → ${toLabel.split(" · ")[0] ?? toLabel}`,
     fromLabel,
     toLabel,

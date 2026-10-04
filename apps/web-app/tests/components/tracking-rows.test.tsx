@@ -18,6 +18,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     id: "migration:r1",
     kind: "migration",
     record: {} as never,
+    recordIds: ["r1"],
     name: "Migration: OldButton → new-ds",
     fromLabel: "OldButton · old-ds",
     toLabel: "new-ds/Button",

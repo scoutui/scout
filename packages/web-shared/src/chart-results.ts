@@ -31,9 +31,9 @@ export const chartResultKey = {
 } as const;
 
 /**
- * Every derivation below receives the same `digests` array, so the per-repo
- * tracking that `deriveRecordStats` runs internally is served from the
- * `deriveGovernanceTracking` memo instead of being computed twice.
+ * Every derivation below receives the same `digests` array, so the tracking that
+ * `deriveRecordStats` runs internally is served from the tracking memo instead of
+ * being computed twice, unless records share a replacement.
  */
 export function deriveChartResults({ digests, tags, governance, dashboards, asOf }: ChartResultsInput): ChartResults {
   const tracking = deriveGovernanceTracking(governance, digests, { kind: "all" }, asOf);
