@@ -5,7 +5,6 @@ import { CircleX } from "lucide-react";
 import type { ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
-import { seriesCanOverlap } from "@/lib/cohort-overlap";
 import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
 import { type ChartCohort, chartColors, deprecatedOnlyKeys, drawnChartCohorts } from "@/lib/dashboard-chart-data";
@@ -314,15 +313,6 @@ export function DashboardBuilder({
     setError(actionErrorMessage(res?.error, "save this chart", "Couldn't save the chart. Try again."));
   }
 
-  // The share caption shows only for the share metric, and only when the series can
-  // overlap so a component can count toward two of them.
-  const showShareCaption =
-    effectiveMetric === "share" &&
-    seriesCanOverlap(cohorts, {
-      components: pickable,
-      packages: scopedPickable?.packages ?? packages,
-      tags: libraryTags,
-    });
 
   const selectedKeys = new Set(cohorts.map(selectorKey));
   const nameMissing = !name.trim();
@@ -500,11 +490,6 @@ export function DashboardBuilder({
             <div className="h-[280px]" />
           )}
 
-          {showShareCaption ? (
-            <p className="text-xs text-muted-foreground">
-              Some of these series share components, and a shared component counts toward each of them.
-            </p>
-          ) : null}
         </div>
       </div>
     </div>

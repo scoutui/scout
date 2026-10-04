@@ -14,7 +14,7 @@ export const metadata = { title: "Governance" };
 
 export default async function GovernancePage() {
   if (!can(await identify({ browser: true }), "edit")) {
-    return <EmptyState titleAs="h1" title="Only Editors can see governance. Ask an admin for access." />;
+    return <EmptyState titleAs="h1" title="Only Editors can see Governance. Ask an Admin for access." />;
   }
   const { records, authors, tags, registry } = await getStorage().withReadSnapshot(async snapshot => ({
     records: await snapshot.listGovernance(),

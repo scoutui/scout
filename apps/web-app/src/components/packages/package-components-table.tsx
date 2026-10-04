@@ -49,7 +49,7 @@ export function PackageComponentsTable({
   }, [components, filters, sortKey, sortDir]);
 
   if (components.length === 0) {
-    return <p className="text-sm text-muted-foreground">No components observed for this package.</p>;
+    return <p className="text-sm text-muted-foreground">No components found.</p>;
   }
 
   const filtering = filters.text.trim() !== "" || filters.deprecated;

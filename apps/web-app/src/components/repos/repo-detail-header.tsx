@@ -88,7 +88,7 @@ export function RepoDetailHeader({
       ) : null}
 
       {/* Status row: deprecated components in use and their movement since
-          the previous scan first, then what else moved. */}
+          the previous scan first, then what else changed. */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         {detail.deprecatedCount > 0 ? (
           // Centred, not baseline-aligned: the alarm is itself a centred

@@ -52,7 +52,7 @@ describe("RepoAdoptionPanel governance tracking", () => {
     );
 
     expect(screen.getByText("No migrations or retirements tracked yet.")).toBeDefined();
-    expect(screen.getByText("Mark a component as replaced or retired and its progress will chart here, scan over scan.")).toBeDefined();
+    expect(screen.getByText("Mark a component as replaced or retired in Governance to track its progress here.")).toBeDefined();
     expect(screen.getByRole("link", { name: "Open Governance" }).getAttribute("href")).toBe("/governance");
     expect(screen.queryByText("Library mix, latest scan")).toBeNull();
     expect(screen.queryByText("Library usage over time")).toBeNull();

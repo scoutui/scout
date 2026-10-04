@@ -29,7 +29,7 @@ export function RepoAdoptionPanel({ tracking, notice, canEdit }: {
         <EmptyState
           icon={<Milestone className="size-6" />}
           title="No migrations or retirements tracked yet."
-          description={canEdit ? "Mark a component as replaced or retired and its progress will chart here, scan over scan." : undefined}
+          description={canEdit ? "Mark a component as replaced or retired in Governance to track its progress here." : undefined}
           action={
             canEdit ? (
               <Link href="/governance" className="text-sm text-foreground underline-offset-4 hover:underline">

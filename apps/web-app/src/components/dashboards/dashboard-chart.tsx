@@ -47,7 +47,7 @@ function ChartFallback() {
   // A (chartType, view.kind) mismatch shows this rather than a blank panel.
   return (
     <p className="py-6 text-center text-sm text-muted-foreground">
-      Nothing to display for this chart.
+      This chart has no data yet.
     </p>
   );
 }

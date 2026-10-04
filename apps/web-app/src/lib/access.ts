@@ -8,12 +8,12 @@ export type Person = { kind: "person"; userId: string; email: string; name: stri
 export type Identity = Person | { kind: "ci" };
 export type Action = "view" | "edit" | "upload" | "manage-people";
 
-export const EDIT_REFUSAL = "Only Editors can make changes. Ask an admin for access.";
+export const EDIT_REFUSAL = "Only Editors can make changes. Ask an Admin for access.";
 export const UPLOAD_REFUSAL = {
   code: "upload_not_allowed",
-  message: "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.",
+  message: "You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.",
 } as const;
-export const ADMIN_REFUSAL = "Only Admins can change roles.";
+export const ADMIN_REFUSAL = "Only Admins can change roles. Ask an Admin for access.";
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
 const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin" };

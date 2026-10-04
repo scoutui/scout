@@ -29,7 +29,7 @@ describe("LoginPage", () => {
   it("asks the user to retry later when their access couldn't be checked", async () => {
     render(await LoginPage({ searchParams: Promise.resolve({ error: "AccessCheckUnavailable" }) }));
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "We couldn't check your access just now. Try again in a few minutes.",
+      "Couldn't check your access. Try again in a few minutes.",
     );
     expect(screen.getByRole("button", { name: "Sign in with SSO" })).toBeEnabled();
   });

@@ -18,7 +18,7 @@ The scan prints one line starting with `Error:` and writes nothing. Match the st
 | `Couldn't find <path>` | Run the scan from the folder that holds the config, or pass its path with `--config <path>`. If there is no config yet, run `scout init`. |
 | `<path> isn't valid JSON` | Fix the syntax. Comments and trailing commas also cause this. To see the line and column where the parser stopped, run the command again with `--debug`. |
 | `<path> has a field Scout doesn't use:` or `<path> has fields Scout doesn't use:` | Remove each field the line names, such as `output`. If it's a misspelling of a field you need, such as `exlude` for `exclude`, correct the name instead. The [config reference](/docs/reference/config#fields) lists every field. |
-| `Invalid config at <path>:` | Fix each problem it lists as `<field>: <problem>`, such as `/include: must be array`. Check each against the [config reference](/docs/reference/config). |
+| `"<field>" in <path>`, followed by what's wrong, such as `"include" in ./scout.config.json can't be an empty list.` | Fix each field it names. Check each against the [config reference](/docs/reference/config). |
 | `scout-scan.json in <folder> links to a file outside that folder` | Delete the link and scan again. |
 | `Scout can't read packages installed with Yarn Plug'n'Play.` | Switch Yarn to `node_modules`, as described in [Install the CLI](/docs/guides/install#2-switch-yarn-off-plugnplay). |
 

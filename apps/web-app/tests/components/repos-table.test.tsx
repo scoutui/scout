@@ -95,7 +95,7 @@ describe("ReposTable", () => {
     render(<ReposTable rows={rows} />);
     const acmeRow = screen.getByRole("link", { name: "acme-web" }).closest("tr")!;
     const acmeCells = within(acmeRow as HTMLElement).getAllByRole("cell");
-    // Deprecated is second to last: the Δ components column follows it.
+    // Deprecated is second to last: the Changes column follows it.
     const acmeDep = acmeCells[acmeCells.length - 2]!;
     expect(acmeDep).toHaveTextContent("2");
     expect(acmeDep.className).toMatch(/text-status-warn-text/);
@@ -171,7 +171,7 @@ describe("ReposExplorer", () => {
   });
 });
 
-describe("ReposTable: Δ components", () => {
+describe("ReposTable: Changes", () => {
   const moved = [
     repo({ repoId: "big-move", scanCount: 3, deprecatedCount: 14, delta: { added: 3, removed: 16, changed: 18, deprecated: -2 } }),
     repo({ repoId: "small-move", scanCount: 2, delta: { added: 0, removed: 2, changed: 0, deprecated: 0 } }),
@@ -180,10 +180,10 @@ describe("ReposTable: Δ components", () => {
   ];
   const rowOf = (name: string) => screen.getByRole("link", { name }).closest("tr") as HTMLElement;
   const lastCell = (tr: HTMLElement) => within(tr).getAllByRole("cell").at(-1) as HTMLElement;
-  // The Δ components cell renders both forms; CSS shows words from lg, the compact form below it.
+  // The Changes cell renders both forms; CSS shows words from lg, the compact form below it.
   const wordsOf = (name: string) => lastCell(rowOf(name)).querySelector(".lg\\:inline") as HTMLElement;
   const compactOf = (name: string) => lastCell(rowOf(name)).querySelector(".lg\\:hidden") as HTMLElement;
-  const HEADER_NAME = "Δ components: added, removed or changed since previous scan";
+  const HEADER_NAME = "Changes: added, removed or changed since the previous scan";
 
   it("from lg reads in words, `+3 added · −16 removed · 18 changed`, zero parts omitted, numbers ink and words muted", () => {
     const changedOnly = repo({ repoId: "changed-only", scanCount: 2, delta: { added: 0, removed: 0, changed: 18, deprecated: 0 } });
@@ -201,7 +201,7 @@ describe("ReposTable: Δ components", () => {
     render(<ReposTable rows={[...moved, changedOnly]} />);
     const sort = screen.getByRole("button", { name: HEADER_NAME });
     expect(sort).toHaveAttribute("title", HEADER_NAME);
-    expect(sort.textContent).toBe("Δ components");
+    expect(sort.textContent).toBe("Changes");
     const big = compactOf("big-move");
     expect(big.textContent).toBe("+3 −16 · 18 changed");
     // The counts are ink medium; the word `changed` is muted.
@@ -270,7 +270,7 @@ describe("ReposTable: Δ components", () => {
   it("mobile tier omits a null movement part on a deprecated-only move", () => {
     const deprecatedOnly = repo({ repoId: "dep-only", scanCount: 2, delta: { added: 0, removed: 0, changed: 0, deprecated: -2 } });
     render(<ReposTable rows={[deprecatedOnly]} />);
-    // Scoped to the mobile-tier movement span: the desktop Δ components cell
+    // Scoped to the mobile-tier movement span: the desktop Changes cell
     // renders "—" for this row's zero added and removed.
     const line = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
     const mobileMovement = within(rowOf("dep-only")).getByText(line("deprecated (−2)"));

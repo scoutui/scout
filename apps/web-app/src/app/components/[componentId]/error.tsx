@@ -12,8 +12,8 @@ export default function ComponentDetailError({
   return (
     <EmptyState
       icon={<CircleX className="size-6 text-status-err" />}
-      title="Something went wrong."
-      description="Could not load this component. You can try again or refresh the page."
+      title="Couldn't load this component."
+      description="Try again, or reload the page."
       action={
         <Button variant="ghost" size="sm" onClick={reset}>
           Try again

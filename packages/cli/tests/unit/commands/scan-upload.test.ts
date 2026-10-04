@@ -477,7 +477,7 @@ describe("runScan pre-scan check", () => {
       "Couldn't upload the scan: upload-test on the dashboard comes from github.com/acme/web. Scan a clone of that repository, or choose another repoId in scout.config.json.",
       " See https://scoutui.dev/docs/guides/troubleshoot-a-scan#repository-from-another-remote",
     ],
-    ["upload_not_allowed", "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.", ""],
+    ["upload_not_allowed", "You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.", ""],
   ])("prints the dashboard's warning line, then its %s refusal of the whole scan, under --quiet, without scanning", async (code, message, page) => {
     const dir = setupConsumer();
     vi.spyOn(global, "fetch").mockResolvedValueOnce(

@@ -13,7 +13,7 @@ export const metadata = { title: "New chart" };
 
 export default async function NewDashboardPage() {
   if (!can(await identify({ browser: true }), "edit")) {
-    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an admin for access." />;
+    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an Admin for access." />;
   }
   const page = await readModelPage(getStorage(), chartBuilderOptions);
   if (page.state !== "ready") return <ReadModelState {...page} />;
