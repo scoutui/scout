@@ -135,7 +135,11 @@ function named(sha: string, day: string): string {
   return `${sha.slice(0, 7)} (${day})`;
 }
 
+let tempFolder = "";
+
 beforeEach(() => {
+  tempFolder = realpathSync(mkdtempSync(join(tmpdir(), "cc-backfill-tmp-")));
+  vi.stubEnv("TMPDIR", tempFolder);
   vi.stubEnv("SCOUTUI_TOKEN", "ci-secret");
   vi.spyOn(process.stdout, "write").mockReturnValue(true);
   vi.spyOn(process.stderr, "write").mockReturnValue(true);
@@ -145,6 +149,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
+  rmSync(tempFolder, { recursive: true, force: true });
 });
 
 describe("scout backfill", () => {
