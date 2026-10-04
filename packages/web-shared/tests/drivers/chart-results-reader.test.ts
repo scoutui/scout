@@ -15,9 +15,12 @@ async function buildResults(pool: Pool): Promise<void> {
 }
 
 async function derived(driver: PostgresDriver) {
+  const stored = await driver.getStoredRegistry();
+  if (!stored) throw new Error("Expected stored chart results");
   const inputs = await driver.withReadSnapshot(async snapshot => ({
     digests: await snapshot.listScanDigests(), tags: await snapshot.listTags(),
     governance: await snapshot.listGovernance(), dashboards: await snapshot.listDashboards(),
+    asOf: stored.snapshotAt,
   }));
   return JSON.parse(JSON.stringify(deriveChartResults(inputs))) as ReturnType<typeof deriveChartResults>;
 }

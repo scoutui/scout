@@ -1,6 +1,7 @@
 import type { CohortRole, CohortSelector, CohortSeries, DashboardView, RepoCoverage } from "@scoutui/web-shared";
 import { cohortKey } from "@scoutui/web-shared/client";
 import { CHART_ORDER, looksAlike, paletteToken } from "@/lib/chart-palette";
+import { formatReposAdded } from "@/lib/dashboard-format";
 import type { ChartConfig } from "@/components/ui/chart";
 
 /** True when a view has no series to draw. */
@@ -61,6 +62,18 @@ export function repoCoverageAt(coverage: RepoCoverage, ts: number): string | nul
   if (coverage.total <= 1) return null;
   const point = coverage.points.find((p) => Date.parse(p.t) === ts);
   return point ? `${point.repos} of ${coverage.total} repos` : null;
+}
+
+/** The times at which a repo joins each line after the line's first point, by cohortKey. */
+export function lineJoins(series: CohortSeries[]): Map<string, Set<string>> {
+  return new Map(series.map((s) => [s.cohortKey, new Set(s.points.slice(1).filter((p) => p.added?.length).map((p) => p.t))]));
+}
+
+/** "checkout added", "checkout and storefront added" or "3 repos added": the repos joining a line at `ts` after its first point. */
+export function reposJoiningAt(series: CohortSeries[], ts: number): string | null {
+  const repos = [...new Set(series.flatMap((s) => s.points.slice(1).filter((p) => Date.parse(p.t) === ts).flatMap((p) => p.added ?? [])))].sort();
+  if (repos.length === 0) return null;
+  return repos.length <= 2 ? `${repos.join(" and ")} added` : formatReposAdded(repos.length);
 }
 
 /** True when the latest point is a repo's first scan, so the change since the point before is that repo arriving. */

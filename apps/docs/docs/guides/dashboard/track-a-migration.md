@@ -61,7 +61,7 @@ On the **governance** page, select a record's count to open its chart: uses over
 
 To see where a record's component or package is still used, select the record's name.
 
-The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated**, and each retirement a row under **Retirements** reading **N left**, the uses still in the code. See [Charts](/docs/guides/dashboard/charts).
+The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated** and **N left**, and each retirement a row under **Retirements** reading **N left**, the uses still in the code. Each row also shows how the uses left changed over the last 30 days. Records that name the same replacement, such as one for each part of a compound component, share one row and one chart. See [Charts](/docs/guides/dashboard/charts).
 
 To follow one repo, open it from **repos** and go to its **Adoption** tab. **Migrations in this repo** and **Retirements in this repo** count that repo alone, so their numbers can differ from the charts page. A repo that never used `LegacyButton` has no row for it. See [Follow adoption in a repo](/docs/guides/dashboard/repos#follow-adoption-in-a-repo).
 

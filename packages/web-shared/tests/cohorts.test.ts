@@ -119,7 +119,7 @@ describe("projectCohortSeries", () => {
     const series = projectCohortSeries([r1a, r1b, r2a], [webTag], [{ kind: "tag", tagId: "web" }], "count");
     const web = series.find((s) => s.cohortKey === "tag:web")!;
     // t1: only r1a (4). t2: r1b (10) + r2a (3) = 13.
-    expect(web.points).toEqual([{ t: t1, value: 4 }, { t: t2, value: 13 }]);
+    expect(web.points).toEqual([{ t: t1, value: 4 }, { t: t2, value: 13, added: ["r2"] }]);
   });
 
   it("counts each repo from its first scan, at the series' timestamps", () => {
@@ -140,7 +140,7 @@ describe("projectCohortSeries", () => {
     const series = projectCohortSeries([a1, b2], [webTag], [{ kind: "tag", tagId: "web" }], "count");
     const web = series.find((s) => s.cohortKey === "tag:web")!;
     // t1: only rA (5). t2: rA carried forward (5) + rB (2) = 7.
-    expect(web.points).toEqual([{ t: t1, value: 5 }, { t: t2, value: 7 }]);
+    expect(web.points).toEqual([{ t: t1, value: 5 }, { t: t2, value: 7, added: ["rB"] }]);
   });
 
   it("carries a repo forward across many timestamps without its contribution drifting", () => {
@@ -154,8 +154,27 @@ describe("projectCohortSeries", () => {
     const web = series.find((s) => s.cohortKey === "tag:web")!;
     // rHeld contributes a flat 6 at every point; rMover adds 0, 1, 2, 3.
     expect(web.points).toEqual([
-      { t: ts[0]!, value: 6 }, { t: ts[1]!, value: 7 },
+      { t: ts[0]!, value: 6 }, { t: ts[1]!, value: 7, added: ["rMover"] },
       { t: ts[2]!, value: 8 }, { t: ts[3]!, value: 9 },
+    ]);
+  });
+
+  it("starts each line at the first scan of the earliest repo that has it, and marks where a repo that has it joins", () => {
+    const t3 = "2026-01-03T00:00:00Z";
+    const scans = [
+      scan("r1", t1, [[webButton, 4]]),
+      scan("r2", t2, [[legacyCard, 3], [webCard, 2]]),
+      scan("r1", t3, [[webButton, 5], [legacyCard, 2]]),
+    ];
+    const series = projectCohortSeries(scans, [webTag, legacyTag], [
+      { kind: "tag", tagId: "legacy" },
+      { kind: "component", componentId: webCard.id },
+      { kind: "component", componentId: webButton.id },
+    ], "count");
+    expect(series.map((s) => s.points)).toEqual([
+      [{ t: t1, value: 0 }, { t: t2, value: 3, added: ["r2"] }, { t: t3, value: 5 }],
+      [{ t: t2, value: 2 }, { t: t3, value: 2 }],
+      [{ t: t1, value: 4 }, { t: t2, value: 4 }, { t: t3, value: 5 }],
     ]);
   });
 
@@ -170,7 +189,7 @@ describe("projectCohortSeries", () => {
       [{ kind: "tag", tagId: "web" }, { kind: "tag", tagId: "legacy" }], "count",
     );
     expect(series.find((s) => s.cohortKey === "tag:web")!.points).toEqual([
-      { t: t1, value: 9 }, { t: t2, value: 10 },
+      { t: t1, value: 9 }, { t: t2, value: 10, added: ["rOther"] },
     ]);
     expect(series.find((s) => s.cohortKey === "tag:legacy")!.points).toEqual([
       { t: t1, value: 2 }, { t: t2, value: 2 },

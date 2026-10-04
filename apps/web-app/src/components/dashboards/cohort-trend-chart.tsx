@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, repoCoverageAt, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
+import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDay, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
@@ -18,7 +18,8 @@ const FACET_THRESHOLD = 5;
  * gradient wash when `seriesWashes` allows it, drawn in on load when motion is
  * allowed. Series are told apart by more than hue: a legend that highlights one
  * series on hover, an end dot and label at each line's tail, and a crosshair
- * tooltip listing every series at that scan. From FACET_THRESHOLD series it
+ * tooltip listing every series at that scan. A small ring marks each scan where a
+ * repo joins a line, and the tooltip names it. From FACET_THRESHOLD series it
  * renders small multiples on a shared y scale.
  */
 export function CohortTrendChart({
@@ -59,6 +60,7 @@ export function CohortTrendChart({
   }
   const config = cohortChartConfig(series);
   const lastTByKey = new Map(series.map((s) => [s.cohortKey, s.points[s.points.length - 1]?.t]));
+  const joins = lineJoins(series);
   // Reserve just enough right margin for the longest (capped) end label.
   const endLabelChars = (s: CohortSeries) => Math.max(distinctiveLabel(s.label).length, deprecatedOnly.has(s.cohortKey) ? DEPRECATED_ONLY.length : 0);
   const rightMargin = Math.min(168, 30 + Math.max(0, ...series.map(endLabelChars)) * 7);
@@ -128,7 +130,7 @@ export function CohortTrendChart({
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             content={
               <ChartTooltipContent
-                labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
+                labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, series)}
                 formatter={(value, name, item) => (
                   <>
                     <span
@@ -166,6 +168,9 @@ export function CohortTrendChart({
                   // A single end-dot (with a surface ring) marks the line's tail and
                   // ties the muted end label to its series without colouring the text.
                   const { cx, cy, payload } = props;
+                  if (cx != null && cy != null && payload?.t !== lastTByKey.get(s.cohortKey) && joins.get(s.cohortKey)?.has(payload?.t ?? "")) {
+                    return <JoinMarker key={`${s.cohortKey}-join-${payload?.t}`} cx={cx} cy={cy} color={color} dimmed={dimmed} />;
+                  }
                   if (cx == null || cy == null || payload?.t !== lastTByKey.get(s.cohortKey)) return <g key={`${s.cohortKey}-none-${props.cx}`} />;
                   const showLabel = labelled.has(s.cohortKey) || hovered === s.cohortKey;
                   return (
@@ -230,15 +235,23 @@ export function CohortTrendChart({
   );
 }
 
-/** A tooltip's heading: the scan time, and beneath it how many repos the point covers when the chart covers more than one. */
-export function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage): ReactNode {
+/** A ring on a line where a repo joins it, in the line's colour on the card surface. */
+function JoinMarker({ cx, cy, color, dimmed }: { cx: number; cy: number; color: string; dimmed: boolean }) {
+  return <circle cx={cx} cy={cy} r={3} fill="var(--card)" stroke={color} strokeWidth={1.5} opacity={dimmed ? 0.25 : 1} className="transition-opacity duration-200" />;
+}
+
+/**
+ * A tooltip's heading: the scan time, and beneath it how many repos the point covers when the chart covers more than
+ * one, and which repos join `series` there.
+ */
+export function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage, series: CohortSeries[] = []): ReactNode {
   const ts = tooltipRowTimestamp(payload);
   if (ts === null) return "";
-  const repos = repoCoverageAt(coverage, ts);
+  const detail = [repoCoverageAt(coverage, ts), reposJoiningAt(series, ts)].filter(Boolean).join(" · ");
   return (
     <>
       {formatScanStamp(ts)}
-      {repos ? <span className="block font-normal text-muted-foreground">{repos}</span> : null}
+      {detail ? <span className="block font-normal text-muted-foreground">{detail}</span> : null}
     </>
   );
 }
@@ -265,6 +278,7 @@ function TrendFacets({
   animate: boolean;
 }) {
   const gradientId = useId();
+  const joins = lineJoins(series);
   const domainMax = Math.max(1, ...series.flatMap((s) => s.points.map((p) => p.value)));
   const allT = series.flatMap((s) => s.points.map((p) => p.t)).sort();
   const firstT = allT[0];
@@ -301,7 +315,7 @@ function TrendFacets({
                     cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
                     content={
                       <ChartTooltipContent
-                        labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
+                        labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, [s])}
                         formatter={(value) => (
                           <div className="flex flex-1 items-center justify-between gap-3 leading-none">
                             <TooltipSeriesName name={distinctiveLabel(s.label)} deprecatedOnly={deprecatedOnly.has(s.cohortKey)} />
@@ -320,7 +334,10 @@ function TrendFacets({
                     strokeWidth={2}
                     strokeLinecap="round"
                     fill={`url(#${gradientId}-f${i})`}
-                    dot={false}
+                    dot={(props: { cx?: number; cy?: number; payload?: { t?: string } }) =>
+                      props.cx != null && props.cy != null && joins.get(s.cohortKey)?.has(props.payload?.t ?? "")
+                        ? <JoinMarker key={`join-${props.payload?.t}`} cx={props.cx} cy={props.cy} color={color} dimmed={false} />
+                        : <g key={`none-${props.cx}`} />}
                     activeDot={{ r: 3.5, strokeWidth: 2, stroke: "var(--card)" }}
                     isAnimationActive={animate}
                     animationDuration={400}

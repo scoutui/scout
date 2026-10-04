@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CohortRole, CohortSelector, CohortSeries } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, repoCoverageAt, savedChartCohorts, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesWashes, tooltipRowTimestamp, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -209,6 +209,32 @@ describe("repoCoverageAt", () => {
     ["a chart of one repo", oneRepo, "2026-06-01T00:00:00Z", null],
   ])("labels %s", (_, coverage, t, label) => {
     expect(repoCoverageAt(coverage, Date.parse(t))).toBe(label);
+  });
+});
+
+describe("repos joining a line", () => {
+  const [t1, t2, t3] = ["2026-06-01T00:00:00Z", "2026-07-01T00:00:00Z", "2026-08-01T00:00:00Z"];
+  const line = (key: string, points: Array<{ t: string; value: number; added?: string[] }>) => ({ cohortKey: key, label: key, color: "", points });
+  const series = [
+    line("a", [{ t: t1, value: 1, added: ["storefront"] }, { t: t2, value: 4, added: ["checkout"] }, { t: t3, value: 6, added: ["admin", "help", "search"] }]),
+    line("b", [{ t: t2, value: 2, added: ["checkout"] }, { t: t3, value: 3, added: ["admin"] }]),
+  ];
+
+  it("marks each point where a repo joins a line after its first point", () => {
+    expect(lineJoins(series)).toEqual(new Map([["a", new Set([t2, t3])], ["b", new Set([t3])]]));
+  });
+
+  it.each([
+    ["the line's first point only", t1, null],
+    ["one repo", t2, "checkout added"],
+    ["three or more repos", t3, "3 repos added"],
+  ])("names the repos joining at %s", (_, t, text) => {
+    expect(reposJoiningAt(series, Date.parse(t))).toBe(text);
+  });
+
+  it("names two repos joining at once", () => {
+    expect(reposJoiningAt([line("a", [{ t: t1, value: 1 }, { t: t2, value: 4, added: ["checkout", "storefront"] }])], Date.parse(t2)))
+      .toBe("checkout and storefront added");
   });
 });
 

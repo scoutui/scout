@@ -226,6 +226,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(stored).toBeDefined();
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
+      expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
       reader = { ...editor, role: "viewer" };
@@ -238,6 +239,25 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await expect(page(trackingParams(`retirement:${unseen.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
       await expect(page(trackingParams(`migration:${added.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
       await expect(page(trackingParams("migration:missing"))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+    });
+  });
+
+  it("opens the one chart of records that share a replacement from either record's link", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const by = { packageName: "@sample/new", exportName: "Button" };
+      const first = await driver.createGovernance({ grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "superseded", by } });
+      const second = await driver.createGovernance({ grain: "component", targetPackage: "@sample/mixed", targetExport: "Field", disposition: { kind: "superseded", by } });
+      await enqueueChartResults(pool);
+      await storeResults(pool);
+      const { default: page } = await import("@/app/charts/[dashboardId]/page");
+      const merged = `migration:${first.id}`;
+      const tree = await page(trackingParams(merged));
+      expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: expect.objectContaining({ id: merged, recordIds: [first.id, second.id] }) }]);
+      expect(textOf(tree)).toContain("Created from 2 Governance records.");
+      await expect(page(trackingParams(`migration:${second.id}`))).rejects.toMatchObject({
+        digest: expect.stringContaining(`;/charts/${encodeURIComponent(merged)};`),
+      });
     });
   });
 

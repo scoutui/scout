@@ -5,8 +5,8 @@ import { type GovernanceTracking, deriveGovernanceTracking } from "./governance-
 import { type RegistryStats, deriveRecordStats } from "./governance-registry.js";
 import { type GovernanceTarget, listGovernanceTargets } from "./governance.js";
 
-export const CHART_RESULTS_VERSION = 7;
-export const CHART_RESULTS_FORMAT_VERSION = 6;
+export const CHART_RESULTS_VERSION = 8;
+export const CHART_RESULTS_FORMAT_VERSION = 7;
 
 export type DashboardPreview = { view: DashboardView; missing: boolean };
 /** A stored preview, and when the snapshot it was derived from was read. */
@@ -14,7 +14,8 @@ export type StoredPreview = DashboardPreview & { snapshotAt: string };
 export type RegistryResult = RegistryStats & { sources: GovernanceTarget[] };
 /** The stored registry, and when the snapshot it was derived from was read. */
 export type StoredRegistry = RegistryResult & { snapshotAt: string };
-export type ChartResultsInput = { digests: DigestScan[]; tags: Tag[]; governance: GovernanceRecord[]; dashboards: Dashboard[] };
+/** `asOf` ends the window the all-repos tracking's change is measured over. */
+export type ChartResultsInput = { digests: DigestScan[]; tags: Tag[]; governance: GovernanceRecord[]; dashboards: Dashboard[]; asOf: string };
 export type ChartResults = {
   tracking: GovernanceTracking[];
   repoTracking: Record<string, GovernanceTracking[]>;
@@ -30,19 +31,19 @@ export const chartResultKey = {
 } as const;
 
 /**
- * Every derivation below receives the same `digests` array, so the per-repo
- * tracking that `deriveRecordStats` runs internally is served from the
- * `deriveGovernanceTracking` memo instead of being computed twice.
+ * Every derivation below receives the same `digests` array, so the tracking that
+ * `deriveRecordStats` runs internally is served from the tracking memo instead of
+ * being computed twice, unless records share a replacement.
  */
-export function deriveChartResults({ digests, tags, governance, dashboards }: ChartResultsInput): ChartResults {
-  const tracking = deriveGovernanceTracking(governance, digests, { kind: "all" });
+export function deriveChartResults({ digests, tags, governance, dashboards, asOf }: ChartResultsInput): ChartResults {
+  const tracking = deriveGovernanceTracking(governance, digests, { kind: "all" }, asOf);
   const repoTracking = Object.fromEntries(
     [...new Set(digests.map((d) => d.meta.repo.id))].map((repoId) => [
       repoId,
-      deriveGovernanceTracking(governance, digests, { kind: "repo", repoId }),
+      deriveGovernanceTracking(governance, digests, { kind: "repo", repoId }, asOf),
     ]),
   );
-  const registry = { ...deriveRecordStats(governance, digests), sources: listGovernanceTargets(digests) };
+  const registry = { ...deriveRecordStats(governance, digests, asOf), sources: listGovernanceTargets(digests) };
   const previews = Object.fromEntries(
     dashboards.map((dashboard) => {
       const scope = dashboard.config.scope;

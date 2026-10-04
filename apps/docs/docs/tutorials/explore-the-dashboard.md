@@ -139,11 +139,11 @@ We select **repos** and open `acme/storefront`:
 
 - The status line now starts with `1 deprecated component in use`.
 - In the **Components** table, `LegacyButton` has a warning icon after its name.
-- On the **Adoption** tab, `Migrations in this repo · 1 in progress` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
+- On the **Adoption** tab, `Migrations in this repo · 1 in progress · change since previous scan` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated` and `1 left`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
 
 ## Step 7: See the migration's chart
 
-We select **charts** in the top navigation. Under `Migrations · 1 in progress` is the same row, reading `66.7% migrated`. We didn't have to build this chart; the dashboard made it from our record.
+We select **charts** in the top navigation. Under `Migrations · 1 in progress · change over the last 30 days` is the same row, reading `66.7% migrated` and `1 left`. We didn't have to build this chart; the dashboard made it from our record.
 
 We click the row. The chart page opens with the heading `Migration: LegacyButton · @acme/ui-legacy → Button · @acme/ui`. The chart area reads `Trends appear once these repos have been scanned more than once.` A trend needs two points in time, and we have one scan.
 
@@ -162,7 +162,7 @@ When it prints `Uploaded the scan`, we refresh the chart page. It now draws two 
 
 ![The LegacyButton to Button migration chart after two scans, with LegacyButton flat at 1, Button flat at 2, and the legend below](/img/tutorial/migration-chart.png)
 
-Back on the charts list, the row now reads `±0 since previous scan`. From here, each scan of a new commit adds a point. As the team replaces `LegacyButton` with `Button`, the `LegacyButton` line falls and the `Button` line rises. [Run in CI](/docs/guides/run-in-ci) scans and uploads from CI, so the chart keeps itself up to date.
+Back on the charts list, the row now reads `no change`. From here, each scan of a new commit adds a point. As the team replaces `LegacyButton` with `Button`, the `LegacyButton` line falls and the `Button` line rises. [Run in CI](/docs/guides/run-in-ci) scans and uploads from CI, so the chart keeps itself up to date.
 
 ## What we've done
 

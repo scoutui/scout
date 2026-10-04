@@ -3,8 +3,8 @@ import { ChevronDown } from "lucide-react";
 import type { GovernanceTracking } from "@scoutui/web-shared";
 import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline";
 import { LazyCohortTrendChart } from "@/components/dashboards/lazy-cohort-trend-chart";
-import { chartColors, repoAddedAtLatest, savedChartCohorts } from "@/lib/dashboard-chart-data";
-import { deltaDirection, formatDeltaFrom, formatPct, } from "@/lib/dashboard-format";
+import { chartColors, savedChartCohorts } from "@/lib/dashboard-chart-data";
+import { deltaDirection, formatChange, formatPct, formatReposAdded } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 
 const ROW_CAP = 5;
@@ -21,10 +21,10 @@ const DISCLOSURE_BAND = `flex cursor-pointer list-none items-center gap-1.5 bg-m
 /**
  * The shared summary for governance-tracking rows. An estate row links to the
  * chart's detail page; a repo row expands inline. Migration rows show the `from`
- * name, `to <successor>` beneath it, "N% migrated", the change in percentage
- * points and a small count trend of the pair. Retirement rows show the name,
- * "N remaining" in plain ink, the change in count and a small count trend in the
- * deprecated colour.
+ * name, `to <successor>` beneath it, "N% migrated", "N left", the change in what
+ * is left and a small count trend of the pair. Retirement rows show the name,
+ * "N left" in plain ink, the change in what is left and a small count trend in
+ * the deprecated colour.
  *
  * The identifier is the only child that flexes, and below `xl` it takes its own
  * line and the sparkline is hidden: the fixed-width children add up to ~410px,
@@ -34,11 +34,8 @@ const DISCLOSURE_BAND = `flex cursor-pointer list-none items-center gap-1.5 bg-m
  */
 function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTracking; uid: string; archived?: boolean }) {
   const migration = entry.kind === "migration";
-  // Archived rows never show movement. Their numbers (remaining 0, progress 1)
-  // already give direction "none", but the guard doesn't rely on that.
-  const moved = deltaDirection(entry.kind, entry.delta);
-  const repoAdded = !archived && moved !== "none" && repoAddedAtLatest(entry.coverage);
-  const direction = archived || repoAdded ? "none" : moved;
+  const direction = archived ? "none" : deltaDirection(entry.delta);
+  const reposAdded = archived ? null : formatReposAdded(entry.reposAdded);
   // Green marks a gain, so it follows the value, not the row kind: a stalled
   // migration and an archived row are plain ink, an unknown one is muted.
   const tone = archived
@@ -79,31 +76,59 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
             {migration ? "migrated" : "left"}
           </span>
         </span>
-        {/* The change since the last scan, coloured by the record's declared
-            direction: green forward, red backward, muted for no change or unknown.
-            The sign and font weight carry it too, not colour alone. */}
-        <span
-          className={cn(
-            // w-40: "down from 34.8% previously" is the widest endpoint phrase.
-            "ml-auto shrink-0 text-right text-xs tabular-nums whitespace-nowrap xl:ml-0 xl:w-40",
-            direction === "backward"
-              ? "font-medium text-status-err"
-              : direction === "forward"
-                ? "font-medium text-status-ok"
-                : "text-muted-foreground",
-          )}
-        >
-          {archived
-            ? "complete"
-            : repoAdded
-              ? "repo added"
-              : formatDeltaFrom(entry.kind, migration ? entry.progress : entry.remaining, entry.delta)}
+        {migration ? (
+          <span className="shrink-0 text-sm">
+            <span className="tabular-nums xl:inline-block xl:w-14 xl:text-right">{entry.remaining.toLocaleString()}</span>{" "}
+            <span className="text-muted-foreground">left</span>
+          </span>
+        ) : null}
+        {/* Green for fewer left, red for more, muted for no change or unknown. The
+            words and font weight carry it too, not colour alone. */}
+        <span className="ml-auto shrink-0 text-right text-xs tabular-nums whitespace-nowrap xl:ml-0 xl:w-44">
+          <span
+            className={cn(
+              direction === "backward"
+                ? "font-medium text-status-err"
+                : direction === "forward"
+                  ? "font-medium text-status-ok"
+                  : "text-muted-foreground",
+            )}
+          >
+            {archived ? "complete" : formatChange(entry.delta)}
+          </span>
+          {reposAdded ? <span className="text-muted-foreground"> · {reposAdded}</span> : null}
         </span>
         <span className="hidden xl:block">
           <DashboardSparkline uid={uid} config={entry.config} view={{ kind: "series", series: entry.series, coverage: entry.coverage }} />
         </span>
       </div>
     </div>
+  );
+}
+
+/** A tracking entry's numbers on one line, for its chart page: "40% migrated · 24 left · 6 fewer in the last 30 days". */
+export function TrackingReadout({ entry }: { entry: GovernanceTracking }) {
+  const direction = deltaDirection(entry.delta);
+  const reposAdded = formatReposAdded(entry.reposAdded);
+  return (
+    <p className="text-sm tabular-nums text-muted-foreground">
+      {entry.kind === "migration" ? (
+        <>
+          <span className="font-medium text-foreground">{entry.progress === null ? "—" : formatPct(entry.progress)}</span> migrated ·{" "}
+        </>
+      ) : null}
+      <span className="font-medium text-foreground">{entry.remaining.toLocaleString()}</span> left
+      {entry.delta === null ? null : (
+        <>
+          {" · "}
+          <span className={cn(direction === "backward" ? "font-medium text-status-err" : direction === "forward" ? "font-medium text-status-ok" : undefined)}>
+            {formatChange(entry.delta)}
+          </span>{" "}
+          in the last 30 days
+        </>
+      )}
+      {reposAdded ? ` · ${reposAdded}` : null}
+    </p>
   );
 }
 
@@ -185,6 +210,7 @@ export function TrackingSection({
     `${noun}${surface === "repo" ? " in this repo" : ""}`,
     entries.length > 0 ? `${entries.length.toLocaleString()} in progress` : null,
     completeCount > 0 ? `${completeCount.toLocaleString()} complete` : null,
+    entries.length > 0 ? (surface === "repo" ? "change since previous scan" : "change over the last 30 days") : null,
   ]
     .filter(Boolean)
     .join(" · ");

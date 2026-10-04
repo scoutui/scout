@@ -15,6 +15,7 @@ function digest(repoId: string, scannedAt: string, uses: Array<[Component, numbe
   }));
 }
 
+const asOf = "2026-02-01T00:00:00Z";
 const rec = (o: Partial<GovernanceRecord>): GovernanceRecord => ({
   id: "r1", grain: "component", targetPackage: "@legacy/ui", targetExport: "Button",
   disposition: { kind: "superseded", by: { packageName: "@new/ui", exportName: "Button" } },
@@ -27,14 +28,23 @@ const newBtn = component(packageExport("@new/ui", "Button"));
 describe("deriveRecordStats", () => {
   it("reports an unseen record with nothing left, in no repo, covering no component", () => {
     const r = rec({ targetPackage: "@ghost/ui", targetExport: "Nope" });
-    const { stats } = deriveRecordStats([r], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3]])]);
+    const { stats } = deriveRecordStats([r], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3]])], asOf);
     expect(stats.r1).toEqual({ status: "unseen", left: 0, leftIn: [], componentIds: [], trackingId: null, successorDeprecated: false });
   });
 
   it("reports an in-flight migration as active with a tracking edge", () => {
-    const { stats } = deriveRecordStats([rec({})], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3], [newBtn, 1]])]);
+    const { stats } = deriveRecordStats([rec({})], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3], [newBtn, 1]])], asOf);
     expect(stats.r1?.status).toBe("active");
     expect(stats.r1?.trackingId).toBe("migration:r1");
+  });
+
+  it("keeps each record's own numbers when records share a replacement, and links each to their one chart", () => {
+    const link = component(packageExport("@legacy/ui", "Link"));
+    const records = [rec({ id: "button", createdAt: "2026-01-01" }), rec({ id: "link", targetExport: "Link", createdAt: "2026-01-02" })];
+    const scans = [digest("a", "2026-01-01T00:00:00Z", [[btn, 3], [newBtn, 1]]), digest("b", "2026-01-01T00:00:00Z", [[link, 2]])];
+    const { stats } = deriveRecordStats(records, scans, asOf);
+    expect(stats.button).toMatchObject({ left: 3, leftIn: ["a"], trackingId: "migration:button" });
+    expect(stats.link).toMatchObject({ left: 2, leftIn: ["b"], trackingId: "migration:button" });
   });
 
   it("counts occurrences left over each repo's latest scan and names the repos still using it", () => {
@@ -44,7 +54,7 @@ describe("deriveRecordStats", () => {
       digest("a", "2026-01-01T00:00:00Z", [[btn, 2]]),
       digest("c", "2026-01-01T00:00:00Z", [[newBtn, 4]]),
     ];
-    const { stats, repoCount } = deriveRecordStats([rec({})], scans);
+    const { stats, repoCount } = deriveRecordStats([rec({})], scans, asOf);
     expect(repoCount).toBe(3);
     expect(stats.r1).toMatchObject({ left: 5, leftIn: ["a", "b"] });
   });
@@ -57,19 +67,19 @@ describe("deriveRecordStats", () => {
       digest("a", "2026-01-01T00:00:00Z", [[btn, 1], [dialog, 2]]),
       digest("a", "2026-02-01T00:00:00Z", [[btn, 1], [card, 1]]),
     ];
-    const { stats } = deriveRecordStats([whole], scans);
+    const { stats } = deriveRecordStats([whole], scans, asOf);
     expect(stats.r1?.componentIds).toEqual([btn.id, card.id].sort());
   });
 
   it("covers no component once a complete record's components leave every latest scan", () => {
     const r = rec({ disposition: { kind: "retired", reason: "removed" } });
     const scans = [digest("a", "2026-01-01T00:00:00Z", [[btn, 3]]), digest("a", "2026-02-01T00:00:00Z", [])];
-    const { stats } = deriveRecordStats([r], scans);
+    const { stats } = deriveRecordStats([r], scans, asOf);
     expect(stats.r1).toMatchObject({ status: "complete", left: 0, leftIn: [], componentIds: [] });
   });
 
   it("reports repoCount so a one-repo estate can drop the coverage phrase", () => {
-    const { repoCount } = deriveRecordStats([rec({})], [digest("a", "2026-01-01T00:00:00Z", [[btn, 1]])]);
+    const { repoCount } = deriveRecordStats([rec({})], [digest("a", "2026-01-01T00:00:00Z", [[btn, 1]])], asOf);
     expect(repoCount).toBe(1);
   });
 
@@ -79,7 +89,7 @@ describe("deriveRecordStats", () => {
       id: "b", targetPackage: "@new/ui", targetExport: "Button",
       disposition: { kind: "retired", reason: "dead end" },
     });
-    const { stats } = deriveRecordStats([source, chained], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3], [newBtn, 1]])]);
+    const { stats } = deriveRecordStats([source, chained], [digest("a", "2026-01-01T00:00:00Z", [[btn, 3], [newBtn, 1]])], asOf);
     expect(stats.a?.successorDeprecated).toBe(true);
     expect(stats.b?.successorDeprecated).toBe(false);
   });
@@ -88,12 +98,13 @@ describe("deriveRecordStats", () => {
     const { stats } = deriveRecordStats(
       [rec({ id: "seen" }), rec({ id: "ghost", targetPackage: "@ghost/ui", targetExport: "X" })],
       [digest("a", "2026-01-01T00:00:00Z", [[btn, 1]])],
+      asOf,
     );
     expect(Object.keys(stats).sort()).toEqual(["ghost", "seen"]);
   });
 
   it("has no repos and no scans to read in an empty estate", () => {
-    const { stats, repoCount } = deriveRecordStats([rec({})], []);
+    const { stats, repoCount } = deriveRecordStats([rec({})], [], asOf);
     expect(repoCount).toBe(0);
     expect(stats.r1?.status).toBe("unseen");
   });
@@ -104,7 +115,7 @@ describe("deriveRecordStats", () => {
       digest("a", "2026-01-01T00:00:00Z", [[btn, 3]]),
       digest("a", "2026-02-01T00:00:00Z", [[btn, 0]]),
     ];
-    const { stats } = deriveRecordStats([r], scans);
+    const { stats } = deriveRecordStats([r], scans, asOf);
     expect(stats.r1?.status).toBe("complete");
     expect(stats.r1?.trackingId).toBe("retirement:r1");
   });

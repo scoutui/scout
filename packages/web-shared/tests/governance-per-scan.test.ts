@@ -7,6 +7,7 @@ import { renderDashboard } from "../src/dashboard-render.js";
 import { artifact, component, packageExport, received, repoDeclaration, resolvedAt, tag } from "./helpers/builders.js";
 
 const t1 = "2026-06-01T00:00:00Z";
+const asOf = "2026-06-02T00:00:00Z";
 
 function scanOf(repoId: string, uses: Array<[Component, number]>) {
   return received(artifact({
@@ -44,7 +45,7 @@ describe("governance per scan on the scan-file identity", () => {
     const migration = rule("button", { disposition: { kind: "superseded", by: { packageName: "@example/new-ui", exportName: "Button" } } });
 
     expect(governedComponentIds(migration, scan, [migration])).toEqual(new Set([button.id, buttonDist.id]));
-    const [entry] = deriveGovernanceTracking([migration], [scan], { kind: "all" });
+    const [entry] = deriveGovernanceTracking([migration], [scan], { kind: "all" }, asOf);
     expect(entry?.remaining).toBe(5);
     expect(entry?.progress).toBe(0.5);
   });
@@ -55,7 +56,7 @@ describe("governance per scan on the scan-file identity", () => {
     const scan = scanOf("repo-a", [[button, 2], [next, 3], [nextDist, 5]]);
     const migration = rule("button", { disposition: { kind: "superseded", by: { packageName: "@example/new-ui", exportName: "Button" } } });
 
-    expect(deriveGovernanceTracking([migration], [scan], { kind: "all" })[0]?.progress).toBe(0.8);
+    expect(deriveGovernanceTracking([migration], [scan], { kind: "all" }, asOf)[0]?.progress).toBe(0.8);
   });
 
   it("a tag rule governs the tag only in the scan that resolves it to the rule's package", () => {
@@ -63,7 +64,7 @@ describe("governance per scan on the scan-file identity", () => {
 
     expect(governedComponentIds(cardRule, scanA, [cardRule])).toEqual(new Set([cardInA.id]));
     expect(governedComponentIds(cardRule, scanB, [cardRule])).toEqual(new Set());
-    const [entry] = deriveGovernanceTracking([cardRule], [scanA, scanB], { kind: "all" });
+    const [entry] = deriveGovernanceTracking([cardRule], [scanA, scanB], { kind: "all" }, asOf);
     expect(entry?.remaining).toBe(1);
   });
 
@@ -73,7 +74,7 @@ describe("governance per scan on the scan-file identity", () => {
     const dialogRule = rule("dialog", { targetExport: "Dialog" });
 
     expect(governedComponentIds(dialogRule, scan, [dialogRule])).toEqual(new Set([popup.id]));
-    expect(deriveGovernanceTracking([dialogRule], [scan], { kind: "all" })[0]?.remaining).toBe(2);
+    expect(deriveGovernanceTracking([dialogRule], [scan], { kind: "all" }, asOf)[0]?.remaining).toBe(2);
   });
 
   it("charts a member with a record of its own under that record only, not also under its compound root", () => {
@@ -85,7 +86,7 @@ describe("governance per scan on the scan-file identity", () => {
       rule("popup", { targetExport: "Dialog.Popup", disposition: { kind: "superseded", by: { packageName: "@example/next-ui" } } }),
     ];
 
-    const remaining = Object.fromEntries(deriveGovernanceTracking(records, [scan], { kind: "all" }).map((t) => [t.record.id, t.remaining]));
+    const remaining = Object.fromEntries(deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf).map((t) => [t.record.id, t.remaining]));
     expect(remaining).toEqual({ dialog: 1, popup: 4 });
   });
 
@@ -94,7 +95,7 @@ describe("governance per scan on the scan-file identity", () => {
     const scan = scanOf("repo-a", [[button, 2], [card, 3]]);
     const records = [rule("package", { grain: "package", targetExport: null }), rule("button", {})];
 
-    const remaining = Object.fromEntries(deriveGovernanceTracking(records, [scan], { kind: "all" }).map((t) => [t.record.id, t.remaining]));
+    const remaining = Object.fromEntries(deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf).map((t) => [t.record.id, t.remaining]));
     expect(remaining).toEqual({ package: 5, button: 2 });
   });
 
@@ -109,7 +110,7 @@ describe("governance per scan on the scan-file identity", () => {
       rule("popup", { targetPackage: "@example/next-ui", targetExport: "Dialog.Popup" }),
     ];
 
-    const migration = deriveGovernanceTracking(records, [scan], { kind: "all" }).find((t) => t.record.id === "modal");
+    const migration = deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf).find((t) => t.record.id === "modal");
     // Successor: Dialog (3) + Dialog.Close (1); Dialog.Popup belongs to its own record.
     expect(migration?.progress).toBeCloseTo(4 / 6);
   });

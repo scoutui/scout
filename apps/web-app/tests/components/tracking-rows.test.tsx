@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { GovernanceTracking } from "@scoutui/web-shared";
-import { TrackingSection } from "@/components/dashboards/tracking-rows";
+import { TrackingReadout, TrackingSection } from "@/components/dashboards/tracking-rows";
 
 // The sparkline would pull recharts into jsdom, and no assertion needs it.
 vi.mock("@/components/dashboards/dashboard-sparkline", () => ({
@@ -18,6 +18,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     id: "migration:r1",
     kind: "migration",
     record: {} as never,
+    recordIds: ["r1"],
     name: "Migration: OldButton → new-ds",
     fromLabel: "OldButton · old-ds",
     toLabel: "new-ds/Button",
@@ -28,27 +29,55 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     remaining: 5,
     progress: 0.5,
     delta: 2,
+    reposAdded: 0,
     ...over,
   };
 }
 
-describe("TrackingSection change since the previous scan", () => {
-  it.each(["migration", "retirement"] as const)("a %s row reads 'repo added' instead of the change when the latest scan is a repo's first", kind => {
-    const joined = { total: 2, points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, { t: "2026-10-01T00:00:00Z", repos: 2 }] };
+describe("TrackingSection change in what is left", () => {
+  it.each(["migration", "retirement"] as const)("a %s row reads the change in what is left, and the repos added", kind => {
     render(
       <TrackingSection
         kind={kind}
         surface="estate"
         entries={[
-          entry({ id: `${kind}:joined`, kind, coverage: joined }),
-          entry({ id: `${kind}:joined-unchanged`, kind, coverage: joined, delta: 0 }),
-          entry({ id: `${kind}:steady`, kind }),
+          entry({ id: `${kind}:fewer`, kind, delta: -3, reposAdded: 1 }),
+          entry({ id: `${kind}:more`, kind, delta: 2 }),
+          entry({ id: `${kind}:still`, kind, delta: 0 }),
         ]}
       />,
     );
-    expect(screen.getAllByText("repo added")).toHaveLength(1);
-    expect(screen.getByText("±0 since previous scan")).toBeInTheDocument();
-    expect(screen.getAllByText(/^(up|down) from .* previously$/)).toHaveLength(1);
+    expect(screen.getByText("3 fewer")).toHaveClass("text-status-ok");
+    expect(screen.getByText("2 more")).toHaveClass("text-status-err");
+    expect(screen.getByText("no change")).not.toHaveClass("text-status-ok", "text-status-err");
+    expect(screen.getAllByText(/repo added/)).toHaveLength(1);
+  });
+
+  it("a migration row reads what is left beside the share migrated", () => {
+    render(<TrackingSection kind="migration" surface="estate" entries={[entry({ remaining: 24, progress: 0.4 })]} />);
+    expect(screen.getByText("40%")).toBeInTheDocument();
+    expect(screen.getByText("24")).toBeInTheDocument();
+    expect(screen.getByText("left")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["estate", "Migrations · 1 in progress · change over the last 30 days"],
+    ["repo", "Migrations in this repo · 1 in progress · change since previous scan"],
+  ] as const)("the %s heading names the period the change covers", (surface, heading) => {
+    render(<TrackingSection kind="migration" surface={surface} entries={[entry({})]} />);
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(heading);
+  });
+});
+
+describe("TrackingReadout", () => {
+  it.each([
+    [{}, "50% migrated · 5 left · 2 more in the last 30 days"],
+    [{ delta: -14, reposAdded: 1 }, "50% migrated · 5 left · 14 fewer in the last 30 days · 1 repo added"],
+    [{ delta: null }, "50% migrated · 5 left"],
+    [{ kind: "retirement" as const, progress: null, delta: 0 }, "5 left · no change in the last 30 days"],
+  ])("reads %o as %s", (over, text) => {
+    const { container } = render(<TrackingReadout entry={entry(over)} />);
+    expect(container.textContent).toBe(text);
   });
 });
 
@@ -62,11 +91,11 @@ describe("TrackingSection complete ledger", () => {
         surface="estate"
       />,
     );
-    expect(screen.getByText(/Migrations · 1 in progress · 1 complete/)).toBeDefined();
+    expect(screen.getByText(/Migrations · 1 in progress · 1 complete · change over the last 30 days/)).toBeDefined();
     expect(screen.getByText("Show 1 complete")).toBeDefined();
     expect(screen.getByText("100%")).toBeDefined(); // formatPct trim
     expect(screen.getByText("complete")).toBeDefined(); // archived Δ slot label
-    expect(screen.queryByText("±0 since previous scan")).toBeNull();
+    expect(screen.queryByText("no change")).toBeNull();
   });
 
   it("a complete-only section renders with no in-progress fragment in the heading", () => {
@@ -97,7 +126,7 @@ describe("TrackingSection heading", () => {
         surface="estate"
       />,
     );
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations · 2 in progress");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations · 2 in progress · change over the last 30 days");
     expect(screen.queryByText(/median/)).toBeNull();
   });
 });
