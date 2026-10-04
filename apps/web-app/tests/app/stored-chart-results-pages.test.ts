@@ -276,7 +276,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
       expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Retirement: @sample/core", children: expect.anything() }]);
-      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `retirement:${retired.id}`, canDuplicate: false, visibility: null }]);
+      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `retirement:${retired.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
       reader = { ...editor, role: "viewer" };
@@ -320,7 +320,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const { default: page } = await import("@/app/charts/[dashboardId]/page");
       const tree = await page(trackingParams(`migration:${record.id}`));
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Migration: Button · @sample/core → Field · @sample/mixed", children: expect.anything() }]);
-      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null }]);
+      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
     });
   });
 
