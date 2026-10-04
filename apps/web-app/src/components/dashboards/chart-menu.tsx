@@ -70,33 +70,33 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
       else setError(actionErrorMessage(res.error, "change who can see this chart", "Couldn't change who can see the chart. Try again."));
     });
 
-  const downloadImage = (shown: ExportedChart) =>
+  const downloadImage = (shown: ExportedChart) => {
+    setError(null);
     imageOf(shown).then(
       (blob) => save(blob, exportFileName(shown.title, "png")),
       () => showError("Couldn't make the image. Try again."),
     );
+  };
   const copyImage = (shown: ExportedChart) =>
     navigator.clipboard.write([new ClipboardItem({ "image/png": imageOf(shown) })]).then(
       () => showCopied("Image copied"),
       () => showError("Couldn't copy the image. Try again."),
     );
-  const downloadData = (shown: ExportedChart) =>
+  const downloadData = (shown: ExportedChart) => {
+    setError(null);
     save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
-  const copyData = (shown: ExportedChart) => {
-    try {
-      navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range))).then(
-        () => showCopied("Data copied"),
-        () => showError("Couldn't copy the data. Try again."),
-      );
-    } catch {
-      showError("Couldn't copy the data. Try again.");
-    }
   };
+  const copyData = (shown: ExportedChart) =>
+    navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range))).then(
+      () => showCopied("Data copied"),
+      () => showError("Couldn't copy the data. Try again."),
+    );
 
   const sharing = visibility === "private" || visibility === "everyone";
   if (!chart && !sharing && !canDuplicate) return null;
   const image = chart !== null && hasFigure(chart.config, chart.drawn);
   const canCopyImage = image && typeof ClipboardItem !== "undefined" && typeof navigator.clipboard?.write === "function";
+  const canCopyData = chart !== null && typeof navigator.clipboard?.writeText === "function";
 
   return (
     <span className="inline-flex items-center gap-2">
@@ -113,7 +113,7 @@ export function ChartMenu({ id, canDuplicate, visibility }: { id: string; canDup
               {image ? <DropdownMenuItem onClick={() => downloadImage(chart)}>Download image</DropdownMenuItem> : null}
               {canCopyImage ? <DropdownMenuItem onClick={() => copyImage(chart)}>Copy image</DropdownMenuItem> : null}
               <DropdownMenuItem onClick={() => downloadData(chart)}>Download data</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => copyData(chart)}>Copy data</DropdownMenuItem>
+              {canCopyData ? <DropdownMenuItem onClick={() => copyData(chart)}>Copy data</DropdownMenuItem> : null}
               {sharing || canDuplicate ? <DropdownMenuSeparator /> : null}
             </>
           ) : null}
@@ -143,5 +143,5 @@ function save(blob: Blob, fileName: string): void {
   link.href = url;
   link.download = fileName;
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url));
 }

@@ -160,6 +160,12 @@ describe("ChartMenu export", () => {
     expect(await menuItems()).toEqual(["Download image", "Download data", "Copy data"]);
   });
 
+  it("offers no Copy image or Copy data where the page has no clipboard", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    renderChart("trend");
+    expect(await menuItems()).toEqual(["Download image", "Download data"]);
+  });
+
   it("sets sharing and Duplicate apart after the export items", async () => {
     renderChart("trend", "3m", { canDuplicate: true, visibility: "private" });
     expect(await menuItems()).toEqual(["Download image", "Copy image", "Download data", "Copy data", "Share with everyone", "Duplicate"]);
@@ -198,11 +204,23 @@ describe("ChartMenu export", () => {
     open();
     fireEvent.click(await screen.findByRole("menuitem", { name: "Download data" }));
     expect(saved).toEqual([{ download: "Button adoption.csv", href: "blob:export" }]);
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
     const csv = vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob;
     expect(csv.type).toBe("text/csv;charset=utf-8");
     expect([...(await readBytes(csv)).slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
     expect((await readBlob(csv)).split("\r\n").slice(0, 2)).toEqual(["Committed (UTC),@example/web,Button · @example/ui", "2026-07-01 00:00,40,"]);
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:export");
+    await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:export"));
+  });
+
+  it("clears a failure message once a later export works", async () => {
+    clipboard.writeText.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError"));
+    renderChart("trend");
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy data" }));
+    expect(await screen.findByText("Couldn't copy the data. Try again.")).toBeInTheDocument();
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download data" }));
+    await waitFor(() => expect(screen.queryByText("Couldn't copy the data. Try again.")).toBeNull());
   });
 
   it("downloads an image of the range on screen named after the chart", async () => {
@@ -237,7 +255,6 @@ describe("ChartMenu export", () => {
     ["Download image", "Download image", () => image.chartPng.mockRejectedValueOnce(new Error("no canvas")), "Couldn't make the image. Try again."],
     ["Copy image", "Copy image", () => clipboard.write.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError")), "Couldn't copy the image. Try again."],
     ["Copy data", "Copy data", () => clipboard.writeText.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError")), "Couldn't copy the data. Try again."],
-    ["Copy data on a page with no clipboard", "Copy data", () => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }), "Couldn't copy the data. Try again."],
   ])("says when %s fails", async (_, item, fail, message) => {
     fail();
     renderChart("trend");
