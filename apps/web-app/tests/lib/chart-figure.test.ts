@@ -84,7 +84,7 @@ describe("chartFigure", () => {
         { label: "Button · @example/ui", value: "75%", color: "#7a3fd1" },
       ],
     ],
-    ["bars: no legend, since each bar is named", config("bars"), barsView, "All repos · latest scans", []],
+    ["bars: no legend", config("bars"), barsView, "All repos · latest scans", []],
   ];
 
   it.each(cases)("titles, credits and keys %s", (_, chartConfig, view, subtitle, legend) => {

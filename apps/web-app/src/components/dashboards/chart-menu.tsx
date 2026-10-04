@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type ShownChart, useChartExport } from "./chart-export-context";
 
-/** How long "Image copied" and "Data copied" show. */
+/** How long "Image copied" and "Table copied" show. */
 const COPIED_MS = 1800;
 /** The UTF-8 byte order mark, written first in a downloaded CSV. */
 const UTF8_BOM = "\uFEFF";
