@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Pool } from "pg";
 import { getPool } from "@/db/client";
-import { type Action, can, type Identity, type Role } from "@/lib/access";
+import { type Action, can, type ChartTarget, type Identity, type Role } from "@/lib/access";
 import { consumeApprovedDeviceCode } from "@/lib/cli-session-store";
 import { hashToken } from "@/lib/cli-session-tokens";
 import { identify } from "@/lib/identity";
@@ -241,5 +241,26 @@ describe("can", () => {
 
   it.each(rows)("$who may $action: $allowed", ({ identity, action, allowed }) => {
     expect(can(identity, action)).toBe(allowed);
+  });
+
+  const theirs = (visibility: "private" | "everyone") => ({ createdByUserId: "u2", visibility });
+  const mine = (visibility: "private" | "everyone") => ({ createdByUserId: "u1", visibility });
+  const chartRows: { who: string; identity: Identity | null; action: Action; chart: string; target: ChartTarget; allowed: boolean }[] = [
+    { who: "nobody", identity: null, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
+    { who: "the CI secret", identity: { kind: "ci" }, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
+    { who: "a Viewer", identity: person("viewer"), action: "view", chart: "someone else's Everyone chart", target: theirs("everyone"), allowed: true },
+    { who: "an Editor", identity: person("editor"), action: "view", chart: "someone else's private chart", target: theirs("private"), allowed: false },
+    { who: "a Viewer", identity: person("viewer"), action: "view", chart: "their own private chart", target: mine("private"), allowed: true },
+    { who: "an Admin", identity: person("admin"), action: "view", chart: "someone else's private chart", target: theirs("private"), allowed: true },
+    { who: "an Editor", identity: person("editor"), action: "edit", chart: "someone else's chart", target: theirs("everyone"), allowed: false },
+    { who: "an Editor", identity: person("editor"), action: "edit", chart: "their own chart", target: mine("everyone"), allowed: true },
+    { who: "a Viewer", identity: person("viewer"), action: "edit", chart: "their own chart", target: mine("everyone"), allowed: false },
+    { who: "an Admin", identity: person("admin"), action: "edit", chart: "someone else's chart", target: theirs("private"), allowed: true },
+    { who: "an Editor", identity: person("editor"), action: "edit", chart: "a chart with no creator", target: { createdByUserId: null, visibility: "everyone" }, allowed: false },
+    { who: "an Admin", identity: person("admin"), action: "edit", chart: "a chart with no creator", target: { createdByUserId: null, visibility: "everyone" }, allowed: true },
+  ];
+
+  it.each(chartRows)("$who may $action $chart: $allowed", ({ identity, action, target, allowed }) => {
+    expect(can(identity, action, { chart: target })).toBe(allowed);
   });
 });

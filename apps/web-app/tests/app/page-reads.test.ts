@@ -124,7 +124,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const { default: builder } = await import("@/app/charts/new/page");
       const { previewDashboard } = await import("@/app/charts/dashboard-actions");
       const recorder = recordQueries();
-      expect(propsFor(await recorder.read(builder), "DashboardBuilder")).toBeDefined();
+      expect(propsFor(await recorder.read(() => builder({ searchParams: Promise.resolve({}) })), "DashboardBuilder")).toBeDefined();
       const config = { scope: { kind: "repo", repoId: "repo-a" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } as const;
       const preview = await recorder.read(() => previewDashboard({ ...config, cohorts: [...config.cohorts] }));
       expect(preview).toMatchObject(state === "being rebuilt"
@@ -350,8 +350,8 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       open: async () => (await import("@/app/governance/page")).default(),
     },
     {
-      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an Admin for access.",
-      open: async () => (await import("@/app/charts/new/page")).default(),
+      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can make charts. Ask an Admin for access.",
+      open: async () => (await import("@/app/charts/new/page")).default({ searchParams: Promise.resolve({}) }),
     },
     {
       url: "/charts/[id]/edit", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an Admin for access.",
@@ -360,7 +360,8 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
   ])("shows a Viewer one line instead of $url, and an Editor the page", async ({ page, line, open }) => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
-      const saved = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      await pool.query(`INSERT INTO "user" (id, email) VALUES ('reader', 'ana@example.com')`);
+      const saved = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, createdByUserId: "reader" });
       reader = { ...editor, role: "viewer" };
       expect(propsFor(await open(saved.id), "EmptyState")).toEqual({ titleAs: "h1", title: line });
       reader = editor;
@@ -379,14 +380,14 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const repo = await import("@/app/repos/[repoId]/page");
       const chart = await import("@/app/charts/new/page");
       const charts = await import("@/app/charts/page");
-      const savedChart = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      const savedChart = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
       const chartDetail = await import("@/app/charts/[dashboardId]/page");
       const chartParams = { params: Promise.resolve({ dashboardId: savedChart.id }) };
       const { pickableForRepo, previewDashboard } = await import("@/app/charts/dashboard-actions");
       const recorder = recordQueries();
       const reads: Array<() => Promise<unknown>> = [
         () => repos.default(), () => packages.default(), () => pkg.default(packageParams),
-        () => cross.default(crossParams), () => history.default(repoParams), () => chart.default(),
+        () => cross.default(crossParams), () => history.default(repoParams), () => chart.default({ searchParams: Promise.resolve({}) }),
         () => repo.default({ ...repoParams, searchParams: Promise.resolve({ scan: "scan-previous" }) }),
         () => repo.generateMetadata(repoParams), () => pkg.generateMetadata(packageParams),
         () => cross.generateMetadata(crossParams), () => history.generateMetadata(repoParams),
@@ -535,10 +536,11 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
         expect(response.status).toBe(503);
         expect(await response.json()).toMatchObject({ state, scans: [], retryable: true });
       }
-      const pages = [
-        await import("@/app/repos/page"), await import("@/app/packages/page"), await import("@/app/charts/new/page"),
-      ];
-      for (const page of pages) expect(propsFor(await page.default(), "ReadModelState")).toMatchObject({ state });
+      const reposPage = await import("@/app/repos/page");
+      const packagesPage = await import("@/app/packages/page");
+      const builder = await import("@/app/charts/new/page");
+      const pages = [() => reposPage.default(), () => packagesPage.default(), () => builder.default({ searchParams: Promise.resolve({}) })];
+      for (const page of pages) expect(propsFor(await page(), "ReadModelState")).toMatchObject({ state });
       const repo = await import("@/app/repos/[repoId]/page");
       const repoHistory = await import("@/app/repos/[repoId]/scans/page");
       const packageDetail = await import("@/app/packages/[packageName]/page");

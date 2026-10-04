@@ -1,11 +1,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Pool } from "pg";
 import type { DashboardInput, GovernanceInput, TagInput } from "@scoutui/web-shared";
-import { deleteDashboard, saveDashboard } from "@/app/charts/dashboard-actions";
+import { deleteDashboard, saveDashboard, setDashboardVisibility } from "@/app/charts/dashboard-actions";
 import { deleteGovernance, saveGovernance } from "@/app/governance/governance-actions";
 import { deleteTag, quickTagPackage, saveTag } from "@/app/packages/tag-actions";
 import { getPool } from "@/db/client";
-import { EDIT_REFUSAL } from "@/lib/access";
+import { CHART_REFUSAL, EDIT_REFUSAL } from "@/lib/access";
 import { getStorage } from "@/lib/storage";
 import { insertPerson } from "../helpers/people";
 import { openReadModelDatabase } from "../helpers/read-model-db";
@@ -23,6 +23,7 @@ const dashboard: DashboardInput = {
   name: "Local usage",
   description: null,
   config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" },
+  visibility: "everyone",
 };
 const governance: GovernanceInput = {
   grain: "component",
@@ -83,13 +84,19 @@ describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
 
       signInAs(editor);
       await saveDashboard(dashboard);
-      const { rows } = await pool.query("SELECT id FROM dashboards");
-      expect(rows).toHaveLength(1);
+      const { rows } = await pool.query("SELECT id, visibility FROM dashboards");
+      expect(rows).toEqual([{ id: expect.any(String), visibility: "private" }]);
       expect(navigation.redirect).toHaveBeenCalledExactlyOnceWith(`/charts/${rows[0].id}`);
     });
 
-    it("refuses a Viewer's delete and keeps the chart, and deletes it for an Editor", async () => {
-      const { id } = await getStorage().upsertDashboard(dashboard);
+    it("refuses an Editor's save over a chart that no longer exists, and stores nothing", async () => {
+      signInAs(editor);
+      expect(await saveDashboard({ ...dashboard, id: "deleted-chart" })).toEqual({ ok: false, error: "This chart was deleted." });
+      expect(await count("dashboards")).toBe(0);
+    });
+
+    it("refuses a Viewer's delete and keeps the chart, and deletes it for the Editor who made it", async () => {
+      const { id } = await getStorage().upsertDashboard({ ...dashboard, createdByUserId: editor });
       signInAs(viewer);
       expect(await deleteDashboard(id)).toEqual({ ok: false, error: EDIT_REFUSAL });
       expect(await count("dashboards")).toBe(1);
@@ -97,6 +104,43 @@ describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
       signInAs(editor);
       expect(await deleteDashboard(id)).toEqual({ ok: true });
       expect(await count("dashboards")).toBe(0);
+    });
+
+    it("refuses another Editor's save over a chart and their delete, and allows both for an Admin", async () => {
+      const other = await insertPerson(pool, { email: "cy@example.com", role: "editor" });
+      const admin = await insertPerson(pool, { email: "di@example.com", role: "admin" });
+      const { id } = await getStorage().upsertDashboard({ ...dashboard, createdByUserId: editor });
+
+      signInAs(other);
+      expect(await saveDashboard({ ...dashboard, id, name: "Taken over" })).toEqual({ ok: false, error: CHART_REFUSAL });
+      expect(await deleteDashboard(id)).toEqual({ ok: false, error: CHART_REFUSAL });
+      expect(await getStorage().getDashboard(id)).toMatchObject({ name: "Local usage" });
+
+      signInAs(admin);
+      const madePrivate: DashboardInput = { ...dashboard, visibility: "private" };
+      await saveDashboard({ ...madePrivate, id, name: "Renamed by an Admin" });
+      expect(await getStorage().getDashboard(id)).toMatchObject({ name: "Renamed by an Admin", createdByUserId: editor, visibility: "everyone" });
+      expect(await deleteDashboard(id)).toEqual({ ok: true });
+      expect(await count("dashboards")).toBe(0);
+    });
+
+    it("lets a chart's creator and an Admin share it or make it private, and refuses another Editor", async () => {
+      const other = await insertPerson(pool, { email: "cy@example.com", role: "editor" });
+      const admin = await insertPerson(pool, { email: "di@example.com", role: "admin" });
+      const { id } = await getStorage().upsertDashboard({ ...dashboard, visibility: "private", createdByUserId: editor });
+      const visibility = async () => (await getStorage().getDashboard(id))?.visibility;
+
+      signInAs(other);
+      expect(await setDashboardVisibility(id, "everyone")).toEqual({ ok: false, error: CHART_REFUSAL });
+      expect(await visibility()).toBe("private");
+
+      signInAs(editor);
+      expect(await setDashboardVisibility(id, "everyone")).toEqual({ ok: true });
+      expect(await visibility()).toBe("everyone");
+
+      signInAs(admin);
+      expect(await setDashboardVisibility(id, "private")).toEqual({ ok: true });
+      expect(await visibility()).toBe("private");
     });
   });
 

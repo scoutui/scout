@@ -51,7 +51,7 @@ export default async function RepoScansPage({
   if (!detail) notFound();
   const unready = await getReadModelProgress(getPool(), scans.filter(scan => !scan.ready).map(scan => scan.scanId));
   const states = new Map(unready.map(scan => [scan.scanId, skippedState(scan)]));
-  const canManage = can(await identify({ browser: true }), "manage-repos", repoId);
+  const canManage = can(await identify({ browser: true }), "manage-repos", { repoId });
 
   return (
     <div className="space-y-6">

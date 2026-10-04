@@ -194,26 +194,35 @@ export const DashboardConfigSchema = z.object({
 });
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
+/** Who can open a saved chart: its creator and Admins, or everyone signed in. */
+export const ChartVisibilitySchema = z.enum(["private", "everyone"]);
+export type ChartVisibility = z.infer<typeof ChartVisibilitySchema>;
+
 export const DashboardSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   config: DashboardConfigSchema,
-  createdByUserId: z.string().nullable(),   // audit only; never gates access
+  visibility: ChartVisibilitySchema,
+  createdByUserId: z.string().nullable(),
+  /** The creator's name, or their email when they have none. */
+  createdBy: z.string().nullable(),
+  /** Whether the creator was removed from the dashboard. Their name stays in `createdBy`. */
+  creatorRemoved: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export type Dashboard = z.infer<typeof DashboardSchema>;
 
 // Create-or-update payload: the driver generates id on create and sets the
-// timestamps. createdByUserId is audit metadata: the server action sets it from the
-// session and never trusts a client-supplied value. The driver persists whatever it
-// is given.
+// timestamps. The server action sets createdByUserId from the session and never
+// trusts a client-supplied value; the driver stores it and visibility on create only.
 export const DashboardInputSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
   description: z.string().nullable(),
   config: DashboardConfigSchema,
+  visibility: ChartVisibilitySchema,
   createdByUserId: z.string().nullable().optional(),
 });
 export type DashboardInput = z.infer<typeof DashboardInputSchema>;

@@ -45,7 +45,7 @@ export default async function SettingsPage() {
       <section aria-labelledby="people-title" className="space-y-3">
         <h2 id="people-title" className="text-base font-medium">People</h2>
         <p className="max-w-prose text-sm text-muted-foreground">
-          Viewers can see repos, packages and charts. Editors can also see Governance, upload scans and change charts, governance and tags. Admins can also set roles, remove scans and delete repos.
+          Viewers can see repos, packages and the charts shared with everyone. Editors can also see Governance, upload scans, make charts and change their own, and change governance and tags. Admins can also change or delete anyone's chart, open private ones, set roles, remove scans and delete repos.
         </p>
         <PeopleTable people={people} />
         <p className="max-w-prose text-sm text-muted-foreground">

@@ -51,6 +51,18 @@ function hrefsIn(node: ReactNode, found: string[] = []): string[] {
   return found;
 }
 
+/** Each `<section>` in the tree: its heading's text and the links it holds. */
+function sections(node: ReactNode, found: { heading: string; links: string[] }[] = []): { heading: string; links: string[] }[] {
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<Props>(child)) continue;
+    if (child.type === "section") {
+      const heading = Children.toArray(child.props.children).find(c => isValidElement(c) && c.type === "h2");
+      found.push({ heading: textOf(heading), links: hrefsIn(child.props.children) });
+    } else sections(child.props.children, found);
+  }
+  return found;
+}
+
 const preparing = { state: "preparing", scans: [], retryable: true };
 
 type Seeded = { retired: GovernanceRecord; unseen: GovernanceRecord; saved: Dashboard };
@@ -63,7 +75,7 @@ async function seed(pool: Pool): Promise<Seeded> {
   return {
     retired: await driver.createGovernance({ grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Retired" } }),
     unseen: await driver.createGovernance({ grain: "package", targetPackage: "@sample/unused", targetExport: null, disposition: { kind: "retired", reason: "Retired" } }),
-    saved: await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } }),
+    saved: await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } }),
   };
 }
 
@@ -87,12 +99,12 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     await withReadModelDatabase(async pool => {
       const { retired, saved } = await seed(pool);
       const unfound = { kind: "component", componentId: "component-in-no-scan" } as const;
-      const gone = await driver.upsertDashboard({ name: "Gone repo", description: null, config: { scope: { kind: "repo", repoId: "repo-gone" }, cohorts: [unfound], chartType: "bars", metric: "count" } });
+      const gone = await driver.upsertDashboard({ visibility: "everyone", name: "Gone repo", description: null, config: { scope: { kind: "repo", repoId: "repo-gone" }, cohorts: [unfound], chartType: "bars", metric: "count" } });
       await pool.query("INSERT INTO repos (repo_id) VALUES ('repo-unscanned')");
-      const unscanned = await driver.upsertDashboard({ name: "Unscanned repo", description: null, config: { scope: { kind: "repo", repoId: "repo-unscanned" }, cohorts: [{ kind: "local" }], chartType: "bars", metric: "count" } });
-      const lost = await driver.upsertDashboard({ name: "Lost component", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }, unfound], chartType: "bars", metric: "count" } });
+      const unscanned = await driver.upsertDashboard({ visibility: "everyone", name: "Unscanned repo", description: null, config: { scope: { kind: "repo", repoId: "repo-unscanned" }, cohorts: [{ kind: "local" }], chartType: "bars", metric: "count" } });
+      const lost = await driver.upsertDashboard({ visibility: "everyone", name: "Lost component", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }, unfound], chartType: "bars", metric: "count" } });
       await storeResults(pool);
-      await driver.upsertDashboard({ id: saved.id, name: saved.name, description: null, config: { ...saved.config, cohorts: [...saved.config.cohorts, unfound] } });
+      await driver.upsertDashboard({ visibility: "everyone", id: saved.id, name: saved.name, description: null, config: { ...saved.config, cohorts: [...saved.config.cohorts, unfound] } });
       const digests = vi.spyOn(PostgresDriver.prototype, "listScanDigests");
       const tags = vi.spyOn(PostgresDriver.prototype, "listTags");
       const { default: page } = await import("@/app/charts/page");
@@ -121,6 +133,38 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       // saved chart changed after its preview was stored.
       expect(allPropsFor(tree, "UnknownComponentsBadge")).toHaveLength(1);
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([]);
+    });
+  });
+
+  it("lists charts shared with everyone, a person's own private charts under Private, and other people's only for Admins", async () => {
+    await withReadModelDatabase(async pool => {
+      const { saved } = await seed(pool);
+      await pool.query(`INSERT INTO "user" (id, name, email) VALUES ('editor', 'Ana Lopez', 'ana@example.com'), ('other', 'Bo Chen', 'bo@example.com')`);
+      const mine = await driver.upsertDashboard({ visibility: "private", name: "My draft", description: null, config: saved.config, createdByUserId: "editor" });
+      const theirs = await driver.upsertDashboard({ visibility: "private", name: "Their draft", description: null, config: saved.config, createdByUserId: "other" });
+      const link = (chart: Dashboard) => `/charts/${encodeURIComponent(chart.id)}`;
+      const { default: page } = await import("@/app/charts/page");
+
+      const creatorTree = await page();
+      expect(sections(creatorTree)).toEqual([
+        { heading: "Saved charts · 1", links: [link(saved)] },
+        { heading: "Private · 1", links: [link(mine)] },
+      ]);
+      expect(textOf(creatorTree)).toContain("2 charts");
+
+      reader = { ...editor, userId: "someone-else" };
+      const otherTree = await page();
+      expect(sections(otherTree)).toEqual([{ heading: "Saved charts · 1", links: [link(saved)] }]);
+      expect(textOf(otherTree)).toContain("1 chart");
+
+      reader = { ...editor, userId: "someone-else", role: "admin" };
+      const adminTree = await page();
+      expect(sections(adminTree)).toEqual([
+        { heading: "Saved charts · 1", links: [link(saved)] },
+        { heading: "Other people's charts · 2", links: [link(mine), link(theirs)] },
+      ]);
+      expect(textOf(adminTree)).toContain("Created by Bo Chen");
+      expect(textOf(adminTree)).toContain("3 charts");
     });
   });
 
@@ -314,7 +358,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await pool.query("UPDATE scans SET artifact = '{}'::json");
       driver = new PostgresDriver(pool);
       database = pool;
-      const saved = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      const saved = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
       await storeResults(pool);
       const previews = await driver.getStoredPreviews();
       await pool.query("DELETE FROM scan_read_models WHERE scan_id = 'scan-current'");

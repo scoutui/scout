@@ -119,7 +119,7 @@ describe.skipIf(!databaseUrl)("chart results job", { timeout: 30_000 }, () => {
     const driver = new PostgresDriver(pool);
     await driver.upsertTag({ value: "core", category: "library", color: "teal", rule: { glob: ["@sample/*"], exact: [] } });
     await driver.createGovernance({ grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Retired" } });
-    const dashboard = await driver.upsertDashboard({ name: "Library usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "package", packageName: "@sample/core" }], chartType: "trend", metric: "count" } });
+    const dashboard = await driver.upsertDashboard({ visibility: "everyone", name: "Library usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "package", packageName: "@sample/core" }], chartType: "trend", metric: "count" } });
     await publish(pool, "scan-a", "repo-a", "2026-09-18T00:00:00Z");
     await publish(pool, "scan-b", "repo-a", "2026-09-19T00:00:00Z");
     await publish(pool, "scan-c", "repo-b");
@@ -208,7 +208,7 @@ describe.skipIf(!databaseUrl)("chart results job", { timeout: 30_000 }, () => {
     await enqueueChartResults(pool);
     expect(await processChartResultsJob(pool, await claimResults(pool, "other-worker"), signal)).toBe("written");
     await retryScanJob(pool, first, 0, null);
-    const dashboard = await new PostgresDriver(pool).upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+    const dashboard = await new PostgresDriver(pool).upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
     await enqueueChartResults(pool);
     const retried = await claimResults(pool);
     expect(retried).toMatchObject({ id: first.id, attempt: 2 });
@@ -294,7 +294,7 @@ describe.skipIf(!databaseUrl)("chart results job", { timeout: 30_000 }, () => {
 
   it("drops the preview of a deleted dashboard on the next job", async () => {
     const driver = new PostgresDriver(pool);
-    const dashboard = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+    const dashboard = await driver.upsertDashboard({ visibility: "everyone", name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
     await publish(pool, "scan-a");
     await processChartResultsJob(pool, await claimResults(pool), signal);
     expect((await storedRows(pool)).map(row => row.key)).toContain(chartResultKey.preview(dashboard.id));

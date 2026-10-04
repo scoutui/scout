@@ -214,17 +214,20 @@ export const tags = pgTable("tags", {
 
 export type TagRow = typeof tags.$inferSelect;
 
-// --- Saved dashboards (cohort charts, visible to everyone) ---
+// --- Saved dashboards (cohort charts) ---
 
 export const dashboards = pgTable("dashboards", {
   id: text("id").primaryKey(), // app-generated uuid at insert (mirrors tags)
   name: text("name").notNull(),
   description: text("description"),
   config: jsonb("config").$type<DashboardConfig>().notNull(),
+  visibility: text("visibility", { enum: ["private", "everyone"] }).notNull().default("private"),
   createdByUserId: text("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => ({
+  visibility: check("dashboards_visibility", sql`${t.visibility} IN ('private', 'everyone')`),
+}));
 
 export type DashboardRow = typeof dashboards.$inferSelect;
 

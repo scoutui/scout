@@ -15,6 +15,7 @@ import type {
   TagInput,
   Dashboard,
   DashboardInput,
+  ChartVisibility,
   GovernanceRecord,
   GovernanceInput,
   DashboardScope,
@@ -161,11 +162,14 @@ export interface StorageDriver {
   /** One dashboard by id, or null if absent. */
   getDashboard(id: string): Promise<Dashboard | null>;
 
-  /** Create (no id) or update (matching id). Returns the stored dashboard. */
+  /** Create (no id) or update (matching id), keeping the stored creator and visibility. Returns the stored dashboard. */
   upsertDashboard(input: DashboardInput): Promise<Dashboard>;
 
   /** Delete by id. No-op if absent. */
   deleteDashboard(id: string): Promise<void>;
+
+  /** Set who can open a dashboard, keeping its last-changed time. No-op if absent. */
+  setDashboardVisibility(id: string, visibility: ChartVisibility): Promise<void>;
 
   // ---- Stored chart results (null when no row has the current format) ----
 

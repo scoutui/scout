@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { unknownCohortKeys } from "@scoutui/web-shared";
+import { type Dashboard, type DashboardView, unknownCohortKeys } from "@scoutui/web-shared";
 import { Milestone } from "lucide-react";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
@@ -28,15 +28,17 @@ export default async function DashboardsPage() {
     latestScan: await snapshot.latestScanArrivedAt(),
     repoIds: await snapshot.listRepoIds(),
   }));
-  const canEdit = can(await identify({ browser: true }), "edit");
+  const identity = await identify({ browser: true });
+  const canEdit = can(identity, "edit");
+  const listed = all.filter((dashboard) => can(identity, "view", { chart: dashboard }));
   const notice =
-    governance.length > 0 || all.length > 0 ? await chartResultsNotice(getPool(), tracking !== null) : null;
+    governance.length > 0 || listed.length > 0 ? await chartResultsNotice(getPool(), tracking !== null) : null;
 
   // Completed records move to a collapsed ledger in each section.
   const migrations = (tracking ?? []).filter((t) => t.kind === "migration");
   const retirements = (tracking ?? []).filter((t) => t.kind === "retirement");
 
-  const rows = all.map((dashboard) => {
+  const rows = listed.map((dashboard) => {
     const scope = dashboard.config.scope;
     const preview = previews[dashboard.id];
     const missing = preview?.missing && scope.kind === "repo"
@@ -47,6 +49,10 @@ export default async function DashboardsPage() {
       && unknownCohortKeys(dashboard.config.cohorts, preview.view).size > 0;
     return { dashboard, missing, unknown, view: preview?.view ?? null };
   });
+  const userId = identity?.kind === "person" ? identity.userId : null;
+  const shared = rows.filter((row) => row.dashboard.visibility === "everyone");
+  const mine = rows.filter((row) => row.dashboard.visibility === "private" && row.dashboard.createdByUserId === userId);
+  const others = rows.filter((row) => row.dashboard.visibility === "private" && row.dashboard.createdByUserId !== userId);
 
   return (
     <div>
@@ -54,7 +60,7 @@ export default async function DashboardsPage() {
         <div>
           <h1 className="text-3xl font-semibold tracking-display">Charts</h1>
           <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-            {all.length.toLocaleString()} {all.length === 1 ? "chart" : "charts"}
+            {listed.length.toLocaleString()} {listed.length === 1 ? "chart" : "charts"}
             {latestScan ? ` · latest scan ${relativeTime(latestScan)}` : ""}
           </p>
         </div>
@@ -122,34 +128,49 @@ export default async function DashboardsPage() {
         />
       ) : (
         /* Headed, because these rows look like the tracking rows above. */
-        <section>
-          <h2 className="mb-2 text-sm tabular-nums text-muted-foreground">
-            Saved charts · {rows.length.toLocaleString()}
-          </h2>
-          <div className="panel divide-y divide-border overflow-hidden">
-            {rows.map(({ dashboard, missing, unknown, view }) => (
-              <Link
-                key={dashboard.id}
-                href={`/charts/${encodeURIComponent(dashboard.id)}`}
-                className="flex items-center gap-4 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent"
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{dashboard.name}</span>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>{CHART_KIND_LABEL[dashboard.config.chartType]}</span>
-                    <DashboardScopeBadge scope={dashboard.config.scope} missing={missing} />
-                    {unknown ? <UnknownComponentsBadge /> : null}
-                  </div>
-                </div>
-                {/* Hidden on phones: 112px of preview is not worth the name's width. */}
-                <span className="hidden sm:block">
-                  <DashboardSparkline uid={dashboard.id} config={dashboard.config} view={view} />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <>
+          {chartSection("Saved charts", shared, false)}
+          {chartSection("Private", mine, false)}
+          {chartSection("Other people's charts", others, true)}
+        </>
       )}
     </div>
+  );
+}
+
+type ChartRow = { dashboard: Dashboard; missing: "scans" | "repo" | undefined; unknown: boolean; view: DashboardView | null };
+
+/** A headed list of saved charts, or nothing when `rows` is empty. */
+function chartSection(heading: string, rows: ChartRow[], showCreator: boolean) {
+  if (rows.length === 0) return null;
+  return (
+    <section className="mb-6 last:mb-0">
+      <h2 className="mb-2 text-sm tabular-nums text-muted-foreground">
+        {heading} · {rows.length.toLocaleString()}
+      </h2>
+      <div className="panel divide-y divide-border overflow-hidden">
+        {rows.map(({ dashboard, missing, unknown, view }) => (
+          <Link
+            key={dashboard.id}
+            href={`/charts/${encodeURIComponent(dashboard.id)}`}
+            className="flex items-center gap-4 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent"
+          >
+            <div className="min-w-0 flex-1">
+              <span className="block truncate font-medium">{dashboard.name}</span>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>{CHART_KIND_LABEL[dashboard.config.chartType]}</span>
+                <DashboardScopeBadge scope={dashboard.config.scope} missing={missing} />
+                {unknown ? <UnknownComponentsBadge /> : null}
+                {showCreator && dashboard.createdBy ? <span>Created by {dashboard.createdBy}</span> : null}
+              </div>
+            </div>
+            {/* Hidden on phones: 112px of preview is not worth the name's width. */}
+            <span className="hidden sm:block">
+              <DashboardSparkline uid={dashboard.id} config={dashboard.config} view={view} />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

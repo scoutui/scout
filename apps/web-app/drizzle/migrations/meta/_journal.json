@@ -71,6 +71,13 @@
       "when": 1791131683004,
       "tag": "0009_removals",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791132990075,
+      "tag": "0010_chart_visibility",
+      "breakpoints": true
     }
   ]
 }
