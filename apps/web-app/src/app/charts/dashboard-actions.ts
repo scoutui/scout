@@ -50,20 +50,11 @@ export async function deleteDashboard(id: string): Promise<{ ok: boolean; error?
 }
 
 /**
- * Rejects when no one is signed in. The read-only actions below return data
- * shapes rather than an error result, so a signed-out call fails the way any
- * other failed read does.
- */
-async function requireSignedIn(): Promise<void> {
-  if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
-}
-
-/**
  * Read-only projection for the builder's live preview. Returns data already
  * visible to the user and never sets createdByUserId.
  */
 export async function previewDashboard(config: DashboardConfig): Promise<ReadModelResult<DashboardView>> {
-  await requireSignedIn();
+  if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
   return loadDashboardView(config);
 }
 
@@ -76,7 +67,7 @@ export async function pickableForRepo(repoId: string): Promise<ReadModelResult<{
   components: PickableComponent[];
   packages: string[];
 }>> {
-  await requireSignedIn();
+  if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
   const result = await readModelPage(getStorage(), async snapshot => ({
     rows: await snapshot.listComponentsForRepo(repoId, ""),
     packageList: await snapshot.listPackages(repoId),
