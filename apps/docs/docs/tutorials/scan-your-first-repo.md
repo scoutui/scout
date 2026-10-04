@@ -83,15 +83,15 @@ Scout couldn't match 4 more uses to a component. See https://scoutui.dev/docs/gu
 The scan reads its settings from `scout.config.json`. We create one with `init`:
 
 ```bash
-npx scout init -y --framework react
+npx scout init -y
 ```
 
-`-y` accepts the defaults instead of asking questions, and `--framework react` tells it which file types to include. A Vue repo passes `--framework vue` instead, and a repo with both passes the flag twice.
+`-y` accepts the defaults instead of asking questions.
 
 `init` prints:
 
 ```
-Wrote /home/dev/storefront/scout.config.json. Run scout scan to scan the repo and upload the scan.
+✓ Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.
 ```
 
 The file it wrote looks like this:
@@ -101,15 +101,13 @@ The file it wrote looks like this:
   "$schema": "https://unpkg.com/@scoutui/cli/schema/config.schema.json",
   "repoId": "acme/storefront",
   "branch": "main",
-  "include": ["src/**/*.{js,jsx,ts,tsx}"],
-  "exclude": ["**/*.{test,spec,stories}.*", "**/node_modules/**"]
+  "exclude": []
 }
 ```
 
 - `repoId` is the name the scan is recorded under, taken from the owner and name in our git remote, `git@github.com:acme/storefront.git`.
 - `branch` is the branch a dashboard tracks when we upload scans to it, taken from our remote's default branch.
-- `include` says which files to read: every JavaScript and TypeScript file under `src/`. If our own repo keeps its code somewhere else, we change it before moving on.
-- `exclude` skips tests, stories and `node_modules`. The [config reference](/docs/reference/config) lists every field.
+- `exclude` lists what to leave out of the scan. Ours leaves out nothing, so the scan reads every JavaScript, TypeScript and Vue file in the repo. It skips tests, stories and `node_modules` on its own. The [config reference](/docs/reference/config) lists every field.
 
 ## Step 3: Run the scan
 

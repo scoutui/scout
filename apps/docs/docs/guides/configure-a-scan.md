@@ -17,17 +17,19 @@ From the repo root, run:
 npx scout init -y
 ```
 
-`init` writes `scout.config.json` in the current folder. Its `include` pattern, `src/**/*.{ts,tsx,jsx,js,vue}`, matches React and Vue files under `src/`.
+`init` writes `scout.config.json` in the current folder. It has no `include`, so the scan reads the [whole repository](#scan-the-whole-repository), and its `exclude` is empty.
 
-`-y` skips the questions. Without it, in a terminal, `init` asks for your dashboard's address, the repository's name on the dashboard, the branch the dashboard tracks, and which frameworks the repo uses (React, Vue or both), and narrows `include` to their files.
+`-y` skips the questions. Without it, in a terminal, `init` asks for your dashboard's address, the repository's name on the dashboard and the branch the dashboard tracks. In a monorepo, it also asks which packages or folders to leave out of the scan, and writes the ones you pick to `exclude`. With `-y`, pass `--exclude <folder>` for each folder to leave out.
 
-`init` sets `repoId`, the [repo id](/docs/reference/glossary#repo-id) the scan is recorded under, from the owner and name in your git remote, such as `acme/storefront`, or from the folder name if there is no remote. To use a different name, edit `repoId` in the file or pass `--repo-id <name>` to `init`.
+If you run `init` in one package's folder of a monorepo, such as `apps/web`, it asks whether to scan the whole repository instead. If you say yes, it writes the config at the repository root.
+
+`init` sets `repoId`, the [repo id](/docs/reference/glossary#repo-id) the scan is recorded under, from the owner and name in your git remote, such as `acme/storefront`, or from the name of the config's folder if there is no remote. To use a different name, edit `repoId` in the file or pass `--repo-id <name>` to `init`.
 
 `init` won't overwrite an existing config. Edit that file instead, or delete it and run `init` again. Every `init` flag is in the [CLI reference](/docs/reference/cli#init).
 
 ## Scan the whole repository
 
-To scan every app and package below the config's folder, delete `include` from the config. Any `exclude` can stay as it is:
+A config from `init` has no `include`, so it already scans every app and package below the config's folder. If your config has an `include`, delete it. Any `exclude` can stay as it is:
 
 ```json title="scout.config.json"
 {
@@ -99,7 +101,7 @@ Scanned 3 files in 0.1s: 6 components, 5 uses.
 The first number should be close to the number of source files you expect. If it's too low, narrow `exclude`, or widen `include` if your config has one. If it's too high, add to `exclude`. If there are no files to scan at all, the scan stops before reading anything. When `include` matches no files:
 
 ```
-Error: No files match "include" in ./scout.config.json (src/**/*.{ts,tsx,jsx,js,vue}). Point it at your source files and scan again.
+Error: No files match "include" in ./scout.config.json (app/**/*.{js,jsx,ts,tsx}, components/**/*.{js,jsx,ts,tsx}). Point it at your source files and scan again.
 ```
 
 When the config has no `include`, and the config's folder holds no source files or `exclude` leaves them all out:
