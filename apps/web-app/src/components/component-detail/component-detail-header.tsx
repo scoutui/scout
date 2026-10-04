@@ -4,7 +4,7 @@ import type { ComponentDetail } from "@scoutui/web-shared";
 import { friendlyKind } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
 import { MigrationLine } from "@/components/governance/migration-line";
-import { KIND_LABEL } from "@/lib/component-facets";
+import { KIND_LABEL, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
 import { cn } from "@/lib/utils";
 
 export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
@@ -21,14 +21,16 @@ export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
       </div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
         <h1 className="font-mono text-2xl font-semibold tracking-tight">{detail.displayName}</h1>
-        <Badge variant={detail.scope === "local" ? "outline" : "secondary"}>{detail.scope}</Badge>
+        <Badge variant={detail.scope === "local" ? "outline" : "secondary"} title={ORIGIN_DESCRIPTION[detail.scope]}>
+          {ORIGIN_LABEL[detail.scope]}
+        </Badge>
         <Badge variant="outline">{KIND_LABEL[friendlyKind(detail.kind)]}</Badge>
         {detail.deprecated ? (
           <Badge variant="warning">
             <AlertTriangle aria-hidden />
             {/* The word, not the icon, sets the badge's baseline, so the badge
                 lines up with the badges beside it. */}
-            <span className="self-baseline leading-3.5">deprecated</span>
+            <span className="self-baseline leading-3.5">Deprecated</span>
           </Badge>
         ) : null}
       </div>

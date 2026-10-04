@@ -192,10 +192,10 @@ describe("chart details and saving", () => {
     expect(screen.getByText("Share of these series")).not.toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Stacked" }));
     expect(screen.getByRole("button", { name: "Share" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Count" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Uses" })).toBeDisabled();
     expect(screen.getByText("Share of these series")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Trend" }));
-    expect(screen.getByRole("button", { name: "Count" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Uses" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Share of these series")).not.toBeVisible();
   });
 

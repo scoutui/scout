@@ -278,6 +278,20 @@ describe("FilterBar pills", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove tag icons" }));
     expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), packages: ["@x/lib"], tags: [] });
   });
+
+  it("names a kind pill's field type, with the kind's label as its value", () => {
+    renderBar(options, { ...emptyFacets(), kinds: ["undefined-element"] });
+    expect(screen.getByRole("button", { name: "Remove type Undefined element" })).toBeInTheDocument();
+  });
+});
+
+describe("FilterBar Origin facet", () => {
+  it("says under each value where its components come from", async () => {
+    renderBar();
+    await openFacet(/^origin/i);
+    expect(within(screen.getByRole("button", { name: /^external/i })).getByText("Installed from a package")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: /^local/i })).getByText("Defined in this repo")).toBeInTheDocument();
+  });
 });
 
 describe("FilterBar uses vocabulary", () => {
@@ -337,7 +351,7 @@ describe("FilterBar since-previous-scan chip", () => {
     expect(screen.queryByText("Clear all")).toBeNull();
   });
 
-  it("renders nothing when there is no changed view (no diff, or nothing moved), even under a pasted ?changed=true", () => {
+  it("renders nothing when there is no changed view (no diff, or nothing changed), even under a pasted ?changed=true", () => {
     renderBar(options, { ...emptyFacets(), changed: true }); // options.changedCount is null
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
   });
@@ -370,15 +384,15 @@ describe("FilterBar result count in the changed view", () => {
     );
   const filtered = { total: 29, added: 0, removed: 2, changed: 10 };
 
-  it("unfiltered, reads the view's size: `29 moved`, never repeating the masthead's breakdown", () => {
+  it("unfiltered, reads the view's size: `29 changes`, never repeating the masthead's breakdown", () => {
     renderCount({ total: 29, added: 3, removed: 8, changed: 18 }, { filtering: false, resultCount: 29 });
-    expect(screen.getByText(sentence("29 moved"))).toBeInTheDocument();
+    expect(screen.getByText(sentence("29 changes"))).toBeInTheDocument();
     expect(screen.queryByText(/removed/)).toBeNull();
   });
 
   it("filtered, anchors the shown rows to the view's size, then their breakdown with zero parts omitted", () => {
     renderCount(filtered, { filtering: true, resultCount: 12 });
-    const count = screen.getByText(sentence("12 of 29 moved · 2 removed · 10 changed"));
+    const count = screen.getByText(sentence("12 of 29 changes · 2 removed · 10 changed"));
     expect(screen.queryByText(/added/)).toBeNull();
     // The shown count and the breakdown's numbers take the ink; the anchor stays muted.
     expect(within(count).getByText("12").className).toBe("font-medium text-foreground");
@@ -389,12 +403,12 @@ describe("FilterBar result count in the changed view", () => {
   it("outside the changed view the count is N of M components", () => {
     renderCount(null, { filtering: true, resultCount: 21 });
     expect(screen.getByText(sentence("21 of 1,879 components"))).toBeInTheDocument();
-    expect(screen.queryByText(/moved/)).toBeNull();
+    expect(screen.queryByText(/changes/)).toBeNull();
   });
 
   it("is not hidden below sm: phones get the breakdown, on its own line in the wrapping row", () => {
     renderCount(filtered, { filtering: true, resultCount: 12 });
-    const count = screen.getByText(sentence("12 of 29 moved · 2 removed · 10 changed"));
+    const count = screen.getByText(sentence("12 of 29 changes · 2 removed · 10 changed"));
     expect(count.className).not.toMatch(/(^|\s)hidden(\s|$)/);
     expect(count.className).not.toMatch(/sm:inline/);
     expect(count.className).toMatch(/(^|\s)basis-full(\s|$)/);
@@ -405,6 +419,6 @@ describe("FilterBar result count in the changed view", () => {
     renderCount(filtered, { filtering: true, resultCount: 12 });
     const search = screen.getByRole("textbox", { name: "Search components by name" }).parentElement as HTMLElement;
     expect(search.className).toBe("relative min-w-0 grow basis-full sm:basis-0 sm:max-w-xs xl:max-w-md");
-    expect(screen.getByText(sentence("12 of 29 moved · 2 removed · 10 changed")).className).toMatch(/(^|\s)sm:ml-auto(\s|$)/);
+    expect(screen.getByText(sentence("12 of 29 changes · 2 removed · 10 changed")).className).toMatch(/(^|\s)sm:ml-auto(\s|$)/);
   });
 });

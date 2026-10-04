@@ -39,6 +39,11 @@ export const ORIGIN_LABEL: Record<OriginValue, string> = {
   local: "Local",
 };
 
+export const ORIGIN_DESCRIPTION: Record<OriginValue, string> = {
+  external: "Installed from a package",
+  local: "Defined in this repo",
+};
+
 /** True when any facet is active (i.e. the row set is being narrowed). */
 export function isFiltering(f: FacetState): boolean {
   return (

@@ -15,7 +15,7 @@ import { compareVersions } from "@/lib/version-order";
 
 const COLUMN_COUNT = 5;
 
-const NO_PACKAGE_TITLE = "no import links this usage to a package";
+const NO_PACKAGE_TITLE = "no import links this component to a package";
 
 /** The outline badge for `added` and `removed` rows. Its border clears the 3:1
  *  non-text minimum on the panel (3.3:1 light, 3.8:1 dark); the default
@@ -236,7 +236,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
               count marks them. */}
           {mark?.kind === "added" ? (
             <>
-              <Badge variant="outline" className={MARK_BADGE}>added</Badge>
+              <Badge variant="outline" className={MARK_BADGE}>Added</Badge>
               {r.occurrenceCount === 0 ? (
                 <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">0 uses</span>
               ) : null}
@@ -323,7 +323,7 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
         <div className={NAME_ROW}>
           <span className="truncate font-mono font-medium text-muted-foreground" title={r.deprecated ? `${r.displayName} (deprecated)` : r.displayName}>{r.displayName}</span>
           {r.deprecated ? <DeprecatedMark /> : null}
-          <Badge variant="outline" className={MARK_BADGE}>removed</Badge>
+          <Badge variant="outline" className={MARK_BADGE}>Removed</Badge>
         </div>
         {/* Stacked tiers below sm: the package, then `0 uses (−5)`. */}
         {r.packageName ? (

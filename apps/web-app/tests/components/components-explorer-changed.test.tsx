@@ -65,7 +65,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     expect(chip.textContent).toBe("since previous scan3");
     expect(screen.queryByRole("button", { name: /^Remove / })).toBeNull(); // no pill
     // Unfiltered, the toolbar reads the view's size; the breakdown is the masthead's.
-    expect(screen.getByText(sentence("3 moved"))).toBeInTheDocument();
+    expect(screen.getByText(sentence("3 changes"))).toBeInTheDocument();
     // Un-pressing the chip restores the full table.
     fireEvent.click(chip);
     expect(screen.getByText("Same")).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     expect(screen.queryByText("OtherNew")).toBeNull();
     // The chip counts under the tag too, agreeing with the toolbar's 2; the toolbar keeps the view's 5 as its anchor.
     expect(sinceChip().textContent).toBe("since previous scan2");
-    expect(screen.getByText(sentence("2 of 5 moved · 1 added · 1 removed"))).toBeInTheDocument();
+    expect(screen.getByText(sentence("2 of 5 changes · 1 added · 1 removed"))).toBeInTheDocument();
   });
 
   it("the deprecated chip reads its count alone in the changed view, where removed rows can take it past the status line's count", () => {

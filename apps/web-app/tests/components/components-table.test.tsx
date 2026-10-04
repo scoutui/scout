@@ -80,7 +80,7 @@ describe("ComponentsTable", () => {
     render(<ComponentsTable repoId="r1" rows={[{ ...row, packageName: null }]} />);
     const dashes = screen.getAllByText("—");
     expect(
-      dashes.some((d) => d.closest("td")?.getAttribute("title") === "no import links this usage to a package"),
+      dashes.some((d) => d.closest("td")?.getAttribute("title") === "no import links this component to a package"),
     ).toBe(true);
   });
 
@@ -184,7 +184,7 @@ describe("ComponentsTable", () => {
       expect(name.className).toMatch(/text-muted-foreground/);
       // `removed` is an outline Badge (a metadata chip), a word rather than a colour
       // cue, with a border that reads on the dark panel and a muted word.
-      const marker = within(tr).getByText("removed");
+      const marker = within(tr).getByText("Removed");
       expect(marker.className).toMatch(/rounded-4xl/);
       expect(marker.className).toMatch(/border-muted-foreground\/70/);
       expect(marker.className).not.toMatch(/border-border/);
@@ -232,7 +232,7 @@ describe("ComponentsTable", () => {
       render(<ComponentsTable repoId="r1" rows={[held, moved]} marks={{ held: { kind: "added" }, m: { kind: "changed", delta: -23 } }} />);
       const tr = rowOf(screen.getByText("Held"));
       // The same outline badge as `removed`, then the muted words.
-      const badge = within(tr).getByText("added");
+      const badge = within(tr).getByText("Added");
       expect(badge.className).toMatch(/rounded-4xl/);
       expect(badge.className).toMatch(/border-muted-foreground\/70/);
       const zero = within(tr).getByText("0 uses");
@@ -255,7 +255,7 @@ describe("ComponentsTable", () => {
       const grew = { ...row, componentId: "grew", displayName: "Grew", occurrenceCount: 9 };
       render(<ComponentsTable repoId="r1" rows={[fresh, grew]} marks={{ fresh: { kind: "added" }, grew: { kind: "changed", delta: 3 } }} />);
       const freshRow = rowOf(screen.getByText("Fresh"));
-      expect(within(freshRow).getByText("added").className).toMatch(/rounded-4xl/);
+      expect(within(freshRow).getByText("Added").className).toMatch(/rounded-4xl/);
       expect(within(freshRow).queryByText(/0 uses/)).toBeNull();
       const grewRow = rowOf(screen.getByText("Grew"));
       expect(within(grewRow).queryByText(/^(added|removed|changed)$/)).toBeNull();
@@ -328,8 +328,8 @@ describe("ComponentsTable", () => {
       const held = { ...row, componentId: "held", displayName: "PharmacyLicenseLogoExample", occurrenceCount: 0, fileCount: 0 };
       render(<ComponentsTable repoId="r1" rows={[held, removed]} marks={{ held: { kind: "added" }, gone: { kind: "removed" } }} />);
       const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
-      expect(screen.getByText("added").parentElement?.className).toBe(NAME_ROW);
-      expect(screen.getByText("removed").parentElement?.className).toBe(NAME_ROW);
+      expect(screen.getByText("Added").parentElement?.className).toBe(NAME_ROW);
+      expect(screen.getByText("Removed").parentElement?.className).toBe(NAME_ROW);
       // The beside-badge `0 uses` note is desktop-only; the mobile tier already says it.
       expect(screen.getByText("0 uses").className).toBe("hidden shrink-0 text-xs text-muted-foreground sm:inline");
       const tier = within(rowOf(screen.getByText("PharmacyLicenseLogoExample"))).getByText("0 files").parentElement as HTMLElement;
