@@ -55,7 +55,7 @@ describe("usageView groups", () => {
     ["className", "styling"], ["class", "styling"], ["style", "styling"], ["sx", "styling"], ["css", "styling"],
     ["key", "attribute"], ["ref", "attribute"], ["data-state", "attribute"], ["aria-label", "attribute"],
     ["qaSelector", "attribute"], ["qa-id", "attribute"], ["e2eId", "attribute"], ["testId", "attribute"], ["test_id", "attribute"], ["dataTestId", "attribute"],
-    ["onClick", "event"],
+    ["onLabel", "prop"],
     ["variant", "prop"], ["quantity", "prop"], ["latestId", "prop"], ["TestId", "prop"],
   ])("%s is listed under %s", (name, group) => {
     expect(view(input([call("a.tsx", 1, [lit(name, "x")])])).props.find(row => row.name === name)?.group).toBe(group);
@@ -69,6 +69,10 @@ describe("usageView groups", () => {
     ["id", "that declares it", "prop", "used"],
   ])("%s on a component %s is listed under %s", (name, _component, group, status) => {
     expect(view(input([call("a.tsx", 1, [lit(name, "x")])], [prop(name, { status })])).props.find(row => row.name === name)?.group).toBe(group);
+  });
+
+  it("lists a prop the scan counts among the component's events under events", () => {
+    expect(view(input([call("a.tsx", 1, [dyn("onClick")])], undefined, ["onClick"])).props.find(row => row.name === "onClick")?.group).toBe("event");
   });
 
   it.each(["close", "hidden"])("lists a Vue listener %s under events on a component with declared props", (name) => {
@@ -223,7 +227,7 @@ describe("the filter column", () => {
   });
 
   it("lists styling, events and attributes in that order, each with its props set or not", () => {
-    const given = input([call("a.tsx", 1, [lit("className", "x"), dyn("onClick")])], [prop("size"), prop("className"), prop("onClick"), prop("data-state"), prop("style")]);
+    const given = input([call("a.tsx", 1, [lit("className", "x"), dyn("onClick")])], [prop("size"), prop("className"), prop("onClick"), prop("data-state"), prop("style")], ["onClick"]);
     expect(propSections(view(given), "").groups.map(g => [g.group, names(g.props)])).toEqual([["styling", ["className", "style"]], ["event", ["onClick"]], ["attribute", ["data-state"]]]);
   });
 
@@ -234,7 +238,7 @@ describe("the filter column", () => {
   });
 
   it("finds props by any part of their name, ignoring case and spaces, in every list", () => {
-    const given = input([call("a.tsx", 1, [lit("size", "large"), lit("tone", "red"), dyn("onClick")])], [prop("size"), prop("tone"), prop("onClick"), prop("iconName"), prop("variant")]);
+    const given = input([call("a.tsx", 1, [lit("size", "large"), lit("tone", "red"), dyn("onClick")])], [prop("size"), prop("tone"), prop("onClick"), prop("iconName"), prop("variant")], ["onClick"]);
     const sections = propSections(view(given), " ON ");
     expect([sections.finding, names(sections.listed), names(sections.unset), sections.groups.map(g => [g.group, names(g.props)])]).toEqual([true, ["tone"], ["iconName"], [["event", ["onClick"]]]]);
   });
@@ -308,7 +312,7 @@ describe("usageView call lines", () => {
   });
 
   it("lists a line's props most set in the scan first, then spreads, then its styling, events and attributes", () => {
-    const given = input([call("src/a.tsx", 1, [lit("className", "x"), dyn("onClick"), dyn("...rest"), lit("tone", "red"), lit("size", "large")])], [prop("size", { written: [{ value: "large", count: 1 }] }), prop("className"), prop("onClick"), prop("tone", { written: [{ value: "red", count: 2 }] })]);
+    const given = input([call("src/a.tsx", 1, [lit("className", "x"), dyn("onClick"), dyn("...rest"), lit("tone", "red"), lit("size", "large")])], [prop("size", { written: [{ value: "large", count: 1 }] }), prop("className"), prop("onClick"), prop("tone", { written: [{ value: "red", count: 2 }] })], ["onClick"]);
     expect(viewWith(given).sections[0]?.files[0]?.lines[0]?.props.map(c => c.name)).toEqual(["tone", "size", "...rest", "className", "onClick"]);
   });
 
@@ -318,7 +322,7 @@ describe("usageView call lines", () => {
   });
 
   it("marks a line's events and attributes quiet, and its props and spreads not", () => {
-    const line = viewWith(input([call("src/a.tsx", 1, [dyn("onClick"), lit("data-state", "open"), lit("size", "large"), dyn("...rest")])])).sections[0]?.files[0]?.lines[0];
+    const line = viewWith(input([call("src/a.tsx", 1, [dyn("onClick"), lit("data-state", "open"), lit("size", "large"), dyn("...rest")])], undefined, ["onClick"])).sections[0]?.files[0]?.lines[0];
     expect(Object.fromEntries(line?.props.map(c => [c.name, c.quiet]) ?? [])).toEqual({ onClick: true, "data-state": true, size: false, "...rest": false });
   });
 

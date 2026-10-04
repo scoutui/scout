@@ -123,7 +123,6 @@ const ATTRIBUTE = /^(data-|aria-)|^(key|ref)$/;
 const PASS_THROUGH = new Set(["id", "role", "tabIndex", "tabindex"]);
 /** HTML attributes listed under Attributes only for a component with declared props that doesn't declare one of that name. */
 const OTHER_HTML_ATTRIBUTE = new Set(["slot", "dir", "lang", "hidden", "title"]);
-const HANDLER = /^on[A-Z]/;
 /**
  * Test ids: names that start with the word `qa` or `e2e` (`qa`, `qaSelector`, `qa-id`, `e2eId`), or end in the words
  * `test` and `id` (`testId`, `testID`, `test-id`, `dataTestId`). `latestId`, `quantity` and `TestId` don't match.
@@ -151,7 +150,7 @@ function groupOf(name: string, status: PropUsage["status"], events: ReadonlySet<
   const declared = status === "used" || status === "unused";
   const html = PASS_THROUGH.has(name) || (hasDeclaredApi && OTHER_HTML_ATTRIBUTE.has(name));
   if (ATTRIBUTE.test(name)) return "attribute";
-  if (HANDLER.test(name) || events.has(name)) return "event";
+  if (events.has(name)) return "event";
   if ((html && !declared) || TEST_ID.test(name)) return "attribute";
   if (STYLING.has(name)) return "styling";
   return "prop";

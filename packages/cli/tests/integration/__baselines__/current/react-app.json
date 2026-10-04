@@ -372,6 +372,17 @@
           "dynamic": 0,
           "omitted": 0
         },
+        "onLabel": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "On",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
         "onClick": {
           "values": [],
           "dynamic": 1,
@@ -645,6 +656,10 @@
         "label": {
           "tier": "written",
           "value": "ok"
+        },
+        "onLabel": {
+          "tier": "written",
+          "value": "On"
         },
         "onClick": {
           "tier": "dynamic"

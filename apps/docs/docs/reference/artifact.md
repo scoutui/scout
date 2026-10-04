@@ -49,7 +49,7 @@ These fields are less often needed:
 | Field | Type | Description |
 | --- | --- | --- |
 | `attribution` | object \| absent | Tags only: which package or repo file defines the web component. See [`attribution`](#attribution). |
-| `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of uses that bind it: Vue listeners such as `@click`, and React props named `on` plus a capital letter, such as `onClick`. Absent when no use binds an event. |
+| `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of uses that bind it: Vue listeners such as `@click`, and React props named `on` plus a capital letter, such as `onClick`, unless their value is written, as in `onLabel="On"`. Absent when no use binds an event. |
 | `writtenNames` | `string[]` \| absent | The other names files render the component under: every distinct [`writtenName`](#occurrences) of its uses, most used first. Absent when none has one. |
 | `declared` | object \| absent | Components defined in the repo only: the props the component's own code declares. See [`declared`](#declared). |
 | `definition` | `{ line, column }` \| absent | React components defined in the repo only: where the declaration starts in `identity.filePath`. `line` and `column` count from 1. |
@@ -324,7 +324,7 @@ The `column` in `mapLoc` and `constructionSite` counts from 1.
 | `{ "tier": "written", "value": ... }` | A literal string, number, boolean or `null`. A prop written with no value counts as `true`. |
 | `{ "tier": "written", "valueSet": [...] }` | React only. A condition that picks between literals, such as `sale ? "primary" : "secondary"`. |
 | `{ "tier": "reference", "ref": "..." }` | A variable or dotted path, recorded by name, such as `label` or `theme.icon`. |
-| `{ "tier": "dynamic" }` | Any other expression. React props named `on` plus a capital letter are always `dynamic`. |
+| `{ "tier": "dynamic" }` | Any other expression. A React prop named `on` plus a capital letter is `dynamic` unless its value is written. |
 
 A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a prop named `...rest` with `{ "tier": "dynamic" }`.
 

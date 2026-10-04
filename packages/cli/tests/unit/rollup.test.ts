@@ -170,13 +170,6 @@ describe("rollupOccurrencesToComponents", () => {
     );
   });
 
-  it("does not classify a literal-valued on* prop as an event (onLabel=\"On\")", () => {
-    const occs = [occ("a.tsx", 1, { onLabel: { tier: "written", value: "On" }, onClick: { tier: "dynamic" } })];
-    const out = rollupOccurrencesToComponents(occs, [row()]);
-    expect(out[0].events).toEqual({ onClick: { boundCount: 1 } }); // onLabel excluded: it's a literal value prop
-    expect(out[0].props.onLabel).toBeDefined();                    // ...and still present in props (faithful)
-  });
-
   it("passes a row's declared API through to the component", () => {
     const declared = { props: { variant: { required: false, default: "primary" } }, hasRest: true };
     const out = rollupOccurrencesToComponents([], [row({ declared })]);
