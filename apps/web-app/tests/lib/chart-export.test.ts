@@ -183,8 +183,10 @@ describe("exportFileName", () => {
   const cases: Array<[string, string, string, string]> = [
     ["keeps a plain title", "Button adoption", "png", "Button adoption.png"],
     ["drops a colon", "Migration: Old → New", "csv", "Migration Old → New.csv"],
-    ["drops each character a file name can't hold", 'a\\b/c:d*e?f"g<h>i|j', "png", "abcdefghij.png"],
-    ["collapses the double space a dropped character leaves", "web / native", "png", "web native.png"],
+    ["drops each other character a file name can't hold", 'b:c*d?e"f<g>h|i', "png", "bcdefghi.png"],
+    ["turns a slash into a space, keeping a package's scope apart from its name", "Migration: Button · @sample/core", "png", "Migration Button · @sample core.png"],
+    ["turns a backslash into a space", "web\\native", "csv", "web native.csv"],
+    ["collapses the double space a slash leaves", "web / native", "png", "web native.png"],
     ["trims the ends", " / Button / ", "csv", "Button.csv"],
   ];
 

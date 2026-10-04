@@ -64,7 +64,10 @@ function inert(value: string): string {
   return formula ? `'${value}` : value;
 }
 
-/** A file name for an export: the title without the characters file systems refuse, then `.ext`. */
+/**
+ * A file name for an export: the title with each slash as a space and the other characters file systems refuse
+ * dropped, then `.ext`.
+ */
 export function exportFileName(title: string, ext: string): string {
-  return `${title.replace(/[/\\:*?"<>|]/g, "").replace(/ {2,}/g, " ").trim()}.${ext}`;
+  return `${title.replace(/[/\\]/g, " ").replace(/[:*?"<>|]/g, "").replace(/ {2,}/g, " ").trim()}.${ext}`;
 }
