@@ -55,6 +55,7 @@ describe("runStartup", () => {
     { case: "fails with neither admin setting and the dev sign-in off", env: {}, error: "Set SCOUTUI_ADMINS to your admins' email addresses, or SCOUTUI_ADMIN_GROUP to a group in your sign-in provider." },
     { case: "starts with only SCOUTUI_ADMIN_GROUP", env: { SCOUTUI_ADMIN_GROUP: "scout-admins" }, error: null },
     { case: "starts with neither admin setting when the dev sign-in is on", env: { NODE_ENV: "development", DEV_AUTH_PASSWORD: "hunter2" }, error: null },
+    { case: "fails with neither admin setting in production, even with a dev password set", env: { NODE_ENV: "production", DEV_AUTH_PASSWORD: "x" }, error: "Set SCOUTUI_ADMINS to your admins' email addresses, or SCOUTUI_ADMIN_GROUP to a group in your sign-in provider." },
   ])("$case", async ({ env, error }) => {
     const started = runStartup({ MIGRATE_ON_START: "false", ...env });
     if (error === null) await expect(started).resolves.toBeUndefined();

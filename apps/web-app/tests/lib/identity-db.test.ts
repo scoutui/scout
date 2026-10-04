@@ -106,17 +106,6 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
   });
 
-  it("recognises the CI upload secret, and nobody for a wrong, longer or unprefixed secret, or once the secret is unset", async () => {
-    vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", "ci-secret-1234");
-    expect(await identify({ bearer: "Bearer ci-secret-1234" })).toEqual({ kind: "ci" });
-    expect(await identify({ bearer: "Bearer ci-secret-9999" })).toBeNull();
-    expect(await identify({ bearer: "Bearer ci-secret-12345" })).toBeNull();
-    expect(await identify({ bearer: "ci-secret-1234" })).toBeNull();
-    expect(await identify({ bearer: null })).toBeNull();
-    vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", undefined);
-    expect(await identify({ bearer: "Bearer ci-secret-1234" })).toBeNull();
-  });
-
   it("gives a CLI token its person with their stored role and records the sign-in, and nobody for an unknown token", async () => {
     const id = await insertPerson(pool, { email: "ana@example.com", role: "editor" });
     const deviceId = crypto.randomUUID();
@@ -193,6 +182,36 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
         "[auth] Couldn't check whether ana@example.com is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: userinfo 503",
       );
     });
+
+    it("clears the admin group when the provider lists other groups, so the person isn't an Admin", async () => {
+      vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+      const id = await insertPerson(pool, { email: "ana@example.com", adminGroup: "scout-admins" });
+      await recordSignIn(
+        { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
+        async () => ["engineering"],
+      );
+      expect(await stored(id)).toMatchObject({ admin_group: null, signed_in_now: true });
+      signInAs(id);
+      expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
+      expect(warn).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("identify with the CI upload secret", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("recognises the CI upload secret, and nobody for a wrong, longer or unprefixed secret, or once the secret is unset", async () => {
+    vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", "ci-secret-1234");
+    expect(await identify({ bearer: "Bearer ci-secret-1234" })).toEqual({ kind: "ci" });
+    expect(await identify({ bearer: "Bearer ci-secret-9999" })).toBeNull();
+    expect(await identify({ bearer: "Bearer ci-secret-12345" })).toBeNull();
+    expect(await identify({ bearer: "ci-secret-1234" })).toBeNull();
+    expect(await identify({ bearer: null })).toBeNull();
+    vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", undefined);
+    expect(await identify({ bearer: "Bearer ci-secret-1234" })).toBeNull();
   });
 });
 
