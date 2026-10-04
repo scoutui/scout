@@ -5,10 +5,11 @@ import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { assertNotCancelled, type PromptAdapter, type SelectOption } from "../prompts/adapter.js";
 import { CliError } from "../cli/parse.js";
 import { InvalidHostError, isValidUrl, normalizeHost } from "../auth/store.js";
-import { probeRepository, readGitBranch, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
+import { probeRepository, readGitBranch, readGitToplevel, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
 import { Logger } from "../util/log.js";
 import { DEFAULT_INCLUDE, walkFiles } from "../walker/files.js";
 import { detectWorkspacePackages, readJsonSafely } from "../workspace/build-graph.js";
+import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
 
 export type InitOptions = {
   cwd: string;
@@ -40,16 +41,26 @@ function buildConfig(answers: Answers) {
 
 export async function runInit(opts: InitOptions): Promise<void> {
   const cwd = isAbsolute(opts.cwd) ? opts.cwd : resolve(opts.cwd);
-  const out = opts.outputPath ?? resolve(cwd, "scout.config.json");
+  let out = opts.outputPath ?? resolve(cwd, "scout.config.json");
   const log = opts.log ?? new Logger();
-  await assertNoExistingConfig(out);
+  const prompts = opts.interactive ? opts.prompts : undefined;
+  const root = opts.outputPath === undefined ? findWorkspaceRoot(cwd, (await readGitToplevel(cwd)) ?? undefined) : null;
+  const rootConfig = root === null ? undefined : join(root, "scout.config.json");
+  if (rootConfig === undefined || prompts === undefined) await assertNoExistingConfig(out);
   const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
   if ((await probeRepository(cwd)).kind === "outside") {
     log.warn("this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.");
   }
-  const prompts = opts.interactive ? opts.prompts : undefined;
   prompts?.intro("scout init");
   const defaults = await gitDefaults(cwd, log, prompts);
+  if (prompts && rootConfig !== undefined) {
+    const whole = assertNotCancelled(
+      await prompts.confirm({ message: "Scan the whole repository instead of only this package?", initialValue: true }),
+      prompts,
+    );
+    if (whole) out = rootConfig;
+    await assertNoExistingConfig(out);
+  }
   const done = `Wrote ${relative(cwd, out)}. Run scout scan --dry-run to try it, then scout scan to upload.`;
 
   if (opts.interactive && opts.prompts) {
@@ -67,6 +78,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   };
   await writeConfig(out, buildConfig(answers));
   log.success(done);
+  if (rootConfig !== undefined) log.info(`To scan the whole repository, run scout init --output ${relative(cwd, rootConfig)}.`);
 }
 
 async function gitDefaults(cwd: string, log: Logger, prompts: PromptAdapter | undefined): Promise<GitDefaults> {

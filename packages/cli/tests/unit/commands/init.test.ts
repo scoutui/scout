@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
@@ -7,6 +7,7 @@ import { runInit } from "../../../src/commands/init.js";
 import { Logger } from "../../../src/util/log.js";
 import { createColor } from "../../../src/util/style.js";
 import { fakeSsh } from "../../helpers/fake-ssh.js";
+import { stageFixture } from "../../helpers/stage-fixture.js";
 
 function git(cwd: string, ...args: string[]): void {
   execFileSync("git", ["-c", "user.email=test@example.com", "-c", "user.name=Test", "-c", "commit.gpgsign=false", ...args], { cwd, stdio: "pipe" });
@@ -115,6 +116,29 @@ describe("init command", () => {
     ]);
     expect(stdout).toEqual(["Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.\n"]);
     expect(written().repoId).toBe(basename(tmp));
+  });
+
+  it("writes the config in a workspace package, then says how to scan the whole repository instead", async () => {
+    const root = await stageFixture("whole-repo-scope");
+    try {
+      rmSync(join(root, "scout.config.json"));
+      const stdout: string[] = [];
+      vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+        stdout.push(String(chunk));
+        return true;
+      });
+      await runInit({ cwd: join(root, "apps/web"), log: new Logger({ color: createColor({ isTTY: false, env: {} }) }) });
+      vi.restoreAllMocks();
+      expect(stdout).toEqual([
+        "Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.\n",
+        "To scan the whole repository, run scout init --output ../../scout.config.json.\n",
+      ]);
+      expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(true);
+      expect(existsSync(join(root, "scout.config.json"))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("warns that a scan needs a git repository, and still writes the config, outside one", async () => {

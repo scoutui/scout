@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
@@ -111,21 +111,21 @@ describe("init wizard", () => {
   });
 });
 
+const stages: string[] = [];
+afterEach(() => {
+  for (const dir of stages.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+/** Stages whole-repo-scope without its config, deleting `remove` and writing `files` over it. */
+async function stageWholeRepo(over: { remove?: string[]; files?: Record<string, string> } = {}): Promise<string> {
+  const dir = await stageFixture("whole-repo-scope");
+  stages.push(dir);
+  for (const rel of ["scout.config.json", ...(over.remove ?? [])]) rmSync(join(dir, rel), { recursive: true });
+  for (const [rel, content] of Object.entries(over.files ?? {})) writeFileSync(join(dir, rel), content);
+  return dir;
+}
+
 describe("init wizard: what to leave out of the scan", () => {
-  const stages: string[] = [];
-  afterEach(() => {
-    for (const dir of stages.splice(0)) rmSync(dir, { recursive: true, force: true });
-  });
-
-  /** Stages whole-repo-scope without its config, deleting `remove` and writing `files` over it. */
-  async function stageWholeRepo(over: { remove?: string[]; files?: Record<string, string> } = {}): Promise<string> {
-    const dir = await stageFixture("whole-repo-scope");
-    stages.push(dir);
-    for (const rel of ["scout.config.json", ...(over.remove ?? [])]) rmSync(join(dir, rel), { recursive: true });
-    for (const [rel, content] of Object.entries(over.files ?? {})) writeFileSync(join(dir, rel), content);
-    return dir;
-  }
-
   type Picker = Parameters<PromptAdapter["multiselect"]>[0];
 
   /** Runs the wizard in `dir`, ticking the offered options in `ticked`; returns each picker call and the `exclude` written. */
@@ -195,5 +195,80 @@ describe("init wizard: what to leave out of the scan", () => {
     const { asked, exclude } = await pick(await stageWholeRepo(), [], { exclude: ["apps/playground"] });
     expect(asked).toEqual([]);
     expect(exclude).toEqual(["apps/playground"]);
+  });
+});
+
+describe("init wizard: run inside a workspace package", () => {
+  const rootQuestion = { message: "Scan the whole repository instead of only this package?", initialValue: true };
+
+  /** Runs the wizard from `cwd`, answering the root question with `whole`; returns each root question, the picker's option values and the closing line. */
+  async function runFrom(cwd: string, whole: boolean | symbol, given: { outputPath?: string } = {}) {
+    const confirms: Parameters<PromptAdapter["confirm"]>[0][] = [];
+    const pickers: string[][] = [];
+    const outros: string[] = [];
+    const prompts = stubAdapter({
+      confirm: async (o) => {
+        confirms.push(o);
+        return whole;
+      },
+      multiselect: async (o) => {
+        pickers.push(o.options.map((option) => String(option.value)));
+        return [];
+      },
+      outro: (message) => {
+        outros.push(message);
+      },
+    });
+    await runInit({ cwd, interactive: true, prompts, ...given });
+    return { confirms, pickers, outros };
+  }
+
+  it("writes the config at the repository root on Yes, and asks what to leave out there", async () => {
+    const root = await stageWholeRepo();
+    const { confirms, pickers, outros } = await runFrom(join(root, "apps/web"), true);
+    expect(confirms).toEqual([rootQuestion]);
+    expect(pickers).toEqual([["apps/playground", "apps/web", "packages/shared-ui", "scripts"]]);
+    expect(outros).toEqual(["Wrote ../../scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload."]);
+    expect(existsSync(join(root, "scout.config.json"))).toBe(true);
+    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
+  });
+
+  it("writes the config in the package on No, without asking what to leave out", async () => {
+    const root = await stageWholeRepo();
+    const { confirms, pickers, outros } = await runFrom(join(root, "apps/web"), false);
+    expect(confirms).toEqual([rootQuestion]);
+    expect(pickers).toEqual([]);
+    expect(outros).toEqual(["Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload."]);
+    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(true);
+    expect(existsSync(join(root, "scout.config.json"))).toBe(false);
+  });
+
+  it("refuses to write over a config already at the repository root on Yes", async () => {
+    const kept = '{ "repoId": "acme/kept" }\n';
+    const root = await stageWholeRepo({ files: { "scout.config.json": kept } });
+    await expect(runFrom(join(root, "apps/web"), true)).rejects.toMatchObject({
+      message: `${join(root, "scout.config.json")} already exists. Edit it, or delete it and run scout init again.`,
+      exitCode: 1,
+    });
+    expect(readFileSync(join(root, "scout.config.json"), "utf8")).toBe(kept);
+    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
+  });
+
+  it("writes nothing when the root question is cancelled", async () => {
+    const root = await stageWholeRepo();
+    await expect(runFrom(join(root, "apps/web"), CANCEL)).rejects.toThrow(PromptCancelledError);
+    expect(existsSync(join(root, "scout.config.json"))).toBe(false);
+    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
+  });
+
+  it("doesn't ask about the repository root when run from it", async () => {
+    const root = await stageWholeRepo();
+    expect((await runFrom(root, true)).confirms).toEqual([]);
+  });
+
+  it("doesn't ask about the repository root when --output is given", async () => {
+    const root = await stageWholeRepo();
+    const { confirms } = await runFrom(join(root, "apps/web"), true, { outputPath: join(root, "apps/web/scout.config.json") });
+    expect(confirms).toEqual([]);
   });
 });
