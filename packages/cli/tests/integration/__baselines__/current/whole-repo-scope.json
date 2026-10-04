@@ -54,7 +54,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@example/playground",
       "version": null,
@@ -84,7 +84,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@example/web",
       "version": null,
@@ -138,7 +138,7 @@
       },
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@example/shared-ui",
       "version": null,
@@ -202,7 +202,7 @@
       },
       "definition": {
         "line": 7,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@example/shared-ui",
       "version": null,
@@ -236,7 +236,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "whole-repo-scope",
       "version": null,
@@ -252,7 +252,7 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "a247a972478df4a2",
+      "occurrenceId": "bff3f5131ac11dff",
       "resolution": {
         "status": "resolved",
         "componentId": "24f8ea1330af8464"
@@ -260,7 +260,7 @@
       "filePath": "apps/playground/src/Demo.tsx",
       "usedIn": "@example/playground",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -280,7 +280,7 @@
       "ownerComponentId": "0cdf15c49200d200"
     },
     {
-      "occurrenceId": "2b122ee6abf5fb91",
+      "occurrenceId": "44562cd08d1c9a63",
       "resolution": {
         "status": "resolved",
         "componentId": "24f8ea1330af8464"
@@ -288,7 +288,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@example/web",
       "line": 6,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -308,7 +308,7 @@
       "ownerComponentId": "4ce9c74153e857a2"
     },
     {
-      "occurrenceId": "5db34216d36ae44c",
+      "occurrenceId": "33fee25687e7c1da",
       "resolution": {
         "status": "resolved",
         "componentId": "24f8ea1330af8464"
@@ -316,7 +316,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@example/web",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -336,7 +336,7 @@
       "ownerComponentId": "4ce9c74153e857a2"
     },
     {
-      "occurrenceId": "9492191bab0aa387",
+      "occurrenceId": "7fef5fa18a8eae95",
       "resolution": {
         "status": "resolved",
         "componentId": "3e686d99c79a8f96"
@@ -344,7 +344,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@example/web",
       "line": 8,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -364,7 +364,7 @@
       "ownerComponentId": "4ce9c74153e857a2"
     },
     {
-      "occurrenceId": "7d57d8fb59ad898e",
+      "occurrenceId": "053e145dabbf8bce",
       "resolution": {
         "status": "resolved",
         "componentId": "3e686d99c79a8f96"
@@ -372,7 +372,7 @@
       "filePath": "packages/shared-ui/src/SharedButton.tsx",
       "usedIn": "@example/shared-ui",
       "line": 8,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -392,7 +392,7 @@
       "ownerComponentId": "24f8ea1330af8464"
     },
     {
-      "occurrenceId": "cbe39feb90346e4a",
+      "occurrenceId": "78ea9809ef9d0241",
       "resolution": {
         "status": "resolved",
         "componentId": "24f8ea1330af8464"
@@ -400,7 +400,7 @@
       "filePath": "scripts/preview.tsx",
       "usedIn": "whole-repo-scope",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },

@@ -79,9 +79,9 @@ describe("integration: react-app fixture", () => {
       const page = local(S, "app/page.tsx", "Page");
       const trace = [imported("../components/submit-button.js", "SubmitButton")];
       expect(rendersIn(S)).toEqual([
-        row("app/page.tsx:6:6", button, page, trace, { variant: { tier: "written", value: "secondary" } }),
-        row("app/page.tsx:7:6", button, page, trace, {}),
-        row("components/submit-button.tsx:5:9", webButton, button, [imported("@example/web-button/dist/react.js", "WebButton")], {
+        row("app/page.tsx:6:7", button, page, trace, { variant: { tier: "written", value: "secondary" } }),
+        row("app/page.tsx:7:7", button, page, trace, {}),
+        row("components/submit-button.tsx:5:10", webButton, button, [imported("@example/web-button/dist/react.js", "WebButton")], {
           variant: { tier: "dynamic" },
         }),
       ]);
@@ -104,10 +104,10 @@ describe("integration: react-app fixture", () => {
       const app = local(S, "App.tsx", "App");
       const button = local(S, "components/button/button.tsx", "Button");
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:7:6", local(S, "components/avatar/avatar.tsx", "Avatar"), app, [imported("./components/avatar", "Avatar")], {
+        row("App.tsx:7:7", local(S, "components/avatar/avatar.tsx", "Avatar"), app, [imported("./components/avatar", "Avatar")], {
           src: { tier: "written", value: "/me.png" },
         }),
-        row("App.tsx:8:6", button, app, [imported("./components/button", "Button")], {
+        row("App.tsx:8:7", button, app, [imported("./components/button", "Button")], {
           label: { tier: "written", value: "ok" },
           onClick: { tier: "dynamic" },
         }),
@@ -121,7 +121,7 @@ describe("integration: react-app fixture", () => {
     it("credits an in-repo default export where the app renders it", () => {
       const S = "local-emission-app";
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:4:9", local(S, "components/Button.tsx", "Button"), local(S, "App.tsx", "App"), [
+        row("App.tsx:4:10", local(S, "components/Button.tsx", "Button"), local(S, "App.tsx", "App"), [
           imported("./components/Button", "default"),
         ], { label: { tier: "written", value: "Hi" } }),
       ]);
@@ -145,11 +145,11 @@ describe("integration: react-app fixture", () => {
     it("still credits the renders inside the body that declares the local", () => {
       const owner = local(S, "item-panel.jsx", "ItemPanel");
       expect(rendersIn(S)).toEqual([
-        row("item-panel.jsx:8:12", local(S, "item-icon.jsx", "ItemIcon"), owner, [imported("./item-icon", "ItemIcon")], {
+        row("item-panel.jsx:8:13", local(S, "item-icon.jsx", "ItemIcon"), owner, [imported("./item-icon", "ItemIcon")], {
           id: { tier: "reference", ref: "id" },
         }),
         // `pkg` is neither declared nor installed.
-        row("item-panel.jsx:9:12", { status: "unresolved", reason: { kind: "module-not-found" } }, owner, [imported("pkg", "Foo")], {
+        row("item-panel.jsx:9:13", { status: "unresolved", reason: { kind: "module-not-found" } }, owner, [imported("pkg", "Foo")], {
           value: { tier: "reference", ref: "id" },
         }),
       ]);

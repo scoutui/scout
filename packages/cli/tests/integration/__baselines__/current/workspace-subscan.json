@@ -50,7 +50,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/web",
       "version": null,
@@ -106,7 +106,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/web",
       "version": null,
@@ -136,7 +136,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -178,7 +178,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -208,7 +208,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -241,7 +241,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -274,7 +274,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -307,7 +307,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -340,7 +340,7 @@
       ],
       "definition": {
         "line": 5,
-        "column": 0
+        "column": 1
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -370,7 +370,7 @@
       "props": {},
       "definition": {
         "line": 9,
-        "column": 0
+        "column": 1
       },
       "owningPackage": "@ws-sub/ui",
       "version": null,
@@ -386,7 +386,7 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "2191e9c84c38cafe",
+      "occurrenceId": "c481b2290bae2693",
       "resolution": {
         "status": "resolved",
         "componentId": "e37b620312476a5b"
@@ -394,7 +394,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 10,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -414,7 +414,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "9079f0361c0d37fb",
+      "occurrenceId": "1c20a574c42c127c",
       "resolution": {
         "status": "resolved",
         "componentId": "a8ccae49e77587a3"
@@ -422,7 +422,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 11,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -442,7 +442,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "3e020eb79bd193aa",
+      "occurrenceId": "340f77d9575518c2",
       "resolution": {
         "status": "resolved",
         "componentId": "aeb23d65757b5d71"
@@ -450,7 +450,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 12,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -465,7 +465,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "f7747dc5283e9fd6",
+      "occurrenceId": "decdc1a1e5810d25",
       "resolution": {
         "status": "resolved",
         "componentId": "952fa8a2046587ee"
@@ -473,7 +473,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 13,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -489,7 +489,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "e888e6bf04874cd0",
+      "occurrenceId": "f2ee904951ed275a",
       "resolution": {
         "status": "resolved",
         "componentId": "aff663ef7f33a8b2"
@@ -497,7 +497,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 14,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -506,7 +506,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "8d5d59119e5fbdae",
+      "occurrenceId": "029743cea325afd6",
       "resolution": {
         "status": "resolved",
         "componentId": "27fce2330f30fa9b"
@@ -514,7 +514,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 15,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -530,7 +530,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "1a4e5223b1cb656d",
+      "occurrenceId": "166859618321e5e2",
       "resolution": {
         "status": "resolved",
         "componentId": "8b3a5eff07c52947"
@@ -538,7 +538,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 16,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -554,7 +554,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "aa44d9065fd4a191",
+      "occurrenceId": "76ceec283c8507cb",
       "resolution": {
         "status": "resolved",
         "componentId": "ead8369588a7bd08"
@@ -562,7 +562,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 17,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -578,7 +578,7 @@
       "ownerComponentId": "93767a0c14a8b7ae"
     },
     {
-      "occurrenceId": "cdde5cf6405dc4f1",
+      "occurrenceId": "a41dbf1b7e07c295",
       "resolution": {
         "status": "resolved",
         "componentId": "a39eac46e7bbfb7b"
@@ -586,7 +586,7 @@
       "filePath": "apps/web/src/App.tsx",
       "usedIn": "@ws-sub/web",
       "line": 7,
-      "column": 10,
+      "column": 11,
       "credit": {
         "kind": "argument",
         "callee": "useSlot",

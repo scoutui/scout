@@ -66,7 +66,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-app",
       "version": null,
@@ -102,7 +102,7 @@
       },
       "definition": {
         "line": 4,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-app",
       "version": null,
@@ -132,7 +132,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-app",
       "version": null,
@@ -180,7 +180,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-app",
       "version": null,
@@ -210,7 +210,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-app",
       "version": null,
@@ -252,7 +252,7 @@
       },
       "definition": {
         "line": 4,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-app",
       "version": null,
@@ -284,7 +284,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-app",
       "version": null,
@@ -333,7 +333,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-app",
       "version": null,
@@ -391,7 +391,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-app",
       "version": null,
@@ -438,14 +438,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "b75df95b408d4360",
+      "occurrenceId": "a5153e0045ffbae5",
       "resolution": {
         "status": "resolved",
         "componentId": "67c420e5531679e5"
       },
       "filePath": "src/body-locals-app/item-panel.jsx",
       "line": 8,
-      "column": 12,
+      "column": 13,
       "credit": {
         "kind": "render"
       },
@@ -465,7 +465,7 @@
       "ownerComponentId": "5e5873d76b6dbe0e"
     },
     {
-      "occurrenceId": "0459ae699b71d01a",
+      "occurrenceId": "be1a7fb4efdc66ad",
       "resolution": {
         "status": "unresolved",
         "reason": {
@@ -474,7 +474,7 @@
       },
       "filePath": "src/body-locals-app/item-panel.jsx",
       "line": 9,
-      "column": 12,
+      "column": 13,
       "credit": {
         "kind": "render"
       },
@@ -494,14 +494,14 @@
       "ownerComponentId": "5e5873d76b6dbe0e"
     },
     {
-      "occurrenceId": "df53049f8889ae72",
+      "occurrenceId": "269bba1e3f7f56c4",
       "resolution": {
         "status": "resolved",
         "componentId": "402690fa9d5bb698"
       },
       "filePath": "src/local-emission-app/App.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -521,14 +521,14 @@
       "ownerComponentId": "d5c8d2a3df27437f"
     },
     {
-      "occurrenceId": "399a42c39797a188",
+      "occurrenceId": "a28ce04bf95e7971",
       "resolution": {
         "status": "resolved",
         "componentId": "ac57410359e4e670"
       },
       "filePath": "src/nextjs-app/app/page.tsx",
       "line": 6,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -548,14 +548,14 @@
       "ownerComponentId": "37af0274b89319d4"
     },
     {
-      "occurrenceId": "d616f8218d42a26d",
+      "occurrenceId": "9901af9e99a40278",
       "resolution": {
         "status": "resolved",
         "componentId": "ac57410359e4e670"
       },
       "filePath": "src/nextjs-app/app/page.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -570,14 +570,14 @@
       "ownerComponentId": "37af0274b89319d4"
     },
     {
-      "occurrenceId": "47846b27b3f581ad",
+      "occurrenceId": "450e4fedab4d0c15",
       "resolution": {
         "status": "resolved",
         "componentId": "2be238a45c4d2e55"
       },
       "filePath": "src/nextjs-app/components/submit-button.tsx",
       "line": 5,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -596,14 +596,14 @@
       "ownerComponentId": "ac57410359e4e670"
     },
     {
-      "occurrenceId": "3e4edfee2c588d3c",
+      "occurrenceId": "372e0828be959380",
       "resolution": {
         "status": "resolved",
         "componentId": "f48a5231840bcecb"
       },
       "filePath": "src/nextjs-folder-basename/App.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -623,14 +623,14 @@
       "ownerComponentId": "219392cb230c7982"
     },
     {
-      "occurrenceId": "5b7891a23e5ae5c8",
+      "occurrenceId": "9e7c164eb41194df",
       "resolution": {
         "status": "resolved",
         "componentId": "a8be24ee636ed688"
       },
       "filePath": "src/nextjs-folder-basename/App.tsx",
       "line": 8,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },

@@ -52,7 +52,7 @@ These fields are less often needed:
 | `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of uses that bind it: Vue listeners such as `@click`, and React props named `on` plus a capital letter, such as `onClick`. Absent when no use binds an event. |
 | `writtenNames` | `string[]` \| absent | The other names files render the component under: every distinct [`writtenName`](#occurrences) of its uses, most used first. Absent when none has one. |
 | `declared` | object \| absent | Components defined in the repo only: the props the component's own code declares. See [`declared`](#declared). |
-| `definition` | `{ line, column }` \| absent | React components defined in the repo only: where the declaration starts in `identity.filePath`. `line` counts from 1 and `column` from 0. |
+| `definition` | `{ line, column }` \| absent | React components defined in the repo only: where the declaration starts in `identity.filePath`. `line` and `column` count from 1. |
 | `owningPackage` | `string` \| absent | Components defined in the repo only: the name of the package the file belongs to. That is the deepest workspace package whose folder holds the file, else the [root package](#root-package). Absent when the file is outside the root package's folder. |
 
 ```json title="A components[] entry"
@@ -222,7 +222,7 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 | `filePath` | `string` | The file the use is in. |
 | `usedIn` | `string` \| absent | The name of the package the file belongs to: the deepest package in [`meta.scope.packages`](#meta) whose folder holds it. Present only when `meta.scope.packages` has more than one entry. |
 | `line` | `number` | Line of the use, counted from 1. |
-| `column` | `number` | Column of the use: counted from 0 in React files and from 1 in Vue files. |
+| `column` | `number` | Column of the use, counted from 1. |
 | `credit` | object | Whether the component is rendered here or passed to a call. See [`credit`](#credit). |
 | `trace` | array | The steps between this use and the component, such as an import or a wrapper. See [`trace`](#trace). |
 | `writtenName` | `string` \| absent | The name this file renders the component under, with any member path, such as `SettingsHeader` after `import SettingsHeader from "./Header"`, or `Filters.FilterBar`. Present only on a matched use, and only when the name differs from the component's own `exportName`, or `tagName` for a tag. A difference in letter case or hyphens alone doesn't count. A package's default export has no name of its own, so it always has one. |
@@ -232,11 +232,11 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 
 ```json title="An occurrences[] entry"
 {
-  "occurrenceId": "c23610a099090c05",
+  "occurrenceId": "686831181daeddbc",
   "resolution": { "status": "resolved", "componentId": "143bee555932e50c" },
   "filePath": "src/components/ProductCard.tsx",
   "line": 7,
-  "column": 6,
+  "column": 7,
   "credit": { "kind": "render" },
   "trace": [{ "kind": "import", "specifier": "@acme/ui", "name": "Button" }],
   "props": { "variant": { "tier": "written", "value": "primary" } },
@@ -266,14 +266,14 @@ An [unmatched use](/docs/reference/glossary#unmatched-use) is a place where the 
 
 ```json title="An unmatched use: @acme/ui is declared but not installed"
 {
-  "occurrenceId": "742a11f2ccdeec08",
+  "occurrenceId": "c5f6b7a0e2035ff1",
   "resolution": {
     "status": "unresolved",
     "reason": { "kind": "package-not-installed", "packageName": "@acme/ui" }
   },
   "filePath": "src/App.tsx",
   "line": 8,
-  "column": 6,
+  "column": 7,
   "credit": { "kind": "render" },
   "trace": [{ "kind": "import", "specifier": "@acme/ui", "name": "Button" }],
   "props": { "variant": { "tier": "written", "value": "secondary" } },
@@ -306,7 +306,7 @@ The steps between the use and the component, outermost first. A plain import has
 | `helper-call` | `callee`, `calleeFile` | The element is inside a function that isn't a component, such as a helper that returns JSX. The element gets one entry per component that calls the helper. |
 | `prop-forward` | `bindingName`, `constructionSite: { file, line, column }` | The element is created outside any component, such as `const badge = <Icon />`, and used inside one. `constructionSite` is where it is created. |
 
-The `column` in `mapLoc` and `constructionSite` counts from 0.
+The `column` in `mapLoc` and `constructionSite` counts from 1.
 
 ```json title="trace for a Checkout component loaded with lazy()"
 [

@@ -24,7 +24,7 @@ Every diagnostic has these two fields, plus the fields listed under its code:
 
 Every code except `dependency-not-installed` also has `filePath`, the file the diagnostic is about, relative to the repository root. `cycle-detected` and `chain-too-deep` use a different base folder; see [Package re-export codes](#package-re-export-codes).
 
-`line` starts at 1. `column` starts at 0 in React files and at 1 in Vue files, the same as in [`occurrences[]`](/docs/reference/artifact#occurrences).
+`line` and `column` start at 1, the same as in [`occurrences[]`](/docs/reference/artifact#occurrences).
 
 ## Codes at a glance
 

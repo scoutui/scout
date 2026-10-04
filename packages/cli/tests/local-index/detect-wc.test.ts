@@ -78,9 +78,9 @@ describe("detectWebComponents: registered names", () => {
       ].join("\n"),
     );
     expect(out.map((d) => [d.componentId.kind === "custom-element" && d.componentId.tagName, d.exportName, d.detector, d.loc])).toEqual([
-      ["x-one", "A", "wc-customelements-define", { file: "src/x.ts", line: 2, column: 0 }],
-      ["x-two", "A", "wc-customelements-define", { file: "src/x.ts", line: 3, column: 0 }],
-      ["x-three", "A", "wc-customelements-define", { file: "src/x.ts", line: 4, column: 0 }],
+      ["x-one", "A", "wc-customelements-define", { file: "src/x.ts", line: 2, column: 1 }],
+      ["x-two", "A", "wc-customelements-define", { file: "src/x.ts", line: 3, column: 1 }],
+      ["x-three", "A", "wc-customelements-define", { file: "src/x.ts", line: 4, column: 1 }],
     ]);
   });
 

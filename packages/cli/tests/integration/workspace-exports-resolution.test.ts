@@ -28,7 +28,7 @@ describe("integration: workspace-exports-resolution fixture", () => {
       })),
     ).toEqual([
       {
-        at: "packages/consumer/src/App.tsx:4:41",
+        at: "packages/consumer/src/App.tsx:4:42",
         component: {
           kind: "repository-declaration",
           repoId: "workspace-exports-resolution",

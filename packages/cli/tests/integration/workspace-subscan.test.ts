@@ -69,13 +69,13 @@ describe("integration: sub-package scan of a monorepo", () => {
   });
 
   it("sub scan: the un-walked sibling Button is defined where the root scan finds it", () => {
-    expect(findButton(rootOut).definition).toEqual({ line: 1, column: 7 });
+    expect(findButton(rootOut).definition).toEqual({ line: 1, column: 8 });
     expect(findButton(subOut).definition).toEqual(findButton(rootOut).definition);
   });
 
   it("sub scan: an un-walked sibling passed only as a hook argument is defined where it is declared", () => {
     const badge = subOut.components.find((c) => c.identity.kind !== "tag" && c.identity.exportName === "Badge");
-    expect([fileOf(badge), badge?.definition]).toEqual(["packages/ui/src/badge.tsx", { line: 1, column: 7 }]);
+    expect([fileOf(badge), badge?.definition]).toEqual(["packages/ui/src/badge.tsx", { line: 1, column: 8 }]);
   });
 
   it("sub scan: static members of an un-walked sibling, rendered directly or destructured, are defined at their assignments", () => {
@@ -83,18 +83,18 @@ describe("integration: sub-package scan of a monorepo", () => {
       subOut.components.find((c) => c.identity.kind !== "tag" && c.identity.exportName === name);
     expect([fileOf(member("Table.Row")), member("Table.Row")?.definition]).toEqual([
       "packages/ui/src/table.tsx",
-      { line: 13, column: 0 },
+      { line: 13, column: 1 },
     ]);
     expect([fileOf(member("Table.Cell")), member("Table.Cell")?.definition]).toEqual([
       "packages/ui/src/table.tsx",
-      { line: 14, column: 0 },
+      { line: 14, column: 1 },
     ]);
   });
 
   it("sub scan: a component the sibling's barrel imports and then exports is defined in its own file", () => {
     const chipOf = (o: ScanArtifact) =>
       o.components.find((c) => c.identity.kind !== "tag" && c.identity.exportName === "Chip");
-    expect([fileOf(chipOf(subOut)), chipOf(subOut)?.definition]).toEqual(["packages/ui/src/chip.tsx", { line: 1, column: 7 }]);
+    expect([fileOf(chipOf(subOut)), chipOf(subOut)?.definition]).toEqual(["packages/ui/src/chip.tsx", { line: 1, column: 8 }]);
     expect(chipOf(subOut)?.id).toBe(chipOf(rootOut)?.id);
   });
 
@@ -114,8 +114,8 @@ describe("integration: sub-package scan of a monorepo", () => {
       expect(sub?.id).toBe(root?.id);
       expect([sub?.identity, sub?.definition, root?.definition]).toEqual([
         { kind: "repository-declaration", repoId: "workspace-subscan", filePath, exportName },
-        { line: 1, column: 7 },
-        { line: 1, column: 7 },
+        { line: 1, column: 8 },
+        { line: 1, column: 8 },
       ]);
     },
   );
@@ -211,7 +211,7 @@ describe("integration: a sibling's static member passed only as a hook argument"
 
   it("sub scan: the destructured member is defined at its assignment in the sibling's file", () => {
     const cell = out.components.find((c) => c.identity.kind !== "tag" && c.identity.exportName === "Table.Cell");
-    expect([fileOf(cell), cell?.definition]).toEqual(["packages/ui/src/table.tsx", { line: 14, column: 0 }]);
+    expect([fileOf(cell), cell?.definition]).toEqual(["packages/ui/src/table.tsx", { line: 14, column: 1 }]);
   });
 });
 
@@ -240,7 +240,7 @@ describe("integration: a CommonJS sibling file imported by relative path", () =>
 
   it("sub scan: the component is defined where the sibling file declares it", () => {
     const legacy = out.components.find((c) => c.identity.kind !== "tag" && c.identity.exportName === "Legacy");
-    expect([fileOf(legacy), legacy?.definition]).toEqual(["packages/ui/src/legacy.jsx", { line: 1, column: 0 }]);
+    expect([fileOf(legacy), legacy?.definition]).toEqual(["packages/ui/src/legacy.jsx", { line: 1, column: 1 }]);
   });
 });
 

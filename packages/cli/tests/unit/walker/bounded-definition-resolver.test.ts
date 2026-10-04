@@ -43,7 +43,7 @@ describe("createBoundedDefinitionResolver", () => {
       absFile: join(stage, "src", "button.tsx"),
       exportName: "Button",
       path: [],
-      definition: { line: 1, column: 7 },
+      definition: { line: 1, column: 8 },
     });
   });
 
@@ -53,7 +53,7 @@ describe("createBoundedDefinitionResolver", () => {
       absFile: join(stage, "src", "button.tsx"),
       exportName: "Button",
       path: [],
-      definition: { line: 1, column: 7 },
+      definition: { line: 1, column: 8 },
     });
   });
 

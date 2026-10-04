@@ -48,7 +48,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "design-system-upgrade",
       "version": null,
@@ -78,7 +78,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "design-system-upgrade",
       "version": null,
@@ -108,7 +108,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "design-system-upgrade",
       "version": null,
@@ -138,7 +138,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "design-system-upgrade",
       "version": null,
@@ -203,14 +203,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "c00dc4a8547f28e7",
+      "occurrenceId": "b2adf08a63f2456d",
       "resolution": {
         "status": "resolved",
         "componentId": "47f6f60bda4c4cec"
       },
       "filePath": "src/App.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -225,14 +225,14 @@
       "ownerComponentId": "54c950a563ffe4b1"
     },
     {
-      "occurrenceId": "c8eabb68545a918e",
+      "occurrenceId": "69ba7fd632d005f7",
       "resolution": {
         "status": "resolved",
         "componentId": "47f6f60bda4c4cec"
       },
       "filePath": "src/Direct.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -247,14 +247,14 @@
       "ownerComponentId": "5d2455d032b3e3d0"
     },
     {
-      "occurrenceId": "dc3bbb9e3bf5a9c9",
+      "occurrenceId": "57b3e72a8d04e718",
       "resolution": {
         "status": "resolved",
         "componentId": "eec4f01b2713ec4e"
       },
       "filePath": "src/Layered.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -269,7 +269,7 @@
       "ownerComponentId": "f4ea884852f7842c"
     },
     {
-      "occurrenceId": "5e4d831136001f3b",
+      "occurrenceId": "2c2a1e3652879448",
       "resolution": {
         "status": "unresolved",
         "reason": {
@@ -279,7 +279,7 @@
       },
       "filePath": "src/Loop.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },

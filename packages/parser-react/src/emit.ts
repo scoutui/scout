@@ -188,8 +188,7 @@ export function emitReact(opts: EmitOptions): void {
 
 function emitImport(node: ImportDeclaration, fb: FileBuilder, source: string): void {
   const specifier = node.source.value;
-  const pos = positionAt(source, node.start);
-  const loc = { line: pos.line, column: pos.column + 1 };
+  const loc = positionAt(source, node.start);
 
   // Side-effect import: no binding to emit.
   if (!node.specifiers || node.specifiers.length === 0) return;

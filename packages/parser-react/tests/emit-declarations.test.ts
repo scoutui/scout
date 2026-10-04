@@ -484,7 +484,7 @@ describe("emitReact: a static member assigned to a name", () => {
         holder: expect.objectContaining({ symbol: "Card", scope: MODULE_SCOPE, memberChain: [] }),
         member: "Header",
         value: ref("CardHeader"),
-        loc: { line: 3, column: 0 },
+        loc: { line: 3, column: 1 },
       },
     ]);
   });
