@@ -14,6 +14,9 @@ let driver: PostgresDriver;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => pool }));
 vi.mock("@/auth", () => ({ auth: async () => ({ user: { id: "reader" } }) }));
+vi.mock("@/lib/identity", () => ({
+  identify: async () => ({ kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "editor", roleSource: "people" }),
+}));
 vi.mock("next/navigation", async () => ({
   ...(await vi.importActual<typeof import("next/navigation")>("next/navigation")),
   ...(await import("../helpers/search-params-mock")).searchParamsNavigationMock(),

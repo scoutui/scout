@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getPool } from "@/db/client";
-import { verifyUploadBearer } from "@/lib/auth";
+import { can, UPLOAD_REFUSAL } from "@/lib/access";
 import { builtWithCli } from "@/lib/built-with-cli";
 import { dashboardWarning } from "@/lib/dashboard-warning";
+import { identify } from "@/lib/identity";
 import { rateLimit, clientKey, logRateLimitRejection } from "@/lib/rate-limit";
 import { repoIdentityRefusal } from "@/lib/repo-identity";
 import { readJsonBody } from "@/lib/request-body";
@@ -32,14 +33,17 @@ const PreflightRequest = z.object({
  * It only reads, so the upload stays the final word.
  */
 export async function POST(req: Request): Promise<Response> {
-  let identity: Awaited<ReturnType<typeof verifyUploadBearer>>;
+  let identity: Awaited<ReturnType<typeof identify>>;
   try {
-    identity = await verifyUploadBearer(req.headers.get("authorization"));
+    identity = await identify({ bearer: req.headers.get("authorization") });
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
   if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!can(identity, "upload")) {
+    return NextResponse.json({ refusal: UPLOAD_REFUSAL, commits: [], warning: dashboardWarning(), scanFormats: SCAN_FORMATS });
   }
 
   const key = identity.kind === "ci" ? `preflight:ci:${clientKey(req)}` : `preflight:user:${identity.userId}`;

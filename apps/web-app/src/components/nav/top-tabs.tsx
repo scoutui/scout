@@ -11,7 +11,7 @@ const TABS = [
   { href: "/governance", label: "governance" },
 ] as const;
 
-export function TopTabs({ rightSlot }: { rightSlot?: React.ReactNode }) {
+export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean; rightSlot?: React.ReactNode }) {
   const pathname = usePathname();
   // Every other route needs sign-in, so on /login the tabs would only lead
   // back to /login.
@@ -32,7 +32,7 @@ export function TopTabs({ rightSlot }: { rightSlot?: React.ReactNode }) {
             shows there are more tabs, and trailing padding lets the last tab
             scroll clear of it. */}
         <div className="flex min-w-0 items-stretch overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-sm:pr-8 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]">
-          {TABS.map((t) => {
+          {TABS.filter((t) => showGovernance || t.href !== "/governance").map((t) => {
             const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
             return (
               <Link

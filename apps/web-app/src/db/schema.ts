@@ -120,7 +120,12 @@ export const users = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
-});
+  role: text("role", { enum: ["viewer", "editor", "admin"] }).default("viewer"),
+  lastSignedInAt: timestamp("last_signed_in_at", { withTimezone: true }),
+  adminGroup: text("admin_group"),
+}, (t) => ({
+  role: check("user_role", sql`${t.role} IN ('viewer', 'editor', 'admin')`),
+}));
 
 export const accounts = pgTable(
   "account",
@@ -242,6 +247,18 @@ export const governance = pgTable(
   }),
 );
 export type GovernanceRow = typeof governance.$inferSelect;
+
+export const roleChanges = pgTable("role_changes", {
+  id: text("id").primaryKey(),
+  changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+  actorEmail: text("actor_email").notNull(),
+  subjectEmail: text("subject_email").notNull(),
+  fromRole: text("from_role", { enum: ["viewer", "editor", "admin"] }).notNull(),
+  toRole: text("to_role", { enum: ["viewer", "editor", "admin"] }),
+}, (t) => ({
+  changedAt: index("role_changes_changed_at").on(t.changedAt.desc()),
+}));
+export type RoleChangeRow = typeof roleChanges.$inferSelect;
 
 export type UserRow = typeof users.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;

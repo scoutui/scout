@@ -154,6 +154,12 @@ app.kubernetes.io/component: postgresql
 {{- end -}}
 {{- end -}}
 
+{{- define "scout.validateAdmins" -}}
+{{- if and (not .Values.auth.admins) (not .Values.auth.adminGroup) -}}
+{{- fail "Set auth.admins to your admins' email addresses, or auth.adminGroup to a group in your sign-in provider." -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "scout.databasePasswordSecretName" -}}
 {{- include "scout.validateDatabase" . -}}
 {{- if .Values.postgresql.enabled -}}

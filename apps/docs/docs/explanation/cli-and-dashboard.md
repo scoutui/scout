@@ -32,7 +32,7 @@ The CLI sends scans to the dashboard; the dashboard never reaches into your repo
 Before it scans, `scout scan` checks everything that would stop the upload, so nobody waits for a scan the dashboard won't take:
 
 - The commit is on the branch the dashboard tracks, with no uncommitted changes and the clone's full history.
-- The CLI is signed in.
+- The CLI is signed in as an Editor or Admin.
 - The dashboard accepts this CLI and this repository, and doesn't already have a scan of the commit.
 - The repo's dependencies are installed.
 
@@ -40,7 +40,7 @@ A scan of a feature branch or of uncommitted work would put a point on the chart
 
 Uploads come from one of two places:
 
-- **A person who has signed in** with `scout auth login`. See [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
+- **An Editor or Admin who has signed in** with `scout auth login`. See [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
 - **A CI job with a token**, so no one has to sign in. See [Run a scan and upload in CI](/docs/guides/run-in-ci).
 
 ## What happens after you upload {#after-upload}

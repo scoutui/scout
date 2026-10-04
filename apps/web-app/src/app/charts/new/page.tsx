@@ -4,11 +4,17 @@ import { readModelPage } from "@/lib/read-model-page";
 import { chartBuilderOptions } from "@/lib/chart-builder-options";
 import { ReadModelState } from "@/components/read-model-state";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
+import { EmptyState } from "@/components/ui/empty-state";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "New chart" };
 
 export default async function NewDashboardPage() {
+  if (!can(await identify({ browser: true }), "edit")) {
+    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an admin for access." />;
+  }
   const page = await readModelPage(getStorage(), chartBuilderOptions);
   if (page.state !== "ready") return <ReadModelState {...page} />;
   const { libraryTags, repos, components, packages } = page.value;

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/auth", () => ({
-  verifyUploadBearer: vi.fn(async (header: string | null) => {
-    if (header === "Bearer ci") return { kind: "ci" as const };
-    return { kind: "user" as const, userId: header?.slice("Bearer ".length) ?? "u1" };
+vi.mock("@/lib/identity", () => ({
+  identify: vi.fn(async ({ bearer }: { bearer: string | null }) => {
+    if (bearer === "Bearer ci") return { kind: "ci" as const };
+    return { kind: "person" as const, userId: bearer?.slice("Bearer ".length) ?? "u1", email: "ana@example.com", name: null, role: "editor" as const, roleSource: "people" as const };
   }),
 }));
 vi.mock("@/db/client", () => ({ getPool: () => ({}) }));

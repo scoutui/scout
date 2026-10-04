@@ -7,7 +7,7 @@ import { MigrationLine } from "@/components/governance/migration-line";
 import { KIND_LABEL, NO_PACKAGE_TITLE, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
 import { cn } from "@/lib/utils";
 
-export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
+export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDetail; canEdit: boolean }) {
   return (
     <header className="space-y-2">
       <div className="text-xs text-muted-foreground">
@@ -49,7 +49,7 @@ export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
           </>
         ) : null}
       </div>
-      <MigrationLine status={detail.migrationStatus} recordId={detail.governedByRecordId} />
+      <MigrationLine status={detail.migrationStatus} recordId={canEdit ? detail.governedByRecordId : null} />
     </header>
   );
 }

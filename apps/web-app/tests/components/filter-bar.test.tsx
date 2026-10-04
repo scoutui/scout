@@ -20,7 +20,7 @@ const options: FacetOptions = {
   changedMax: 0,
 };
 
-function renderBar(opts: FacetOptions = options, facets: FacetState = emptyFacets(), deprecatedTotal = 2) {
+function renderBar(opts: FacetOptions = options, facets: FacetState = emptyFacets(), deprecatedTotal = 2, canEdit = true) {
   const onChange = vi.fn();
   render(
     <FilterBar
@@ -32,6 +32,7 @@ function renderBar(opts: FacetOptions = options, facets: FacetState = emptyFacet
       deprecatedTotal={deprecatedTotal}
       diffShown={null}
       filtering={isFiltering(facets)}
+      canEdit={canEdit}
     />,
   );
   return onChange;
@@ -53,7 +54,7 @@ type TagOption = { value: string; color: string; count: number };
 /** Each page's bar, set up through its own options so one case runs on both. */
 const PAGES: {
   page: string;
-  renderTags: (tags: TagOption[], selected?: string[]) => void;
+  renderTags: (tags: TagOption[], selected?: string[], canEdit?: boolean) => void;
   /** The facet that leaves the menu with one value left: counts for its first
    *  two values, and whether the first is selected. */
   oneValueFacet: RegExp;
@@ -61,7 +62,7 @@ const PAGES: {
 }[] = [
   {
     page: "repo page",
-    renderTags: (tags, selected = []) => renderBar({ ...options, tags }, { ...emptyFacets(), tags: selected }),
+    renderTags: (tags, selected = [], canEdit = true) => renderBar({ ...options, tags }, { ...emptyFacets(), tags: selected }, 2, canEdit),
     oneValueFacet: /^type/i,
     renderOneValueFacet: ([react, vue], selected) =>
       renderBar(
@@ -71,8 +72,8 @@ const PAGES: {
   },
   {
     page: "Packages page",
-    renderTags: (tags, selected = []) =>
-      renderPackageBar({ tags }, { tags: selected }),
+    renderTags: (tags, selected = [], canEdit = true) =>
+      renderPackageBar({ tags }, { tags: selected }, canEdit),
     oneValueFacet: /^versions/i,
     renderOneValueFacet: ([multi, single], selected) =>
       renderPackageBar({ versions: { multi, single, unversioned: 0 } }, { versions: selected ? "multi" : null }),
@@ -82,6 +83,7 @@ const PAGES: {
 function renderPackageBar(
   opts: Partial<React.ComponentProps<typeof PackageFilterBar>["options"]>,
   facets: Partial<React.ComponentProps<typeof PackageFilterBar>["facets"]>,
+  canEdit = true,
 ) {
   render(
     <PackageFilterBar
@@ -96,6 +98,7 @@ function renderPackageBar(
         ...opts,
       }}
       resultCount={4}
+      canEdit={canEdit}
     />,
   );
 }
@@ -146,6 +149,13 @@ describe.each(PAGES)("the filter bar on the $page", ({ renderTags, oneValueFacet
     expect(await screen.findByText(/No library tags yet/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /add one in Governance/i })).toHaveAttribute("href", "/governance#tags");
     expect(screen.queryByText("No matches.")).toBeNull();
+  });
+
+  it("says only that there are no tags, without the Governance link, to someone who can't edit", async () => {
+    renderTags([], [], false);
+    await openFacet(/^tag/i);
+    expect(await screen.findByText("No library tags yet.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /add one in Governance/i })).toBeNull();
   });
 
   it("sets tag names in mono in the Tag list", async () => {
@@ -324,6 +334,7 @@ describe("FilterBar since-previous-scan chip", () => {
         deprecatedTotal={2}
         diffShown={null}
         filtering={false}
+        canEdit
       />,
     );
     const chip = screen.getByRole("button", { name: /^since previous scan/ });
@@ -380,6 +391,7 @@ describe("FilterBar result count in the changed view", () => {
         deprecatedTotal={2}
         diffShown={diffShown}
         filtering={filtering}
+        canEdit
       />,
     );
   const filtered = { total: 29, added: 0, removed: 2, changed: 10 };

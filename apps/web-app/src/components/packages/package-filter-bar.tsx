@@ -17,18 +17,20 @@ export function PackageFilterBar({
   onChange,
   options,
   resultCount,
+  canEdit,
 }: {
   facets: PackageFacetState;
   onChange: (next: PackageFacetState) => void;
   options: PackageFacetOptions;
   resultCount: number;
+  canEdit: boolean;
 }) {
   const setTags = (tags: string[]) => onChange({ ...facets, tags });
 
   // Deprecation is a status, not a facet: it is the DeprecatedFilterChip beside
   // the Filter menu.
   const facetList: Facet[] = [
-    tagFacet(options.tags, facets.tags, setTags),
+    tagFacet(options.tags, facets.tags, setTags, canEdit),
     {
       key: "versions",
       label: "Versions",

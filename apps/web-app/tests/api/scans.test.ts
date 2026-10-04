@@ -5,7 +5,8 @@ import { DrizzleQueryError } from "drizzle-orm/errors";
 import type { Pool } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { readArchive } from "@/lib/scan-archive";
-import { verifyUploadBearer } from "@/lib/auth";
+import type { Identity } from "@/lib/access";
+import { identify } from "@/lib/identity";
 import { hashToken } from "@/lib/cli-session-tokens";
 import { claimScanJob, UPLOAD_QUEUE_LOCK_KEY, type ClaimedScanJob } from "@/lib/scan-jobs";
 import { publishScan } from "@/lib/scan-projection";
@@ -34,12 +35,13 @@ vi.mock("@/lib/scan-projection", async (importOriginal) => {
 });
 const db = vi.hoisted(() => ({ pool: undefined as Pool | undefined }));
 vi.mock("@/db/client", () => ({ getPool: () => db.pool }));
-const identity = vi.hoisted(() => ({ value: { kind: "user", userId: "u1" } as null | { kind: "user"; userId: string } | { kind: "ci" } }));
-vi.mock("@/lib/auth", () => ({ verifyUploadBearer: vi.fn(async () => identity.value) }));
-vi.mock("@/auth", () => ({ auth: async () => null }));
+const identity = vi.hoisted(() => ({ value: null as Identity | null }));
+vi.mock("@/lib/identity", () => ({ identify: vi.fn(async () => identity.value) }));
 
 import { POST } from "@/app/api/scans/route";
 import { GET } from "@/app/api/scans/uploads/[uploadId]/route";
+
+const editor: Identity = { kind: "person", userId: "u1", email: "u1@example.test", name: null, role: "editor", roleSource: "people" };
 
 function request(body: BodyInit | null, headers: Record<string, string> = {}, signal?: AbortSignal, url = "http://x/api/scans") {
   return new Request(url, {
@@ -74,13 +76,13 @@ async function statusOf(statusUrl: string) {
 const { DATABASE_URL: databaseUrl } = process.env;
 
 describe("POST /api/scans without reception", () => {
-  beforeEach(() => { identity.value = { kind: "user", userId: "u1" }; db.pool = undefined; });
+  beforeEach(() => { identity.value = editor; db.pool = undefined; });
   afterEach(() => vi.restoreAllMocks());
 
   it("returns a generic server error when CLI bearer lookup fails", async () => {
     const raw = `scout_u_${"a".repeat(43)}`;
     const hash = hashToken(raw);
-    vi.mocked(verifyUploadBearer).mockRejectedValueOnce(new DrizzleQueryError("resolve upload bearer", [hash], new Error(raw)));
+    vi.mocked(identify).mockRejectedValueOnce(new DrizzleQueryError("resolve upload bearer", [hash], new Error(raw)));
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     const response = await POST(request(null, { Authorization: `Bearer ${raw}` }));
     expect(response.status).toBe(500);
@@ -122,7 +124,7 @@ describe.skipIf(!databaseUrl)("POST /api/scans reception", { timeout: 30_000 }, 
   afterAll(async () => { await database?.close(); }, 30_000);
   beforeEach(async () => {
     db.pool = pool;
-    identity.value = { kind: "user", userId: "u1" };
+    identity.value = editor;
     projector.calls = 0;
     zlib.syncCalls.length = 0;
     await pool.query("TRUNCATE repos, scan_uploads, \"user\" CASCADE");

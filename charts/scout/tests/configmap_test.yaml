@@ -30,6 +30,10 @@ tests:
           value: "scout"
       - notExists:
           path: data.OIDC_ALLOWED_DOMAINS
+      - notExists:
+          path: data.SCOUTUI_ADMINS
+      - notExists:
+          path: data.SCOUTUI_ADMIN_GROUP
 
   - it: includes allowedDomains when set
     set:
@@ -43,3 +47,29 @@ tests:
       - equal:
           path: data.OIDC_ALLOWED_DOMAINS
           value: "example.org,example.com"
+
+  - it: joins admin emails with commas
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+        admins: [ana@example.com, sam@example.com]
+    asserts:
+      - equal:
+          path: data.SCOUTUI_ADMINS
+          value: "ana@example.com,sam@example.com"
+
+  - it: includes the admin group when set
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+        adminGroup: scout-admins
+    asserts:
+      - equal:
+          path: data.SCOUTUI_ADMIN_GROUP
+          value: "scout-admins"

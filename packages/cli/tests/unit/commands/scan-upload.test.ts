@@ -471,17 +471,22 @@ describe("runScan pre-scan check", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("prints the dashboard's warning line, then its refusal of the whole scan, under --quiet", async () => {
+  it.each([
+    [
+      "repo_remote_mismatch",
+      "Couldn't upload the scan: upload-test on the dashboard comes from github.com/acme/web. Scan a clone of that repository, or choose another repoId in scout.config.json.",
+      " See https://scoutui.dev/docs/guides/troubleshoot-a-scan#repository-from-another-remote",
+    ],
+    ["upload_not_allowed", "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.", ""],
+  ])("prints the dashboard's warning line, then its %s refusal of the whole scan, under --quiet, without scanning", async (code, message, page) => {
     const dir = setupConsumer();
-    const message = "Couldn't upload the scan: upload-test on the dashboard comes from github.com/acme/web. Scan a clone of that repository, or choose another repoId in scout.config.json.";
     vi.spyOn(global, "fetch").mockResolvedValueOnce(
-      Response.json({ refusal: { code: "repo_remote_mismatch", message }, commits: [], warning: "A line from the dashboard." }),
+      Response.json({ refusal: { code, message }, commits: [], warning: "A line from the dashboard." }),
     );
     const result = await runScan({ cwd: dir, quiet: true, upload: true });
-    expect(stderr()).toBe(
-      `Warning: A line from the dashboard.\nError: ${message} See https://scoutui.dev/docs/guides/troubleshoot-a-scan#repository-from-another-remote\n`,
-    );
+    expect(stderr()).toBe(`Warning: A line from the dashboard.\nError: ${message}${page}\n`);
     expect(scanExitCode(result)).toBe(1);
+    expect(result.output).toBeNull();
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
   });
 

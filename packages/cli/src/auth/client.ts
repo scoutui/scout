@@ -11,9 +11,12 @@ export type DeviceCodeResponse = {
   warning: string | null;
 };
 
+export type DashboardRole = "viewer" | "editor" | "admin";
+
 export type UserSession = {
   token: string;
   email: string;
+  role: DashboardRole | null;
 };
 
 export type PollResult =
@@ -55,15 +58,19 @@ async function readError(res: Response): Promise<string> {
 
 const USER_SESSION_TOKEN_PATTERN = /^scout_u_[A-Za-z0-9_-]{43}$/;
 
+function readRole(value: unknown): DashboardRole | null {
+  return value === "viewer" || value === "editor" || value === "admin" ? value : null;
+}
+
 function toUserSession(body: unknown): UserSession {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new AuthProtocolError("Invalid token response: missing session.");
   }
-  const { access_token: token, token_type: tokenType, email } = body as Record<string, unknown>;
+  const { access_token: token, token_type: tokenType, email, role } = body as Record<string, unknown>;
   if (typeof token !== "string" || !USER_SESSION_TOKEN_PATTERN.test(token) || tokenType !== "Bearer" || typeof email !== "string" || email.trim() === "") {
     throw new AuthProtocolError("Invalid token response: malformed session.");
   }
-  return { token, email };
+  return { token, email, role: readRole(role) };
 }
 
 /**
@@ -141,7 +148,7 @@ export async function revokeSession(base: string, token: string): Promise<void> 
 export async function whoami(
   base: string,
   token: string,
-): Promise<{ userId: string; email: string | null } | null> {
+): Promise<{ userId: string; email: string | null; role: DashboardRole | null } | null> {
   const res = await fetch(endpoint(base, "/api/auth/cli/whoami"), {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -153,9 +160,9 @@ export async function whoami(
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new AuthProtocolError("Invalid whoami response: missing identity.");
   }
-  const { userId, email } = body as Record<string, unknown>;
+  const { userId, email, role } = body as Record<string, unknown>;
   if (typeof userId !== "string" || userId === "" || (typeof email !== "string" && email !== null)) {
     throw new AuthProtocolError("Invalid whoami response: malformed identity.");
   }
-  return { userId, email };
+  return { userId, email, role: readRole(role) };
 }

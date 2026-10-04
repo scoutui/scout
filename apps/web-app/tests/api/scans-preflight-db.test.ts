@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import type { Pool } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { SCHEMA_VERSION, type ScanArtifact } from "@scoutui/scan-format";
+import type { Identity } from "@/lib/access";
 import { resetRateLimitState } from "@/lib/rate-limit";
 import { claimScanJob, getUploadStatus, type ClaimedScanJob } from "@/lib/scan-jobs";
 import { publishScan } from "@/lib/scan-projection";
@@ -11,10 +12,12 @@ import { receiveArtifact, sampleArtifact } from "../helpers/scan-artifact";
 
 const db = vi.hoisted(() => ({ pool: undefined as Pool | undefined }));
 vi.mock("@/db/client", () => ({ getPool: () => db.pool }));
-const identity = vi.hoisted(() => ({ value: { kind: "user", userId: "u1" } as null | { kind: "user"; userId: string } }));
-vi.mock("@/lib/auth", () => ({ verifyUploadBearer: vi.fn(async () => identity.value) }));
+const identity = vi.hoisted(() => ({ value: null as Identity | null }));
+vi.mock("@/lib/identity", () => ({ identify: vi.fn(async () => identity.value) }));
 
 import { POST } from "@/app/api/scans/preflight/route";
+
+const editor: Identity = { kind: "person", userId: "u1", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
 
 const cliVersion: string = JSON.parse(readFileSync(new URL("../../../../packages/cli/package.json", import.meta.url), "utf8")).version;
 
@@ -45,7 +48,7 @@ function checkOf(scan: ScanArtifact, rescan: boolean) {
 const { DATABASE_URL: databaseUrl } = process.env;
 
 describe("POST /api/scans/preflight without the database", () => {
-  beforeEach(() => { identity.value = { kind: "user", userId: "u1" }; db.pool = undefined; resetRateLimitState(); });
+  beforeEach(() => { identity.value = editor; db.pool = undefined; resetRateLimitState(); });
 
   it("refuses a request without a bearer", async () => {
     identity.value = null;
@@ -74,7 +77,7 @@ describe.skipIf(!databaseUrl)("POST /api/scans/preflight", { timeout: 30_000 }, 
   afterAll(async () => { await database?.close(); }, 30_000);
   beforeEach(async () => {
     db.pool = pool;
-    identity.value = { kind: "user", userId: "u1" };
+    identity.value = editor;
     resetRateLimitState();
     vi.spyOn(console, "log").mockImplementation(() => {});
     await pool.query("TRUNCATE repos, scan_uploads, scan_jobs CASCADE");

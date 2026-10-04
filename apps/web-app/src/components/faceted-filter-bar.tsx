@@ -142,6 +142,7 @@ export function tagFacet(
   tags: { value: string; color: string; count: number }[],
   selected: readonly string[],
   onSelect: (selected: string[]) => void,
+  canEdit: boolean,
 ): ListFacet {
   return {
     key: "tag",
@@ -151,13 +152,15 @@ export function tagFacet(
     onSelect,
     mono: true,
     searchPlaceholder: "Search tags…",
-    empty: (
+    empty: canEdit ? (
       <>
         No library tags yet.{" "}
         <Link href="/governance#tags" className="text-foreground underline-offset-4 hover:underline">
           Add one in Governance
         </Link>
       </>
+    ) : (
+      "No library tags yet."
     ),
   };
 }

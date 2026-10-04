@@ -47,6 +47,7 @@ const sidebars: SidebarsConfig = {
             "guides/run-the-dashboard-locally",
             "guides/deploy-the-dashboard",
             "guides/deploy-with-your-own-chart",
+            "guides/manage-people-and-roles",
           ],
         },
         "guides/upgrade-scout",

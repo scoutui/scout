@@ -7,7 +7,7 @@ import { openReadModelDatabase } from "../helpers/read-model-db";
 
 const db = vi.hoisted(() => ({ pool: undefined as Pool | undefined }));
 vi.mock("@/db/client", () => ({ getPool: () => db.pool }));
-vi.mock("@/lib/auth", () => ({ verifyUploadBearer: vi.fn(async () => ({ kind: "ci" })) }));
+vi.mock("@/lib/identity", () => ({ identify: vi.fn(async () => ({ kind: "ci" })) }));
 
 import { POST } from "@/app/api/scans/route";
 

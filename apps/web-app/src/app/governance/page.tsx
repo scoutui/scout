@@ -5,11 +5,17 @@ import { progressLabel } from "@/lib/governance-map";
 import { ChartResultsState } from "@/components/read-model-state";
 import { TagsPanel } from "@/components/tags/tags-panel";
 import { GovernanceManager } from "@/components/governance/governance-manager";
+import { EmptyState } from "@/components/ui/empty-state";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance" };
 
 export default async function GovernancePage() {
+  if (!can(await identify({ browser: true }), "edit")) {
+    return <EmptyState titleAs="h1" title="Only Editors can see governance. Ask an admin for access." />;
+  }
   const { records, authors, tags, registry } = await getStorage().withReadSnapshot(async snapshot => ({
     records: await snapshot.listGovernance(),
     authors: await snapshot.listGovernanceAuthors(),

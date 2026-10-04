@@ -78,16 +78,16 @@ describe("runAuthLogin", () => {
     expect(errors.join("")).toBe(`Error: Couldn't sign in: ${BASE} ${UNEXPECTED_REPLY}\n`);
   });
 
-  it("reuses a validated session without requesting a device code", async () => {
+  it("reuses a validated session without requesting a device code, and says which role the dashboard gives it", async () => {
     await saveStore(signedIn(), file);
-    const who = vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com" });
+    const who = vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com", role: "admin" });
     const device = vi.spyOn(client, "requestDeviceCode");
     const lines: string[] = [];
     vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { lines.push(s); return true; }) as typeof process.stdout.write);
     expect(await runAuthLogin({ host: BASE, store: { filePath: file } })).toBe(0);
     expect(who).toHaveBeenCalledWith(BASE, "scout_u_abc");
     expect(device).not.toHaveBeenCalled();
-    expect(lines.join("")).toContain("Already signed in as ben@example.com");
+    expect(lines.join("")).toBe(`Already signed in as ben@example.com to ${BASE} as an Admin.\n`);
     expect((await loadStore(file)).hosts[BASE]).toEqual({ token: "scout_u_abc", userEmail: "ben@example.com" });
   });
 
@@ -137,7 +137,7 @@ describe("runAuthLogin", () => {
       .mockResolvedValueOnce({ kind: "pending" })
       .mockResolvedValueOnce({
         kind: "session",
-        session: { token: USER_TOKEN, email: "ben@example.com" },
+        session: { token: USER_TOKEN, email: "ben@example.com", role: null },
       });
     const sleep = vi.fn().mockResolvedValue(undefined);
 
@@ -154,7 +154,7 @@ describe("runAuthLogin", () => {
     vi.mocked(systemKeychain).mockReturnValue(fake.keychain);
     vi.spyOn(client, "requestDeviceCode").mockResolvedValue(deviceCode);
     vi.spyOn(browser, "openBrowser").mockReturnValue(false);
-    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com" } });
+    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com", role: null } });
     const errors: string[] = [];
     vi.spyOn(process.stderr, "write").mockImplementation(((s: string) => { errors.push(s); return true; }) as typeof process.stderr.write);
 
@@ -172,13 +172,13 @@ describe("runAuthLogin", () => {
     try {
       vi.spyOn(client, "requestDeviceCode").mockResolvedValue(deviceCode);
       vi.spyOn(browser, "openBrowser").mockReturnValue(false);
-      vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com" } });
+      vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com", role: null } });
       const errors: string[] = [];
       vi.spyOn(process.stderr, "write").mockImplementation(((s: string) => { errors.push(s); return true; }) as typeof process.stderr.write);
       expect(await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0 })).toBe(0);
       expect(errors.join("")).toContain("so it was saved to ~/hosts.json instead.");
 
-      vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com" });
+      vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com", role: null });
       const lines: string[] = [];
       expect(await runAuthStatus({ host: BASE, store: { filePath: file }, env: {}, write: (s) => lines.push(s) })).toBe(0);
       expect(lines.join("")).toContain("(session saved in ~/hosts.json).");
@@ -192,7 +192,7 @@ describe("runAuthLogin", () => {
     vi.spyOn(browser, "openBrowser").mockReturnValue(true);
     vi.spyOn(client, "pollToken")
       .mockResolvedValueOnce({ kind: "slow_down" })
-      .mockResolvedValueOnce({ kind: "session", session: { token: USER_TOKEN, email: "x@y.z" } });
+      .mockResolvedValueOnce({ kind: "session", session: { token: USER_TOKEN, email: "x@y.z", role: null } });
     const sleep = vi.fn().mockResolvedValue(undefined);
     await runAuthLogin({ host: BASE, store: { filePath: file }, sleep, now: () => 0 });
     expect(sleep).toHaveBeenNthCalledWith(2, 10_000);
@@ -305,7 +305,7 @@ describe("runAuthLogin", () => {
     vi.mocked(systemKeychain).mockReturnValue(fakeKeychain().keychain);
     vi.spyOn(client, "requestDeviceCode").mockResolvedValue(deviceCode);
     vi.spyOn(browser, "openBrowser").mockReturnValue(false);
-    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com" } });
+    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com", role: null } });
     const errs = captureStderr();
     const lines: string[] = [];
     vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { lines.push(s); return true; }) as typeof process.stdout.write);
@@ -315,13 +315,29 @@ describe("runAuthLogin", () => {
     expect(errs.join("")).toBe(stderr);
   });
 
+  it.each([
+    ["editor", " as an Editor"],
+    ["no role", ""],
+  ])("says which role the dashboard gave the account when it signs in (%s)", async (role, as) => {
+    vi.spyOn(client, "requestDeviceCode").mockResolvedValue(deviceCode);
+    vi.spyOn(browser, "openBrowser").mockReturnValue(false);
+    vi.spyOn(global, "fetch").mockResolvedValue(Response.json({
+      access_token: USER_TOKEN, token_type: "Bearer", email: "ben@example.com", ...(role === "no role" ? {} : { role }),
+    }));
+    captureStderr();
+    const lines: string[] = [];
+    vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { lines.push(s); return true; }) as typeof process.stdout.write);
+    expect(await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger(plain) })).toBe(0);
+    expect(lines.at(-1)).toBe(`✓ Signed in as ben@example.com to ${BASE}${as}.\n`);
+  });
+
   it("prints the dashboard's warning line before the sign-in steps", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(Response.json({
       device_code: "dc", user_code: "ABCD-EFGH", verification_uri: `${BASE}/login/device`,
       verification_uri_complete: `${BASE}/login/device?code=ABCD-EFGH`, expires_in: 600, interval: 5, warning: "A line from the dashboard.",
     }, { status: 201 }));
     vi.spyOn(browser, "openBrowser").mockReturnValue(false);
-    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com" } });
+    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: USER_TOKEN, email: "ben@example.com", role: null } });
     const writes = captureStderr();
     vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { writes.push(s); return true; }) as typeof process.stdout.write);
     const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger(plain) });
@@ -391,13 +407,17 @@ describe("runAuthStatus", () => {
     expect(errors.join("")).toBe(`Error: Couldn't check your session: ${BASE} ${UNEXPECTED_REPLY}\n`);
   });
 
-  it("reports the signed-in identity from whoami", async () => {
+  it.each([
+    ["viewer", " as a Viewer"],
+    ["no role", ""],
+    ["owner", ""],
+  ])("reports who is signed in and the role the dashboard gives them, when it sends one Scout knows (%s)", async (role, as) => {
     await saveStore(signedIn(), file);
-    vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com" });
+    vi.spyOn(global, "fetch").mockResolvedValue(Response.json({ userId: "u1", email: "ben@example.com", ...(role === "no role" ? {} : { role }) }));
     const logs: string[] = [];
     const code = await runAuthStatus({ store: { filePath: file }, env: {}, write: (s) => logs.push(s) });
     expect(code).toBe(0);
-    expect(logs.join("")).toMatch(/ben@example\.com/);
+    expect(logs).toEqual([`Signed in as ben@example.com to ${BASE}${as} (session saved in ${file}).\n`]);
   });
 
   it("shows whether the token is stored in the keychain or hosts.json", async () => {
@@ -410,7 +430,7 @@ describe("runAuthStatus", () => {
       file,
       { ...fake.keychain, set: async () => false },
     );
-    vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com" });
+    vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com", role: null });
     const lines: string[] = [];
 
     expect(await runAuthStatus({ host: BASE, store: { filePath: file }, env: {}, write: (s) => lines.push(s) })).toBe(0);
@@ -524,7 +544,7 @@ describe("runAuth dispatcher", () => {
 
   it("delegates `status` and returns its exit code", async () => {
     await saveStore(signedIn(), file);
-    vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com" });
+    vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com", role: null });
     expect(await runAuth(["status"], { env: {}, store: { filePath: file } })).toBe(0);
   });
 
@@ -532,7 +552,7 @@ describe("runAuth dispatcher", () => {
     const other = "https://other.example";
     await saveStore({ default: other, hosts: { ...signedIn().hosts, [other]: { token: "scout_u_other", userEmail: "ben@example.com" } } }, file);
     await writeFile(join(dir, "scout.config.json"), JSON.stringify({ include: ["src/**"], host: BASE }));
-    const who = vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com" });
+    const who = vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com", role: null });
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     expect(await runAuth(["status"], { env: {}, cwd: dir, store: { filePath: file } })).toBe(0);
     expect(who).toHaveBeenCalledWith(BASE, "scout_u_abc");

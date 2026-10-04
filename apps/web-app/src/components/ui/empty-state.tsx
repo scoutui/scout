@@ -6,7 +6,7 @@ interface EmptyStateProps {
   title: string;
   /** The title's element: a heading where the state stands in for a page or section. */
   titleAs?: "p" | "h1" | "h2";
-  description?: string;
+  description?: string | undefined;
   action?: ReactNode;
   className?: string;
 }

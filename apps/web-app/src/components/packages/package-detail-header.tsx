@@ -9,9 +9,11 @@ import { VersionComposition, computeVersionShare } from "@/components/viz/versio
 export function PackageDetailHeader({
   detail,
   allTags = [],
+  canEdit,
 }: {
   detail: PackageDetail;
   allTags?: Tag[];
+  canEdit: boolean;
 }) {
   // A package is single-framework, so derive it once from its components and
   // show it here instead of repeating a uniform "Kind" column on every row.
@@ -35,7 +37,7 @@ export function PackageDetailHeader({
           <h1 className="font-mono text-2xl font-semibold tracking-tight">{detail.packageName}</h1>
           <span className="flex items-center gap-1.5">
             {detail.tags?.length ? <TagChips tags={detail.tags} max={4} /> : null}
-            <QuickTag packageName={detail.packageName} allTags={allTags} />
+            {canEdit ? <QuickTag packageName={detail.packageName} allTags={allTags} /> : null}
           </span>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">

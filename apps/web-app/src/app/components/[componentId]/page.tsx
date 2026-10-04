@@ -4,6 +4,8 @@ import { readModelPage, readModelTitle } from "@/lib/read-model-page";
 import { ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
 import { CrossRepoHeader } from "@/components/components-tab/cross-repo-header";
 import { CrossRepoUsedInTable } from "@/components/components-tab/cross-repo-used-in-table";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +28,11 @@ export default async function CrossRepoComponentPage({
   if (page.state !== "ready") return <ReadModelState {...page} />;
   const detail = page.value;
   if (!detail) notFound();
+  const canEdit = can(await identify({ browser: true }), "edit");
 
   return (
     <div className="space-y-6">
-      <CrossRepoHeader detail={detail} />
+      <CrossRepoHeader detail={detail} canEdit={canEdit} />
       <SkippedScansNotice fallbacks={page.fallbacks} />
       <Section title="Used in">
         <CrossRepoUsedInTable componentId={detail.componentId} usages={detail.usages} />

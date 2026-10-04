@@ -332,6 +332,10 @@ async function backfill(opts: BackfillOptions, state: RunState): Promise<number>
             process.stderr.write(`${RUN_AGAIN}\n`);
             return 1;
           }
+          if (err.code === "upload_not_allowed") {
+            log.error(describeUploadError(err, authed.base).message);
+            return 1;
+          }
           refused(entry, err);
         }
       }

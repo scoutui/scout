@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ComponentRow, StorageDriver } from "@scoutui/web-shared";
 import { pickableForRepo, previewDashboard } from "@/app/charts/dashboard-actions";
+import type { identify, requireEditor } from "@/lib/identity";
 
-const auth = vi.hoisted(() => vi.fn(async (): Promise<{ user: { id: string } } | null> => ({ user: { id: "user-1" } })));
-vi.mock("@/auth", () => ({ auth }));
+const identity = vi.hoisted(() => ({
+  identify: vi.fn<typeof identify>(async () => ({ kind: "person", userId: "user-1", email: "ana@example.com", name: null, role: "editor", roleSource: "people" })),
+  requireEditor: vi.fn<typeof requireEditor>(async () => ({ ok: true, userId: "user-1" })),
+}));
+vi.mock("@/lib/identity", () => identity);
 vi.mock("@/lib/storage", () => ({ getStorage: () => storage }));
 vi.stubEnv("DATABASE_URL", "");
 
@@ -44,13 +48,15 @@ describe("pickableForRepo", () => {
 
 describe("chart builder reads", () => {
   it("refuse a caller who isn't signed in", async () => {
-    auth.mockResolvedValue(null);
+    identity.identify.mockResolvedValue(null);
+    identity.requireEditor.mockResolvedValue({ ok: false, error: "not_authenticated" });
     try {
       await expect(pickableForRepo("known")).rejects.toThrow("not_authenticated");
       await expect(previewDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }))
         .rejects.toThrow("not_authenticated");
     } finally {
-      auth.mockResolvedValue({ user: { id: "user-1" } });
+      identity.identify.mockReset();
+      identity.requireEditor.mockReset();
     }
   });
 });

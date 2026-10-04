@@ -19,6 +19,7 @@ let driver: StorageDriver;
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/auth", () => ({ auth: async () => null }));
+vi.mock("@/lib/identity", () => ({ identify: async () => null }));
 
 const v1Artifact = {
   meta: { scanId: "scan-a", scannerVersion: "0", scannedAt: "2026-09-19T00:00:00Z", repo: { id: "repo-a", commit: "abc", branch: null, gitRemote: null, initialCommit: null } },

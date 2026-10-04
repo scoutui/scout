@@ -6,7 +6,7 @@ import { ORIGIN_LABEL } from "@/lib/component-facets";
 import { MigrationLine } from "@/components/governance/migration-line";
 import { VersionComposition, computeVersionShare } from "@/components/viz/version-composition";
 
-export function CrossRepoHeader({ detail }: { detail: CrossRepoComponentDetail }) {
+export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponentDetail; canEdit: boolean }) {
   const versionShare = computeVersionShare(detail.usages, detail.distinctVersionCount);
   const deprecatedRepoCount = detail.usages.filter(u => u.deprecated).length;
   const repoNoun = detail.repoCount === 1 ? "repo" : "repos";
@@ -51,7 +51,7 @@ export function CrossRepoHeader({ detail }: { detail: CrossRepoComponentDetail }
         ) : null}
       </div>
 
-      <MigrationLine status={detail.migrationStatus} recordId={detail.governedByRecordId} />
+      <MigrationLine status={detail.migrationStatus} recordId={canEdit ? detail.governedByRecordId : null} />
     </header>
   );
 }

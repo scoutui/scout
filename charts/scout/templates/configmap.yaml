@@ -16,3 +16,9 @@ data:
   {{- with .Values.auth.requiredGroup }}
   SCOUTUI_REQUIRED_GROUP: {{ . | quote }}
   {{- end }}
+  {{- with .Values.auth.admins }}
+  SCOUTUI_ADMINS: {{ join "," . | quote }}
+  {{- end }}
+  {{- with .Values.auth.adminGroup }}
+  SCOUTUI_ADMIN_GROUP: {{ . | quote }}
+  {{- end }}

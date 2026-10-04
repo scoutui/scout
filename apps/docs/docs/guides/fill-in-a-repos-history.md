@@ -10,7 +10,7 @@ A repo you've just set Scout up on has one scan, so each of its charts shows a s
 Before you start:
 
 - The repo has the CLI installed and a `scout.config.json`. See [Install the CLI](/docs/guides/install) and [Configure a scan](/docs/guides/configure-a-scan).
-- You're signed in to the dashboard, or `SCOUTUI_TOKEN` is set. See [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
+- You're signed in to the dashboard as an Editor or Admin, or `SCOUTUI_TOKEN` is set. See [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
 - The clone has its full history. In a shallow clone, run `git fetch --unshallow` first.
 
 Your checkout can be on any branch, with uncommitted changes: backfill works in a temporary checkout of its own and never touches yours.

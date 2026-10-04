@@ -3,6 +3,8 @@ import { Client, type Pool, type PoolClient } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { requireAdminSettings } from "./access.ts";
+import { isDevAuthEnabled } from "./auth-providers.ts";
 import { trustedProxyHops } from "./rate-limit.ts";
 import { readScanUploadConfig } from "./scan-upload-config.ts";
 
@@ -88,6 +90,7 @@ export async function migrateOnStart(opts: { databaseUrl: string; migrationsDir:
 export async function runStartup(env: Env): Promise<void> {
   readScanUploadConfig(env);
   trustedProxyHops(env);
+  if (!isDevAuthEnabled(env)) requireAdminSettings(env);
   if (!migrateOnStartEnabled(env)) {
     console.log("[startup] migrations: off (MIGRATE_ON_START=false)");
     return;

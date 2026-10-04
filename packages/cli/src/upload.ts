@@ -265,7 +265,21 @@ async function postArtifact(url: string, headers: Record<string, string>, body: 
     return await res.json() as UploadReceipt;
   }
   const text = await res.text().catch(() => "");
+  if (res.status === 403) {
+    const { refusal } = (parseJsonObject(text) ?? {}) as { refusal?: { code?: unknown; message?: unknown } };
+    if (typeof refusal?.code === "string" && typeof refusal.message === "string") throw new UploadRefusedError(refusal.message, refusal.code, url);
+  }
   throw new UploadError(res.status, `Upload failed (${res.status}): ${text || res.statusText}`, parseRetryAfter(res.headers.get("Retry-After")), text);
+}
+
+/** `text` parsed as JSON when it is an object, or undefined. */
+function parseJsonObject(text: string): object | undefined {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return typeof parsed === "object" && parsed !== null ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const DASHBOARD_ERROR = "Couldn't upload the scan: the dashboard returned an error. Try again, or ask your dashboard administrator to check its logs.";

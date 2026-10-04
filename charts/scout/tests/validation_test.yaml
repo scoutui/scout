@@ -1,10 +1,11 @@
-suite: Database configuration validation
+suite: Configuration validation
 set:
   auth.url: https://scout.example.com
   auth.oidc.issuerUrl: https://auth.example.com/application/o/scout/
   auth.oidc.clientId: scout
   auth.sessionSecretRef.name: app-session
   auth.oidc.clientSecretRef.name: oidc-secret
+  auth.admins: [admin@example.com]
 tests:
   - it: asks for a database when none is set
     asserts:
@@ -38,3 +39,20 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: Set database.passwordSecretRef.name to the Secret that holds your database password.
+
+  - it: asks for admin emails or an admin group when neither is set
+    set:
+      postgresql.enabled: true
+      auth.admins: []
+    asserts:
+      - failedTemplate:
+          errorMessage: Set auth.admins to your admins' email addresses, or auth.adminGroup to a group in your sign-in provider.
+
+  - it: accepts an admin group without admin emails
+    set:
+      postgresql.enabled: true
+      auth.admins: []
+      auth.adminGroup: scout-admins
+    asserts:
+      - isKind: { of: Deployment }
+        template: deployment.yaml

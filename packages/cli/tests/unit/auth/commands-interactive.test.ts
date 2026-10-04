@@ -51,7 +51,7 @@ describe("interactive auth login", () => {
     vi.spyOn(browser, "openBrowser").mockReturnValue(true);
     vi.spyOn(client, "pollToken").mockResolvedValue({
       kind: "session",
-      session: { token: `scout_u_${"a".repeat(43)}`, email: "b@e.co" },
+      session: { token: `scout_u_${"a".repeat(43)}`, email: "b@e.co", role: null },
     });
     const prompts = stubAdapter({ text: async () => BASE });
     const code = await runAuth(["login"], {
@@ -70,7 +70,7 @@ describe("interactive auth login", () => {
     await writeFile(join(dir, "scout.config.json"), JSON.stringify({ include: ["src/**"], host: BASE }));
     vi.spyOn(client, "requestDeviceCode").mockResolvedValue(deviceCode);
     vi.spyOn(browser, "openBrowser").mockReturnValue(true);
-    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: `scout_u_${"a".repeat(43)}`, email: "b@e.co" } });
+    vi.spyOn(client, "pollToken").mockResolvedValue({ kind: "session", session: { token: `scout_u_${"a".repeat(43)}`, email: "b@e.co", role: null } });
     const asked: string[] = [];
     const prompts = stubAdapter({
       text: async (o) => {

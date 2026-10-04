@@ -50,6 +50,13 @@
       "when": 1790959806400,
       "tag": "0006_governance_tag_authors",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791074308894,
+      "tag": "0007_roles",
+      "breakpoints": true
     }
   ]
 }

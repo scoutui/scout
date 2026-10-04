@@ -10,6 +10,7 @@ auth:
     clientSecretRef:
       name: dummy-secret
       key: OIDC_CLIENT_SECRET
+  admins: [admin@example.com]
 postgresql:
   enabled: true
   auth:

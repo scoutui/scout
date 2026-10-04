@@ -14,12 +14,18 @@ vi.mock("@/lib/cli-device-codes", () => ({
 vi.mock("@/lib/cli-session-store", () => ({
   consumeApprovedDeviceCode: vi.fn(async () => ({ token: `scout_u_${"a".repeat(43)}`, email: "ben@example.com" })),
 }));
+vi.mock("@/lib/identity", () => ({
+  identify: vi.fn(async (caller: { bearer: string | null }) => caller.bearer === `Bearer scout_u_${"a".repeat(43)}`
+    ? { kind: "person", userId: "user-1", email: "ben@example.com", name: null, role: "editor", roleSource: "people" }
+    : null),
+}));
 
 import { POST as deviceCode } from "@/app/api/auth/cli/device-code/route";
 import { POST as token } from "@/app/api/auth/cli/token/route";
 import { consumeApprovedDeviceCode } from "@/lib/cli-session-store";
 import { createDeviceCode, deleteDeniedDeviceCode, pruneDeviceCodes } from "@/lib/cli-device-codes";
 import { hashToken } from "@/lib/cli-session-tokens";
+import { identify } from "@/lib/identity";
 
 const cliVersion: string = JSON.parse(readFileSync(new URL("../../../../packages/cli/package.json", import.meta.url), "utf8")).version;
 
@@ -79,13 +85,20 @@ describe("device flow", () => {
     const ok = await token(req("http://x/api/auth/cli/token", { device_code: "dc-plain" }));
     expect(ok.status).toBe(200);
     const b = await ok.json();
-    expect(b).toEqual({ access_token: `scout_u_${"a".repeat(43)}`, token_type: "Bearer", email: "ben@example.com" });
+    expect(b).toEqual({ access_token: `scout_u_${"a".repeat(43)}`, token_type: "Bearer", email: "ben@example.com", role: "editor" });
     expect(b).not.toHaveProperty("refresh_token");
     expect(b).not.toHaveProperty("expires_in");
     expect(consumeApprovedDeviceCode).toHaveBeenCalledWith("d1", "user-1");
     state.status = "consumed";
     const again = await token(req("http://x/api/auth/cli/token", { device_code: "dc-plain" }));
     expect((await again.json()).error).toBe("expired_token");
+  });
+  it("still hands over the session, without a role, when the role lookup fails", async () => {
+    state.status = "approved"; state.userId = "user-1";
+    vi.mocked(identify).mockRejectedValueOnce(new Error("database unavailable"));
+    const ok = await token(req("http://x/api/auth/cli/token", { device_code: "dc-plain" }));
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ access_token: `scout_u_${"a".repeat(43)}`, token_type: "Bearer", email: "ben@example.com", role: null });
   });
   it("returns expired_token when another poll consumes the approval first", async () => {
     state.status = "approved"; state.userId = "user-1";

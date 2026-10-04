@@ -9,14 +9,8 @@ import {
   conflictMessage,
   validateGovernanceInput,
 } from "@scoutui/web-shared";
-import { auth } from "@/auth";
+import { requireEditor } from "@/lib/identity";
 import { getStorage } from "@/lib/storage";
-
-async function requireUser(): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "not_authenticated" };
-  return { ok: true, userId: session.user.id };
-}
 
 // Governance changes the derived `deprecated` everywhere, so revalidate the same surfaces tags do, plus /governance.
 function revalidateAll() {
@@ -34,7 +28,7 @@ export type SaveGovernanceResult =
   | { ok: false; error: string; conflict?: GovernanceConflict };
 
 export async function saveGovernance(untrusted: GovernanceInput): Promise<SaveGovernanceResult> {
-  const gate = await requireUser();
+  const gate = await requireEditor();
   if (!gate.ok) return { ok: false, error: gate.error };
   const parsed = GovernanceInputSchema.safeParse(untrusted);
   if (!parsed.success) return { ok: false, error: "Couldn't save the record. Reload the page and try again." };
@@ -64,7 +58,7 @@ export async function saveGovernance(untrusted: GovernanceInput): Promise<SaveGo
 }
 
 export async function deleteGovernance(id: string): Promise<{ ok: boolean; error?: string }> {
-  const gate = await requireUser();
+  const gate = await requireEditor();
   if (!gate.ok) return gate;
   await getStorage().deleteGovernance(id);
   revalidateAll();

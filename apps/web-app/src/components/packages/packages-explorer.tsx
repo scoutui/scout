@@ -22,8 +22,10 @@ import {
  */
 export function PackagesExplorer({
   rows,
+  canEdit,
 }: {
   rows: PackageSummary[];
+  canEdit: boolean;
 }) {
   const [facets, setFacets] = useQueryParamsState<PackageFacetState>(PACKAGE_FACET_PARAMS, paramsToPackageFacets, packageFacetsToParams);
 
@@ -33,7 +35,7 @@ export function PackagesExplorer({
 
   return (
     <div className="panel overflow-hidden">
-      <PackageFilterBar facets={facets} onChange={setFacets} options={options} resultCount={filtered.length} />
+      <PackageFilterBar facets={facets} onChange={setFacets} options={options} resultCount={filtered.length} canEdit={canEdit} />
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-3 py-12 text-center">
           <p className="text-sm text-muted-foreground">No packages match these filters.</p>

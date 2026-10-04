@@ -7,6 +7,8 @@ import { PackageDetailHeader } from "@/components/packages/package-detail-header
 import { PackageConsumersTable } from "@/components/packages/package-consumers-table";
 import { PackageComponentsTable } from "@/components/packages/package-components-table";
 import { MigrationLine } from "@/components/governance/migration-line";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +45,15 @@ export default async function PackageDetailPage({
 
   const decodedName = decodeURIComponent(packageName);
   const packageRecord = governingRecord({ packageName: decodedName, name: null }, governance);
+  const canEdit = can(await identify({ browser: true }), "edit");
 
   return (
     <div className="space-y-6">
-      <PackageDetailHeader detail={detail} allTags={tags} />
+      <PackageDetailHeader detail={detail} allTags={tags} canEdit={canEdit} />
       <SkippedScansNotice fallbacks={page.fallbacks} />
       <MigrationLine
         status={resolveGovernance({ packageName: decodedName, name: null }, governance)}
-        recordId={packageRecord?.id ?? null}
+        recordId={canEdit ? packageRecord?.id ?? null : null}
       />
       <Section title="Used in">
         <PackageConsumersTable cells={detail.cells} packageName={detail.packageName} />

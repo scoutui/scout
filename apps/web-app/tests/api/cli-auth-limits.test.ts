@@ -7,7 +7,9 @@ vi.mock("@/lib/cli-device-codes", () => ({
   deleteDeniedDeviceCode: vi.fn(async () => {}),
   touchPoll: vi.fn(async () => {}),
 }));
-vi.mock("@/lib/auth", () => ({ verifyUploadBearer: vi.fn(async () => ({ kind: "user", userId: "u1" })) }));
+vi.mock("@/lib/identity", () => ({
+  identify: vi.fn(async () => ({ kind: "person", userId: "u1", email: "ana@example.com", name: null, role: "editor", roleSource: "people" })),
+}));
 
 import { POST as deviceCode } from "@/app/api/auth/cli/device-code/route";
 import { POST as token } from "@/app/api/auth/cli/token/route";
