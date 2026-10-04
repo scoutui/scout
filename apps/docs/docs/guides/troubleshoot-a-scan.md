@@ -34,7 +34,7 @@ If the scan stops with `Error: No files match "include"`, your `include` pattern
 
 If your config has no `include`, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder. When there are none, it stops with `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront.` Run the scan from the folder that holds your source files, or check that `exclude` doesn't leave them all out.
 
-The scan always leaves out test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`) and `node_modules`, even when `include` names them. Their usages aren't counted.
+The scan always leaves out test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`) and `node_modules`, even when `include` names them. Their uses aren't counted.
 
 The scan skips code inside a submodule or another clone below the config's folder. If `include` only matches files in one, the scan stops with `Error: "include" in <path> (<patterns>) only matches files in <folder>, which is a separate git repository.` With no `include`, the message is `Error: The only source files here are in <folder>, which is a separate git repository.` Run the scan from that folder instead.
 
