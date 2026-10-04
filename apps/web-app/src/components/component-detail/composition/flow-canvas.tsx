@@ -155,7 +155,8 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         }}
         onBlur={() => hover(null)}
         className={cn(
-          "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          pinned && "focus-visible:ring-offset-2 focus-visible:ring-offset-foreground",
           isFocus ? "cursor-default" : "cursor-pointer",
         )}
       >
