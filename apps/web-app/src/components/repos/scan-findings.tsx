@@ -55,7 +55,7 @@ const KINDS: Record<ScanFindingKind, { label: [string, string]; fix: ReactNode; 
   },
   "package-exports": {
     label: ["use from a package whose exports couldn't be followed", "uses from packages whose exports couldn't be followed"],
-    fix: "Nothing to change in this repo.",
+    fix: "Nothing to change.",
     docs: "reference/diagnostics#package-re-export-codes",
     toFix: false,
   },
