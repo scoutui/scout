@@ -51,8 +51,8 @@ export function presentIdentity(component: PresentableComponent): Presented {
 
 /**
  * The governance key: the presented package and name (export or tag) of a component, so a
- * repository declaration counts under its workspace package. Null when ungovernable: a component
- * with no package (a repository declaration outside any workspace package, a tag resolved to a
+ * repository declaration counts under its package. Null when ungovernable: a component
+ * with no package (a repository declaration with no `owningPackage`, a tag resolved to a
  * repository, an unknown or conflicting tag).
  */
 export function governanceKey(component: PresentableComponent): { packageName: string; name: string } | null {
