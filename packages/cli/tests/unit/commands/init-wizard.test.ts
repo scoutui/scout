@@ -276,12 +276,14 @@ describe("init wizard: run inside a workspace package", () => {
     expect(existsSync(join(root, "scout.config.json"))).toBe(false);
   });
 
-  it("refuses to write over a config already in the package on No", async () => {
+  it("refuses a config already in the package before asking about the repository root", async () => {
     const root = await stageWholeRepo({ files: { "apps/web/scout.config.json": existingConfig } });
-    await expect(runFrom(join(root, "apps/web"), false)).rejects.toMatchObject({
+    const confirm = vi.fn(async () => true);
+    await expect(runInit({ cwd: join(root, "apps/web"), interactive: true, prompts: stubAdapter({ confirm }) })).rejects.toMatchObject({
       message: `${join(root, "apps/web/scout.config.json")} already exists. Edit it, or delete it and run scout init again.`,
       exitCode: 1,
     });
+    expect(confirm).not.toHaveBeenCalled();
     expect(readFileSync(join(root, "apps/web/scout.config.json"), "utf8")).toBe(existingConfig);
     expect(existsSync(join(root, "scout.config.json"))).toBe(false);
   });
@@ -298,7 +300,11 @@ describe("init wizard: run inside a workspace package", () => {
     expect((await runFrom(root, true)).confirms).toEqual([]);
   });
 
-  it("refuses before asking anything when the repository root already has a config, and says to scan from the root", async () => {
+  it.each([
+    ["apps/web", "../.."],
+    ["apps/web/src", "../../.."],
+    ["scripts", ".."],
+  ])("refuses before asking anything in %s when the repository root already has a config, and says to scan from the root", async (cwd, up) => {
     const root = await stageWholeRepo({ files: { "scout.config.json": existingConfig } });
     const asked: string[] = [];
     const prompts = stubAdapter({
@@ -314,12 +320,12 @@ describe("init wizard: run inside a workspace package", () => {
         return o.initialValue ?? "";
       },
     });
-    await expect(runInit({ cwd: join(root, "apps/web"), interactive: true, prompts })).rejects.toMatchObject({
-      message: "This repository already has a config: ../../scout.config.json. Run scout scan in ../.. to use it.",
+    await expect(runInit({ cwd: join(root, cwd), interactive: true, prompts })).rejects.toMatchObject({
+      message: `This repository already has a config: ${up}/scout.config.json. Run scout scan in ${up} to use it.`,
       exitCode: 1,
     });
     expect(asked).toEqual([]);
-    expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
+    expect(existsSync(join(root, cwd, "scout.config.json"))).toBe(false);
     expect(readFileSync(join(root, "scout.config.json"), "utf8")).toBe(existingConfig);
   });
 
