@@ -49,6 +49,8 @@ Check what else a pattern catches: before you save, the form shows how many scan
 @acme/ui
 ```
 
+A pattern also matches the packages your repos define. A component defined in a repo counts under its own package: its workspace package, or the repo's [root package](/docs/reference/artifact#root-package). So `@acme/*` also matches an app named `@acme/web`, and the app's own components count under `acme-ui`. If the form names one of your apps, or counts more packages than the library has, list the library's packages by their exact names instead.
+
 A package that matches two tags counts under both. See [Why shares can overlap](/docs/explanation/dashboard/reading-the-numbers#why-shares-can-overlap).
 
 ## Add a package from its page
