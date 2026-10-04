@@ -10,3 +10,8 @@ export type PropUsage =
   | { name: string; tier: "written"; valueSet: (string | number | boolean)[] }
   | { name: string; tier: "reference"; ref: string }
   | { name: string; tier: "dynamic" };
+
+/** A prop named `on` plus a capital letter, such as `onClick`. */
+export function isHandlerName(name: string): boolean {
+  return /^on[A-Z]/.test(name);
+}

@@ -1,5 +1,5 @@
 import type { AttributeNode, DirectiveNode, ElementNode } from "@vue/compiler-core";
-import type { PropUsage } from "@scoutui/reference-graph";
+import { isHandlerName, type PropUsage } from "@scoutui/reference-graph";
 import { classifyExprText } from "./classify-expr-text.js";
 import { VueNode } from "./parse-sfc.js";
 
@@ -32,7 +32,7 @@ export function readAttrs(el: ElementNode): { props: PropUsage[]; events: string
     if (/^[:.]|^v-bind:/.test(attr.name)) {
       const name = attr.name.replace(/^[:.]|^v-bind:/, "");
       const usage = classifyBindExpr(name, attr.value.trim());
-      props.push(/^on[A-Z]/.test(name) && usage.tier !== "written" ? { name, tier: "dynamic" } : usage);
+      props.push(isHandlerName(name) && usage.tier !== "written" ? { name, tier: "dynamic" } : usage);
       continue;
     }
     props.push({ name: attr.name, tier: "written", value: attr.value === "" ? true : attr.value });

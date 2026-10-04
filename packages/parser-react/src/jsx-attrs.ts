@@ -1,6 +1,6 @@
 import type { JSXAttribute, JSXOpeningElement } from "oxc-parser";
 import type { Expression } from "@oxc-project/types";
-import type { PropUsage } from "@scoutui/reference-graph";
+import { isHandlerName, type PropUsage } from "@scoutui/reference-graph";
 import { unwrapTsNoise } from "./infer-value.js";
 
 /** Dotted static member path, or null if any segment is computed/dynamic. */
@@ -81,7 +81,7 @@ export function readJsxAttrs(opening: JSXOpeningElement): PropUsage[] {
     const name = nameNode.type === "JSXIdentifier" ? nameNode.name : "";
     if (!name) continue;
     const usage = readAttrValue(name, attr.value);
-    if (name.startsWith("on") && name.length > 2 && /[A-Z]/.test(name.charAt(2))) {
+    if (isHandlerName(name)) {
       props.push(usage?.tier === "written" ? usage : { name, tier: "dynamic" });
       continue;
     }
