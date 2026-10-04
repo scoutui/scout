@@ -82,7 +82,7 @@ const TYPE_WORDS: Record<string, string> = { array: "a list", string: "a string"
 /** One sentence naming each field the schema rejected and what's wrong with it, in the order the schema reports them. */
 function invalidValuesMessage(configPath: string, errors: readonly ErrorObject[]): string {
   const problems = [...new Set(errors.map((e, i) => fieldProblem(e, i === 0 ? configPath : undefined)))];
-  const sentence = problems.length === 1 ? problems[0] : `${problems.slice(0, -1).join(", ")}, and ${problems.at(-1)}`;
+  const sentence = problems.length > 1 ? `${problems.slice(0, -1).join(", ")}, and ${problems.at(-1)}` : (problems[0] ?? "");
   return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}. Fix ${problems.length === 1 ? "it" : "them"} and try again.`;
 }
 
