@@ -52,7 +52,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "@workspace-exports/consumer",
       "version": null,
@@ -94,7 +94,7 @@
       },
       "definition": {
         "line": 2,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "@example/icons",
       "version": null,
@@ -110,7 +110,7 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "1460e732fb34aee5",
+      "occurrenceId": "c6e681df78ca1437",
       "resolution": {
         "status": "resolved",
         "componentId": "9948bbe70d0f421e"
@@ -118,7 +118,7 @@
       "filePath": "packages/consumer/src/App.tsx",
       "usedIn": "@workspace-exports/consumer",
       "line": 4,
-      "column": 41,
+      "column": 42,
       "credit": {
         "kind": "render"
       },

@@ -7,6 +7,7 @@ import {
   type EngineOccurrence,
   type FileGraph,
   type Graph,
+  type GraphHostHooks,
 } from "@scoutui/reference-graph";
 import type { DiagnosticCollector, ResolveImport } from "@scoutui/reference-graph";
 import { emitVueTemplate, type EmitVueTemplateOpts } from "../src/emit-template.js";
@@ -30,6 +31,8 @@ export type RunVueScanOpts = {
    *  normalise absolute moduleResolver returns into repo-relative graph keys.
    *  Required for cross-file fixtures that write to a tmp dir. */
   repoRoot?: string;
+  /** Optional first-party check, forwarded to the graph build as scan.ts does. */
+  firstParty?: GraphHostHooks["firstParty"];
   /** Additional Vue SFC files to add to the graph before resolve, as scan.ts
    *  parses every .vue file in the workspace. A relative import resolves to a
    *  local workspace SFC only when the target is in the graph. */
@@ -109,7 +112,7 @@ export function runVueScan(opts: RunVueScanOpts): RunVueScanResult {
   const resolveOpts: ResolveOpts = {};
   if (opts.collector !== undefined) resolveOpts.collector = opts.collector;
 
-  const graph = gb.build();
+  const graph = gb.build(opts.firstParty !== undefined ? { firstParty: opts.firstParty } : undefined);
   const { occurrences } = resolveGraph(graph, resolveOpts);
   const fileGraph = graph.files.get(file);
   if (!fileGraph) {

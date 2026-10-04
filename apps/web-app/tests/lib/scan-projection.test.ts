@@ -377,15 +377,15 @@ describe.skipIf(!databaseUrl)("atomic scan publication", { timeout: 30_000 }, ()
       const calls = async (componentId: string) => (await driver.getComponentUsage("react-shapes", componentId))
         .map(({ filePath, line, column, owner }) => ({ filePath, line, column, owner }));
       expect(await calls(id("src/helper-fanout-data-factory/Leaf.tsx", "Leaf"))).toEqual([
-        { filePath: "src/helper-fanout-data-factory/config.tsx", line: 6, column: 9, owner: { componentId: id("src/helper-fanout-data-factory/ViewA.tsx", "ViewA"), displayName: "ViewA" } },
-        { filePath: "src/helper-fanout-data-factory/config.tsx", line: 6, column: 9, owner: { componentId: id("src/helper-fanout-data-factory/ViewB.tsx", "ViewB"), displayName: "ViewB" } },
+        { filePath: "src/helper-fanout-data-factory/config.tsx", line: 6, column: 10, owner: { componentId: id("src/helper-fanout-data-factory/ViewA.tsx", "ViewA"), displayName: "ViewA" } },
+        { filePath: "src/helper-fanout-data-factory/config.tsx", line: 6, column: 10, owner: { componentId: id("src/helper-fanout-data-factory/ViewB.tsx", "ViewB"), displayName: "ViewB" } },
       ]);
       expect(await calls(id("src/helper-orphan-no-caller/Leaf.tsx", "Leaf"))).toEqual([
-        { filePath: "src/helper-orphan-no-caller/unused.tsx", line: 4, column: 47, owner: undefined },
+        { filePath: "src/helper-orphan-no-caller/unused.tsx", line: 4, column: 48, owner: undefined },
       ]);
       expect(await calls(id("src/helper-multi-caller-mixed/Leaf.tsx", "Leaf"))).toEqual([
-        { filePath: "src/helper-multi-caller-mixed/build.tsx", line: 4, column: 43, owner: { componentId: id("src/helper-multi-caller-mixed/Views.tsx", "ViewA"), displayName: "ViewA" } },
-        { filePath: "src/helper-multi-caller-mixed/build.tsx", line: 4, column: 43, owner: undefined },
+        { filePath: "src/helper-multi-caller-mixed/build.tsx", line: 4, column: 44, owner: { componentId: id("src/helper-multi-caller-mixed/Views.tsx", "ViewA"), displayName: "ViewA" } },
+        { filePath: "src/helper-multi-caller-mixed/build.tsx", line: 4, column: 44, owner: undefined },
       ]);
     });
   });

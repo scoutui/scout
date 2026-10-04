@@ -48,7 +48,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "subpath-entries",
       "version": null,
@@ -190,14 +190,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "7b60bbc68c93a061",
+      "occurrenceId": "3b420e484f82eeeb",
       "resolution": {
         "status": "resolved",
         "componentId": "d95f162618f064c6"
       },
       "filePath": "src/App.tsx",
       "line": 7,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -213,14 +213,14 @@
       "ownerComponentId": "8d631234fd836946"
     },
     {
-      "occurrenceId": "8401a8fd337e69e3",
+      "occurrenceId": "5026b1b86c93ad85",
       "resolution": {
         "status": "resolved",
         "componentId": "01d1fe668b54977c"
       },
       "filePath": "src/App.tsx",
       "line": 8,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -241,14 +241,14 @@
       "ownerComponentId": "8d631234fd836946"
     },
     {
-      "occurrenceId": "a68040e813c81ca1",
+      "occurrenceId": "bcab9ec6f1570d68",
       "resolution": {
         "status": "resolved",
         "componentId": "adf6ac7a06b4c654"
       },
       "filePath": "src/App.tsx",
       "line": 9,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -273,14 +273,14 @@
       "ownerComponentId": "8d631234fd836946"
     },
     {
-      "occurrenceId": "6a5e6061b6f2ca4b",
+      "occurrenceId": "caa95ce7a55e1fa4",
       "resolution": {
         "status": "resolved",
         "componentId": "adf6ac7a06b4c654"
       },
       "filePath": "src/App.tsx",
       "line": 12,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },

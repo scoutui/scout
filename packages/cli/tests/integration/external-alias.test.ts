@@ -26,7 +26,7 @@ describe("integration: external-alias fixture", () => {
       })),
     ).toEqual([
       {
-        at: "src/App.tsx:6:9",
+        at: "src/App.tsx:6:10",
         component: { kind: "package-export", packageName: "@example/react-ds", publicEntry: "", exportName: "Button" },
         owner: { kind: "repository-declaration", repoId: "external-alias", filePath: "src/App.tsx", exportName: "App" },
         writtenName: "AliasedButton",

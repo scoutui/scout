@@ -525,7 +525,7 @@ describe("a nested declaration that shadows an import", () => {
     expect(ids(occs)).toEqual(["local:src/App.tsx:Item@3", "local:src/App.tsx:Item@3"]);
     expect(occs.map((o) => o.viaChain)).toEqual([[{ kind: "local-component" }], [{ kind: "local-component" }]]);
     expect(occs.map((o) => o.definition)).toEqual([
-      { line: 3, column: 40 },
+      { line: 3, column: 41 },
       undefined,
     ]);
   });
@@ -643,7 +643,7 @@ describe("a module-scope declaration sharing its name with a type-only import", 
     );
     expect(ids(occs)).toEqual(["local:src/App.tsx:Foo@3"]);
     expect(occs.map((o) => o.viaChain)).toEqual([[{ kind: "local-component" }]]);
-    expect(occs.map((o) => o.definition)).toEqual([{ line: 2, column: 6 }]);
+    expect(occs.map((o) => o.definition)).toEqual([{ line: 2, column: 7 }]);
   });
 });
 
@@ -980,7 +980,7 @@ export const App = () => (
     );
     expect(r.occurrences.map((o) => [(o.rawComponentId as { export?: string }).export, o.definition])).toEqual([
       ["CardHeader", undefined],
-      ["Card.Inline", { line: 4, column: 0 }],
+      ["Card.Inline", { line: 4, column: 1 }],
     ]);
   });
 

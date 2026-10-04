@@ -212,10 +212,10 @@ The scan wrote `scout-scan.json` next to the config. It has four top-level keys.
 
 ```json
 {
-  "occurrenceId": "c23610a099090c05",
+  "occurrenceId": "686831181daeddbc",
   "resolution": { "status": "resolved", "componentId": "143bee555932e50c" },
   "filePath": "src/components/ProductCard.tsx",
-  "line": 7, "column": 6,
+  "line": 7, "column": 7,
   "credit": { "kind": "render" },
   "trace": [
     { "kind": "import", "specifier": "@acme/ui", "name": "Button" }

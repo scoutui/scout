@@ -26,7 +26,7 @@ describe("integration: star-reexport-barrel fixture", () => {
       })),
     ).toEqual([
       {
-        at: "packages/consumer/src/App.tsx:3:25",
+        at: "packages/consumer/src/App.tsx:3:26",
         component: {
           kind: "repository-declaration",
           repoId: "star-reexport-barrel",

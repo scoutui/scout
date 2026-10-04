@@ -159,7 +159,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
   const registry = buildComponentRegistry(graph, taggedDeclarations(graph, tagEvaluations));
   const helperIndex = buildHelperCallers(graph, excludeHostElementNames(registry, graph));
 
-  // The admission rule: a local react-component identity pinned to a
+  // The admission rule: a local React or Vue component identity pinned to a
   // first-party path outside the graph (an unparsed first-party file, such as
   // a lazy `import("./PhoneInput")` whose target file wasn't walked) is
   // rejected when that path has an extension that is provably not code
@@ -172,7 +172,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
   const CODE_EXT = /\.(?:[cm]?[jt]sx?|vue)$/i;
   const HAS_EXT = /\.[^./\\]+$/;
   const admit = (id: ComponentId): boolean => {
-    if (id.kind !== "react-component" || id.source.type !== "local") return true;
+    if (id.kind === "custom-element" || id.source.type !== "local") return true;
     const { filePath } = id.source;
     if (graph.files.has(filePath)) return true;
     return !HAS_EXT.test(filePath) || CODE_EXT.test(filePath);

@@ -10,7 +10,7 @@ describe("definition on a compound member with no declaration of its own", () =>
   it("stamps the holder's declaration position when rendered in the holder's file", () => {
     const occs = scan({ "src/ns.tsx": `${NS}export const Here = () => <NS.Inline />;\n` }, relResolver("/repo"), "/repo");
     const occ = occs.find((o) => (o.rawComponentId as { export?: string }).export === "NS.Inline");
-    expect(occ?.definition).toEqual({ line: 1, column: 13 });
+    expect(occ?.definition).toEqual({ line: 1, column: 14 });
   });
 
   it("stamps the same position when rendered from another file", () => {
@@ -24,7 +24,7 @@ describe("definition on a compound member with no declaration of its own", () =>
     );
     const occ = occs.find((o) => (o.rawComponentId as { export?: string }).export === "NS.Inline");
     expect(occ?.filePath).toBe("src/App.tsx");
-    expect(occ?.definition).toEqual({ line: 1, column: 13 });
+    expect(occ?.definition).toEqual({ line: 1, column: 14 });
   });
 
   it("stamps the same position when rendered through a workspace-sibling import", () => {
@@ -43,7 +43,7 @@ describe("definition on a compound member with no declaration of its own", () =>
       source: { type: "local", filePath: "packages/ui/src/index.tsx" },
     });
     expect(occ?.filePath).toBe("apps/web/src/App.tsx");
-    expect(occ?.definition).toEqual({ line: 1, column: 13 });
+    expect(occ?.definition).toEqual({ line: 1, column: 14 });
   });
 
   it("takes no definition from the holder when the member resolves to its own declaration in the holder's file", () => {
