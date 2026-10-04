@@ -62,38 +62,47 @@ const LAYOUTS = [
 //     surfaces as an `auto-import-stale-entry` diagnostic (never an identity).
 //   - MysteryWidget has no script import, no registry entry, and no tag
 //     registration: it surfaces as an unresolved `unbound-name` occurrence.
+/** Writes the Nuxt app described above into `dir`, with the generated declaration `files`. */
+async function writeNuxtApp(dir: string, files: Record<string, string>): Promise<void> {
+  await writeFile(
+    join(dir, "package.json"),
+    JSON.stringify({ name: "fixture-nuxt-app", private: true, dependencies: { nuxt: "^4.0.0" } }),
+  );
+  await writeFile(
+    join(dir, "scout.config.json"),
+    JSON.stringify({ include: ["app/**/*.vue"], repoId: "fixture/nuxt-app" }),
+  );
+  await mkdir(join(dir, "app", "components"), { recursive: true });
+  await mkdir(join(dir, "app", "pages"), { recursive: true });
+  await mkdir(join(dir, ".nuxt", "types"), { recursive: true });
+  await writeFile(
+    join(dir, "app", "components", "FooCard.vue"),
+    "<template><div>foo</div></template>\n",
+  );
+  await writeFile(
+    join(dir, "app", "pages", "index.vue"),
+    "<template><main><FooCard title=\"hi\" /><MysteryWidget /></main></template>\n",
+  );
+  for (const [relPath, source] of Object.entries(files)) {
+    await writeFile(join(dir, relPath), source);
+  }
+}
+
+async function commitAll(dir: string): Promise<void> {
+  await exec("git", ["init", "-q"], { cwd: dir });
+  await exec("git", ["config", "user.email", "t@example.com"], { cwd: dir });
+  await exec("git", ["config", "user.name", "T"], { cwd: dir });
+  await exec("git", ["add", "-A"], { cwd: dir });
+  await exec("git", ["commit", "-q", "-m", "init"], { cwd: dir });
+}
+
 describe.each(LAYOUTS)("nuxt auto-import integration: $name", ({ files }) => {
   let stagingDir = "";
 
   beforeAll(async () => {
     stagingDir = await mkdtemp(join(tmpdir(), "cc-nuxt-auto-"));
-    await writeFile(
-      join(stagingDir, "package.json"),
-      JSON.stringify({ name: "fixture-nuxt-app", private: true, dependencies: { nuxt: "^4.0.0" } }),
-    );
-    await writeFile(
-      join(stagingDir, "scout.config.json"),
-      JSON.stringify({ include: ["app/**/*.vue"], repoId: "fixture/nuxt-app" }),
-    );
-    await mkdir(join(stagingDir, "app", "components"), { recursive: true });
-    await mkdir(join(stagingDir, "app", "pages"), { recursive: true });
-    await mkdir(join(stagingDir, ".nuxt", "types"), { recursive: true });
-    await writeFile(
-      join(stagingDir, "app", "components", "FooCard.vue"),
-      "<template><div>foo</div></template>\n",
-    );
-    await writeFile(
-      join(stagingDir, "app", "pages", "index.vue"),
-      "<template><main><FooCard title=\"hi\" /><MysteryWidget /></main></template>\n",
-    );
-    for (const [relPath, source] of Object.entries(files)) {
-      await writeFile(join(stagingDir, relPath), source);
-    }
-    await exec("git", ["init", "-q"], { cwd: stagingDir });
-    await exec("git", ["config", "user.email", "t@example.com"], { cwd: stagingDir });
-    await exec("git", ["config", "user.name", "T"], { cwd: stagingDir });
-    await exec("git", ["add", "-A"], { cwd: stagingDir });
-    await exec("git", ["commit", "-q", "-m", "init"], { cwd: stagingDir });
+    await writeNuxtApp(stagingDir, files);
+    await commitAll(stagingDir);
   }, 30_000);
 
   afterAll(async () => {
@@ -171,3 +180,19 @@ describe("nuxt auto-import integration: missing declarations", () => {
     }
   }, 30_000);
 });
+
+it("names a stale entry's target from the repository root when the app is in a folder below it", async () => {
+  const root = await mkdtemp(join(tmpdir(), "cc-nuxt-below-root-"));
+  try {
+    await mkdir(join(root, "web"));
+    await writeNuxtApp(join(root, "web"), LAYOUTS[0].files);
+    await commitAll(root);
+    await exec("node", [cli, "scan", "--dry-run", "--quiet"], { cwd: join(root, "web") });
+    const out = assertValidArtifact(JSON.parse(await readFile(join(root, "web", "scout-scan.json"), "utf8")));
+    expect(out.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "auto-import-stale-entry", filePath: "web/.nuxt/components.d.ts", target: "web/app/components/GhostCard.vue" }),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 30_000);
