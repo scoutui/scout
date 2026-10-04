@@ -121,7 +121,7 @@ describe("deriveChartResults", () => {
     });
 
     const repoView = results.previews[repoDashboard.id]?.view;
-    expect(canonical(repoView)).not.toBe(canonical(renderDashboard(repoDashboard.config, digests, tags, governance)));
+    expect(canonical(repoView)).not.toBe(canonical(renderDashboard(repoDashboard.config, digests, tags, asOf, governance)));
     expect(repoView).toEqual({
       kind: "snapshot",
       points: [{ cohortKey: "package:@sample/core", label: "@sample/core", color: "", value: 3, componentCount: 3, role: "deprecated" }],

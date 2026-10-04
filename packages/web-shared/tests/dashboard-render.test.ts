@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
-import type { GovernanceRecord, Tag } from "../src/dto.js";
+import type { Component } from "@scoutui/scan-format";
+import type { DashboardConfig, GovernanceRecord, Tag } from "../src/dto.js";
 import { renderDashboard } from "../src/dashboard-render.js";
 import { artifact, component, packageExport, received, resolvedAt } from "./helpers/builders.js";
 
 const webTag: Tag = { id: "web", value: "web", category: "library", color: "violet", rule: { glob: ["@x/web-*"], exact: [] } };
 const webButton = component(packageExport("@x/web-webc", "WebButton"));
+const asOf = "2026-01-02T00:00:00Z";
 
 describe("renderDashboard", () => {
   const arts = [received(artifact({
@@ -17,19 +19,19 @@ describe("renderDashboard", () => {
   const digests = arts;
 
   it("returns a snapshot for a snapshot chartType (bars)", () => {
-    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "bars", metric: "count" }, digests, [webTag]);
+    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "bars", metric: "count" }, digests, [webTag], asOf);
     expect(view.kind).toBe("snapshot");
     if (view.kind === "snapshot") expect(view.points[0]!.value).toBe(10);
   });
 
   it("renders stacked-share as a series, forcing the share metric", () => {
-    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "stacked-share", metric: "count" }, digests, [webTag]);
+    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "stacked-share", metric: "count" }, digests, [webTag], asOf);
     expect(view.kind).toBe("series");
     if (view.kind === "series") expect(view.series[0]!.points[0]!.value).toBe(1); // 10/10 → share, not count
   });
 
   it("renders table as snapshot + series joined", () => {
-    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "table", metric: "count" }, digests, [webTag]);
+    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "table", metric: "count" }, digests, [webTag], asOf);
     expect(view.kind).toBe("table");
     if (view.kind === "table") {
       expect(view.points[0]!.value).toBe(10);
@@ -38,7 +40,7 @@ describe("renderDashboard", () => {
   });
 
   it("returns a series for trend chartType", () => {
-    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "trend", metric: "count" }, digests, [webTag]);
+    const view = renderDashboard({ scope: { kind: "all" }, cohorts: [{ kind: "tag", tagId: "web" }], chartType: "trend", metric: "count" }, digests, [webTag], asOf);
     expect(view.kind).toBe("series");
     if (view.kind === "series") expect(view.series[0]!.points[0]!.value).toBe(10);
   });
@@ -51,9 +53,54 @@ describe("renderDashboard", () => {
       { scope: { kind: "all" }, cohorts: [{ kind: "package", packageName: "@x/web-webc", deprecatedOnly: true }], chartType: "bars", metric: "count" },
       digests,
       [webTag],
+      asOf,
       gov,
     );
     expect(view.kind).toBe("snapshot");
     if (view.kind === "snapshot") expect(view.points[0]!.value).toBe(10);
+  });
+});
+
+/** One scan's digest in which each component has the given number of occurrences. */
+function digest(repoId: string, scannedAt: string, uses: Array<[Component, number]>) {
+  return received(artifact({
+    repoId,
+    scanId: `${repoId}:${scannedAt}`,
+    scannedAt,
+    components: uses.map(([c]) => c),
+    occurrences: uses.flatMap(([c, count]) => Array.from({ length: count }, (_, i) => resolvedAt(c, "src/app.tsx", i + 1))),
+  }));
+}
+
+describe("renderDashboard: a table's change", () => {
+  const a = component(packageExport("@x/a", "A"));
+  const b = component(packageExport("@x/b", "B"));
+  // The 30 days up to 1 March start on 30 January. The latest scan is r2's rescan, which changed nothing.
+  const scans = [
+    digest("r1", "2026-01-01T00:00:00Z", [[a, 10], [b, 10]]),
+    digest("r1", "2026-02-20T00:00:00Z", [[a, 6], [b, 16]]),
+    digest("r2", "2026-01-01T00:00:00Z", [[a, 5], [b, 5]]),
+    digest("r2", "2026-02-10T00:00:00Z", [[a, 3], [b, 7]]),
+    digest("r3", "2026-02-24T00:00:00Z", [[b, 10]]),
+    digest("r2", "2026-02-25T00:00:00Z", [[a, 3], [b, 7]]),
+  ];
+  const change = (scope: DashboardConfig["scope"], metric: DashboardConfig["metric"]) => {
+    const inScope = scope.kind === "repo" ? scans.filter((s) => s.meta.repo.id === scope.repoId) : scans;
+    const config: DashboardConfig = { scope, cohorts: [{ kind: "package", packageName: "@x/a" }, { kind: "package", packageName: "@x/b" }], chartType: "table", metric };
+    const view = renderDashboard(config, inScope, [], "2026-03-01T00:00:00Z");
+    return view.kind === "table" ? view.change : null;
+  };
+
+  it.each([
+    ["across all repos, adds up each repo's change over the 30 days", { kind: "all" } as const, "count", { "package:@x/a": -6, "package:@x/b": 8 }],
+    ["in one repo, is the change since its previous scan", { kind: "repo", repoId: "r1" } as const, "count", { "package:@x/a": -4, "package:@x/b": 6 }],
+  ] as const)("%s", (_, scope, metric, expected) => {
+    expect(change(scope, metric)).toEqual(expected);
+  });
+
+  it("across all repos, compares shares of the same repos' scans, a repo that joined counting from its first scan", () => {
+    const shares = change({ kind: "all" }, "share");
+    expect(shares?.["package:@x/a"]).toBeCloseTo(9 / 42 - 15 / 40);
+    expect(shares?.["package:@x/b"]).toBeCloseTo(33 / 42 - 25 / 40);
   });
 });

@@ -20,7 +20,7 @@ Two places read more than the latest scan:
 - A repo page opened on an older scan shows that scan.
 - Charts over time, including the charts on a repo page's **Adoption** tab, read the whole history. Each point in time uses every repo's most recent ready scan as of that moment.
 
-A repo joins a chart over time at its first scan. A line starts at the first scan of a repo that uses it, and when another repo that uses it is scanned for the first time, the line can jump though no code changed. A small ring marks that point, and the tooltip names the repo, for example **3 of 4 repos · storefront added**. When the latest change comes from a repo's first scan, a table chart reads **repo added** instead of the change.
+A repo joins a chart over time at its first scan. A line starts at the first scan of a repo that uses it, and when another repo that uses it is scanned for the first time, the line can jump though no code changed. A small ring marks that point, and the tooltip names the repo, for example **3 of 4 repos · storefront added**.
 
 ## Components, uses and files
 
@@ -93,6 +93,8 @@ Records that name the same replacement, such as one record for each part of a co
 Each migration and retirement row shows **N left**, the deprecated side's uses in each repo's latest scan, and how that number changed: **6 fewer**, **2 more** or **no change**. Fewer is progress on every row. Uses of the replacement don't move it, so deleting code that uses the new component never reads as a step back.
 
 On the **charts** page, the change covers the last 30 days, and each repo is compared with itself. A repo scanned for the first time in those 30 days counts from that first scan, so joining isn't a change, and the row says it joined, for example **3 fewer · 1 repo added**. On a repo's **Adoption** tab, the change is since that repo's previous scan.
+
+A table chart's **Change** column counts the same way: over the last 30 days for a chart of all repos, and since the previous scan for a chart of one repo. With **% of uses**, the change compares the same repos at both ends, so a repo joining doesn't move it. A series with nothing to compare yet reads **—**.
 
 A record is complete when the deprecated side has no uses in any latest scan within the scope. So a migration can be complete on one repo's **Adoption** tab and still in progress on the **charts** page. A repo that never used `LegacyButton` has no row for it on its **Adoption** tab.
 
