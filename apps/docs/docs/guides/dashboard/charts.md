@@ -72,7 +72,7 @@ On a chart's page, except for a **Stacked** chart, the **Uses** and **Share** to
 
 To change the chart itself, press **Edit**. The chart builder opens with the chart's name, repos, chart type, metric and series. Make your changes and press **Save chart** to update the same chart, or **Cancel** to leave without saving.
 
-To delete a chart, open it, press **Delete**, then **Delete chart**. Deleting can't be undone, and any signed-in user can delete any saved chart.
+To delete a chart, open it, press **Delete**, then **Delete chart**. Deleting can't be undone, and any Editor or Admin can delete any saved chart.
 
 ### Fix a chart with missing components
 

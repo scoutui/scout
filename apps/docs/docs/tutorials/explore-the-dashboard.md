@@ -11,7 +11,7 @@ In this tutorial we'll upload a scan to the dashboard and walk through it. We'll
 
 - **The repo from [Scan your first repo](/docs/tutorials/scan-your-first-repo)**, with its dependencies and the CLI installed and its `scout.config.json` in place.
 - **That repo checked out on its default branch**, up to date with a remote we can push to, and with no uncommitted changes besides what the first tutorial added.
-- **A running dashboard that we can sign in to.** [Run the dashboard locally](/docs/guides/run-the-dashboard-locally) sets one up at `http://localhost:3000` and signs us in to it in the browser.
+- **A running dashboard that we can sign in to as an Editor or Admin.** [Run the dashboard locally](/docs/guides/run-the-dashboard-locally) sets one up at `http://localhost:3000` and signs us in to it in the browser.
 - **A browser window at least 1024 pixels wide**, such as a laptop screen at full width. On a narrower window, the component page in step 4 folds its filters away above the list of files.
 
 We'll keep following the `storefront` example from that tutorial. Its scan found:
@@ -42,7 +42,7 @@ Opened your browser…
 Our code will be different. If the browser doesn't open, we open the link ourselves with our code on the end, such as `http://localhost:3000/login/device?code=HJKM-4TQX`. The browser shows an approval page with our email under **Signed in as** and the same code under **Device code**. We check that the code matches and press **Approve**. The terminal finishes with:
 
 ```
-✓ Signed in as dev@acme.test to http://localhost:3000.
+✓ Signed in as dev@acme.test to http://localhost:3000 as an Admin.
 ```
 
 Now we scan and upload. `scan` takes only a commit that's on the remote's default branch, with the repo's dependencies installed and no uncommitted changes apart from the config and the scan file. In the first tutorial we added the CLI to `package.json`, so we commit that and push it.

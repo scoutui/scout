@@ -55,7 +55,7 @@ Output is styled when all of these hold:
 - `CI` is unset, empty, `false` or `0`.
 - `NO_COLOR` is unset or empty.
 
-Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `auth login` still ends with `✓ Signed in as <email> to <host>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
+Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `auth login` still ends with `✓ Signed in as <email> to <host> as <role>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
 
 ## New versions
 
@@ -131,7 +131,7 @@ Before it scans, `scan` checks these, in this order, and stops at the first that
 | On a detached HEAD, the commit isn't on the tracked branch | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>. Check out <branch> and try again.` |
 | A tracked file has uncommitted changes, or a file the scan reads isn't committed. `--debug` lists the files. | `Error: Couldn't upload the scan: you have uncommitted changes. Commit or stash them and try again.` |
 | No upload host is set, or you aren't signed in to it | `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.` or `Error: Not signed in to <host>.`, followed by what to run. See [Host resolution](#host-resolution). |
-| The dashboard refuses the scan: this CLI's version, the repository name, or a `--rescan` from an older CLI | The dashboard's own line, such as `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI (<version>). Upgrade the CLI to <version> or newer, or run npx @scoutui/cli@<version> scan --rescan.` |
+| The dashboard refuses the scan: this CLI's version, the repository name, a `--rescan` from an older CLI, or your role is Viewer | The dashboard's own line, such as `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI (<version>). Upgrade the CLI to <version> or newer, or run npx @scoutui/cli@<version> scan --rescan.` A Viewer gets `Error: You can view this dashboard but not upload to it. Ask an admin to make you an Editor.` |
 | A package in `dependencies` or `devDependencies` isn't installed | `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed. Install your dependencies and try again.` `<package.json>` is the file that lists it, relative to the top of the git repository, as in the scan's own warning. |
 | The scanned folder is a Nuxt app that hasn't been prepared | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.` |
 
@@ -316,13 +316,15 @@ scout auth <login|logout|status> [--host <url>]
 
 | Subcommand | Behavior | Exit code |
 | --- | --- | --- |
-| `login` | Signs in with a code you approve in the browser, saves the session, and prints `✓ Signed in as <email> to <host>.` It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
-| `status` | Checks the session with the dashboard and prints `Signed in as <email> to <host> (session saved in the system keychain).` When the session is saved in `hosts.json`, the line ends with that file's path instead, for example `(session saved in ~/.config/scoutui/hosts.json).` | `0` signed in. `1` not signed in to that host, the session is no longer valid, or the dashboard can't check it. |
+| `login` | Signs in with a code you approve in the browser, saves the session, and prints `✓ Signed in as <email> to <host> as <role>.` It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host> as <role>.` instead. The first host you sign in to becomes your default host. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
+| `status` | Checks the session with the dashboard and prints `Signed in as <email> to <host> as <role> (session saved in the system keychain).` When the session is saved in `hosts.json`, the line ends with that file's path instead, for example `(session saved in ~/.config/scoutui/hosts.json).` | `0` signed in. `1` not signed in to that host, the session is no longer valid, or the dashboard can't check it. |
 | `logout` | Ends the session on the dashboard, then deletes it from this computer. If that host was your default, you have no default until you next sign in. | `0`, including when you weren't signed in. `1` the dashboard couldn't end the session, so it stays saved. |
 
 | Flag | Value | Behavior |
 | --- | --- | --- |
 | `--host <url>` | URL | Host to act on. Without it, see [Host resolution](#host-resolution). |
+
+`<role>` is your role on that dashboard: `a Viewer`, `an Editor` or `an Admin`. With a dashboard that doesn't send a role, the line has no `as <role>`.
 
 For the full sign-in steps, see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
 

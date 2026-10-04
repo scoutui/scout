@@ -66,6 +66,7 @@ auth:
     clientId: "scout"
     clientSecretRef:
       name: scout-secret
+  admins: ["you@example.com"]
 
 postgresql:
   enabled: true
@@ -76,6 +77,8 @@ postgresql:
 Adjust the `ingress` block to your ingress controller and certificate. Whichever controller you use, it must accept request bodies of at least 42 MiB and wait at least 240 seconds for a response, or large uploads fail. The annotations above set that for ingress-nginx.
 
 Use the address people reach the dashboard on for `auth.url`.
+
+Set `auth.admins` to your admins' email addresses, or `auth.adminGroup` to a group in your sign-in provider: see [Name the first admins](/docs/guides/manage-people-and-roles#name-the-first-admins).
 
 `postgresql.enabled: true` runs a bundled Postgres: a single pod with no backups or failover, which keeps its data on a 2Gi volume. For production, consider [your own Postgres](#use-your-own-postgres) instead.
 
@@ -119,7 +122,7 @@ npx scout auth login --host https://scout.example.com
 npx scout scan --host https://scout.example.com
 ```
 
-The upload ends with `Uploaded the scan of <commit>: https://scout.example.com/repos/storefront`, and the repo appears on the repos list.
+The upload ends with `Uploaded the scan of <commit>: https://scout.example.com/repos/storefront`, and the repo appears on the repos list. If it stops with `Error: You can view this dashboard but not upload to it. Ask an admin to make you an Editor.`, the dashboard didn't make you an Admin: see [If someone you named isn't an Admin](/docs/guides/manage-people-and-roles#if-someone-you-named-isnt-an-admin).
 
 ## Let CI upload
 
@@ -144,6 +147,8 @@ Some chart versions need a step of their own. Before you upgrade, download the n
 ```bash
 helm pull oci://ghcr.io/scoutui/charts/scout --version <chart version> --untar
 ```
+
+The dashboard needs `auth.admins` or `auth.adminGroup`. If your values set neither, add one first ([Name the first admins](/docs/guides/manage-people-and-roles#name-the-first-admins)), or the upgrade fails with `Set auth.admins to your admins' email addresses, or auth.adminGroup to a group in your sign-in provider.`
 
 Then upgrade with the same values file:
 

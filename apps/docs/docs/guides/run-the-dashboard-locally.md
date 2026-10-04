@@ -69,7 +69,9 @@ The worker doesn't read `.env.local`, so pass `DATABASE_URL` on the command line
 
 ## 6. Sign in to the dashboard
 
-Open `http://localhost:3000`, enter any email address and your dev password, and press **Dev sign-in**. You land on the repos list, which is empty until the first upload.
+Open `http://localhost:3000`, enter any email address and your dev password, pick a **Role**, and press **Dev sign-in**. You land on the repos list, which is empty until the first upload.
+
+**Admin**, the default role, can do everything. Pick **Viewer** or **Editor** to try the dashboard as someone with that role; [Manage people and roles](/docs/guides/manage-people-and-roles) lists what each can do. To switch, sign out from the account menu and sign in again. Locally you don't need the admin settings, `SCOUTUI_ADMINS` and `SCOUTUI_ADMIN_GROUP`, that a deployed dashboard needs.
 
 ## 7. Sign the CLI in
 
@@ -79,7 +81,7 @@ In a repo that has its dependencies and the CLI installed and a `scout.config.js
 npx scout auth login --host http://localhost:3000
 ```
 
-Include `http://`; without a scheme the CLI assumes `https://`. The CLI opens your browser at an approval page showing the same code as the terminal. Press **Approve**, and the terminal prints `✓ Signed in as <your email> to http://localhost:3000.` [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads) covers checking and switching hosts.
+Include `http://`; without a scheme the CLI assumes `https://`. The CLI opens your browser at an approval page showing the same code as the terminal. Press **Approve**, and the terminal prints `✓ Signed in as <your email> to http://localhost:3000 as an Admin.`, or the role you picked. [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads) covers checking and switching hosts.
 
 ## Verify
 

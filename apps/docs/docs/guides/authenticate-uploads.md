@@ -7,7 +7,7 @@ sidebar_label: "Authenticate uploads"
 
 Sign the CLI in to your dashboard so `scout scan` can upload scans as you. For uploads from a CI job, where nobody can open a browser, see [Run a scan and upload in CI](/docs/guides/run-in-ci) instead.
 
-You need the CLI installed ([Install the CLI](/docs/guides/install)) and a running dashboard ([Run the dashboard locally](/docs/guides/run-the-dashboard-locally) or [Deploy the dashboard](/docs/guides/deploy-the-dashboard)).
+You need the CLI installed ([Install the CLI](/docs/guides/install)) and a running dashboard ([Run the dashboard locally](/docs/guides/run-the-dashboard-locally) or [Deploy the dashboard](/docs/guides/deploy-the-dashboard)). To upload, you need the Editor or Admin role on the dashboard ([Manage people and roles](/docs/guides/manage-people-and-roles)).
 
 ## Sign in
 
@@ -41,8 +41,10 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
 4. The terminal finishes with:
 
    ```
-   ✓ Signed in as dev@acme.test to https://scout.example.com.
+   ✓ Signed in as dev@acme.test to https://scout.example.com as an Editor.
    ```
+
+   The line ends with your role on the dashboard.
 
 The CLI saves your session in the system keychain. When it can't use one, for example on Windows, it saves the session in a file instead and warns:
 
@@ -76,7 +78,7 @@ npx scout auth status --host https://scout.example.com
 ```
 
 ```
-Signed in as dev@acme.test to https://scout.example.com (session saved in the system keychain).
+Signed in as dev@acme.test to https://scout.example.com as an Editor (session saved in the system keychain).
 ```
 
 If the dashboard stops accepting your session, `auth status` prints this instead, and `scan` fails with the same message:
@@ -108,5 +110,13 @@ The output ends with the uploaded scan and your repo's page:
 ```
 ✓ Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
+
+If you're a Viewer, `scan` stops before it scans with:
+
+```
+Error: You can view this dashboard but not upload to it. Ask an admin to make you an Editor.
+```
+
+Once an Admin has [changed your role](/docs/guides/manage-people-and-roles#change-someones-role), scan again. You don't need to sign in again.
 
 For every `auth` flag and exit code, see the [CLI reference](/docs/reference/cli#auth).

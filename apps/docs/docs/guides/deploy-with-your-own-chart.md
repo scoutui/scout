@@ -49,6 +49,7 @@ The web server needs:
 | `OIDC_ISSUER_URL` | Your provider's issuer URL |
 | `OIDC_CLIENT_ID` | The dashboard's client ID |
 | `OIDC_CLIENT_SECRET` | The dashboard's client secret |
+| `SCOUTUI_ADMINS`, `SCOUTUI_ADMIN_GROUP` | At least one: your admins' email addresses separated by commas, or a group in your sign-in provider whose members are Admins. See [Name the first admins](/docs/guides/manage-people-and-roles#name-the-first-admins). |
 | `NODE_OPTIONS` | `--max-old-space-size=<megabytes>`, as in [step 5](#5-size-memory-and-the-database) |
 
 The worker needs only `DATABASE_URL`, with the same value, and `NODE_OPTIONS`. It doesn't read the sign-in settings, so leave the session key and the client secret off it.
@@ -131,6 +132,8 @@ Open `https://scout.example.com`, sign in, and upload a scan, as in [step 5 of D
 Upgrade the dashboard before your teams upgrade the CLI ([Upgrade Scout](/docs/guides/upgrade-scout)).
 
 Some upgrades need a step of their own. Each `web-app@<version>` release names the chart version that runs it. Before you upgrade, read the chart's [`CHANGELOG.md`](https://github.com/scoutui/scout/blob/main/charts/scout/CHANGELOG.md) from the version that runs your current image up to the one that runs the new image.
+
+The web server needs `SCOUTUI_ADMINS` or `SCOUTUI_ADMIN_GROUP`. If you set neither, add one first, or it won't start and logs `[startup] failed: Set SCOUTUI_ADMINS to your admins' email addresses, or SCOUTUI_ADMIN_GROUP to a group in your sign-in provider.`
 
 Then change the image tag on both Deployments. [Upgrade](/docs/guides/deploy-the-dashboard#upgrade) describes what happens to existing scans, and how to retry any that fail to rebuild.
 
