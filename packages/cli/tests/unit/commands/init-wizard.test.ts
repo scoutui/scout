@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { runInit } from "../../../src/commands/init.js";
 import { PromptCancelledError, type PromptAdapter } from "../../../src/prompts/adapter.js";
+import { Logger } from "../../../src/util/log.js";
+import { createColor, wordmark } from "../../../src/util/style.js";
 import { fakeSsh } from "../../helpers/fake-ssh.js";
 import { stageFixture } from "../../helpers/stage-fixture.js";
 
@@ -225,13 +227,18 @@ describe("init wizard: what to leave out of the scan", () => {
 
 describe("init wizard: run inside a workspace package", () => {
   const rootQuestion = { message: "Scan the whole repository instead of only this package?", initialValue: true };
+  const color = createColor({ isTTY: true, env: {} });
 
-  /** Runs the wizard from `cwd`, answering the root question with `whole`; returns each root question, the picker's option values and the closing line. */
+  /** Runs the wizard from `cwd`, answering the root question with `whole`; returns the title, each root question, the picker's option values and the closing line. */
   async function runFrom(cwd: string, whole: boolean | symbol, given: { outputPath?: string } = {}) {
+    const intros: string[] = [];
     const confirms: Parameters<PromptAdapter["confirm"]>[0][] = [];
     const pickers: string[][] = [];
     const outros: string[] = [];
     const prompts = stubAdapter({
+      intro: (message) => {
+        intros.push(message);
+      },
       confirm: async (o) => {
         confirms.push(o);
         return whole;
@@ -244,13 +251,14 @@ describe("init wizard: run inside a workspace package", () => {
         outros.push(message);
       },
     });
-    await runInit({ cwd, interactive: true, prompts, ...given });
-    return { confirms, pickers, outros };
+    await runInit({ cwd, interactive: true, prompts, log: new Logger({ color }), ...given });
+    return { intros, confirms, pickers, outros };
   }
 
   it("writes the config at the repository root on Yes, named after the root's folder, and asks what to leave out there", async () => {
     const root = await stageWholeRepo();
-    const { confirms, pickers, outros } = await runFrom(join(root, "apps/web"), true);
+    const { intros, confirms, pickers, outros } = await runFrom(join(root, "apps/web"), true);
+    expect(intros).toEqual([wordmark(color, "init")]);
     expect(confirms).toEqual([rootQuestion]);
     expect(pickers).toEqual([["apps/playground", "apps/web", "packages/shared-ui", "scripts"]]);
     expect(outros).toEqual(["Wrote ../../scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload."]);

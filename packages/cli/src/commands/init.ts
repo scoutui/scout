@@ -8,6 +8,7 @@ import { CliError } from "../cli/parse.js";
 import { InvalidHostError, isValidUrl, normalizeHost } from "../auth/store.js";
 import { probeRepository, readGitBranch, readGitToplevel, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
 import { Logger } from "../util/log.js";
+import { wordmark } from "../util/style.js";
 import { DEFAULT_INCLUDE, walkFiles } from "../walker/files.js";
 import { detectWorkspacePackages, readJsonSafely } from "../workspace/build-graph.js";
 import { findWorkspaceRoot } from "../workspace/find-workspace-root.js";
@@ -52,7 +53,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if ((await probeRepository(cwd)).kind === "outside") {
     log.warn("this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.");
   }
-  prompts?.intro("scout init");
+  prompts?.intro(wordmark(log.color, "init"));
   const defaults = await gitDefaults(cwd, log, prompts);
   if (asksRoot) {
     const whole = assertNotCancelled(
