@@ -3,7 +3,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { lstat, readFile, realpath } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { loadConfig, ConfigError } from "../config/loader.js";
-import { createLazyResolver } from "../barrels/lazy-resolver.js";
+import { createLazyResolver, findPackageRoot } from "../barrels/lazy-resolver.js";
 import { buildLocalIndex } from "../local-index/index.js";
 import { extractReactDeclaredProps } from "../local-index/declared-props.js";
 import { detectVueComponents } from "../local-index/detect-vue.js";
@@ -587,6 +587,10 @@ export async function scanRepository(input: {
       return true;
     },
     isInstalledPackage: (fromFile, packageName) => isInstalledPackage(absoluteFromGraphKey(fromFile), packageName),
+    inInstalledPackage: (fromFile, absPath) => {
+      const pkg = findPackageRoot(absPath);
+      return pkg !== null && isInstalledPackage(absoluteFromGraphKey(fromFile), pkg.name);
+    },
   });
   const { occurrences: engineOccurrences, registry } = resolveGraph(graph, resolveOpts);
 

@@ -242,8 +242,9 @@ function moduleExport(
 
 /** Classify the module `specifier` resolves to from `fromFile`: a parsed
  *  file is followed; a first-party file the graph does not hold is
- *  `unparsed`, whatever the specifier's shape. Anything else, resolved or
- *  not, is a package export for a specifier that names a valid package and a
+ *  `unparsed`, whatever the specifier's shape. Anything else is a package
+ *  export for a specifier that names a valid package, resolved or not, or for
+ *  a resolved file inside an installed package (`inInstalledPackage`), and a
  *  failed import for any other. */
 function moduleTarget(
   graph: Graph,
@@ -260,10 +261,11 @@ function moduleTarget(
       return { kind: "outside", binding: { kind: "unparsed", file: abs, exportName, path } };
     }
   }
-  const binding: Binding =
-    packageNameFromSpecifier(specifier) !== null
-      ? { kind: "package-export", specifier, exportName, path, stub: null, fromFile, resolved: abs !== null }
-      : { kind: "import-failed", specifier, exportName, path };
+  const namesPackage =
+    packageNameFromSpecifier(specifier) !== null || (abs !== null && graph.inInstalledPackage?.(fromFile, abs) === true);
+  const binding: Binding = namesPackage
+    ? { kind: "package-export", specifier, exportName, path, stub: null, fromFile, resolved: abs !== null }
+    : { kind: "import-failed", specifier, exportName, path };
   return { kind: "outside", binding };
 }
 
