@@ -56,11 +56,25 @@ function isUseServer(statement: ts.Statement | undefined): boolean {
   );
 }
 
+function hasModifier(statement: ts.Statement, kind: ts.SyntaxKind): boolean {
+  return ts.canHaveModifiers(statement) && (ts.getModifiers(statement)?.some((m) => m.kind === kind) ?? false);
+}
+
 function isExported(statement: ts.Statement): boolean {
-  return (
-    ts.canHaveModifiers(statement) &&
-    (ts.getModifiers(statement)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ?? false)
-  );
+  return hasModifier(statement, ts.SyntaxKind.ExportKeyword);
+}
+
+/** Default exports and `export { … }` or `export *` statements in `file`, apart from type-only ones. */
+function unreadableExports(file: ts.SourceFile): ts.Statement[] {
+  return file.statements.filter((statement) => {
+    if (ts.isExportAssignment(statement)) return true;
+    if (ts.isExportDeclaration(statement)) {
+      const clause = statement.exportClause;
+      const typesOnly = clause && ts.isNamedExports(clause) && clause.elements.every((element) => element.isTypeOnly);
+      return !statement.isTypeOnly && !typesOnly;
+    }
+    return isExported(statement) && hasModifier(statement, ts.SyntaxKind.DefaultKeyword);
+  });
 }
 
 /** Each exported function or variable in `file`: its name and the node holding its code. */
@@ -109,20 +123,28 @@ function inlineServerFunctions(file: ts.SourceFile): Array<[string, ts.Node]> {
   return found;
 }
 
-/** Every server action and API write route under src/app, keyed `<path from src/app>#<name>`, with its code. */
-function entryPoints(): Map<string, string> {
+/**
+ * Every server action in src and API write route in src/app, keyed `<path from src/app>#<name>`, with its code,
+ * and each `<path from src/app>:<line>` where one of those files exports in a way the collector can't read.
+ */
+function entryPoints(): { entries: Map<string, string>; unreadable: string[] } {
   const entries = new Map<string, string>();
-  for (const path of srcFiles.filter((p) => p.startsWith(APP + sep) && /\.tsx?$/.test(p))) {
+  const unreadable: string[] = [];
+  for (const path of srcFiles.filter((p) => /\.tsx?$/.test(p))) {
     const file = parse(path);
     const at = relative(APP, path);
     const found = inlineServerFunctions(file);
+    const isRoute = path.startsWith(APP + sep) && basename(path) === "route.ts";
     if (isUseServer(file.statements[0])) found.push(...exportedValues(file));
-    if (basename(path) === "route.ts") {
-      found.push(...exportedValues(file).filter(([name]) => WRITE_METHODS.has(name)));
+    if (isRoute) found.push(...exportedValues(file).filter(([name]) => WRITE_METHODS.has(name)));
+    if (isRoute || isUseServer(file.statements[0])) {
+      for (const statement of unreadableExports(file)) {
+        unreadable.push(`${at}:${file.getLineAndCharacterOfPosition(statement.getStart()).line + 1}`);
+      }
     }
     for (const [name, code] of found) entries.set(`${at}#${name}`, code.getText(file));
   }
-  return entries;
+  return { entries, unreadable };
 }
 
 function filesMatching(pattern: RegExp): string[] {
@@ -132,9 +154,15 @@ function filesMatching(pattern: RegExp): string[] {
 const nameOf = (key: string) => key.slice(key.indexOf("#") + 1);
 
 describe("access checks", () => {
-  const entries = entryPoints();
+  const { entries, unreadable } = entryPoints();
 
   it("lists every server action and API write route", () => {
+    expect(
+      unreadable.map(
+        (at) =>
+          `${at} exports in a way access-guard.test.ts can't read. Export each action with export async function or export const.`,
+      ),
+    ).toEqual([]);
     const listed = new Set([...CHECKED, ...SIGN_IN_FLOWS]);
     const unlisted = [...entries.keys()].filter((key) => !listed.has(key));
     expect(
@@ -167,13 +195,15 @@ describe("access checks", () => {
     expect(requireEditor?.[1].getText()).toMatch(/\bcan\(/);
   });
 
-  it("lets only a signed-in browser person who can view approve, deny or switch a CLI sign-in", () => {
-    for (const name of ["approveDevice", "denyDevice", "switchDeviceAccount"]) {
+  it('calls identify({ browser: true }) and then can(identity, "view") in each CLI device action', () => {
+    const wrong = ["approveDevice", "denyDevice", "switchDeviceAccount"].filter((name) => {
       const code = entries.get(`login/device/actions.ts#${name}`) ?? "";
       const identified = code.indexOf("identify({ browser: true })");
-      expect(identified, name).toBeGreaterThanOrEqual(0);
-      expect(code.indexOf('can(identity, "view")', identified), name).toBeGreaterThan(identified);
-    }
+      return identified < 0 || code.indexOf('can(identity, "view")', identified) < 0;
+    });
+    expect(wrong.map((name) => `${name} must call identify({ browser: true }) and then can(identity, "view").`)).toEqual(
+      [],
+    );
   });
 
   it("never links accounts that share an email", () => {
