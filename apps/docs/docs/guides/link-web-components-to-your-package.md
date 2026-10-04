@@ -67,7 +67,7 @@ The manifest only tells the scan which package a tag belongs to. Descriptions, p
 
 ## If it still has no package
 
-The scan doesn't warn when it can't use a manifest: the tag's `attribution.status` just reads `unknown`, or `conflict` when two packages claim it. Check each of these:
+The scan warns when a package's `customElements` field points at a file that is missing or isn't valid JSON. Otherwise it doesn't warn: the tag's `attribution.status` just reads `unknown`, or `conflict` when two packages claim it. Check each of these:
 
 - **The repo doesn't install your package.** The scan reads manifests only from packages installed in the scanned repo, so tags loaded from a CDN script stay without a package.
 - **The field is missing, or isn't a string path.** Check `customElements` in the installed copy, `node_modules/@acme/elements/package.json`.

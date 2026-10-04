@@ -419,6 +419,11 @@ export async function scanRepository(input: {
 
   // Custom Elements Manifest index of every package installed in the repository.
   const cemIndex = await buildCemIndex({ root: outputRoot, configDir: cfg.configDir });
+  for (const { packageName, manifest, problem } of cemIndex.unreadable) {
+    scanWarning(
+      `Couldn't read the Custom Elements Manifest of ${packageName} (${manifest} ${problem === "missing" ? "is missing" : "isn't valid JSON"}), so its tags aren't linked to it.`,
+    );
+  }
 
 
   const packageTsconfigs = packageAliases.tsconfigCount;

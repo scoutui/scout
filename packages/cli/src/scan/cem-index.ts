@@ -146,12 +146,15 @@ function compareRank(a: InstallRank, b: InstallRank): number {
 
 type PackageCem = { packageName: string; version: string | null; cem: CemJson };
 
+/** A package whose `package.json#customElements` names a manifest that is missing or isn't valid JSON. */
+export type UnreadableCem = { packageName: string; manifest: string; problem: "missing" | "invalid" };
+
 /**
- * The CEM the package in `dir` declares through `package.json#customElements`;
- * null when it declares none, the CEM is missing or malformed, or the
- * package.json is unreadable or unnamed.
+ * The CEM the package in `dir` declares through `package.json#customElements`,
+ * or why it couldn't be read; null when it declares none, or the package.json
+ * is unreadable or unnamed.
  */
-async function readPackageCem(dir: string): Promise<PackageCem | null> {
+async function readPackageCem(dir: string): Promise<PackageCem | UnreadableCem | null> {
   let pkg: { name?: unknown; version?: unknown; customElements?: unknown };
   try {
     const text = await readFile(join(dir, "package.json"), "utf8");
@@ -161,14 +164,14 @@ async function readPackageCem(dir: string): Promise<PackageCem | null> {
     return null;
   }
   if (typeof pkg.name !== "string" || typeof pkg.customElements !== "string") return null;
-  const cemPath = join(dir, pkg.customElements);
-  if (!existsSync(cemPath)) return null;
+  const manifest = pkg.customElements;
+  const cemPath = join(dir, manifest);
+  if (!existsSync(cemPath)) return { packageName: pkg.name, manifest, problem: "missing" };
   try {
     const cem = JSON.parse(await readFile(cemPath, "utf8")) as CemJson;
     return { packageName: pkg.name, version: typeof pkg.version === "string" ? pkg.version : null, cem };
   } catch {
-    // Malformed CEM: skip.
-    return null;
+    return { packageName: pkg.name, manifest, problem: "invalid" };
   }
 }
 
@@ -176,8 +179,8 @@ async function readPackageCem(dir: string): Promise<PackageCem | null> {
 const READERS = 64;
 
 /** `readPackageCem` for every directory, in order, at most `READERS` at a time. */
-async function readPackageCems(dirs: readonly string[]): Promise<(PackageCem | null)[]> {
-  const results: (PackageCem | null)[] = dirs.map(() => null);
+async function readPackageCems(dirs: readonly string[]): Promise<(PackageCem | UnreadableCem | null)[]> {
+  const results: (PackageCem | UnreadableCem | null)[] = dirs.map(() => null);
   const queue = dirs.entries();
   const reader = async (): Promise<void> => {
     for (const [i, dir] of queue) results[i] = await readPackageCem(dir);
@@ -200,9 +203,11 @@ async function readPackageCems(dirs: readonly string[]): Promise<(PackageCem | n
  * installed more than once, the claim's version comes from the install that
  * ranks first among those declaring the tag: the one Node resolves from
  * `configDir` (the nearest on its lookup path), else the shallowest under
- * `root`, then by path.
+ * `root`, then by path. `unreadable` lists, once per package name and ordered
+ * by it, the packages whose declared manifest is missing or isn't valid JSON
+ * in every install.
  */
-export async function buildCemIndex(input: { root: string; configDir: string }): Promise<CemIndex> {
+export async function buildCemIndex(input: { root: string; configDir: string }): Promise<CemIndex & { unreadable: UnreadableCem[] }> {
   const root = await realpath(input.root);
   const configDir = await realpath(input.configDir);
 
@@ -222,8 +227,15 @@ export async function buildCemIndex(input: { root: string; configDir: string }):
   const ranked = [...rankByRealpath].sort(([, a], [, b]) => compareRank(a, b));
 
   const index: CemIndex = { byTag: new Map() };
+  const unreadable = new Map<string, UnreadableCem>();
+  const read = new Set<string>();
   for (const found of await readPackageCems(ranked.map(([dir]) => dir))) {
     if (found === null) continue;
+    if (!("cem" in found)) {
+      if (!unreadable.has(found.packageName)) unreadable.set(found.packageName, found);
+      continue;
+    }
+    read.add(found.packageName);
     const { packageName, version, cem } = found;
     for (const tagName of cemTagNames(cem)) {
       const tag = canonicalTagName(tagName);
@@ -237,5 +249,7 @@ export async function buildCemIndex(input: { root: string; configDir: string }):
     claims.sort((a, b) => (a.packageName < b.packageName ? -1 : a.packageName > b.packageName ? 1 : 0));
   }
 
-  return index;
+  const skipped = [...unreadable.values()].filter(({ packageName }) => !read.has(packageName));
+  skipped.sort((a, b) => (a.packageName < b.packageName ? -1 : a.packageName > b.packageName ? 1 : 0));
+  return { ...index, unreadable: skipped };
 }

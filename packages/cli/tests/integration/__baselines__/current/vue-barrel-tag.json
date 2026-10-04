@@ -103,7 +103,7 @@
           "omitted": 0
         }
       },
-      "version": null,
+      "version": "1.13.4",
       "composition": {
         "rendersByCount": {},
         "renderedByCount": {
