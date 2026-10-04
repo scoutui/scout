@@ -2,7 +2,7 @@
 "@scoutui/web-app": minor
 ---
 
-Repo pages show what a scan covered and which package each use sits in:
+The dashboard now shows what a scan covered and, in a monorepo, which package each use sits in:
 
 - A repo page says what the scan covered when it left something out, such as **Scanned: everything except apps/playground.** or **Scanned: apps/web only.**
 - The Components table's **Used in** filter shows only the components used in one package, with that package's uses and files. Its link keeps the package in `used-in=`; after a package is renamed, a saved link matches nothing until you pick the new name.
