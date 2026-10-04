@@ -46,7 +46,11 @@ describe("integration: what a scan covers and which package each usage sits in",
   beforeAll(async () => {
     const wholeStage = await stage();
     const excludedStage = await stage({
-      "scout.config.json": JSON.stringify({ repoId: "whole-repo-scope", exclude: ["apps/playground", "packages/shared-ui"] }),
+      "scout.config.json": JSON.stringify({
+        repoId: "whole-repo-scope",
+        include: ["**/*.{ts,tsx}"],
+        exclude: ["apps/playground", "packages/shared-ui"],
+      }),
     });
     const subStage = await stage({ "apps/web/scout.config.json": JSON.stringify({ repoId: "whole-repo-scope" }) });
     const renamedStage = await stage({
@@ -98,9 +102,10 @@ describe("integration: what a scan covers and which package each usage sits in",
   });
 
   describe("with two packages excluded", () => {
-    it("records the exclude and only the packages its scanned files sit in", () => {
+    it("records the include, the exclude and only the packages its scanned files sit in", () => {
       expect(excluded.meta.scope).toStrictEqual({
         folder: "",
+        include: ["**/*.{ts,tsx}"],
         exclude: ["apps/playground", "packages/shared-ui"],
         packages: [
           { name: "whole-repo-scope", folder: "" },
@@ -121,22 +126,12 @@ describe("integration: what a scan covers and which package each usage sits in",
       }).toEqual({ id: all.id, declared: undefined, rendersByCount: {}, owningPackage: "@example/shared-ui" });
     });
 
-    it("records the package each of the excluded component's usages sits in", () => {
-      const sharedButton = component(excluded, "SharedButton").id;
-      const rows = excluded.occurrences
-        .filter((o) => o.resolution.componentId === sharedButton)
-        .map((o) => [o.filePath, o.usedIn])
-        .sort();
-      expect(rows).toEqual([
-        ["apps/web/src/App.tsx", "@example/web"],
-        ["apps/web/src/App.tsx", "@example/web"],
-        ["scripts/preview.tsx", "whole-repo-scope"],
-      ]);
-    });
-
-    it("drops the usage inside an excluded file from the count", () => {
-      expect([component(whole, "Button").stats.occurrenceCount, component(excluded, "Button").stats.occurrenceCount]).toEqual([
-        2, 1,
+    it("records the package each usage sits in, keeping the excluded component's usages and dropping the usage inside an excluded file", () => {
+      expect(occurrenceRows(excluded)).toEqual([
+        ["apps/web/src/App.tsx", "Button", "@example/web"],
+        ["apps/web/src/App.tsx", "SharedButton", "@example/web"],
+        ["apps/web/src/App.tsx", "SharedButton", "@example/web"],
+        ["scripts/preview.tsx", "SharedButton", "whole-repo-scope"],
       ]);
     });
   });

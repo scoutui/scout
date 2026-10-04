@@ -131,7 +131,7 @@ const occurrenceSchema = z.object({
   occurrenceId: nonEmptyString,
   resolution: resolutionSchema,
   filePath: z.string(),
-  /** The name of the package in `meta.scope.packages` whose folder holds `filePath`. Present only when `meta.scope.packages` has more than one entry. */
+  /** The name of the deepest package in `meta.scope.packages` whose folder holds `filePath`. Present only when `meta.scope.packages` has more than one entry. */
   usedIn: nonEmptyString.optional(),
   line: finiteNumber,
   column: finiteNumber,
