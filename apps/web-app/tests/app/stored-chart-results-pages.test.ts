@@ -269,7 +269,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const stored = (await driver.getStoredTracking({ kind: "all" }))?.find(entry => entry.id === `retirement:${retired.id}`);
       expect(stored).toBeDefined();
       const tree = await page(trackingParams(`retirement:${retired.id}`));
-      expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
+      expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
       expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
@@ -399,7 +399,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const { default: page } = await import("@/app/charts/[dashboardId]/page");
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([{ notice: failed, besideNumbers: true }]);
-      expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
+      expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
     });
   });
 

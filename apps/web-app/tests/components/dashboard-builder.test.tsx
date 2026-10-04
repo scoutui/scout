@@ -150,6 +150,23 @@ describe("editing a saved chart", () => {
     await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ name: "Copy of Button rollout", description: null, config }));
   });
 
+  it("opens at the chart's saved range and saves the range picked in the preview", async () => {
+    const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(2025, 9 + i, 1)).toISOString());
+    const series = [{ cohortKey: "local", label: "Local components", color: "", points: months.map((t, i) => ({ t, value: i })) }];
+    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series, coverage: { total: 1, points: months.map((t) => ({ t, repos: 1 })) } } });
+    const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const, range: "6m" as const };
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Local", description: null, config }} />);
+    expect(await screen.findByRole("button", { name: "6 months" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "3 months" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ config: { ...config, range: "3m" } })));
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    const { range: _, ...all } = config;
+    await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ config: all })));
+    expect(actions.preview).toHaveBeenCalledTimes(1);
+  });
+
   it("lists a series the chart leaves out as Unknown component, never by its id", async () => {
     const componentId = "3f1c9a0b7d2e4c65";
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "component" as const, componentId }], chartType: "trend" as const, metric: "count" as const };

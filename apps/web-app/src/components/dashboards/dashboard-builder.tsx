@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CircleX } from "lucide-react";
-import type { ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
+import type { ChartRange, ChartType, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
@@ -136,6 +136,7 @@ export function DashboardBuilder({
   const [cohorts, setCohorts] = useState<CohortSelector[]>(saved?.config.cohorts ?? []);
   const [chartType, setChartType] = useState<ChartType>(saved?.config.chartType ?? "trend");
   const [metric, setMetric] = useState<DashboardMetric>(saved?.config.metric ?? "count");
+  const [range, setRange] = useState<ChartRange>(saved?.config.range ?? "all");
   const [preview, setPreview] = useState<{ config: DashboardConfig; view: DashboardView; skipped: SkippedNotices } | null>(null);
   // The last preview that landed, and the keys of the series its config held that its view left out.
   const [landed, setLanded] = useState<{ view: DashboardView; unknown: ReadonlySet<string> } | null>(null);
@@ -309,7 +310,7 @@ export function DashboardBuilder({
       ...(saved && !duplicate ? { id: saved.id } : {}),
       name: name.trim(),
       description: description.trim() || null,
-      config,
+      config: range !== "all" && (chartType === "trend" || chartType === "stacked-share") ? { ...config, range } : config,
     });
     setSaving(false);
     setError(actionErrorMessage(res?.error, "save this chart", "Couldn't save the chart. Try again."));
@@ -486,7 +487,7 @@ export function DashboardBuilder({
             // rail's series list is the legend, so the chart's own legend is off.
             <div className={cn("space-y-4 transition-opacity duration-200", loadingPreview && "opacity-50")}>
               <SkippedScansNotice {...preview.skipped} refresh={() => setPreviewRetry(n => n + 1)} />
-              <DashboardChart config={preview.config} view={preview.view} showLegend={false} />
+              <DashboardChart config={preview.config} view={preview.view} showLegend={false} range={range} onRangeChange={setRange} />
             </div>
           ) : (
             <div className="h-[280px]" />

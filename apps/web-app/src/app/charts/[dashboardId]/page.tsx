@@ -8,7 +8,7 @@ import { chartResultsNotice, chartResultsUnavailable } from "@/lib/read-model-pr
 import { readModelPage, readModelTitle } from "@/lib/read-model-page";
 import { ChartResultsState, ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
 import { ChartTitleLabel } from "@/components/dashboards/chart-title-label";
-import { DashboardChart } from "@/components/dashboards/dashboard-chart";
+import { LinkedDashboardChart } from "@/components/dashboards/dashboard-chart";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { DashboardMetricToggle } from "@/components/dashboards/dashboard-metric-toggle";
@@ -18,7 +18,7 @@ import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
-import { isEmptyView } from "@/lib/dashboard-chart-data";
+import { chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
 import { buttonVariants } from "@/components/ui/button";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
@@ -51,6 +51,8 @@ export default async function DashboardViewPage({
   // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
   const rawMetric = sp["metric"];
   const metricParam = Array.isArray(rawMetric) ? rawMetric[0] : rawMetric;
+  // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
+  const rangeParam = chartRange(sp["range"]);
 
   const governancePage = id.startsWith("migration:") || id.startsWith("retirement:");
   const identity = await identify({ browser: true });
@@ -227,7 +229,7 @@ export default async function DashboardViewPage({
       ) : (
         /* A table runs flush to the panel edge; plotted charts sit inset. */
         <div className={config.chartType === "table" ? "panel overflow-hidden" : "panel p-4"}>
-          <DashboardChart config={config} view={view} />
+          <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} />
         </div>
       )}
 
