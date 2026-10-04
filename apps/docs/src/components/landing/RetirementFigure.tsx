@@ -39,18 +39,18 @@ function Spark(): React.ReactElement {
 
 /**
  * The retirements section of the dashboard's Charts page, holding one row: the component, the uses left and where,
- * and the change since the last scan. Laid out left to right whatever the page direction, as the web app is.
+ * and the change since the previous scan. Laid out left to right whatever the page direction, as the web app is.
  */
 export default function RetirementFigure(): React.ReactElement {
   const draw = useDrawOnView<HTMLElement>();
   return (
     <figure ref={draw.ref} className={styles.figure} dir="ltr" data-draw={draw.state}>
-      <TrackingHeading>Retirements · 1 active</TrackingHeading>
+      <TrackingHeading>Retirements · 1 in progress</TrackingHeading>
       <div className={clsx(shared.panel, styles.panel)}>
         <TrackingRow
           label={<Code>Carousel · @acme/legacy-ui</Code>}
           value={RETIRED_NOW}
-          unit="remaining in 2 repos"
+          unit="left in 2 repos"
           delta={RETIRED_DELTA}
           mini={<Spark />}
         />

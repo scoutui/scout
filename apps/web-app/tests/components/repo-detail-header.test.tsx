@@ -73,7 +73,7 @@ describe("RepoDetailHeader forge links", () => {
 });
 
 describe("RepoDetailHeader meta line and status row", () => {
-  it("keeps the package count and drops the occurrence total from the meta line", () => {
+  it("keeps the package count and drops the uses total from the meta line", () => {
     render(
       <RepoDetailHeader
         detail={makeDetail({ packageCount: 70, totalOccurrences: 6886 })}
@@ -81,7 +81,7 @@ describe("RepoDetailHeader meta line and status row", () => {
       />,
     );
     expect(screen.getByText("70 packages")).toBeInTheDocument();
-    expect(screen.queryByText(/occurrences/)).toBeNull();
+    expect(screen.queryByText(/\buses\b|occurrences/)).toBeNull();
   });
 
   it("renders the framework split only when more than one framework is present", () => {

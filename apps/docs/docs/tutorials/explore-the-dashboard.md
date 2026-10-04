@@ -1,5 +1,5 @@
 ---
-description: "Upload a scan to the dashboard, then find the repo, read its components and calls, tag its libraries, record a migration and watch it on a chart."
+description: "Upload a scan to the dashboard, then find the repo, read its components and their uses, tag its libraries, record a migration and watch it on a chart."
 sidebar_label: "Explore the dashboard"
 ---
 
@@ -75,9 +75,9 @@ The row shows the date of the commit we scanned, with its branch and commit. **C
 
 We click the `acme/storefront` row. The repo page opens on its **Components** tab. Near the top, the status line reads `first scan · nothing to compare`. After the next scan, it will say what changed since this one.
 
-The table has one row per component, sorted by **Occurrences**, highest first. An [occurrence](/docs/reference/glossary#occurrence) is one place in the code where a component is used. We see:
+The table has one row per component, sorted by **Uses**, highest first. A [use](/docs/reference/glossary#use) is one place in the code where a component is used. We see:
 
-- `Button` first, with **Package** `@acme/ui`, **Version** `4.2.0` and **Occurrences** `2`.
+- `Button` first, with **Package** `@acme/ui`, **Version** `4.2.0` and **Uses** `2`.
 - `Card`, from `@acme/ui`, and `LegacyButton`, from `@acme/ui-legacy`, with `1` each.
 - `ProductCard` with `1`, and `App` and `Checkout` with `0`. These show `—` under **Package**, because they are defined in the repo.
 
@@ -85,25 +85,25 @@ The table has one row per component, sorted by **Occurrences**, highest first. A
 
 We click the **Adoption** tab. It reads `No migrations or retirements tracked yet.`, with an **Open Governance** link. We'll give it a migration in step 6. [Repos](/docs/guides/dashboard/repos#read-a-repo-page) describes the rest of this page.
 
-## Step 4: Open a component and its calls
+## Step 4: Open a component and see where it's used
 
-We go back to the **Components** tab and click the `Button` row. The component page opens on its **Usage** tab, with `2` beside the tab's name. These are `Button`'s two occurrences, which this tab lists as *calls*.
+We go back to the **Components** tab and click the `Button` row. The component page opens on its **Usage** tab, with `2` beside the tab's name. These are `Button`'s two uses.
 
 The tab has a column of filters on the left and the list of files on the right:
 
-- **Where it’s used** has **under** `src/` beside it, and lists two folders, `components` and `src/`, with `1` call each.
-- **Prop values** lists `variant`, set on both calls.
-- The list has a row for each file, `src/App.tsx` and `ProductCard.tsx`, and the count above it reads `2 calls · 2 files`.
+- **Where it’s used** has **under** `src/` beside it, and lists two folders, `components` and `src/`, with `1` use each.
+- **Prop values** lists `variant`, set on both uses.
+- The list has a row for each file, `src/App.tsx` and `ProductCard.tsx`, and the count above it reads `2 uses · 2 files`.
 
-`Button` has only two calls, so both files are already open, with one line per call. `src/App.tsx` shows **Rendered by** `App` and `:8 variant="secondary"`. `ProductCard.tsx` shows **Rendered by** `ProductCard` and `:7 variant="primary"`. **Rendered by** names the component whose code renders the call.
+`Button` has only two uses, so both files are already open, with one line per use. `src/App.tsx` shows **Rendered by** `App` and `:8 variant="secondary"`. `ProductCard.tsx` shows **Rendered by** `ProductCard` and `:7 variant="primary"`. **Rendered by** names the component whose code renders that use.
 
-We press `variant` under **Prop values** to open its values: `primary` and `secondary`, each with `1`. We press `primary`. A pill reading `variant = primary` appears above the list, the count changes to `1 of 2 calls · 1 file`, and only `ProductCard.tsx` is left.
+We press `variant` under **Prop values** to open its values: `primary` and `secondary`, each with `1`. We press `primary`. A pill reading `variant = primary` appears above the list, the count changes to `1 of 2 uses · 1 file`, and only `ProductCard.tsx` is left.
 
 We select `:7`, which opens line 7 of `ProductCard.tsx` on GitHub, at the commit we scanned.
 
 ![The Button component page's Usage tab, with primary picked under variant, the variant = primary pill, and ProductCard.tsx open on line 7](/img/tutorial/component-page.png)
 
-We press the × on the pill to remove the filter, and both files are back. A component with more calls also has a search box above the list. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#see-how-it-is-used) covers the rest of the tab, including search, sorting and **Copy list**.
+We press the × on the pill to remove the filter, and both files are back. A component with more uses also has a search box above the list. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#see-how-it-is-used) covers the rest of the tab, including search, sorting and **Copy list**.
 
 ## Step 5: Tag our libraries
 
@@ -129,21 +129,21 @@ We want everyone to move from `LegacyButton` to `Button`. A [lifecycle record](/
 We select **governance** again. In the **New record** form:
 
 1. We click **Package or component**, type `legacy button`, and pick `LegacyButton` from `@acme/ui-legacy`.
-2. We leave **Type** on **Superseded**.
-3. We click **Superseded by**, type `button`, and pick `Button` from `@acme/ui`.
-4. We press **Create**. The form says `LegacyButton superseded by Button` and stays open for another record, so we press **Close**.
+2. We leave **Type** on **Replaced**.
+3. We click **Replaced by**, type `button`, and pick `Button` from `@acme/ui`.
+4. We press **Create**. The form says `LegacyButton replaced by Button` and stays open for another record, so we press **Close**.
 
-Under **Records**, `LegacyButton` now reads **Superseded by** `Button · @acme/ui`. Its count is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Occurrences left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
+Under **Records**, `LegacyButton` now reads **Replaced by** `Button · @acme/ui`. Its count is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`, and **Uses left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
 
 We select **repos** and open `acme/storefront`:
 
 - The status line now starts with `1 deprecated component in use`.
 - In the **Components** table, `LegacyButton` has a warning icon after its name.
-- On the **Adoption** tab, `Migrations in this repo · 1 active` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
+- On the **Adoption** tab, `Migrations in this repo · 1 in progress` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
 
 ## Step 7: See the migration's chart
 
-We select **charts** in the top navigation. Under `Migrations · 1 active` is the same row, reading `66.7% migrated`. We didn't have to build this chart; the dashboard made it from our record.
+We select **charts** in the top navigation. Under `Migrations · 1 in progress` is the same row, reading `66.7% migrated`. We didn't have to build this chart; the dashboard made it from our record.
 
 We click the row. The chart page opens with the heading `Migration: LegacyButton · @acme/ui-legacy → Button · @acme/ui`. The chart area reads `Trends appear once these repos have been scanned more than once.` A trend needs two points in time, and we have one scan.
 
@@ -162,7 +162,7 @@ When it prints `Uploaded the scan`, we refresh the chart page. It now draws two 
 
 ![The LegacyButton to Button migration chart after two scans, with LegacyButton flat at 1, Button flat at 2, and the legend below](/img/tutorial/migration-chart.png)
 
-Back on the charts list, the row now reads `±0 since last scan`. From here, each scan of a new commit adds a point. As the team replaces `LegacyButton` with `Button`, the `LegacyButton` line falls and the `Button` line rises. [Run in CI](/docs/guides/run-in-ci) scans and uploads from CI, so the chart keeps itself up to date.
+Back on the charts list, the row now reads `±0 since previous scan`. From here, each scan of a new commit adds a point. As the team replaces `LegacyButton` with `Button`, the `LegacyButton` line falls and the `Button` line rises. [Run in CI](/docs/guides/run-in-ci) scans and uploads from CI, so the chart keeps itself up to date.
 
 ## What we've done
 

@@ -239,7 +239,7 @@ describe("an upload's refusal", () => {
     expect(result.upload).toBe("failed");
     expect(scanExitCode(result)).toBe(1);
     expect(stderr()).toContain(
-      `Couldn't upload the scan: no components were found. Check "include" in ${join(dir, "scout.config.json")} and try again.`,
+      `Couldn't upload the scan: no uses were found. Check "include" in ${join(dir, "scout.config.json")} and try again.`,
     );
   });
 

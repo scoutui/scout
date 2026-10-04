@@ -61,8 +61,8 @@ describe("printSummary", () => {
     );
     expect(printed).toBe(
       [
-        "Scanned 3 files in 0.1s: 6 components, 12 occurrences.",
-        "Scout couldn't match 1 more occurrence to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences",
+        "Scanned 3 files in 0.1s: 6 components, 12 uses.",
+        "Scout couldn't match 1 more use to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences",
         "",
         "Most used:",
         "  Button        @acme/ui                        3",
@@ -80,7 +80,7 @@ describe("printSummary", () => {
     const printed = capture([component("a", { kind: "tag", tagName: "acme-badge" }, 1)], {
       filesScanned: 1, scanDurationMs: 0, componentCount: 1, occurrenceCount: 1, resolvedOccurrenceCount: 1,
     });
-    expect(printed).toBe("Scanned 1 file in 0.0s: 1 component, 1 occurrence.\n\nMost used:\n  <acme-badge>    1\n\n");
+    expect(printed).toBe("Scanned 1 file in 0.0s: 1 component, 1 use.\n\nMost used:\n  <acme-badge>    1\n\n");
   });
 
   it("names a package's default export the way the dashboard does", () => {
@@ -93,13 +93,13 @@ describe("printSummary", () => {
   it("has no list when no component was used", () => {
     expect(capture([component("a", declaredIn("src/App.tsx", "App"), 0)], {
       filesScanned: 1, scanDurationMs: 0, componentCount: 1, occurrenceCount: 0, resolvedOccurrenceCount: 0,
-    })).toBe("Scanned 1 file in 0.0s: 1 component, 0 occurrences.\n\n");
+    })).toBe("Scanned 1 file in 0.0s: 1 component, 0 uses.\n\n");
   });
 
   it("leaves the list out when not asked for it", () => {
     expect(capture([component("a", packageExport("@acme/ui", "Button"), 3)], {
       filesScanned: 1, scanDurationMs: 0, componentCount: 1, occurrenceCount: 3, resolvedOccurrenceCount: 3,
-    }, undefined, false)).toBe("Scanned 1 file in 0.0s: 1 component, 3 occurrences.\n\n");
+    }, undefined, false)).toBe("Scanned 1 file in 0.0s: 1 component, 3 uses.\n\n");
   });
 
   it("in colour, makes the numbers bold and where each component comes from dim, keeping the columns aligned", () => {
@@ -112,8 +112,8 @@ describe("printSummary", () => {
     const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
     expect(printed).toBe(
       [
-        `Scanned ${bold("2")} files in 0.1s: ${bold("2")} components, ${bold("15")} occurrences.`,
-        `Scout couldn't match ${bold("1")} more occurrence to a component. See \x1b[36mhttps://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\x1b[0m`,
+        `Scanned ${bold("2")} files in 0.1s: ${bold("2")} components, ${bold("15")} uses.`,
+        `Scout couldn't match ${bold("1")} more use to a component. See \x1b[36mhttps://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\x1b[0m`,
         "",
         bold("Most used:"),
         `  Button  ${dim("@acme/ui    ")}  ${bold("12")}`,
@@ -134,8 +134,8 @@ describe("printSummary", () => {
     });
     expect(printed).toBe(
       [
-        "Scanned 2,929 files in 0.1s: 1,191 components, 3,925 occurrences.",
-        "Scout couldn't match 2,000 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences",
+        "Scanned 2,929 files in 0.1s: 1,191 components, 3,925 uses.",
+        "Scout couldn't match 2,000 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences",
         "",
         "Most used:",
         "  Button  @acme/ui      1,204",

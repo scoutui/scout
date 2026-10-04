@@ -53,19 +53,19 @@ describe("formatMetric", () => {
 
 describe("formatDeltaFrom", () => {
   it("phrases a migration Δ as the previous share level", () => {
-    // current 49% with a +14.2pp move ⇒ it was 34.8% last scan.
-    expect(formatDeltaFrom("migration", 0.49, 14.2)).toBe("up from 34.8% last scan");
-    expect(formatDeltaFrom("migration", 0.45, -15)).toBe("down from 60% last scan");
+    // current 49% with a +14.2pp move ⇒ it was 34.8% at the previous scan.
+    expect(formatDeltaFrom("migration", 0.49, 14.2)).toBe("up from 34.8% previously");
+    expect(formatDeltaFrom("migration", 0.45, -15)).toBe("down from 60% previously");
   });
 
   it("phrases a retirement Δ as the previous remaining count", () => {
-    expect(formatDeltaFrom("retirement", 821, 121)).toBe("up from 700 last scan");
-    expect(formatDeltaFrom("retirement", 700, -1400)).toBe("down from 2,100 last scan");
+    expect(formatDeltaFrom("retirement", 821, 121)).toBe("up from 700 previously");
+    expect(formatDeltaFrom("retirement", 700, -1400)).toBe("down from 2,100 previously");
   });
 
   it("keeps the unitless ±0 inside deltaDirection's band", () => {
-    expect(formatDeltaFrom("migration", 0.49, 0.04)).toBe("±0 since last scan");
-    expect(formatDeltaFrom("retirement", 821, 0)).toBe("±0 since last scan");
+    expect(formatDeltaFrom("migration", 0.49, 0.04)).toBe("±0 since previous scan");
+    expect(formatDeltaFrom("retirement", 821, 0)).toBe("±0 since previous scan");
   });
 
   it("reads an em dash when either endpoint is unknowable", () => {

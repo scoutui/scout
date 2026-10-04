@@ -52,7 +52,7 @@ export function ReposTable({ rows }: { rows: RepoSummary[] }) {
             <SortButton label="Repo" sortKey="repoId" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           <TableHead className="whitespace-nowrap" aria-sort={ariaSort("committedAt", sortKey, sortDir)}>
-            <SortButton label="Updated" sortKey="committedAt" current={sortKey} dir={sortDir} onClick={toggleSort} />
+            <SortButton label="Committed" sortKey="committedAt" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("componentCount", sortKey, sortDir)}>
             <SortButton label="Components" sortKey="componentCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />

@@ -4,7 +4,7 @@ import type { CanvasLayout, LayoutEdge } from "./graph-layout";
 export type EdgeTip = { tip: string };
 
 /**
- * Edge tooltip text keyed by edge id: each edge's call-site count.
+ * Edge tooltip text keyed by edge id: each edge's count of direct uses.
  */
 export function buildEdgeTips(layout: Pick<CanvasLayout, "edges">): Map<string, EdgeTip> {
   const tips = new Map<string, EdgeTip>();
@@ -12,8 +12,8 @@ export function buildEdgeTips(layout: Pick<CanvasLayout, "edges">): Map<string, 
     tips.set(e.id, {
       tip:
         e.count === 1
-          ? "1 call site renders directly."
-          : `${e.count.toLocaleString()} call sites render directly.`,
+          ? "1 direct use."
+          : `${e.count.toLocaleString()} direct uses.`,
     });
   }
   return tips;

@@ -1,11 +1,11 @@
 ---
 description: "Every field in the JSON file scout scan uploads and scout scan --dry-run writes: meta, components, occurrences and diagnostics."
-sidebar_label: "Scan artifact"
+sidebar_label: "Scan file"
 ---
 
-# Scan artifact reference
+# Scan file reference
 
-Every scan is one JSON file, the [artifact](/docs/reference/glossary#artifact). [`scout scan --dry-run`](/docs/reference/cli#scan) writes it to `scout-scan.json` next to the config; an upload sends it to the dashboard without writing it. This page lists every field in it.
+Every scan is one JSON file, the [scan file](/docs/reference/glossary#scan-file). [`scout scan --dry-run`](/docs/reference/cli#scan) writes it to `scout-scan.json` next to the config; an upload sends it to the dashboard without writing it. This page lists every field in it.
 
 ## Top-level shape {#top-level-shape}
 
@@ -18,10 +18,10 @@ The file is one JSON object with four keys, written in this order:
 | `occurrences` | array | One entry per place a component is used, including places the scan couldn't tie to a component. See [`occurrences[]`](#occurrences). |
 | `diagnostics` | array | Things the scan saw but couldn't follow. See [`diagnostics[]`](#diagnostics). |
 
-Most questions are answered from `components` and `occurrences`. A resolved occurrence names its component by the component's `id`.
+Most questions are answered from `components` and `occurrences`. Each use the scan matched names its component by the component's `id`.
 
 :::note
-A newer CLI can add values to some lists: `credit.kind`, a `trace` step's `kind`, an unresolved occurrence's `reason.kind` and `reason.code`, and the `confidence`, `strongestClass`, `reason`, `source`, `strength` and `disposition` values in a tag's `attribution`. If you read the file with your own scripts, skip values you don't recognise. The other lists of values in `components[]` and `occurrences[]` change only with a new `meta.schemaVersion`.
+A newer CLI can add values to some lists: `credit.kind`, a `trace` step's `kind`, an unmatched use's `reason.kind` and `reason.code`, and the `confidence`, `strongestClass`, `reason`, `source`, `strength` and `disposition` values in a tag's `attribution`. If you read the file with your own scripts, skip values you don't recognise. The other lists of values in `components[]` and `occurrences[]` change only with a new `meta.schemaVersion`.
 :::
 
 ## Paths {#paths}
@@ -34,11 +34,11 @@ One entry per [component](/docs/reference/glossary#component). A component appea
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `id` | `string` | 16-character id computed from `identity`. The same identity gets the same `id` in every scan, so you can match a component across scans. Occurrences and `composition` refer to components by this value. |
+| `id` | `string` | 16-character id computed from `identity`. The same identity gets the same `id` in every scan, so you can match a component across scans. `occurrences[]` entries and `composition` refer to components by this value. |
 | `identity` | object | What the component is and where it comes from. See [Component identity](#component-identity). |
 | `framework` | `"react" \| "vue"` \| absent | The framework the component is written in. Absent on web components. |
-| `stats.occurrenceCount` | `number` | Number of resolved occurrences of this component, including those where it is passed to a call (see [`credit`](#credit)). |
-| `stats.fileCount` | `number` | Number of distinct files those occurrences are in. |
+| `stats.occurrenceCount` | `number` | Number of uses of this component, including those where it is passed to a call (see [`credit`](#credit)). |
+| `stats.fileCount` | `number` | Number of distinct files those uses are in. |
 | `usage` | `"direct" \| "root" \| "none"` | Why the component is listed. See [`usage`](#usage). |
 | `props` | object | For each prop name, how often each value was passed. See [Prop value counts](#component-props). |
 | `composition` | object | Which components this one renders and is rendered by. Present on every entry. See [`composition`](#composition). |
@@ -49,8 +49,8 @@ These fields are less often needed:
 | Field | Type | Description |
 | --- | --- | --- |
 | `attribution` | object \| absent | Tags only: which package or repo file defines the web component. See [`attribution`](#attribution). |
-| `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of occurrences that bind it: Vue listeners such as `@click`, and React props named `on` plus a capital letter, such as `onClick`. Absent when no occurrence binds an event. |
-| `writtenNames` | `string[]` \| absent | The other names files render the component under: every distinct [`writtenName`](#occurrences) of its occurrences, most used first. Absent when none has one. |
+| `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of uses that bind it: Vue listeners such as `@click`, and React props named `on` plus a capital letter, such as `onClick`. Absent when no use binds an event. |
+| `writtenNames` | `string[]` \| absent | The other names files render the component under: every distinct [`writtenName`](#occurrences) of its uses, most used first. Absent when none has one. |
 | `declared` | object \| absent | Components defined in the repo only: the props the component's own code declares. See [`declared`](#declared). |
 | `definition` | `{ line, column }` \| absent | React components defined in the repo only: where the declaration starts in `identity.filePath`. `line` counts from 1 and `column` from 0. |
 | `owningPackage` | `string` \| absent | Components defined in the repo only: the name of the workspace package whose folder holds the file. Absent when the file isn't in a workspace package. |
@@ -88,8 +88,8 @@ These fields are less often needed:
 
 | `kind` | Fields | What it is |
 | --- | --- | --- |
-| `package-export` | `packageName`, `publicEntry`, `exportName` | A component imported from an installed package, such as `Button` from `@acme/ui`. See [From a package](/docs/reference/glossary#from-a-package). |
-| `repository-declaration` | `repoId`, `filePath`, `exportName` | A component defined in the scanned repo, including one in another workspace package of the same repo. See [Defined in the repo](/docs/reference/glossary#defined-in-the-repo). |
+| `package-export` | `packageName`, `publicEntry`, `exportName` | A component imported from an installed package, such as `Button` from `@acme/ui`. See [External](/docs/reference/glossary#external). |
+| `repository-declaration` | `repoId`, `filePath`, `exportName` | A component defined in the scanned repo, including one in another workspace package of the same repo. See [Local](/docs/reference/glossary#local). |
 | `tag` | `tagName` | A [web component](/docs/reference/glossary#web-component), such as `<acme-badge>`, whichever package or file defines it. Any tag with a hyphen in its name that nothing imports counts, so a Vue component registered globally at runtime, such as vue-i18n's `<i18n-t>`, is a tag too. The few SVG and MathML elements with a hyphen, such as `<font-face>`, are not. |
 
 | Field | In | Description |
@@ -161,20 +161,20 @@ Every component has exactly one value. The first row that applies wins.
 
 | Value | When |
 | --- | --- |
-| `direct` | The component has at least one resolved occurrence. |
-| `root` | A component defined in the repo, with no resolved occurrences, that is the default export of a framework entry file: `{page,layout,template,error,loading,not-found}.{tsx,jsx}` anywhere under an `app/` folder, or any `.tsx` or `.jsx` file under a `pages/` folder except `pages/api/`. The folders can be at any depth, such as `src/app/`. |
+| `direct` | The component has at least one use. |
+| `root` | A component defined in the repo, with no uses, that is the default export of a framework entry file: `{page,layout,template,error,loading,not-found}.{tsx,jsx}` anywhere under an `app/` folder, or any `.tsx` or `.jsx` file under a `pages/` folder except `pages/api/`. The folders can be at any depth, such as `src/app/`. |
 | `none` | Anything else, such as a component defined in the repo that renders others but that nothing renders. |
 
 ### Prop value counts {#component-props}
 
-`props` has one key per prop name passed at any of the component's resolved occurrences. Each value is:
+`props` has one key per prop name passed at any of the component's uses. Each value is:
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `values` | array | One entry per distinct value, most frequent first. See the value shapes below. |
-| `dynamic` | `number` | Occurrences where the value is an expression the scan doesn't read, such as a function call or an arrow function. |
-| `omitted` | `number` | Occurrences that don't pass the prop. |
-| `other` | `number` \| absent | Occurrences whose value isn't in `values` because the prop has more than 100 distinct values. `values` keeps the 100 most frequent. Absent at 100 distinct values or fewer. |
+| `dynamic` | `number` | Uses where the value is an expression the scan doesn't read, such as a function call or an arrow function. |
+| `omitted` | `number` | Uses that don't pass the prop. |
+| `other` | `number` \| absent | Uses whose value isn't in `values` because the prop has more than 100 distinct values. `values` keeps the 100 most frequent. Absent at 100 distinct values or fewer. |
 | `truncated` | `number` \| absent | How many distinct values were left out of `values`. Absent at 100 distinct values or fewer. |
 
 For every prop, the counts in `values` plus `dynamic`, `other` and `omitted` add up to `stats.occurrenceCount`.
@@ -200,31 +200,31 @@ The props a component defined in the repo declares in its own code. Read from a 
 
 ### `composition` {#composition}
 
-Which components this one renders and which render it. Component A *renders* component B when a place B is used sits inside A's own code, so A is that occurrence's `ownerComponentId`. Only resolved occurrences count. [Composition: renders and rendered by](/docs/explanation/composition-and-ownership) explains how this is worked out.
+Which components this one renders and which render it. Component A *renders* component B when a place B is used sits inside A's own code, so A is that use's `ownerComponentId`. Unmatched uses don't count. [Composition: renders and rendered by](/docs/explanation/composition-and-ownership) explains how this is worked out.
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `rendersByCount` | `Record<string, number>` | Component `id` of each component this one renders, to how many times it renders it. |
 | `renderedByCount` | `Record<string, number>` | Component `id` of each component that renders this one, to how many times it does. |
-| `isRootCount` | `number` | Occurrences of this component that no component renders, such as a use outside any component. |
+| `isRootCount` | `number` | Uses of this component that no component renders, such as one outside any component. |
 | `isLeafCount` | `number` | Equal to `stats.occurrenceCount` when `rendersByCount` is empty, otherwise `0`. |
 
 Keys are `components[].id` values. Look them up in `components[]` to get names. Only ids that are in `components[]` appear.
 
 ## `occurrences[]` {#occurrences}
 
-One entry per [occurrence](/docs/reference/glossary#occurrence): a place in the code that uses a component, usually one tag. A tag inside a helper function that several components call gets one occurrence per calling component. The array also holds [unresolved occurrences](#unresolved-occurrences), places where the scan saw a component used but couldn't tell which one.
+One entry per [use](/docs/reference/glossary#use): a place in the code where a component appears, usually one tag. A tag inside a helper function that several components call gets one entry per calling component. The array also holds [unmatched uses](#unresolved-occurrences), places where the scan saw a component used but couldn't tell which one.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `occurrenceId` | `string` | 16-character id computed from what the occurrence names, its position and its owner. Unique within the artifact. |
+| `occurrenceId` | `string` | 16-character id computed from what the use names, its position and its owner. Unique within the scan file. |
 | `resolution` | object | Which component this is, or why the scan couldn't tell. See [`resolution`](#resolution). |
 | `filePath` | `string` | The file the use is in. |
 | `line` | `number` | Line of the use, counted from 1. |
 | `column` | `number` | Column of the use: counted from 0 in React files and from 1 in Vue files. |
 | `credit` | object | Whether the component is rendered here or passed to a call. See [`credit`](#credit). |
 | `trace` | array | The steps between this use and the component, such as an import or a wrapper. See [`trace`](#trace). |
-| `writtenName` | `string` \| absent | The name this file renders the component under, with any member path, such as `SettingsHeader` after `import SettingsHeader from "./Header"`, or `Filters.FilterBar`. Present only on a resolved occurrence, and only when the name differs from the component's own `exportName`, or `tagName` for a tag. A difference in letter case or hyphens alone doesn't count. A package's default export has no name of its own, so it always has one. |
+| `writtenName` | `string` \| absent | The name this file renders the component under, with any member path, such as `SettingsHeader` after `import SettingsHeader from "./Header"`, or `Filters.FilterBar`. Present only on a matched use, and only when the name differs from the component's own `exportName`, or `tagName` for a tag. A difference in letter case or hyphens alone doesn't count. A package's default export has no name of its own, so it always has one. |
 | `props` | object | The value passed for each prop here. See [Prop values at one place](#occurrence-props). |
 | `events` | `string[]` \| absent | Vue event listeners bound here, such as `remove` for `@remove`. React handlers stay in `props`. Absent when none are bound. |
 | `ownerComponentId` | `string` \| absent | The `components[].id` of the component whose code contains this use. Absent outside any component. |
@@ -248,22 +248,22 @@ One entry per [occurrence](/docs/reference/glossary#occurrence): a place in the 
 | `status` | Other fields | Meaning |
 | --- | --- | --- |
 | `"resolved"` | `componentId` | The `components[].id` of the component used. |
-| `"unresolved"` | `reason` | The scan couldn't tell which component this is. See [Unresolved occurrences](#unresolved-occurrences). |
+| `"unresolved"` | `reason` | The scan couldn't tell which component this is. See [Unmatched uses](#unresolved-occurrences). |
 
-### Unresolved occurrences {#unresolved-occurrences}
+### Unmatched uses {#unresolved-occurrences}
 
-An [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence) is a place where the scan saw a component used but couldn't tie it to one. It has no `componentId`, and nothing in `components[]` stands for it. It keeps its file, position, `credit`, `trace`, `props` and owner, but doesn't count toward any component's `stats`, `props` or `composition`. When the use came through an import, `trace` keeps that import as written, so it shows which import failed. The scan summary counts unresolved occurrences, as in `Scout couldn't match 4 more occurrences to a component.`
+An [unmatched use](/docs/reference/glossary#unmatched-use) is a place where the scan saw a component used but couldn't tie it to one. It has no `componentId`, and nothing in `components[]` stands for it. It keeps its file, position, `credit`, `trace`, `props` and owner, but doesn't count toward any component's `stats`, `props` or `composition`. When the use came through an import, `trace` keeps that import as written, so it shows which import failed. The scan summary counts them, as in `Scout couldn't match 4 more uses to a component.`
 
 `reason.kind` says why:
 
 | `reason.kind` | Other fields | Meaning |
 | --- | --- | --- |
-| `package-not-installed` | `packageName` | The import names a package that a `package.json` declares, either the importing file's workspace package or the workspace root, but the package isn't installed. Each such package also gets a [`dependency-not-installed`](/docs/reference/diagnostics#dependency-not-installed) diagnostic. A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans, unless it's a dry run. One listed only in `peerDependencies` or `optionalDependencies` doesn't: the scan uploads with these occurrences unresolved. |
+| `package-not-installed` | `packageName` | The import names a package that a `package.json` declares, either the importing file's workspace package or the workspace root, but the package isn't installed. Each such package also gets a [`dependency-not-installed`](/docs/reference/diagnostics#dependency-not-installed) diagnostic. A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans, unless it's a dry run. One listed only in `peerDependencies` or `optionalDependencies` doesn't: the scan uploads with these uses unmatched. |
 | `module-not-found` | none | The import can't be followed: a path to a missing file, a path to a file outside the scanned folder (outside the monorepo, when the folder is part of one), an alias your config or `tsconfig.json` doesn't define, or a package that no `package.json` declares and that isn't installed. |
 | `unbound-name` | `name` | Nothing in the file imports or declares the name, such as `<Widget />` with no import. In a Vue template it also covers a tag whose import lacks the name, such as `<Menu.Item>` when the imported `Menu` has no `Item`. |
 | `chain-bailed` | `code` | Following a package's re-exports to the file that defines the component looped back on itself (`"cycle-detected"`) or passed through more than 32 files (`"chain-too-deep"`). The same problem is reported as a [diagnostic](/docs/reference/diagnostics#package-re-export-codes). |
 
-```json title="An unresolved occurrence: @acme/ui is declared but not installed"
+```json title="An unmatched use: @acme/ui is declared but not installed"
 {
   "occurrenceId": "742a11f2ccdeec08",
   "resolution": {
@@ -287,7 +287,7 @@ When a component you expect is missing, see [Troubleshoot a scan](/docs/guides/t
 | `kind` | Other fields | Meaning |
 | --- | --- | --- |
 | `"render"` | none | The component is rendered here: a JSX element or a Vue template tag. |
-| `"argument"` | `callee`, `index` | The component is passed to a call instead of rendered, such as `makeControl(Input)` or `useModal(ConfirmDialog)`. `callee` names the function and `index` is the argument position, from `0`. These occurrences have no props. |
+| `"argument"` | `callee`, `index` | The component is passed to a call instead of rendered, such as `makeControl(Input)` or `useModal(ConfirmDialog)`. `callee` names the function and `index` is the argument position, from `0`. These uses have no props. |
 
 A component rendered through a wrapper, such as `const Save = memo(Button)` then `<Save />`, is a `render` of `Button` with a `hoc` step in its trace.
 
@@ -301,8 +301,8 @@ The steps between the use and the component, outermost first. A plain import has
 | `tag` | `written` | A web component whose tag is written with capitals, such as `Acme-Badge`. `identity.tagName` holds the lowercased name. |
 | `hoc` | `callee` | A function that wraps the component and returns a new one, such as `memo`, `forwardRef` or `connect`. |
 | `lazy` | `callee` | A lazy-loading wrapper, such as `lazy(() => import("./Checkout"))` or Next.js `dynamic`. |
-| `dynamic-map` | `mapName`, `mapLoc: { file, line, column }` | The component is picked from an object of components, such as `icons[kind]`. Every component in the object gets an occurrence. `mapLoc` is where the object is defined. |
-| `helper-call` | `callee`, `calleeFile` | The element is inside a function that isn't a component, such as a helper that returns JSX. The element gets one occurrence per component that calls the helper. |
+| `dynamic-map` | `mapName`, `mapLoc: { file, line, column }` | The component is picked from an object of components, such as `icons[kind]`. Every component in the object gets an entry. `mapLoc` is where the object is defined. |
+| `helper-call` | `callee`, `calleeFile` | The element is inside a function that isn't a component, such as a helper that returns JSX. The element gets one entry per component that calls the helper. |
 | `prop-forward` | `bindingName`, `constructionSite: { file, line, column }` | The element is created outside any component, such as `const badge = <Icon />`, and used inside one. `constructionSite` is where it is created. |
 
 The `column` in `mapLoc` and `constructionSite` counts from 0.
@@ -364,7 +364,7 @@ A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a 
 
 ## `diagnostics[]` {#diagnostics}
 
-Things the scan saw but couldn't follow, such as a component passed in as a prop, or a package whose re-exports loop. A use the scan couldn't tie to a component because of a missing file, an uninstalled package or a name nothing imports isn't a diagnostic: it is an [unresolved occurrence](#unresolved-occurrences).
+Things the scan saw but couldn't follow, such as a component passed in as a prop, or a package whose re-exports loop. A use the scan couldn't tie to a component because of a missing file, an uninstalled package or a name nothing imports isn't a diagnostic: it is an [unmatched use](#unresolved-occurrences).
 
 | Field | Type | Description |
 | --- | --- | --- |

@@ -59,7 +59,7 @@ function Edges(): React.ReactElement {
   );
 }
 
-const SUMMARY = `Render tree of the Button from @acme/ui in partner-portal. ${DIRECT.join(", ")} and more components render it directly. Further up, CheckoutPage renders PaymentForm, OrdersPage renders OrderTable and ConfirmDialog, AccountPage renders ConfirmDialog, AppLayout renders Header, and more.`;
+const SUMMARY = `Composition of the Button from @acme/ui in partner-portal. ${DIRECT.join(", ")} and more components render it directly. Further up, CheckoutPage renders PaymentForm, OrdersPage renders OrderTable and ConfirmDialog, AccountPage renders ConfirmDialog, AppLayout renders Header, and more.`;
 
 /** The tree grows away from the life line, so it mirrors with the page direction. */
 export default function RenderTreeFigure(): React.ReactElement {

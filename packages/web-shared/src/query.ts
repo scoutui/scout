@@ -16,10 +16,10 @@ export type QueryView = {
   /** The other names files render the component under, so a bare term finds it by any of them. */
   written: string[];
   scope: "external" | "local";
-  kind: "react" | "vue" | "wc" | "tag";
+  kind: "react" | "vue" | "wc" | "undefined-element";
   package: string;
   deprecated: boolean;
-  occurrences: number;
+  uses: number;
   tag: string[];
 };
 
@@ -27,7 +27,7 @@ const KIND_FRIENDLY: Record<ComponentKind, QueryView["kind"]> = {
   "react-component": "react",
   "vue-component": "vue",
   "custom-element": "wc",
-  tag: "tag",
+  tag: "undefined-element",
 };
 
 export function friendlyKind(kind: ComponentKind): QueryView["kind"] {
@@ -47,7 +47,7 @@ export function toQueryView(
     kind: friendlyKind(kind),
     package: packageName ?? "",
     deprecated: componentDeprecated(c, governance),
-    occurrences: c.stats.occurrenceCount,
+    uses: c.stats.occurrenceCount,
     tag: resolveTags(packageName, tags).map((t) => t.value),
   };
 }
@@ -67,7 +67,7 @@ export function parseQuery(input: string): { ast: LiqeQuery | null; error: strin
 /**
  * Whether a component matches the parsed query. False when liqe throws at eval
  * time, which it does for a query that parses but can't be evaluated (a numeric
- * comparison against a string, `occurrences:>foo`) and for unknown field names.
+ * comparison against a string, `uses:>foo`) and for unknown field names.
  */
 export function matchesQuery(
   ast: LiqeQuery,

@@ -65,7 +65,7 @@ describe("CompositionCanvas smoke", () => {
     return el;
   };
 
-  it("a chip's tooltip singularizes a lone call site", async () => {
+  it("a chip's tooltip singularizes a lone use", async () => {
     const model = buildGraphModel({
       nodes: [node("a"), node("F")],
       edges: [{ source: "a", target: "F", count: 1 }],
@@ -85,7 +85,7 @@ describe("CompositionCanvas smoke", () => {
     );
     await screen.findByText("rendered by");
     fireEvent.focus(trigger("a", "a"));
-    expect(await screen.findByText("1 call site")).toBeInTheDocument();
+    expect(await screen.findByText("1 use")).toBeInTheDocument();
   });
 
   // Component chips are links, so their tooltip says they open on click.

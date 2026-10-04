@@ -49,7 +49,7 @@ describe("facetOptions: every count follows the other filters", () => {
     const o = facetOptions(rows, null, { ...emptyFacets(), packages: ["@x/lib"], kinds: ["react"] });
     // Packages ignore `package` but keep `kind:react`: B (vue) does not count toward @x/lib.
     expect(o.packages).toEqual([{ value: "@x/lib", count: 1 }, { value: "@y/ui", count: 1 }]);
-    // Framework ignores `kind` but keeps `package:@x/lib`: A (react) and B (vue).
+    // Type ignores `kind` but keeps `package:@x/lib`: A (react) and B (vue).
     expect(o.kinds).toEqual([{ value: "react", count: 1 }, { value: "vue", count: 1 }]);
     // Origin, Tag and the deprecated chip keep both: only A.
     expect(o.origin).toEqual({ external: 1, local: 0 });
@@ -106,15 +106,16 @@ describe("URL params", () => {
     ["search text", { text: "date picker" }, "q=date+picker"],
     ["origin", { origin: "local" }, "origin=local"],
     ["one kind param per kind", { kinds: ["react", "vue"] }, "kind=react&kind=vue"],
+    ["an undefined element", { kinds: ["undefined-element"] }, "kind=undefined-element"],
     ["one package param per package", { packages: ["@acme/ui", "@acme/icons"] }, "package=@acme/ui&package=@acme/icons"],
     ["one tag param per tag", { tags: ["icons", "acme-ui"] }, "tag=icons&tag=acme-ui"],
     ["deprecated", { deprecated: true }, "deprecated=true"],
     ["not deprecated", { deprecated: false }, "deprecated=false"],
-    ["at least N occurrences", { occurrences: { op: ">=", value: 10 } }, "occurrences=gte:10"],
-    ["more than N occurrences", { occurrences: { op: ">", value: 10 } }, "occurrences=gt:10"],
-    ["at most N occurrences", { occurrences: { op: "<=", value: 10 } }, "occurrences=lte:10"],
-    ["fewer than N occurrences", { occurrences: { op: "<", value: 10 } }, "occurrences=lt:10"],
-    ["exactly N occurrences", { occurrences: { op: "=", value: 10 } }, "occurrences=10"],
+    ["at least N uses", { occurrences: { op: ">=", value: 10 } }, "uses=gte:10"],
+    ["more than N uses", { occurrences: { op: ">", value: 10 } }, "uses=gt:10"],
+    ["at most N uses", { occurrences: { op: "<=", value: 10 } }, "uses=lte:10"],
+    ["fewer than N uses", { occurrences: { op: "<", value: 10 } }, "uses=lt:10"],
+    ["exactly N uses", { occurrences: { op: "=", value: 10 } }, "uses=10"],
     ["changed since the previous scan", { changed: true }, "changed=true"],
   ])("writes and reads %s", (_case, facets, written) => {
     const f = { ...emptyFacets(), ...facets };
@@ -130,7 +131,7 @@ describe("URL params", () => {
     ["a param it doesn't know", "usages=gte:10"],
     ["an origin it doesn't know", "origin=elsewhere"],
     ["a kind it doesn't know", "kind=svelte"],
-    ["occurrences it can't read", "occurrences=>=10"],
+    ["uses it can't read", "uses=>=10"],
     ["deprecated other than true or false", "deprecated=yes"],
     ["changed other than true", "changed=yes"],
   ])("ignores %s", (_case, written) => {

@@ -57,10 +57,10 @@ export function PackageConsumersTable({
               <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
             </TableHead>
             <TableHead className="whitespace-nowrap text-right">
-              <SortButton label="Occurrences" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+              <SortButton label="Uses" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
             </TableHead>
             <TableHead className="whitespace-nowrap text-right pr-3">
-              <SortButton label="Updated" sortKey="committedAt" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+              <SortButton label="Committed" sortKey="committedAt" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
             </TableHead>
           </TableRow>
         </TableHeader>

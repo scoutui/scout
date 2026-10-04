@@ -29,7 +29,7 @@ function Usage(): React.ReactElement {
       <div className={shared.col}>
         <StageHead id="usage" title="See which props and values teams actually pass" />
         <p className={clsx(shared.body, styles.lead)}>
-          Every call site, with the values it passes, linked to its line of code.
+          Every use, with the values it passes, linked to its line of code.
         </p>
         <UsageFigure />
       </div>
@@ -62,8 +62,8 @@ function Migration(): React.ReactElement {
       <div className={shared.col}>
         <StageHead id="migration" title="Mark what's replacing what, and watch the move" />
         <p className={clsx(shared.body, styles.lead)}>
-          Supersede a whole package or a single component, and every scan shows how much has moved to its
-          replacement.
+          Mark a whole package or a single component as replaced, and every scan shows how much has moved to
+          its replacement.
         </p>
         <MigrationChart />
       </div>

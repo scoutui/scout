@@ -62,9 +62,14 @@ describe("ComponentDetailHeader", () => {
     expect(identityLine()).toBe("@example/ui·defined at src/components/Button.tsx:4:16");
   });
 
+  it("names the origin in its badge, with what it means as the badge's title", () => {
+    render(<ComponentDetailHeader detail={makeDetail({ scope: "local" })} />);
+    expect(screen.getByText("Local")).toHaveAttribute("title", "Defined in this repo");
+  });
+
   it("puts the warning triangle in the deprecated pill", () => {
     render(<ComponentDetailHeader detail={makeDetail({ deprecated: true })} />);
-    const pill = screen.getByText("deprecated").closest("[data-slot=badge]");
+    const pill = screen.getByText("Deprecated").closest("[data-slot=badge]");
     expect(pill?.querySelector("svg")).toBeInstanceOf(SVGElement);
   });
 });

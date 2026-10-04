@@ -76,7 +76,7 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
               : entry.remaining.toLocaleString()}
           </span>{" "}
           <span className="text-muted-foreground">
-            {migration ? "migrated" : "remaining"}
+            {migration ? "migrated" : "left"}
           </span>
         </span>
         {/* The change since the last scan, coloured by the record's declared
@@ -84,7 +84,7 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
             The sign and font weight carry it too, not colour alone. */}
         <span
           className={cn(
-            // w-40: "down from 34.8% last scan" is the widest endpoint phrase.
+            // w-40: "down from 34.8% previously" is the widest endpoint phrase.
             "ml-auto shrink-0 text-right text-xs tabular-nums whitespace-nowrap xl:ml-0 xl:w-40",
             direction === "backward"
               ? "font-medium text-status-err"
@@ -183,7 +183,7 @@ export function TrackingSection({
   const noun = kind === "migration" ? "Migrations" : "Retirements";
   const heading = [
     `${noun}${surface === "repo" ? " in this repo" : ""}`,
-    entries.length > 0 ? `${entries.length.toLocaleString()} active` : null,
+    entries.length > 0 ? `${entries.length.toLocaleString()} in progress` : null,
     completeCount > 0 ? `${completeCount.toLocaleString()} complete` : null,
   ]
     .filter(Boolean)
@@ -207,8 +207,8 @@ export function TrackingSection({
                 aria-hidden
                 className="size-3.5 shrink-0 -rotate-90 transition-transform group-open/expand:rotate-0 motion-reduce:transition-none"
               />
-              <span className="group-open/expand:hidden">Show all {entries.length.toLocaleString()} active</span>
-              <span className="hidden group-open/expand:inline">Showing all {entries.length.toLocaleString()} active</span>
+              <span className="group-open/expand:hidden">Show all {entries.length.toLocaleString()} in progress</span>
+              <span className="hidden group-open/expand:inline">Showing all {entries.length.toLocaleString()} in progress</span>
             </summary>
             <div className="divide-y divide-border border-t">{hidden.map(row)}</div>
           </details>

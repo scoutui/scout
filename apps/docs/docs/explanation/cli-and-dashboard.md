@@ -5,7 +5,7 @@ sidebar_label: "CLI and dashboard"
 
 # How the CLI and the dashboard fit together
 
-Scout has two parts. The **CLI** scans one repository and uploads the scan, a JSON [artifact](/docs/reference/glossary#artifact). The **dashboard** is a site you host yourself, where your team reads many of those scans side by side and over time.
+Scout has two parts. The **CLI** scans one repository and uploads the result as a JSON [scan file](/docs/reference/glossary#scan-file). The **dashboard** is a site you host yourself, where your team reads many of those scans side by side and over time.
 
 Most people meet the CLI first, because it is the part you install and run. Most of the looking and deciding happens in the dashboard.
 
@@ -15,17 +15,17 @@ The CLI is a collector. Point it at a repo and it makes one scan: a snapshot of 
 
 The dashboard keeps the scans it receives from every repo in one place for the whole team, with at most one scan per commit of each repo. Uploading a scan of a commit the dashboard already has changes nothing, unless you scan with `--rescan`, which replaces that commit's scan. Either way, a chart never counts one commit twice. The CLI calls a running dashboard its *host*: the address it uploads to, given with `--host` or the config file's `host` field.
 
-The artifact is useful on its own. You can read it with `jq`, feed it to your own scripts, or keep it as a build output. It also keeps [unresolved occurrences](/docs/reference/glossary#unresolved-occurrence), which the dashboard leaves out of every number. The scan's summary leaves them out of its totals too, and counts them on a line of their own: `Scout couldn't match … more occurrences to a component.`
+The scan file is useful on its own. You can read it with `jq`, feed it to your own scripts, or keep it as a build output. It also keeps the [uses the scan couldn't match](/docs/reference/glossary#unmatched-use) to a component, which the dashboard leaves out of every number. The scan's summary leaves them out of its totals too, and counts them on a line of their own: `Scout couldn't match … more uses to a component.`
 
 What one file can't answer are questions that span repos or time, and those are the dashboard's job:
 
 - **Across repos.** How is `Button` from `@acme/ui` used in `storefront` and `checkout` together?
 - **Over time.** Is `LegacyButton` still falling as teams move to `Button`? That needs a series of scans, kept and compared.
-- **Decisions next to usage.** A record such as "`LegacyButton` is superseded by `Button`" sits beside the numbers, so you can see policy and practice together. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
+- **Decisions next to usage.** A record such as "`LegacyButton` is replaced by `Button`" sits beside the numbers, so you can see policy and practice together. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## How a scan gets in
 
-The CLI sends scans to the dashboard; the dashboard never reaches into your repos. `scout scan` scans and sends the artifact, and writes no file. To keep the artifact as a file, run `scout scan --dry-run`: it writes `scout-scan.json` and doesn't contact the dashboard.
+The CLI sends scans to the dashboard; the dashboard never reaches into your repos. `scout scan` scans and sends the scan file, and writes nothing to disk. To keep the scan file, run `scout scan --dry-run`: it writes `scout-scan.json` and doesn't contact the dashboard.
 
 `scout scan` sends the commit you have checked out. Past commits come in through `scout backfill`, which scans one commit a week of the tracked branch's history, each in a temporary checkout, and uploads them. A repo's charts can then show its history straight away. See [Fill in a repo's history](/docs/guides/fill-in-a-repos-history).
 
@@ -74,13 +74,13 @@ A scan that isn't ready affects only its own repo. When a repo's latest scan is 
 
 A page shows **Preparing scan data**, **Scan data couldn't be prepared** or **Scan data can't be read** instead of its content only when it has nothing to show: a repo's own pages before any of its scans is ready, an older scan you picked that isn't ready, and pages whose scans the dashboard is still rebuilding after an upgrade. These states are about data the dashboard has already stored, not about an upload: a failed upload never reaches the pages, and the CLI reports it.
 
-The dashboard doesn't reread the raw artifact every time you open a page. When it publishes a scan, it also stores that scan in the shape its pages read. A new upload is prepared before it shows, so pages keep showing the previous scan until the new one is ready.
+The dashboard doesn't reread the raw scan file every time you open a page. When it publishes a scan, it also stores that scan in the shape its pages read. A new upload is prepared before it shows, so pages keep showing the previous scan until the new one is ready.
 
 **Preparing scan data** in place of a page means it needs a scan whose stored data isn't ready for this version of the dashboard. The usual cause is an upgrade. The worker prepares those scans again on its own, starting with each repo's latest scan. The page checks again every few seconds and loads by itself once the worker has caught up.
 
 Most pages read only each repo's latest scans, so they come back first. A chart over time needs every scan in its range, so it comes back last.
 
-Some numbers are worked out by the worker ahead of time rather than when you open the page: the occurrences left on the **governance** page, the migration and retirement charts, the rows on a repo's **Adoption** tab, and chart previews on the **charts** page. The worker updates them after each new scan and after each change to a record, tag or chart, so they catch up a moment later and a reload shows the new numbers. Until the worker has worked them out for the first time, for example straight after an upgrade, they show **Preparing scan data**.
+Some numbers are worked out by the worker ahead of time rather than when you open the page: the uses left on the **governance** page, the migration and retirement charts, the rows on a repo's **Adoption** tab, and chart previews on the **charts** page. The worker updates them after each new scan and after each change to a record, tag or chart, so they catch up a moment later and a reload shows the new numbers. Until the worker has worked them out for the first time, for example straight after an upgrade, they show **Preparing scan data**.
 
 When a repo's latest scan couldn't be prepared or can't be read, they use its newest ready scan and name the repo above the numbers. **Numbers may be out of date** means the worker couldn't work them out again; ask your dashboard administrator to retry it.
 

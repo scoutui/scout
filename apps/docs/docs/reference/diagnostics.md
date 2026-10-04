@@ -5,11 +5,11 @@ sidebar_label: "Diagnostics"
 
 # Diagnostics reference
 
-A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints its warnings to the terminal at the end of the run ([the rest with `--debug`](#terminal-output)) and writes every diagnostic to the artifact's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array.
+A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints its warnings to the terminal at the end of the run ([the rest with `--debug`](#terminal-output)) and writes every diagnostic to the scan file's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array.
 
-A use whose import points at a missing file, whose package isn't installed, or whose name nothing imports isn't a diagnostic. The scan keeps it in `occurrences[]` as an [unresolved occurrence](/docs/reference/artifact#unresolved-occurrences), with the reason.
+A use whose import points at a missing file, whose package isn't installed, or whose name nothing imports isn't a diagnostic. The scan keeps it in `occurrences[]` as an [unmatched use](/docs/reference/artifact#unresolved-occurrences), with the reason.
 
-On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), a scan with diagnostics still writes the artifact and exits `0`.
+On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), a scan with diagnostics still writes the scan file and exits `0`.
 
 To work out why a component is missing from your results, start with [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan). This page lists every code.
 
@@ -45,7 +45,7 @@ Every code except `dependency-not-installed` also has `filePath`, the file the d
 
 **Severity:** `warning`
 
-A package that a `package.json` in the repo declares isn't installed, so the scan can't find its components. Every use of them is an [unresolved occurrence](/docs/reference/artifact#unresolved-occurrences) with the reason `package-not-installed`. The scan reports one diagnostic per package, and only for a package it found in use.
+A package that a `package.json` in the repo declares isn't installed, so the scan can't find its components. Every use of them is [unmatched](/docs/reference/artifact#unresolved-occurrences), with the reason `package-not-installed`. The scan reports one diagnostic per package, and only for a package it found in use.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ A package that a `package.json` in the repo declares isn't installed, so the sca
 This code has no `filePath`.
 
 ```text
-Warning: @acme/ui is listed in package.json but isn't installed, so 3 occurrences of it aren't matched to a component. Install your dependencies and scan again.
+Warning: @acme/ui is listed in package.json but isn't installed, so 3 uses of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
 **What to do:** install the repo's dependencies with your package manager, then scan again. Until every package in `dependencies` and `devDependencies` is installed, `scan` stops before it scans:
@@ -65,11 +65,11 @@ Warning: @acme/ui is listed in package.json but isn't installed, so 3 occurrence
 Error: Couldn't upload the scan: @acme/ui is listed in package.json but isn't installed. Install your dependencies and try again.
 ```
 
-A package listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with that package's occurrences unresolved.
+A package listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with that package's uses unmatched.
 
 ## Render codes
 
-A *render* is one JSX tag that names a component, such as `<Button>` or `<Card.Header>`. When the tag's name is bound to something the scan can't follow to a component, the render gets no [occurrence](/docs/reference/glossary#occurrence) and reports one of these codes instead, unless it is one of the [renders that report nothing](#renders-that-report-nothing).
+A *render* is one JSX tag that names a component, such as `<Button>` or `<Card.Header>`. When the tag's name is bound to something the scan can't follow to a component, the render isn't counted as a [use](/docs/reference/glossary#use) and reports one of these codes instead, unless it is one of the [renders that report nothing](#renders-that-report-nothing).
 
 ### `late-bound-render`
 
@@ -125,7 +125,7 @@ The component is loaded with `import()`, for example through `React.lazy` or `ne
 | `detail` | string | Why the scan gave up. |
 
 ```text
-Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this usage isn't counted.
+Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this use isn't counted.
 ```
 
 **What to do:** where you can, reduce the `.then` callback to a single export pick, such as `.then((m) => ({ default: m.Panel }))`.
@@ -136,7 +136,7 @@ Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads
 
 **Severity:** `warning`
 
-The `package.json` next to the config lists `nuxt`, but Nuxt's generated components file, `.nuxt/components.d.ts` (Nuxt 3) or `.nuxt/types/components.d.ts` (Nuxt 4), doesn't exist. Without it the scan can't find auto-imported components. A tag that uses one, such as `<AppHeader />`, is an [unresolved occurrence](/docs/reference/artifact#unresolved-occurrences) with the reason `unbound-name`. A kebab-case tag such as `<app-header />` is counted instead as a [web component](/docs/reference/glossary#web-component) with no package.
+The `package.json` next to the config lists `nuxt`, but Nuxt's generated components file, `.nuxt/components.d.ts` (Nuxt 3) or `.nuxt/types/components.d.ts` (Nuxt 4), doesn't exist. Without it the scan can't find auto-imported components. A tag that uses one, such as `<AppHeader />`, is an [unmatched use](/docs/reference/artifact#unresolved-occurrences) with the reason `unbound-name`. A kebab-case tag such as `<app-header />` is counted instead as a [web component](/docs/reference/glossary#web-component) with no package.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -173,7 +173,7 @@ Warning: /home/dev/checkout/.nuxt/components.d.ts lists PromoBanner at component
 
 ## Package re-export codes
 
-These two describe files inside an installed package, not your code. While following the package's re-exports (`export * from "./widgets.js"`) to the file that defines a component, the scan gave up. Every use of that component is an [unresolved occurrence](/docs/reference/artifact#unresolved-occurrences) with the reason `chain-bailed` and the same code.
+These two describe files inside an installed package, not your code. While following the package's re-exports (`export * from "./widgets.js"`) to the file that defines a component, the scan gave up. Every use of that component is [unmatched](/docs/reference/artifact#unresolved-occurrences), with the reason `chain-bailed` and the same code.
 
 For both codes, `filePath` is the package file, such as `node_modules/@acme/ui/index.js`. It is relative to your monorepo root, or to the folder that holds the config when the scanned folder isn't part of a monorepo.
 
@@ -189,7 +189,7 @@ The re-exports came back to a file and export the scan had already visited, so i
 | `packageName` | string, optional | The package that holds `filePath`. |
 
 ```text
-Warning: The re-exports of Widget in node_modules/@acme/loop/index.js loop back on themselves, so its occurrences aren't matched to a component.
+Warning: The re-exports of Widget in node_modules/@acme/loop/index.js loop back on themselves, so its uses aren't matched to a component.
 ```
 
 **What to do:** nothing to fix in your repo. If the package is yours, remove the loop from its re-exports.
@@ -207,14 +207,14 @@ The re-exports passed through more than 32 files without reaching the file that 
 | `packageName` | string, optional | The package that holds `filePath`. |
 
 ```text
-Warning: Stopped following the re-exports of StarIcon after 32 files (at node_modules/@acme/icons/d32.js), so its occurrences aren't matched to a component.
+Warning: Stopped following the re-exports of StarIcon after 32 files (at node_modules/@acme/icons/d32.js), so its uses aren't matched to a component.
 ```
 
 **What to do:** nothing to fix in your repo. If the package is yours, shorten its re-export chain.
 
 ## Renders that report nothing
 
-These tags produce no occurrence and no diagnostic:
+These tags aren't counted as uses and report no diagnostic:
 
 - A plain HTML or namespaced JSX tag, such as `<div>` or `<svg:rect>`.
 - A JSX tag bound to a string, such as `const Tag = as ?? "span";` then `<Tag>`.
@@ -224,19 +224,19 @@ These tags produce no occurrence and no diagnostic:
 
 ## Terminal output
 
-At the end of a scan, before the summary, the scan prints each `warning` to stderr on its own line, starting `Warning:`. `dependency-not-installed` lines come last. The terminal lines don't show the codes; the artifact does.
+At the end of a scan, before the summary, the scan prints each `warning` to stderr on its own line, starting `Warning:`. `dependency-not-installed` lines come last. The terminal lines don't show the codes; the scan file does.
 
 ```text
-Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this usage isn't counted.
+Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this use isn't counted.
 ```
 
-[`--quiet`](/docs/reference/cli#scan) turns off these lines. The artifact still lists every diagnostic. `auto-import-manifest-missing` prints once, as the scan starts, so it shows even with `--quiet`.
+[`--quiet`](/docs/reference/cli#scan) turns off these lines. The scan file still lists every diagnostic. `auto-import-manifest-missing` prints once, as the scan starts, so it shows even with `--quiet`.
 
-The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): one line per code, with a count. The individual entries are only in the artifact.
+The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): one line per code, with a count. The individual entries are only in the scan file.
 
 ```text
 1 component passed in as a prop or argument wasn't counted.
-5 usages couldn't be matched to a component and weren't counted.
+5 renders couldn't be followed to a component and weren't counted as uses.
 ```
 
-The artifact records each diagnostic once. `cycle-detected` and `chain-too-deep` appear once per package file and export, however many of your files import the component.
+The scan file records each diagnostic once. `cycle-detected` and `chain-too-deep` appear once per package file and export, however many of your files import the component.

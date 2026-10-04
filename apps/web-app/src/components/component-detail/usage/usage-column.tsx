@@ -227,7 +227,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
             share={area.count / inView}
             selected={area.picked}
             dim={filtered && !area.picked}
-            ariaLabel={`Folder ${area.label}, ${plural(area.count, "call")}`}
+            ariaLabel={`Folder ${area.label}, ${plural(area.count, "use")}`}
             title={area.key === area.label || area.key === "." ? undefined : area.key}
             onClick={() => onArea(area.picked ? null : area.key)}
           />
@@ -396,7 +396,7 @@ function PropLine({ row, open, onToggle, onPick }: { row: UsagePropRow; open: bo
       <span aria-hidden />
     </>
   );
-  const label = `${row.name}${undeclared ? ", Undeclared" : ""}${never ? "" : `, set on ${row.set.toLocaleString()} of ${plural(row.of, "call")}`}${row.picked ? ", filtered" : ""}`;
+  const label = `${row.name}${undeclared ? ", Undeclared" : ""}${never ? "" : `, set on ${row.set.toLocaleString()} of ${plural(row.of, "use")}`}${row.picked ? ", filtered" : ""}`;
   const of = Math.max(1, row.of);
 
   return (
@@ -437,7 +437,7 @@ function PropLine({ row, open, onToggle, onPick }: { row: UsagePropRow; open: bo
                     selected={value.picked}
                     dim={row.picked && !value.picked}
                     muted={value.kind === "unset"}
-                    ariaLabel={`${row.name} ${valueSpeech(value)}, ${plural(value.count, "call")}`}
+                    ariaLabel={`${row.name} ${valueSpeech(value)}, ${plural(value.count, "use")}`}
                     title={value.kind === "dynamic" ? "Expression" : valueLabel(value).length > 18 ? valueLabel(value) : undefined}
                     onClick={() => onPick(value)}
                   />

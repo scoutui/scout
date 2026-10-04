@@ -5,7 +5,7 @@ sidebar_label: "Resolve monorepo imports"
 
 # Resolve imports in a monorepo
 
-Make the scan follow your path aliases and workspace package imports. When it can't follow an import, the use becomes an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence) with the reason `module-not-found`, and the component it imports is missing from the results and the dashboard.
+Make the scan follow your path aliases and workspace package imports. When it can't follow an import, it records the use as [unmatched](/docs/reference/glossary#unmatched-use), with the reason `module-not-found`, and the component it imports is missing from the results and the dashboard.
 
 This guide assumes the repo already has a working `scout.config.json`. If it doesn't, see [Configure a scan](/docs/guides/configure-a-scan).
 
@@ -77,13 +77,13 @@ When the scan prints `Monorepo root:`, alias paths are relative to that monorepo
 
 ## If the design system is a package in the same monorepo
 
-You don't need any config. The scan reads the package list from `pnpm-workspace.yaml`, or from `workspaces` in the root `package.json`, and follows imports of those packages to their source files. A component found this way is [defined in the repo](/docs/reference/glossary#defined-in-the-repo) and listed under the package's name. List the components to check:
+You don't need any config. The scan reads the package list from `pnpm-workspace.yaml`, or from `workspaces` in the root `package.json`, and follows imports of those packages to their source files. A component found this way is [defined in the repo](/docs/reference/glossary#local) and listed under the package's name. List the components to check:
 
 ```bash
 jq -r '.components[] | "\(.identity.kind)  \(.identity.packageName // .owningPackage // .attribution.target.packageName // "-")  \(.identity.exportName // .identity.tagName)  \(.identity.filePath // "")"' scout-scan.json
 ```
 
-Each line shows `repository-declaration` for a component defined in the repo or `package-export` for one [from a package](/docs/reference/glossary#from-a-package), then its package, its name and the file that defines it:
+Each line shows `repository-declaration` for a component defined in the repo or `package-export` for one [from a package](/docs/reference/glossary#external), then its package, its name and the file that defines it:
 
 ```
 repository-declaration  @acme/ui  Button  packages/ui/src/Button.tsx

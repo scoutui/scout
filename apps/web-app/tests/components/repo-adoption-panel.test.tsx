@@ -70,7 +70,7 @@ describe("RepoAdoptionPanel governance tracking", () => {
     const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" });
     render(<RepoAdoptionPanel tracking={tracking} notice={null} />);
 
-    expect(screen.getByText("Migrations in this repo · 1 active · 1 complete")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 in progress · 1 complete")).toBeDefined();
     expect(screen.getByText("Show 1 complete")).toBeDefined();
   });
 
@@ -85,6 +85,6 @@ describe("RepoAdoptionPanel governance tracking", () => {
     const tracking = deriveGovernanceTracking(governance, digests, { kind: "repo", repoId: "r1" });
     render(<RepoAdoptionPanel tracking={tracking} notice={{ state: "failed", scans: [{ scanId: "s2", repoId: "r1", commit: "0123456789" }], retryable: false }} />);
     expect(screen.getByText("Numbers may be out of date")).toBeDefined();
-    expect(screen.getByText("Migrations in this repo · 1 active")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 in progress")).toBeDefined();
   });
 });

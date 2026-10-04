@@ -38,9 +38,9 @@ The scan skips code inside a submodule or another clone below the config's folde
 
 A line such as `Warning: /home/dev/storefront/src/Broken.tsx has syntax errors (Unexpected token), so the scan read what it could.` means the scan couldn't fully parse that file. It carries on, but components defined or used in that file can be missing from the results. Fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.
 
-## Components are missing: Scout couldn't match some occurrences {#unresolved-occurrences}
+## Components are missing: Scout couldn't match some uses {#unresolved-occurrences}
 
-When the scan sees a component used but can't tell which one it is, it records an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). The component gets no entry for that use, and the dashboard leaves it out. The summary counts them in a line such as `Scout couldn't match 3 more occurrences to a component.`, which links to this section.
+When the scan sees a component used but can't tell which one it is, it records an [unmatched use](/docs/reference/glossary#unmatched-use). The component gets no entry for that use, and the dashboard leaves it out. The summary counts them in a line such as `Scout couldn't match 3 more uses to a component.`, which links to this section.
 
 List them with the reason, the file and line, and the import or name that failed. The command reads `scout-scan.json`, so run `npx scout scan --dry-run` first to write it:
 
@@ -54,7 +54,7 @@ package-not-installed  src/App.tsx:7  @acme/ui
 unbound-name  src/App.tsx:9  PromoBanner
 ```
 
-Fix each reason as follows. The [artifact reference](/docs/reference/artifact#unresolved-occurrences) describes them in full.
+Fix each reason as follows. The [scan file reference](/docs/reference/artifact#unresolved-occurrences) describes them in full.
 
 | Reason | Fix |
 | --- | --- |
@@ -66,14 +66,14 @@ Fix each reason as follows. The [artifact reference](/docs/reference/artifact#un
 ## Dependencies aren't installed
 
 ```text
-Warning: @acme/ui is listed in package.json but isn't installed, so 3 occurrences of it aren't matched to a component. Install your dependencies and scan again.
+Warning: @acme/ui is listed in package.json but isn't installed, so 3 uses of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
 The summary also reads `3 of them are from a package that isn't installed.` The scan finds a package's components only in the installed package, so every use of `@acme/ui` is unresolved and none of its components are listed. Run your package manager's install in the scanned checkout, then scan again. In CI, install before the scan step.
 
 ## A web component has no package
 
-A tag such as `<acme-button>` shows `<no package>` on its page in the dashboard, and in the artifact its `attribution.status` is `unknown` or `conflict`. It has no version, and lifecycle records can't cover it. If the tag comes from your design system, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
+A tag such as `<acme-button>` shows `<no package>` on its page in the dashboard, and in the scan file its `attribution.status` is `unknown` or `conflict`. It has no version, and lifecycle records can't cover it. If the tag comes from your design system, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 
 ## Some renders aren't counted
 
@@ -104,7 +104,7 @@ jq -r '.diagnostics[] | select(.code == "late-bound-render" or .code == "unresol
 | `Error: Couldn't upload the scan: you have uncommitted changes.` | Commit or stash them. A change to any tracked file counts, and so does a new file the scan would read. Add `--debug` to list the files. |
 | `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed.` | [Install dependencies](#dependencies-arent-installed), then scan again. |
 | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared.` | Run `npx nuxt prepare`, then scan again. |
-| `Error: Couldn't upload the scan: no components were found.` | The scan read no components. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files). |
+| `Error: Couldn't upload the scan: no uses were found.` | The scan found no uses. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files). |
 | `Error: Couldn't upload the scan: this CLI is newer than the dashboard.` or `… is too old for the dashboard.` | See [If the CLI is newer or older than the dashboard](/docs/guides/upgrade-scout#version-messages). |
 | `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI` | Run the `npx` command the line names, such as `npx @scoutui/cli@<version> scan --rescan`, or upgrade the CLI to that version. |
 | <Link id="repository-from-another-remote" />`Error: Couldn't upload the scan: <repoId> on the dashboard comes from <address>.` | Another repository already uploads under this `repoId`. Scan a clone of the repository the message names, or set a different `repoId` in `scout.config.json`. If the repository was renamed or moved, ask your dashboard administrator to [reset its remote](/docs/guides/deploy-the-dashboard#reset-a-repositorys-remote). |

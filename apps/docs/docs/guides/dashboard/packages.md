@@ -9,7 +9,7 @@ The packages area lists every package your repos' components come from, counted 
 
 ## Find a package
 
-Select **packages** in the top navigation. Each row is one package, with how many **Repos** use it, how many of its **Components** are used, its **Version**, its total [**Occurrences**](/docs/reference/glossary#occurrence) and how many **Deprecated** components are in use. The most-used packages come first; select a column header to sort by it.
+Select **packages** in the top navigation. Each row is one package, with how many **Repos** use it, how many of its **Components** are used, its **Version**, its total [**Uses**](/docs/reference/glossary#use) and how many **Deprecated** components are in use. The most-used packages come first; select a column header to sort by it.
 
 ![The packages list with 4 on multiple versions, the deprecated chip, tag chips on the rows and the Filter menu open on Tag](/img/dashboard/packages-list.png)
 
@@ -34,23 +34,23 @@ If the list reads **No packages tracked yet.**, no scan has been uploaded. [Run 
 
 ## Read a package page
 
-Select a row to open the package's page. The header shows the package's tags and frameworks, and how many repos, components and occurrences use it.
+Select a row to open the package's page. The header shows the package's tags and frameworks, how many repos use it, how many of its components are used, and its total uses.
 
-Below that, a version bar splits the package's occurrences by version. The highest version found in the scans is coloured and every older one is grey, so the grey share is the code still on an older version. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains what counts as highest.
+Below that, a version bar splits the package's uses by version. The highest version found in the scans is coloured and every older one is grey, so the grey share is the code still on an older version. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains what counts as highest.
 
-When deprecated components are in use, a **deprecated components in use** line counts them. When a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the whole package, a line reads **Superseded by →** with its successor, or **Retired ·** with the reason, and links to the record on the **governance** page.
+When deprecated components are in use, a **deprecated components in use** line counts them. When a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the whole package, a line reads **Replaced by →** with its replacement, or **Retired ·** with the reason, and links to the record on the **governance** page.
 
 ### See who uses it
 
-**Used in** has one row per repo and version, so a repo on two versions of `@acme/ui` gets two rows. In the **Version** column a coloured dot marks the highest version and a grey dot every other, which shows at a glance which repos are behind. **Updated** gives the date of the commit each repo's numbers come from.
+**Used in** has one row per repo and version, so a repo on two versions of `@acme/ui` gets two rows. In the **Version** column a coloured dot marks the highest version and a grey dot every other, which shows at a glance which repos are behind. **Committed** gives the date of the commit each repo's numbers come from.
 
 Select a row to open that repo's **Components** tab filtered to this package. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo).
 
 ### See which components are used
 
-**Components** lists the package's components with how many repos use each (**Consumers**) and their total **Occurrences**, most-used first. Search by name, or press the **deprecated** chip to show only deprecated components.
+**Components** lists the package's components with how many repos use each (**Repos**) and their total **Uses**, most-used first. Search by name, or press the **deprecated** chip to show only deprecated components.
 
-The table also lists components with no occurrences, so it can have more rows than the header's component count.
+The table also lists components with no uses, so it can have more rows than the header's component count.
 
 Select a component to open its page across repos. See [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
 
@@ -82,7 +82,7 @@ A package page's **Components** table keeps its search and **deprecated** chip i
 ## Good to know
 
 - A package that only re-exports components from another package isn't listed. If your code imports `Button` through `@acme/all`, which re-exports it from `@acme/ui`, `Button` counts under `@acme/ui`, at the version of `@acme/ui` that is installed.
-- A dash (`—`) in **Version** means no version was recorded: a workspace package holding components [defined in the repo](/docs/reference/glossary#defined-in-the-repo), or an installed package whose version the scan could not read.
+- A dash (`—`) in **Version** means no version was recorded: a workspace package holding components [defined in the repo](/docs/reference/glossary#local), or an installed package whose version the scan could not read.
 - A [web component](/docs/reference/glossary#web-component) is listed under a package only when the scan links the tag to it. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 - Deprecated counts add up across repos. On the packages list and a package page, a deprecated component used in three repos counts three times. See [Where "deprecated" comes from](/docs/explanation/dashboard/reading-the-numbers#where-deprecated-comes-from).
 

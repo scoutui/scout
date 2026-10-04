@@ -53,7 +53,7 @@ export function VersionComposition({ share }: { share: VersionShare[] }) {
       <div
         className="flex h-2 w-56 gap-px overflow-hidden rounded-full bg-muted"
         role="img"
-        aria-label={`Occurrences by version: ${share
+        aria-label={`Uses by version: ${share
           .map(v => `${v.label} ${v.occurrences.toLocaleString()}`)
           .join(", ")}`}
       >

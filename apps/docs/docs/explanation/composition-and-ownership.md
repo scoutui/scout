@@ -49,11 +49,11 @@ In the dashboard, open a component from a repo's **Components** table and choose
 Press a row in either list to draw its path on the tree, and press it again to clear it. The drawn path is kept in the page's link, so a copied link opens with it drawn. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#see-how-it-is-used) covers the **Usage** tab.
 
 :::note
-A component can have call sites and still show **Nothing in this repo renders** it. That is expected when every use sits outside a component. For example, an `App` that `main.tsx` mounts with `createRoot(root).render(<App />)` is used, but no component renders it. Those uses count on the **Usage** tab.
+A component can be used and still show **Nothing in this repo renders** it. That is expected when every use sits outside a component. For example, an `App` that `main.tsx` mounts with `createRoot(root).render(<App />)` is used, but no component renders it. Those uses count on the **Usage** tab.
 :::
 
 ## In the JSON
 
-Each component's `composition` holds the direct links only: which components it renders and which render it, with how many times each. The dashboard works out the longer chains from these. The [artifact reference](/docs/reference/artifact#composition) lists the fields.
+Each component's `composition` holds the direct links only: which components it renders and which render it, with how many times each. The dashboard works out the longer chains from these. The [scan file reference](/docs/reference/artifact#composition) lists the fields.
 
 Each use also records how the component was reached, such as through a helper function or a wrapper, in [`trace`](/docs/reference/artifact#trace).

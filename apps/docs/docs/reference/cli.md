@@ -13,7 +13,7 @@ scout <command> [options]
 
 | Command | What it does |
 | --- | --- |
-| [`scan`](#scan) | Scans the repo and uploads the scan to the dashboard. With `--dry-run`, writes the [artifact](/docs/reference/glossary#artifact) to `scout-scan.json` instead. |
+| [`scan`](#scan) | Scans the repo and uploads the scan to the dashboard. With `--dry-run`, writes the [scan file](/docs/reference/glossary#scan-file) to `scout-scan.json` instead. |
 | [`backfill`](#backfill) | Scans past commits on the tracked branch, one a week, and uploads them to the dashboard. |
 | [`init`](#init) | Writes a starter `scout.config.json`. |
 | [`auth`](#auth) | Signs in to a dashboard, signs out, or shows who you are signed in as. Takes a subcommand: `login`, `logout` or `status`. |
@@ -24,7 +24,7 @@ scout <command> [options]
 | --- | --- |
 | `--help`, `-h` | Prints help and exits `0`. After a command, prints that command's help. |
 | `--version`, `-v` | Prints the CLI version and exits `0`. |
-| `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and the counts of usages a scan couldn't match. Works before or after the command. |
+| `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and how many renders the scan couldn't follow. Works before or after the command. |
 
 Every error prints one line starting `Error:`, and every warning one line starting `Warning:`, both on stderr. When [styled](#terminal-output), `✗` comes before `Error:` and `!` before `Warning:`. An error that isn't one of the expected ones prints `Error: Scout stopped unexpectedly (<reason>).` and asks you to run the command again with `--debug` and report the output.
 
@@ -95,18 +95,18 @@ Most runs need no flags: `scout scan` reads `scout.config.json` in the current d
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
-| `--dry-run` | none | off | Scans without uploading, and writes the artifact to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
+| `--dry-run` | none | off | Scans without uploading, and writes the scan file to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
 | `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
 
-After the scan, a summary counts the files read, the components found and their occurrences. On a dry run in a terminal, it also lists up to five of the most used components, with the package or file each comes from. An upload, or output that isn't a terminal, such as a CI job's log, leaves the list out.
+After the scan, a summary counts the files read, the components found and their uses. On a dry run in a terminal, it also lists up to five of the most used components, with the package or file each comes from. An upload, or output that isn't a terminal, such as a CI job's log, leaves the list out.
 
-While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching occurrences to components…`. In a terminal, that's one line rewritten in place. When [styled](#terminal-output), the upload also shows `Uploading the scan…`, then `Waiting for the dashboard to process the scan…`, on that line. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
+While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching uses to components…`. In a terminal, that's one line rewritten in place. When [styled](#terminal-output), the upload also shows `Uploading the scan…`, then `Waiting for the dashboard to process the scan…`, on that line. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
 
 The config file must be inside a git repository with at least one commit. Otherwise `scan` exits `1` with `Error: Couldn't scan: <folder> isn't inside a git repository. Run scout scan from a git checkout.`, or `Error: Couldn't scan: this repository has no commits yet. Commit your files and try again.` In a shallow clone, a dry run warns `Warning: This checkout doesn't have the full history. Run git fetch --unshallow and scan again.` and records no [`initialCommit`](/docs/reference/artifact#meta). An upload refuses a shallow clone instead (see [Upload flags](#upload-flags)).
 
 If no file matches `include`, `scan` stops before it scans or contacts the dashboard, on a dry run too, and exits `2` with `Error: No files match "include" in <config path> (<patterns>). Point it at your source files and scan again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
 
-`scan` needs the repo's dependencies installed. Components from a declared package that isn't installed aren't found: each place that uses one is recorded as an [unresolved occurrence](/docs/reference/glossary#unresolved-occurrence). A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans; a dry run scans anyway. One listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with its occurrences unresolved.
+`scan` needs the repo's dependencies installed. Components from a declared package that isn't installed aren't found: each place that uses one is recorded as an [unmatched use](/docs/reference/glossary#unmatched-use). A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans; a dry run scans anyway. One listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with its uses unmatched.
 
 ### Upload flags
 
@@ -139,7 +139,7 @@ Before it scans, `scan` checks these, in this order, and stops at the first that
 
 When a check before the scan fails, nothing is uploaded and no file is written.
 
-After the scan, `scan` refuses a scan that found no components: `Error: Couldn't upload the scan: no components were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
+After the scan, `scan` refuses a scan that found no uses: `Error: Couldn't upload the scan: no uses were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default.
 
 If the dashboard already has a scan of this commit, `scan` prints `Commit <commit> is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and exits `0` without scanning, unless the dashboard couldn't prepare that scan: then the upload replaces it. Some error lines end with `See <url>`: the page that explains that problem.
 
@@ -147,8 +147,8 @@ If the dashboard already has a scan of this commit, `scan` prints `Commit <commi
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
-| `--repo-id <value>` | string | the config's `repoId`, else derived from the git remote (see [Repo identity](/docs/reference/config#repo-identity)) | [Repo id](/docs/reference/glossary#repo-id) written into the artifact. Replaces the config's `repoId`. |
-| `--repo-root <dir>` | path | the top of the git repository that holds the config file | Folder that file paths in the artifact are relative to. Relative to the current directory. |
+| `--repo-id <value>` | string | the config's `repoId`, else derived from the git remote (see [Repo identity](/docs/reference/config#repo-identity)) | [Repo id](/docs/reference/glossary#repo-id) written into the scan file. Replaces the config's `repoId`. |
+| `--repo-root <dir>` | path | the top of the git repository that holds the config file | Folder that file paths in the scan file are relative to. Relative to the current directory. |
 
 ## `backfill`
 

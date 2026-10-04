@@ -63,7 +63,7 @@ async function show(componentId: string, search = "") {
   return render(await page({ params: Promise.resolve({ repoId: "shop", componentId: encodeURIComponent(componentId) }) }));
 }
 const query = () => new URLSearchParams(window.location.search);
-const fileButtons = () => screen.getAllByRole("button", { name: /^Calls in / }).map(button => button.getAttribute("aria-label"));
+const fileButtons = () => screen.getAllByRole("button", { name: /^Uses in / }).map(button => button.getAttribute("aria-label"));
 
 describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, () => {
   let close: () => Promise<void>;
@@ -96,7 +96,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("shows one line per call site, naming every component that renders it", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/checkout/Pay.tsx" }));
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/checkout/Pay.tsx" }));
     expect(screen.getAllByText(":6")).toHaveLength(1);
     const renderers = (line: string) => within(screen.getByText(line).closest("tr") as HTMLElement).getAllByRole("link", { name: /^Show .+ in Composition$/ }).map(link => link.textContent);
     expect([renderers(":6"), renderers(":12")]).toEqual([["PayForm", "PayDialog"], ["PayForm"]]);
@@ -104,20 +104,20 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("names the renderer once for a file one component renders", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/settings/Panel.tsx" }));
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/settings/Panel.tsx" }));
     expect(screen.getAllByRole("link", { name: "Show Panel in Composition" })).toHaveLength(1);
   });
 
   it("shows no renderer for a call outside any component", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/settings/config.tsx" }));
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/settings/config.tsx" }));
     expect(screen.getByText(":2")).toBeInTheDocument();
     expect(screen.queryByText(/Rendered by/)).toBeNull();
   });
 
   it("opens Composition with the renderer pinned, as a new history entry", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/checkout/Pay.tsx" }));
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/checkout/Pay.tsx" }));
     const before = window.history.length;
     fireEvent.click(screen.getAllByRole("link", { name: "Show PayDialog in Composition" })[0] as HTMLElement);
     expect([query().get("tab"), query().get("pin"), window.history.length]).toEqual(["composition", `up:${payDialog.id}`, before + 1]);
@@ -128,7 +128,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     await show(button.id);
     fireEvent.click(screen.getByRole("button", { name: "Where it’s used and prop values" }));
     fireEvent.click(screen.getByRole("button", { name: /^size, set on/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/checkout/Pay.tsx" }));
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/checkout/Pay.tsx" }));
     fireEvent.click(screen.getAllByRole("link", { name: "Show PayDialog in Composition" })[0] as HTMLElement);
     await screen.findByTestId("canvas-stub");
     await act(() => new Promise(resolve => {
@@ -136,18 +136,18 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
       window.history.back();
     }));
     const expanded = (name: string | RegExp) => screen.getByRole("button", { name }).getAttribute("aria-expanded");
-    expect([expanded("Where it’s used and prop values"), expanded(/^size, set on/), expanded("Calls in src/checkout/Pay.tsx"), expanded("Calls in src/settings/Panel.tsx")]).toEqual(["true", "true", "true", "false"]);
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/settings/Panel.tsx" }));
+    expect([expanded("Where it’s used and prop values"), expanded(/^size, set on/), expanded("Uses in src/checkout/Pay.tsx"), expanded("Uses in src/settings/Panel.tsx")]).toEqual(["true", "true", "true", "false"]);
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/settings/Panel.tsx" }));
     const search = screen.getByRole("textbox", { name: "Search files and props" });
     fireEvent.change(search, { target: { value: "zzz" } });
-    expect(screen.queryAllByRole("button", { name: /^Calls in / })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: /^Uses in / })).toHaveLength(0);
     fireEvent.change(search, { target: { value: "" } });
-    expect([expanded("Calls in src/checkout/Pay.tsx"), expanded("Calls in src/settings/Panel.tsx")]).toEqual(["true", "true"]);
+    expect([expanded("Uses in src/checkout/Pay.tsx"), expanded("Uses in src/settings/Panel.tsx")]).toEqual(["true", "true"]);
   });
 
   it("writes each file's most used values as JSX under its name", async () => {
     await show(button.id);
-    const jsx = (path: string) => within(screen.getByRole("button", { name: `Calls in ${path}` }).closest("tr") as HTMLElement).queryByText(/^(size|variant)=/)?.textContent;
+    const jsx = (path: string) => within(screen.getByRole("button", { name: `Uses in ${path}` }).closest("tr") as HTMLElement).queryByText(/^(size|variant)=/)?.textContent;
     expect([jsx("src/checkout/Pay.tsx"), jsx("src/home/Hero.tsx")]).toEqual(['size="large"', 'variant="ghost"']);
   });
 
@@ -158,15 +158,15 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("reproduces a filtered view from its link", async () => {
     await show(button.id, "?sel=size~value~large");
-    expect(document.body).toHaveTextContent("4 of 7 calls");
+    expect(document.body).toHaveTextContent("4 of 7 uses");
     expect(screen.getByRole("button", { name: "Remove the filter size = large" })).toBeInTheDocument();
-    expect(fileButtons()).toEqual(["Calls in src/checkout/Pay.tsx", "Calls in src/settings/Panel.tsx"]);
+    expect(fileButtons()).toEqual(["Uses in src/checkout/Pay.tsx", "Uses in src/settings/Panel.tsx"]);
   });
 
   it("writes a search to the URL and narrows the files", async () => {
     await show(button.id);
     fireEvent.change(screen.getByRole("textbox", { name: "Search files and props" }), { target: { value: "config" } });
-    expect([query().get("find"), fileButtons()]).toEqual(["config", ["Calls in src/settings/config.tsx"]]);
+    expect([query().get("find"), fileButtons()]).toEqual(["config", ["Uses in src/settings/config.tsx"]]);
   });
 
   it("removes one prop's filter from its pill and keeps the search", async () => {
@@ -185,12 +185,12 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
   it("writes the sort to the URL", async () => {
     await show(button.id);
     fireEvent.click(screen.getByRole("button", { name: /^File/ }));
-    expect([query().get("sort"), fileButtons()[0]]).toEqual(["file~asc", "Calls in src/settings/config.tsx"]);
+    expect([query().get("sort"), fileButtons()[0]]).toEqual(["file~asc", "Uses in src/settings/config.tsx"]);
   });
 
   it("says when a search matches nothing, clears it and focuses the search", async () => {
     await show(button.id, "?find=zzz");
-    expect(screen.getByText("No calls match this search.")).toBeInTheDocument();
+    expect(screen.getByText("No uses match this search.")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: "Clear search" }).at(-1) as HTMLElement);
     expect(query().get("find")).toBeNull();
     const search = screen.getByRole("textbox", { name: "Search files and props" });
@@ -203,7 +203,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     await show(button.id, "?sel=size~value~large");
     fireEvent.click(screen.getByRole("button", { name: "Copy the list of 2 files" }));
     const text = writeText.mock.calls[0]?.[0] as string;
-    expect(text.startsWith("Button in shop: 4 calls in 2 files\nFilters: size = large\n")).toBe(true);
+    expect(text.startsWith("Button in shop: 4 uses in 2 files\nFilters: size = large\n")).toBe(true);
     expect(text).toContain("- src/checkout/Pay.tsx:6 ");
     expect(text).toContain("- src/settings/Panel.tsx:5, 9 ");
     expect(text).toContain("View in Scout: http://");
@@ -216,14 +216,14 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     fireEvent.click(screen.getByRole("button", { name: "Copy the list of 13 files in odd" }));
     const lines = (writeText.mock.calls[0]?.[0] as string).split("\n");
     const files = lines.filter(line => line.startsWith("- "));
-    expect([lines[0], files.length, new Set(files.map(line => line.split("/").slice(0, 3).join("/")))]).toEqual(["Card in shop, folder src/cards/odd: 13 calls in 13 files", 13, new Set(["- src/cards/odd"])]);
+    expect([lines[0], files.length, new Set(files.map(line => line.split("/").slice(0, 3).join("/")))]).toEqual(["Card in shop, folder src/cards/odd: 13 uses in 13 files", 13, new Set(["- src/cards/odd"])]);
     expect([(await screen.findAllByText("Copied")).length, within(screen.getByRole("button", { name: "Copy the list of 13 files in odd" })).queryByText("Copied")?.tagName]).toEqual([1, "SPAN"]);
   });
 
   it("keeps a file row the reader opened open while a search takes the calls in view to 5 or fewer and back", async () => {
     await show(button.id);
-    const expanded = (path: string) => screen.getByRole("button", { name: `Calls in ${path}` }).getAttribute("aria-expanded");
-    fireEvent.click(screen.getByRole("button", { name: "Calls in src/checkout/Pay.tsx" }));
+    const expanded = (path: string) => screen.getByRole("button", { name: `Uses in ${path}` }).getAttribute("aria-expanded");
+    fireEvent.click(screen.getByRole("button", { name: "Uses in src/checkout/Pay.tsx" }));
     const search = screen.getByRole("textbox", { name: "Search files and props" });
     fireEvent.change(search, { target: { value: "checkout" } });
     const narrowed = expanded("src/checkout/Pay.tsx");
@@ -233,35 +233,35 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("lists where it's used with each folder's calls", async () => {
     await show(button.id);
-    expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder checkout, 3 calls", "Folder settings, 3 calls", "Folder home, 1 call"]);
+    expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder checkout, 3 uses", "Folder settings, 3 uses", "Folder home, 1 use"]);
   });
 
   it("opens every file row from Expand all rows", async () => {
     await show(button.id);
     fireEvent.click(screen.getByRole("button", { name: "Expand all rows" }));
-    expect(screen.getAllByRole("button", { name: /^Calls in / }).map(row => row.getAttribute("aria-expanded"))).toEqual(["true", "true", "true", "true"]);
+    expect(screen.getAllByRole("button", { name: /^Uses in / }).map(row => row.getAttribute("aria-expanded"))).toEqual(["true", "true", "true", "true"]);
   });
 
   it("filters by a folder from the column", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: "Folder home, 1 call" }));
-    expect([query().get("area"), fileButtons()]).toEqual(["src/home", ["Calls in src/home/Hero.tsx"]]);
+    fireEvent.click(screen.getByRole("button", { name: "Folder home, 1 use" }));
+    expect([query().get("area"), fileButtons()]).toEqual(["src/home", ["Uses in src/home/Hero.tsx"]]);
   });
 
   it("focuses the one-folder sentence when unpicking a folder leaves one folder in view", async () => {
     await show(button.id, "?area=src%2Fhome&find=hero");
-    const folder = screen.getByRole("button", { name: "Folder home, 1 call" });
+    const folder = screen.getByRole("button", { name: "Folder home, 1 use" });
     folder.focus();
     fireEvent.click(folder);
-    expect(document.activeElement).toBe(screen.getByText(/^The call is in/));
+    expect(document.activeElement).toBe(screen.getByText(/^The only use is in/));
   });
 
   it("filters by two values of one prop, matching either", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: /^size, set on 6 of 7 calls/ }));
-    fireEvent.click(screen.getByRole("button", { name: "size large, 4 calls" }));
-    fireEvent.click(screen.getByRole("button", { name: "size small, 2 calls" }));
-    expect([query().get("sel"), document.body.textContent?.includes("6 of 7 calls")]).toEqual(["size~value~large,size~value~small", true]);
+    fireEvent.click(screen.getByRole("button", { name: /^size, set on 6 of 7 uses/ }));
+    fireEvent.click(screen.getByRole("button", { name: "size large, 4 uses" }));
+    fireEvent.click(screen.getByRole("button", { name: "size small, 2 uses" }));
+    expect([query().get("sel"), document.body.textContent?.includes("6 of 7 uses")]).toEqual(["size~value~large,size~value~small", true]);
   });
 
   it("lists styling, events and attributes in their own sections", async () => {
@@ -280,16 +280,16 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("keeps a prop the link filtered open after its last value is unpicked", async () => {
     await show(button.id, "?sel=size~value~large");
-    fireEvent.click(screen.getByRole("button", { name: "size large, 4 calls" }));
+    fireEvent.click(screen.getByRole("button", { name: "size large, 4 uses" }));
     expect([query().get("sel"), screen.getByRole("button", { name: /^size, set on/ }).getAttribute("aria-expanded")]).toEqual([null, "true"]);
   });
 
   it("opens Not set on a filtered prop that moves there when its last value is unpicked, and focuses its line", async () => {
     await show(button.id, "?area=src%2Fhome&sel=size~value~large");
-    const pressed = screen.getByRole("button", { name: "size large, 0 calls" });
+    const pressed = screen.getByRole("button", { name: "size large, 0 uses" });
     pressed.focus();
     fireEvent.click(pressed);
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "size, set on 0 of 1 call" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "size, set on 0 of 1 use" }));
   });
 
   it("focuses the search on /", async () => {
@@ -311,20 +311,20 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("says a component with no calls has none, and lists its declared props", async () => {
     await show(unused.id);
-    expect(document.body).toHaveTextContent("This scan found no calls to Unused in shop.");
+    expect(document.body).toHaveTextContent("This scan found no uses of Unused in shop.");
     expect(screen.getByRole("link", { name: "Open the definition" }).getAttribute("href")).toContain("src/Unused.tsx");
     expect(document.body).toHaveTextContent("Default sm");
   });
 
-  it("opens every file of a component with 5 calls or fewer, without a search or Filter button", async () => {
+  it("opens every file of a component with 5 uses or fewer, without a search or Filter button", async () => {
     await show(badge.id);
     expect([screen.queryByRole("textbox", { name: "Search files and props" }), screen.queryByRole("button", { name: /^Filter/ })]).toEqual([null, null]);
     expect(screen.getByText(":8")).toBeInTheDocument();
   });
 
   it.each<[string, Component, boolean]>([
-    ["with 5 calls or fewer", badge, false],
-    ["with more than 5 calls", button, true],
+    ["with 5 uses or fewer", badge, false],
+    ["with more than 5 uses", button, true],
   ])("pins the file list's header and folder heading only %s", async (_title, shown, pinned) => {
     await show(shown.id);
     const heads = [screen.getByRole("columnheader", { name: /^File/ }), document.querySelector('th[scope="rowgroup"]')];

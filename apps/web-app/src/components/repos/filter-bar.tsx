@@ -12,6 +12,7 @@ import {
   emptyFacets,
   isFiltering,
   KIND_LABEL,
+  ORIGIN_DESCRIPTION,
   ORIGIN_LABEL,
   type FacetOptions,
   type FacetState,
@@ -38,7 +39,7 @@ export function FilterBar({
   deprecatedTotal: number;
   /** While the changed view is active: its unfiltered size (`total`) and the
    *  shown rows' breakdown; null outside it. Unfiltered the count reads
-   *  `29 moved`; narrowed by any other filter, `12 of 29 moved · 2 removed ·
+   *  `29 changes`; narrowed by any other filter, `12 of 29 changes · 2 removed ·
    *  10 changed`, zero parts omitted. It replaces `N of M components` because
    *  removed rows come from the previous scan. */
   diffShown: { total: number; added: number; removed: number; changed: number } | null;
@@ -58,14 +59,19 @@ export function FilterBar({
     {
       key: "origin",
       label: "Origin",
-      values: (["external", "local"] as const).map((o) => ({ value: o, label: ORIGIN_LABEL[o], count: options.origin[o] })),
+      values: (["external", "local"] as const).map((o) => ({
+        value: o,
+        label: ORIGIN_LABEL[o],
+        description: ORIGIN_DESCRIPTION[o],
+        count: options.origin[o],
+      })),
       selected: facets.origin ? [facets.origin] : [],
       onSelect: ([origin]) => onChange({ ...facets, origin: (origin as OriginValue | undefined) ?? null }),
       single: true,
     },
     {
       key: "kind",
-      label: "Framework",
+      label: "Type",
       values: options.kinds.map((k) => ({ value: k.value, label: KIND_LABEL[k.value], count: k.count })),
       selected: facets.kinds,
       onSelect: (kinds) => onChange({ ...facets, kinds: kinds as KindValue[] }),
@@ -84,7 +90,7 @@ export function FilterBar({
     tagFacet(options.tags, facets.tags, setTags),
     {
       key: "occurrences",
-      label: "Occurrences",
+      label: "Uses",
       picker: <OccurrencePicker facets={facets} onChange={onChange} />,
       active: facets.occurrences ? 1 : 0,
     },
@@ -96,7 +102,7 @@ export function FilterBar({
       : []),
     ...facets.kinds.map((k) => ({
       key: `kind:${k}`,
-      field: "framework",
+      field: "type",
       value: KIND_LABEL[k],
       onRemove: () => onChange({ ...facets, kinds: facets.kinds.filter((x) => x !== k) }),
     })),
@@ -119,7 +125,7 @@ export function FilterBar({
       ? [
           {
             key: "occurrences",
-            field: "occurrences",
+            field: "uses",
             value: `${occurrenceSymbol(facets.occurrences.op)} ${facets.occurrences.value.toLocaleString()}`,
             onRemove: () => onChange({ ...facets, occurrences: null }),
           },
@@ -166,7 +172,7 @@ export function FilterBar({
       count={
         diffShown !== null && filtering ? (
           <>
-            {inkCount(resultCount)} of {diffShown.total.toLocaleString()} moved
+            {inkCount(resultCount)} of {changesLabel(diffShown.total)}
             {diffParts.map((p) => (
               <span key={p.word}>
                 {" · "}
@@ -175,7 +181,7 @@ export function FilterBar({
             ))}
           </>
         ) : diffShown !== null ? (
-          <>{diffShown.total.toLocaleString()} moved</>
+          <>{changesLabel(diffShown.total)}</>
         ) : filtering ? (
           <>
             {inkCount(resultCount)} of {total.toLocaleString()} components
@@ -188,6 +194,10 @@ export function FilterBar({
       onClearAll={() => onChange(emptyFacets())}
     />
   );
+}
+
+function changesLabel(n: number): string {
+  return `${n.toLocaleString()} ${n === 1 ? "change" : "changes"}`;
 }
 
 function occurrenceSymbol(op: OccurrenceOp): string {

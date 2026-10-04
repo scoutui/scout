@@ -58,7 +58,7 @@ const rows: RepoSummary[] = [
 ];
 
 describe("ReposTable", () => {
-  it("renders all rows, default sort by Updated desc", () => {
+  it("renders all rows, default sort by Committed desc", () => {
     render(<ReposTable rows={rows} />);
     const rendered = screen.getAllByRole("row").slice(1).map(r => r.textContent ?? "");
     expect(rendered[0]).toContain("beta-app");   // most recent
@@ -85,10 +85,10 @@ describe("ReposTable", () => {
 
   it("puts aria-sort on the active column header, not the button", () => {
     render(<ReposTable rows={rows} />);
-    const updated = screen.getByRole("columnheader", { name: /updated/i });
-    expect(updated).toHaveAttribute("aria-sort", "descending");
+    const committed = screen.getByRole("columnheader", { name: /committed/i });
+    expect(committed).toHaveAttribute("aria-sort", "descending");
     expect(screen.getByRole("columnheader", { name: /^repo/i })).toHaveAttribute("aria-sort", "none");
-    expect(screen.getByRole("button", { name: /updated/i })).not.toHaveAttribute("aria-sort");
+    expect(screen.getByRole("button", { name: /committed/i })).not.toHaveAttribute("aria-sort");
   });
 
   it("flags deprecated rows with warn styling and mutes zero to a dash", () => {

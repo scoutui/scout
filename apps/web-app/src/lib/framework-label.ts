@@ -6,7 +6,7 @@ export function frameworkLabel(kind: ComponentKind): string {
     case "react-component": return "react";
     case "vue-component": return "vue";
     case "custom-element": return "web components";
-    case "tag": return "tags";
+    case "tag": return "undefined elements";
     default: return kind;
   }
 }

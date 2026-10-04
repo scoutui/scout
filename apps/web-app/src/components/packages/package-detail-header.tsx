@@ -44,7 +44,7 @@ export function PackageDetailHeader({
           <Sep />
           <span className="tabular-nums">{detail.componentCount.toLocaleString()} components</span>
           <Sep />
-          <span className="tabular-nums">{detail.totalOccurrences.toLocaleString()} occurrences</span>
+          <span className="tabular-nums">{detail.totalOccurrences.toLocaleString()} uses</span>
         </div>
       </div>
 

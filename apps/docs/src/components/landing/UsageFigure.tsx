@@ -20,7 +20,7 @@ const VARIANT_TOTAL = VARIANT.reduce((sum, v) => sum + v.count, 0);
 
 type FileGroup = { dir: string; base: string; lines: readonly number[] };
 
-/** Call sites that pass variant="danger", in the dashboard's order. */
+/** Uses that pass variant="danger", in the dashboard's order. */
 const FILES: readonly FileGroup[] = [
   { dir: "src/orders/", base: "OrderTable.tsx", lines: [88, 112] },
   { dir: "src/components/", base: "ConfirmDialog.tsx", lines: [34] },
@@ -31,8 +31,8 @@ const CALL_COUNT = 3;
 const SELECTION = "variant=danger";
 
 /**
- * The Usage tab of `@acme/ui`'s Button in partner-portal, filtered to `variant=danger`: the props rail and the call
- * sites in one panel, side by side from 768px and stacked below. Laid out left to right whatever the page
+ * The Usage tab of `@acme/ui`'s Button in partner-portal, filtered to `variant=danger`: the props rail and the uses
+ * in one panel, side by side from 768px and stacked below. Laid out left to right whatever the page
  * direction, as the web app is.
  */
 export default function UsageFigure(): React.ReactElement {
@@ -43,7 +43,7 @@ export default function UsageFigure(): React.ReactElement {
       <div className={clsx(shared.panel, styles.frame)} dir="ltr">
         <div className={styles.values}>
           <p className={styles.band}>
-            <span className={shared.label}>Props &amp; values</span>
+            <span className={shared.label}>Prop values</span>
           </p>
           <div className={styles.facet}>
             <p className={styles.facetHead}>
@@ -71,10 +71,10 @@ export default function UsageFigure(): React.ReactElement {
         <div className={styles.sites}>
           <p className={styles.band}>
             <span className={shared.label}>
-              Call sites<Code className={styles.selection}>· {SELECTION}</Code>
+              Uses<Code className={styles.selection}>· {SELECTION}</Code>
             </span>
             <span className={clsx(styles.small, shared.num)}>
-              {FILE_COUNT} files · {CALL_COUNT} call sites
+              {FILE_COUNT} files · {CALL_COUNT} uses
             </span>
           </p>
 
@@ -87,7 +87,7 @@ export default function UsageFigure(): React.ReactElement {
                     <span className={styles.base}>{f.base}</span>
                   </Code>
                   <span className={clsx(styles.small, shared.num)}>
-                    {f.lines.length} {f.lines.length === 1 ? "call" : "calls"}
+                    {f.lines.length} {f.lines.length === 1 ? "use" : "uses"}
                   </span>
                 </p>
                 <ol className={styles.calls}>

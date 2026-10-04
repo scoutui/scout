@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { paletteToken } from "@/lib/chart-palette";
 import { cn } from "@/lib/utils";
 
-export type FacetValue = { value: string; label?: string; count: number; color?: string };
+export type FacetValue = { value: string; label?: string; description?: string; count: number; color?: string };
 
 /** A facet whose picker is a list of values to tick. */
 export type ListFacet = {
@@ -296,6 +296,7 @@ function ValueList({ facet }: { facet: ListFacet }) {
               onToggle={() => toggle(v.value)}
               mono={facet.mono}
               dot={v.color}
+              description={v.description}
             >
               {v.label ?? v.value}
             </CheckRow>
@@ -318,6 +319,7 @@ function CheckRow({
   onToggle,
   mono,
   dot,
+  description,
   children,
 }: {
   checked: boolean;
@@ -325,6 +327,7 @@ function CheckRow({
   onToggle: () => void;
   mono?: boolean | undefined;
   dot?: string | undefined;
+  description?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -339,6 +342,7 @@ function CheckRow({
         {dot ? <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: paletteToken(dot) }} /> : null}
         <span className={cn("min-w-0 flex-1 truncate", mono && "font-mono text-xs")} title={typeof children === "string" ? children : undefined}>
           {children}
+          {description ? <span className="block truncate text-xs text-muted-foreground">{description}</span> : null}
         </span>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{count.toLocaleString()}</span>
       </button>

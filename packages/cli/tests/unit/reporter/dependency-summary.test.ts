@@ -50,23 +50,23 @@ describe("missing dependency reporting", () => {
   it.each([
     [
       [occurrence(notInstalled("@example/ui"), 1), occurrence(notInstalled("@example/icons"), 2), occurrence(notInstalled("@example/ui"), 3), occurrence({ status: "unresolved", reason: { kind: "module-not-found" } }, 4)],
-      "Scout couldn't match 4 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n3 of them are from packages that aren't installed.\n",
+      "Scout couldn't match 4 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n3 of them are from packages that aren't installed.\n",
     ],
     [
       [occurrence(notInstalled("@example/ui"), 1)],
-      "Scout couldn't match 1 more occurrence to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n1 of them is from a package that isn't installed.\n",
+      "Scout couldn't match 1 more use to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n1 of them is from a package that isn't installed.\n",
     ],
     [
       [occurrence(notInstalled("@example/ui"), 1), occurrence(notInstalled("@example/ui"), 2)],
-      "Scout couldn't match 2 more occurrences to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n2 of them are from a package that isn't installed.\n",
+      "Scout couldn't match 2 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences\n2 of them are from a package that isn't installed.\n",
     ],
   ])("says how many of the occurrences it couldn't match are from packages that aren't installed (%#)", (occurrences, lines) => {
-    expect(capture(artifactOf(occurrences))).toBe(`Scanned 1 file in 0.0s: 0 components, 0 occurrences.\n${lines}\n`);
+    expect(capture(artifactOf(occurrences))).toBe(`Scanned 1 file in 0.0s: 0 components, 0 uses.\n${lines}\n`);
   });
 
   it.each([
-    [2, "@example/ui is listed in apps/web/package.json but isn't installed, so 2 occurrences of it aren't matched to a component. Install your dependencies and scan again."],
-    [1, "@example/ui is listed in apps/web/package.json but isn't installed, so 1 occurrence of it isn't matched to a component. Install your dependencies and scan again."],
+    [2, "@example/ui is listed in apps/web/package.json but isn't installed, so 2 uses of it aren't matched to a component. Install your dependencies and scan again."],
+    [1, "@example/ui is listed in apps/web/package.json but isn't installed, so 1 use of it isn't matched to a component. Install your dependencies and scan again."],
   ])("logs the package, its occurrences (%i) and the declaring package.json", (occurrenceCount, line) => {
     expect(
       formatWarning({
