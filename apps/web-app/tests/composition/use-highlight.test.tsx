@@ -5,11 +5,9 @@ import {
   HighlightStore, useNodeHighlight, useHighlightSet,
 } from "@/components/component-detail/composition/use-highlight";
 
-function Probe({ store, id, spy, neverDims }: {
-  store: HighlightStore; id: string; spy: () => void; neverDims?: boolean;
-}) {
+function Probe({ store, id, spy }: { store: HighlightStore; id: string; spy: () => void }) {
   spy();
-  const h = useNodeHighlight(store, id, neverDims);
+  const h = useNodeHighlight(store, id);
   return <span data-testid={`probe-${id}`}>{h}</span>;
 }
 
@@ -49,14 +47,6 @@ describe("useNodeHighlight", () => {
     expect(spyA.mock.calls.length).toBe(a);
     expect(spyB.mock.calls.length).toBe(b + 1);
     expect(screen.getByTestId("probe-b").textContent).toBe("dim");
-  });
-
-  it("neverDims pins a node to chain while a highlight is active", () => {
-    const store = new HighlightStore();
-    render(<Probe store={store} id="focus" spy={() => {}} neverDims />);
-    expect(screen.getByTestId("probe-focus").textContent).toBe("none");
-    act(() => store.setOverride(new Set(["other"])));
-    expect(screen.getByTestId("probe-focus").textContent).toBe("chain");
   });
 });
 

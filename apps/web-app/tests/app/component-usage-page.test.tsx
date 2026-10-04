@@ -19,7 +19,7 @@ vi.mock("next/navigation", async () => ({
   ...(await import("../helpers/search-params-mock")).searchParamsNavigationMock(),
   usePathname: () => window.location.pathname,
 }));
-vi.mock("@/components/component-detail/composition/composition-canvas", () => ({ CompositionCanvas: () => <div data-testid="canvas-stub" /> }));
+vi.mock("@/components/component-detail/composition/flow-canvas", () => ({ FlowCanvas: () => <div data-testid="canvas-stub" /> }));
 
 const written = (value: string): PropValueState => ({ tier: "written", value });
 const declaredOnly = () => ({ values: [], dynamic: 0, omitted: 0 });
@@ -27,9 +27,11 @@ const button = component(packageExport("@example/ui", "Button"), {
   props: { size: declaredOnly(), onClick: declaredOnly(), className: declaredOnly(), "data-testid": declaredOnly(), variant: declaredOnly() },
 });
 const tag = component(packageExport("@example/ui", "Tag"));
-const payForm = component(repoDeclaration("shop", "src/checkout/Pay.tsx", "PayForm"));
-const payDialog = component(repoDeclaration("shop", "src/checkout/Pay.tsx", "PayDialog"));
-const panel = component(repoDeclaration("shop", "src/settings/Panel.tsx", "Panel"));
+const rendersButton = (count: number): Partial<Component> =>
+  ({ composition: { rendersByCount: { [button.id]: count }, renderedByCount: {}, isRootCount: 0, isLeafCount: 0 } });
+const payForm = component(repoDeclaration("shop", "src/checkout/Pay.tsx", "PayForm"), rendersButton(2));
+const payDialog = component(repoDeclaration("shop", "src/checkout/Pay.tsx", "PayDialog"), rendersButton(1));
+const panel = component(repoDeclaration("shop", "src/settings/Panel.tsx", "Panel"), rendersButton(2));
 function at(file: string, line: number, column: number, owner: Component | null, props: Record<string, PropValueState>) {
   return resolvedAt(button, file, line, { occurrenceId: `${file}:${line}:${owner?.id ?? "-"}`, column, props, ...(owner ? { ownerComponentId: owner.id } : {}) });
 }

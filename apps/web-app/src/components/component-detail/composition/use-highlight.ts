@@ -41,12 +41,12 @@ export class HighlightStore {
 
 /** A node's own highlight state; the snapshot is a primitive, so React bails
  *  out of re-rendering unless this node's value actually flips. */
-export function useNodeHighlight(store: HighlightStore, id: string, neverDims = false): NodeHighlight {
+export function useNodeHighlight(store: HighlightStore, id: string): NodeHighlight {
   const getSnapshot = useCallback((): NodeHighlight => {
     const active = store.getActive();
     if (active === null) return "none";
-    return active.has(id) || neverDims ? "chain" : "dim";
-  }, [store, id, neverDims]);
+    return active.has(id) ? "chain" : "dim";
+  }, [store, id]);
   return useSyncExternalStore(store.subscribe, getSnapshot, getSnapshot);
 }
 

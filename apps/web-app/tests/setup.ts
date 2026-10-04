@@ -20,6 +20,14 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   } as unknown as typeof ResizeObserver;
 }
 
+// jsdom lacks DOMMatrixReadOnly, which React Flow reads the zoom from when it
+// measures a node.
+if (typeof globalThis.window !== "undefined" && typeof globalThis.DOMMatrixReadOnly === "undefined") {
+  globalThis.DOMMatrixReadOnly = class {
+    m22 = 1;
+  } as unknown as typeof DOMMatrixReadOnly;
+}
+
 // jsdom has no layout, so offset* are 0. @tanstack/virtual-core sizes its scroll
 // viewport and rows from offsetWidth/offsetHeight, so stub a non-zero box, or a
 // virtualized table renders zero rows.
