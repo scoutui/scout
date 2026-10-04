@@ -63,12 +63,12 @@ describe("ghostRow", () => {
     expect(
       ghostRow({
         componentId: "c", displayName: "x-button", packageName: "@x/wc", scope: "external", kind: "custom-element",
-        occurrenceCount: 8, deprecated: true, tags: [{ id: "t1", value: "forms", category: null, color: "#000" }],
+        occurrenceCount: 8, deprecated: true, tags: [{ id: "t1", value: "forms", category: null, color: "teal" }],
       }),
     ).toEqual({
       componentId: "c", kind: "custom-element", scope: "external", packageName: "@x/wc",
       displayName: "x-button", disambiguator: null, version: null, occurrenceCount: 8, fileCount: 0,
-      deprecated: true, tags: [{ id: "t1", value: "forms", category: null, color: "#000" }],
+      deprecated: true, tags: [{ id: "t1", value: "forms", category: null, color: "teal" }],
     });
   });
 });

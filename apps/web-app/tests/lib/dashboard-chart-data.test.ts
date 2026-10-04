@@ -27,15 +27,17 @@ describe("cohortChartConfig", () => {
 });
 
 describe("paletteToken", () => {
-  it("maps each of the four palette hexes to its theme token", () => {
-    expect(paletteToken("#009598")).toBe("var(--viz-primary)");
-    expect(paletteToken("#9b6bce")).toBe("var(--viz-cat-2)");
-    expect(paletteToken("#2863ab")).toBe("var(--viz-cat-3)");
-    expect(paletteToken("#7d8088")).toBe("var(--viz-legacy)");
+  it("maps each tag colour to its theme token", () => {
+    expect(paletteToken("teal")).toBe("var(--viz-primary)");
+    expect(paletteToken("violet")).toBe("var(--viz-cat-2)");
+    expect(paletteToken("blue")).toBe("var(--viz-cat-3)");
+    expect(paletteToken("berry")).toBe("var(--viz-cat-4)");
+    expect(paletteToken("orchid")).toBe("var(--viz-cat-5)");
   });
-  it("returns non-palette hexes verbatim (authored-value doctrine for custom colours)", () => {
-    expect(paletteToken("#7c3aed")).toBe("#7c3aed");
-    expect(paletteToken("")).toBe("");
+  it("returns nothing for a colour that isn't a tag colour", () => {
+    expect(paletteToken("#009598")).toBeUndefined();
+    expect(paletteToken("grey")).toBeUndefined();
+    expect(paletteToken("")).toBeUndefined();
   });
 });
 
@@ -46,41 +48,38 @@ describe("chartColors", () => {
   const local = { cohortKey: "local", color: "" };
 
   const cases: Array<[string, ChartCohort[], Record<string, string>]> = [
-    ["a tag keeps its colour", [tag("a", "#009598")], { "tag:a": "var(--viz-primary)" }],
+    ["a tag keeps its colour", [tag("a", "orchid")], { "tag:a": "var(--viz-cat-5)" }],
     [
       "a second tag with the same colour takes the next free chart colour",
-      [tag("a", "#009598"), tag("b", "#009598")],
+      [tag("a", "teal"), tag("b", "teal")],
       { "tag:a": "var(--viz-primary)", "tag:b": "var(--viz-cat-2)" },
     ],
     [
-      "a tag whose colour looks like an earlier line's loses it",
-      [local, tag("a", "#7d8088")],
-      { local: "var(--viz-local)", "tag:a": "var(--viz-primary)" },
-    ],
-    [
       "a teal tag saved before a successor line takes violet",
-      [tag("a", "#009598"), pkg("x", "successor")],
+      [tag("a", "teal"), pkg("x", "successor")],
       { "tag:a": "var(--viz-cat-2)", "package:x": "var(--viz-primary)" },
     ],
     [
       "a package never takes a colour a tag holds, whatever its position",
-      [pkg("x"), tag("a", "#009598")],
+      [pkg("x"), tag("a", "teal")],
       { "package:x": "var(--viz-cat-2)", "tag:a": "var(--viz-primary)" },
     ],
     [
-      "packages and components get theme tokens, and the fourth uncoloured line repeats teal",
-      [pkg("a"), pkg("b"), comp("c"), pkg("d")],
+      "packages and components get theme tokens, and the sixth uncoloured line repeats teal",
+      [pkg("a"), pkg("b"), comp("c"), pkg("d"), pkg("e"), pkg("f")],
       {
         "package:a": "var(--viz-primary)",
         "package:b": "var(--viz-cat-2)",
         "component:c": "var(--viz-cat-3)",
-        "package:d": "var(--viz-primary)",
+        "package:d": "var(--viz-cat-4)",
+        "package:e": "var(--viz-cat-5)",
+        "package:f": "var(--viz-primary)",
       },
     ],
-    ["a custom tag colour stays as written", [tag("a", "#7c3aed")], { "tag:a": "#7c3aed" }],
+    ["a colour that isn't a tag colour takes the first free chart colour", [tag("a", "#9b6bce")], { "tag:a": "var(--viz-primary)" }],
     [
       "deprecated is orange and Local is the Local grey",
-      [{ ...tag("a", "#009598"), role: "deprecated" }, local],
+      [{ ...tag("a", "teal"), role: "deprecated" }, local],
       { "tag:a": "var(--viz-deprecated)", local: "var(--viz-local)" },
     ],
   ];
@@ -108,9 +107,9 @@ describe("chartColors", () => {
       const colors = chartColors(savedChartCohorts(saved, drawn));
       return [colors.get("package:x"), colors.get("package:y"), colors.get("tag:t")];
     };
-    const expected = ["var(--viz-deprecated)", "var(--viz-cat-2)", "#7c3aed"];
-    expect(colorsOf([pkg("x", "deprecated"), comp("c"), pkg("y"), tag("t", "#7c3aed")])).toEqual(expected);
-    expect(colorsOf([pkg("x", "deprecated"), pkg("y"), tag("t", "#7c3aed")])).toEqual(expected);
+    const expected = ["var(--viz-deprecated)", "var(--viz-cat-2)", "var(--viz-cat-5)"];
+    expect(colorsOf([pkg("x", "deprecated"), comp("c"), pkg("y"), tag("t", "orchid")])).toEqual(expected);
+    expect(colorsOf([pkg("x", "deprecated"), pkg("y"), tag("t", "orchid")])).toEqual(expected);
   });
 
   it("colours a drawn cohort that no saved selector names", () => {

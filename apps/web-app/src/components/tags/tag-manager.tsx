@@ -3,27 +3,21 @@ import { Fragment, useRef, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
-import type { Tag, TagRule } from "@scoutui/web-shared";
-import { tagMatchesPackage } from "@scoutui/web-shared/client";
+import type { Tag, TagColour, TagRule } from "@scoutui/web-shared";
+import { TAG_COLOURS, tagMatchesPackage } from "@scoutui/web-shared/client";
 import { saveTag, deleteTag } from "@/app/packages/tag-actions";
 import { actionErrorMessage } from "@/lib/action-error";
-import { CHART_SERIES_PALETTE, paletteToken, tagColourName } from "@/lib/chart-palette";
+import { paletteToken, tagColourName } from "@/lib/chart-palette";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Tag swatches are the shared cohort palette (`chart-palette`), which excludes
-// the status hues, so a tag dot is never misread as a status. A tag's chart line
-// keeps the tag's colour unless another line on the chart already has it or one
-// like it.
-const TAG_PALETTE = CHART_SERIES_PALETTE;
-
-function nextTagColor(existing: Tag[]): string {
+function nextTagColor(existing: Tag[]): TagColour {
   const used = new Set(existing.map((t) => t.color));
-  const unused = TAG_PALETTE.find((c) => !used.has(c));
+  const unused = TAG_COLOURS.find((c) => !used.has(c));
   // Every swatch is used: fall back round-robin. The index is always in range
   // (modulo over a non-empty tuple), but narrow it for the strict index check.
-  return unused ?? TAG_PALETTE[existing.length % TAG_PALETTE.length] ?? TAG_PALETTE[0];
+  return unused ?? TAG_COLOURS[existing.length % TAG_COLOURS.length] ?? TAG_COLOURS[0];
 }
 
 export function splitPatterns(raw: string): TagRule {
@@ -62,7 +56,7 @@ export function TagTableColumns() {
 
 const FORM_GRID = "md:grid md:grid-cols-[10rem_minmax(0,1fr)_11rem_3rem]";
 
-export function TagSwatch({ color, label, className }: { color: string; label?: string; className?: string }) {
+export function TagSwatch({ color, label, className }: { color: TagColour; label?: string; className?: string }) {
   return (
     <span
       role={label ? "img" : undefined}
@@ -168,11 +162,11 @@ export function TagEditor({
             </span>
             <RadioGroup
               value={color}
-              onValueChange={(v) => setColor(v as string)}
+              onValueChange={(v) => setColor(v as TagColour)}
               aria-labelledby="tag-colour-label"
               className="flex gap-1"
             >
-              {TAG_PALETTE.map((c) => (
+              {TAG_COLOURS.map((c) => (
                 <Radio.Root
                   key={c}
                   value={c}

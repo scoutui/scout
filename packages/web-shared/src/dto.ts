@@ -26,11 +26,15 @@ export const TagRuleSchema = z.object({
 });
 export type TagRule = z.infer<typeof TagRuleSchema>;
 
+export const TAG_COLOURS = ["teal", "violet", "blue", "berry", "orchid"] as const;
+export const TagColourSchema = z.enum(TAG_COLOURS);
+export type TagColour = z.infer<typeof TagColourSchema>;
+
 export const TagSchema = z.object({
   id: z.string(),
   value: z.string(),                       // "core", "legacy"
   category: z.string().nullable(),         // "library"; null = plain flat label
-  color: z.string(),
+  color: TagColourSchema,
   rule: TagRuleSchema,
 });
 export type Tag = z.infer<typeof TagSchema>;
@@ -43,7 +47,7 @@ export const TagRefSchema = z.object({
   id: z.string(),
   value: z.string(),
   category: z.string().nullable(),
-  color: z.string(),
+  color: TagColourSchema,
 });
 export type TagRef = z.infer<typeof TagRefSchema>;
 

@@ -1,5 +1,4 @@
 import { useId } from "react";
-import { CHART_SERIES_PALETTE, paletteToken } from "@/lib/chart-palette";
 
 /**
  * Empty state for the chart builder: a faded example of a legacy library declining
@@ -8,8 +7,8 @@ import { CHART_SERIES_PALETTE, paletteToken } from "@/lib/chart-palette";
  */
 export function SeriesEmptyState() {
   const gid = useId();
-  const replacementColor = paletteToken(CHART_SERIES_PALETTE[0]); // teal: the rising replacement
-  const legacyColor = paletteToken(CHART_SERIES_PALETTE[3]); // grey: the declining legacy library
+  const replacementColor = "var(--viz-primary)";
+  const legacyColor = "var(--viz-legacy)";
   const rising = "0,108 64,92 128,70 192,46 256,26 320,12";
   const declining = "0,14 64,28 128,46 192,70 256,90 320,104";
   return (

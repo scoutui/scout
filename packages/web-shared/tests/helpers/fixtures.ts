@@ -2,14 +2,14 @@ import type { Component, Occurrence, ScanArtifact, TagAttribution } from "@scout
 import type { GovernanceRecord, Tag } from "../../src/dto.js";
 import { artifact, component, packageExport, repoDeclaration, resolvedAt, tag, unresolvedAt } from "./builders.ts";
 
-export const tags: Tag[] = [{ id: "core", value: "core", category: "library", color: "#123456", rule: { glob: ["@sample/*"], exact: [] } }];
+export const tags: Tag[] = [{ id: "core", value: "core", category: "library", color: "teal", rule: { glob: ["@sample/*"], exact: [] } }];
 export const governance: GovernanceRecord[] = [
   { id: "package", grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Package retired" }, createdAt: "2026-01-01", updatedAt: "2026-01-01" },
   { id: "exact", grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "superseded", by: { packageName: "@sample/new", exportName: "Button" } }, createdAt: "2026-01-01", updatedAt: "2026-01-01" },
 ];
 export const overlays = [
   { name: "initial", tags, governance },
-  { name: "changed", tags: [{ ...tags[0], id: "reassigned", value: "reassigned", category: "library", color: "#654321", rule: { glob: [], exact: ["@sample/mixed"] } }] as Tag[], governance: governance.slice(0, 1) },
+  { name: "changed", tags: [{ ...tags[0], id: "reassigned", value: "reassigned", category: "library", color: "violet", rule: { glob: [], exact: ["@sample/mixed"] } }] as Tag[], governance: governance.slice(0, 1) },
   { name: "cleared", tags: [], governance: [] },
 ];
 

@@ -99,7 +99,7 @@ describe("diffDigests", () => {
 
   it("resolves a removed row's tags through resolveTags: a matching package carries the TagRef, local (no package) carries none", () => {
     const forms: Tag = {
-      id: "t-forms", value: "forms", category: null, color: "#000",
+      id: "t-forms", value: "forms", category: null, color: "teal",
       rule: { glob: ["@x/forms/*"], exact: [] },
     };
     const ext = component(packageExport("@x/forms/button", "Ext"));
@@ -108,7 +108,7 @@ describe("diffDigests", () => {
     const after = scan("S2", "2026-09-02T00:00:00.000Z", []);
     const d = diffDigests(after, before, [], [forms]);
     expect(d.removedRows.find((r) => r.componentId === ext.id)?.tags).toEqual([
-      { id: "t-forms", value: "forms", category: null, color: "#000" },
+      { id: "t-forms", value: "forms", category: null, color: "teal" },
     ]);
     expect(d.removedRows.find((r) => r.componentId === loc.id)?.tags).toEqual([]);
   });

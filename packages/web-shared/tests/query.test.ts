@@ -11,7 +11,7 @@ const webTag: Tag = {
   id: "t1",
   value: "web",
   category: "library",
-  color: "#000",
+  color: "teal",
   rule: { glob: ["@scope/*"], exact: [] },
 };
 

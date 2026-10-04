@@ -98,7 +98,7 @@ describe.skipIf(!process.env.DATABASE_URL)("stored read models", () => {
         expect((await snapshot.listScanDigests())[0]?.components[0]?.stats.occurrenceCount).toBe(99);
         await pool.query("UPDATE scan_read_models SET state = 'preparing' WHERE scan_id = $1", [artifact.meta.scanId]);
         expect(await publishScan(pool, artifact, { uploadedByUserId: null })).toMatchObject({ status: "rebuilt", revision: 2 });
-        await pool.query("INSERT INTO tags (id, value, color, rule) VALUES ('new', 'new', '#ffffff', '{\"glob\":[\"*\"],\"exact\":[]}')");
+        await pool.query("INSERT INTO tags (id, value, color, rule) VALUES ('new', 'new', 'teal', '{\"glob\":[\"*\"],\"exact\":[]}')");
         expect(await snapshot.listTags()).toEqual([]);
         expect(await snapshot.withReadSnapshot(nested => nested.getRepo(artifact.meta.repo.id))).toEqual(first);
         expect(await snapshot.listComponentsForRepo(artifact.meta.repo.id, "")).toEqual(before);

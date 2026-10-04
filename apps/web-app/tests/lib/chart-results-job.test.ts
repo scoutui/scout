@@ -117,7 +117,7 @@ describe.skipIf(!databaseUrl)("chart results job", { timeout: 30_000 }, () => {
 
   it("stores the derivation of one snapshot and deletes the job", async () => {
     const driver = new PostgresDriver(pool);
-    await driver.upsertTag({ value: "core", category: "library", color: "#123456", rule: { glob: ["@sample/*"], exact: [] } });
+    await driver.upsertTag({ value: "core", category: "library", color: "teal", rule: { glob: ["@sample/*"], exact: [] } });
     await driver.createGovernance({ grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Retired" } });
     const dashboard = await driver.upsertDashboard({ name: "Library usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "package", packageName: "@sample/core" }], chartType: "trend", metric: "count" } });
     await publish(pool, "scan-a", "repo-a", "2026-09-18T00:00:00Z");

@@ -30,7 +30,7 @@ const tag: Tag = {
   id: "t1",
   value: "core",
   category: "library",
-  color: "chart-1",
+  color: "teal",
   rule: { glob: [], exact: ["@example/button"] },
 };
 

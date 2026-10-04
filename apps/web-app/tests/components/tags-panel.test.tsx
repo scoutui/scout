@@ -14,7 +14,7 @@ const acme: Tag = {
   id: "t1",
   value: "acme",
   category: "library",
-  color: "#7d8088",
+  color: "berry",
   rule: { glob: ["@acme/*"], exact: ["legacy-kit"] },
 };
 const packageNames = ["@acme/icons", "@acme/layouts", "legacy-kit", "react"];
@@ -32,7 +32,7 @@ describe("TagsPanel", () => {
   });
 
   it("puts each tag's swatch before its name, named by its colour, with no Colour column", () => {
-    const custom: Tag = { ...acme, id: "t2", value: "house", color: "#123456", rule: { glob: [], exact: ["house-kit"] } };
+    const custom: Tag = { ...acme, id: "t2", value: "house", color: "orchid", rule: { glob: [], exact: ["house-kit"] } };
     render(<TagsPanel allTags={[acme, custom]} packageNames={packageNames} />);
     expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
       "Name",
@@ -41,8 +41,8 @@ describe("TagsPanel", () => {
       "Edit",
     ]);
     for (const [tagName, colour] of [
-      ["acme", "Grey"],
-      ["house", "#123456"],
+      ["acme", "Berry"],
+      ["house", "Orchid"],
     ] as const) {
       const [nameCell] = within(screen.getByRole("row", { name: new RegExp(tagName) })).getAllByRole("cell");
       const swatch = within(nameCell as HTMLElement).getByRole("img", { name: colour });
@@ -113,7 +113,7 @@ describe("TagsPanel", () => {
     render(<TagsPanel allTags={[]} packageNames={packageNames} />);
     fireEvent.click(screen.getByRole("button", { name: "Add tag" }));
     const radios = within(screen.getByRole("radiogroup", { name: "Colour" })).getAllByRole("radio");
-    expect(radios.map((r) => r.getAttribute("aria-label"))).toEqual(["Teal", "Violet", "Blue", "Grey"]);
+    expect(radios.map((r) => r.getAttribute("aria-label"))).toEqual(["Teal", "Violet", "Blue", "Berry", "Orchid"]);
     for (const radio of radios) {
       expect(radio).toHaveAttribute("title", radio.getAttribute("aria-label"));
       expect(radio).toHaveTextContent(/^$/);
@@ -130,7 +130,7 @@ describe("TagsPanel", () => {
     const { saveTag } = await import("@/app/packages/tag-actions");
     await vi.waitFor(() =>
       expect(saveTag).toHaveBeenCalledWith(
-        expect.objectContaining({ value: "kit", color: "#9b6bce", rule: { glob: ["@acme/*"], exact: ["legacy-kit"] } }),
+        expect.objectContaining({ value: "kit", color: "violet", rule: { glob: ["@acme/*"], exact: ["legacy-kit"] } }),
       ),
     );
   });

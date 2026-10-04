@@ -35,7 +35,7 @@ describe("search text", () => {
 });
 
 describe("facetOptions: every count follows the other filters", () => {
-  const ds = { id: "t-ds", value: "ds", category: null, color: "#000" };
+  const ds = { id: "t-ds", value: "ds", category: null, color: "teal" as const };
   const row: ComponentRow = {
     componentId: "", kind: "react-component", scope: "external", packageName: null,
     displayName: "", disambiguator: null, version: null,
@@ -55,7 +55,7 @@ describe("facetOptions: every count follows the other filters", () => {
     expect(o.kinds).toEqual([{ value: "react", count: 1 }, { value: "vue", count: 1 }]);
     // Origin, Tag and the deprecated chip keep both: only A.
     expect(o.origin).toEqual({ external: 1, local: 0 });
-    expect(o.tags).toEqual([{ value: "ds", color: "#000", count: 1 }]);
+    expect(o.tags).toEqual([{ value: "ds", color: "teal", count: 1 }]);
     expect(o.deprecatedCount).toBe(1);
   });
 

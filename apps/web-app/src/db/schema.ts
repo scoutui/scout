@@ -208,7 +208,9 @@ export const tags = pgTable("tags", {
   updatedByUserId: text("updated_by_user_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => ({
+  color: check("tags_color", sql`${t.color} IN ('teal', 'violet', 'blue', 'berry', 'orchid')`),
+}));
 
 export type TagRow = typeof tags.$inferSelect;
 

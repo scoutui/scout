@@ -30,7 +30,7 @@ const governance: GovernanceInput = {
   targetExport: "Button",
   disposition: { kind: "retired", reason: "Use the new button" },
 };
-const tag: TagInput = { value: "core", category: "library", color: "chart-1", rule: { glob: ["@example/*"], exact: [] } };
+const tag: TagInput = { value: "core", category: "library", color: "teal", rule: { glob: ["@example/*"], exact: [] } };
 
 describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
   let pool: Pool;

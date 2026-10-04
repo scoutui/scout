@@ -32,7 +32,7 @@ describe("versionsValueOf", () => {
 
 describe("filterPackageRows", () => {
   const rows = [
-    row({ packageName: "@x/lib", distinctVersionCount: 3, soleVersion: null, tags: [{ id: "t1", value: "ds", color: "#123456", category: null }] }),
+    row({ packageName: "@x/lib", distinctVersionCount: 3, soleVersion: null, tags: [{ id: "t1", value: "ds", color: "teal", category: null }] }),
     row({ packageName: "@x/wc", deprecatedCount: 2 }),
     row({ packageName: "local-pkg", distinctVersionCount: 0, soleVersion: null }),
   ];
@@ -59,8 +59,8 @@ describe("filterPackageRows", () => {
 });
 
 describe("packageFacetOptions: every count follows the other filters", () => {
-  const forms = { id: "t1", value: "forms", color: "#009598", category: null };
-  const core = { id: "t2", value: "core", color: "#2863ab", category: null };
+  const forms = { id: "t1", value: "forms", color: "teal" as const, category: null };
+  const core = { id: "t2", value: "core", color: "blue" as const, category: null };
   const rows = [
     row({ packageName: "@x/forms", distinctVersionCount: 3, soleVersion: null, deprecatedCount: 1, tags: [forms] }),
     row({ packageName: "@x/core", tags: [core] }),
@@ -77,16 +77,16 @@ describe("packageFacetOptions: every count follows the other filters", () => {
   it("counts every tag under the other filters, ignoring the tag selection itself", () => {
     const o = packageFacetOptions(rows, { ...emptyPackageFacets(), tags: ["forms"], versions: "single" });
     expect(o.tags).toEqual([
-      { value: "core", color: "#2863ab", count: 2 },
-      { value: "forms", color: "#009598", count: 1 },
+      { value: "core", color: "blue", count: 2 },
+      { value: "forms", color: "teal", count: 1 },
     ]);
   });
 
   it("lists a tag the other filters leave at zero, and a selected tag no package has", () => {
     const o = packageFacetOptions(rows, { ...emptyPackageFacets(), text: "core", tags: ["gone"] });
     expect(o.tags).toEqual([
-      { value: "core", color: "#2863ab", count: 1 },
-      { value: "forms", color: "#009598", count: 0 },
+      { value: "core", color: "blue", count: 1 },
+      { value: "forms", color: "teal", count: 0 },
       { value: "gone", color: "", count: 0 },
     ]);
   });
