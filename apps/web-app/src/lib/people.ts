@@ -93,17 +93,18 @@ type Transaction = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]
 
 /**
  * Locks the person `userId` and runs `change` in the same transaction, when `actor` may change them: someone other
- * than `actor`, not removed, whose role is set on the People page rather than by `SCOUTUI_ADMINS` or the admin group.
+ * than `actor`, not removed, whose role comes from one of `sources`.
  */
 async function changePerson(
   actor: Person,
   userId: string,
+  sources: readonly RoleSource[],
   change: (tx: Transaction, target: Person) => Promise<void>,
 ): Promise<PeopleResult> {
   return getDb().transaction(async (tx): Promise<PeopleResult> => {
     const [row] = await tx.select(PERSON_COLUMNS).from(users).where(eq(users.id, userId)).for("update");
     const target = row ? personIdentity(row, adminSettings()) : null;
-    if (target === null || target.userId === actor.userId || target.roleSource !== "people") return CHANGED_SINCE_LOADED;
+    if (target === null || target.userId === actor.userId || !sources.includes(target.roleSource)) return CHANGED_SINCE_LOADED;
     await change(tx, target);
     return { ok: true };
   });
@@ -112,7 +113,7 @@ async function changePerson(
 /** Gives the person `userId` the role `role`, and records the change in the history. */
 export async function setRole(actor: Person, userId: string, role: Role): Promise<PeopleResult> {
   if (!ROLES.includes(role)) return CHANGED_SINCE_LOADED;
-  return changePerson(actor, userId, async (tx, target) => {
+  return changePerson(actor, userId, ["people"], async (tx, target) => {
     if (target.role === role) return;
     await tx.update(users).set({ role }).where(eq(users.id, userId));
     await tx.insert(roleChanges).values({ id: ulid(), actorEmail: actor.email, subjectEmail: target.email, fromRole: target.role, toRole: role });
@@ -120,12 +121,13 @@ export async function setRole(actor: Person, userId: string, role: Role): Promis
 }
 
 /**
- * Removes the person `userId`: ends their browser and CLI sessions, drops the CLI sign-ins they approved but haven't
- * used, clears their role and admin group, and records the removal in the history. Their row stays: signing in again
- * brings them back to it as a Viewer.
+ * Removes the person `userId`, whose role is set on the People page or comes from the admin group: ends their browser
+ * and CLI sessions, drops the CLI sign-ins they approved but haven't used, clears their role and admin group, and
+ * records the removal in the history. Their row stays: signing in again brings them back to it as a Viewer, or as an
+ * Admin while they're in the admin group.
  */
 export async function removePerson(actor: Person, userId: string): Promise<PeopleResult> {
-  return changePerson(actor, userId, async (tx, target) => {
+  return changePerson(actor, userId, ["people", "group"], async (tx, target) => {
     await tx.delete(sessions).where(eq(sessions.userId, userId));
     await tx.delete(cliSessions).where(eq(cliSessions.userId, userId));
     await tx.delete(cliDeviceCodes).where(eq(cliDeviceCodes.approvedUserId, userId));

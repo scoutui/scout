@@ -21,8 +21,8 @@ function fixedRole(person: PersonListing, currentUserId: string): string | null 
 }
 
 /**
- * Everyone who can sign in, with a role picker and Remove on each row the signed-in Admin may change. Below `sm`
- * each person is a stacked block instead of a table row.
+ * Everyone who can sign in, with a role picker on each row the signed-in Admin may change and Remove on each row they
+ * may remove. Below `sm` each person is a stacked block instead of a table row.
  */
 export function PeopleTable({ people, currentUserId }: { people: PersonListing[]; currentUserId: string }) {
   const [pending, startTransition] = useTransition();
@@ -65,6 +65,7 @@ export function PeopleTable({ people, currentUserId }: { people: PersonListing[]
           <TableBody className="max-sm:block">
             {shown.map((person) => {
               const fixed = fixedRole(person, currentUserId);
+              const removable = person.userId !== currentUserId && person.roleSource !== "install";
               return (
                 <TableRow
                   key={person.userId}
@@ -98,7 +99,7 @@ export function PeopleTable({ people, currentUserId }: { people: PersonListing[]
                     )}
                   </TableCell>
                   <TableCell className={`${STACKED_CELL} max-sm:pt-1 whitespace-normal max-sm:empty:hidden`}>
-                    {fixed === null ? (
+                    {removable ? (
                       <RemoveButton email={person.email} pending={pending} onRemove={() => remove(person.userId)} />
                     ) : null}
                   </TableCell>

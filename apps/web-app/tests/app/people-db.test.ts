@@ -117,7 +117,9 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     remove: (userId: string) => removeFromPeople(userId),
   };
 
-  const cases = Object.keys(actions).flatMap(action => Object.keys(targets).map(target => [action, target]));
+  const cases = Object.keys(actions)
+    .flatMap(action => Object.keys(targets).map(target => [action, target]))
+    .filter(([action, target]) => !(action === "remove" && target === "a member of SCOUTUI_ADMIN_GROUP"));
 
   it.each(cases)(
     "won't let an Admin %s %s, but will for an ordinary person",
@@ -172,6 +174,39 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     expect(await history()).toEqual([
       { actor_email: "ana@example.com", subject_email: "sam@example.com", from_role: "editor", to_role: null },
     ]);
+  });
+
+  it("removes a member of SCOUTUI_ADMIN_GROUP, ending every browser and CLI sign-in and clearing their role and group", async () => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    const mo = await insertPerson(pool, { email: "mo@example.com", adminGroup: "scout-admins" });
+    await addBrowserSession(mo);
+    expect(await consumeApprovedDeviceCode(await addApprovedDeviceCode(mo), mo)).not.toBeNull();
+    await addApprovedDeviceCode(mo);
+    expect(await signIns(mo)).toEqual({ browser: 1, cli: 1, device_codes: 2 });
+
+    expect(await removeFromPeople(mo)).toEqual({ ok: true });
+    expect(await signIns(mo)).toEqual({ browser: 0, cli: 0, device_codes: 0 });
+    expect(await stored(mo)).toEqual({ role: null, admin_group: null });
+    expect(await history()).toEqual([
+      { actor_email: "ana@example.com", subject_email: "mo@example.com", from_role: "admin", to_role: null },
+    ]);
+  });
+
+  it.each([
+    ["still in the group", "an Admin", ["scout-users", "scout-admins"], { role: "admin", roleSource: "group" }],
+    ["no longer in the group", "a Viewer", ["scout-users"], { role: "viewer", roleSource: "people" }],
+  ] as const)("brings a removed SCOUTUI_ADMIN_GROUP member who is %s back as %s when they sign in again", async (_still, _as, groups, comesBackAs) => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    const mo = await insertPerson(pool, { email: "mo@example.com", adminGroup: "scout-admins" });
+    expect(await removeFromPeople(mo)).toEqual({ ok: true });
+
+    signInAs(mo);
+    expect(await identify({ browser: true })).toBeNull();
+    await recordSignIn(
+      { userId: mo, email: "mo@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
+      async () => [...groups],
+    );
+    expect(await identify({ browser: true })).toMatchObject({ kind: "person", userId: mo, ...comesBackAs });
   });
 
   it("stops a removed person's approved CLI sign-in from giving a session, while a kept person's still does", async () => {

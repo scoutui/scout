@@ -25,12 +25,11 @@ const rowOf = (email: string) => screen.getByRole("row", { name: new RegExp(emai
 beforeEach(() => vi.clearAllMocks());
 
 describe("PeopleTable", () => {
-  it("shows your own row and the fixed Admins as text with no Remove, and gives anyone else a role picker and Remove", () => {
+  it("shows your own row and an Admin set at install as text with no Remove, and gives anyone else a role picker and Remove", () => {
     render(<PeopleTable people={people} currentUserId="ana" />);
     for (const [email, role] of [
       ["ana@example.com", "Admin"],
       ["lee@example.com", "Admin (set at install)"],
-      ["mo@example.com", "Admin (from SSO group)"],
     ] as const) {
       const row = rowOf(email);
       expect(within(row).getByText(role)).toBeInTheDocument();
@@ -40,6 +39,14 @@ describe("PeopleTable", () => {
     const sam = rowOf("sam@example.com");
     expect(within(sam).getByRole("combobox", { name: "Role for sam@example.com" })).toHaveValue("viewer");
     expect(within(sam).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+  });
+
+  it("shows an Admin from the SSO group as text with no role picker, but with Remove", () => {
+    render(<PeopleTable people={people} currentUserId="ana" />);
+    const mo = rowOf("mo@example.com");
+    expect(within(mo).getByText("Admin (from SSO group)")).toBeInTheDocument();
+    expect(within(mo).queryByRole("combobox")).toBeNull();
+    expect(within(mo).getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
   it("changes the role to the one picked", () => {
