@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CohortPoint, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 import { chartFigure, type ChartFigure } from "@/lib/chart-figure";
+import { figureTexts } from "../helpers/figure-texts";
 
 const MORNING = "2026-09-01T09:05:00Z";
 const AFTERNOON = "2026-09-01T15:30:00Z";
@@ -60,14 +61,6 @@ const drawn = (chartConfig: DashboardConfig, view: DashboardView): ChartFigure =
   if (result === null) throw new Error("expected a figure");
   return result;
 };
-
-/** Every string in a figure that a viewer reads, leaving out colours and the marks' kind. */
-function texts(value: unknown): string[] {
-  if (typeof value === "string") return [value];
-  if (Array.isArray(value)) return value.flatMap(texts);
-  if (value === null || typeof value !== "object") return [];
-  return Object.entries(value).flatMap(([key, v]) => (["color", "palette", "kind", "align"].includes(key) ? [] : texts(v)));
-}
 
 describe("chartFigure", () => {
   const cases: Array<[string, DashboardConfig, DashboardView, string, Array<{ label: string; value: string; color: string }>]> = [
@@ -171,7 +164,7 @@ describe("chartFigure", () => {
   ];
 
   it.each(textCases)("holds no other text in %s", (_, chartConfig, view, expected) => {
-    expect(texts(drawn(chartConfig, view)).sort()).toEqual([...frameTexts, ...expected].sort());
+    expect(figureTexts(drawn(chartConfig, view)).sort()).toEqual([...frameTexts, ...expected].sort());
   });
 
   it("labels the time axis with a few days, each with room for its label", () => {

@@ -35,16 +35,29 @@ export function chartExportTable(config: DashboardConfig, view: DashboardView): 
   };
 }
 
-/** The table as CSV: a field holding a comma, quote or line break is quoted, and lines end in CRLF. */
+/**
+ * The table as CSV: a field holding a comma, quote or line break is quoted, a field a spreadsheet would run as a
+ * formula starts with `'`, and lines end in CRLF.
+ */
 export function toCsv(table: ExportTable): string {
-  const field = (value: string) => (/[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value);
+  const field = (value: string) => {
+    const safe = inert(value);
+    return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
+  };
   return [table.columns, ...table.rows].map((row) => row.map(field).join(",")).join("\r\n");
 }
 
-/** The table as tab-separated text, with each tab or line break inside a field turned into a space. */
+/**
+ * The table as tab-separated text, with each tab or line break inside a field turned into a space and a field a
+ * spreadsheet would run as a formula starting with `'`.
+ */
 export function toTsv(table: ExportTable): string {
-  const field = (value: string) => value.replace(/\r\n|[\t\r\n]/g, " ");
+  const field = (value: string) => inert(value).replace(/\r\n|[\t\r\n]/g, " ");
   return [table.columns, ...table.rows].map((row) => row.map(field).join("\t")).join("\n");
+}
+
+function inert(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
 /** A file name for an export: the title without the characters file systems refuse, then `.ext`. */

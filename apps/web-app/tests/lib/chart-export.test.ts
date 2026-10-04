@@ -144,6 +144,9 @@ describe("toCsv", () => {
     ["a field with a comma in quotes", "Button, large", '"Button, large"'],
     ["a field with a quote in quotes, the quote doubled", 'Say "hi"', '"Say ""hi"""'],
     ["a field with a line break in quotes", "two\nlines", '"two\nlines"'],
+    ["a field that starts with = behind a quote mark, so it can't run as a formula", "=SUM(A1)", "'=SUM(A1)"],
+    ["a field that starts with @ behind a quote mark", "@cmd", "'@cmd"],
+    ["a number as it is", "125", "125"],
   ];
 
   it.each(cases)("writes %s", (_, field, written) => {
@@ -157,6 +160,7 @@ describe("toTsv", () => {
     ["a tab as a space", "a\tb", "a b"],
     ["a line break as a space", "a\nb", "a b"],
     ["a CRLF line break as one space", "a\r\nb", "a b"],
+    ["a field that starts with = behind a quote mark", "=SUM(A1)", "'=SUM(A1)"],
   ];
 
   it.each(cases)("writes %s", (_, field, written) => {
