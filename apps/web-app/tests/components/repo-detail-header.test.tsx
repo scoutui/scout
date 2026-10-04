@@ -131,3 +131,21 @@ describe("RepoDetailHeader package count", () => {
     expect(screen.getByText("1 package")).toBeInTheDocument();
   });
 });
+
+describe("RepoDetailHeader scanned line", () => {
+  it("says which folders the scan left out", () => {
+    render(
+      <RepoDetailHeader
+        detail={makeDetail({ scope: { folder: "", exclude: ["apps/playground"], packages: [] } })}
+        recentScans={[]}
+      />,
+    );
+    expect(screen.getByText("Scanned: everything except apps/playground.")).toBeInTheDocument();
+  });
+
+  it("says nothing about coverage for a scan that doesn't record it", () => {
+    render(<RepoDetailHeader detail={makeDetail({ scope: null })} recentScans={[]} />);
+    expect(screen.getByRole("heading", { level: 1, name: "elk-zone/elk" })).toBeInTheDocument();
+    expect(screen.queryByText(/^Scanned:/)).toBeNull();
+  });
+});

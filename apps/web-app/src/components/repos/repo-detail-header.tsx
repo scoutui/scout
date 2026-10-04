@@ -7,6 +7,7 @@ import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { commitUrl } from "@/lib/git-remote";
 import { relativeTime } from "@/lib/relative-time";
 import { deltaTone } from "@/lib/scan-diff-view";
+import { scannedLine } from "@/lib/scanned-line";
 import { ScanDiffLine } from "./scan-diff-line";
 import { ScanSwitcher } from "./scan-switcher";
 
@@ -24,6 +25,7 @@ export function RepoDetailHeader({
 }) {
   const remote = parseGitRemote(detail.gitRemote);
   const commitHref = commitUrl(detail.gitRemote, detail.commit);
+  const scanned = scannedLine(detail.scope);
 
   return (
     <header className="space-y-4">
@@ -71,6 +73,7 @@ export function RepoDetailHeader({
             gitRemote={detail.gitRemote}
           />
         </div>
+        {scanned ? <p className="text-xs text-muted-foreground">{scanned}</p> : null}
       </div>
 
       {/* Framework split */}

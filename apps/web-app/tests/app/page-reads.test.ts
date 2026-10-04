@@ -227,7 +227,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const empty = await page({ params: Promise.resolve({ repoId: "repo-empty" }), searchParams });
       expect(propsFor(empty, "EmptyState")).toMatchObject({
         title: "No components found",
-        description: "This scan found no components. Check the include patterns in scout.config.json, then scan again.",
+        description: 'This scan found no components. Check "include" and "exclude" in scout.config.json, then scan again.',
       });
     });
   });
