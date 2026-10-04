@@ -832,7 +832,7 @@ function FindBox({
                 role="group"
                 aria-label={g.title}
               >
-                <div className="sticky top-0 z-10 flex justify-between border-b bg-card/95 px-2.5 py-1 text-label text-muted-foreground backdrop-blur-sm">
+                <div className="sticky top-0 z-10 flex justify-between border-b bg-card px-2.5 py-1 text-label text-muted-foreground">
                   <span>{g.title}</span>
                   <span className="tabular-nums">
                     {query.trim()
