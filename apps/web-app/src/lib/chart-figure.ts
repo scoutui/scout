@@ -36,7 +36,7 @@ const NAME_COLUMN = 300;
 const VALUE_COLUMN = 96;
 const BAR_ROW_MAX = 64;
 const BAR_MAX = 36;
-/** The size of a bar's name and value, in layout units. Mono glyphs advance 0.6 of it. */
+/** The size of a bar's name and value, in layout units. */
 export const BAR_TEXT_SIZE = 15;
 const TEXT_GAP = 8;
 
@@ -73,6 +73,8 @@ export type ChartFigureInput = {
   exportedAt: Date;
   /** A CSS colour for each chart colour token the chart uses and for each `FigureColorRole`. */
   colors: Record<string, string>;
+  /** The width of a bar's name set in the mono face at `BAR_TEXT_SIZE`, in layout units. */
+  nameWidth: (name: string) => number;
 };
 
 /** True when a chart has an image to export: a trend, stacked or bar chart with something to draw. */
@@ -86,7 +88,7 @@ export function hasFigure(config: DashboardConfig, view: DashboardView): boolean
  * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a
  * table chart or a chart with nothing to draw.
  */
-export function chartFigure({ title, config, view, host, exportedAt, colors }: ChartFigureInput): ChartFigure | null {
+export function chartFigure({ title, config, view, host, exportedAt, colors, nameWidth }: ChartFigureInput): ChartFigure | null {
   if (!hasFigure(config, view)) return null;
   const resolve = (key: string): string => {
     const value = colors[key];
@@ -97,6 +99,7 @@ export function chartFigure({ title, config, view, host, exportedAt, colors }: C
   const style = {
     seriesColor: (cohortKey: string) => resolve(tokens.get(cohortKey) ?? cohortKey),
     deprecatedOnly: deprecatedOnlyKeys(config.cohorts),
+    nameWidth,
   };
   const frame = {
     width: FIGURE_WIDTH,
@@ -115,7 +118,7 @@ export function chartFigure({ title, config, view, host, exportedAt, colors }: C
   return { ...frame, ...seriesLayout(view.series, stacked ? "share" : config.metric, stacked, style, repo ?? reposCovered(view.coverage)) };
 }
 
-type SeriesStyle = { seriesColor: (cohortKey: string) => string; deprecatedOnly: ReadonlySet<string> };
+type SeriesStyle = { seriesColor: (cohortKey: string) => string; deprecatedOnly: ReadonlySet<string>; nameWidth: (name: string) => number };
 type Layout = Pick<ChartFigure, "subtitle" | "plot" | "yTicks" | "xLabels" | "marks" | "legend">;
 
 function seriesLayout(series: CohortSeries[], metric: "count" | "share", stacked: boolean, style: SeriesStyle, coverage: string): Layout {
@@ -187,7 +190,7 @@ function seriesLayout(series: CohortSeries[], metric: "count" | "share", stacked
 function barsLayout(points: CohortPoint[], metric: "count" | "share", style: SeriesStyle, subtitle: string): Layout {
   const bars = barOrder(points);
   const names = bars.map((p) => exportLabel(p, style.deprecatedOnly));
-  const nameColumn = Math.min(NAME_COLUMN, Math.max(...names.map((n) => n.length)) * BAR_TEXT_SIZE * 0.6 + 2 * TEXT_GAP);
+  const nameColumn = Math.min(NAME_COLUMN, Math.max(...names.map(style.nameWidth)) + 2 * TEXT_GAP);
   const plot: FigureRect = {
     x: PAD + nameColumn,
     y: PLOT_TOP,

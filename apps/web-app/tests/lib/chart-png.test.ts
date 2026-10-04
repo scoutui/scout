@@ -45,7 +45,7 @@ const FONTS = { sans: '"Sans Test", sans-serif', mono: '"Mono Test", monospace' 
 const config = (chartType: DashboardConfig["chartType"]): DashboardConfig => ({ scope: { kind: "all" }, cohorts, chartType, metric: "count" });
 
 function drawn(chartConfig: DashboardConfig, view: DashboardView): ChartFigure {
-  const figure = chartFigure({ title: "Button adoption", config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4), colors });
+  const figure = chartFigure({ title: "Button adoption", config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4), colors, nameWidth: (name) => name.length * 9 });
   if (figure === null) throw new Error("expected a figure");
   return figure;
 }
@@ -144,6 +144,16 @@ describe("chartPng", () => {
     const fontOf = (text: string) => calls.find((c) => c.op === "fillText" && c.args[0] === text)?.font;
     expect(fontOf("Button adoption")).toBe(`600 30px ${fonts.sans}`);
     expect(fontOf("@example/web")).toBe(`400 15px ${fonts.mono}`);
+  });
+
+  it("draws each bar's whole name, however wide the page's mono face sets it", async () => {
+    addStyle(paletteCss());
+    Object.defineProperty(document, "fonts", { value: { ready: Promise.resolve() }, configurable: true });
+    const { ctx, calls } = recorder(10);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => ctx as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((done) => done(new Blob(["png"], { type: "image/png" })));
+    await chartPng({ title: "Button adoption", config: config("bars"), view: { kind: "snapshot", points }, host: "scout.example.com", exportedAt: new Date(2026, 9, 4) });
+    expect(textsDrawn(calls)).toEqual(expect.arrayContaining(["@example/web", "Button · @example/ui"]));
   });
 });
 

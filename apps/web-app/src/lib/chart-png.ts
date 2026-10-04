@@ -56,20 +56,22 @@ export type FigureContext = Pick<
 /** CSS font families for the figure's sans and mono text. */
 export type FigureFonts = { sans: string; mono: string };
 
-/** What `chartFigure` takes, apart from the colours, which `chartPng` reads from the page. */
-export type ChartPngInput = Omit<ChartFigureInput, "colors">;
+/** What `chartFigure` takes, apart from the colours and name widths, which `chartPng` reads from the page. */
+export type ChartPngInput = Omit<ChartFigureInput, "colors" | "nameWidth">;
 
 /** The chart as a 2560 × 1440 PNG in the light theme's colours, whatever theme the page shows. */
 export async function chartPng(input: ChartPngInput): Promise<Blob> {
   await document.fonts.ready;
-  const figure = chartFigure({ ...input, colors: lightChartColors() });
-  if (figure === null) throw new Error("This chart has no image to export.");
   const canvas = document.createElement("canvas");
-  canvas.width = figure.width * SCALE;
-  canvas.height = figure.height * SCALE;
   const ctx = canvas.getContext("2d");
   if (ctx === null) throw new Error("This browser can't draw the chart's image.");
-  paintFigure(ctx, figure, pageFonts());
+  const fonts = pageFonts();
+  ctx.font = monoFont(fonts, BAR_TEXT_SIZE);
+  const figure = chartFigure({ ...input, colors: lightChartColors(), nameWidth: (name) => ctx.measureText(name).width });
+  if (figure === null) throw new Error("This chart has no image to export.");
+  canvas.width = figure.width * SCALE;
+  canvas.height = figure.height * SCALE;
+  paintFigure(ctx, figure, fonts);
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("This browser can't draw the chart's image."))), "image/png");
   });
@@ -115,6 +117,8 @@ function rootStyles(sheets: Iterable<CSSStyleSheet>): CSSStyleDeclaration[] {
   return styles;
 }
 
+const monoFont = (fonts: FigureFonts, size: number) => `400 ${size}px ${fonts.mono}`;
+
 function pageFonts(): FigureFonts {
   const style = getComputedStyle(document.documentElement);
   return {
@@ -127,7 +131,7 @@ function pageFonts(): FigureFonts {
 export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: FigureFonts): void {
   const { palette, plot, marks } = figure;
   const sans = (weight: number, size: number) => `${weight} ${size}px ${fonts.sans}`;
-  const mono = (size: number) => `400 ${size}px ${fonts.mono}`;
+  const mono = (size: number) => monoFont(fonts, size);
   ctx.scale(SCALE, SCALE);
   ctx.textBaseline = "middle";
   ctx.fillStyle = palette.background;

@@ -54,7 +54,7 @@ const config = (chartType: DashboardConfig["chartType"], scope: DashboardConfig[
 });
 
 const figure = (chartConfig: DashboardConfig, view: DashboardView): ChartFigure | null =>
-  chartFigure({ title: "Button adoption", config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4, 12), colors });
+  chartFigure({ title: "Button adoption", config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4, 12), colors, nameWidth: (name) => name.length * 9 });
 
 const drawn = (chartConfig: DashboardConfig, view: DashboardView): ChartFigure => {
   const result = figure(chartConfig, view);
