@@ -7,10 +7,10 @@
  * `allowedDomains` is a comma-separated string sourced from the
  * `OIDC_ALLOWED_DOMAINS` env var. Comparison is case-insensitive on both sides.
  *
- * `emailVerified` is the IdP's `email_verified` claim. When the gate is active
- * the address must be verified: a provider that lets a user assert their own
- * email would let anyone claim an allowed domain. Anything other than a literal
- * `true` denies, including a missing claim, so the gate fails closed.
+ * `emailVerified` is whether the IdP marked `email` verified. When the gate is
+ * active the address must be verified: a provider that lets a user assert their
+ * own email would let anyone claim an allowed domain. Anything other than a
+ * literal `true` denies, including a missing claim, so the gate fails closed.
  */
 export function emailDomainDenial(
   email: string | null | undefined,

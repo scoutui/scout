@@ -22,7 +22,7 @@ Before you upgrade, read the entries in [`CHANGELOG.md`](CHANGELOG.md) newer tha
 | `auth.admins` or `auth.adminGroup` | Who is an Admin: their email addresses, or a group in your sign-in provider. Set at least one |
 | `ingress` | How traffic reaches the web server |
 | `postgresql.enabled` or `database.host` | The bundled Postgres, or your own |
-| `auth.requiredGroup`, `auth.oidc.allowedDomains` | Who may sign in, when your provider doesn't decide that itself |
+| `auth.oidc.allowedDomains` | Which email domains may sign in, when your provider doesn't decide that itself |
 
 [`values.yaml`](values.yaml) lists every value with its default.
 

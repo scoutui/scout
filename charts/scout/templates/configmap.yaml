@@ -13,9 +13,6 @@ data:
   {{- with .Values.auth.oidc.allowedDomains }}
   OIDC_ALLOWED_DOMAINS: {{ . | quote }}
   {{- end }}
-  {{- with .Values.auth.requiredGroup }}
-  SCOUTUI_REQUIRED_GROUP: {{ . | quote }}
-  {{- end }}
   {{- with .Values.auth.admins }}
   SCOUTUI_ADMINS: {{ join "," . | quote }}
   {{- end }}

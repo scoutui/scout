@@ -142,9 +142,6 @@ auth:
       key: OIDC_CLIENT_SECRET
     # Optional comma-separated allow-list of email domains.
     allowedDomains: ""
-  # Optional IdP group gate (SCOUTUI_REQUIRED_GROUP), checked at browser sign-in.
-  # Empty = no group gate. Existing CLI sessions are not rechecked.
-  requiredGroup: ""
   # Set at least one. Emails of people who are always Admins; each counts only
   # when the sign-in provider marks it verified.
   admins: []
