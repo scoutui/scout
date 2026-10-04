@@ -160,6 +160,8 @@ helm upgrade scout oci://ghcr.io/scoutui/charts/scout \
 
 Migrations run when the new pods start. When a new version prepares scans differently, the worker rebuilds existing scans by itself, latest scan per repo first, unless the version's CHANGELOG entry says otherwise. While that runs, some pages may show **Preparing scan data** ([what that means](/docs/explanation/cli-and-dashboard#scan-preparing)).
 
+Admins named in `auth.admins` or `auth.adminGroup` become Admins at their next browser sign-in, so once the upgrade is done, have them sign out of the dashboard and sign in again.
+
 ### Retry scans that failed to rebuild
 
 The worker gives up on a rebuild after a few failed tries. Pages then show that repo's newest ready scan under a band saying its latest scan couldn't be prepared, charts over time leave the scan out and list it, and a page with nothing else to show reads **Scan data couldn't be prepared**. The same steps also retry chart numbers shown as **Numbers may be out of date**.

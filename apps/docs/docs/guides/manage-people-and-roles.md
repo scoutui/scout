@@ -19,6 +19,8 @@ People who sign in for the first time are Viewers. Everyone who had signed in be
 
 The dashboard needs at least one admin setting, or it won't start. Name your admins by email, by a group in your sign-in provider, or both.
 
+Named admins become Admins at their next browser sign-in. After you upgrade to a dashboard with roles, nobody is an Admin until one of them signs in again, so have them sign out of the dashboard and sign in again.
+
 Admins named either way show on **People** as **Admin (set at install)** or **Admin (from SSO group)**, and you can't change their role there. To change it, change the setting or the group.
 
 ### By email

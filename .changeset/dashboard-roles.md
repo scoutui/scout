@@ -4,4 +4,4 @@
 
 Adds roles. Viewers can look around; Editors can also upload scans and change charts, governance and tags; Admins can also set people's roles on Settings → People, where they can remove someone too. Everyone who has already signed in becomes an Editor; people who sign in for the first time are Viewers.
 
-Before upgrading, set `SCOUTUI_ADMINS` (chart `auth.admins`) to your admins' email addresses, or `SCOUTUI_ADMIN_GROUP` (chart `auth.adminGroup`) to a group in your sign-in provider. The dashboard won't start without one of them. An email counts only when your sign-in provider marks it verified.
+Before upgrading, set `SCOUTUI_ADMINS` (chart `auth.admins`) to your admins' email addresses, or `SCOUTUI_ADMIN_GROUP` (chart `auth.adminGroup`) to a group in your sign-in provider. The dashboard won't start without one of them. An email counts only when your sign-in provider marks it verified. Named admins become Admins at their next browser sign-in, so after upgrading, have them sign out and sign in again: until one of them does, nobody is an Admin.
