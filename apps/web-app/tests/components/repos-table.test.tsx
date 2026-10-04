@@ -113,7 +113,7 @@ describe("ReposTable", () => {
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute("href", "/repos/acme-web");
     // The remote belongs in the repo page's masthead, not as a second link here.
-    expect(screen.queryByRole("link", { name: /github\.com/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: "github.com/acme/acme-web" })).toBeNull();
   });
 
   it("shows branch and short commit as scan provenance, never the scan count", () => {

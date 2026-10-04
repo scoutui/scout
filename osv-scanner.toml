@@ -1,0 +1,3 @@
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+reason = "No fixed release of braces. The CLI expands only glob patterns from the repository it scans, so a crafted pattern can only stall a scan of that repository."
