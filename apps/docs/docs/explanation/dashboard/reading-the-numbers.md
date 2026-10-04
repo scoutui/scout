@@ -82,7 +82,7 @@ The denominator is the pair, not every use in the repo. A migration asks how muc
 
 The replacement side counts every use of the replacement within the scope, including uses that never replaced anything. On a repo's **Adoption** tab the scope is that repo; on the **charts** page it is every repo. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page reads **94.2% migrated** (490 ÷ 520), while `checkout`'s **Adoption** tab still reads 75%.
 
-If no scan within the scope has the replacement component yet, the replacement side counts every component of its package instead, and the row names the package rather than the component.
+The replacement side counts only the component or package the record names. Until a repo in the scope uses it, the row reads **0% migrated**.
 
 A retirement has no replacement, so there is nothing to divide. It reads **N left**, the uses still in the code.
 

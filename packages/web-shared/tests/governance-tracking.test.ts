@@ -72,15 +72,23 @@ describe("deriveGovernanceTracking: migrations", () => {
     expect(deriveGovernanceTracking([record("g1", { targetExport: "Modal" })], scans, { kind: "all" }, asOf)).toEqual([]);
   });
 
-  it("a successor export some scan holds charts its components; one no scan holds falls back to the package", () => {
+  it("a successor export some scan holds charts its components", () => {
     const withExport = record("g1", { disposition: { kind: "superseded", by: { packageName: "@x/example-button", exportName: "ExampleButton" } } });
     const [m] = deriveGovernanceTracking([withExport], scans, { kind: "all" }, asOf);
     expect(m?.config.cohorts[1]).toEqual({ kind: "component", componentId: pb.id, role: "successor" });
     expect(m?.toLabel).toBe("ExampleButton · @x/example-button");
+  });
 
-    const unresolvable = record("g2", { disposition: { kind: "superseded", by: { packageName: "@x/example-button", exportName: "Nope" } } });
-    const [f] = deriveGovernanceTracking([unresolvable], scans, { kind: "all" }, asOf);
-    expect(f?.config.cohorts[1]).toEqual({ kind: "package", packageName: "@x/example-button", role: "successor" });
+  it.each([
+    ["an export", { packageName: "@x/example-button", exportName: "Nope" }, "Nope · @x/example-button", "Migration: Button → Nope"],
+    ["a package", { packageName: "@x/unused" }, "@x/unused", "Migration: Button → @x/unused"],
+  ])("a successor %s no scan holds counts 0 uses under its own name", (_, by, toLabel, name) => {
+    const [m] = deriveGovernanceTracking([record("g2", { disposition: { kind: "superseded", by } })], scans, { kind: "all" }, asOf);
+    expect(m?.config.cohorts).toEqual([{ kind: "component", componentId: btn.id }]);
+    expect(m?.toLabel).toBe(toLabel);
+    expect(m?.name).toBe(name);
+    expect(m?.series[1]?.points.map((p) => p.value)).toEqual([0, 0]);
+    expect(m?.progress).toBe(0);
   });
 
   it("observation window: clips leading scans where the deprecated side is unobserved", () => {
