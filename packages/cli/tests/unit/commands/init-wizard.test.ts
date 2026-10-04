@@ -261,7 +261,7 @@ describe("init wizard: run inside a workspace package", () => {
     expect(intros).toEqual([wordmark(color, "init")]);
     expect(confirms).toEqual([rootQuestion]);
     expect(pickers).toEqual([["apps/playground", "apps/web", "packages/shared-ui", "scripts"]]);
-    expect(outros).toEqual(["Wrote ../../scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload."]);
+    expect(outros).toEqual(["Wrote ../../scout.config.json. Run scout scan --dry-run in ../.. to try it, then scout scan to upload."]);
     expect(JSON.parse(readFileSync(join(root, "scout.config.json"), "utf8")).repoId).toBe(basename(root));
     expect(existsSync(join(root, "apps/web/scout.config.json"))).toBe(false);
   });

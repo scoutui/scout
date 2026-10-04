@@ -152,18 +152,23 @@ describe("init command", () => {
     }
   });
 
-  it("warns that a scan needs a git repository, and still writes the config, outside one", async () => {
+  it("warns that a scan needs a git repository, then writes the config and says only where, outside one", async () => {
     const stderr: string[] = [];
+    const stdout: string[] = [];
     vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
       stderr.push(String(chunk));
       return true;
     });
-    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+      stdout.push(String(chunk));
+      return true;
+    });
     await runInit({ cwd: tmp, log: new Logger({ color: createColor({ isTTY: false, env: {} }) }) });
     vi.restoreAllMocks();
     expect(stderr).toEqual([
       "Warning: this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.\n",
     ]);
+    expect(stdout).toEqual(["Wrote scout.config.json.\n"]);
     expect(written().repoId).toBe(basename(tmp));
   });
 

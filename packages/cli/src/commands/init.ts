@@ -50,7 +50,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const asksRoot = prompts !== undefined && rootConfig !== null;
   if (!asksRoot) await assertNoExistingConfig(out);
   const host = opts.host !== undefined ? savedHost(opts.host) : undefined;
-  if ((await probeRepository(cwd)).kind === "outside") {
+  const outsideGit = (await probeRepository(cwd)).kind === "outside";
+  if (outsideGit) {
     log.warn("this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.");
   }
   prompts?.intro(wordmark(log.color, "init"));
@@ -63,7 +64,10 @@ export async function runInit(opts: InitOptions): Promise<void> {
     if (whole) out = rootConfig;
     await assertNoExistingConfig(out);
   }
-  const done = `Wrote ${relative(cwd, out)}. Run scout scan --dry-run to try it, then scout scan to upload.`;
+  const runIn = relative(cwd, dirname(out));
+  const done = outsideGit
+    ? `Wrote ${relative(cwd, out)}.`
+    : `Wrote ${relative(cwd, out)}. Run scout scan --dry-run${runIn === "" ? "" : ` in ${runIn}`} to try it, then scout scan to upload.`;
 
   if (opts.interactive && opts.prompts) {
     const answers = await runWizard(opts.prompts, defaults, { ...opts, host }, dirname(out));
