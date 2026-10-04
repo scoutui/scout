@@ -11744,9 +11744,9 @@ __metadata:
   linkType: hard
 
 "http-cache-semantics@npm:^4.1.1":
-  version: 4.2.0
-  resolution: "http-cache-semantics@npm:4.2.0"
-  checksum: 10c0/45b66a945cf13ec2d1f29432277201313babf4a01d9e52f44b31ca923434083afeca03f18417f599c9ab3d0e7b618ceb21257542338b57c54b710463b4a53e37
+  version: 4.3.0
+  resolution: "http-cache-semantics@npm:4.3.0"
+  checksum: 10c0/b9668e271b4a99cba067bfa6f286b12eff1408a24e090ca16f0f5fa826ac07f67b4b8c7aa6e7458596d890683f3c172f647a00ca516a8f0158c80d7e4ebe0316
   languageName: node
   linkType: hard
 
@@ -19276,8 +19276,8 @@ __metadata:
   linkType: hard
 
 "webpack-dev-middleware@npm:^7.4.2":
-  version: 7.4.5
-  resolution: "webpack-dev-middleware@npm:7.4.5"
+  version: 7.4.6
+  resolution: "webpack-dev-middleware@npm:7.4.6"
   dependencies:
     colorette: "npm:^2.0.10"
     memfs: "npm:^4.43.1"
@@ -19290,7 +19290,7 @@ __metadata:
   peerDependenciesMeta:
     webpack:
       optional: true
-  checksum: 10c0/e72fa7de3b1589c0c518976358f946d9ec97699a3eb90bfd40718f4be3e9d5d13dc80f748c5c16662efbf1400cedbb523c79f56a778e6e8ffbdf1bd93be547eb
+  checksum: 10c0/3d6cfaa36a1d7059f112c1c585b85fd041aad358f142cd913ff009c0954891704cc14f64febccbd2552add4cf119848c824a2ee37de6dbca65cc80e3aa3df28a
   languageName: node
   linkType: hard
 
