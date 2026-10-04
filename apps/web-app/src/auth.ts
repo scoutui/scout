@@ -1,5 +1,6 @@
 import NextAuth, { type NextAuthResult } from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@/db/client";
 import { emailDomainDenial } from "@/lib/oidc-domain-gate";
 import { idpGroupDenial } from "@/lib/oidc-group-gate";
@@ -14,6 +15,15 @@ import {
 } from "@/lib/auth-session";
 
 const providers = buildProviders();
+
+/** Whether the provider account `account` is already linked to someone's row. */
+async function isLinked(account: { provider: string; providerAccountId: string }): Promise<boolean> {
+  const linked = await getDb().query.accounts.findFirst({
+    where: and(eq(schema.accounts.provider, account.provider), eq(schema.accounts.providerAccountId, account.providerAccountId)),
+    columns: { userId: true },
+  });
+  return linked !== undefined;
+}
 
 // Annotated to avoid TS2742 on the `auth` callable, whose inferred type refers
 // to types in next-auth's internal lib directory that the package root doesn't
@@ -40,6 +50,7 @@ const nextAuth: NextAuthResult = NextAuth({
     async signIn({ user, account, profile }) {
       // Dev bypass: skip the OIDC domain and group gates entirely.
       if (account?.provider === "dev") return true;
+      if (account && (await nextAuth.auth())?.user && !(await isLinked(account))) return false;
       const domainDenial = emailDomainDenial(
         user.email,
         // biome-ignore lint/complexity/useLiteralKeys: env access
