@@ -32,9 +32,11 @@ If it stops with `Error: Couldn't scan: git failed in <path>.`, run `git status`
 
 If the scan stops with `Error: No files match "include"`, your `include` patterns don't match your code. If the summary counts fewer files than your repo has, `include` or `exclude` leaves some of them out. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files).
 
-If your config has no `include`, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder. When there are none, it stops with `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront.` Run the scan from the folder that holds your source files, or check that `exclude` doesn't leave them all out.
+If your config has no `include`, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts` and `.vue` file below the config's folder. When there are none, it stops with `Error: No JavaScript, TypeScript or Vue files to scan in /home/dev/storefront.` Run the scan from the folder that holds your source files, or check that `exclude` doesn't leave them all out.
 
-The scan always leaves out test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`) and `node_modules`, even when `include` names them. Their uses aren't counted.
+The scan always leaves out test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`, `.d.mts`, `.d.cts`) and `node_modules`, even when `include` names them. Their uses aren't counted.
+
+The summary doesn't count a file the scan couldn't read or parse. It prints `Warning: Skipped src/Checkout.tsx: couldn't read it.`, often because of the file's permissions, or `Warning: Skipped src/Checkout.tsx: couldn't parse it (Unexpected token).`, which [A file has syntax errors](#a-file-has-syntax-errors) covers. A file with an extension the scan doesn't read, such as `.md`, isn't counted either, even when `include` matches it.
 
 The scan skips code inside a submodule or another clone below the config's folder. If `include` only matches files in one, the scan stops with `Error: "include" in <path> (<patterns>) only matches files in <folder>, which is a separate git repository.` With no `include`, the message is `Error: The only source files here are in <folder>, which is a separate git repository.` Run the scan from that folder instead.
 
@@ -44,7 +46,7 @@ A line such as `Warning: "apps/playground" in exclude matches nothing. Update or
 
 ## A file has syntax errors
 
-A line such as `Warning: /home/dev/storefront/src/Broken.tsx has syntax errors (Unexpected token), so the scan read what it could.` means the scan couldn't fully parse that file. It carries on, but components defined or used in that file can be missing from the results. Fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.
+A line such as `Warning: Skipped src/Broken.tsx: couldn't parse it (Unexpected token).` means the scan couldn't parse that file at all, so it skipped it: uses in it aren't counted. A line such as `Warning: src/Broken.tsx has syntax errors (Missing initializer in const declaration), so the scan read what it could.` means the scan parsed only part of the file: components defined or used in it can be missing from the results. Either way, fix the syntax error, or add the file to `exclude` in the config if you don't want it counted.
 
 ## Components are missing: Scout couldn't match some uses {#unresolved-occurrences}
 

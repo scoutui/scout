@@ -24,12 +24,24 @@ export function syntaxErrorWarning(filePath: string, messages: string[]): string
   return `${filePath} has syntax errors (${messages.join("; ")}), so the scan read what it could.`;
 }
 
+const SCRIPT_EXTENSIONS = new Set([".tsx", ".jsx", ".ts", ".js", ".mts", ".mjs", ".cts", ".cjs"]);
+
+/** Whether `parseByExt` reads a file with this path's extension. */
+export function isParsable(filePath: string): boolean {
+  const ext = extname(filePath);
+  return SCRIPT_EXTENSIONS.has(ext) || ext === ".vue";
+}
+
 export function parseByExt(filePath: string, source: string, onSyntaxErrors?: SyntaxErrorReporter): ParsedFile {
   const ext = extname(filePath);
   const report = onSyntaxErrors && ((messages: string[]) => onSyntaxErrors(filePath, messages));
 
-  if (ext === ".tsx" || ext === ".jsx" || ext === ".ts" || ext === ".js") {
-    return { kind: "babel", ast: parseOxc(filePath, source, ext, report), source };
+  if (SCRIPT_EXTENSIONS.has(ext)) {
+    const { program, errors } = parseOxc(filePath, source, ext);
+    // oxc returns an empty Program when it can't recover from a syntax error.
+    if (errors.length > 0 && program.body.length === 0) throw new Error(errors.join("; "));
+    if (errors.length > 0) report?.(errors);
+    return { kind: "babel", ast: program, source };
   }
 
   if (ext === ".vue") {
@@ -43,8 +55,8 @@ export function parseByExt(filePath: string, source: string, onSyntaxErrors?: Sy
       return {
         kind: "vue",
         descriptor,
-        scriptAst: parseOxc(`${filePath}.ts`, scriptContent, ".ts", report),
-        ...(plainContent ? { plainScriptAst: parseOxc(`${filePath}.ts`, plainContent, ".ts", report) } : {}),
+        scriptAst: parseScriptBlock(`${filePath}.ts`, scriptContent, report),
+        ...(plainContent ? { plainScriptAst: parseScriptBlock(`${filePath}.ts`, plainContent, report) } : {}),
         source: scriptContent,
       };
     }
@@ -54,7 +66,13 @@ export function parseByExt(filePath: string, source: string, onSyntaxErrors?: Sy
   return { kind: "unsupported" };
 }
 
-function parseOxc(filePath: string, source: string, ext: string, report?: (messages: string[]) => void): Program {
+function parseScriptBlock(filePath: string, source: string, report?: (messages: string[]) => void): Program {
+  const { program, errors } = parseOxc(filePath, source, ".ts");
+  if (errors.length > 0) report?.(errors);
+  return program;
+}
+
+function parseOxc(filePath: string, source: string, ext: string): { program: Program; errors: string[] } {
   // oxc parses JSX in .js files only with a lang hint; without one it
   // returns an empty Program.
   const options =
@@ -64,6 +82,5 @@ function parseOxc(filePath: string, source: string, ext: string, report?: (messa
   const result = options
     ? oxcParseSync(filePath, source, options)
     : oxcParseSync(filePath, source);
-  if (result.errors.length > 0) report?.(result.errors.map((e) => e.message));
-  return result.program;
+  return { program: result.program, errors: result.errors.map((e) => e.message) };
 }

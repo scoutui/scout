@@ -13,14 +13,14 @@ HTML files and Lit templates are not read.
 
 | | React | Vue |
 | --- | --- | --- |
-| Files | `.tsx`, `.jsx`, `.ts`, `.js` | `.vue` |
+| Files | `.tsx`, `.jsx`, `.ts`, `.js`, `.mts`, `.mjs`, `.cts`, `.cjs` | `.vue` |
 | What is read | JSX anywhere in the file | The `<template>` and `<script>` blocks |
 | Components found | Imported or locally defined components used as JSX tags, and web components | Imported components, auto-imported components, and web components |
 | Prop values | Yes | Yes |
 | Events | Props named `on` plus a capital letter, such as `onClick`, unless their value is written, as in `onLabel="On"` | `@name`, `v-on:name`, and props bound with a name like `:onClick`, unless their value is written |
 | Renders and rendered by | Yes | Yes |
 
-Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, are skipped even when `include` matches them.
+Files with any other extension, such as `.html` or `.svelte`, are skipped even when `include` matches them, and the summary doesn't count them as scanned.
 
 *Renders and rendered by* is what the dashboard's **Composition** tab shows and what `composition` holds in the [scan file](/docs/reference/artifact#composition): which components a component's own code renders, and which components render it. [Composition](/docs/explanation/composition-and-ownership) explains it.
 

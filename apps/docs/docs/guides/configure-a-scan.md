@@ -79,7 +79,7 @@ Fix the path, or remove it from `exclude`.
 
 The scan already leaves these out, so you don't need to exclude them:
 
-- test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`) and `node_modules`;
+- test, spec and story files, files in `__tests__` folders, type declaration files (`.d.ts`, `.d.mts`, `.d.cts`) and `node_modules`;
 - files your `.gitignore` ignores;
 - folders whose names start with a dot, such as `.next`;
 - a folder below the config's folder that holds its own git repository, such as a submodule, even when an `include` pattern points into it.
@@ -107,7 +107,7 @@ Error: No files match "include" in ./scout.config.json (app/**/*.{js,jsx,ts,tsx}
 When the config has no `include`, and the config's folder holds no source files or `exclude` leaves them all out:
 
 ```
-Error: No .js, .jsx, .ts, .tsx or .vue files to scan in /home/dev/storefront. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.
+Error: No JavaScript, TypeScript or Vue files to scan in /home/dev/storefront. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.
 ```
 
 Code inside a submodule or another clone below the config's folder isn't scanned, so an `include` pattern that points into one matches no files.

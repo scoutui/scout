@@ -42,12 +42,14 @@ const RELATIVE_SPECIFIER = /^\.\.?(?:$|[\\/])/;
  * TypeScript ESM spellings. Under `moduleResolution: node16|nodenext`
  * a relative specifier names the emitted file (`./Leaf.js`) while the source
  * on disk is `Leaf.ts`/`Leaf.tsx`. Mirror `tsc`'s mapping (`.js` → `.ts`,
- * `.tsx`; `.jsx` → `.tsx`) and probe those twins only after the spelled file
+ * `.tsx`; `.jsx` → `.tsx`; `.mjs` → `.mts`; `.cjs` → `.cts`) and probe those twins only after the spelled file
  * itself is missing, so a real `.js` on disk still wins.
  */
 const TS_SOURCE_TWINS: ReadonlyArray<readonly [emitted: string, sources: readonly string[]]> = [
   [".js", [".ts", ".tsx"]],
   [".jsx", [".tsx"]],
+  [".mjs", [".mts"]],
+  [".cjs", [".cts"]],
 ];
 
 function tsSourceSpellings(spec: string): string[] {

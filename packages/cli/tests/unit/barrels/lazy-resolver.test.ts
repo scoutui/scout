@@ -138,6 +138,22 @@ describe("createLazyResolver: multi-hop re-export chain", () => {
 
     expect(hit).toMatchObject({ leafPackage: "@example/leaf", exportName: "InternalBtn" });
   });
+
+  it.each(["index.mts", "index.cts"])("follows a re-export in a TypeScript %s entry that uses an angle-bracket type assertion", (entry) => {
+    writePkg(tmp, "@example/leaf", {
+      "index.js": "export class InternalBtn {}",
+    }, { main: "index.js" });
+    writePkg(tmp, "@example/agg", {
+      [entry]: `export { InternalBtn as XBtn } from "@example/leaf";\nexport const sizes = <const>["s", "m"];`,
+    }, { main: entry });
+
+    const resolveImport = createImportResolver({ repoRoot: tmp });
+    const resolver = createLazyResolver({ resolveImport });
+
+    const hit = resolver.lookupExternalLeaf(join(tmp, "src", "App.tsx"), "@example/agg", "XBtn");
+
+    expect(hit).toMatchObject({ leafPackage: "@example/leaf", exportName: "InternalBtn" });
+  });
 });
 
 describe("createLazyResolver: failure modes", () => {

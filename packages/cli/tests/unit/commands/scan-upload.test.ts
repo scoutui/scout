@@ -143,7 +143,7 @@ describe("runScan upload outcome", () => {
     {
       repositories: [],
       says: (dir: string) =>
-        `No .js, .jsx, .ts, .tsx or .vue files to scan in ${realpathSync(dir)}. Check "exclude" in ${join(dir, "scout.config.json")}, or scan from the folder that holds your source files.`,
+        `No JavaScript, TypeScript or Vue files to scan in ${realpathSync(dir)}. Check "exclude" in ${join(dir, "scout.config.json")}, or scan from the folder that holds your source files.`,
     },
     {
       repositories: ["vendor/lib"],
@@ -175,7 +175,7 @@ describe("runScan upload outcome", () => {
     const result = await runScan({ configPath: "./scout.config.json" });
     expect(scanExitCode(result)).toBe(2);
     expect(stderr()).toBe(
-      `Error: No .js, .jsx, .ts, .tsx or .vue files to scan in ${realpathSync(dir)}. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.\n`,
+      `Error: No JavaScript, TypeScript or Vue files to scan in ${realpathSync(dir)}. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.\n`,
     );
   });
 

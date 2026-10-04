@@ -40,6 +40,13 @@ export type Diagnostic =
       depth: number;
       packageName?: string;
     }
+  // A file the walk matched that the scan couldn't read or parse.
+  | {
+      code: "file-not-parsed";
+      severity: "warning";
+      filePath: string;
+      reason: string;
+    }
   // Scan-level: a declared package with `package-not-installed` occurrences.
   | {
       code: "dependency-not-installed";
@@ -65,6 +72,7 @@ function diagnosticKey(d: Diagnostic): string {
     case "auto-import-stale-entry":
       return `${d.code}::${d.componentName}::${d.target}`;
     case "auto-import-manifest-missing":
+    case "file-not-parsed":
       return `${d.code}::${d.filePath}`;
     case "cycle-detected":
       return `${d.code}::${d.filePath}::${d.exportName}`;

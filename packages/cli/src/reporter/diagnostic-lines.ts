@@ -19,6 +19,8 @@ export function formatWarning(d: Warning): string {
       return `${d.filePath} lists ${d.componentName} at ${d.target}, which no longer exists. Regenerate that file (for Nuxt, run npx nuxt prepare) and scan again.`;
     case "auto-import-manifest-missing":
       return "This Nuxt app hasn't been prepared, so auto-imported components aren't counted. Run npx nuxt prepare and scan again.";
+    case "file-not-parsed":
+      return `Skipped ${d.filePath}: ${d.reason}.`;
     case "dependency-not-installed":
       return d.occurrenceCount === 1
         ? `${d.packageName} is listed in ${d.declaredIn} but isn't installed, so 1 use of it isn't matched to a component. Install your dependencies and scan again.`
