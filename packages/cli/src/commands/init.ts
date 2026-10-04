@@ -1,4 +1,4 @@
-import { readFile, writeFile, stat } from "node:fs/promises";
+import { writeFile, stat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { posixPath } from "@scoutui/reference-graph";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
@@ -8,7 +8,7 @@ import { InvalidHostError, isValidUrl, normalizeHost } from "../auth/store.js";
 import { probeRepository, readGitBranch, remoteDefaultBranch, saveRemoteChoice, selectRemote, severalRemotesLine } from "../util/git.js";
 import { Logger } from "../util/log.js";
 import { DEFAULT_INCLUDE, walkFiles } from "../walker/files.js";
-import { detectWorkspacePackages, type DetectWorkspacePackagesInput } from "../workspace/build-graph.js";
+import { detectWorkspacePackages, readJsonSafely } from "../workspace/build-graph.js";
 
 export type InitOptions = {
   cwd: string;
@@ -165,7 +165,7 @@ async function askLeaveOut(prompts: PromptAdapter, configDir: string): Promise<s
  * reads, each group sorted by folder. An option's value is its folder relative to `configDir`.
  */
 async function pickerOptions(configDir: string): Promise<{ packages: SelectOption<string>[]; folders: SelectOption<string>[] }> {
-  const packages = detectWorkspacePackages(configDir, await readPackageJson(configDir))
+  const packages = detectWorkspacePackages(configDir, readJsonSafely(join(configDir, "package.json")) ?? {})
     .map((pkg) => ({ value: posixPath(relative(configDir, pkg.absolutePath)), label: pkg.name }))
     .filter(({ value }) => value !== "" && value !== ".." && !value.startsWith("../"))
     .sort((a, b) => (a.value < b.value ? -1 : 1))
@@ -179,15 +179,6 @@ async function pickerOptions(configDir: string): Promise<{ packages: SelectOptio
     if (!packages.some(({ value }) => value === top || value.startsWith(`${top}/`))) folders.add(top);
   }
   return { packages, folders: [...folders].sort().map((folder) => ({ value: folder, label: folder })) };
-}
-
-/** The package.json in `dir`, or an empty one when it's missing or isn't JSON. */
-async function readPackageJson(dir: string): Promise<DetectWorkspacePackagesInput> {
-  try {
-    return JSON.parse(await readFile(join(dir, "package.json"), "utf8")) ?? {};
-  } catch {
-    return {};
-  }
 }
 
 function cannotCreate(out: string, cause: unknown): CliError {

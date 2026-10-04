@@ -118,7 +118,7 @@ function expandPackages(absRoot: string, entries: string[]): WorkspacePackage[] 
   return packages;
 }
 
-function readJsonSafely(path: string): WorkspacePackage["packageJson"] | null {
+export function readJsonSafely(path: string): WorkspacePackage["packageJson"] | null {
   try {
     return JSON.parse(readFileSync(path, "utf8"));
   } catch {
