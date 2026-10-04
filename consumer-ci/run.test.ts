@@ -16,4 +16,12 @@ describe("parseArgs", () => {
       workDir: "/w",
     });
   });
+
+  test("captures --rescan", () => {
+    expect(parseArgs(["--step", "scan", "--work-dir", "/w", "--rescan"])).toEqual({
+      step: "scan",
+      workDir: "/w",
+      rescan: true,
+    });
+  });
 });

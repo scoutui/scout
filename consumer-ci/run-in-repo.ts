@@ -24,10 +24,11 @@ export function scanConfig(scan: ScanSpec): Record<string, unknown> {
 }
 
 /** CLI argv (after the bin path) for one scan, which uploads. */
-export function scanArgs(configPath: string, host?: string): string[] {
+export function scanArgs(configPath: string, host?: string, rescan = false): string[] {
   // Keep stdout: the nightly log needs the uploaded scanId for verification.
   const args = ["scan", "--config", configPath];
   if (host !== undefined && host !== "") args.push("--host", host);
+  if (rescan) args.push("--rescan");
   return args;
 }
 
@@ -43,6 +44,8 @@ export interface RunOptions {
   workDir?: string;
   /** Run only this step. Without it, both run. */
   step?: Step;
+  /** Scan and upload even when the dashboard already has the commit. */
+  rescan?: boolean;
 }
 
 /**
@@ -55,7 +58,7 @@ export async function runTarget(
   cliBin: string,
   options: RunOptions = {},
 ): Promise<ScanResult[]> {
-  const { workDir, step } = options;
+  const { workDir, step, rescan } = options;
   const work = workDir ?? (await mkdtemp(join(tmpdir(), `cc-${target.name}-`)));
   const env = { ...process.env, YARN_NODE_LINKER: "node-modules" };
   try {
@@ -76,7 +79,7 @@ export async function runTarget(
       await writeFile(configPath, JSON.stringify(scanConfig(scan)));
 
       const { SCOUTUI_HOST: host } = process.env;
-      const { exitCode } = await execa("node", [cliBin, ...scanArgs(configPath, host)], {
+      const { exitCode } = await execa("node", [cliBin, ...scanArgs(configPath, host, rescan)], {
         cwd: appDir,
         env,
         stdio: "inherit",
