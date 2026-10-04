@@ -51,6 +51,18 @@ function hrefsIn(node: ReactNode, found: string[] = []): string[] {
   return found;
 }
 
+/** Each `<section>` in the tree: its heading's text and the links it holds. */
+function sections(node: ReactNode, found: { heading: string; links: string[] }[] = []): { heading: string; links: string[] }[] {
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<Props>(child)) continue;
+    if (child.type === "section") {
+      const heading = Children.toArray(child.props.children).find(c => isValidElement(c) && c.type === "h2");
+      found.push({ heading: textOf(heading), links: hrefsIn(child.props.children) });
+    } else sections(child.props.children, found);
+  }
+  return found;
+}
+
 const preparing = { state: "preparing", scans: [], retryable: true };
 
 type Seeded = { retired: GovernanceRecord; unseen: GovernanceRecord; saved: Dashboard };
@@ -121,6 +133,33 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       // saved chart changed after its preview was stored.
       expect(allPropsFor(tree, "UnknownComponentsBadge")).toHaveLength(1);
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([]);
+    });
+  });
+
+  it("lists charts shared with everyone, a person's own private charts under Private, and other people's only for Admins", async () => {
+    await withReadModelDatabase(async pool => {
+      const { saved } = await seed(pool);
+      await pool.query(`INSERT INTO "user" (id, name, email) VALUES ('editor', 'Ana Lopez', 'ana@example.com'), ('other', 'Bo Chen', 'bo@example.com')`);
+      const mine = await driver.upsertDashboard({ visibility: "private", name: "My draft", description: null, config: saved.config, createdByUserId: "editor" });
+      const theirs = await driver.upsertDashboard({ visibility: "private", name: "Their draft", description: null, config: saved.config, createdByUserId: "other" });
+      const link = (chart: Dashboard) => `/charts/${encodeURIComponent(chart.id)}`;
+      const { default: page } = await import("@/app/charts/page");
+
+      expect(sections(await page())).toEqual([
+        { heading: "Saved charts · 1", links: [link(saved)] },
+        { heading: "Private · 1", links: [link(mine)] },
+      ]);
+
+      reader = { ...editor, userId: "someone-else" };
+      expect(sections(await page())).toEqual([{ heading: "Saved charts · 1", links: [link(saved)] }]);
+
+      reader = { ...editor, userId: "someone-else", role: "admin" };
+      const adminTree = await page();
+      expect(sections(adminTree)).toEqual([
+        { heading: "Saved charts · 1", links: [link(saved)] },
+        { heading: "Other people's charts · 2", links: [link(mine), link(theirs)] },
+      ]);
+      expect(textOf(adminTree)).toContain("Created by Bo Chen");
     });
   });
 
