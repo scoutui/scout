@@ -45,13 +45,13 @@ It heads the repo page and is `meta.repo.id` in the JSON. [Repo identity](/docs/
 
 ## External
 
-Installed from a package. An external component is one your code imports from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package's [Custom Elements Manifest](#custom-elements-manifest) declares it or your code registers a class imported from it.
+A component that isn't defined in the scanned repo, usually one your code imports from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package's [Custom Elements Manifest](#custom-elements-manifest) declares it or your code registers a class imported from it. [Undefined elements](#undefined-element) count as external too.
 
 The **Origin** filter on a repo page and a component's badge call it **External**. In the JSON its `identity.kind` is `"package-export"`. See the [scan file reference](/docs/reference/artifact).
 
 ## Local
 
-Defined in this repo. A local component is one whose code lives in the scanned repo, such as `Card` in `src/components/Card.tsx`, including one in another workspace package of the same monorepo. A `Card` in `storefront` and a `Card` in `checkout` are two different components, even when their files look alike.
+A component defined in the scanned repo, such as `Card` in `src/components/Card.tsx`, including one in another workspace package of the same monorepo. A `Card` in `storefront` and a `Card` in `checkout` are two different components, even when their files look alike.
 
 A web component that your repo defines and registers, with `customElements.define()` or `@customElement()`, counts as local too.
 
@@ -65,7 +65,7 @@ The **Type** filter splits web components in two: **Web component** when a manif
 
 ## Undefined element
 
-A [web component](#web-component) that nothing in the scan defines: no package's [Custom Elements Manifest](#custom-elements-manifest) declares it and no code registers it. It has no package and no version. The **Type** filter on a repo page lists it as **Undefined element**.
+A [web component](#web-component) that nothing in the scan defines: no package's [Custom Elements Manifest](#custom-elements-manifest) declares it and no code registers it. The **Type** filter and a component's badge call it **Undefined element**.
 
 ## Version
 

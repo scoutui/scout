@@ -50,7 +50,7 @@ export const BUTTON_UI: readonly number[] = [88, 92, 110, 124, 124, 190, 214, 21
 export const BUTTON_LEGACY: readonly number[] = [612, 612, 598, 580, 580, 522, 505, 505, 441, 402, 330, 312];
 
 /**
- * A migration's readout and its change, in the web app's words: the successor's share of uses across the pair in
+ * A migration's readout and its change, in the web app's words: the replacement's share of uses across the pair in
  * the latest scan, and in the scan before.
  */
 function migration(successor: readonly number[], legacy: readonly number[]): { now: string; delta: string } {

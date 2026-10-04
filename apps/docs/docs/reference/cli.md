@@ -24,7 +24,7 @@ scout <command> [options]
 | --- | --- |
 | `--help`, `-h` | Prints help and exits `0`. After a command, prints that command's help. |
 | `--version`, `-v` | Prints the CLI version and exits `0`. |
-| `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and the counts of uses a scan couldn't match. Works before or after the command. |
+| `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and how many renders the scan couldn't follow. Works before or after the command. |
 
 Every error prints one line starting `Error:`, and every warning one line starting `Warning:`, both on stderr. When [styled](#terminal-output), `✗` comes before `Error:` and `!` before `Warning:`. An error that isn't one of the expected ones prints `Error: Scout stopped unexpectedly (<reason>).` and asks you to run the command again with `--debug` and report the output.
 

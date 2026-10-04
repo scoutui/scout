@@ -19,8 +19,8 @@ The scan doesn't know which packages make up your design system. It records ever
 
 Every component is one of three kinds. For an imported component, the scan works out which from where the import points:
 
-- **[From a package](/docs/reference/glossary#external):** the import leads to an installed package, such as `import { Button } from "@acme/ui"`.
-- **[Defined in the repo](/docs/reference/glossary#local):** the import leads to a file in the repo, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is defined in the repo too: it is still your repo's code.
+- **[External](/docs/reference/glossary#external):** the import leads to an installed package, such as `import { Button } from "@acme/ui"`.
+- **[Local](/docs/reference/glossary#local):** the import leads to a file in the repo, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is defined in the repo too: it is still your repo's code.
 - **[Web component](/docs/reference/glossary#web-component):** a tag with a hyphen, such as `<acme-button>`, which nothing imports. A registration in your code or a package's Custom Elements Manifest decides which repo or package it belongs to. Otherwise it has no package. [Framework support](/docs/reference/framework-support#web-components) gives the order.
 
 A [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) only tells the scan which package a tag belongs to. To ship one with your package, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
@@ -31,8 +31,8 @@ No config field labels a component one way or the other. If your repo uses path 
 
 Each kind is matched across repos in its own way:
 
-- **From a package: matched by package and name.** `Button` from `@acme/ui` is the same component in `storefront` and `checkout`, so the dashboard can add their usage together and show every repo that uses it. The package entry point counts too: `Button` imported from `@acme/ui/button` is a separate component from `Button` imported from `@acme/ui`.
-- **Defined in the repo: matched by repo and file.** A `Card` in `storefront` and a `Card` in `checkout` are two components, even when the files look alike. They are separate code and can change separately.
+- **External: matched by package and name.** `Button` from `@acme/ui` is the same component in `storefront` and `checkout`, so the dashboard can add their usage together and show every repo that uses it. The package entry point counts too: `Button` imported from `@acme/ui/button` is a separate component from `Button` imported from `@acme/ui`.
+- **Local: matched by repo and file.** A `Card` in `storefront` and a `Card` in `checkout` are two components, even when the files look alike. They are separate code and can change separately.
 - **Web component: matched by tag name.** `<acme-button>` is the same component in every repo that uses it. Which package or repo it belongs to is worked out again in each scan.
 
 ## Why dependencies must be installed

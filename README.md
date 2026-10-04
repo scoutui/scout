@@ -22,7 +22,7 @@ Scout is an adoption dashboard for design-system teams. Its CLI scans a React or
 ## Features
 
 - **Adoption across repos**: see which repos use each component, and on which version.
-- **Every usage**: open a component to see each file and line that uses it, and the props passed.
+- **Every use**: open a component to see each file and line that uses it, and the props passed.
 - **Migrations and retirements**: mark a package or component as replaced or retired, and track each repo until it moves off.
 - **History**: Scout keeps a scan for each commit, so charts show how adoption changes over time.
 - **Scans from CI**: upload a fresh scan on every merge, so the dashboard stays current.

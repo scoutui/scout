@@ -14,7 +14,7 @@ type Row = {
   version?: string;
   files?: number;
   occurrences: number;
-  /** Occurrences gained or lost since the previous scan. */
+  /** Uses gained or lost since the previous scan. */
   delta: number;
   /** Replaced or retired. */
   deprecated?: boolean;
@@ -46,7 +46,7 @@ function describeRow(r: Row): string {
   return `${r.name} from ${r.pkg}${r.deprecated ? " (deprecated)" : ""}, ${state}, ${change}`;
 }
 
-const SUMMARY = `Example repo page for partner-portal, showing what changed since the previous scan: 6 deprecated components in use; 2 added, 4 removed and 11 changed since the previous scan. The table lists the 17 components that changed: ${ROWS.map(describeRow).join("; ")}; and more. Lifted out of the first row, the top of the Button's page in partner-portal: an external React component from @acme/ui version 4.2.0, open on its Usage tab with 38 uses.`;
+const SUMMARY = `Example repo page for partner-portal, showing what changed since the previous scan: 6 deprecated components in use; 2 added, 4 removed and 11 changed since the previous scan. The table lists the 17 components added, removed or changed: ${ROWS.map(describeRow).join("; ")}; and more. Lifted out of the first row, the top of the Button's page in partner-portal: an external React component from @acme/ui version 4.2.0, open on its Usage tab with 38 uses.`;
 
 function Sep({ className }: { className?: string }): React.ReactElement {
   return <span className={clsx(styles.sep, className)}>·</span>;

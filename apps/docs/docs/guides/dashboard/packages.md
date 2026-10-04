@@ -34,7 +34,7 @@ If the list reads **No packages tracked yet.**, no scan has been uploaded. [Run 
 
 ## Read a package page
 
-Select a row to open the package's page. The header shows the package's tags and frameworks, and how many repos and components use it, and its total uses.
+Select a row to open the package's page. The header shows the package's tags and frameworks, how many repos use it, how many of its components are used, and its total uses.
 
 Below that, a version bar splits the package's uses by version. The highest version found in the scans is coloured and every older one is grey, so the grey share is the code still on an older version. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains what counts as highest.
 

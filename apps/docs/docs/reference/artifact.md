@@ -88,8 +88,8 @@ These fields are less often needed:
 
 | `kind` | Fields | What it is |
 | --- | --- | --- |
-| `package-export` | `packageName`, `publicEntry`, `exportName` | A component imported from an installed package, such as `Button` from `@acme/ui`. See [From a package](/docs/reference/glossary#external). |
-| `repository-declaration` | `repoId`, `filePath`, `exportName` | A component defined in the scanned repo, including one in another workspace package of the same repo. See [Defined in the repo](/docs/reference/glossary#local). |
+| `package-export` | `packageName`, `publicEntry`, `exportName` | A component imported from an installed package, such as `Button` from `@acme/ui`. See [External](/docs/reference/glossary#external). |
+| `repository-declaration` | `repoId`, `filePath`, `exportName` | A component defined in the scanned repo, including one in another workspace package of the same repo. See [Local](/docs/reference/glossary#local). |
 | `tag` | `tagName` | A [web component](/docs/reference/glossary#web-component), such as `<acme-badge>`, whichever package or file defines it. Any tag with a hyphen in its name that nothing imports counts, so a Vue component registered globally at runtime, such as vue-i18n's `<i18n-t>`, is a tag too. The few SVG and MathML elements with a hyphen, such as `<font-face>`, are not. |
 
 | Field | In | Description |

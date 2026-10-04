@@ -11,7 +11,7 @@ export function TrackingHeading({ children }: { children: React.ReactNode }): Re
 /**
  * One row of the web app's migration and retirement lists: what is tracked, where it stands ("74% migrated",
  * "31 left") and the change since the previous scan, then an optional mini trend. A migration's level is green
- * while it moves forward; a retirement's stays in ink. A migration's successor sits beneath the label as a quieter
+ * while it moves forward; a retirement's stays in ink. A migration's replacement sits beneath the label as a quieter
  * "to …" line at every width, so the pair never reflows. Below 1280px the numbers drop below, as the web app's do.
  */
 export default function TrackingRow({
@@ -24,7 +24,7 @@ export default function TrackingRow({
   mini,
 }: {
   label: React.ReactNode;
-  /** A migration's successor, set beneath the label after a muted "to". */
+  /** A migration's replacement, set beneath the label after a muted "to". */
   to?: React.ReactNode;
   value: React.ReactNode;
   gain?: boolean;

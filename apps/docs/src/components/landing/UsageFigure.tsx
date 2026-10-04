@@ -20,7 +20,7 @@ const VARIANT_TOTAL = VARIANT.reduce((sum, v) => sum + v.count, 0);
 
 type FileGroup = { dir: string; base: string; lines: readonly number[] };
 
-/** Call sites that pass variant="danger", in the dashboard's order. */
+/** Uses that pass variant="danger", in the dashboard's order. */
 const FILES: readonly FileGroup[] = [
   { dir: "src/orders/", base: "OrderTable.tsx", lines: [88, 112] },
   { dir: "src/components/", base: "ConfirmDialog.tsx", lines: [34] },
@@ -31,8 +31,8 @@ const CALL_COUNT = 3;
 const SELECTION = "variant=danger";
 
 /**
- * The Usage tab of `@acme/ui`'s Button in partner-portal, filtered to `variant=danger`: the props rail and the call
- * sites in one panel, side by side from 768px and stacked below. Laid out left to right whatever the page
+ * The Usage tab of `@acme/ui`'s Button in partner-portal, filtered to `variant=danger`: the props rail and the uses
+ * in one panel, side by side from 768px and stacked below. Laid out left to right whatever the page
  * direction, as the web app is.
  */
 export default function UsageFigure(): React.ReactElement {
