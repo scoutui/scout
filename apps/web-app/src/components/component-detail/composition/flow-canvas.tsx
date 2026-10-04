@@ -76,6 +76,8 @@ type Ctx = FlowActions & {
   reveal: (flowId: string) => void;
   /** Focuses the element with this `data-focus-key` once it's drawn. */
   focusNext: (key: string) => void;
+  /** Clears the selection, moving focus to the route's first step if the focused box goes. */
+  clearPin: () => void;
 };
 const FlowCtx = createContext<Ctx | null>(null);
 function useFlow(): Ctx {
@@ -117,14 +119,14 @@ function chipLabel(item: ChipItem, focusName: string): string {
 
 const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
   const { item, fragment, pinned, dim } = data as unknown as ChipData;
-  const { setPin, hover, reveal, focusNext, store, focusName } = useFlow();
+  const { setPin, clearPin, hover, reveal, store, focusName } = useFlow();
   const lit = useNodeHighlight(store, id) === "chain";
   const isFocus = item.id === FOCUS;
   const node = item.node;
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-md border bg-card shadow-xs transition-[color,border-color] duration-150",
+        "relative flex items-center rounded-md border bg-card shadow-xs transition-[color,border-color] duration-150 motion-reduce:transition-none",
         (isFocus || pinned) && "border-foreground ring-1 ring-foreground",
         lit && !pinned && !isFocus && "border-foreground/60",
         dim && "text-muted-foreground",
@@ -144,8 +146,8 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         }
         onClick={() => {
           if (!item.dir) return;
-          if (pinned && item.steps > 1 && item.innerId) focusNext(`chip:${item.innerId}`);
-          setPin(pinned ? null : { dir: item.dir, id: node.id });
+          if (pinned) clearPin();
+          else setPin({ dir: item.dir, id: node.id });
         }}
         onFocus={(e) => {
           hover(id);
@@ -153,12 +155,14 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         }}
         onBlur={() => hover(null)}
         className={cn(
-          "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           isFocus ? "cursor-default" : "cursor-pointer",
         )}
       >
         <ScopeGlyph scope={node.scope} />
-        <span className={cn("min-w-0 truncate font-mono text-xs", isFocus && "font-semibold")}>{node.displayName}</span>
+        <span title={node.displayName} className={cn("min-w-0 truncate font-mono text-xs", isFocus && "font-semibold")}>
+          {node.displayName}
+        </span>
         {node.deprecated ? <DeprecatedMark /> : null}
         {fragment ? (
           <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground">{`· ${fragment}`}</span>
@@ -175,8 +179,8 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
   const n = item.members.length;
   const label =
     item.dir === "up"
-      ? `Show the other ${componentsWord(n)} that ${n === 1 ? "renders" : "render"} ${parentName}`
-      : `Show the other ${componentsWord(n)} ${parentName} renders`;
+      ? `Show ${n.toLocaleString()} more ${n === 1 ? "component that renders" : "components that render"} ${parentName}`
+      : `Show ${n.toLocaleString()} more ${n === 1 ? "component" : "components"} that ${parentName} renders`;
   return (
     <div className="relative" style={{ width: item.w, height: item.h }}>
       <Handle type="target" position={Position.Left} className="!pointer-events-none !opacity-0" />
@@ -191,7 +195,7 @@ const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
           focusNext(`filter:${groupId("list", item.dir, item.parentRealId)}`);
           toggleList(item.dir, item.parentRealId);
         }}
-        className="flex size-full cursor-pointer items-center justify-between gap-2 rounded-md border border-dashed bg-muted px-2 text-xs text-muted-foreground transition-[color,background-color,scale] duration-150 hover:bg-card hover:text-foreground active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex size-full cursor-pointer items-center justify-between gap-2 rounded-md border border-dashed bg-muted px-2 text-xs text-muted-foreground transition-[color,background-color,scale] duration-150 hover:bg-card hover:text-foreground active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <span className={cn("font-medium", !dim && "text-foreground")}>{`+${n.toLocaleString()} more`}</span>
         <span>Show</span>
@@ -259,7 +263,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter by name or file"
           aria-label={`Filter the ${componentsWord(n)}`}
-          className="h-7 w-full rounded-md border bg-transparent px-2 font-mono text-xs placeholder:font-sans focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="h-7 w-full rounded-md border bg-transparent px-2 font-mono text-base placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
         />
       </div>
       <ul className="nowheel nodrag nopan min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain">
@@ -278,19 +282,23 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <ScopeGlyph scope={m.node.scope} />
-                <span className="min-w-0 flex-1 truncate font-mono text-xs">{m.node.displayName}</span>
+                <span title={m.node.displayName} className="min-w-0 flex-1 truncate font-mono text-xs">
+                  {m.node.displayName}
+                </span>
                 {m.node.deprecated ? <DeprecatedMark /> : null}
-                <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{usesWord(m.uses)}</span>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{usesWord(m.uses)}</span>
               </span>
-              <span className="min-w-0 truncate text-left text-[11px] text-muted-foreground [direction:rtl]">
+              <span className="min-w-0 truncate text-left text-code text-muted-foreground [direction:rtl]">
                 <bdi dir="ltr">{tail}</bdi>
               </span>
             </button>
           </li>
         ))}
-        {rows.length === 0 ? <li className="px-3 py-4 text-center text-xs text-muted-foreground">No matches.</li> : null}
+        {rows.length === 0 ? (
+          <li className="px-3 py-4 text-center text-xs text-muted-foreground">{`No matches for “${query.trim()}”.`}</li>
+        ) : null}
       </ul>
-      <div className="shrink-0 border-t px-2.5 py-1 text-[11px] text-muted-foreground">
+      <div className="shrink-0 border-t px-2.5 py-1 text-xs text-muted-foreground">
         {query.trim() ? `${rows.length.toLocaleString()} of ${n.toLocaleString()}` : `All ${n.toLocaleString()} listed`}
       </div>
       <Handle type="source" position={Position.Right} className="!pointer-events-none !opacity-0" />
@@ -322,7 +330,7 @@ const SummaryNode = memo(function SummaryNode({ data }: NodeProps) {
 
 const nodeTypes: NodeTypes = { chip: ChipNode, more: MoreNode, list: ListNode, summary: SummaryNode };
 
-type CanvasControls = { fit: () => void; home: () => void };
+type CanvasControls = { fit: () => void; home: () => void; clearPin: () => void };
 
 type CanvasInnerProps = {
   model: GraphModel;
@@ -514,10 +522,35 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
     reframeRef.current(prefersReducedMotion() ? 0 : 250);
   }, [sceneKey]);
 
+  const pendingFocus = useRef<{ key: string; ifLost: boolean } | null>(null);
+  const focusNext = useCallback((key: string) => {
+    pendingFocus.current = { key, ifLost: false };
+  }, []);
+  // The route's first step, or the "+N more" it folds into once nothing is selected.
+  const clearPin = useCallback(() => {
+    const now = sceneRef.current;
+    const first = now.items.find((i): i is ChipItem => i.kind === "chip" && i.steps === 1 && now.pathIds.has(i.id));
+    if (first) {
+      const next = buildScene(model, focusId, routes, { ...state, pin: null });
+      const key = next.items.some((i) => i.id === first.id)
+        ? `chip:${first.id}`
+        : next.items.find((i) => i.kind === "more" && i.members.some((m) => m.node.id === first.node.id))?.id;
+      if (key) pendingFocus.current = { key, ifLost: true };
+    }
+    actions.setPin(null);
+  }, [model, focusId, routes, state, actions]);
+
   controlsRef.current = {
     fit: () => frame(null, prefersReducedMotion() ? 0 : 150, MIN_ZOOM),
     home: () => reframeRef.current(prefersReducedMotion() ? 0 : 150),
+    clearPin,
   };
+  useEffect(
+    () => () => {
+      controlsRef.current = null;
+    },
+    [controlsRef],
+  );
 
   const reveal = useCallback(
     (flowId: string) => {
@@ -534,18 +567,18 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
     [getViewport, setCenter, topClearance],
   );
 
-  const pendingFocus = useRef<string | null>(null);
-  const focusNext = useCallback((key: string) => {
-    pendingFocus.current = key;
-  }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: a pending focus lands once the new boxes are drawn
   useEffect(() => {
-    const key = pendingFocus.current;
-    if (!key) return;
+    const pending = pendingFocus.current;
+    if (!pending) return;
     let tries = 0;
     let raf = 0;
     const attempt = () => {
-      const target = shellRef.current?.querySelector<HTMLElement>(`[data-focus-key="${key}"]`);
+      if (pending.ifLost && document.activeElement && document.activeElement !== document.body) {
+        pendingFocus.current = null;
+        return;
+      }
+      const target = shellRef.current?.querySelector<HTMLElement>(`[data-focus-key="${pending.key}"]`);
       if (target) {
         pendingFocus.current = null;
         target.focus({ preventScroll: true });
@@ -569,8 +602,9 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
       hover,
       reveal,
       focusNext,
+      clearPin,
     }),
-    [actions, focusName, store, hover, reveal, focusNext],
+    [actions, focusName, store, hover, reveal, focusNext, clearPin],
   );
 
   useEffect(() => {
@@ -727,7 +761,13 @@ function FindBox({
     .join(" · ");
   let index = -1;
   return (
-    <div ref={boxRef} className={cn("relative", inline ? "flex h-full flex-col" : "w-80 max-w-full")}>
+    <div
+      ref={boxRef}
+      onBlur={(e) => {
+        if (!inline && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+      className={cn("relative", inline ? "flex h-full flex-col" : "w-80 max-w-full")}
+    >
       <div className={cn(inline && "shrink-0 border-b p-2")}>
         <input
           type="text"
@@ -760,7 +800,7 @@ function FindBox({
               setOpen(false);
             }
           }}
-          className="h-8 w-full rounded-lg border bg-card px-2.5 font-mono text-xs shadow-sm placeholder:font-sans focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="h-8 w-full rounded-lg border bg-card px-2.5 font-mono text-base shadow-sm placeholder:font-sans placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-xs"
         />
       </div>
       {open ? (
@@ -817,14 +857,16 @@ function FindBox({
                       >
                         <span className="flex min-w-0 items-center gap-1.5">
                           <ScopeGlyph scope={r.node.scope} />
-                          <span className="min-w-0 flex-1 truncate font-mono text-xs">{r.node.displayName}</span>
+                          <span title={r.node.displayName} className="min-w-0 flex-1 truncate font-mono text-xs">
+                            {r.node.displayName}
+                          </span>
                           {r.node.deprecated ? <DeprecatedMark /> : null}
                         </span>
-                        <span className="min-w-0 truncate text-left text-[11px] text-muted-foreground [direction:rtl]">
+                        <span className="min-w-0 truncate text-left text-code text-muted-foreground [direction:rtl]">
                           <bdi dir="ltr">{tailOf.get(r) ?? ""}</bdi>
                         </span>
                         {r.steps > 1 ? (
-                          <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">{r.chain.join(" → ")}</span>
+                          <span className="min-w-0 truncate text-code text-muted-foreground">{r.chain.join(" → ")}</span>
                         ) : null}
                       </div>
                     );
@@ -832,7 +874,11 @@ function FindBox({
                 </div>
               </div>
             ))}
-            {rows.length === 0 ? <div className="px-3 py-4 text-center text-xs text-muted-foreground">No matches.</div> : null}
+            {rows.length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                {query.trim() ? `No matches for “${query.trim()}”.` : "No matches."}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -881,9 +927,10 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
     actions.setPin({ dir: r.dir, id: r.node.id });
     setView("diagram");
   };
+  const clearPin = () => (controlsRef.current ? controlsRef.current.clearPin() : actions.setPin(null));
   const empty = !state.pin && state.lists.size === 0 && state.brought.size === 0;
   const control =
-    "cursor-pointer rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-[color,scale] duration-150 hover:text-foreground active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+    "cursor-pointer rounded-md border bg-card px-2 py-1 text-xs text-muted-foreground transition-[color,scale] duration-150 hover:text-foreground active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
 
   return (
     <ReactFlowProvider>
@@ -891,7 +938,7 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
         aria-label="Composition"
         className="panel flex flex-col overflow-hidden lg:h-full lg:min-w-0 lg:flex-1"
         onKeyDown={(e) => {
-          if (e.key === "Escape" && state.pin) actions.setPin(null);
+          if (e.key === "Escape" && state.pin) clearPin();
         }}
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-muted px-3 py-2 max-sm:flex-wrap">
@@ -941,7 +988,7 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
                     row={pinRow}
                     note={nothingFurtherOut(model, routes[pinRow.dir], pinRow.dir, pinRow.node.id)}
                     repoId={repoId}
-                    onClear={() => actions.setPin(null)}
+                    onClear={clearPin}
                   />
                 ) : null}
               </div>

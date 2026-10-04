@@ -44,6 +44,7 @@ describe("CompositionTab", () => {
     expect(param("pin")).toBe("up:d0");
     expect(param("scan")).toBe("s1");
     expect(await box("d0")).toHaveAttribute("aria-pressed", "true");
+    expect(within(await box("d0")).getByTitle("d0")).toBeInTheDocument();
     expect(await box("p0")).toHaveAccessibleName(/^p0, local, src\/p0\.tsx\. 2 steps from F\.$/);
     fireEvent.click(await box("d0"));
     expect(param("pin")).toBeNull();
@@ -87,14 +88,63 @@ describe("CompositionTab", () => {
     expect(param("pin")).toBeNull();
   });
 
+  it("closes Find when focus leaves it, and keeps it open while focus moves into its list", async () => {
+    renderTab();
+    const find = await screen.findByRole("combobox");
+    fireEvent.focus(find);
+    fireEvent.blur(find, { relatedTarget: screen.getByRole("listbox") });
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    fireEvent.blur(find, { relatedTarget: await box("d0") });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(find).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("moves focus to the route's first step when the bar clears the route", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:p0");
+    renderTab();
+    const clear = await screen.findByRole("button", { name: "Clear the selection (Escape)" });
+    clear.focus();
+    fireEvent.click(clear);
+    await waitFor(() => expect(screen.getByRole("button", { name: /^d0, / })).toHaveFocus());
+  });
+
+  it("moves focus to the +N more a cleared route's first step folds into", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:q0");
+    renderTab(
+      graph(
+        [node("F"), node("q0"), ...Array.from({ length: 12 }, (_, i) => node(`d${i}`))],
+        [...Array.from({ length: 12 }, (_, i) => [`d${i}`, "F", 12 - i] as [string, string, number]), ["q0", "d11", 1]],
+      ),
+    );
+    const q0 = await box("q0");
+    q0.focus();
+    fireEvent.keyDown(q0, { key: "Escape" });
+    expect(param("pin")).toBeNull();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Show 2 more components that render F" })).toHaveFocus());
+  });
+
+  it("keeps focus on a box that stays when Escape clears the route", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0");
+    renderTab();
+    const d1 = await box("d1");
+    d1.focus();
+    fireEvent.keyDown(d1, { key: "Escape" });
+    expect(param("pin")).toBeNull();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(await box("d1")).toHaveFocus();
+  });
+
   it("opens +N more as a list, filters it, and selects the row picked", async () => {
     renderTab();
-    fireEvent.click(await screen.findByRole("button", { name: "Show the other 2 components that render F" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Show 2 more components that render F" }));
     expect(param("list")).toBe("up:F");
     const filter = await screen.findByRole("textbox", { name: "Filter the 2 components" });
     await waitFor(() => expect(filter).toHaveFocus());
     fireEvent.change(filter, { target: { value: "d11" } });
     expect(screen.getByText("1 of 2")).toBeInTheDocument();
+    fireEvent.change(filter, { target: { value: "zzz" } });
+    expect(screen.getByText("No matches for “zzz”.")).toBeInTheDocument();
+    fireEvent.change(filter, { target: { value: "d11" } });
     fireEvent.click(screen.getByRole("button", { name: /^d11, src\/d11\.tsx, 1 use\./ }));
     expect(param("bring")).toBe("up:d11");
     expect(param("pin")).toBe("up:d11");
@@ -139,7 +189,7 @@ describe("CompositionTab", () => {
     expect(shell("up:d0")).not.toHaveClass("text-muted-foreground");
     expect(shell("up:p0")).not.toHaveClass("text-muted-foreground");
     expect(screen.getByText("+2 more")).not.toHaveClass("text-foreground");
-    fireEvent.click(screen.getByRole("button", { name: "Show the other 2 components that render F" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show 2 more components that render F" }));
     expect(await screen.findByRole("group", { name: "2 more render F" })).not.toHaveClass("text-muted-foreground");
   });
 
