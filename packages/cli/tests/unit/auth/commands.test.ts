@@ -91,6 +91,18 @@ describe("runAuthLogin", () => {
     expect((await loadStore(file)).hosts[BASE]).toEqual({ token: "scout_u_abc", userEmail: "ben@example.com" });
   });
 
+  it.each([
+    ["makes it the default dashboard when there's none", undefined, BASE],
+    ["leaves another default dashboard as it is", "https://other.example", "https://other.example"],
+  ])("reuses a validated session and %s", async (_, before, after) => {
+    const hosts = { ...signedIn().hosts, "https://other.example": { token: "scout_u_other", userEmail: "a@example.com" } };
+    await saveStore({ ...(before !== undefined ? { default: before } : {}), hosts }, file);
+    vi.spyOn(client, "whoami").mockResolvedValue({ userId: "u1", email: "ben@example.com", role: null });
+    vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    expect(await runAuthLogin({ host: BASE, store: { filePath: file } })).toBe(0);
+    expect(await loadStore(file)).toEqual({ default: after, hosts });
+  });
+
   it("clears a confirmed invalid session for only the selected host before device login", async () => {
     const other = "https://other.example";
     await saveStore({ default: other, hosts: { ...signedIn().hosts, [other]: { token: "scout_u_other", userEmail: "a@example.com" } } }, file);
@@ -311,7 +323,7 @@ describe("runAuthLogin", () => {
     vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { lines.push(s); return true; }) as typeof process.stdout.write);
     const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger({ ...plain, styled }) });
     expect(code).toBe(0);
-    expect(lines.join("")).toBe(`To sign in, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n${end}`);
+    expect(lines.join("")).toBe(`To sign in, open:\n  ${BASE}/login/device?code=ABCD-EFGH\nCode: ABCD-EFGH\n${end}`);
     expect(errs.join("")).toBe(stderr);
   });
 
@@ -343,7 +355,7 @@ describe("runAuthLogin", () => {
     const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger(plain) });
     expect(code).toBe(0);
     expect(writes[0]).toBe("Warning: A line from the dashboard.\n");
-    expect(writes[1]).toBe(`To sign in, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n`);
+    expect(writes[1]).toBe(`To sign in, open:\n  ${BASE}/login/device?code=ABCD-EFGH\nCode: ABCD-EFGH\n`);
   });
 });
 
