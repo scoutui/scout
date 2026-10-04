@@ -12,12 +12,12 @@ import { changeRole, removeFromPeople } from "@/app/settings/people-actions";
 import { PeopleTable } from "@/components/settings/people-table";
 
 const person = (userId: string, email: string, extra: Partial<PersonListing> = {}): PersonListing => ({
-  userId, name: null, email, lastSignedInAt: null, role: "viewer", roleSource: "people", ...extra,
+  userId, name: null, email, lastSignedInAt: null, role: "viewer", roleSource: "people", canChangeRole: true, canRemove: true, ...extra,
 });
 const people = [
-  person("ana", "ana@example.com", { name: "Ana Ruiz", role: "admin" }),
-  person("lee", "lee@example.com", { role: "admin", roleSource: "install" }),
-  person("mo", "mo@example.com", { role: "admin", roleSource: "group" }),
+  person("ana", "ana@example.com", { name: "Ana Ruiz", role: "admin", canChangeRole: false, canRemove: false }),
+  person("lee", "lee@example.com", { role: "admin", roleSource: "install", canChangeRole: false, canRemove: false }),
+  person("mo", "mo@example.com", { role: "admin", roleSource: "group", canChangeRole: false }),
   person("sam", "sam@example.com"),
 ];
 const rowOf = (email: string) => screen.getByRole("row", { name: new RegExp(email) });
@@ -25,8 +25,8 @@ const rowOf = (email: string) => screen.getByRole("row", { name: new RegExp(emai
 beforeEach(() => vi.clearAllMocks());
 
 describe("PeopleTable", () => {
-  it("shows your own row and an Admin set at install as text with no Remove, and gives a role set on the People page a role picker and Remove", () => {
-    render(<PeopleTable people={people} currentUserId="ana" />);
+  it("shows the role as text with no Remove on rows that can't be changed or removed, naming where a fixed Admin comes from, and gives a row that can be both a role picker and Remove", () => {
+    render(<PeopleTable people={people} />);
     for (const [email, role] of [
       ["ana@example.com", "Admin"],
       ["lee@example.com", "Admin (set at install)"],
@@ -41,8 +41,8 @@ describe("PeopleTable", () => {
     expect(within(sam).getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
-  it("shows an Admin from the SSO group as text with no role picker, but with Remove", () => {
-    render(<PeopleTable people={people} currentUserId="ana" />);
+  it("shows a row that can only be removed as text with Remove", () => {
+    render(<PeopleTable people={people} />);
     const mo = rowOf("mo@example.com");
     expect(within(mo).getByText("Admin (from SSO group)")).toBeInTheDocument();
     expect(within(mo).queryByRole("combobox")).toBeNull();
@@ -50,13 +50,13 @@ describe("PeopleTable", () => {
   });
 
   it("changes the role to the one picked", () => {
-    render(<PeopleTable people={people} currentUserId="ana" />);
+    render(<PeopleTable people={people} />);
     fireEvent.change(screen.getByRole("combobox", { name: "Role for sam@example.com" }), { target: { value: "editor" } });
     expect(changeRole).toHaveBeenCalledExactlyOnceWith("sam", "editor");
   });
 
   it("asks before removing someone, and removes them once confirmed", () => {
-    render(<PeopleTable people={people} currentUserId="ana" />);
+    render(<PeopleTable people={people} />);
     const sam = rowOf("sam@example.com");
     fireEvent.click(within(sam).getByRole("button", { name: "Remove" }));
     expect(within(sam).getByText("Remove sam@example.com?")).toBeInTheDocument();

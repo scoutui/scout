@@ -48,10 +48,24 @@ const PERSON_COLUMNS = {
   adminGroup: users.adminGroup,
 };
 
-export type PersonListing = { userId: string; name: string | null; email: string; lastSignedInAt: string | null; role: Role; roleSource: RoleSource };
+/** What an Admin may do to someone on the People page. */
+export type PeopleChanges = { canChangeRole: boolean; canRemove: boolean };
 
-/** Everyone who hasn't been removed, by email, with their role as it stands now. */
-export async function listPeople(): Promise<PersonListing[]> {
+/**
+ * What the Admin `actorId` may do to `target`: change the role of anyone else whose role is set on the People page,
+ * and remove anyone else who isn't named in `SCOUTUI_ADMINS`.
+ */
+function peopleChanges(actorId: string, target: Person): PeopleChanges {
+  const someoneElse = target.userId !== actorId;
+  return { canChangeRole: someoneElse && target.roleSource === "people", canRemove: someoneElse && target.roleSource !== "install" };
+}
+
+export type PersonListing = PeopleChanges & {
+  userId: string; name: string | null; email: string; lastSignedInAt: string | null; role: Role; roleSource: RoleSource;
+};
+
+/** Everyone who hasn't been removed, by email, with their role as it stands now and what the Admin `actorId` may do to them. */
+export async function listPeople(actorId: string): Promise<PersonListing[]> {
   const settings = adminSettings();
   const rows = await getDb()
     .select({ ...PERSON_COLUMNS, lastSignedInAt: users.lastSignedInAt })
@@ -68,6 +82,7 @@ export async function listPeople(): Promise<PersonListing[]> {
       lastSignedInAt: row.lastSignedInAt?.toISOString() ?? null,
       role: person.role,
       roleSource: person.roleSource,
+      ...peopleChanges(actorId, person),
     }];
   });
 }
@@ -92,19 +107,19 @@ const CHANGED_SINCE_LOADED: PeopleResult = { ok: false, error: "This person's ro
 type Transaction = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
 
 /**
- * Locks the person `userId` and runs `change` in the same transaction, when `actor` may change them: someone other
- * than `actor`, not removed, whose role comes from one of `sources`.
+ * Locks the person `userId` and runs `change` in the same transaction, when they weren't removed and `peopleChanges`
+ * gives `actor` the permission `allowed` on them.
  */
 async function changePerson(
   actor: Person,
   userId: string,
-  sources: readonly RoleSource[],
+  allowed: keyof PeopleChanges,
   change: (tx: Transaction, target: Person) => Promise<void>,
 ): Promise<PeopleResult> {
   return getDb().transaction(async (tx): Promise<PeopleResult> => {
     const [row] = await tx.select(PERSON_COLUMNS).from(users).where(eq(users.id, userId)).for("update");
     const target = row ? personIdentity(row, adminSettings()) : null;
-    if (target === null || target.userId === actor.userId || !sources.includes(target.roleSource)) return CHANGED_SINCE_LOADED;
+    if (target === null || !peopleChanges(actor.userId, target)[allowed]) return CHANGED_SINCE_LOADED;
     await change(tx, target);
     return { ok: true };
   });
@@ -113,7 +128,7 @@ async function changePerson(
 /** Gives the person `userId` the role `role`, and records the change in the history. */
 export async function setRole(actor: Person, userId: string, role: Role): Promise<PeopleResult> {
   if (!ROLES.includes(role)) return CHANGED_SINCE_LOADED;
-  return changePerson(actor, userId, ["people"], async (tx, target) => {
+  return changePerson(actor, userId, "canChangeRole", async (tx, target) => {
     if (target.role === role) return;
     await tx.update(users).set({ role }).where(eq(users.id, userId));
     await tx.insert(roleChanges).values({ id: ulid(), actorEmail: actor.email, subjectEmail: target.email, fromRole: target.role, toRole: role });
@@ -127,7 +142,7 @@ export async function setRole(actor: Person, userId: string, role: Role): Promis
  * Admin while they're in the admin group.
  */
 export async function removePerson(actor: Person, userId: string): Promise<PeopleResult> {
-  return changePerson(actor, userId, ["people", "group"], async (tx, target) => {
+  return changePerson(actor, userId, "canRemove", async (tx, target) => {
     await tx.delete(sessions).where(eq(sessions.userId, userId));
     await tx.delete(cliSessions).where(eq(cliSessions.userId, userId));
     await tx.delete(cliDeviceCodes).where(eq(cliDeviceCodes.approvedUserId, userId));

@@ -21,7 +21,7 @@ export default async function SettingsPage() {
   if (identity?.kind !== "person" || !can(identity, "manage-people")) {
     return <EmptyState titleAs="h1" title="Only Admins can see settings." />;
   }
-  const [people, changes] = await Promise.all([listPeople(), listRoleChanges(20)]);
+  const [people, changes] = await Promise.all([listPeople(identity.userId), listRoleChanges(20)]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
@@ -32,7 +32,7 @@ export default async function SettingsPage() {
         <p className="max-w-prose text-sm text-muted-foreground">
           Viewers can look around. Editors can also upload scans and change charts, governance and tags. Admins can also set roles.
         </p>
-        <PeopleTable people={people} currentUserId={identity.userId} />
+        <PeopleTable people={people} />
         <p className="max-w-prose text-sm text-muted-foreground">
           Removing someone signs them out everywhere. If your sign-in provider still lets them in, they come back as a Viewer.
         </p>

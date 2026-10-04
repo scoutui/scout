@@ -230,17 +230,20 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     expect(await identify({ browser: true })).toMatchObject({ kind: "person", userId: sam, role: "viewer" });
   });
 
-  it("lists everyone who wasn't removed by email, with an Admin named in SCOUTUI_ADMINS shown as set at install", async () => {
+  it("lists everyone who wasn't removed by email, with where an Admin's role comes from and what the signed-in Admin may change", async () => {
     vi.stubEnv("SCOUTUI_ADMINS", "lee@example.com");
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
     const lee = await insertPerson(pool, { email: "lee@example.com", name: "Lee", verified: true });
+    const mo = await insertPerson(pool, { email: "mo@example.com", adminGroup: "scout-admins" });
     const bo = await insertPerson(pool, { email: "bo@example.com", role: "editor" });
     await insertPerson(pool, { email: "abe@example.com", role: null });
     await pool.query(`UPDATE "user" SET last_signed_in_at = '2026-10-01T09:30:00Z' WHERE id = $1`, [lee]);
 
-    expect(await listPeople()).toEqual([
-      { userId: admin, name: null, email: "ana@example.com", lastSignedInAt: null, role: "admin", roleSource: "people" },
-      { userId: bo, name: null, email: "bo@example.com", lastSignedInAt: null, role: "editor", roleSource: "people" },
-      { userId: lee, name: "Lee", email: "lee@example.com", lastSignedInAt: "2026-10-01T09:30:00.000Z", role: "admin", roleSource: "install" },
+    expect(await listPeople(admin)).toEqual([
+      { userId: admin, name: null, email: "ana@example.com", lastSignedInAt: null, role: "admin", roleSource: "people", canChangeRole: false, canRemove: false },
+      { userId: bo, name: null, email: "bo@example.com", lastSignedInAt: null, role: "editor", roleSource: "people", canChangeRole: true, canRemove: true },
+      { userId: lee, name: "Lee", email: "lee@example.com", lastSignedInAt: "2026-10-01T09:30:00.000Z", role: "admin", roleSource: "install", canChangeRole: false, canRemove: false },
+      { userId: mo, name: null, email: "mo@example.com", lastSignedInAt: null, role: "admin", roleSource: "group", canChangeRole: false, canRemove: true },
     ]);
   });
 
