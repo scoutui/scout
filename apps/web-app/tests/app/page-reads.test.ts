@@ -346,15 +346,15 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
 
   it.each([
     {
-      url: "/governance", page: "GovernanceManager", line: "Only Editors can see governance. Ask an admin for access.",
+      url: "/governance", page: "GovernanceManager", line: "Only Editors can see Governance. Ask an Admin for access.",
       open: async () => (await import("@/app/governance/page")).default(),
     },
     {
-      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an admin for access.",
+      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an Admin for access.",
       open: async () => (await import("@/app/charts/new/page")).default(),
     },
     {
-      url: "/charts/[id]/edit", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an admin for access.",
+      url: "/charts/[id]/edit", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an Admin for access.",
       open: async (dashboardId: string) => (await import("@/app/charts/[dashboardId]/edit/page")).default({ params: Promise.resolve({ dashboardId }) }),
     },
   ])("shows a Viewer one line instead of $url, and an Editor the page", async ({ page, line, open }) => {

@@ -28,14 +28,14 @@ export function ViewingOlderScanBanner({
           <span title={formatAbsoluteUtc(arrivedAt)} className="font-medium">
             {relativeTime(arrivedAt)}
           </span>
-          . Component pages show the latest scan.
+          .
         </span>
       </span>
       <Link
         href={`/repos/${encodeURIComponent(repoId)}`}
         className="ml-auto text-foreground underline-offset-4 hover:underline"
       >
-        view latest →
+        View latest scan
       </Link>
     </aside>
   );

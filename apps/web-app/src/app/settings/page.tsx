@@ -19,7 +19,7 @@ function changeLine({ actorEmail, subjectEmail, toRole }: RoleChange): string {
 export default async function SettingsPage() {
   const identity = await identify({ browser: true });
   if (identity?.kind !== "person" || !can(identity, "manage-people")) {
-    return <EmptyState titleAs="h1" title="Only Admins can see settings." />;
+    return <EmptyState titleAs="h1" title="Only Admins can see settings. Ask an Admin for access." />;
   }
   const [people, changes] = await Promise.all([listPeople(identity.userId), listRoleChanges(20)]);
 
@@ -30,7 +30,7 @@ export default async function SettingsPage() {
       <section aria-labelledby="people-title" className="space-y-3">
         <h2 id="people-title" className="text-base font-medium">People</h2>
         <p className="max-w-prose text-sm text-muted-foreground">
-          Viewers can look around. Editors can also upload scans and change charts, governance and tags. Admins can also set roles.
+          Viewers can see repos, packages and charts. Editors can also see Governance, upload scans and change charts, governance and tags. Admins can also set roles.
         </p>
         <PeopleTable people={people} />
         <p className="max-w-prose text-sm text-muted-foreground">

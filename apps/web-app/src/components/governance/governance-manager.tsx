@@ -68,7 +68,7 @@ const KIND_LABEL: Record<DispositionKind, string> = {
 
 const KIND_HINT: Record<DispositionKind, string> = {
   superseded: "Replaced: teams move to a replacement.",
-  retired: "Retired: it goes with no replacement.",
+  retired: "Retired: teams stop using it.",
 };
 
 // ---------------------------------------------------------------------------
@@ -509,7 +509,7 @@ function RecordTable({
           Records
         </h2>
         <span className="text-xs tabular-nums text-muted-foreground">
-          {recordCountLabel(recordCount)} · counts from each repo's latest scan
+          {recordCountLabel(recordCount)}
         </span>
       </div>
       <table aria-labelledby={titleId} className="panel block overflow-hidden [&>tbody+tbody]:border-t">

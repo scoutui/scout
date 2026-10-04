@@ -122,7 +122,7 @@ npx scout auth login --host https://scout.example.com
 npx scout scan --host https://scout.example.com
 ```
 
-The upload ends with `Uploaded the scan of <commit>: https://scout.example.com/repos/storefront`, and the repo appears on the repos list. If it stops with `Error: You can view this dashboard but not upload to it. Ask an admin to make you an Editor.`, the dashboard didn't make you an Admin: see [If someone you named isn't an Admin](/docs/guides/manage-people-and-roles#if-someone-you-named-isnt-an-admin).
+The upload ends with `Uploaded the scan of <commit>: https://scout.example.com/repos/storefront`, and the repo appears on the repos list. If it stops with `Error: You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.`, the dashboard didn't make you an Admin: see [If someone you named isn't an Admin](/docs/guides/manage-people-and-roles#if-someone-you-named-isnt-an-admin).
 
 ## Let CI upload
 

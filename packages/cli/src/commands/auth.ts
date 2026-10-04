@@ -74,7 +74,7 @@ export async function runAuthLogin(opts: {
       }
       const removed = await removeStoredSession(base, { expectedToken: stored.token, ...(filePath !== undefined ? { filePath } : {}) });
       if (!removed) {
-        log.error(`Session for ${base} changed while checking it. Run \`scout auth login --host ${base}\` again.`);
+        log.error(`Session for ${base} changed while checking it. Run scout auth login --host ${base} again.`);
         return 1;
       }
     } catch (e) {
@@ -97,7 +97,7 @@ export async function runAuthLogin(opts: {
     return 1;
   }
   if (device.warning !== null) log.warn(device.warning);
-  out(`To authorize this device, open:\n  ${log.color.brand(device.verificationUri)}\nCode: ${log.color.bold(device.userCode)}\n`);
+  out(`To sign in, open:\n  ${log.color.brand(device.verificationUri)}\nCode: ${log.color.bold(device.userCode)}\n`);
   if (openBrowser(device.verificationUriComplete, base)) out("Opened your browser…\n");
   // When styled, a spinner turns on stderr while Scout waits; otherwise the result follows on the same line.
   const waiting = log.styled
@@ -143,18 +143,18 @@ export async function runAuthLogin(opts: {
     }
     if (result.kind === "expired") {
       stopWaiting();
-      log.error("Code expired. Run `scout auth login` again.");
+      log.error("Code expired. Run scout auth login again.");
       return 1;
     }
     if (result.kind === "denied") {
       stopWaiting();
-      log.error("Authorization was declined.");
+      log.error("Couldn't sign in: the request was denied on the dashboard. Run scout auth login to try again.");
       return 1;
     }
     // pending → keep polling
   }
   stopWaiting();
-  log.error("Timed out waiting for approval. Run `scout auth login` again.");
+  log.error("Timed out waiting for approval. Run scout auth login again.");
   return 1;
 }
 
@@ -190,7 +190,7 @@ export async function runAuthStatus(opts: {
       const removed = await removeStoredSession(base, { expectedToken: token, ...(filePath !== undefined ? { filePath } : {}) });
       log.error(removed
         ? new ReloginRequiredError(base).message
-        : `Session changed for ${base}; retry \`scout auth status --host ${base}\`.`);
+        : `Your sign-in changed while checking it. Run scout auth status --host ${base} again.`);
       return 1;
     }
     const storage = await tokenStorage(base, filePath);
@@ -242,7 +242,7 @@ export async function runAuthLogout(opts: {
     return 1;
   }
   const removed = await removeStoredSession(base, { expectedToken: entry.token, ...(filePath !== undefined ? { filePath } : {}) });
-  write(removed ? `Signed out of ${base}.\n` : `Revoked the previous session for ${base}; newer sign-in kept.\n`);
+  write(removed ? `Signed out of ${base}.\n` : `Signed out of ${base}. Your newer sign-in is kept.\n`);
   return 0;
 }
 

@@ -35,12 +35,9 @@ export function DashboardSparkline({
   return <BarsSpark points={view.points.map((p) => ({ cohortKey: p.cohortKey, color: colors.get(p.cohortKey) ?? "", value: p.value }))} />;
 }
 
-function Frame({ title, children }: { title: string; children: React.ReactNode }) {
-  // Hidden from assistive tech so its kind ("library share over time") stays out of
-  // the enclosing link's accessible name. `title` stays for the pointer tooltip.
+function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden focusable="false" className="shrink-0">
-      <title>{title}</title>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false" className="shrink-0">
       {children}
     </svg>
   );
@@ -55,7 +52,7 @@ function TrendSpark({ gid, series, colors }: { gid: string; series: CohortSeries
   const yAt = (v: number) => H - PAD - (v / max) * (H - 2 * PAD);
   const washes = seriesWashes(series);
   return (
-    <Frame title="usage trend">
+    <Frame>
       <defs>
         {series.map((s, si) => (
           <linearGradient key={s.cohortKey} id={`${gid}-${si}`} x1="0" y1="0" x2="0" y2="1">
@@ -95,7 +92,7 @@ function BarsSpark({ points }: { points: SparkPoint[] }) {
   const slot = (H - 2 * PAD) / ranked.length;
   const bh = Math.max(2.5, Math.min(6, slot - 1.5));
   return (
-    <Frame title="cohort comparison">
+    <Frame>
       {ranked.map((p, i) => {
         const w = Math.max(1.5, (p.value / max) * (W - 2 * PAD));
         const y = PAD + i * slot + (slot - bh) / 2;
@@ -130,7 +127,7 @@ function ShareSpark({ series, colors }: { series: CohortSeries[]; colors: Readon
     return { key: s.cohortKey, d, color: colors.get(s.cohortKey) ?? "" };
   });
   return (
-    <Frame title="library share over time">
+    <Frame>
       {bands.map((b) => (
         <path key={b.key} d={b.d} fill={b.color} fillOpacity={0.85} />
       ))}
@@ -153,7 +150,7 @@ function StackedBandsSpark({ points }: { points: SparkPoint[] }) {
     return seg;
   });
   return (
-    <Frame title="library share">
+    <Frame>
       {segs.map((s) => (
         <rect key={s.key} x={s.x} y={y} width={s.w} height={barH} rx={2} fill={s.color} />
       ))}
@@ -163,7 +160,7 @@ function StackedBandsSpark({ points }: { points: SparkPoint[] }) {
 
 function EmptySpark() {
   return (
-    <Frame title="no data">
+    <Frame>
       <line x1={PAD} y1={H / 2} x2={W - PAD} y2={H / 2} stroke="var(--border)" strokeWidth={1} />
     </Frame>
   );

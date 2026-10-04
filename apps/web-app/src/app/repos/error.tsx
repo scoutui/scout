@@ -12,8 +12,8 @@ export default function ReposError({
   return (
     <EmptyState
       icon={<CircleX className="size-6 text-status-err" />}
-      title="Something went wrong."
-      description="Could not load repositories. You can try again or refresh the page."
+      title="Couldn't load repos."
+      description="Try again, or reload the page."
       action={
         <Button variant="ghost" size="sm" onClick={reset}>
           Try again

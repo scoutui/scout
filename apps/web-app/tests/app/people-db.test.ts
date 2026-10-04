@@ -17,7 +17,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 // biome-ignore lint/complexity/useLiteralKeys: env access
 const RUN_DB = process.env["DATABASE_URL"] != null;
 
-const ADMIN_REFUSAL = { ok: false, error: "Only Admins can change roles." };
+const ADMIN_REFUSAL = { ok: false, error: "Only Admins can change roles. Ask an Admin for access." };
 const CHANGED_SINCE_LOADED = { ok: false, error: "This person's role has changed since the page loaded. Reload to see it." };
 
 describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {

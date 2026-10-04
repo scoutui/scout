@@ -332,10 +332,11 @@ function TrendFacets({
           );
         })}
       </div>
-      <p className="mt-4 text-xs tabular-nums text-muted-foreground">
-        One panel per series, same scale 0–{formatMetric(domainMax, metric)}
-        {firstT && lastT ? ` · ${formatDay(firstT)} – ${formatDay(lastT)}` : ""}
-      </p>
+      {firstT && lastT ? (
+        <p className="mt-4 text-xs tabular-nums text-muted-foreground">
+          {formatDay(firstT)} – {formatDay(lastT)}
+        </p>
+      ) : null}
     </div>
   );
 }

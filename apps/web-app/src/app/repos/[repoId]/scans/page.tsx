@@ -135,7 +135,7 @@ export default async function RepoScansPage({
                         href={viewHref}
                         className="text-xs text-foreground underline-offset-4 hover:underline"
                       >
-                        view scan
+                        View scan
                       </Link>
                     </TableCell>
                   </TableRow>

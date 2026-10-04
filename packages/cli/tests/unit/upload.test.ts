@@ -323,7 +323,7 @@ describe("submitArtifact", () => {
     }));
   });
 
-  const viewer = "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.";
+  const viewer = "You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.";
   it.each([
     { name: "with the dashboard's refusal", body: { error: "upload_not_allowed", refusal: { code: "upload_not_allowed", message: viewer } }, error: transport.UploadRefusedError, code: "upload_not_allowed", line: viewer },
     { name: "without one", body: { error: "forbidden" }, error: transport.UploadError, code: 403, line: "Couldn't upload the scan: the dashboard returned an error. Try again, or ask your dashboard administrator to check its logs." },

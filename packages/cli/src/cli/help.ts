@@ -8,7 +8,7 @@ Commands:
   init          Create scout.config.json for this repo
   auth          Sign in, see who you're signed in as, or sign out (login | status | logout)
 
-Run \`scout <command> --help\` for command-specific options.
+Run scout <command> --help for command-specific options.
 
 Other:
   --help, -h

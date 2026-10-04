@@ -87,7 +87,7 @@ export function parseCommand(command: string, argv: string[]): ParsedCommand {
 export function unknownCommandMessage(command: string): string {
   const suggestion = nearestMatch(command, KNOWN_COMMANDS as readonly string[]);
   const hint = suggestion ? ` Did you mean '${suggestion}'?` : "";
-  return `Unknown command '${command}'.${hint} Run \`scout --help\`.`;
+  return `Unknown command '${command}'.${hint} Run scout --help.`;
 }
 
 function toCliError(err: unknown, command: string, options: OptionsConfig): CliError {
@@ -96,11 +96,11 @@ function toCliError(err: unknown, command: string, options: OptionsConfig): CliE
     const bad = extractUnknownOption(e.message ?? "");
     const names = Object.keys(options).map((o) => `--${o}`);
     const suggestion = bad ? nearestMatch(bad, names) : undefined;
-    const hint = suggestion ? ` Did you mean '${suggestion}'?` : "";
-    return new CliError(`Unknown option '${bad ?? "(option)"}' for \`scout ${command}\`.${hint}`);
+    const hint = suggestion ? ` Did you mean '${suggestion}'?` : ` Run scout ${command} --help.`;
+    return new CliError(`Unknown option '${bad ?? "(option)"}' for scout ${command}.${hint}`);
   }
   return new CliError(
-    `${e.message ?? `Invalid arguments for \`scout ${command}\``} (run \`scout ${command} --help\`).`,
+    `${e.message ?? `Invalid arguments for scout ${command}`} (run scout ${command} --help).`,
   );
 }
 

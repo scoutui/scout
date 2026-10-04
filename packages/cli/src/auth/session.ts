@@ -2,19 +2,19 @@ import { loadStore, mutateStore, normalizeHost, type HostEntry, type Store } fro
 
 export class NotSignedInError extends Error {
   constructor(public host: string) {
-    super(`Not signed in to ${host}. Run \`scout auth login --host ${host}\`.`);
+    super(`Not signed in to ${host}. Run scout auth login --host ${host}.`);
   }
 }
 
 export class ReloginRequiredError extends Error {
   constructor(public host: string) {
-    super(`Session for ${host} is no longer valid. Run \`scout auth login --host ${host}\`.`);
+    super(`Session for ${host} is no longer valid. Run scout auth login --host ${host}.`);
   }
 }
 
 export class SessionChangedError extends Error {
   constructor(public host: string) {
-    super(`Session changed for ${host}; retry the upload with the current sign-in.`);
+    super("Your sign-in changed during the upload. Try again.");
   }
 }
 

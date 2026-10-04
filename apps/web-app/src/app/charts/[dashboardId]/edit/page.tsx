@@ -18,7 +18,7 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
   const id = decodeURIComponent(dashboardId);
   if (isDerivedId(id)) notFound();
   if (!can(await identify({ browser: true }), "edit")) {
-    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an admin for access." />;
+    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an Admin for access." />;
   }
   const page = await readModelPage(getStorage(), async snapshot => {
     const dashboard = await snapshot.getDashboard(id);

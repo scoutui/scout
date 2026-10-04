@@ -9,7 +9,7 @@ The repos area shows every repo the dashboard has a [scan](/docs/reference/gloss
 
 ## Find a repo
 
-Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, with **Committed** (the date of the commit its numbers come from), how many **Components** its latest scan found, how many are **Deprecated**, and **Δ components**: what was added, removed or changed since its previous scan.
+Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, with **Committed** (the date of the commit its numbers come from), how many **Components** its latest scan found, how many are **Deprecated**, and **Changes**: what was added, removed or changed since its previous scan.
 
 ![The repos list with four repos, the search box and the since previous scan chip](/img/dashboard/repos-list.png)
 
@@ -85,9 +85,9 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 ## Look at an older scan
 
-Press the **scan** button in the header (it shows the scan's id) to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, one row per scan, newest first. **Committed** is the date of the scanned commit and **Scanned** is when the scan reached the dashboard. **Scanned by** is the person who uploaded it, or **—** for a scan uploaded with a [CI upload token](/docs/guides/run-in-ci). **view scan** opens the repo page on that scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
+Press the **scan** button in the header (it shows the scan's id) to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, one row per scan, newest first. **Committed** is the date of the scanned commit and **Scanned** is when the scan reached the dashboard. **Scanned by** is the person who uploaded it, or **—** for a scan uploaded with a [CI upload token](/docs/guides/run-in-ci). **View scan** opens the repo page on that scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-An older scan shows a banner: **Viewing an older scan: committed 3mo ago, scanned 2d ago. Component pages show the latest scan.** The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link and reads **not in the latest scan**. The **Adoption** tab doesn't change with the scan you pick. Press **view latest →** to go back.
+An older scan shows a banner: **Viewing an older scan: committed 3mo ago, scanned 2d ago.** The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link and reads **not in the latest scan**. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
 
 The page URL carries `?scan=` while an older scan is shown, so a shared link opens the same scan.
 

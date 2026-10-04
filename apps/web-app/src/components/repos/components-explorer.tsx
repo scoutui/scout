@@ -70,7 +70,7 @@ export function ComponentsExplorer({
   const usedIn = useMemo(() => usedInOptions(rows, facets), [rows, facets]);
   const filtered = useMemo(() => filterRows(candidates, facets), [candidates, facets]);
   const packageFolders = useMemo(() => new Map(packages.map((p) => [p.name, p.folder])), [packages]);
-  // The changed view's toolbar breakdown, `12 of 29 moved · 2 removed ·
+  // The changed view's toolbar breakdown, `12 of 29 changes · 2 removed ·
   // 10 changed`, counted from the shown rows' marks.
   const diffShown = useMemo(() => {
     if (!changedActive || diff === null) return null;

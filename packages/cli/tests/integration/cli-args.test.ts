@@ -71,13 +71,13 @@ describe("cli argument handling", () => {
   it("rejects an unknown flag with a suggestion and exit 2", async () => {
     const { code, stderr } = await run(["scan", "--dry-rn"]);
     expect(code).toBe(2);
-    expect(stderr).toBe("Error: Unknown option '--dry-rn' for `scout scan`. Did you mean '--dry-run'?\n");
+    expect(stderr).toBe("Error: Unknown option '--dry-rn' for scout scan. Did you mean '--dry-run'?\n");
   });
 
   it.each(["--output", "--upload", "--commit-date"])("rejects the removed %s flag with exit 2", async (flag) => {
     const { code, stderr } = await run(["scan", flag]);
     expect(code).toBe(2);
-    expect(stderr).toBe(`Error: Unknown option '${flag}' for \`scout scan\`.\n`);
+    expect(stderr).toBe(`Error: Unknown option '${flag}' for scout scan. Run scout scan --help.\n`);
   });
 
   it("refuses --rescan with --dry-run, with one line and exit 2", async () => {

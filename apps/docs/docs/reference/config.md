@@ -116,9 +116,8 @@ A config error stops `scan` or `backfill` with exit code `2` before it reads any
 | --- | --- |
 | No file at the config path | `Couldn't find ./scout.config.json. Run scout init to create one, or pass --config <path>.` With `--config`, it names that path instead. |
 | The file isn't valid JSON | `<path> isn't valid JSON. Fix it and try again.` With `--debug`, the next line says where the parser stopped. |
-| A top-level `manifests` key | ``<path>: the `manifests` field was removed. Replace with `include` (array of glob patterns for files to scan).`` |
 | A field that isn't in [Fields](#fields), such as a misspelled name | `<path> has a field Scout doesn't use: "<field>". Remove it and try again.` With several, it names every one: `<path> has fields Scout doesn't use: "<field>", "<field>". Remove them and try again.` No other problem is shown until they are gone. |
-| Anything else the schema rejects | `Invalid config at <path>: <problems>` |
+| Anything else the schema rejects | Each field it rejects and what's wrong, such as `"include" in <path> can't be an empty list. Fix it and try again.` |
 | On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), `scout-scan.json` in the config folder links to a file outside it | `scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
 
 `<problems>` lists every problem found, separated by `; `, each as `<location>: <message>`. The location is `<root>` for the whole file, or the field's path, such as `/include/0` for the first `include` entry. Messages you are likely to see:

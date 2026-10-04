@@ -33,7 +33,7 @@ const RETRY = "Run scout backfill --debug to retry the skipped commits and see w
 
 const NEWER_CLI = "a1c9e04 was scanned with a newer CLI (1.4.0). Upgrade the CLI to 1.4.0 or newer, or run npx @scoutui/cli@1.4.0 scan --rescan.";
 
-const VIEWER = "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.";
+const VIEWER = "You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.";
 
 type Commit = { date: string; files?: Record<string, string> };
 

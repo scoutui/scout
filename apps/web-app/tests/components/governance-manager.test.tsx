@@ -86,7 +86,7 @@ describe("GovernanceManager", () => {
 
   it("shows one Records table with the name, replacement or reason, and uses left columns", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
-    expect(screen.getByText("6 records · counts from each repo's latest scan")).toBeInTheDocument();
+    expect(screen.getByText("6 records")).toBeInTheDocument();
     const table = screen.getByRole("table", { name: "Records" });
     expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
       "Name",
@@ -296,7 +296,7 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("radiogroup", { name: "Type" })).toBeInTheDocument();
     expect(screen.getByText("Replaced: teams move to a replacement.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
-    expect(screen.getByText("Retired: it goes with no replacement.")).toBeInTheDocument();
+    expect(screen.getByText("Retired: teams stop using it.")).toBeInTheDocument();
     expect(screen.getByLabelText("Reason")).not.toHaveAttribute("placeholder");
     expect(screen.getByText("Shown on the record, for example why there's no replacement.")).toBeInTheDocument();
   });

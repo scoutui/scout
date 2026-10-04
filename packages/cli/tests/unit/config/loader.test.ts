@@ -92,7 +92,7 @@ describe("loadConfig", () => {
 
   it("rejects an empty include", async () => {
     const path = writeConfig(tmp(), { include: [] });
-    await expect(loadConfig(path)).rejects.toMatchObject({ message: `Invalid config at ${path}: /include: must NOT have fewer than 1 items` });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `"include" in ${path} can't be an empty list. Fix it and try again.` });
   });
 
   it("accepts tsconfigPath", async () => {
@@ -137,35 +137,39 @@ describe("loadConfig", () => {
 
   it("rejects an empty install", async () => {
     const path = writeConfig(tmp(), { include: ["src/**/*.ts"], install: "" });
-    await expect(loadConfig(path)).rejects.toMatchObject({ message: `Invalid config at ${path}: /install: must NOT have fewer than 1 characters` });
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: `"install" in ${path} can't be empty. Fix it and try again.` });
   });
 
-  describe("legacy manifests field migration", () => {
-    it("rejects configs containing manifests with a migration error", async () => {
-      const dir = tmp();
-      const path = writeConfig(dir, {
-        repoId: "x",
-        manifests: ["@example/pkg"],
-        include: ["src/**/*.tsx"],
-      });
-      await expect(loadConfig(path)).rejects.toMatchObject({
-        message: `${path}: the \`manifests\` field was removed. Replace with \`include\` (array of glob patterns for files to scan).`,
-      });
-    });
+  it.each([
+    ["a value of the wrong type", { include: "src/**/*.ts" }, `"include" in <path> should be a list. Fix it and try again.`],
+    ["an empty entry in a list", { include: [""] }, `Entries in "include" in <path> can't be empty. Fix it and try again.`],
+    ["two problems", { repoId: "", gitignore: "yes" }, `"repoId" in <path> can't be empty, and "gitignore" should be true or false. Fix them and try again.`],
+  ])("names the field and the problem for %s", async (_case, cfg, message) => {
+    const path = writeConfig(tmp(), cfg);
+    await expect(loadConfig(path)).rejects.toMatchObject({ message: message.replace("<path>", path) });
+  });
 
-    it("loads a valid config without packageScopes", async () => {
-      const dir = tmp();
-      const path = writeConfig(dir, {
-        repoId: "x",
-        include: ["src/**/*.tsx"],
-      });
-      const cfg = await loadConfig(path);
-      expect(cfg.repoId).toBe("x");
-      expect(cfg.include).toEqual(["src/**/*.tsx"]);
+  it("loads a valid config without packageScopes", async () => {
+    const dir = tmp();
+    const path = writeConfig(dir, {
+      repoId: "x",
+      include: ["src/**/*.tsx"],
     });
+    const cfg = await loadConfig(path);
+    expect(cfg.repoId).toBe("x");
+    expect(cfg.include).toEqual(["src/**/*.tsx"]);
   });
 
   describe("removed fields rejection", () => {
+    it("rejects removed manifests field", async () => {
+      const dir = tmp();
+      const path = writeConfig(dir, {
+        manifests: ["@example/pkg"],
+        include: ["src/**/*.ts"],
+      });
+      await expect(loadConfig(path)).rejects.toThrow(`has a field Scout doesn't use: "manifests". Remove it and try again.`);
+    });
+
     it("rejects removed packageScopes field", async () => {
       const dir = tmp();
       const path = writeConfig(dir, {

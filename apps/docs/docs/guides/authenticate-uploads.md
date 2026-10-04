@@ -22,7 +22,7 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
 2. The CLI prints a code and opens your browser:
 
    ```
-   To authorize this device, open:
+   To sign in, open:
      https://scout.example.com/login/device
    Code: HJKM-4TQX
    Opened your browser…
@@ -36,7 +36,7 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
 
 3. In the browser, sign in to the dashboard if it asks you to. Check that **Device code** matches the code in your terminal and that **Signed in as** shows the account you want to upload as, then press **Approve**.
    - If **Signed in as** shows the wrong account, press **Use another account**. The dashboard signs you out in the browser. Sign in as the right account and you come back to the same code.
-   - If you didn't start this sign-in, press **Deny**. The terminal prints `Authorization was declined.`
+   - If you didn't start this sign-in, press **Deny**. The terminal prints `Couldn't sign in: the request was denied on the dashboard. Run scout auth login to try again.`
 
 4. The terminal finishes with:
 
@@ -85,7 +85,7 @@ Signed in as dev@acme.test to https://scout.example.com as an Editor (session sa
 If the dashboard stops accepting your session, `auth status` prints this instead, and `scan` fails with the same message:
 
 ```
-Error: Session for https://scout.example.com is no longer valid. Run `scout auth login --host https://scout.example.com`.
+Error: Session for https://scout.example.com is no longer valid. Run scout auth login --host https://scout.example.com.
 ```
 
 Run the `auth login` command it names. If `auth status` prints `Error: Couldn't reach <host>. Check your connection and try again.`, you are still signed in: check your network and try again.
@@ -115,7 +115,7 @@ The output ends with the uploaded scan and your repo's page:
 If you're a Viewer, `scan` stops before it scans with:
 
 ```
-Error: You can view this dashboard but not upload to it. Ask an admin to make you an Editor.
+Error: You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.
 ```
 
 Once an Admin has [changed your role](/docs/guides/manage-people-and-roles#change-someones-role), scan again. You don't need to sign in again.

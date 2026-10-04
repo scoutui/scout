@@ -42,7 +42,7 @@ export function PackageConsumersTable({
   }, [cells]);
 
   if (cells.length === 0) {
-    return <p className="text-sm text-muted-foreground">No usage recorded.</p>;
+    return <p className="text-sm text-muted-foreground">No repos use this package yet.</p>;
   }
 
   return (

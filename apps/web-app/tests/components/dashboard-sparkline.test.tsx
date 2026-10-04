@@ -34,7 +34,7 @@ describe("DashboardSparkline trend mini", () => {
 describe("DashboardSparkline without a stored preview", () => {
   it("renders the empty mini", () => {
     const { container } = render(<DashboardSparkline uid="none" config={trend} view={null} />);
-    expect(container.querySelector("title")?.textContent).toBe("no data");
+    expect(container.querySelectorAll("svg line")).toHaveLength(1);
     expect(linePaths(container)).toBe(0);
   });
 });

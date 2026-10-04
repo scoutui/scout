@@ -148,7 +148,7 @@ async function withStoreLock<T>(filePath: string, action: () => Promise<T>): Pro
   const deadline = Date.now() + LOCK_WAIT_MS;
   while (true) {
     if (Date.now() >= deadline) {
-      throw new StoreLockError(`Timed out waiting for credential store lock at ${lockPath}. Retry, or remove it only after confirming no CLI process is running.`);
+      throw new StoreLockError(`Another scout command is using your saved sign-in. Try again when it finishes. If none is running, delete ${lockPath}.`);
     }
     try {
       const handle = await open(lockPath, "wx", 0o600);

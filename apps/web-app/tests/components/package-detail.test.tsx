@@ -165,7 +165,7 @@ describe("PackageConsumersTable", () => {
 
   it("renders an empty-state when no cells provided", () => {
     render(<PackageConsumersTable packageName="@x/lib" cells={[]} />);
-    expect(screen.getByText(/No usage recorded/i)).toBeInTheDocument();
+    expect(screen.getByText(/No repos use this package yet/i)).toBeInTheDocument();
   });
 });
 
@@ -212,7 +212,7 @@ describe("PackageComponentsTable", () => {
 
   it("renders an empty-state when no components are provided", () => {
     render(<PackageComponentsTable components={[]} />);
-    expect(screen.getByText(/No components observed/i)).toBeInTheDocument();
+    expect(screen.getByText("No components found.")).toBeInTheDocument();
   });
 
   it("renders all components in one table, no disclosure", () => {

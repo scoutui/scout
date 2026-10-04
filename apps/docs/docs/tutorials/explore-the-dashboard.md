@@ -33,7 +33,7 @@ npx scout auth login --host http://localhost:3000
 We write the full address, including `http://`. For a dashboard our team already runs, we use its address instead. The CLI prints a link and a code, and opens our browser at the link:
 
 ```
-To authorize this device, open:
+To sign in, open:
   http://localhost:3000/login/device
 Code: HJKM-4TQX
 Opened your browser…
@@ -67,7 +67,7 @@ It prints the same counts as before, without the list of most used components, t
 
 We open the dashboard. It starts on the **repos** list, which reads `1 repo · 1 scan` and has one row, `acme/storefront`. That is our [repo id](/docs/reference/glossary#repo-id), from our config.
 
-The row shows the date of the commit we scanned, with its branch and commit. **Components** reads `6`, every component the scan found, including `App` and `Checkout`. **Δ components** reads `first scan`, because there is no earlier scan to compare with yet.
+The row shows the date of the commit we scanned, with its branch and commit. **Components** reads `6`, every component the scan found, including `App` and `Checkout`. **Changes** reads `first scan`, because there is no earlier scan to compare with yet.
 
 ![The repos list with one repo, acme/storefront, reading first scan](/img/tutorial/repos-list.png)
 

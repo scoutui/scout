@@ -84,7 +84,7 @@ describe("createAuthedUploader", () => {
     await expect(upload).rejects.toMatchObject({
       receipt,
       statusUrl: `${BASE}/api/scans/uploads/U1`,
-      cause: { message: expect.stringMatching(/session changed.*retry/i) },
+      cause: { message: expect.stringMatching(/sign-in changed during the upload/i) },
     });
     expect((await loadStore(file)).hosts[BASE]).toEqual({ token: "scout_u_new", userEmail: "new@example.com" });
   });

@@ -29,7 +29,7 @@ const DESC_KEYS: ReadonlySet<SortKey> = new Set([
   "delta",
 ]);
 
-/** Movement magnitude for the Δ components sort; null (first scan) sorts last. */
+/** Movement magnitude for the Changes sort; null (first scan) sorts last. */
 function movement(r: RepoSummary): number | null {
   return r.delta === null ? null : r.delta.added + r.delta.removed + r.delta.changed + Math.abs(r.delta.deprecated);
 }
@@ -60,12 +60,12 @@ export function ReposTable({ rows }: { rows: RepoSummary[] }) {
           <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("deprecatedCount", sortKey, sortDir)}>
             <SortButton label="Deprecated" sortKey="deprecatedCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          {/* The title spells out what the Δ counts, which the cells' compact
+          {/* The title spells out what the column counts, which the cells' compact
               form below lg doesn't. */}
           <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
             <SortButton
-              label="Δ components"
-              title="Δ components: added, removed or changed since previous scan"
+              label="Changes"
+              title="Changes: added, removed or changed since the previous scan"
               sortKey="delta"
               current={sortKey}
               dir={sortDir}
@@ -172,7 +172,7 @@ function MobileMovement({ delta }: { delta: NonNullable<RepoSummary["delta"]> })
   );
 }
 
-/** The Δ components cell. From lg it reads in words, `+3 added · −16 removed ·
+/** The Changes cell. From lg it reads in words, `+3 added · −16 removed ·
  *  13 changed`, so signs never read as a net sum; below lg it is the compact
  *  `+3 −16 · 13 changed`. Zero parts are omitted; a faint dash when no
  *  component moved, and `first scan` when there is no earlier scan. */
