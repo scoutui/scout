@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { GitCompareArrows, Search, X } from "lucide-react";
 import type { RepoSummary } from "@scoutui/web-shared";
-import { repoDeltaMoved } from "@scoutui/web-shared/client";
+import { plural, repoDeltaMoved } from "@scoutui/web-shared/client";
 import { Input } from "@/components/ui/input";
 import { StatusFilterChip } from "@/components/status-filter-chip";
 import { ReposTable } from "@/components/repos/repos-table";
@@ -49,7 +49,7 @@ export function ReposExplorer({
             aria-label="Search repos by id, remote, or branch"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Search ${rows.length.toLocaleString()} ${rows.length === 1 ? "repo" : "repos"}…`}
+            placeholder={`Search ${plural(rows.length, "repo")}…`}
             className="h-8 pl-8 font-mono text-xs placeholder:font-sans"
           />
           {text ? (
