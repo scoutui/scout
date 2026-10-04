@@ -101,24 +101,28 @@ export async function chartResultsUnavailable(pool: Pool): Promise<ReadModelUnav
   const degraded = failed.filter(fallback => fallback.state === "degraded");
   const listed = degraded.length ? degraded : failed;
   if (listed.length) return { state: degraded.length ? "degraded" : "failed", scans: listed.map(fallback => fallback.latest), retryable: false };
-  return await resultsJobFailed(pool)
+  return await resultsJobState(pool) === "failed"
     ? { state: "failed", scans: [], retryable: false }
     : { state: "preparing", scans: [], retryable: true };
 }
 
-async function resultsJobFailed(pool: Pool): Promise<boolean> {
-  const { rows: [results] } = await pool.query<{ failed: boolean }>(
-    "SELECT state = 'failed' AS failed FROM scan_jobs WHERE kind = 'results' ORDER BY sequence DESC LIMIT 1");
-  return results?.failed ?? false;
+/** Whether the newest results job is still to run or running, or failed; null when none is left. */
+async function resultsJobState(pool: Pool): Promise<"pending" | "failed" | null> {
+  const { rows: [results] } = await pool.query<{ state: string }>(
+    "SELECT state FROM scan_jobs WHERE kind = 'results' ORDER BY sequence DESC LIMIT 1");
+  if (results?.state === "failed") return "failed";
+  return results?.state === "queued" || results?.state === "processing" ? "pending" : null;
 }
 
 /**
  * What a stored-results surface shows. With nothing stored, any unavailable state. Beside stored results, the repos
- * whose newest scan failed or can't be read, and a failed results job; null when there's neither.
+ * whose newest scan failed or can't be read, and a failed or pending results job; null when there's none of these.
  */
 export async function chartResultsNotice(pool: Pool, stored: boolean): Promise<ChartResultsNotice | null> {
   if (!stored) return { unavailable: await chartResultsUnavailable(pool), fallbacks: [] };
-  const unavailable: ReadModelUnavailable | null = await resultsJobFailed(pool) ? { state: "failed", scans: [], retryable: false } : null;
+  const job = await resultsJobState(pool);
+  const unavailable: ReadModelUnavailable | null = job === "failed" ? { state: "failed", scans: [], retryable: false }
+    : job === "pending" ? { state: "preparing", scans: [], retryable: true } : null;
   const fallbacks = await failedFallbacks(pool);
   return unavailable || fallbacks.length ? { unavailable, fallbacks } : null;
 }

@@ -19,6 +19,10 @@ vi.mock("@/db/client", () => ({ getPool: () => database }));
 const editor: Person = { kind: "person", userId: "editor", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
 let reader = editor;
 vi.mock("@/lib/identity", () => ({ identify: async () => reader }));
+vi.mock("next/navigation", async () => ({
+  ...(await vi.importActual<typeof import("next/navigation")>("next/navigation")),
+  useRouter: () => ({ refresh: () => {} }),
+}));
 
 type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[]; description?: string; action?: ReactNode };
 
@@ -132,7 +136,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       // Only the lost chart: the gone repo's badge already explains its chart, and the
       // saved chart changed after its preview was stored.
       expect(allPropsFor(tree, "UnknownComponentsBadge")).toHaveLength(1);
-      expect(allPropsFor(tree, "ChartResultsState")).toEqual([]);
+      expect(allPropsFor(tree, "ChartResultsState")).toEqual([{ notice: { unavailable: preparing, fallbacks: [] }, besideNumbers: true }]);
     });
   });
 
@@ -314,6 +318,22 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(await page(trackingParams(`migration:${superseded.id}`)), "ReadModelState")).toEqual([preparing]);
       await expect(page(trackingParams(`migration:${retired.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
       await expect(page(trackingParams(`retirement:${superseded.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+    });
+  });
+
+  it("shows the preparing state beside stored results until a record change is applied, and 404s a deleted record's chart", async () => {
+    await withReadModelDatabase(async pool => {
+      const { retired } = await seed(pool);
+      await storeResults(pool);
+      const { default: governance } = await import("@/app/governance/page");
+      const { default: chart } = await import("@/app/charts/[dashboardId]/page");
+      expect(allPropsFor(await governance(), "ChartResultsState")).toEqual([]);
+      expect(allPropsFor(await chart(trackingParams(`retirement:${retired.id}`)), "ChartResultsState")).toEqual([]);
+      await driver.deleteGovernance(retired.id);
+      expect(allPropsFor(await governance(), "ChartResultsState")).toEqual([{ notice: { unavailable: preparing, fallbacks: [] }, besideNumbers: true }]);
+      await expect(chart(trackingParams(`retirement:${retired.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+      await storeResults(pool);
+      expect(allPropsFor(await governance(), "ChartResultsState")).toEqual([]);
     });
   });
 
