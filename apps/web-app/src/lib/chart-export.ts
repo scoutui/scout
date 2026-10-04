@@ -60,7 +60,7 @@ export function toTsv(table: ExportTable): string {
 const SCOPED_PACKAGE = /^@[a-z0-9][a-z0-9._~-]*\/[a-z0-9][a-z0-9._~-]*$/;
 
 function inert(value: string): string {
-  const formula = /^[=+\-\t\r]/.test(value) || (value.startsWith("@") && !SCOPED_PACKAGE.test(value));
+  const formula = /^[=+\-\t\r]/.test(value) || (value.startsWith("@") && !SCOPED_PACKAGE.test(value.split(" · ")[0] ?? ""));
   return formula ? `'${value}` : value;
 }
 

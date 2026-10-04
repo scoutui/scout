@@ -161,6 +161,8 @@ describe("toCsv", () => {
     ["a field that starts with a carriage return behind a quote mark, in quotes", "\rSUM(A1)", '"\'\rSUM(A1)"'],
     ["a field that starts with @ behind a quote mark", "@SUM(A1)", "'@SUM(A1)"],
     ["a scoped package name as it is", "@example/web-button", "@example/web-button"],
+    ["a deprecated-only scoped package as it is", "@example/ui · deprecated only", "@example/ui · deprecated only"],
+    ["a field that starts with @ but no package name before · behind a quote mark", "@SUM(A1) · deprecated only", "'@SUM(A1) · deprecated only"],
     ["a number as it is", "125", "125"],
   ];
 
