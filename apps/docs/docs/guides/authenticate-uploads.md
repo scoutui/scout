@@ -23,16 +23,12 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
 
    ```
    To sign in, open:
-     https://scout.example.com/login/device
+     https://scout.example.com/login/device?code=HJKM-4TQX
    Code: HJKM-4TQX
-   Opened your browser…
+   Opening your browser…
    ```
 
-   The CLI opens only a link on the host you're signing in to. If no browser opens, open the link yourself with your code on the end:
-
-   ```
-   https://scout.example.com/login/device?code=HJKM-4TQX
-   ```
+   The CLI opens only a link on the host you're signing in to. If no browser opens, open the link yourself.
 
 3. In the browser, sign in to the dashboard if it asks you to. Check that **Device code** matches the code in your terminal and that **Signed in as** shows the account you want to upload as, then press **Approve**.
    - If **Signed in as** shows the wrong account, press **Use another account**. The dashboard signs you out in the browser. Sign in as the right account and you come back to the same code.

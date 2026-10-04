@@ -4,7 +4,7 @@ import { InvalidHostError, isValidUrl, loadStore, normalizeHost, StoreLockError,
 import { hostsFilePath } from "../auth/paths.js";
 import { requestDeviceCode, pollToken, whoami, revokeSession, AuthHttpError, AuthProtocolError, SignInRefusedError, type DashboardRole } from "../auth/client.js";
 import { openBrowser } from "../auth/browser.js";
-import { resolveHost, getStoredSession, setStoredSession, removeStoredSession, ReloginRequiredError, HostUnavailableError, NoHostError, formatAuthError } from "../auth/session.js";
+import { resolveHost, getStoredSession, setStoredSession, setDefaultIfNone, removeStoredSession, ReloginRequiredError, HostUnavailableError, NoHostError, formatAuthError } from "../auth/session.js";
 import { parseCommand } from "../cli/parse.js";
 import { assertNotCancelled, PromptCancelledError, type PromptAdapter } from "../prompts/adapter.js";
 import { Logger } from "../util/log.js";
@@ -69,6 +69,7 @@ export async function runAuthLogin(opts: {
     try {
       const identity = await whoami(base, stored.token);
       if (identity) {
+        await setDefaultIfNone(base, filePath !== undefined ? { filePath } : {});
         out(`Already signed in as ${identity.email ?? stored.userEmail} to ${base}${asRole(identity.role)}.\n`);
         return 0;
       }
@@ -97,8 +98,8 @@ export async function runAuthLogin(opts: {
     return 1;
   }
   if (device.warning !== null) log.warn(device.warning);
-  out(`To sign in, open:\n  ${log.color.brand(device.verificationUri)}\nCode: ${log.color.bold(device.userCode)}\n`);
-  if (openBrowser(device.verificationUriComplete, base)) out("Opened your browser…\n");
+  out(`To sign in, open:\n  ${log.color.brand(device.verificationUriComplete)}\nCode: ${log.color.bold(device.userCode)}\n`);
+  if (openBrowser(device.verificationUriComplete, base)) out("Opening your browser…\n");
   // When styled, a spinner turns on stderr while Scout waits; otherwise the result follows on the same line.
   const waiting = log.styled
     ? startPhase({ label: "Waiting for approval…", writer: (s) => process.stderr.write(s), isTTY: true, columns: process.stderr.columns, motion: log.color })
