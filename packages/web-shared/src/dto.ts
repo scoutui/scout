@@ -180,6 +180,10 @@ export type ChartType = z.infer<typeof ChartTypeSchema>;
 export const DashboardMetricSchema = z.enum(["count", "share"]);
 export type DashboardMetric = z.infer<typeof DashboardMetricSchema>;
 
+// How far back a chart over time reaches from its latest scan.
+export const ChartRangeSchema = z.enum(["3m", "6m", "1y", "all"]);
+export type ChartRange = z.infer<typeof ChartRangeSchema>;
+
 export const DashboardScopeSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("all") }),
   z.object({ kind: z.literal("repo"), repoId: z.string() }),
@@ -191,6 +195,7 @@ export const DashboardConfigSchema = z.object({
   cohorts: z.array(CohortSelectorSchema).min(1),
   chartType: ChartTypeSchema,
   metric: DashboardMetricSchema,
+  range: ChartRangeSchema.optional(),
 });
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 

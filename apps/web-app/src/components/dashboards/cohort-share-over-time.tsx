@@ -13,7 +13,7 @@ import { scanTooltipLabel } from "./cohort-trend-chart";
  * Share over time: a 100%-stacked area over scans, where each band is a cohort's
  * share of the in-scope total at that scan. The latest scan's mix sits above as a
  * share bar whose labelled row is the legend and highlights a band on hover. With
- * fewer than two scans only the bar renders. `expandRowShares` renormalises each
+ * fewer than two scans only the bar renders. With `from`, the x-axis starts there. `expandRowShares` renormalises each
  * timestamp itself rather than using Recharts' `stackOffset="expand"` (see its doc),
  * so overlapping series that double-count still fill exactly 100%.
  */
@@ -23,12 +23,14 @@ export function CohortShareOverTime({
   colors,
   deprecatedOnly = NO_KEYS,
   showLegend = true,
+  from = null,
 }: {
   series: CohortSeries[];
   coverage: RepoCoverage;
   colors: ReadonlyMap<string, string>;
   deprecatedOnly?: ReadonlySet<string>;
   showLegend?: boolean;
+  from?: number | null;
 }) {
   const [animate, setAnimate] = useState(false);
   useEffect(() => {
@@ -41,7 +43,7 @@ export function CohortShareOverTime({
     () => expandRowShares(rows, series.map((s) => s.cohortKey)),
     [rows, series],
   );
-  const ticks = useMemo(() => dayTicks(rows), [rows]);
+  const ticks = useMemo(() => dayTicks(rows).filter((t) => from === null || t >= from), [rows, from]);
 
   const latest: ShareSegment[] = series.map((s) => ({
     cohortKey: s.cohortKey,
@@ -66,7 +68,8 @@ export function CohortShareOverTime({
           <XAxis
             dataKey="ts"
             type="number"
-            domain={["dataMin", "dataMax"]}
+            domain={[from ?? "dataMin", "dataMax"]}
+            allowDataOverflow={from !== null}
             ticks={ticks}
             tickLine={false}
             axisLine={false}
