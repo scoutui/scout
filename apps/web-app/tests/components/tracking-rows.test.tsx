@@ -32,7 +32,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
   };
 }
 
-describe("TrackingSection change since the last scan", () => {
+describe("TrackingSection change since the previous scan", () => {
   it.each(["migration", "retirement"] as const)("a %s row reads 'repo added' instead of the change when the latest scan is a repo's first", kind => {
     const joined = { total: 2, points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, { t: "2026-10-01T00:00:00Z", repos: 2 }] };
     render(
@@ -47,13 +47,13 @@ describe("TrackingSection change since the last scan", () => {
       />,
     );
     expect(screen.getAllByText("repo added")).toHaveLength(1);
-    expect(screen.getByText("±0 since last scan")).toBeInTheDocument();
-    expect(screen.getAllByText(/^(up|down) from .* last scan$/)).toHaveLength(1);
+    expect(screen.getByText("±0 since previous scan")).toBeInTheDocument();
+    expect(screen.getAllByText(/^(up|down) from .* previously$/)).toHaveLength(1);
   });
 });
 
 describe("TrackingSection complete ledger", () => {
-  it("renders active rows plus a 'Show N complete' band; archived row reads plain 'complete'", () => {
+  it("renders in-progress rows plus a 'Show N complete' band; archived row reads plain 'complete'", () => {
     render(
       <TrackingSection
         kind="migration"
@@ -62,14 +62,14 @@ describe("TrackingSection complete ledger", () => {
         surface="estate"
       />,
     );
-    expect(screen.getByText(/Migrations · 1 active · 1 complete/)).toBeDefined();
+    expect(screen.getByText(/Migrations · 1 in progress · 1 complete/)).toBeDefined();
     expect(screen.getByText("Show 1 complete")).toBeDefined();
     expect(screen.getByText("100%")).toBeDefined(); // formatPct trim
     expect(screen.getByText("complete")).toBeDefined(); // archived Δ slot label
-    expect(screen.queryByText("±0 since last scan")).toBeNull();
+    expect(screen.queryByText("±0 since previous scan")).toBeNull();
   });
 
-  it("a complete-only section renders with no active fragment in the heading", () => {
+  it("a complete-only section renders with no in-progress fragment in the heading", () => {
     render(
       <TrackingSection
         kind="migration"
@@ -79,7 +79,7 @@ describe("TrackingSection complete ledger", () => {
       />,
     );
     expect(screen.getByText("Migrations · 1 complete")).toBeDefined();
-    expect(screen.queryByText(/0 active/)).toBeNull();
+    expect(screen.queryByText(/0 in progress/)).toBeNull();
   });
 
   it("renders nothing with zero entries of either kind", () => {
@@ -97,7 +97,7 @@ describe("TrackingSection heading", () => {
         surface="estate"
       />,
     );
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations · 2 active");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations · 2 in progress");
     expect(screen.queryByText(/median/)).toBeNull();
   });
 });

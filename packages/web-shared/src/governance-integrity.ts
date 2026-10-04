@@ -133,9 +133,9 @@ export function conflictMessage(c: GovernanceConflict): string {
     case "target_governed":
       return "This package or component already has a record. Edit that record instead.";
     case "self_supersession":
-      return "It can't be superseded by itself. Choose another.";
+      return "It can't be its own replacement. Choose another.";
     case "cycle":
-      return `That would make a loop: ${c.via} is already superseded by this one. Choose another.`;
+      return `That would make a loop: ${c.via} is already replaced by this one. Choose another.`;
     case "package_grain_overlap":
       return `${c.packageName} already has a record for the whole package. Edit that record, or remove it to add records for single components.`;
     case "component_grain_overlap":

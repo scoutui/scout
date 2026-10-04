@@ -101,7 +101,7 @@ describe("GovernanceManager", () => {
   it("says on every row whether the record is superseded or retired", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const button = row("r1");
-    expect(button.children[1]?.textContent).toBe("Superseded by");
+    expect(button.children[1]?.textContent).toBe("Replaced by");
     expect(button.children[2]?.textContent).toContain("Button · @acme/new");
     const chip = row("r2");
     expect(chip.children[1]?.textContent).toBe("Retired");
@@ -264,7 +264,7 @@ describe("GovernanceManager", () => {
     ];
     const chainStats = { a: { status: "active", left: 1, leftIn: ["repo-a"], componentIds: [], trackingId: "migration:a", successorDeprecated: true } as RecordStat };
     render(<GovernanceManager records={chain} sources={sources} stats={chainStats} repoCount={3} summary={null} authors={{}} notice={null} />);
-    expect(screen.getByText("Successor deprecated")).toBeInTheDocument();
+    expect(screen.getByText("Replacement deprecated")).toBeInTheDocument();
     expect(screen.getByText("→ Input · @acme/new")).toBeInTheDocument();
   });
 
@@ -275,7 +275,7 @@ describe("GovernanceManager", () => {
     const alerts = await screen.findAllByRole("alert");
     const text = alerts.map((a) => a.textContent).join(" | ");
     expect(text).toMatch(/choose a package or component/i);
-    expect(text).toMatch(/choose what supersedes it/i);
+    expect(text).toMatch(/choose a replacement/i);
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     expect(saveGovernance).not.toHaveBeenCalled();
   });
@@ -294,7 +294,7 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("heading", { name: "New record" })).toBeInTheDocument();
     expect(screen.getByText("Package or component")).toBeInTheDocument();
     expect(screen.getByRole("radiogroup", { name: "Type" })).toBeInTheDocument();
-    expect(screen.getByText("Superseded: something replaces it.")).toBeInTheDocument();
+    expect(screen.getByText("Replaced: teams move to a replacement.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Retired" }));
     expect(screen.getByText("Retired: it goes with no replacement.")).toBeInTheDocument();
     expect(screen.getByLabelText("Reason")).not.toHaveAttribute("placeholder");
@@ -306,7 +306,7 @@ describe("GovernanceManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     await screen.findAllByRole("alert");
     expect(screen.getByRole("combobox", { name: "Package or component" })).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("combobox", { name: "Superseded by" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("combobox", { name: "Replaced by" })).toHaveAttribute("aria-invalid", "true");
   });
 
   it("names the source search box after its label, empty before a pick", () => {
@@ -416,14 +416,14 @@ describe("GovernanceManager", () => {
     fireEvent.keyDown(source, { key: "ArrowUp" });
     fireEvent.keyDown(source, { key: "Enter" });
     fireEvent.keyDown(source, { key: "Enter" });
-    const by = screen.getByRole("combobox", { name: "Superseded by" });
+    const by = screen.getByRole("combobox", { name: "Replaced by" });
     fireEvent.change(by, { target: { value: "@acme/new" } });
     fireEvent.keyDown(by, { key: "ArrowUp" });
     fireEvent.keyDown(by, { key: "Enter" });
     fireEvent.keyDown(by, { key: "Enter" });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
-    await vi.waitFor(() => expect(statuses()).toContain("Star superseded by Button"));
+    await vi.waitFor(() => expect(statuses()).toContain("Star replaced by Button"));
     expect(saveGovernance).toHaveBeenCalledWith({
       grain: "component",
       targetPackage: "old-icons",
@@ -452,7 +452,7 @@ describe("GovernanceManager", () => {
     }
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     expect(await screen.findByText("Choose a package or component.")).toBeInTheDocument();
-    expect(screen.getByText("Choose what supersedes it.")).toBeInTheDocument();
+    expect(screen.getByText("Choose a replacement.")).toBeInTheDocument();
     expect(saveGovernance).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("radio", { name: "Retired" }));

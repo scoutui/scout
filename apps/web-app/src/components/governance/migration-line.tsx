@@ -17,7 +17,7 @@ export function MigrationLine({
   const body =
     status.status === "superseded" ? (
       <>
-        Superseded by →{" "}
+        Replaced by →{" "}
         <span className="font-mono text-foreground/90">
           {status.by.exportName ? `${status.by.packageName}/${status.by.exportName}` : status.by.packageName}
         </span>

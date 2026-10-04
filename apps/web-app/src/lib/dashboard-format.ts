@@ -94,7 +94,7 @@ export function formatAxisCount(v: number): string {
  * `deltaDirection`'s call, so a retirement going well reads "down from 900" in
  * green.
  *
- * A move under 0.05pp reads "±0 since last scan" (the same band as
+ * A move under 0.05pp reads "±0 since previous scan" (the same band as
  * `deltaDirection`, so the text can't contradict the colour). With fewer than
  * two scans it reads a bare em dash.
  *
@@ -108,10 +108,10 @@ export function formatDeltaFrom(
   delta: number | null,
 ): string {
   if (delta === null || current === null) return "—";
-  if (deltaDirection(kind, delta) === "none") return "±0 since last scan";
+  if (deltaDirection(kind, delta) === "none") return "±0 since previous scan";
   const word = delta > 0 ? "up" : "down";
   const previous = kind === "migration" ? formatPct(current - delta / 100) : (current - delta).toLocaleString();
-  return `${word} from ${previous} last scan`;
+  return `${word} from ${previous} previously`;
 }
 
 /**

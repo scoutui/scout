@@ -62,12 +62,12 @@ const DISPOSITION_KINDS = ["superseded", "retired"] as const;
 type DispositionKind = (typeof DISPOSITION_KINDS)[number];
 
 const KIND_LABEL: Record<DispositionKind, string> = {
-  superseded: "Superseded",
+  superseded: "Replaced",
   retired: "Retired",
 };
 
 const KIND_HINT: Record<DispositionKind, string> = {
-  superseded: "Superseded: something replaces it.",
+  superseded: "Replaced: teams move to a replacement.",
   retired: "Retired: it goes with no replacement.",
 };
 
@@ -151,7 +151,7 @@ type FieldErrors = {
 const FIELD_ERROR: Record<GovernanceField, [keyof FieldErrors, string]> = {
   targetPackage: ["source", "Choose a package or component."],
   targetExport: ["source", "Choose a component."],
-  successor: ["supersededBy", "Choose what supersedes it."],
+  successor: ["supersededBy", "Choose a replacement."],
   reason: ["reason", "Enter a reason."],
 };
 
@@ -354,7 +354,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
         </div>
         {notice}
         <p className="max-w-prose text-sm text-muted-foreground">
-          Mark packages and components as superseded or retired. Each record marks the package or component as deprecated everywhere it appears.
+          Mark packages and components as replaced or retired. Each record marks the package or component as deprecated everywhere it appears.
         </p>
       </header>
 
@@ -673,7 +673,7 @@ function RecordRow({
         )}
       </th>
       <td className="min-w-0 pl-3 text-xs whitespace-nowrap text-muted-foreground max-lg:sr-only">
-        {record.disposition.kind === "superseded" ? "Superseded by" : "Retired"}
+        {record.disposition.kind === "superseded" ? "Replaced by" : "Retired"}
       </td>
       <td className="min-w-0 px-3 max-md:col-span-full max-md:row-start-2 max-md:pl-8">
         {record.disposition.kind === "superseded" ? (
@@ -732,7 +732,7 @@ function SuccessorCell({
         title={pickLabel(by)}
       >
         <span aria-hidden className="font-sans text-muted-foreground lg:hidden">
-          Superseded by{" "}
+          Replaced by{" "}
         </span>
         <span className="text-foreground">{successor.name}</span>
         {successor.packageName ? <span className="text-muted-foreground"> · {successor.packageName}</span> : null}
@@ -740,7 +740,7 @@ function SuccessorCell({
       {deprecated ? (
         <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] text-status-warn-text">
           <TriangleAlert aria-hidden strokeWidth={1.5} className="size-3 shrink-0" />
-          Successor deprecated
+          Replacement deprecated
         </span>
       ) : null}
       {nextHop ? (
@@ -1025,7 +1025,7 @@ function RecordForm({
                     " retired"
                   ) : (
                     <>
-                      {" superseded by "}
+                      {" replaced by "}
                       <span className="font-mono text-foreground">{created.by}</span>
                     </>
                   )}
@@ -1084,7 +1084,7 @@ function RecordForm({
         {form.dispositionKind === "superseded" ? (
           <div className="flex min-w-0 flex-col gap-1.5">
             <label id="gov-by-label" htmlFor="gov-by" className="text-label text-muted-foreground">
-              Superseded by
+              Replaced by
             </label>
             <GroupedIdentityPicker
               id="gov-by"

@@ -23,7 +23,7 @@ export function RecordSearch({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search records…"
-          aria-label="Search records by package, component or successor"
+          aria-label="Search records by package, component or replacement"
           className="pl-8"
         />
       </div>
