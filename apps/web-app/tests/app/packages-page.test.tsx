@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { StorageDriver } from "@scoutui/web-shared";
 import PackagesPage from "@/app/packages/page";
+import type { Role } from "@/lib/access";
 
 const packageRow = (packageName: string) => ({
   packageName,
@@ -22,10 +23,24 @@ const storage = {
   listTags: async () => [],
 };
 vi.mock("@/lib/storage", () => ({ getStorage: () => storage }));
-vi.mock("@/components/packages/packages-explorer", () => ({ PackagesExplorer: () => null }));
+let role: Role = "editor";
+vi.mock("@/lib/identity", () => ({
+  identify: async () => ({ kind: "person", userId: "u1", email: "ana@example.com", name: null, role, roleSource: "people" }),
+}));
+let explorerCanEdit: boolean | undefined;
+vi.mock("@/components/packages/packages-explorer", () => ({
+  PackagesExplorer: ({ canEdit }: { canEdit: boolean }) => {
+    explorerCanEdit = canEdit;
+    return null;
+  },
+}));
 vi.stubEnv("DATABASE_URL", "");
 
 describe("PackagesPage", () => {
+  afterEach(() => {
+    role = "editor";
+  });
+
   it.each([
     [["@example/button"], "1 package"],
     [["@example/button", "@example/card"], "2 packages"],
@@ -33,5 +48,15 @@ describe("PackagesPage", () => {
     packageNames = names;
     render(await PackagesPage());
     expect(screen.getByText(count, { exact: true })).toBeInTheDocument();
+  });
+
+  it("tells the package list that an Editor can edit and a Viewer can't", async () => {
+    packageNames = ["@example/button"];
+    explorerCanEdit = undefined;
+    render(await PackagesPage());
+    expect(explorerCanEdit).toBe(true);
+    role = "viewer";
+    render(await PackagesPage());
+    expect(explorerCanEdit).toBe(false);
   });
 });

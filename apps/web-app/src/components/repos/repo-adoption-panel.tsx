@@ -6,9 +6,10 @@ import type { ReadModelUnavailable } from "@/lib/read-model-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TrackingSection } from "@/components/dashboards/tracking-rows";
 
-export function RepoAdoptionPanel({ tracking, notice }: {
+export function RepoAdoptionPanel({ tracking, notice, canEdit }: {
   tracking: GovernanceTracking[] | null;
   notice: ReadModelUnavailable | null;
+  canEdit: boolean;
 }) {
   const entries = tracking ?? [];
 
@@ -28,11 +29,13 @@ export function RepoAdoptionPanel({ tracking, notice }: {
         <EmptyState
           icon={<Milestone className="size-6" />}
           title="No migrations or retirements tracked yet."
-          description="Mark a component as replaced or retired and its progress will chart here, scan over scan."
+          description={canEdit ? "Mark a component as replaced or retired and its progress will chart here, scan over scan." : undefined}
           action={
-            <Link href="/governance" className="text-sm text-foreground underline-offset-4 hover:underline">
-              Open Governance
-            </Link>
+            canEdit ? (
+              <Link href="/governance" className="text-sm text-foreground underline-offset-4 hover:underline">
+                Open Governance
+              </Link>
+            ) : undefined
           }
         />
       ) : (

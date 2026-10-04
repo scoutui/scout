@@ -7,6 +7,7 @@ import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/
 import { processChartResultsJob } from "../../src/lib/chart-results-job.ts";
 import { claimScanJob, enqueueScanJob, failScanJob, SCAN_JOB_PRIORITY } from "../../src/lib/scan-jobs.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
+import type { Person } from "../../src/lib/access.ts";
 import { withReadModelDatabase } from "../helpers/read-model-db.ts";
 
 const { DATABASE_URL: databaseUrl } = process.env;
@@ -15,11 +16,19 @@ let driver: StorageDriver;
 let database: Pool;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
-vi.mock("@/lib/identity", () => ({
-  identify: async () => ({ kind: "person", userId: "editor", email: "ana@example.com", name: null, role: "editor", roleSource: "people" }),
-}));
+const editor: Person = { kind: "person", userId: "editor", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
+let reader = editor;
+vi.mock("@/lib/identity", () => ({ identify: async () => reader }));
 
-type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[] };
+type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[]; description?: string; action?: ReactNode };
+
+/** The text the page renders itself, joined; child components are not rendered. */
+function textOf(node: ReactNode): string {
+  return Children.toArray(node).map(child => {
+    if (typeof child === "string" || typeof child === "number") return String(child);
+    return isValidElement<{ children?: ReactNode }>(child) ? textOf(child.props.children) : "";
+  }).join("");
+}
 
 function allPropsFor(node: ReactNode, name: string, found: Props[] = []): Props[] {
   for (const child of Children.toArray(node)) {
@@ -68,7 +77,10 @@ function trackingParams(id: string) {
   return { params: Promise.resolve({ dashboardId: encodeURIComponent(id) }), searchParams: Promise.resolve({}) };
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  reader = editor;
+});
 
 describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 30_000 }, () => {
   it("renders /charts tracking rows and previews from stored results without reading digests or tags", async () => {
@@ -120,6 +132,32 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([{ notice: { unavailable: preparing, fallbacks: [] }, besideNumbers: false }]);
       expect(allPropsFor(tree, "TrackingSection")).toEqual([]);
       expect(allPropsFor(tree, "DashboardSparkline")).toEqual([expect.objectContaining({ uid: saved.id, view: null })]);
+    });
+  });
+
+  it("shows an Editor New chart and the empty states' hints and links on /charts, and a Viewer only the titles", async () => {
+    await withReadModelDatabase(async pool => {
+      for (const artifact of genericArtifacts()) await publishScan(pool, artifact, { uploadedByUserId: null });
+      driver = new PostgresDriver(pool);
+      database = pool;
+      const { default: page } = await import("@/app/charts/page");
+
+      reader = { ...editor, role: "viewer" };
+      const viewerTree = await page();
+      expect(hrefsIn(viewerTree)).not.toContain("/charts/new");
+      expect(allPropsFor(viewerTree, "EmptyState")).toEqual([
+        { className: "mb-6", icon: expect.anything(), title: "No migrations or retirements tracked yet." },
+        { title: "No charts yet" },
+      ]);
+
+      reader = editor;
+      const editorTree = await page();
+      expect(hrefsIn(editorTree)).toContain("/charts/new");
+      const [governanceEmpty, chartsEmpty] = allPropsFor(editorTree, "EmptyState");
+      expect(governanceEmpty?.description).toBe("Mark a component as superseded or retired in Governance to track its progress here.");
+      expect(hrefsIn(governanceEmpty?.action)).toEqual(["/governance"]);
+      expect(chartsEmpty?.description).toBe("Compare libraries, packages or components across scans.");
+      expect(hrefsIn(chartsEmpty?.action)).toEqual(["/charts/new"]);
     });
   });
 
@@ -189,6 +227,12 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "DashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
+      expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
+      reader = { ...editor, role: "viewer" };
+      const viewerTree = await page(trackingParams(`retirement:${retired.id}`));
+      expect(hrefsIn(viewerTree)).not.toContain(`/governance#record-${retired.id}`);
+      expect(textOf(viewerTree)).not.toContain("Governance");
+      reader = editor;
       expect(allPropsFor(await page(trackingParams(`retirement:${added.id}`)), "ReadModelState")).toEqual([preparing]);
       expect(digests).not.toHaveBeenCalled();
       await expect(page(trackingParams(`retirement:${unseen.id}`))).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");

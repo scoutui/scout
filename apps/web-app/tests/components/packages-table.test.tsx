@@ -119,7 +119,7 @@ describe("PackagesExplorer", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/packages"));
 
   it("filters rows by the search input (substring, case-insensitive)", () => {
-    render(<PackagesExplorer rows={rows} />);
+    render(<PackagesExplorer rows={rows} canEdit />);
     const input = screen.getByPlaceholderText(/search .* packages by name/i);
     fireEvent.change(input, { target: { value: "WC" } });
     expect(screen.queryByText("@x/lib")).toBeNull();
@@ -129,7 +129,7 @@ describe("PackagesExplorer", () => {
 
   it("seeds facet state from the URL", () => {
     window.history.replaceState(null, "", "http://localhost:3000/packages?deprecated=true");
-    render(<PackagesExplorer rows={rows} />);
+    render(<PackagesExplorer rows={rows} canEdit />);
     expect(screen.getByText("@x/wc")).toBeInTheDocument();
     expect(screen.queryByText("@x/lib")).toBeNull();
     expect(screen.queryByText("lodash")).toBeNull();
@@ -137,14 +137,14 @@ describe("PackagesExplorer", () => {
 
   it("seeds the versions facet from ?versions=multi", () => {
     window.history.replaceState(null, "", "http://localhost:3000/packages?versions=multi");
-    render(<PackagesExplorer rows={rows} />);
+    render(<PackagesExplorer rows={rows} canEdit />);
     expect(screen.getByText("@x/lib")).toBeInTheDocument();
     expect(screen.getByText("lodash")).toBeInTheDocument();
     expect(screen.queryByText("@x/wc")).toBeNull();
   });
 
   it("renders a no-results state with a clear affordance when filters exclude everything", () => {
-    render(<PackagesExplorer rows={rows} />);
+    render(<PackagesExplorer rows={rows} canEdit />);
     const input = screen.getByPlaceholderText(/search .* packages by name/i);
     fireEvent.change(input, { target: { value: "zzzzz" } });
     expect(screen.getByText(/No packages match/i)).toBeInTheDocument();

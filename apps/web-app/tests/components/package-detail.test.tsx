@@ -15,7 +15,7 @@ vi.mock("@/app/packages/tag-actions", () => ({
 vi.mock("next/navigation", async () =>
   (await import("../helpers/search-params-mock")).searchParamsNavigationMock(),
 );
-import type { PackageDetail } from "@scoutui/web-shared";
+import type { PackageDetail, Tag } from "@scoutui/web-shared";
 import { PackageDetailHeader } from "@/components/packages/package-detail-header";
 import { PackageConsumersTable } from "@/components/packages/package-consumers-table";
 import { PackageComponentsTable } from "@/components/packages/package-components-table";
@@ -39,6 +39,8 @@ const baseDetail: PackageDetail = {
   ],
 };
 
+const coreTag: Tag = { id: "t1", value: "core", category: "library", color: "#0f766e", rule: { glob: [], exact: [] } };
+
 const rowsWithDeadLocal: PackageDetail["components"] = [
   { componentId: "w1", displayName: "FakeButton", kind: "react-component", totalOccurrences: 5, consumerCount: 2, deprecated: false, usage: "direct" },
   { componentId: "c2", displayName: "UnusedComponent", kind: "react-component", totalOccurrences: 4, consumerCount: 1, deprecated: false, usage: "direct" },
@@ -48,21 +50,21 @@ const rowsWithDeadLocal: PackageDetail["components"] = [
 
 describe("PackageDetailHeader", () => {
   it("renders the package name in monospace", () => {
-    render(<PackageDetailHeader detail={baseDetail} />);
+    render(<PackageDetailHeader detail={baseDetail} canEdit />);
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading).toHaveTextContent("@x/lib");
     expect(heading.className).toMatch(/font-mono/);
   });
 
   it("renders identity counts in the meta line: repos, components, uses", () => {
-    render(<PackageDetailHeader detail={baseDetail} />);
+    render(<PackageDetailHeader detail={baseDetail} canEdit />);
     expect(screen.getByText(/2 repos/)).toBeInTheDocument();
     expect(screen.getByText(/4 components/)).toBeInTheDocument();
     expect(screen.getByText(/11 uses/)).toBeInTheDocument();
   });
 
   it("renders the version composition bar, latest first, unversioned last", () => {
-    render(<PackageDetailHeader detail={baseDetail} />);
+    render(<PackageDetailHeader detail={baseDetail} canEdit />);
     const bar = screen.getByRole("img");
     expect(bar).toHaveAttribute(
       "aria-label",
@@ -78,13 +80,14 @@ describe("PackageDetailHeader", () => {
           distinctVersionCount: 0,
           cells: [{ repoId: "r1", version: null, occurrenceCount: 5, committedAt: "2026-05-15T10:00:00Z" }],
         }}
+        canEdit
       />,
     );
     expect(screen.queryByRole("img")).toBeNull();
   });
 
   it("renders the deprecated count as plain warn-coloured status text when non-zero", () => {
-    render(<PackageDetailHeader detail={baseDetail} />);
+    render(<PackageDetailHeader detail={baseDetail} canEdit />);
     const alarm = screen.getByText(/deprecated component in use/);
     expect(alarm.textContent).toBe("1deprecated component in use");
     expect(alarm.className).toMatch(/text-status-warn-text/);
@@ -93,8 +96,18 @@ describe("PackageDetailHeader", () => {
   });
 
   it("renders no deprecated count when it is zero", () => {
-    render(<PackageDetailHeader detail={{ ...baseDetail, deprecatedCount: 0 }} />);
+    render(<PackageDetailHeader detail={{ ...baseDetail, deprecatedCount: 0 }} canEdit />);
     expect(screen.queryByText(/deprecated component/)).toBeNull();
+  });
+
+  it("shows the tag button to someone who can edit", () => {
+    render(<PackageDetailHeader detail={baseDetail} allTags={[coreTag]} canEdit />);
+    expect(screen.getByRole("button", { name: "Tag @x/lib" })).toBeInTheDocument();
+  });
+
+  it("hides the tag button from someone who can't edit", () => {
+    render(<PackageDetailHeader detail={baseDetail} allTags={[coreTag]} canEdit={false} />);
+    expect(screen.queryByRole("button", { name: "Tag @x/lib" })).toBeNull();
   });
 });
 

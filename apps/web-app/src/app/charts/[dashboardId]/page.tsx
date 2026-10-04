@@ -16,6 +16,8 @@ import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
 import { isEmptyView } from "@/lib/dashboard-chart-data";
 import { buttonVariants } from "@/components/ui/button";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -112,6 +114,7 @@ export default async function DashboardViewPage({
   const skipped = page.value.kind === "saved" ? chartSkippedNotices(config, page) : { fallbacks: [], gaps: [] };
 
   const derived = governancePage;
+  const canEdit = can(await identify({ browser: true }), "edit");
   const showMetricToggle = !governancePage && config.chartType !== "stacked-share";
 
   return (
@@ -155,7 +158,7 @@ export default async function DashboardViewPage({
         </div>
         <div className="flex items-center gap-2">
           {showMetricToggle ? <DashboardMetricToggle metric={metric} /> : null}
-          {!derived ? (
+          {!derived && canEdit ? (
             <>
               <Link href={`/charts/${encodeURIComponent(dashboard.id)}/edit`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                 Edit
@@ -187,13 +190,17 @@ export default async function DashboardViewPage({
         <EmptyState
           icon={<AlertTriangle className="size-6" />}
           title="This chart's repo no longer exists."
-          description={`There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.`}
+          description={
+            canEdit
+              ? `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.`
+              : `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted.`
+          }
         />
       ) : isEmptyView(view) ? (
         <EmptyState
           icon={<SearchX className="size-6" />}
           title="Couldn't find the components in this chart."
-          description="Edit the chart to pick them again."
+          description={canEdit ? "Edit the chart to pick them again." : undefined}
         />
       ) : (
         /* A table runs flush to the panel edge; plotted charts sit inset. */
@@ -202,7 +209,7 @@ export default async function DashboardViewPage({
         </div>
       )}
 
-      {derivedEntry ? (
+      {derivedEntry && canEdit ? (
         <p className="mt-3 text-xs text-muted-foreground">
           Created from a Governance record.{" "}
           <Link href={`/governance#record-${derivedEntry.record.id}`} className="underline underline-offset-2 transition-colors hover:text-foreground">

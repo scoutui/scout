@@ -30,6 +30,7 @@ export function ComponentsExplorer({
   notInLatest,
   deprecatedTotal,
   diff,
+  canEdit,
 }: {
   repoId: string;
   rows: ComponentRow[];
@@ -38,6 +39,7 @@ export function ComponentsExplorer({
   deprecatedTotal: number;
   /** The shown scan vs the one before; null on a first scan. */
   diff: ScanDiff | null;
+  canEdit: boolean;
 }) {
   const notInLatestIds = useMemo(() => new Set(notInLatest), [notInLatest]);
   const [facets, setFacets] = useQueryParamsState<FacetState>(FACET_PARAMS, paramsToFacets, facetsToParams);
@@ -80,6 +82,7 @@ export function ComponentsExplorer({
         deprecatedTotal={deprecatedTotal}
         diffShown={diffShown}
         filtering={isFiltering({ ...facets, changed: false })}
+        canEdit={canEdit}
       />
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-3 py-12 text-center">

@@ -6,6 +6,8 @@ import { ReadModelState, SkippedScansNotice } from "@/components/read-model-stat
 import { EmptyState } from "@/components/ui/empty-state";
 import { FirstScanCta } from "@/components/ui/first-scan-cta";
 import { PackagesExplorer } from "@/components/packages/packages-explorer";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Packages" };
@@ -19,6 +21,7 @@ export default async function PackagesPage() {
   const decorated = attachTags(rows, tags);
   const multiVersion = decorated.filter(r => r.distinctVersionCount > 1).length;
   const withDeprecated = decorated.filter(r => r.deprecatedCount > 0).length;
+  const canEdit = can(await identify({ browser: true }), "edit");
 
   return (
     <div className="space-y-6">
@@ -54,7 +57,7 @@ export default async function PackagesPage() {
       ) : (
         /* No key needed: the explorer reads its facets from the live URL
            through useQueryParamsState. */
-        <PackagesExplorer rows={decorated} />
+        <PackagesExplorer rows={decorated} canEdit={canEdit} />
       )}
     </div>
   );

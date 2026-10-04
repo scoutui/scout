@@ -30,6 +30,7 @@ export function FilterBar({
   deprecatedTotal,
   diffShown,
   filtering,
+  canEdit,
 }: {
   facets: FacetState;
   onChange: (next: FacetState) => void;
@@ -47,6 +48,7 @@ export function FilterBar({
    *  count reads `N of M`. `facets`, and every write through `onChange`, keep
    *  the real state. */
   filtering: boolean;
+  canEdit: boolean;
 }) {
   const diffParts = diffShown === null ? [] : movementParts(diffShown);
   const inkCount = (n: number) => <span className="font-medium text-foreground">{n.toLocaleString()}</span>;
@@ -87,7 +89,7 @@ export function FilterBar({
       searchPlaceholder: "Search packages…",
       empty: "No packages.",
     },
-    tagFacet(options.tags, facets.tags, setTags),
+    tagFacet(options.tags, facets.tags, setTags, canEdit),
     {
       key: "occurrences",
       label: "Uses",

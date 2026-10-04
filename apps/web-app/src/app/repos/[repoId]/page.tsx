@@ -12,6 +12,8 @@ import { RepoAdoptionPanel } from "@/components/repos/repo-adoption-panel";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
 import { ViewingOlderScanBanner } from "@/components/repos/viewing-older-scan-banner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,7 @@ export default async function RepoDetailPage({
   if (!page.value) notFound();
   const { detail, recentScans, rows, notInLatest, governance, tracking } = page.value;
   if (!detail) notFound();
+  const canEdit = can(await identify({ browser: true }), "edit");
 
   // listScans puts the latest scan first.
   const showOlderScanBanner = isOlderScan(scanId, recentScans[0]?.scanId, detail.scanId);
@@ -80,11 +83,11 @@ export default async function RepoDetailPage({
                 title="No components found"
                 description="This scan found no components. Check the include patterns in scout.config.json, then scan again."
               />
-            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} />}
+            ) : <ComponentsExplorer repoId={repoId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} canEdit={canEdit} />}
           </div>
         }
         adoption={
-          <RepoAdoptionPanel tracking={tracking}
+          <RepoAdoptionPanel tracking={tracking} canEdit={canEdit}
             notice={governance.length > 0 ? (await chartResultsNotice(getPool(), tracking !== null))?.unavailable ?? null : null} />
         }
       />

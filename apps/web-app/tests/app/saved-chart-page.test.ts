@@ -6,6 +6,7 @@ import { PostgresDriver, type DashboardConfig, type StorageDriver } from "@scout
 import { artifact, component, packageExport, resolvedAt } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
+import type { Person } from "../../src/lib/access.ts";
 import { withReadModelDatabase } from "../helpers/read-model-db.ts";
 
 const { DATABASE_URL: databaseUrl } = process.env;
@@ -13,10 +14,12 @@ const { DATABASE_URL: databaseUrl } = process.env;
 let driver: StorageDriver;
 let database: Pool;
 let session: { user: { id: string } } | null = null;
+const editor: Person = { kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
+let reader = editor;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 vi.mock("@/lib/identity", () => ({
-  identify: async () => session ? { kind: "person", userId: session.user.id, email: "ana@example.com", name: null, role: "editor", roleSource: "people" } : null,
+  identify: async () => reader,
   requireEditor: async () => session ? { ok: true, userId: session.user.id } : { ok: false, error: "not_authenticated" },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -27,6 +30,15 @@ function textOf(node: ReactNode): string {
     if (typeof child === "string" || typeof child === "number") return String(child);
     return isValidElement<{ children?: ReactNode }>(child) ? textOf(child.props.children) : "";
   }).join("");
+}
+
+function hrefsIn(node: ReactNode, found: string[] = []): string[] {
+  for (const child of Children.toArray(node)) {
+    if (!isValidElement<{ children?: ReactNode; href?: unknown }>(child)) continue;
+    if (typeof child.props.href === "string") found.push(child.props.href);
+    hrefsIn(child.props.children, found);
+  }
+  return found;
 }
 
 function propsOf(node: ReactNode, name: string): Record<string, unknown> | undefined {
@@ -53,6 +65,7 @@ async function renderSaved(config: DashboardConfig) {
 describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
   afterEach(() => {
     session = null;
+    reader = editor;
     vi.restoreAllMocks();
   });
 
@@ -114,6 +127,33 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
         description: "There are no scans for repo-gone any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.",
       });
       expect(propsOf(tree, "DashboardScopeBadge")).toMatchObject({ missing: "repo" });
+    });
+  });
+
+  it("shows Edit, Delete and how to fix a chart to an Editor, and none of them to a Viewer", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const goneRepo: DashboardConfig = { scope: { kind: "repo", repoId: "repo-gone" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" };
+      const lostComponents: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: "v1-logical-id" }], chartType: "trend", metric: "count" };
+      const editLinks = (tree: ReactNode) => hrefsIn(tree).filter(href => href.endsWith("/edit"));
+
+      reader = { ...editor, role: "viewer" };
+      const viewerGone = await renderSaved(goneRepo);
+      expect(editLinks(viewerGone)).toEqual([]);
+      expect(propsOf(viewerGone, "DeleteDashboardButton")).toBeUndefined();
+      expect(propsOf(viewerGone, "EmptyState")).toMatchObject({
+        title: "This chart's repo no longer exists.",
+        description: "There are no scans for repo-gone any more. It may have been renamed or deleted.",
+      });
+      expect(propsOf(await renderSaved(lostComponents), "EmptyState")).toEqual({
+        icon: expect.anything(),
+        title: "Couldn't find the components in this chart.",
+      });
+
+      reader = editor;
+      const editorGone = await renderSaved(goneRepo);
+      expect(editLinks(editorGone)).toHaveLength(1);
+      expect(propsOf(editorGone, "DeleteDashboardButton")).toEqual({ id: expect.any(String) });
     });
   });
 

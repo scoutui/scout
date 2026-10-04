@@ -12,6 +12,8 @@ import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline"
 import { DashboardScopeBadge, UnknownComponentsBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { TrackingSection } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,7 @@ export default async function DashboardsPage() {
     latestScan: await snapshot.latestScanArrivedAt(),
     repoIds: await snapshot.listRepoIds(),
   }));
+  const canEdit = can(await identify({ browser: true }), "edit");
   const notice =
     governance.length > 0 || all.length > 0 ? await chartResultsNotice(getPool(), tracking !== null) : null;
 
@@ -57,9 +60,11 @@ export default async function DashboardsPage() {
             {latestScan ? ` · latest scan ${relativeTime(latestScan)}` : ""}
           </p>
         </div>
-        <Link href="/charts/new" className={cn(buttonVariants({ size: "sm" }))}>
-          New chart
-        </Link>
+        {canEdit ? (
+          <Link href="/charts/new" className={cn(buttonVariants({ size: "sm" }))}>
+            New chart
+          </Link>
+        ) : null}
       </div>
 
       {notice ? (
@@ -75,11 +80,13 @@ export default async function DashboardsPage() {
           className="mb-6"
           icon={<Milestone className="size-6" />}
           title="No migrations or retirements tracked yet."
-          description="Mark a component as replaced or retired in Governance to track its progress here."
+          description={canEdit ? "Mark a component as replaced or retired in Governance to track its progress here." : undefined}
           action={
-            <Link href="/governance" className="text-sm text-foreground underline-offset-4 hover:underline">
-              Open Governance
-            </Link>
+            canEdit ? (
+              <Link href="/governance" className="text-sm text-foreground underline-offset-4 hover:underline">
+                Open Governance
+              </Link>
+            ) : undefined
           }
         />
       ) : (
@@ -106,11 +113,13 @@ export default async function DashboardsPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="No charts yet"
-          description="Compare libraries, packages or components across scans."
+          description={canEdit ? "Compare libraries, packages or components across scans." : undefined}
           action={
-            <Link href="/charts/new" className={cn(buttonVariants({ size: "sm", variant: "outline" }))}>
-              New chart
-            </Link>
+            canEdit ? (
+              <Link href="/charts/new" className={cn(buttonVariants({ size: "sm", variant: "outline" }))}>
+                New chart
+              </Link>
+            ) : undefined
           }
         />
       ) : (
