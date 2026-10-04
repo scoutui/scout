@@ -9,9 +9,11 @@ vi.mock("@/lib/auth-providers", () => ({
   buildProviders: vi.fn(() => []),
   isDevAuthEnabled: vi.fn(() => false),
 }));
+vi.mock("@/lib/people", () => ({ recordSignIn: vi.fn() }));
 
 import NextAuth from "next-auth";
 import "@/auth";
+import { recordSignIn } from "@/lib/people";
 
 function authOptions() {
   const options = vi.mocked(NextAuth).mock.calls[0]?.[0];
@@ -141,5 +143,39 @@ describe("OIDC sign-in", () => {
     vi.stubEnv("OIDC_ISSUER_URL", "https://idp.test/issuer");
     await expect(oidcSignIn("idp-token")).resolves.toBe(true);
     expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe("recording a sign-in", () => {
+  it.each([
+    {
+      case: "an OIDC email the provider verified, in another letter case",
+      account: { provider: "oidc", providerAccountId: "sub-1", type: "oidc", access_token: "idp-token" },
+      profile: { sub: "sub-1", email: "Alice@Example.com", email_verified: true },
+      accessToken: "idp-token",
+      emailVerified: true,
+    },
+    {
+      case: "a verified OIDC email that isn't the stored one",
+      account: { provider: "oidc", providerAccountId: "sub-1", type: "oidc", access_token: "idp-token" },
+      profile: { sub: "sub-1", email: "mallory@example.com", email_verified: true },
+      accessToken: "idp-token",
+      emailVerified: false,
+    },
+    {
+      case: "a dev sign-in, which has no profile",
+      account: { provider: "dev", providerAccountId: "u1", type: "credentials" },
+      profile: undefined,
+      accessToken: undefined,
+      emailVerified: false,
+    },
+  ])("records $case as verified: $emailVerified", async ({ account, profile, accessToken, emailVerified }) => {
+    vi.mocked(recordSignIn).mockClear();
+    const event = authOptions().events?.signIn;
+    if (!event) throw new Error("The sign-in event was not configured");
+    await event({ user: { id: "u1", email: "alice@example.com" }, account, profile } as Parameters<typeof event>[0]);
+    expect(recordSignIn).toHaveBeenCalledExactlyOnceWith({
+      userId: "u1", email: "alice@example.com", provider: account.provider, emailVerified, accessToken,
+    });
   });
 });

@@ -84,7 +84,7 @@ const nextAuth: NextAuthResult = NextAuth({
         userId: user.id,
         email: user.email,
         provider: account?.provider,
-        emailVerified: profile?.email_verified === true,
+        emailVerified: profile?.email_verified === true && typeof profile.email === "string" && profile.email.toLowerCase() === user.email.toLowerCase(),
         accessToken: account?.access_token ?? undefined,
       });
     },
