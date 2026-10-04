@@ -40,7 +40,7 @@ export const ORIGIN_LABEL: Record<OriginValue, string> = {
 };
 
 export const ORIGIN_DESCRIPTION: Record<OriginValue, string> = {
-  external: "Installed from a package",
+  external: "From outside this repo",
   local: "Defined in this repo",
 };
 

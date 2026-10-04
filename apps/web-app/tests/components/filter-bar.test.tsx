@@ -289,7 +289,7 @@ describe("FilterBar Origin facet", () => {
   it("says under each value where its components come from", async () => {
     renderBar();
     await openFacet(/^origin/i);
-    expect(within(screen.getByRole("button", { name: /^external/i })).getByText("Installed from a package")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: /^external/i })).getByText("From outside this repo")).toBeInTheDocument();
     expect(within(screen.getByRole("button", { name: /^local/i })).getByText("Defined in this repo")).toBeInTheDocument();
   });
 });
