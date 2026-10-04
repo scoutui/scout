@@ -59,7 +59,7 @@ describe("pollToken", () => {
     const r = await pollToken(BASE, "dc");
     expect(r).toEqual({
       kind: "session",
-      session: { token: USER_TOKEN, email: "ben@example.com" },
+      session: { token: USER_TOKEN, email: "ben@example.com", role: null },
     });
   });
 
@@ -121,7 +121,7 @@ describe("revokeSession", () => {
 describe("whoami", () => {
   it("returns identity on 200", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(jsonResponse({ userId: "u1", email: "ben@example.com" }, 200));
-    expect(await whoami(BASE, "a")).toEqual({ userId: "u1", email: "ben@example.com" });
+    expect(await whoami(BASE, "a")).toEqual({ userId: "u1", email: "ben@example.com", role: null });
   });
   it("returns null on 401", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(jsonResponse({ error: "unauthorized" }, 401));

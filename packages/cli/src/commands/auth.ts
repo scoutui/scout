@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { InvalidHostError, isValidUrl, loadStore, normalizeHost, StoreLockError, tokenStorage, type HostEntry } from "../auth/store.js";
 import { hostsFilePath } from "../auth/paths.js";
-import { requestDeviceCode, pollToken, whoami, revokeSession, AuthHttpError, AuthProtocolError, SignInRefusedError } from "../auth/client.js";
+import { requestDeviceCode, pollToken, whoami, revokeSession, AuthHttpError, AuthProtocolError, SignInRefusedError, type DashboardRole } from "../auth/client.js";
 import { openBrowser } from "../auth/browser.js";
 import { resolveHost, getStoredSession, setStoredSession, removeStoredSession, ReloginRequiredError, HostUnavailableError, NoHostError, formatAuthError } from "../auth/session.js";
 import { parseCommand } from "../cli/parse.js";
@@ -25,6 +25,12 @@ function requestDetail(e: unknown): string | undefined {
 }
 
 const UNEXPECTED_REPLY = "sent an unexpected reply. Check that it's your Scout dashboard and that the CLI is up to date.";
+
+const ROLE_PHRASE: Record<DashboardRole, string> = { viewer: "a Viewer", editor: "an Editor", admin: "an Admin" };
+
+function asRole(role: DashboardRole | null): string {
+  return role === null ? "" : ` as ${ROLE_PHRASE[role]}`;
+}
 
 function defaultSleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,7 +69,7 @@ export async function runAuthLogin(opts: {
     try {
       const identity = await whoami(base, stored.token);
       if (identity) {
-        out(`Already signed in as ${identity.email ?? stored.userEmail} to ${base}.\n`);
+        out(`Already signed in as ${identity.email ?? stored.userEmail} to ${base}${asRole(identity.role)}.\n`);
         return 0;
       }
       const removed = await removeStoredSession(base, { expectedToken: stored.token, ...(filePath !== undefined ? { filePath } : {}) });
@@ -125,7 +131,7 @@ export async function runAuthLogin(opts: {
       };
       await setStoredSession(base, entry, filePath !== undefined ? { filePath } : {});
       waiting?.done();
-      out(`${symbol(log.color, "success")} Signed in as ${entry.userEmail || "your account"} to ${base}.\n`);
+      out(`${symbol(log.color, "success")} Signed in as ${entry.userEmail || "your account"} to ${base}${asRole(result.session.role)}.\n`);
       if (await tokenStorage(base, filePath) === "hosts.json") {
         log.warn(`Couldn't save your session to the system keychain, so it was saved to ${displayPath(filePath ?? hostsFilePath())} instead.`);
       }
@@ -189,7 +195,7 @@ export async function runAuthStatus(opts: {
     }
     const storage = await tokenStorage(base, filePath);
     const savedIn = storage === "keychain" ? "the system keychain" : displayPath(filePath ?? hostsFilePath());
-    write(`Signed in as ${who.email ?? userEmail} to ${base}${storage ? ` (session saved in ${savedIn})` : ""}.\n`);
+    write(`Signed in as ${who.email ?? userEmail} to ${base}${asRole(who.role)}${storage ? ` (session saved in ${savedIn})` : ""}.\n`);
     return 0;
   } catch (e) {
     const msg = e instanceof StoreLockError ? e.message : formatAuthError(e) ?? (e instanceof AuthHttpError

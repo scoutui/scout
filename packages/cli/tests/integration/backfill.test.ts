@@ -33,6 +33,8 @@ const RETRY = "Run scout backfill --debug to retry the skipped commits and see w
 
 const NEWER_CLI = "a1c9e04 was scanned with a newer CLI (1.4.0). Upgrade the CLI to 1.4.0 or newer, or run npx @scoutui/cli@1.4.0 scan --rescan.";
 
+const VIEWER = "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.";
+
 type Commit = { date: string; files?: Record<string, string> };
 
 const dirs: string[] = [];
@@ -579,6 +581,49 @@ describe("scout backfill", () => {
         ].join(""),
       );
       expect(sent(fetchSpy, "/api/scans")).toHaveLength(1);
+      expect(stdout()).toBe("");
+      expect(code).toBe(1);
+    }, 60_000);
+
+    it("stops before scanning when the dashboard won't take uploads from this account, and exits 1", async () => {
+      const { dir } = pushedRepo([{ date: "2026-06-10T10:00:00Z" }, { date: "2026-06-17T10:00:00Z" }]);
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(
+        Response.json({ refusal: { code: "upload_not_allowed", message: VIEWER }, commits: [], warning: null }),
+      );
+
+      const code = await backfill(dir, { since: "2026-06-01" });
+
+      expect(stderr()).toBe(`Error: ${VIEWER}\n`);
+      expect(fetchSpy.mock.calls.map(([input]) => String(input))).toEqual(["https://h.example/api/scans/preflight"]);
+      expect(stdout()).toBe("");
+      expect(code).toBe(1);
+    }, 60_000);
+
+    it("stops at the first upload the dashboard refuses because the account can't upload, without scanning the next commit, and exits 1", async () => {
+      const { dir, shas } = pushedRepo([{ date: "2026-06-03T10:00:00Z" }, { date: "2026-06-10T10:00:00Z" }, { date: "2026-06-17T10:00:00Z" }]);
+      const [, c2 = "", c3 = ""] = shas;
+      let uploads = 0;
+      const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(async (input, init) => {
+        const { pathname } = new URL(String(input));
+        if (pathname === "/api/scans/preflight") return await preScanReply()(input, init);
+        if (pathname === "/api/scans" && ++uploads > 1) {
+          return Response.json({ error: "upload_not_allowed", refusal: { code: "upload_not_allowed", message: VIEWER } }, { status: 403 });
+        }
+        if (pathname === "/api/scans") return Response.json({ uploadId: "U1", statusUrl: "/api/scans/uploads/U1" }, { status: 202 });
+        return Response.json(READY);
+      });
+
+      const code = await backfill(dir, { since: "2026-06-01" });
+
+      expect(stderr()).toBe(
+        [
+          "Found 3 commits on origin/main, one a week since 1 Jun 2026. Scout will scan all 3.\n",
+          `Scanning ${named(c3, "17 Jun 2026")}, 1 of 3…\n`,
+          `Scanning ${named(c2, "10 Jun 2026")}, 2 of 3…\n`,
+          `Error: ${VIEWER}\n`,
+        ].join(""),
+      );
+      expect(uploadedCommits(fetchSpy)).toEqual([c3, c2]);
       expect(stdout()).toBe("");
       expect(code).toBe(1);
     }, 60_000);

@@ -322,4 +322,16 @@ describe("submitArtifact", () => {
       headers: { "Content-Type": "application/json", Authorization: "Bearer token" },
     }));
   });
+
+  const viewer = "You can view this dashboard but not upload to it. Ask an admin to make you an Editor.";
+  it.each([
+    { name: "with the dashboard's refusal", body: { error: "upload_not_allowed", refusal: { code: "upload_not_allowed", message: viewer } }, error: transport.UploadRefusedError, code: "upload_not_allowed", line: viewer },
+    { name: "without one", body: { error: "forbidden" }, error: transport.UploadError, code: 403, line: "Couldn't upload the scan: the dashboard returned an error. Try again, or ask your dashboard administrator to check its logs." },
+  ])("describes a 403 $name in one line", async ({ body, error, code, line }) => {
+    vi.spyOn(global, "fetch").mockResolvedValue(Response.json(body, { status: 403 }));
+    const caught = await submit().catch((caught: unknown) => caught);
+    expect(caught).toBeInstanceOf(error);
+    expect(caught).toMatchObject({ code });
+    expect(transport.describeUploadError(caught, host).message).toBe(line);
+  });
 });
