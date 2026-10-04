@@ -150,7 +150,7 @@ helm pull oci://ghcr.io/scoutui/charts/scout --version <chart version> --untar
 
 The dashboard needs `auth.admins` or `auth.adminGroup`. If your values set neither, add one first ([Name the first admins](/docs/guides/manage-people-and-roles#name-the-first-admins)), or the upgrade fails with `Set auth.admins to your admins' email addresses, or auth.adminGroup to a group in your sign-in provider.`
 
-Then upgrade with the same values file:
+Then upgrade with your values file:
 
 ```bash
 helm upgrade scout oci://ghcr.io/scoutui/charts/scout \

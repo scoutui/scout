@@ -57,6 +57,7 @@ The CLI saves your session in the system keychain. When it can't use one, for ex
 Your sign-in ends when the first of these happens:
 
 - You run `auth logout`.
+- An Admin [removes you](/docs/guides/manage-people-and-roles#remove-someone) on the dashboard's **People** page.
 - You don't use it for 30 days. Every upload and every `auth status` counts as use.
 - 90 days pass since you signed in, however often you use it.
 - You sign out of your identity provider, if the dashboard [receives back-channel logouts](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider) from it.

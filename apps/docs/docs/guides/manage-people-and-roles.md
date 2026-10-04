@@ -19,7 +19,7 @@ People who sign in for the first time are Viewers. Everyone who had signed in be
 
 The dashboard needs at least one admin setting, or it won't start. Name your admins by email, by a group in your sign-in provider, or both.
 
-Admins named either way show on **People** as **Admin (set at install)** or **Admin (from SSO group)**, and you can't change their role there. To change it, change the setting or the group. You can [remove](#remove-someone) a group Admin, but not one named by email.
+Admins named either way show on **People** as **Admin (set at install)** or **Admin (from SSO group)**, and you can't change their role there. To change it, change the setting or the group.
 
 ### By email
 
@@ -51,12 +51,17 @@ The dashboard checks the group each time someone signs in to it in a browser. So
 
 ### If someone you named isn't an Admin {#if-someone-you-named-isnt-an-admin}
 
-First check that their address or group is in the setting. If it is, the web server logs the reason when the person signs in:
+First check that their address or group is in the setting. Then look at the web server's `[auth]` lines from when the person signed in. With the Scout chart, this shows them:
+
+```bash
+kubectl logs deploy/scout | grep '\[auth\]'
+```
 
 - `[auth] ana@example.com is in SCOUTUI_ADMINS, but the sign-in provider didn't mark the email verified, so they aren't an Admin.` Set your provider up to mark emails verified, or name a group instead.
 - `[auth] Couldn't check whether ana@example.com is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: <reason>` Fix what the reason names.
+- **No `[auth]` line.** The setting doesn't match what the provider sends. For a group, check that the provider sends the `groups` field ([By group](#by-group)), and set `auth.adminGroup` or `SCOUTUI_ADMIN_GROUP` to the group exactly as it appears there, letter case included: some providers send a path or an ID instead of the name. For an email, check that the address is the one the provider sends.
 
-Then have the person sign out of the dashboard and sign in again. With the Scout chart, `kubectl logs deploy/scout | grep '\[auth\]'` shows these lines.
+Then have the person sign out of the dashboard and sign in again.
 
 ## Change someone's role
 
@@ -75,15 +80,10 @@ If your sign-in provider still lets them in, they come back the next time they s
 
 ## When someone leaves
 
-Once your provider stops letting someone in, they can't sign in to the dashboard again. Sessions they already have keep working, though: a browser session for up to 12 hours, and a CLI sign-in for up to 90 days, or until it goes 30 days unused. Their access ends sooner when:
-
-- an Admin removes them on **People**, group Admins included, or
-- your sign-in provider's sign-out notification for them reaches the dashboard.
-
-Set up sign-out notifications, so that a leaver's access ends without anyone having to remove them: see [End sessions when people sign out of the provider](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider).
-
-An Admin named by email can't be removed on **People**: take their address out of `auth.admins` or `SCOUTUI_ADMINS` and redeploy, then remove them.
+1. Stop your sign-in provider letting them in.
+2. [Remove them](#remove-someone) on **People**, which ends their browser and CLI sign-ins straight away. For an Admin named by email, first take their address out of `auth.admins` or `SCOUTUI_ADMINS` and redeploy.
+3. Set up your provider's sign-out notifications, so a leaver's sign-ins end on their own when the provider signs them out: see [End sessions when people sign out of the provider](/docs/guides/deploy-the-dashboard#end-sessions-when-people-sign-out-of-the-provider). Without them, and without a removal, sign-ins a leaver already has keep working: a browser session for up to 12 hours, and a CLI sign-in for up to 90 days, or until it goes 30 days unused.
 
 ## See who changed what
 
-Once someone has changed a role, **History** under **People** lists the 20 most recent role changes and removals, newest first, each with who made it and when. Changes to the admin settings aren't in it.
+Once there's been a change or a removal, **History** under **People** lists the 20 most recent role changes and removals, newest first, each with who made it and when. Changes to the admin settings aren't in it.
