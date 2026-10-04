@@ -24,7 +24,7 @@ type Declared = NonNullable<UsagePropRow["declared"]>;
 
 const SECTION_LABEL: Record<Section, string> = { styling: "Styling", event: "Events", attribute: "Attributes" };
 
-/** A folder or value row: label, bar, count and filter cue. */
+/** A folder, package or value row: label, bar, count and filter cue. */
 const ROW_GRID = "grid-cols-[minmax(0,1fr)_3.5rem_2.5rem_0.75rem]";
 // The 1px border, for the selected state, comes out of the padding, so a value row's label, bar and count line up with a
 // prop line's, which has no border.
