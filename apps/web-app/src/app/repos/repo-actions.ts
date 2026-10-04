@@ -10,7 +10,7 @@ import { deleteStoredRepo, type RemovalResult, removeStoredScan } from "@/lib/sc
 export async function removeScan(repoId: string, scanId: string): Promise<RemovalResult> {
   const identity = await identify({ browser: true });
   if (identity?.kind !== "person") return { ok: false, error: "not_authenticated" };
-  if (!can(identity, "manage-repos", repoId)) return { ok: false, error: REPO_ADMIN_REFUSAL };
+  if (!can(identity, "manage-repos", { repoId })) return { ok: false, error: REPO_ADMIN_REFUSAL };
   let result: RemovalResult;
   try {
     result = await removeStoredScan(getPool(), identity, repoId, scanId);
@@ -25,7 +25,7 @@ export async function removeScan(repoId: string, scanId: string): Promise<Remova
 export async function deleteRepo(repoId: string): Promise<RemovalResult> {
   const identity = await identify({ browser: true });
   if (identity?.kind !== "person") return { ok: false, error: "not_authenticated" };
-  if (!can(identity, "manage-repos", repoId)) return { ok: false, error: REPO_ADMIN_REFUSAL };
+  if (!can(identity, "manage-repos", { repoId })) return { ok: false, error: REPO_ADMIN_REFUSAL };
   try {
     await deleteStoredRepo(getPool(), identity, repoId);
   } catch (err) {
