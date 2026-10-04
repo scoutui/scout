@@ -47,7 +47,7 @@ export default async function SettingsPage() {
                 {changeLine(change)}
                 <span className="text-muted-foreground">
                   {" · "}
-                  <span title={formatAbsoluteUtc(change.changedAt)}>{relativeTime(change.changedAt)}</span>
+                  <span title={formatAbsoluteUtc(change.changedAt)} className="whitespace-nowrap">{relativeTime(change.changedAt)}</span>
                 </span>
               </li>
             ))}
