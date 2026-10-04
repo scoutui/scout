@@ -237,7 +237,7 @@ export function CohortTrendChart({
               onFocus={() => setHovered(s.cohortKey)}
               onBlur={() => setHovered(null)}
               className={cn(
-                "inline-flex items-center gap-1.5 transition-opacity duration-200",
+                "inline-flex cursor-pointer items-center gap-1.5 transition-opacity duration-200",
                 "rounded-sm outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 (shown ?? highlighted) !== null && (shown ?? highlighted) !== s.cohortKey && "opacity-40",
               )}
