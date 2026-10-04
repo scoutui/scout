@@ -212,14 +212,14 @@ describe("ChartMenu export", () => {
     await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:export"));
   });
 
-  it("clears a failure message once a later export works", async () => {
+  it.each(["Download data", "Download image"])("clears a failure message once %s works", async (item) => {
     clipboard.writeText.mockRejectedValueOnce(new DOMException("Denied", "NotAllowedError"));
     renderChart("trend");
     open();
     fireEvent.click(await screen.findByRole("menuitem", { name: "Copy data" }));
     expect(await screen.findByText("Couldn't copy the data. Try again.")).toBeInTheDocument();
     open();
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Download data" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: item }));
     await waitFor(() => expect(screen.queryByText("Couldn't copy the data. Try again.")).toBeNull());
   });
 

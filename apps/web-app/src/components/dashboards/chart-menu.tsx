@@ -23,7 +23,7 @@ import { type ShownChart, useChartExport } from "./chart-export-context";
 
 /** How long "Image copied" and "Data copied" show. */
 const COPIED_MS = 1800;
-/** Starts a CSV file so spreadsheet apps read it as UTF-8. */
+/** The UTF-8 byte order mark, written first in a downloaded CSV. */
 const UTF8_BOM = "\uFEFF";
 
 type ExportedChart = ShownChart & { title: string; drawn: DashboardView };

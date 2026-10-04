@@ -85,8 +85,8 @@ export function hasFigure(config: DashboardConfig, view: DashboardView): boolean
 }
 
 /**
- * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a
- * table chart or a chart with nothing to draw.
+ * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a chart `hasFigure`
+ * gives no image.
  */
 export function chartFigure({ title, config, view, host, exportedAt, colors, nameWidth }: ChartFigureInput): ChartFigure | null {
   if (!hasFigure(config, view)) return null;
