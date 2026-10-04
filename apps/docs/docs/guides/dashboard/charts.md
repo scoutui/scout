@@ -58,7 +58,7 @@ The picker's other entries chart more than tags:
 
 - **Local components**, at the end of the **Tags** tab, counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
 - The **Packages** tab adds one package, such as `@acme/icons`.
-- The **Components** tab adds one component, such as `Button` from `@acme/ui`.
+- The **Components** tab adds one component, such as `Button` from `@acme/ui`. When two components share a name, the subpath one shows its entry point beside the package, such as `@acme/ui · button`.
 
 With one repo picked under **Repos**, the **Tags**, **Packages** and **Components** tabs list only what that repo's latest scan contains. A tab shows at most 50 entries, so type into the search box to find the rest. To remove a series, press its **×** in the list, or press its entry in the picker again.
 

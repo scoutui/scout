@@ -22,6 +22,7 @@ export async function chartBuilderOptions(snapshot: StorageDriver): Promise<Char
       componentId: c.componentId,
       displayName: c.displayName,
       packageName: c.packageName,
+      disambiguator: c.disambiguator,
       deprecated: c.deprecated,
     })),
     packages: packageList.map((p) => p.packageName).sort((a, b) => a.localeCompare(b)),

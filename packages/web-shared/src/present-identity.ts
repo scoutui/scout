@@ -56,6 +56,11 @@ export function tagClaimants(component: Pick<Component, "attribution">): string[
   return attribution.candidates.map(target => (target.kind === "package" ? target.packageName : target.filePath));
 }
 
+/** What tells a component apart from another with the same package and name: an external one's entry point, a local one's file. */
+export function disambiguatorOf(presented: Presented): string | null {
+  return presented.scope === "external" ? presented.publicEntry : presented.filePath;
+}
+
 /**
  * The governance key: the presented package and name (export or tag) of a component, so a
  * repository declaration counts under its package. Null when ungovernable: a component
