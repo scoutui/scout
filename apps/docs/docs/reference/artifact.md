@@ -49,7 +49,7 @@ These fields are less often needed:
 | Field | Type | Description |
 | --- | --- | --- |
 | `attribution` | object \| absent | Tags only: which package or repo file defines the web component. See [`attribution`](#attribution). |
-| `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of uses that bind it: Vue listeners such as `@click`, and React props named `on` plus a capital letter, such as `onClick`, unless their value is written, as in `onLabel="On"`. Absent when no use binds an event. |
+| `events` | object \| absent | Event name to `{ "boundCount": number }`, the number of uses that bind it: Vue listeners such as `@click`, and props named `on` plus a capital letter, such as `onClick` in React or `:onClick` in Vue, unless their value is written, as in `onLabel="On"`. Absent when no use binds an event. |
 | `writtenNames` | `string[]` \| absent | The other names files render the component under: every distinct [`writtenName`](#occurrences) of its uses, most used first. Absent when none has one. |
 | `declared` | object \| absent | Components defined in the repo only: the props the component's own code declares. See [`declared`](#declared). |
 | `definition` | `{ line, column }` \| absent | React components defined in the repo only: where the declaration starts in `identity.filePath`. `line` and `column` count from 1. |
@@ -227,7 +227,7 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 | `trace` | array | The steps between this use and the component, such as an import or a wrapper. See [`trace`](#trace). |
 | `writtenName` | `string` \| absent | The name this file renders the component under, with any member path, such as `SettingsHeader` after `import SettingsHeader from "./Header"`, or `Filters.FilterBar`. Present only on a matched use, and only when the name differs from the component's own `exportName`, or `tagName` for a tag. A difference in letter case or hyphens alone doesn't count. A package's default export has no name of its own, so it always has one. |
 | `props` | object | The value passed for each prop here. See [Prop values at one place](#occurrence-props). |
-| `events` | `string[]` \| absent | Vue event listeners bound here, such as `remove` for `@remove`. React handlers stay in `props`. Absent when none are bound. |
+| `events` | `string[]` \| absent | Vue event listeners bound here, such as `remove` for `@remove`. Handlers passed as props, such as `onClick`, stay in `props`. Absent when none are bound. |
 | `ownerComponentId` | `string` \| absent | The `components[].id` of the component whose code contains this use. Absent outside any component. |
 
 ```json title="An occurrences[] entry"
@@ -324,7 +324,7 @@ The `column` in `mapLoc` and `constructionSite` counts from 1.
 | `{ "tier": "written", "value": ... }` | A literal string, number, boolean or `null`. A prop written with no value counts as `true`. |
 | `{ "tier": "written", "valueSet": [...] }` | React only. A condition that picks between literals, such as `sale ? "primary" : "secondary"`. |
 | `{ "tier": "reference", "ref": "..." }` | A variable or dotted path, recorded by name, such as `label` or `theme.icon`. |
-| `{ "tier": "dynamic" }` | Any other expression. A React prop named `on` plus a capital letter is `dynamic` unless its value is written. |
+| `{ "tier": "dynamic" }` | Any other expression. A prop named `on` plus a capital letter is `dynamic` unless its value is written. |
 
 A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a prop named `...rest` with `{ "tier": "dynamic" }`.
 
