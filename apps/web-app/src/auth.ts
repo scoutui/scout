@@ -5,6 +5,7 @@ import { emailDomainDenial } from "@/lib/oidc-domain-gate";
 import { idpGroupDenial } from "@/lib/oidc-group-gate";
 import { ACCESS_CHECK_UNAVAILABLE } from "@/lib/sign-in-errors";
 import { buildProviders } from "@/lib/auth-providers";
+import { recordSignIn } from "@/lib/people";
 import {
   SESSION_MAX_AGE_SECONDS,
   SESSION_UPDATE_AGE_SECONDS,
@@ -74,6 +75,18 @@ const nextAuth: NextAuthResult = NextAuth({
       const userId = user?.id ?? token?.sub;
       if (session.user && userId) session.user.id = userId;
       return session;
+    },
+  },
+  events: {
+    async signIn({ user, account, profile }) {
+      if (!user.id || !user.email) return;
+      await recordSignIn({
+        userId: user.id,
+        email: user.email,
+        provider: account?.provider,
+        emailVerified: profile?.email_verified === true,
+        accessToken: account?.access_token ?? undefined,
+      });
     },
   },
 });

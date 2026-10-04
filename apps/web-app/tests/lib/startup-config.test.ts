@@ -38,7 +38,7 @@ describe("runStartup", () => {
   });
 
   it("does nothing when migrations are off", async () => {
-    await expect(runStartup({ MIGRATE_ON_START: "false" })).resolves.toBeUndefined();
+    await expect(runStartup({ MIGRATE_ON_START: "false", SCOUTUI_ADMINS: "ana@example.com" })).resolves.toBeUndefined();
     expect(log).toHaveBeenCalledWith(expect.stringContaining("off"));
   });
   it("rejects an invalid scan upload setting before anything else", async () => {
@@ -49,6 +49,15 @@ describe("runStartup", () => {
     await expect(runStartup({ MIGRATE_ON_START: "false", SCOUTUI_TRUSTED_PROXY_HOPS: "0" })).rejects.toThrow("SCOUTUI_TRUSTED_PROXY_HOPS");
   });
   it("fails when on and DATABASE_URL is missing", async () => {
-    await expect(runStartup({})).rejects.toThrow(/DATABASE_URL/);
+    await expect(runStartup({ SCOUTUI_ADMINS: "ana@example.com" })).rejects.toThrow(/DATABASE_URL/);
+  });
+  it.each([
+    { case: "fails with neither admin setting and the dev sign-in off", env: {}, error: "Set SCOUTUI_ADMINS to your admins' email addresses, or SCOUTUI_ADMIN_GROUP to a group in your sign-in provider." },
+    { case: "starts with only SCOUTUI_ADMIN_GROUP", env: { SCOUTUI_ADMIN_GROUP: "scout-admins" }, error: null },
+    { case: "starts with neither admin setting when the dev sign-in is on", env: { NODE_ENV: "development", DEV_AUTH_PASSWORD: "hunter2" }, error: null },
+  ])("$case", async ({ env, error }) => {
+    const started = runStartup({ MIGRATE_ON_START: "false", ...env });
+    if (error === null) await expect(started).resolves.toBeUndefined();
+    else await expect(started).rejects.toThrow(error);
   });
 });

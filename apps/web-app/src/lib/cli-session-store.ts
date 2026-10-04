@@ -61,6 +61,7 @@ export async function consumeApprovedDeviceCode(
 
     const token = generateUserSessionToken();
     await tx.insert(cliSessions).values({ id: ulid(), userId: approvedUserId, tokenHash: hashToken(token) });
+    await tx.update(users).set({ lastSignedInAt: sql`now()` }).where(eq(users.id, approvedUserId));
 
     const [user] = await tx.select({ email: users.email }).from(users).where(eq(users.id, approvedUserId)).limit(1);
     if (!user) throw new Error("Approved CLI user not found");

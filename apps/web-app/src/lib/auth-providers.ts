@@ -2,6 +2,7 @@ import Credentials from "next-auth/providers/credentials";
 import type { Provider } from "next-auth/providers";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db/client";
+import { ROLES } from "@/lib/access";
 
 function requiredEnv(env: Record<string, string | undefined>, name: string): string {
   const value = env[name];
@@ -68,10 +69,12 @@ export function buildProviders(env: Record<string, string | undefined> = process
         credentials: {
           email: { label: "Email", type: "email" },
           password: { label: "Password", type: "password" },
+          role: { label: "Role", type: "text" },
         },
         authorize: async (creds) => {
           if (creds?.password !== devPassword) return null;
           if (typeof creds?.email !== "string" || !creds.email.includes("@")) return null;
+          const role = ROLES.find(r => r === creds?.role) ?? "admin";
           // split("@")[0] is `string | undefined` under noUncheckedIndexedAccess.
           const name = creds.email.split("@")[0] ?? creds.email;
           // Credentials sign-ins never reach the adapter, so nothing else stores
@@ -83,11 +86,12 @@ export function buildProviders(env: Record<string, string | undefined> = process
             columns: { id: true, name: true },
           });
           if (existing) {
+            await db.update(schema.users).set({ role }).where(eq(schema.users.id, existing.id));
             return { id: existing.id, email: creds.email, name: existing.name ?? name };
           }
           const [created] = await db
             .insert(schema.users)
-            .values({ id: `dev-${creds.email}`, email: creds.email, name })
+            .values({ id: `dev-${creds.email}`, email: creds.email, name, role })
             .returning({ id: schema.users.id });
           if (!created) return null;
           return { id: created.id, email: creds.email, name };

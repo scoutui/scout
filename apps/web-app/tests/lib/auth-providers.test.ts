@@ -4,6 +4,7 @@ import { buildProviders, isDevAuthEnabled, isOidcConfigured } from "@/lib/auth-p
 
 const mockFindFirstUsers = vi.fn();
 const mockInsertValues = vi.fn();
+const mockUpdateSet = vi.fn();
 
 const mockDb = {
   query: { users: { findFirst: mockFindFirstUsers } },
@@ -11,6 +12,12 @@ const mockDb = {
     values: (v: { id: string }) => {
       mockInsertValues(v);
       return { returning: async () => [{ id: v.id }] };
+    },
+  }),
+  update: () => ({
+    set: (v: Record<string, unknown>) => {
+      mockUpdateSet(v);
+      return { where: async () => {} };
     },
   }),
 };
@@ -102,21 +109,23 @@ describe("dev sign-in persistence", () => {
     mockFindFirstUsers.mockResolvedValue(undefined);
   });
 
-  it("creates a users row for a first-time dev sign-in", async () => {
+  it("creates a users row for a first-time dev sign-in, as an Admin when no role is given", async () => {
     const user = await devAuthorize()({ email: "you@example.com", password: "hunter2" });
     expect(user).toEqual({ id: "dev-you@example.com", email: "you@example.com", name: "you" });
     expect(mockInsertValues).toHaveBeenCalledWith({
       id: "dev-you@example.com",
       email: "you@example.com",
       name: "you",
+      role: "admin",
     });
   });
 
-  it("reuses the existing users row when the email is already registered", async () => {
+  it("reuses the existing users row when the email is already registered, and stores the chosen role", async () => {
     mockFindFirstUsers.mockResolvedValue({ id: "uuid-1", name: "Real Name" });
-    const user = await devAuthorize()({ email: "you@example.com", password: "hunter2" });
+    const user = await devAuthorize()({ email: "you@example.com", password: "hunter2", role: "viewer" });
     expect(user).toEqual({ id: "uuid-1", email: "you@example.com", name: "Real Name" });
     expect(mockInsertValues).not.toHaveBeenCalled();
+    expect(mockUpdateSet).toHaveBeenCalledExactlyOnceWith({ role: "viewer" });
   });
 
   it("does not touch the database when the credentials are rejected", async () => {
@@ -124,6 +133,7 @@ describe("dev sign-in persistence", () => {
     expect(user).toBeNull();
     expect(mockFindFirstUsers).not.toHaveBeenCalled();
     expect(mockInsertValues).not.toHaveBeenCalled();
+    expect(mockUpdateSet).not.toHaveBeenCalled();
   });
 });
 
