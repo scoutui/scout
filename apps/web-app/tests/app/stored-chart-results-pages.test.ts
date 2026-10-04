@@ -15,7 +15,9 @@ let driver: StorageDriver;
 let database: Pool;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
-vi.mock("@/lib/identity", () => ({ identify: async () => null }));
+vi.mock("@/lib/identity", () => ({
+  identify: async () => ({ kind: "person", userId: "editor", email: "ana@example.com", name: null, role: "editor", roleSource: "people" }),
+}));
 
 type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[] };
 

@@ -7,9 +7,11 @@ import { Mona_Sans } from "next/font/google";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import { TopTabs } from "@/components/nav/top-tabs";
-import { UserChip } from "@/components/auth/user-chip";
+import { AccountMenu } from "@/components/auth/account-menu";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 const monaSans = Mona_Sans({
   subsets: ["latin"],
@@ -30,6 +32,8 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem("theme");var
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Set by the middleware with the page's Content-Security-Policy.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const identity = await identify({ browser: true });
+  const person = identity?.kind === "person" ? identity : null;
   return (
     <html lang="en" className={monaSans.variable} suppressHydrationWarning>
       <head>
@@ -41,10 +45,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="font-sans antialiased">
         <ThemeProvider>
           <TopTabs
+            showGovernance={can(person, "edit")}
             rightSlot={
               <div className="flex items-center gap-4">
                 <ThemeToggle />
-                <UserChip />
+                <AccountMenu person={person} />
               </div>
             }
           />

@@ -13,6 +13,7 @@ import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/
 import { claimScanJob, enqueueScanJob, failScanJob, SCAN_JOB_PRIORITY } from "../../src/lib/scan-jobs.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
 import { readModelPage } from "../../src/lib/read-model-page.ts";
+import type { Person } from "../../src/lib/access.ts";
 import { withReadModelDatabase } from "../helpers/read-model-db.ts";
 
 const { DATABASE_URL: databaseUrl } = process.env;
@@ -21,9 +22,9 @@ let driver: StorageDriver;
 let database: Pool;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
-vi.mock("@/lib/identity", () => ({
-  identify: async () => ({ kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "viewer", roleSource: "people" }),
-}));
+const editor: Person = { kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
+let reader = editor;
+vi.mock("@/lib/identity", () => ({ identify: async () => reader }));
 
 const scope = new AsyncLocalStorage<{ usage: boolean }>();
 
@@ -98,7 +99,10 @@ const packageParams = { params: Promise.resolve({ packageName: "%40sample%2Fcore
 const crossParams = { params: Promise.resolve({ componentId: button }) };
 const searchParams = Promise.resolve({});
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  reader = editor;
+});
 
 describe.skipIf(!databaseUrl)("page read boundaries", () => {
   it.each(["being rebuilt", "failed"] as const)("returns a trend preview's state while an older scan is %s, after the chart builder loads", async state => {
@@ -320,6 +324,30 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(propsFor(tree, "GovernanceManager")?.records).toEqual([expect.objectContaining({ targetPackage: "@sample/core" })]);
       expect(propsFor(tree, "GovernanceManager")?.stats).toEqual({});
       expect(await GET().json()).toEqual({ status: "ok" });
+    });
+  });
+
+  it.each([
+    {
+      url: "/governance", page: "GovernanceManager", line: "Only Editors can see governance. Ask an admin for access.",
+      open: async () => (await import("@/app/governance/page")).default(),
+    },
+    {
+      url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an admin for access.",
+      open: async () => (await import("@/app/charts/new/page")).default(),
+    },
+    {
+      url: "/charts/[id]/edit", page: "DashboardBuilder", line: "Only Editors can change charts. Ask an admin for access.",
+      open: async (dashboardId: string) => (await import("@/app/charts/[dashboardId]/edit/page")).default({ params: Promise.resolve({ dashboardId }) }),
+    },
+  ])("shows a Viewer one line instead of $url, and an Editor the page", async ({ page, line, open }) => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const saved = await driver.upsertDashboard({ name: "Local usage", description: null, config: { scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" } });
+      reader = { ...editor, role: "viewer" };
+      expect(propsFor(await open(saved.id), "EmptyState")).toEqual({ titleAs: "h1", title: line });
+      reader = editor;
+      expect(propsFor(await open(saved.id), page)).toBeDefined();
     });
   });
 

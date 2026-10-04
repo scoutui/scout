@@ -16,6 +16,7 @@ let session: { user: { id: string } } | null = null;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 vi.mock("@/lib/identity", () => ({
+  identify: async () => session ? { kind: "person", userId: session.user.id, email: "ana@example.com", name: null, role: "editor", roleSource: "people" } : null,
   requireEditor: async () => session ? { ok: true, userId: session.user.id } : { ok: false, error: "not_authenticated" },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

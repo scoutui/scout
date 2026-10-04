@@ -6,6 +6,9 @@ import { chartBuilderOptions } from "@/lib/chart-builder-options";
 import { isDerivedId } from "@/lib/derived-dashboards";
 import { ReadModelState } from "@/components/read-model-state";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
+import { EmptyState } from "@/components/ui/empty-state";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit chart" };
@@ -14,6 +17,9 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
   const { dashboardId } = await params;
   const id = decodeURIComponent(dashboardId);
   if (isDerivedId(id)) notFound();
+  if (!can(await identify({ browser: true }), "edit")) {
+    return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an admin for access." />;
+  }
   const page = await readModelPage(getStorage(), async snapshot => {
     const dashboard = await snapshot.getDashboard(id);
     return dashboard ? { dashboard, options: await chartBuilderOptions(snapshot) } : null;
