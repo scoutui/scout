@@ -5,7 +5,11 @@ export function App() {
   return (
     <>
       <Avatar src="/me.png" />
-      <Button label="ok" onClick={() => console.log("clicked")} />
+      <Button label="ok" onLabel="On" onClick={save} />
     </>
   );
+}
+
+function save() {
+  console.log("clicked");
 }

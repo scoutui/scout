@@ -17,7 +17,7 @@ HTML files and Lit templates are not read.
 | What is read | JSX anywhere in the file | The `<template>` and `<script>` blocks |
 | Components found | Imported or locally defined components used as JSX tags, and web components | Imported components, auto-imported components, and web components |
 | Prop values | Yes | Yes |
-| Events | Props named `on` plus a capital letter, such as `onClick` | `@name` and `v-on:name` |
+| Events | Props named `on` plus a capital letter, such as `onClick`, unless their value is written, as in `onLabel="On"` | `@name`, `v-on:name`, and props bound with a name like `:onClick`, unless their value is written |
 | Renders and rendered by | Yes | Yes |
 
 Files with any other extension, such as `.mjs`, `.mts`, `.html` or `.svelte`, are skipped even when `include` matches them.

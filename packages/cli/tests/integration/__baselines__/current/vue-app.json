@@ -187,6 +187,89 @@
       }
     },
     {
+      "id": "bf15083ca0c7b3b3",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "vue-app",
+        "filePath": "src/on-props/components/Toggle.vue",
+        "exportName": "Toggle"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "onLabel": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "On",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "onClick": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
+      "events": {
+        "onClick": {
+          "boundCount": 1
+        }
+      },
+      "declared": {
+        "props": {
+          "onLabel": {
+            "required": false,
+            "type": "string"
+          }
+        },
+        "hasRest": false
+      },
+      "owningPackage": "vue-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "53bd0edf62eaece1": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "53bd0edf62eaece1",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "vue-app",
+        "filePath": "src/on-props/pages/index.vue",
+        "exportName": "Index"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "owningPackage": "vue-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "bf15083ca0c7b3b3": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "ffa6c15e8cd29dc9",
       "identity": {
         "kind": "repository-declaration",
@@ -741,6 +824,36 @@
         }
       },
       "ownerComponentId": "15f6e2109ee5339f"
+    },
+    {
+      "occurrenceId": "b9253b984eb0eb95",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "bf15083ca0c7b3b3"
+      },
+      "filePath": "src/on-props/pages/index.vue",
+      "line": 2,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "../components/Toggle.vue",
+          "name": "default"
+        }
+      ],
+      "props": {
+        "onLabel": {
+          "tier": "written",
+          "value": "On"
+        },
+        "onClick": {
+          "tier": "dynamic"
+        }
+      },
+      "ownerComponentId": "53bd0edf62eaece1"
     },
     {
       "occurrenceId": "d87b090df4366c22",

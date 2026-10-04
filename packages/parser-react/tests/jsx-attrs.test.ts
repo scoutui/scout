@@ -67,9 +67,4 @@ describe("readJsxAttrs", () => {
       { name: "c", tier: "dynamic" },
     ]);
   });
-  it("onClick handlers → dynamic (recovered into events rollup downstream)", () => {
-    expect(readJsxAttrs(extractOpening("const x = <Foo onClick={h} />;"))).toEqual([
-      { name: "onClick", tier: "dynamic" },
-    ]);
-  });
 });

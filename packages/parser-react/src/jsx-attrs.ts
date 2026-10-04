@@ -1,6 +1,6 @@
-import type { JSXOpeningElement } from "oxc-parser";
+import type { JSXAttribute, JSXOpeningElement } from "oxc-parser";
 import type { Expression } from "@oxc-project/types";
-import type { PropUsage } from "@scoutui/reference-graph";
+import { isHandlerName, type PropUsage } from "@scoutui/reference-graph";
 import { unwrapTsNoise } from "./infer-value.js";
 
 /** Dotted static member path, or null if any segment is computed/dynamic. */
@@ -37,14 +37,37 @@ function ternaryLiterals(node: Expression): (string | number | boolean)[] | null
   return out;
 }
 
+/** One attribute's usage, or null for a value it skips (an empty `{}`, or JSX as the value). */
+function readAttrValue(name: string, value: JSXAttribute["value"]): PropUsage | null {
+  if (!value) return { name, tier: "written", value: true };
+  if (value.type === "Literal") return { name, tier: "written", value: value.value };
+  if (value.type !== "JSXExpressionContainer") return null;
+
+  const raw = value.expression;
+  if (raw.type === "JSXEmptyExpression") return null;
+  const expr = unwrapTsNoise(raw);
+  if (!expr) return null;
+
+  if (expr.type === "Literal") {
+    const val = (expr as unknown as { value: unknown }).value;
+    return isLiteralValue(val) ? { name, tier: "written", value: val } : { name, tier: "dynamic" };
+  }
+  const set = ternaryLiterals(expr);
+  if (set) return { name, tier: "written", valueSet: set };
+  if (expr.type === "Identifier") return { name, tier: "reference", ref: (expr as unknown as { name: string }).name };
+  const path = memberPath(expr);
+  return path ? { name, tier: "reference", ref: path } : { name, tier: "dynamic" };
+}
+
 /**
- * Extract per-prop usage from a JSXOpeningElement. Event handlers (`onClick`
- * etc.) are captured as `dynamic` props (recovered into the component's
- * `events` rollup downstream). Drops empty expression containers (`{}`). Returns one
- * entry per recognised attribute, tiered as `written` (literal value, incl. a
- * folded literal set from a ternary-of-literals), `reference` (identifier or
- * static member path, captured by name but not resolved), or `dynamic`
- * (opaque: call, spread, object/array, mixed template, etc.).
+ * Extract per-prop usage from a JSXOpeningElement. A prop named `on` plus a
+ * capital letter keeps a `written` value; any other value it has is `dynamic`
+ * (recovered into the component's `events` rollup downstream). Drops empty
+ * expression containers (`{}`) on other props. Returns one entry per recognised
+ * attribute, tiered as `written` (literal value, incl. a folded literal set from
+ * a ternary-of-literals), `reference` (identifier or static member path,
+ * captured by name but not resolved), or `dynamic` (opaque: call, spread,
+ * object/array, mixed template, etc.).
  */
 export function readJsxAttrs(opening: JSXOpeningElement): PropUsage[] {
   const props: PropUsage[] = [];
@@ -57,43 +80,12 @@ export function readJsxAttrs(opening: JSXOpeningElement): PropUsage[] {
     const nameNode = attr.name;
     const name = nameNode.type === "JSXIdentifier" ? nameNode.name : "";
     if (!name) continue;
-    if (name.startsWith("on") && name.length > 2 && /[A-Z]/.test(name.charAt(2))) {
-      props.push({ name, tier: "dynamic" });
+    const usage = readAttrValue(name, attr.value);
+    if (isHandlerName(name)) {
+      props.push(usage?.tier === "written" ? usage : { name, tier: "dynamic" });
       continue;
     }
-
-    if (!attr.value) {
-      props.push({ name, tier: "written", value: true });
-      continue;
-    }
-    if (attr.value.type === "Literal") {
-      props.push({ name, tier: "written", value: attr.value.value });
-      continue;
-    }
-    if (attr.value.type !== "JSXExpressionContainer") continue;
-
-    const raw = attr.value.expression;
-    if (raw.type === "JSXEmptyExpression") continue;
-    const expr = unwrapTsNoise(raw);
-    if (!expr) continue;
-
-    if (expr.type === "Literal") {
-      const val = (expr as unknown as { value: unknown }).value;
-      if (isLiteralValue(val)) props.push({ name, tier: "written", value: val });
-      else props.push({ name, tier: "dynamic" });
-      continue;
-    }
-    const set = ternaryLiterals(expr);
-    if (set) {
-      props.push({ name, tier: "written", valueSet: set });
-      continue;
-    }
-    if (expr.type === "Identifier") {
-      props.push({ name, tier: "reference", ref: (expr as unknown as { name: string }).name });
-      continue;
-    }
-    const path = memberPath(expr);
-    props.push(path ? { name, tier: "reference", ref: path } : { name, tier: "dynamic" });
+    if (usage) props.push(usage);
   }
   return props;
 }

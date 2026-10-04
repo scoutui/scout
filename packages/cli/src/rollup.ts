@@ -15,6 +15,7 @@ import type {
   PropValueState,
   ResolvedOccurrence,
 } from "@scoutui/scan-format";
+import { isHandlerName } from "@scoutui/reference-graph";
 import { isFrameworkRootPath } from "./scan/framework-root.js";
 
 /** One component's descriptive fields, before its occurrences are rolled up. */
@@ -118,9 +119,9 @@ export function rollupOccurrencesToComponents(
     for (const o of occs) {
       const names = new Set([
         ...(o.events ?? []),
-        // React on* handlers: an on* name with a dynamic value (a function), so
+        // on* handlers: an on* name with a dynamic value (a function), so
         // literal on* props like onLabel="On" / onColor="#0f0" are not handlers.
-        ...Object.keys(o.props).filter((k) => /^on[A-Z]/.test(k) && (o.props[k] as PropValueState).tier === "dynamic"),
+        ...Object.keys(o.props).filter((k) => isHandlerName(k) && (o.props[k] as PropValueState).tier === "dynamic"),
       ]);
       for (const name of names) {
         events[name] = { boundCount: (events[name]?.boundCount ?? 0) + 1 };

@@ -94,13 +94,14 @@ describe("integration: react-app fixture", () => {
     });
   });
 
-  // App.tsx renders `<Button label="ok" onClick={() => ...} />`. The `on*`
-  // attribute reaches `props` as a dynamic prop, and the rollup
-  // (packages/cli/src/rollup.ts) counts it among Button's events.
+  // App.tsx renders `<Button label="ok" onLabel="On" onClick={save} />`. An
+  // `on*` prop with a written value keeps it; a handler reaches `props` as a
+  // dynamic prop, and the rollup (packages/cli/src/rollup.ts) counts it among
+  // Button's events.
   describe("nextjs-folder-basename", () => {
     const S = "nextjs-folder-basename";
 
-    it("resolves each component folder to its same-named file, and rolls onClick into Button's events", () => {
+    it("resolves each component folder to its same-named file, and counts onClick, not onLabel, among Button's events", () => {
       const app = local(S, "App.tsx", "App");
       const button = local(S, "components/button/button.tsx", "Button");
       expect(rendersIn(S)).toEqual([
@@ -109,11 +110,13 @@ describe("integration: react-app fixture", () => {
         }),
         row("App.tsx:8:7", button, app, [imported("./components/button", "Button")], {
           label: { tier: "written", value: "ok" },
+          onLabel: { tier: "written", value: "On" },
           onClick: { tier: "dynamic" },
         }),
       ]);
+      expect(componentOf(button)?.props.onLabel).toEqual({ values: [{ provenance: "written", value: "On", count: 1 }], dynamic: 0, omitted: 0 });
       expect(componentOf(button)?.props.onClick).toMatchObject({ dynamic: 1 });
-      expect(componentOf(button)?.events?.onClick).toEqual({ boundCount: 1 });
+      expect(componentOf(button)?.events).toEqual({ onClick: { boundCount: 1 } });
     });
   });
 

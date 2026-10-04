@@ -156,6 +156,23 @@ describe("integration: vue-app fixture", () => {
     });
   });
 
+  // `<Toggle :onLabel="'On'" :onClick="flip">` binds a written value and a
+  // handler to props named `on` plus a capital letter.
+  describe("on-props", () => {
+    it("keeps a bound on* prop's written value as a prop, and counts a bound handler among the component's events", () => {
+      const S = "on-props";
+      const toggle = local(S, "components/Toggle.vue", "Toggle");
+      expect(rendersIn(S)).toEqual([
+        row("pages/index.vue:2:3", toggle, local(S, "pages/index.vue", "Index"), [imported("../components/Toggle.vue", "default")], {
+          onLabel: { tier: "written", value: "On" },
+          onClick: { tier: "dynamic" },
+        }),
+      ]);
+      expect(componentOf(toggle)?.props.onLabel).toEqual({ values: [{ provenance: "written", value: "On", count: 1 }], dynamic: 0, omitted: 0 });
+      expect(componentOf(toggle)?.events).toEqual({ onClick: { boundCount: 1 } });
+    });
+  });
+
   // `<Field>` sits in `<Panel>`'s default slot, inside a `<template #default>`.
   describe("slot-content", () => {
     it("credits a component rendered in slot content, owned by the SFC whose template holds it", () => {
@@ -183,6 +200,8 @@ describe("integration: vue-app fixture", () => {
         "src/define-options-name/components/page-header.vue",
         "src/mixed-page/components/WebAction.vue",
         "src/mixed-page/pages/index.vue",
+        "src/on-props/components/Toggle.vue",
+        "src/on-props/pages/index.vue",
         "src/sfc-wraps-tag/components/WebAction.vue",
         "src/sfc-wraps-tag/pages/index.vue",
         "src/slot-content/components/Field.vue",

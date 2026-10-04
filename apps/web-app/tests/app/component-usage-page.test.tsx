@@ -28,6 +28,7 @@ const written = (value: string): PropValueState => ({ tier: "written", value });
 const declaredOnly = () => ({ values: [], dynamic: 0, omitted: 0 });
 const button = component(packageExport("@example/ui", "Button"), {
   props: { size: declaredOnly(), onClick: declaredOnly(), className: declaredOnly(), "data-testid": declaredOnly(), variant: declaredOnly() },
+  events: { onClick: { boundCount: 2 } },
 });
 const tag = component(packageExport("@example/ui", "Tag"));
 const rendersButton = (count: number): Partial<Component> =>

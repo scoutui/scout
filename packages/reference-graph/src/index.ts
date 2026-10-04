@@ -6,6 +6,7 @@ export type { InferredType } from "./types/inferred-type.js";
 export type { OccurrenceVia } from "./types/occurrence-via.js";
 export type { ComponentId, ComponentKind } from "./types/component-id.js";
 export type { PropUsage } from "./types/prop-usage.js";
+export { isHandlerName } from "./types/prop-usage.js";
 export type { ResolveImport } from "./types/resolve-import.js";
 export type {
   BindingDecl,
