@@ -62,7 +62,7 @@ const PAGES: {
   {
     page: "repo page",
     renderTags: (tags, selected = []) => renderBar({ ...options, tags }, { ...emptyFacets(), tags: selected }),
-    oneValueFacet: /^framework/i,
+    oneValueFacet: /^type/i,
     renderOneValueFacet: ([react, vue], selected) =>
       renderBar(
         { ...options, kinds: [{ value: "react", count: react }, { value: "vue", count: vue }] },

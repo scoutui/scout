@@ -49,7 +49,7 @@ describe("facetOptions: every count follows the other filters", () => {
     const o = facetOptions(rows, null, { ...emptyFacets(), packages: ["@x/lib"], kinds: ["react"] });
     // Packages ignore `package` but keep `kind:react`: B (vue) does not count toward @x/lib.
     expect(o.packages).toEqual([{ value: "@x/lib", count: 1 }, { value: "@y/ui", count: 1 }]);
-    // Framework ignores `kind` but keeps `package:@x/lib`: A (react) and B (vue).
+    // Type ignores `kind` but keeps `package:@x/lib`: A (react) and B (vue).
     expect(o.kinds).toEqual([{ value: "react", count: 1 }, { value: "vue", count: 1 }]);
     // Origin, Tag and the deprecated chip keep both: only A.
     expect(o.origin).toEqual({ external: 1, local: 0 });
@@ -106,6 +106,7 @@ describe("URL params", () => {
     ["search text", { text: "date picker" }, "q=date+picker"],
     ["origin", { origin: "local" }, "origin=local"],
     ["one kind param per kind", { kinds: ["react", "vue"] }, "kind=react&kind=vue"],
+    ["an undefined element", { kinds: ["undefined-element"] }, "kind=undefined-element"],
     ["one package param per package", { packages: ["@acme/ui", "@acme/icons"] }, "package=@acme/ui&package=@acme/icons"],
     ["one tag param per tag", { tags: ["icons", "acme-ui"] }, "tag=icons&tag=acme-ui"],
     ["deprecated", { deprecated: true }, "deprecated=true"],

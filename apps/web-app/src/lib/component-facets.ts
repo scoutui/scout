@@ -31,7 +31,7 @@ export const KIND_LABEL: Record<KindValue, string> = {
   react: "React",
   vue: "Vue",
   wc: "Web component",
-  tag: "Tag",
+  "undefined-element": "Undefined element",
 };
 
 export const ORIGIN_LABEL: Record<OriginValue, string> = {
@@ -191,7 +191,7 @@ export function facetOptions(
 /** The params the components table keeps its facets in. */
 export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "changed"];
 
-const KINDS: readonly KindValue[] = ["react", "vue", "wc", "tag"];
+const KINDS: readonly KindValue[] = ["react", "vue", "wc", "undefined-element"];
 const OCCURRENCE_WORDS: Record<OccurrenceOp, string> = { ">=": "gte:", ">": "gt:", "<=": "lte:", "<": "lt:", "=": "" };
 const OCCURRENCE_RE = /^(gte:|gt:|lte:|lt:)?(\d+)$/;
 

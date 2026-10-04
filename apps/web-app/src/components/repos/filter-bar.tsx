@@ -65,7 +65,7 @@ export function FilterBar({
     },
     {
       key: "kind",
-      label: "Framework",
+      label: "Type",
       values: options.kinds.map((k) => ({ value: k.value, label: KIND_LABEL[k.value], count: k.count })),
       selected: facets.kinds,
       onSelect: (kinds) => onChange({ ...facets, kinds: kinds as KindValue[] }),
@@ -96,7 +96,7 @@ export function FilterBar({
       : []),
     ...facets.kinds.map((k) => ({
       key: `kind:${k}`,
-      field: "framework",
+      field: "type",
       value: KIND_LABEL[k],
       onRemove: () => onChange({ ...facets, kinds: facets.kinds.filter((x) => x !== k) }),
     })),

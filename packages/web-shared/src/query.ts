@@ -16,7 +16,7 @@ export type QueryView = {
   /** The other names files render the component under, so a bare term finds it by any of them. */
   written: string[];
   scope: "external" | "local";
-  kind: "react" | "vue" | "wc" | "tag";
+  kind: "react" | "vue" | "wc" | "undefined-element";
   package: string;
   deprecated: boolean;
   uses: number;
@@ -27,7 +27,7 @@ const KIND_FRIENDLY: Record<ComponentKind, QueryView["kind"]> = {
   "react-component": "react",
   "vue-component": "vue",
   "custom-element": "wc",
-  tag: "tag",
+  tag: "undefined-element",
 };
 
 export function friendlyKind(kind: ComponentKind): QueryView["kind"] {
