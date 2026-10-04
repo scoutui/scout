@@ -78,7 +78,7 @@ export function DashboardChart({
     );
   }
   if (config.chartType === "table") {
-    return view.kind === "table" ? <CohortTable points={view.points} change={view.change} scope={config.scope} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
+    return view.kind === "table" ? <CohortTable points={view.points} change={view.change} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
   }
   if (view.kind !== "snapshot") return <ChartFallback />;
   return config.chartType === "bars" ? <CohortBarChart points={view.points} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;

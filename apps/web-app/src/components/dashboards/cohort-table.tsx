@@ -1,5 +1,5 @@
 "use client";
-import type { CohortPoint, DashboardScope } from "@scoutui/web-shared";
+import type { CohortPoint } from "@scoutui/web-shared";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { formatMetric } from "@/lib/dashboard-format";
@@ -34,14 +34,12 @@ function formatDelta(delta: number | null, metric: "count" | "share"): string {
 export function CohortTable({
   points,
   change,
-  scope,
   colors,
   deprecatedOnly = NO_KEYS,
   metric,
 }: {
   points: CohortPoint[];
   change: Record<string, number | null>;
-  scope: DashboardScope;
   colors: ReadonlyMap<string, string>;
   deprecatedOnly?: ReadonlySet<string>;
   metric: "count" | "share";
@@ -75,7 +73,7 @@ export function CohortTable({
             <TableHead className="text-right">
               <SortButton
                 label="Change"
-                title={scope.kind === "repo" ? "Change since the previous scan" : "Change over the last 30 days"}
+                title="Change over the last 30 days"
                 sortKey="delta"
                 current={sortKey}
                 dir={sortDir}

@@ -139,7 +139,7 @@ We select **repos** and open `acme/storefront`:
 
 - The status line now starts with `1 deprecated component in use`.
 - In the **Components** table, `LegacyButton` has a warning icon after its name.
-- On the **Adoption** tab, `Migrations in this repo · 1 in progress · change since previous scan` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated` and `1 left`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
+- On the **Adoption** tab, `Migrations in this repo · 1 in progress · change over the last 30 days` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated` and `1 left`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
 
 ## Step 7: See the migration's chart
 
