@@ -206,7 +206,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     });
   });
 
-  it("opens a copy of a chart someone can open in the builder, as a new chart", async () => {
+  it("opens a copy of a chart in the builder for someone who can open it, and shows anyone else only that it's private", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       await pool.query(`INSERT INTO "user" (id, name, email) VALUES ('maker', 'Maker', 'maker@example.com')`);

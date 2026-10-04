@@ -134,6 +134,22 @@ describe("editing a saved chart", () => {
     await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ id: "chart-1", name: "Button rollout again", description: "Kept as it was", config }));
   });
 
+  it("saves a copy of the saved chart as a new chart", async () => {
+    const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "bars" as const, metric: "share" as const };
+    render(
+      <DashboardBuilder
+        libraryTags={[]}
+        repos={["repo-a"]}
+        components={[]}
+        packages={[]}
+        saved={{ id: "chart-1", name: "Copy of Button rollout", description: null, config }}
+        duplicate
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith({ name: "Copy of Button rollout", description: null, config }));
+  });
+
   it("lists a series the chart leaves out as Unknown component, never by its id", async () => {
     const componentId = "3f1c9a0b7d2e4c65";
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "component" as const, componentId }], chartType: "trend" as const, metric: "count" as const };

@@ -145,13 +145,17 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const link = (chart: Dashboard) => `/charts/${encodeURIComponent(chart.id)}`;
       const { default: page } = await import("@/app/charts/page");
 
-      expect(sections(await page())).toEqual([
+      const creatorTree = await page();
+      expect(sections(creatorTree)).toEqual([
         { heading: "Saved charts · 1", links: [link(saved)] },
         { heading: "Private · 1", links: [link(mine)] },
       ]);
+      expect(textOf(creatorTree)).toContain("2 charts");
 
       reader = { ...editor, userId: "someone-else" };
-      expect(sections(await page())).toEqual([{ heading: "Saved charts · 1", links: [link(saved)] }]);
+      const otherTree = await page();
+      expect(sections(otherTree)).toEqual([{ heading: "Saved charts · 1", links: [link(saved)] }]);
+      expect(textOf(otherTree)).toContain("1 chart");
 
       reader = { ...editor, userId: "someone-else", role: "admin" };
       const adminTree = await page();
@@ -160,6 +164,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
         { heading: "Other people's charts · 2", links: [link(mine), link(theirs)] },
       ]);
       expect(textOf(adminTree)).toContain("Created by Bo Chen");
+      expect(textOf(adminTree)).toContain("3 charts");
     });
   });
 
