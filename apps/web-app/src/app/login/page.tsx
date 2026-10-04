@@ -46,7 +46,7 @@ export default async function LoginPage({
               {error === "AccessDenied"
                 ? "Your account doesn't have access to this dashboard. Ask your dashboard administrator to add you."
                 : error === ACCESS_CHECK_UNAVAILABLE
-                  ? "Couldn't check your access. Try again in a few minutes."
+                  ? "We couldn't check your access just now. Try again in a few minutes."
                   : "Sign-in didn't complete. Try again."}
             </span>
           </div>
