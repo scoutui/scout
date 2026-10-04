@@ -413,7 +413,7 @@ export async function scanRepository(input: {
   // Resolves an external import's leaf package and public entry.
   const lazyResolver = createLazyResolver({
     resolveImport,
-    repoRoot: workspaceRoot,
+    repoRoot: outputRoot,
     collector,
   });
 
@@ -468,7 +468,7 @@ export async function scanRepository(input: {
         componentName: s.componentName,
         // s.target is absolute; the artefact stores repo-relative POSIX paths
         // so it stays portable across machines.
-        target: posixPath(relative(cfg.configDir, s.target)),
+        target: posixPath(relative(outputRoot, s.target)),
       });
     }
   } else {

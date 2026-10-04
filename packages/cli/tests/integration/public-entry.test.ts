@@ -22,7 +22,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import type { ScanArtifact } from "@scoutui/scan-format";
@@ -149,5 +149,25 @@ describe("integration: a package export is keyed by its public entry", () => {
     expect(
       v1.components.some((c) => c.identity.kind === "package-export" && c.identity.packageName === "@example/loop-kit"),
     ).toBe(false);
+  });
+
+  it("names the looping barrel from the repository root when the config is in a folder below it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "cc-below-root-"));
+    try {
+      await rename(await stageFixture("design-system-upgrade"), join(root, "app"));
+      await rm(join(root, "app", ".git"), { recursive: true });
+      const git = (...args: string[]) =>
+        exec("git", ["-c", "user.email=test@example.com", "-c", "user.name=Test", ...args], { cwd: root });
+      await git("init", "-q");
+      await git("add", "-A");
+      await git("commit", "-q", "-m", "init");
+      const scan = await scanDir(join(root, "app"));
+      expect(scan.occurrences.filter((o) => o.resolution.status === "unresolved").map((o) => o.filePath)).toEqual(["app/src/Loop.tsx"]);
+      expect(scan.diagnostics).toContainEqual(
+        expect.objectContaining({ code: "cycle-detected", filePath: "app/node_modules/@example/loop-kit/index.js" }),
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
