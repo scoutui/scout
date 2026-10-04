@@ -21,7 +21,7 @@ type IndexedCall = {
   readonly row: OccurrenceRow;
   /** The lower-cased text a search looks in. */
   readonly hay: string;
-  /** The key of the folder the call's file is in. */
+  /** The key of the package or folder the call's file is in: the package's name, or the folder's path. */
   readonly area: string;
   /** The value of every name the call sets. A name missing here is not set. */
   readonly values: ReadonlyMap<string, SetValue>;
@@ -33,6 +33,8 @@ type IndexedCall = {
 export type UsageIndex = {
   readonly total: number;
   readonly few: boolean;
+  /** Every call is in a package and they name more than one: the calls are listed by package, not by folder. */
+  readonly byPackage: boolean;
   readonly prefix: string;
   readonly rows: readonly UsagePropInfo[];
   readonly calls: readonly IndexedCall[];
@@ -85,7 +87,10 @@ export type UsageFile = {
   /** The most used value of each line prop, as JSX on one line: `size="large" isFullWidth`. A prop whose most used value is `{…}` is left off. */
   jsx: string;
 };
-/** A folder's files, or with `key` and `label` null, every file in view. `shared` is the folders its files share below `key`. */
+/**
+ * A package's or a folder's files, or with `key` and `label` null, every file in view. `shared` is the folders its files
+ * share: below `key` for a folder, from the repo root for a package.
+ */
 export type UsageSection = { key: string | null; label: string | null; shared: string | null; calls: number; files: UsageFile[] };
 export type UsageValueColumn = { prop: string; width: number };
 export type UsageView = {
@@ -96,6 +101,8 @@ export type UsageView = {
   searched: boolean;
   filtered: boolean;
   active: number;
+  /** `areas` and `sections` are packages, not folders. */
+  byPackage: boolean;
   areas: UsageArea[];
   props: UsagePropRow[];
   sections: UsageSection[];
@@ -184,8 +191,9 @@ function areaOf(path: string, prefix: readonly string[]): string {
   return parts.slice(0, prefix.length + 1).join("/");
 }
 
-/** How a folder reads: its name, `src/` for the shared folder itself, or `(repo root)`. */
-function areaLabel(key: string, prefix: string): string {
+/** How a package or folder reads: a package's name, a folder's name, `src/` for the shared folder itself, or `(repo root)`. */
+function areaLabel(key: string, prefix: string, byPackage: boolean): string {
+  if (byPackage) return key;
   if (key === ".") return REPO_ROOT;
   const name = key.slice(key.lastIndexOf("/") + 1);
   return key === prefix ? `${name}/` : name;
@@ -333,15 +341,18 @@ function callChips(row: OccurrenceRow, rankOf: (name: string) => ChipRank): Usag
 
 export function usageIndex(input: UsageInput): UsageIndex {
   const prefix = sharedDirs(input.occurrences.map((o) => o.filePath));
+  const packages = new Set(input.occurrences.map((o) => o.usedIn));
+  const byPackage = !packages.has(undefined) && packages.size > 1;
   const rows = propRows(input);
   const few = input.occurrences.length <= FEW;
   const rankOf = chipRanks(rows);
-  const calls = input.occurrences.map((row) => ({ row, hay: haystack(row), area: areaOf(row.filePath, prefix), values: setValues(row), chips: callChips(row, rankOf) }));
+  const calls = input.occurrences.map((row) => ({ row, hay: haystack(row), area: byPackage ? (row.usedIn as string) : areaOf(row.filePath, prefix), values: setValues(row), chips: callChips(row, rankOf) }));
   const files = [...filesOf(calls).values()];
   return {
     total: input.occurrences.length,
     few,
-    prefix: prefix.join("/"),
+    byPackage,
+    prefix: byPackage ? "" : prefix.join("/"),
     rows,
     calls,
     columns: new Map(columnProps(rows, calls, few).map((prop) => [prop, files.map((list) => cellOf(list, prop))])),
@@ -536,18 +547,21 @@ export function nextUsageSort(sort: UsageSort, key: UsageSortKey): UsageSort {
   return { key, dir: key === "uses" ? "desc" : "asc" };
 }
 
-/** The folders every one of these paths sits under, below `key` when it's given, ending in `/`; null when none. */
-function sharedBelow(paths: readonly string[], key: string | null): string | null {
+/**
+ * The folders every one of these paths sits under, ending in `/`: below `key` when it's a folder, from the repo root
+ * when it's a package or not given; null when none.
+ */
+function sharedBelow(paths: readonly string[], key: string | null, byPackage: boolean): string | null {
   const dirs = sharedDirs(paths);
-  const rest = key === null || key === "." ? dirs : dirs.slice(key.split("/").length);
+  const rest = key === null || key === "." || byPackage ? dirs : dirs.slice(key.split("/").length);
   return rest.length ? `${rest.join("/")}/` : null;
 }
 
 const callsIn = (files: readonly UsageFile[]) => files.reduce((n, f) => n + f.calls, 0);
 
-/** Grouped, a section per folder by calls, highest first, then label; otherwise one section of every file. */
-function sectionsOf(files: readonly UsageFile[], folderOf: ReadonlyMap<string, string>, grouped: boolean, prefix: string): UsageSection[] {
-  if (!grouped) return [{ key: null, label: null, shared: sharedBelow(files.map((f) => f.path), null), calls: callsIn(files), files: [...files] }];
+/** Grouped, a section per package or folder by calls, highest first, then label; otherwise one section of every file. */
+function sectionsOf(files: readonly UsageFile[], folderOf: ReadonlyMap<string, string>, grouped: boolean, prefix: string, byPackage: boolean): UsageSection[] {
+  if (!grouped) return [{ key: null, label: null, shared: sharedBelow(files.map((f) => f.path), null, byPackage), calls: callsIn(files), files: [...files] }];
   const byFolder = new Map<string, UsageFile[]>();
   for (const f of files) {
     const key = folderOf.get(f.path) ?? ".";
@@ -556,7 +570,7 @@ function sectionsOf(files: readonly UsageFile[], folderOf: ReadonlyMap<string, s
     else byFolder.set(key, [f]);
   }
   return [...byFolder]
-    .map(([key, list]) => ({ key, label: areaLabel(key, prefix), shared: sharedBelow(list.map((f) => f.path), key), calls: callsIn(list), files: list }))
+    .map(([key, list]) => ({ key, label: areaLabel(key, prefix, byPackage), shared: sharedBelow(list.map((f) => f.path), key, byPackage), calls: callsIn(list), files: list }))
     .sort((a, b) => b.calls - a.calls || a.label.localeCompare(b.label));
 }
 
@@ -643,9 +657,9 @@ export function usageView(index: UsageIndex, filters: UsageFilters, columns: rea
     })
     .sort((a, b) => b.set - a.set || a.name.localeCompare(b.name));
   const areas = [...areaCounts]
-    .map(([key, n]): UsageArea => ({ key, label: areaLabel(key, index.prefix), count: n, picked: key === area }))
+    .map(([key, n]): UsageArea => ({ key, label: areaLabel(key, index.prefix, index.byPackage), count: n, picked: key === area }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-  if (area && !areaCounts.has(area)) areas.unshift({ key: area, label: areaLabel(area, index.prefix), count: 0, picked: true });
+  if (area && !areaCounts.has(area)) areas.unshift({ key: area, label: areaLabel(area, index.prefix, index.byPackage), count: 0, picked: true });
 
   const byPath = filesOf(inView);
   const stale = filters.sort.key.startsWith("prop:") && !columns.includes(filters.sort.key.slice(5));
@@ -661,9 +675,10 @@ export function usageView(index: UsageIndex, filters: UsageFilters, columns: rea
     searched: Boolean(needle),
     filtered: Boolean(needle) || filters.picks.length > 0 || area !== null,
     active: picks.size + (area ? 1 : 0),
+    byPackage: index.byPackage,
     areas,
     props,
-    sections: sectionsOf(files, folderOf, grouped, index.prefix),
+    sections: sectionsOf(files, folderOf, grouped, index.prefix, index.byPackage),
     grouped,
     sort,
     columns: [...columns],
@@ -710,7 +725,7 @@ export function propSections(view: UsageView, find: string): UsagePropSections {
   };
 }
 
-/** What the column says in place of the folder rows while every call it counts is in one folder that isn't filtered. */
+/** What the column says in place of the package or folder rows while every call it counts is in one that isn't filtered. */
 export function oneFolderText(view: UsageView): { lead: string; label: string } | null {
   const only = view.areas.length === 1 ? view.areas[0] : undefined;
   if (!only || only.picked) return null;
@@ -730,12 +745,15 @@ function orList(items: readonly string[]): string {
   return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} or ${items.at(-1)}`;
 }
 
-/** The active filters in words: `size = large or small; folder src/a; search “x”`. `say` reads each value. */
-export function filterText(picks: readonly UsagePick[], area: string | null, find: string, say: (value: UsagePick) => string = valueLabel): string {
+/**
+ * The active filters in words: `size = large or small; folder src/a; search “x”`, naming a package as
+ * `package @example/web` when `byPackage`. `say` reads each value.
+ */
+export function filterText(picks: readonly UsagePick[], area: string | null, find: string, say: (value: UsagePick) => string = valueLabel, byPackage = false): string {
   const parts = pickGroups(picks).map(({ prop, picks: values }) =>
     values.length === 1 && values[0]?.kind === "unset" ? `${prop} not set` : `${prop} = ${orList(values.map(say))}`,
   );
-  if (area) parts.push(`folder ${areaName(area)}`);
+  if (area) parts.push(`${byPackage ? "package" : "folder"} ${areaName(area)}`);
   const needle = find.trim().toLowerCase();
   if (needle) parts.push(`search “${needle}”`);
   return parts.join("; ");
@@ -748,7 +766,9 @@ export type CopyListInput = {
   repoId: string;
   deprecated: boolean;
   migrationStatus: ComponentDetail["migrationStatus"];
-  /** Set on a folder's own button. */
+  /** `folderKey` and the section keys are packages, not folders. */
+  byPackage: boolean;
+  /** Set on a package's or a folder's own button. */
   folderKey: string | null;
   /** `filterText(...)`, or "" without filters. */
   filters: string;
@@ -781,8 +801,9 @@ export function countText(view: UsageView, due: UsageDue | null): { short: strin
   return { short, long: `${calls}${due ? ` still ${due}` : ""} · ${plural(view.files, "file")}` };
 }
 
-/** The heading over the folders the calls are in. */
-export function whereHeading(due: UsageDue | null): string {
+/** The heading over the packages or the folders the calls are in. */
+export function whereHeading(due: UsageDue | null, byPackage = false): string {
+  if (byPackage) return due ? "Still used in" : "Used in";
   return due ? "Where it’s still used" : "Where it’s used";
 }
 
@@ -809,7 +830,7 @@ function lifecycleText(status: ComponentDetail["migrationStatus"], deprecated: b
 export function copyListText(input: CopyListInput): string {
   const { sections, folderKey } = input;
   const files = sections.reduce((n, s) => n + s.files.length, 0);
-  const where = folderKey ? `, folder ${areaName(folderKey)}` : "";
+  const where = folderKey ? `, ${input.byPackage ? "package" : "folder"} ${areaName(folderKey)}` : "";
   const out = [`${input.displayName} in ${input.repoId}${where}: ${plural(sections.reduce((n, s) => n + s.calls, 0), "use")} in ${plural(files, "file")}`];
   const lifecycle = lifecycleText(input.migrationStatus, input.deprecated);
   if (lifecycle) out.push(lifecycle);

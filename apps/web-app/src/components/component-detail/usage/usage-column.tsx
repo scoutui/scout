@@ -52,7 +52,7 @@ export const propFilterKey = (prop: string) => `prop:${prop}`;
 /** The `data-filter` of one of a prop's value rows. */
 export const valueFilterKey = (pick: UsagePick) => `prop:${pick.prop}:${pick.kind}:${pick.label}`;
 
-/** The calls by folder and each prop's values, each row a filter. Below lg it folds away above the files. */
+/** The calls by package or folder and each prop's values, each row a filter. Below lg it folds away above the files. */
 export function UsageColumn({
   view,
   prefix,
@@ -111,7 +111,7 @@ export function UsageColumn({
             <section aria-labelledby="usage-where">
               <div className="mb-1 flex items-baseline gap-2 px-1.5">
                 <h3 id="usage-where" className="text-label shrink-0 text-muted-foreground">
-                  {whereHeading(due)}
+                  {whereHeading(due, view.byPackage)}
                 </h3>
                 {prefix ? (
                   <span className="min-w-0 truncate text-xs text-muted-foreground" title={`${prefix}/`}>
@@ -227,7 +227,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
             share={area.count / inView}
             selected={area.picked}
             dim={filtered && !area.picked}
-            ariaLabel={`Folder ${area.label}, ${plural(area.count, "use")}`}
+            ariaLabel={`${view.byPackage ? "Package" : "Folder"} ${area.label}, ${plural(area.count, "use")}`}
             title={area.key === area.label || area.key === "." ? undefined : area.key}
             onClick={() => onArea(area.picked ? null : area.key)}
           />

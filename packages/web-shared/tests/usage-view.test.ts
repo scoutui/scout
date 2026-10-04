@@ -137,11 +137,13 @@ describe("count and empty-list text", () => {
     expect(usageDue(deprecated, status)).toBe(due);
   });
 
-  it.each<[string, UsageDue | null, string]>([
-    ["as where it's used for a component that isn't deprecated", null, "Where it’s used"],
-    ["as where it's still used for a deprecated one", "to remove", "Where it’s still used"],
-  ])("heads the folders %s", (_title, due, heading) => {
-    expect(whereHeading(due)).toBe(heading);
+  it.each<[string, UsageDue | null, boolean, string]>([
+    ["folders as where it's used for a component that isn't deprecated", null, false, "Where it’s used"],
+    ["folders as where it's still used for a deprecated one", "to remove", false, "Where it’s still used"],
+    ["packages as used in for a component that isn't deprecated", null, true, "Used in"],
+    ["packages as still used in for a deprecated one", "to migrate", true, "Still used in"],
+  ])("heads the %s", (_title, due, byPackage, heading) => {
+    expect(whereHeading(due, byPackage)).toBe(heading);
   });
 
   it.each<[string, Partial<UsageFilters>, string | null]>([
@@ -171,6 +173,40 @@ describe("usageView folders", () => {
 
   it("labels files at the repo root as the repo root", () => {
     expect(view(input([call("One.tsx", 1), call("src/Two.tsx", 1)])).areas.map(a => [a.key, a.label])).toEqual([[".", "(repo root)"], ["src", "src"]]);
+  });
+});
+
+describe("usageView by package", () => {
+  const at = (filePath: string, usedIn?: string) => call(filePath, 1, [], usedIn !== undefined ? { usedIn } : {});
+  const spread = input([at("apps/web/src/App.tsx", "@example/web"), at("apps/web/src/Nav.tsx", "@example/web"), at("scripts/preview.tsx", "whole-repo-scope")]);
+
+  it("lists the calls by package, each under its full name", () => {
+    const v = view(spread);
+    expect([v.byPackage, v.areas.map(a => [a.key, a.label, a.count])]).toEqual([true, [["@example/web", "@example/web", 2], ["whole-repo-scope", "whole-repo-scope", 1]]]);
+  });
+
+  it.each<[string, OccurrenceRow[], string[]]>([
+    ["every call in one package", [at("apps/web/src/App.tsx", "@example/web"), at("apps/web/lib/Nav.tsx", "@example/web")], ["apps/web/lib", "apps/web/src"]],
+    ["calls with no package", [at("apps/web/src/App.tsx"), at("scripts/preview.tsx")], ["apps", "scripts"]],
+    ["calls in two packages and one with no package", [at("apps/web/src/App.tsx", "@example/web"), at("apps/admin/src/App.tsx", "@example/admin"), at("scripts/preview.tsx")], ["apps", "scripts"]],
+  ])("keeps the folder list for %s", (_title, rows, keys) => {
+    const v = view(input(rows));
+    expect([v.byPackage, v.areas.map(a => a.key)]).toEqual([false, keys]);
+  });
+
+  it("filters to one package", () => {
+    expect(view(spread, { area: "@example/web" }).shown).toBe(2);
+  });
+
+  it("groups the files by package past 24 files, each section with the folders its files share", () => {
+    const many = Array.from({ length: 30 }, (_, i) => (i % 2 ? at(`apps/web/src/F${i}.tsx`, "@example/web") : at(`apps/admin/src/F${i}.tsx`, "@example/admin")));
+    expect(view(input(many)).sections.map(s => [s.label, s.shared, s.files.length])).toEqual([["@example/admin", "apps/admin/src/", 15], ["@example/web", "apps/web/src/", 15]]);
+  });
+
+  it("names the package in the filters and in the header of a package's own copy", () => {
+    const v = view(spread, { area: "@example/web" });
+    const text = copyListText({ sections: v.sections, displayName: "SharedButton", repoId: "whole-repo-scope", deprecated: false, migrationStatus: { status: "active" }, byPackage: true, folderKey: "@example/web", filters: "", href: "https://scout.test/x", urlFor: () => null });
+    expect([filterText([], "@example/web", "", valueLabel, true), text.split("\n")[0]]).toEqual(["package @example/web", "SharedButton in whole-repo-scope, package @example/web: 2 uses in 2 files"]);
   });
 });
 
@@ -441,7 +477,7 @@ describe("value columns", () => {
 describe("copy list", () => {
   it("lists each call site's line once, headed by the component, the counts and the filters", () => {
     const v = viewWith(input([call("src/Pay.tsx", 6, [], owned("form")), call("src/Pay.tsx", 6, [], owned("dialog")), call("src/Pay.tsx", 9)]), { picks: [pick("size", "unset")] });
-    expect(copyListText({ sections: v.sections, displayName: "Button", repoId: "shop", deprecated: false, migrationStatus: { status: "active" }, folderKey: null, filters: filterText([pick("size", "unset")], null, ""), href: "https://scout.test/x", urlFor: (path, line) => `https://git.test/${path}#L${line}` }))
+    expect(copyListText({ sections: v.sections, displayName: "Button", repoId: "shop", deprecated: false, migrationStatus: { status: "active" }, byPackage: false, folderKey: null, filters: filterText([pick("size", "unset")], null, ""), href: "https://scout.test/x", urlFor: (path, line) => `https://git.test/${path}#L${line}` }))
       .toBe("Button in shop: 3 uses in 1 file\nFilters: size not set\n\n- src/Pay.tsx:6, 9 https://git.test/src/Pay.tsx#L6\n\nView in Scout: https://scout.test/x");
   });
 
@@ -449,7 +485,7 @@ describe("copy list", () => {
   const filesIn = (dir: string, count: number) => Array.from({ length: count }, (_, i) => call(`${dir}${name(i)}`, 1));
   const listed = (dir: string, count: number) => Array.from({ length: count }, (_, i) => `- ${dir}${name(i)}:1`);
   const copy = (v: UsageView, extra: Partial<CopyListInput> = {}) =>
-    copyListText({ sections: v.sections, displayName: "Button", repoId: "shop", deprecated: false, migrationStatus: { status: "active" }, folderKey: null, filters: "", href: "https://scout.test/x", urlFor: () => null, ...extra });
+    copyListText({ sections: v.sections, displayName: "Button", repoId: "shop", deprecated: false, migrationStatus: { status: "active" }, byPackage: false, folderKey: null, filters: "", href: "https://scout.test/x", urlFor: () => null, ...extra });
 
   it("lists a grouped view folder by folder, most calls first, each headed by its full path", () => {
     const v = viewWith(input([...filesIn("apps/web/checkout/", 12), ...filesIn("apps/web/", 13)]));

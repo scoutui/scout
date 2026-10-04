@@ -19,18 +19,18 @@ function makeDetail(overrides?: Partial<ComponentDetail>): ComponentDetail {
 
 /** The line under the name: package, public entry, version and definition site. */
 function identityLine(): string {
-  return screen.getByText("@example/ui").parentElement?.textContent ?? "";
+  return screen.getByText("@example/ui").closest("div")?.textContent ?? "";
 }
 
 describe("ComponentDetailHeader", () => {
   it("shows a package export's package and public entry", () => {
     render(<ComponentDetailHeader detail={makeDetail()} canEdit />);
-    expect(identityLine()).toBe("@example/ui·dist/button");
+    expect(identityLine()).toBe("From @example/ui·dist/button");
   });
 
   it("shows no entry for a package export at the package root", () => {
     render(<ComponentDetailHeader detail={makeDetail({ publicEntry: "" })} canEdit />);
-    expect(identityLine()).toBe("@example/ui");
+    expect(identityLine()).toBe("From @example/ui");
   });
 
   it("renders no 'Used as', 'via' or manifest badge, whatever else the detail carries", () => {
@@ -43,7 +43,7 @@ describe("ComponentDetailHeader", () => {
     render(<ComponentDetailHeader detail={detail} canEdit />);
     // The header still renders its real content from the same detail.
     expect(screen.getByRole("heading", { level: 1, name: "Button" })).toBeInTheDocument();
-    expect(identityLine()).toBe("@example/ui·dist/button");
+    expect(identityLine()).toBe("From @example/ui·dist/button");
     expect(screen.queryByText(/Used as/)).toBeNull();
     expect(screen.queryByText(/\bvia\b/)).toBeNull();
     expect(screen.queryByText(/manifest/)).toBeNull();
@@ -60,7 +60,7 @@ describe("ComponentDetailHeader", () => {
         canEdit
       />,
     );
-    expect(identityLine()).toBe("@example/ui·defined at src/components/Button.tsx:4:16");
+    expect(identityLine()).toBe("From @example/ui·defined at src/components/Button.tsx:4:16");
   });
 
   it("shows a dash for a component with no package, as the components table does", () => {

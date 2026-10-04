@@ -189,8 +189,9 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
       repoId: detail.repoId,
       deprecated: detail.deprecated,
       migrationStatus: detail.migrationStatus,
+      byPackage: view.byPackage,
       folderKey: folder,
-      filters: filterText(filters.picks, filters.area, filters.find),
+      filters: filterText(filters.picks, filters.area, filters.find, undefined, view.byPackage),
       href: window.location.href,
       urlFor: (path, line) => (source ? sourceFileUrl(source.remote, source.commit, path, line) : null),
     });

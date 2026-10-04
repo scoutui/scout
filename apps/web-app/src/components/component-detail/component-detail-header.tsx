@@ -35,7 +35,9 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
         ) : null}
       </div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <span className="font-mono" title={detail.packageName ? undefined : NO_PACKAGE_TITLE}>{detail.packageName ?? "—"}</span>
+        <span>
+          From <span className="font-mono" title={detail.packageName ? undefined : NO_PACKAGE_TITLE}>{detail.packageName ?? "—"}</span>
+        </span>
         {detail.publicEntry ? (<><Sep /><span className="font-mono">{detail.publicEntry}</span></>) : null}
         {detail.version ? (<><Sep /><span className="font-mono">v{detail.version}</span></>) : null}
         {detail.definedAt ? (

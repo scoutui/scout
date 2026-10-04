@@ -25,7 +25,7 @@ type HrefWith = ReturnType<typeof useHrefWith>;
  * The files in view, one row each, grouped into the view's sections. A row opens to one line per call site. Rows start
  * open while few calls are in view; a row the reader opens or closes stays that way. From md each of `columns` shows a
  * prop's values; below md a line of JSX under each file name shows them. The File, value and Calls headings sort the
- * files by `view.sort` and report a click through `onSort`. Each folder's heading copies its files through
+ * files by `view.sort` and report a click through `onSort`. Each package's or folder's heading copies its files through
  * `onCopyFolder`; the one whose key is `copiedFolder` reads "Copied". The headings pin under the file toolbar, except
  * when the component has `few` calls.
  */
@@ -114,7 +114,7 @@ export function FileTable({
       </thead>
       {view.sections.map((section, i) => (
         <tbody key={section.key ?? "all"}>
-          <SectionHeading section={section} cols={cols} first={i === 0} pinned={!few} copied={section.key !== null && section.key === copiedFolder} onCopy={() => onCopyFolder(section)} />
+          <SectionHeading section={section} byPackage={view.byPackage} cols={cols} first={i === 0} pinned={!few} copied={section.key !== null && section.key === copiedFolder} onCopy={() => onCopyFolder(section)} />
           {section.files.map((file, j) => (
             <FileRow
               key={file.path}
@@ -135,22 +135,22 @@ export function FileTable({
 }
 
 /** The folders below which a section's files sit, in full, for the heading's title. */
-function headingTitle(section: UsageSection): string | undefined {
-  if (section.key === null || section.key === ".") return section.shared ?? undefined;
+function headingTitle(section: UsageSection, byPackage: boolean): string | undefined {
+  if (section.key === null || section.key === "." || byPackage) return section.shared ?? undefined;
   return section.shared ? `${section.key}/${section.shared}` : section.key;
 }
 
 /**
- * A folder's label, the folders its files share and its own Copy, shown on hover or focus and always on touch; or for a
- * flat list only the folders every file shares.
+ * A package's or a folder's label, the folders its files share and its own Copy, shown on hover or focus and always on
+ * touch; or for a flat list only the folders every file shares. `byPackage` when the section is a package's.
  */
-function SectionHeading({ section, cols, first, pinned, copied, onCopy }: { section: UsageSection; cols: number; first: boolean; pinned: boolean; copied: boolean; onCopy: () => void }) {
+function SectionHeading({ section, byPackage, cols, first, pinned, copied, onCopy }: { section: UsageSection; byPackage: boolean; cols: number; first: boolean; pinned: boolean; copied: boolean; onCopy: () => void }) {
   if (section.label === null && section.shared === null) return null;
   return (
     <tr className="group/g">
       <th colSpan={cols} scope="rowgroup" className={cn("bg-card px-4 pb-1 pt-2 text-left font-normal", pinned && "sticky z-[5]", !first && "border-t")} style={pinned ? SECTION_TOP : undefined}>
         <div className="flex min-h-6 min-w-0 items-center gap-2">
-          <span className="flex min-w-0 items-baseline gap-1.5 font-mono text-xs" title={headingTitle(section)}>
+          <span className="flex min-w-0 items-baseline gap-1.5 font-mono text-xs" title={headingTitle(section, byPackage)}>
             {section.label !== null ? <span className="shrink-0 font-medium">{section.label}</span> : null}
             {section.label !== null && section.shared !== null ? (
               <span aria-hidden className="shrink-0 text-muted-foreground">

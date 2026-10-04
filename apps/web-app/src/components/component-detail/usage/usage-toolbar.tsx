@@ -204,8 +204,8 @@ function SwapIcon({ on, from, to }: { on: boolean; from: ReactNode; to: ReactNod
 }
 
 /**
- * One pill per filtered prop, in the order first picked, then the folder; below sm, Clear filters after them. Each
- * pill's × removes that filter and tells `onRemoving` its position first.
+ * One pill per filtered prop, in the order first picked, then the package or folder; below sm, Clear filters after
+ * them. Each pill's × removes that filter and tells `onRemoving` its position first.
  */
 export function FilterPills({
   view,
@@ -252,13 +252,13 @@ export function FilterPills({
       })}
       {area ? (
         <Pill
-          label={`Remove the filter folder ${area.label}`}
+          label={`Remove the filter ${view.byPackage ? "package" : "folder"} ${area.label}`}
           onRemove={() => {
             onRemoving(groups.length);
             onRemoveArea();
           }}
         >
-          <span className="text-muted-foreground">Folder</span>
+          <span className="text-muted-foreground">{view.byPackage ? "Package" : "Folder"}</span>
           <span className="truncate font-mono font-medium">{area.label}</span>
         </Pill>
       ) : null}
