@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Person } from "@/lib/access";
 
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
@@ -18,8 +18,7 @@ describe("AccountMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Account" }));
     expect(await screen.findByText("Ana Ruiz")).toBeInTheDocument();
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
-    expect(screen.getByText("Admin")).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Settings" })).toHaveAttribute("href", "/settings");
+    expect(within(screen.getByRole("group", { name: "Admin" })).getByRole("menuitem", { name: "Settings" })).toHaveAttribute("href", "/settings");
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
     expect(signOut).toHaveBeenCalledExactlyOnceWith({ callbackUrl: "/login" });
   });
@@ -27,7 +26,9 @@ describe("AccountMenu", () => {
   it("closes the menu when Settings is clicked", async () => {
     render(<AccountMenu person={admin} />);
     fireEvent.click(screen.getByRole("button", { name: "Account" }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Settings" }));
+    const settings = await screen.findByRole("menuitem", { name: "Settings" });
+    document.addEventListener("click", event => event.preventDefault(), { once: true });
+    fireEvent.click(settings);
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
   });
 

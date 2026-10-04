@@ -1,5 +1,6 @@
 export const ROLES = ["viewer", "editor", "admin"] as const;
 export type Role = (typeof ROLES)[number];
+export const ROLE_NAMES: Record<Role, string> = { viewer: "Viewer", editor: "Editor", admin: "Admin" };
 /** Where a person's role comes from: the People page, `SCOUTUI_ADMINS`, or `SCOUTUI_ADMIN_GROUP`. */
 export type RoleSource = "people" | "install" | "group";
 export type Person = { kind: "person"; userId: string; email: string; name: string | null; role: Role; roleSource: RoleSource };

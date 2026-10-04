@@ -1,17 +1,17 @@
 "use client";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { can, type Person, type Role } from "@/lib/access";
+import { can, type Person, ROLE_NAMES } from "@/lib/access";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const ROLE_NAMES: Record<Role, string> = { viewer: "Viewer", editor: "Editor", admin: "Admin" };
 
 function initials({ name, email }: Person): string {
   const words = name?.trim().split(/\s+/).filter(Boolean) ?? [];
@@ -30,20 +30,24 @@ export function AccountMenu({ person }: { person: Person | null }) {
         {initials(person)}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 text-xs">
-        <div className="px-2 py-1.5">
-          {person.name ? <p className="truncate font-medium">{person.name}</p> : null}
-          <p className="truncate text-muted-foreground">{person.email}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <p className="px-2 py-1.5 text-muted-foreground">{ROLE_NAMES[person.role]}</p>
-        {can(person, "manage-people") ? (
-          <DropdownMenuLinkItem className="text-xs" closeOnClick render={<Link href="/settings" />}>
-            Settings
-          </DropdownMenuLinkItem>
-        ) : null}
-        <DropdownMenuItem className="text-xs" onClick={() => signOut({ callbackUrl: "/login" })}>
-          Sign out
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            {person.name ? <p className="truncate font-medium">{person.name}</p> : null}
+            <p className="truncate text-muted-foreground">{person.email}</p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-muted-foreground">{ROLE_NAMES[person.role]}</DropdownMenuLabel>
+            {can(person, "manage-people") ? (
+              <DropdownMenuLinkItem className="text-xs" closeOnClick render={<Link href="/settings" />}>
+                Settings
+              </DropdownMenuLinkItem>
+            ) : null}
+            <DropdownMenuItem className="text-xs" onClick={() => signOut({ callbackUrl: "/login" })}>
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
