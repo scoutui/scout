@@ -6,17 +6,19 @@ import { claimScanJob, type ClaimedScanJob } from "@/lib/scan-jobs";
 import { processScanJob } from "@/worker/runner";
 import { openReadModelDatabase } from "../helpers/read-model-db";
 import { receiveArtifact, sampleArtifact } from "../helpers/scan-artifact";
-import { verifyUploadBearer } from "@/lib/auth";
+import type { Identity } from "@/lib/access";
 import { hashToken } from "@/lib/cli-session-tokens";
+import { type Caller, identify } from "@/lib/identity";
 
 const db = vi.hoisted(() => ({ pool: undefined as Pool | undefined }));
-const session = vi.hoisted(() => ({ value: null as null | { user?: { id?: string } } }));
+const session = vi.hoisted(() => ({ value: null as Identity | null }));
+const editor = vi.hoisted((): Identity => ({ kind: "person", userId: "u1", email: "ana@example.com", name: null, role: "editor", roleSource: "people" }));
 vi.mock("@/db/client", () => ({ getPool: () => db.pool }));
-vi.mock("@/auth", () => ({ auth: vi.fn(async () => session.value) }));
-vi.mock("@/lib/auth", () => ({
-  verifyUploadBearer: vi.fn(async (header: string | null) => {
-    if (header === "Bearer user-token") return { kind: "user", userId: "u1" };
-    if (header === "Bearer ci-token") return { kind: "ci" };
+vi.mock("@/lib/identity", () => ({
+  identify: vi.fn(async (caller: Caller): Promise<Identity | null> => {
+    if ("browser" in caller) return session.value;
+    if (caller.bearer === "Bearer user-token") return editor;
+    if (caller.bearer === "Bearer ci-token") return { kind: "ci" };
     return null;
   }),
 }));
@@ -86,7 +88,7 @@ describe("GET /api/scans/uploads/[uploadId] database failures", () => {
   it("returns a generic server error when CLI bearer lookup fails", async () => {
     const raw = `scout_u_${"a".repeat(43)}`;
     const hash = hashToken(raw);
-    vi.mocked(verifyUploadBearer).mockRejectedValueOnce(new DrizzleQueryError("resolve upload bearer", [hash], new Error(raw)));
+    vi.mocked(identify).mockRejectedValueOnce(new DrizzleQueryError("resolve upload bearer", [hash], new Error(raw)));
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     const response = await status("00000000-0000-4000-8000-000000000000", `Bearer ${raw}`);
     expect(response.status).toBe(500);
@@ -130,15 +132,13 @@ describe.skipIf(!databaseUrl)("GET /api/scans/uploads/[uploadId]", { timeout: 30
     expect(anonymous.status).toBe(401);
     expect(await anonymous.json()).toEqual({ error: "unauthorized" });
     expect((await status(uploadId, "Bearer expired")).status).toBe(401);
-    session.value = { user: {} };
-    expect((await status(uploadId, null)).status).toBe(401);
   });
 
   it("accepts a user bearer, the CI bearer and a browser session", async () => {
     const uploadId = await receiveArtifact(pool, sampleArtifact());
     expect((await status(uploadId, "Bearer user-token")).status).toBe(200);
     expect((await status(uploadId, "Bearer ci-token")).status).toBe(200);
-    session.value = { user: { id: "u2" } };
+    session.value = editor;
     const browser = await status(uploadId, null);
     expect(browser.status).toBe(200);
     expect(browser.headers.get("Cache-Control")).toBe("no-store");

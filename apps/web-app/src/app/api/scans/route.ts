@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/db/client";
-import { verifyUploadBearer } from "@/lib/auth";
+import { can, UPLOAD_REFUSAL } from "@/lib/access";
+import { identify } from "@/lib/identity";
 import { rateLimit, clientKey, logRateLimitRejection } from "@/lib/rate-limit";
 import { tooLarge } from "@/lib/request-body";
 import { receiveUpload, UploadReceiveError } from "@/lib/scan-archive";
@@ -83,14 +84,17 @@ function receiveFailure(error: unknown, config: ScanUploadConfig, signal: AbortS
 }
 
 export async function POST(req: Request): Promise<Response> {
-  let identity: Awaited<ReturnType<typeof verifyUploadBearer>>;
+  let identity: Awaited<ReturnType<typeof identify>>;
   try {
-    identity = await verifyUploadBearer(req.headers.get("authorization"));
+    identity = await identify({ bearer: req.headers.get("authorization") });
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
   if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!can(identity, "upload")) {
+    return NextResponse.json({ error: UPLOAD_REFUSAL.code, refusal: UPLOAD_REFUSAL }, { status: 403 });
   }
 
   const key = identity.kind === "ci" ? `scans:ci:${clientKey(req)}` : `scans:user:${identity.userId}`;

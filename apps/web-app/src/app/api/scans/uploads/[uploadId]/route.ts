@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getPool } from "@/db/client";
-import { verifyUploadBearer } from "@/lib/auth";
+import { can } from "@/lib/access";
+import { identify } from "@/lib/identity";
 import { errorClass, getUploadStatus } from "@/lib/scan-jobs";
 
 async function authorized(req: Request): Promise<boolean> {
   const header = req.headers.get("authorization");
-  if (header) return (await verifyUploadBearer(header)) !== null;
-  return Boolean((await auth())?.user?.id);
+  const identity = header ? await identify({ bearer: header }) : await identify({ browser: true });
+  return can(identity, "view") || can(identity, "upload");
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ uploadId: string }> }): Promise<Response> {

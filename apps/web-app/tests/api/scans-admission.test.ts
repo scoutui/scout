@@ -1,7 +1,7 @@
 import { setImmediate } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/auth", () => ({ verifyUploadBearer: vi.fn(async () => ({ kind: "ci" })) }));
+vi.mock("@/lib/identity", () => ({ identify: vi.fn(async () => ({ kind: "ci" })) }));
 vi.mock("@/db/client", () => ({ getPool: () => ({}) }));
 vi.mock("@/lib/scan-archive", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/scan-archive")>(),

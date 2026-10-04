@@ -14,6 +14,11 @@ vi.mock("@/lib/cli-device-codes", () => ({
 vi.mock("@/lib/cli-session-store", () => ({
   consumeApprovedDeviceCode: vi.fn(async () => ({ token: `scout_u_${"a".repeat(43)}`, email: "ben@example.com" })),
 }));
+vi.mock("@/lib/identity", () => ({
+  identify: vi.fn(async (caller: { bearer: string | null }) => caller.bearer === `Bearer scout_u_${"a".repeat(43)}`
+    ? { kind: "person", userId: "user-1", email: "ben@example.com", name: null, role: "editor", roleSource: "people" }
+    : null),
+}));
 
 import { POST as deviceCode } from "@/app/api/auth/cli/device-code/route";
 import { POST as token } from "@/app/api/auth/cli/token/route";
@@ -79,7 +84,7 @@ describe("device flow", () => {
     const ok = await token(req("http://x/api/auth/cli/token", { device_code: "dc-plain" }));
     expect(ok.status).toBe(200);
     const b = await ok.json();
-    expect(b).toEqual({ access_token: `scout_u_${"a".repeat(43)}`, token_type: "Bearer", email: "ben@example.com" });
+    expect(b).toEqual({ access_token: `scout_u_${"a".repeat(43)}`, token_type: "Bearer", email: "ben@example.com", role: "editor" });
     expect(b).not.toHaveProperty("refresh_token");
     expect(b).not.toHaveProperty("expires_in");
     expect(consumeApprovedDeviceCode).toHaveBeenCalledWith("d1", "user-1");

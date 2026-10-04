@@ -3,7 +3,9 @@ import { SCHEMA_VERSION } from "@scoutui/scan-format";
 
 const line = vi.hoisted(() => "A line from the dashboard.");
 vi.mock("@/lib/dashboard-warning", () => ({ dashboardWarning: () => line }));
-vi.mock("@/lib/auth", () => ({ verifyUploadBearer: vi.fn(async () => ({ kind: "user", userId: "u1" })) }));
+vi.mock("@/lib/identity", () => ({
+  identify: vi.fn(async () => ({ kind: "person", userId: "u1", email: "ana@example.com", name: null, role: "editor", roleSource: "people" })),
+}));
 vi.mock("@/db/client", () => ({ getPool: () => ({ query: async () => ({ rows: [] }) }) }));
 vi.mock("@/lib/cli-device-codes", () => ({
   createDeviceCode: vi.fn(async () => ({ deviceCode: "dc-plain", userCode: "ABCD-EFGH" })),

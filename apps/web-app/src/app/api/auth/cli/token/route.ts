@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteDeniedDeviceCode, findByDeviceCodeHash, pruneDeviceCodes, touchPoll } from "@/lib/cli-device-codes";
 import { consumeApprovedDeviceCode } from "@/lib/cli-session-store";
 import { hashToken } from "@/lib/cli-session-tokens";
+import { identify } from "@/lib/identity";
 import { rateLimit, clientKey, logRateLimitRejection } from "@/lib/rate-limit";
 import { readJsonBody } from "@/lib/request-body";
 
@@ -83,11 +84,13 @@ async function pollDeviceCode(rawDeviceCode: string): Promise<Response> {
 
     const session = await consumeApprovedDeviceCode(id, approvedUserId);
     if (!session) return NextResponse.json({ error: "expired_token" }, { status: 400 });
+    const identity = await identify({ bearer: `Bearer ${session.token}` });
 
     return NextResponse.json({
       access_token: session.token,
       token_type: "Bearer",
       email: session.email,
+      role: identity?.kind === "person" ? identity.role : null,
     });
   }
 

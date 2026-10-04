@@ -104,10 +104,15 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
   });
 
-  it("recognises the CI upload secret, and nobody for a wrong secret", async () => {
+  it("recognises the CI upload secret, and nobody for a wrong, longer or unprefixed secret, or once the secret is unset", async () => {
     vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", "ci-secret-1234");
     expect(await identify({ bearer: "Bearer ci-secret-1234" })).toEqual({ kind: "ci" });
     expect(await identify({ bearer: "Bearer ci-secret-9999" })).toBeNull();
+    expect(await identify({ bearer: "Bearer ci-secret-12345" })).toBeNull();
+    expect(await identify({ bearer: "ci-secret-1234" })).toBeNull();
+    expect(await identify({ bearer: null })).toBeNull();
+    vi.stubEnv("SCOUTUI_CI_UPLOAD_TOKEN", undefined);
+    expect(await identify({ bearer: "Bearer ci-secret-1234" })).toBeNull();
   });
 
   it("gives a CLI token its person with their stored role and records the sign-in, and nobody for an unknown token", async () => {
