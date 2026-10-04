@@ -251,7 +251,8 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const refused = await edit();
       expect(propsOf(refused, "DashboardBuilder")).toBeUndefined();
       expect(propsOf(refused, "EmptyState")).toMatchObject({ titleAs: "h1", title: "Only the chart's creator or an Admin can change it." });
-      expect(hrefsIn(propsOf(refused, "EmptyState")?.["action"] as ReactNode)).toEqual([`/charts/new?from=${encodeURIComponent(created.id)}`]);
+      const { action } = propsOf(refused, "EmptyState") ?? {};
+      expect(hrefsIn(action as ReactNode)).toEqual([`/charts/new?from=${encodeURIComponent(created.id)}`]);
 
       session = { user: { id: "admin" } };
       reader = { ...editor, userId: "admin", role: "admin" };
