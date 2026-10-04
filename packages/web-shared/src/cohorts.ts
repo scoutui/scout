@@ -180,6 +180,7 @@ export function projectCohortSnapshot(
 
 /** Cohort occurrences over time. Step-union: each repo contributes its most-recent
  *  artifact as of each distinct timestamp. metric=share → fraction of cohort total at that point.
+ *  Each cohort's series starts at the first scan of the earliest repo that has it in some scan.
  *  `names` only names a cohort and gives it its role, as in `projectCohortSnapshot`. */
 export function projectCohortSeries(
   artifacts: DigestScan[],
@@ -196,6 +197,7 @@ export function projectCohortSeries(
       occurrences: (a: DigestScan) => resolveCohort(selector, a, tags, governance).occurrences,
     })),
     metric,
+    { fromFirstRepo: true },
   );
 }
 
@@ -227,9 +229,16 @@ export type SeriesCohort = { key: string; label: string; color: string; role?: C
 
 /**
  * The step-union series projection behind `projectCohortSeries`, over cohorts that count their own occurrences per scan.
- * Each scan joins the timeline at its `scanOrderTime`.
+ * Each scan joins the timeline at its `scanOrderTime`. A point after a series' first names in `added` the repos whose
+ * first scan it is and that have the cohort in that scan. With `fromFirstRepo`, a cohort's series starts at the first
+ * scan of the earliest repo that has it in some scan.
  */
-export function projectSeries(artifacts: DigestScan[], cohorts: SeriesCohort[], metric: "count" | "share"): CohortSeries[] {
+export function projectSeries(
+  artifacts: DigestScan[],
+  cohorts: SeriesCohort[],
+  metric: "count" | "share",
+  { fromFirstRepo = false }: { fromFirstRepo?: boolean } = {},
+): CohortSeries[] {
   const byRepo = new Map<string, DigestScan[]>();
   for (const a of artifacts) {
     const arr = byRepo.get(a.meta.repo.id) ?? [];
@@ -267,18 +276,26 @@ export function projectSeries(artifacts: DigestScan[], cohorts: SeriesCohort[], 
     return cohorts.map((cohort, ci) => asOf.reduce((s, a) => s + occurrencesFor(ci, cohort, a), 0));
   });
 
+  const firstScans = [...byRepo.values()].flatMap(([first]) => (first ? [first] : []));
   return cohorts.map((cohort, ci) => {
+    const holds = (a: DigestScan) => occurrencesFor(ci, cohort, a) > 0;
+    const start = fromFirstRepo
+      ? [...byRepo.values()].flatMap(([first, ...rest]) => (first && [first, ...rest].some(holds) ? [scanOrderTime(first.meta)] : [])).sort()[0]
+      : undefined;
     return {
       cohortKey: cohort.key,
       label: cohort.label,
       color: cohort.color,
       ...(cohort.role ? { role: cohort.role } : {}),
-      points: timestamps.map((t, ti) => {
+      points: timestamps.flatMap((t, ti) => {
+        if (start !== undefined && t.localeCompare(start) < 0) return [];
         const row = perTime[ti]!;
         const occ = row[ci] ?? 0;
-        if (metric !== "share") return { t, value: occ };
         const total = row.reduce((s, v) => s + v, 0);
-        return { t, value: total === 0 ? 0 : occ / total };
+        return [{ t, value: metric !== "share" ? occ : total === 0 ? 0 : occ / total }];
+      }).map((point, i) => {
+        const added = i === 0 ? [] : firstScans.filter((a) => scanOrderTime(a.meta) === point.t && holds(a)).map((a) => a.meta.repo.id).sort();
+        return added.length > 0 ? { ...point, added } : point;
       }),
     };
   });

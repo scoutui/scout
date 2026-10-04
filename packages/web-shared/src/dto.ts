@@ -232,7 +232,11 @@ export const CohortSeriesSchema = z.object({
   cohortKey: z.string(),
   label: z.string(),
   color: z.string(),
-  points: z.array(z.object({ t: z.string(), value: z.number().min(0) })),
+  points: z.array(z.object({
+    t: z.string(),
+    value: z.number().min(0),
+    added: z.array(z.string()).optional(),  // after a series' first point: repos whose first scan this is, when they have the cohort in it
+  })),
   role: CohortRoleSchema.optional(),
 });
 export type CohortSeries = z.infer<typeof CohortSeriesSchema>;
