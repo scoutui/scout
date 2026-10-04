@@ -12,6 +12,10 @@ describe("compareVersions", () => {
   it("sorts an array ascending, 0.x before 1.x", () => {
     expect(["1.14.11", "0.9.0", "1.5.0"].sort(compareVersions)).toEqual(["0.9.0", "1.5.0", "1.14.11"]);
   });
+
+  it("puts a release above its prereleases", () => {
+    expect(["5.0.0", "5.0.0-rc.2", "4.9.0", "5.0.0-beta.1"].sort(compareVersions)).toEqual(["4.9.0", "5.0.0-beta.1", "5.0.0-rc.2", "5.0.0"]);
+  });
 });
 
 describe("computeVersionShare ordering", () => {

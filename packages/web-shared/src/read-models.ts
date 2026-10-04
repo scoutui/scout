@@ -3,7 +3,7 @@ import type { ComponentDetailHead, ComponentSummaryBand, CompositionEdge, Declar
 import { type ComponentDigest, toComponentDigest } from "./digest.js";
 import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-graph.js";
 import { shownWrittenName } from "./display-name.js";
-import { governanceIdentity, presentIdentity, type GovernanceIdentity } from "./present-identity.js";
+import { disambiguatorOf, governanceIdentity, presentIdentity, type GovernanceIdentity } from "./present-identity.js";
 import { createComponentProjectionContext, displayNameCollisionKey, type ComponentProjectionContext, type OccurrenceStatistics, type ProjectionContext } from "./projection-context.js";
 import { usedComponentKey, isUsed } from "./usage.js";
 
@@ -65,7 +65,7 @@ function deriveComponentFact(context: ComponentProjectionContext, component: Com
     displayName,
     writtenNames: (component.writtenNames ?? []).filter(written => shownWrittenName(written, displayName) !== undefined),
     packages: presented.packageName === null ? [] : [{ packageName: presented.packageName, versions: component.version ? [component.version] : [] }],
-    disambiguator: collides ? (presented.scope === "external" ? presented.publicEntry : presented.filePath) : null,
+    disambiguator: collides ? disambiguatorOf(presented) : null,
     usedIdentityKey: isUsed(component) ? usedComponentKey(component) : null,
     digest: toComponentDigest(component),
     ...(stats?.byPackage.size

@@ -150,23 +150,6 @@ export function createLazyResolver(opts: CreateLazyResolverOptions): LazyResolve
     return firstStar ? { from: firstStar.from, targetExport: exportName } : null;
   }
 
-  function findPackageRoot(absFile: string): { name: string; dir: string } | null {
-    let dir = dirname(absFile);
-    while (dir !== dirname(dir)) {
-      const pkgJson = join(dir, "package.json");
-      if (existsSync(pkgJson)) {
-        try {
-          const pkg = JSON.parse(readFileSync(pkgJson, "utf8")) as { name?: string };
-          if (pkg.name) return { name: pkg.name, dir };
-        } catch {
-          // Continue walking if unreadable.
-        }
-      }
-      dir = dirname(dir);
-    }
-    return null;
-  }
-
   // The walk and cache behind `lookupExternalLeaf`.
   function resolveLeaf(fromFile: string, specifier: string, exportName: string): LeafWalk | null {
     const initialAbs = resolveImport(fromFile, specifier);
@@ -295,6 +278,25 @@ export function createLazyResolver(opts: CreateLazyResolverOptions): LazyResolve
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** The package `absFile` is in: the nearest directory above it whose
+ *  `package.json` has a `name`, with that name. Null when there is none. */
+export function findPackageRoot(absFile: string): { name: string; dir: string } | null {
+  let dir = dirname(absFile);
+  while (dir !== dirname(dir)) {
+    const pkgJson = join(dir, "package.json");
+    if (existsSync(pkgJson)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgJson, "utf8")) as { name?: string };
+        if (pkg.name) return { name: pkg.name, dir };
+      } catch {
+        // Continue walking if unreadable.
+      }
+    }
+    dir = dirname(dir);
+  }
+  return null;
+}
 
 function safeReadFile(path: string): string | null {
   try {

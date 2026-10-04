@@ -34,12 +34,12 @@ We write the full address, including `http://`. For a dashboard our team already
 
 ```
 To sign in, open:
-  http://localhost:3000/login/device
+  http://localhost:3000/login/device?code=HJKM-4TQX
 Code: HJKM-4TQX
-Opened your browser…
+Opening your browser…
 ```
 
-Our code will be different. If the browser doesn't open, we open the link ourselves with our code on the end, such as `http://localhost:3000/login/device?code=HJKM-4TQX`. The browser shows an approval page with our email under **Signed in as** and the same code under **Device code**. We check that the code matches and press **Approve**. The terminal finishes with:
+Our code will be different. If the browser doesn't open, we open the link ourselves. The browser shows an approval page with our email under **Signed in as** and the same code under **Device code**. We check that the code matches and press **Approve**. The terminal finishes with:
 
 ```
 ✓ Signed in as dev@acme.test to http://localhost:3000 as an Admin.

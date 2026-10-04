@@ -26,6 +26,10 @@
     "./git-remote": {
       "types": "./dist/git-remote.d.ts",
       "import": "./dist/git-remote.js"
+    },
+    "./cli-version": {
+      "types": "./dist/cli-version.d.ts",
+      "import": "./dist/cli-version.js"
     }
   },
   "files": [

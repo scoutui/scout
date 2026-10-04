@@ -402,7 +402,7 @@ function OccurrenceDelta({ delta, deprecated }: { delta: number; deprecated: boo
 
 // Shortens a disambiguator path to its last two segments with a leading
 // ellipsis. The full path stays in the cell's `title`.
-function shortenPath(path: string, segments = 2): string {
+export function shortenPath(path: string, segments = 2): string {
   const parts = path.split("/");
   if (parts.length <= segments) return path;
   return `…/${parts.slice(-segments).join("/")}`;

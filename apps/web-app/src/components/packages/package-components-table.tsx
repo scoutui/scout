@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, X } from "lucide-react";
 import type { PackageComponentRow } from "@scoutui/web-shared";
 import { plural } from "@scoutui/web-shared/client";
+import { shortenPath } from "@/components/repos/components-table";
 import {
   Table,
   TableBody,
@@ -139,10 +140,17 @@ function PackageComponentTableRow({ component: c }: { component: PackageComponen
         <Link
           href={`/components/${encodeURIComponent(c.componentId)}`}
           title={c.deprecated ? `${c.displayName} (deprecated)` : c.displayName}
-          className="flex min-w-0 items-center gap-2 px-3 py-2 font-mono font-medium hover:underline"
+          className="group block min-w-0 px-3 py-2 font-mono"
         >
-          <span className="truncate">{c.displayName}</span>
-          {c.deprecated ? <DeprecatedMark /> : null}
+          <span className="flex min-w-0 items-center gap-2 font-medium">
+            <span className="truncate group-hover:underline">{c.displayName}</span>
+            {c.deprecated ? <DeprecatedMark /> : null}
+          </span>
+          {c.disambiguator ? (
+            <span className="block truncate text-code text-muted-foreground" title={c.disambiguator}>
+              {shortenPath(c.disambiguator)}
+            </span>
+          ) : null}
         </Link>
       </TableCell>
       <TableCell className="text-right tabular-nums">{c.consumerCount.toLocaleString()}</TableCell>

@@ -216,7 +216,7 @@ export class PostgresDriver implements StorageDriver {
   async listPackages(repoId?: string) {
     return this.read(async (reader, snapshot) => {
       const scans = await reader.select(repoId, { latestOnly: true });
-      const facts = await reader.facts(scans, ["packages", "usedIdentityKey", "stats", ...identityFields]);
+      const facts = await reader.facts(scans, ["id", "packages", "usedIdentityKey", "stats", ...identityFields]);
       return reducePackagesAcrossScans(facts, await snapshot.listGovernance());
     });
   }

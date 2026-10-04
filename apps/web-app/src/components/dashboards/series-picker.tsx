@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { shortenPath } from "@/components/repos/components-table";
 import { cn } from "@/lib/utils";
 
 export type PickableComponent = {
   componentId: string;
   displayName: string;
   packageName: string | null;
+  disambiguator: string | null;
   deprecated: boolean;
 };
 
@@ -197,9 +199,9 @@ export function SeriesPicker({
                     >
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span className="w-full truncate font-mono text-xs">{c.displayName}</span>
-                        {c.packageName ? (
-                          <span className="w-full truncate font-mono text-xs text-muted-foreground">
-                            {c.packageName}
+                        {c.packageName || c.disambiguator ? (
+                          <span className="w-full truncate font-mono text-xs text-muted-foreground" title={c.disambiguator || undefined}>
+                            {[c.packageName, c.disambiguator ? shortenPath(c.disambiguator) : null].filter(Boolean).join(" · ")}
                           </span>
                         ) : null}
                       </span>

@@ -34,18 +34,18 @@ const baseDetail: PackageDetail = {
     { repoId: "r2", version: "2.0.0", occurrenceCount: 8, committedAt: "2026-05-15T11:00:00Z" },
   ],
   components: [
-    { componentId: "c1", displayName: "Address", kind: "react-component", totalOccurrences: 8, consumerCount: 2, deprecated: false, usage: "direct" },
-    { componentId: "c2", displayName: "Button", kind: "react-component", totalOccurrences: 3, consumerCount: 1, deprecated: true, usage: "direct" },
+    { componentId: "c1", displayName: "Address", kind: "react-component", disambiguator: null, totalOccurrences: 8, consumerCount: 2, deprecated: false, usage: "direct" },
+    { componentId: "c2", displayName: "Button", kind: "react-component", disambiguator: null, totalOccurrences: 3, consumerCount: 1, deprecated: true, usage: "direct" },
   ],
 };
 
 const coreTag: Tag = { id: "t1", value: "core", category: "library", color: "teal", rule: { glob: [], exact: [] } };
 
 const rowsWithDeadLocal: PackageDetail["components"] = [
-  { componentId: "w1", displayName: "FakeButton", kind: "react-component", totalOccurrences: 5, consumerCount: 2, deprecated: false, usage: "direct" },
-  { componentId: "c2", displayName: "UnusedComponent", kind: "react-component", totalOccurrences: 4, consumerCount: 1, deprecated: false, usage: "direct" },
-  { componentId: "ce1", displayName: "fake-button", kind: "custom-element", totalOccurrences: 3, consumerCount: 1, deprecated: false, usage: "direct" },
-  { componentId: "c3", displayName: "DeadLocal", kind: "react-component", totalOccurrences: 0, consumerCount: 0, deprecated: false, usage: "none" },
+  { componentId: "w1", displayName: "FakeButton", kind: "react-component", disambiguator: null, totalOccurrences: 5, consumerCount: 2, deprecated: false, usage: "direct" },
+  { componentId: "c2", displayName: "UnusedComponent", kind: "react-component", disambiguator: null, totalOccurrences: 4, consumerCount: 1, deprecated: false, usage: "direct" },
+  { componentId: "ce1", displayName: "fake-button", kind: "custom-element", disambiguator: null, totalOccurrences: 3, consumerCount: 1, deprecated: false, usage: "direct" },
+  { componentId: "c3", displayName: "DeadLocal", kind: "react-component", disambiguator: null, totalOccurrences: 0, consumerCount: 0, deprecated: false, usage: "none" },
 ];
 
 describe("PackageDetailHeader", () => {
@@ -180,6 +180,14 @@ describe("PackageComponentsTable", () => {
     expect(screen.getByText("Button")).toBeInTheDocument();
     expect(screen.getByText("8")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
+  });
+
+  it("shows the entry point under components that share a name", () => {
+    render(<PackageComponentsTable components={[
+      { componentId: "b1", displayName: "Button", kind: "react-component", disambiguator: "", totalOccurrences: 5, consumerCount: 1, deprecated: false, usage: "direct" },
+      { componentId: "b2", displayName: "Button", kind: "react-component", disambiguator: "dist/react/button/index", totalOccurrences: 3, consumerCount: 1, deprecated: false, usage: "direct" },
+    ]} />);
+    expect(screen.getByText("…/button/index")).toHaveAttribute("title", "dist/react/button/index");
   });
 
   it("marks deprecated rows with the orange warning glyph after the name, never a pill", () => {

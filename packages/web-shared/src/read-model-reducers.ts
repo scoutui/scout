@@ -21,7 +21,8 @@ import { resolveGovernance, isDeprecated, governingRecord, componentDeprecated, 
 import { parseQuery, matchesQuery } from "./query.js";
 import { strongerUsage } from "./usage.js";
 import type { DigestScan } from "./digest.js";
-import { governanceKey, presentIdentity, tagClaimants, type GovernanceIdentity, type PresentableComponent } from "./present-identity.js";
+import { disambiguatorOf, governanceKey, presentIdentity, tagClaimants, type GovernanceIdentity, type PresentableComponent } from "./present-identity.js";
+import { displayNameCollisionKey } from "./projection-context.js";
 import { representativeUsage } from "./representative.js";
 import { diffForScan, repoDelta } from "./scan-diff.js";
 import type { ComponentFact, FactScan, DetailRow, OccurrenceModelRow, GraphRow } from "./read-models.js";
@@ -34,7 +35,7 @@ export type ComponentRowFact = RepoFact & Pick<ComponentFact, "displayName" | "w
 export type SummaryFact = RepoFact & Pick<ComponentFact, "displayName">;
 export type PackageDetailFact = SummaryFact & Pick<ComponentFact, "version" | "usedIdentityKey">;
 export type CrossRepoFact = IdentityFact & Pick<ComponentFact, "id" | "stats" | "displayName" | "version">;
-export type PackageFact = IdentityFact & Pick<ComponentFact, "packages" | "usedIdentityKey" | "stats">;
+export type PackageFact = IdentityFact & Pick<ComponentFact, "id" | "packages" | "usedIdentityKey" | "stats">;
 
 /** The governance lookup a stored row carries; null when its component is ungovernable. */
 const storedLookup = ({ packageName, exportName }: GovernanceIdentity): GovernanceLookup | null =>
@@ -49,6 +50,20 @@ function presentAcrossScans(usages: ScanUsage<IdentityFact & Pick<ComponentFact,
   if (usage === null) throw new Error("A component presented across scans needs at least one usage");
   const { kind, packageName, scope } = presentIdentity(usage.component);
   return { kind, packageName, scope, displayName: usage.component.displayName };
+}
+
+/** The entry point or file of a component seen in several scans, read from the usage `presentAcrossScans` presents. */
+function disambiguatorAcrossScans(usages: ScanUsage<IdentityFact>[]): string | null {
+  const usage = representativeUsage(usages);
+  return usage === null ? null : disambiguatorOf(presentIdentity(usage.component));
+}
+
+/** Rows keep their disambiguator only where another row shares their package and name. */
+function disambiguateCollisions<R extends { displayName: string; disambiguator: string | null }>(rows: R[], packageOf: (row: R) => string | null): R[] {
+  const key = (row: R) => displayNameCollisionKey(packageOf(row), row.displayName);
+  const counts = new Map<string, number>();
+  for (const row of rows) counts.set(key(row), (counts.get(key(row)) ?? 0) + 1);
+  return rows.map(row => ((counts.get(key(row)) ?? 0) > 1 ? row : { ...row, disambiguator: null }));
 }
 
 /** Totals for one component id across scans. */
@@ -195,7 +210,7 @@ export function reducePackagesAcrossScans(artifacts: FactScan<PackageFact>[], go
     // reached the same way from N repos still contributes 1 if it's used in at least one.
     usedKeys: Set<string>;
     totalOccurrences: number;
-    deprecatedCount: number;
+    deprecatedIds: Set<string>;
     versions: Set<string>;
   }>();
 
@@ -204,13 +219,13 @@ export function reducePackagesAcrossScans(artifacts: FactScan<PackageFact>[], go
       for (const { packageName: pkg, versions } of c.packages) {
         let entry = acc.get(pkg);
         if (!entry) {
-          entry = { consumers: new Set(), usedKeys: new Set(), totalOccurrences: 0, deprecatedCount: 0, versions: new Set() };
+          entry = { consumers: new Set(), usedKeys: new Set(), totalOccurrences: 0, deprecatedIds: new Set(), versions: new Set() };
           acc.set(pkg, entry);
         }
         entry.consumers.add(a.meta.repo.id);
         if (c.usedIdentityKey !== null) entry.usedKeys.add(c.usedIdentityKey);
         entry.totalOccurrences += c.stats.occurrenceCount;
-        if (componentDeprecated(c, governance)) entry.deprecatedCount++;
+        if (componentDeprecated(c, governance)) entry.deprecatedIds.add(c.id);
         for (const version of versions) entry.versions.add(version);
       }
     }
@@ -222,7 +237,7 @@ export function reducePackagesAcrossScans(artifacts: FactScan<PackageFact>[], go
       consumerCount: e.consumers.size,
       componentCount: e.usedKeys.size,
       totalOccurrences: e.totalOccurrences,
-      deprecatedCount: e.deprecatedCount,
+      deprecatedCount: e.deprecatedIds.size,
       distinctVersionCount: e.versions.size,
       soleVersion: soleVersionOf(e.versions),
     }))
@@ -244,7 +259,6 @@ export function reducePackageDetail(
   // the full `components` list below stays complete regardless.
   const usedKeys = new Set<string>();
   let totalOccurrences = 0;
-  let deprecatedCount = 0;
   let found = false;
 
   for (const a of artifacts) {
@@ -259,7 +273,6 @@ export function reducePackageDetail(
       consumers.add(repoId);
       if (c.usedIdentityKey !== null) usedKeys.add(c.usedIdentityKey);
       totalOccurrences += c.stats.occurrenceCount;
-      if (dep) deprecatedCount++;
       if (c.version) versions.add(c.version);
 
       const version = c.version ?? null;
@@ -277,21 +290,24 @@ export function reducePackageDetail(
 
   if (!found) return null;
 
+  const components = disambiguateCollisions(
+    [...componentBuckets].map(([componentId, b]): PackageComponentRow => {
+      const { displayName, kind } = presentAcrossScans(b.usages);
+      return { componentId, displayName, kind, disambiguator: disambiguatorAcrossScans(b.usages), totalOccurrences: b.totalOccurrences, consumerCount: b.repoIds.size, deprecated: b.deprecated, usage: b.usage };
+    }),
+    () => packageName,
+  ).sort((a, b) => b.totalOccurrences - a.totalOccurrences);
+
   return {
     packageName,
     consumerCount: consumers.size,
     componentCount: usedKeys.size,
     totalOccurrences,
-    deprecatedCount,
+    deprecatedCount: components.filter(row => row.deprecated).length,
     distinctVersionCount: versions.size,
     soleVersion: soleVersionOf(versions),
     cells: [...cells.values()],
-    components: [...componentBuckets]
-      .map(([componentId, b]): PackageComponentRow => {
-        const { displayName, kind } = presentAcrossScans(b.usages);
-        return { componentId, displayName, kind, totalOccurrences: b.totalOccurrences, consumerCount: b.repoIds.size, deprecated: b.deprecated, usage: b.usage };
-      })
-      .sort((a, b) => b.totalOccurrences - a.totalOccurrences),
+    components,
   };
 }
 
@@ -303,20 +319,22 @@ export function reduceComponentsAcrossScans(
   for (const a of artifacts) {
     for (const c of a.components) addToBucket(byId, a.meta, c, componentDeprecated(c, governance));
   }
-  return [...byId]
-    .map(([componentId, b]): ComponentSummary => {
+  return disambiguateCollisions(
+    [...byId].map(([componentId, b]): ComponentSummary => {
       const [soleRepoId] = b.repoIds;
       return {
         componentId,
         ...presentAcrossScans(b.usages),
+        disambiguator: disambiguatorAcrossScans(b.usages),
         totalOccurrences: b.totalOccurrences,
         repoCount: b.repoIds.size,
         repoId: b.repoIds.size === 1 ? soleRepoId ?? null : null,
         deprecated: b.deprecated,
         usage: b.usage,
       };
-    })
-    .sort((a, b) => b.totalOccurrences - a.totalOccurrences);
+    }),
+    row => row.packageName,
+  ).sort((a, b) => b.totalOccurrences - a.totalOccurrences);
 }
 
 function addToBucket<C extends Pick<ComponentFact, "id" | "stats" | "usage">>(

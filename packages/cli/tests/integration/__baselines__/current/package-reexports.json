@@ -75,7 +75,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -105,7 +105,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -135,7 +135,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -165,7 +165,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -195,7 +195,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -226,7 +226,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -259,7 +259,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "package-reexports",
       "version": null,
@@ -492,14 +492,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "b891d9c85b8211e6",
+      "occurrenceId": "5236be43858b97c3",
       "resolution": {
         "status": "resolved",
         "componentId": "e023354b8401972a"
       },
       "filePath": "src/bundled-entry/App.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -514,14 +514,14 @@
       "ownerComponentId": "3f7c11105b3449ec"
     },
     {
-      "occurrenceId": "9c116c774ce71bfe",
+      "occurrenceId": "7dc37dfb27480b28",
       "resolution": {
         "status": "resolved",
         "componentId": "b2b7b323def4a5e8"
       },
       "filePath": "src/leaf-relabel/App.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -536,14 +536,14 @@
       "ownerComponentId": "1cccd6fb492a4245"
     },
     {
-      "occurrenceId": "16aaac00b5c8e115",
+      "occurrenceId": "43239e359359b385",
       "resolution": {
         "status": "resolved",
         "componentId": "b2b7b323def4a5e8"
       },
       "filePath": "src/leaf-relabel/Direct.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -558,14 +558,14 @@
       "ownerComponentId": "5dd9bdedbb6b504e"
     },
     {
-      "occurrenceId": "69c9905d1292661c",
+      "occurrenceId": "2d7e824e845133f2",
       "resolution": {
         "status": "resolved",
         "componentId": "e158ad2e457a5506"
       },
       "filePath": "src/star-reexports/Aliased.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -581,14 +581,14 @@
       "ownerComponentId": "897ba978536d42ca"
     },
     {
-      "occurrenceId": "71e76b3c8f736a48",
+      "occurrenceId": "f53e95e0bac571aa",
       "resolution": {
         "status": "resolved",
         "componentId": "65385e93190ff80f"
       },
       "filePath": "src/star-reexports/App.tsx",
       "line": 6,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -603,14 +603,14 @@
       "ownerComponentId": "17e3248107ea8d72"
     },
     {
-      "occurrenceId": "b20cfafb493f4d0c",
+      "occurrenceId": "8211ae5763d09b68",
       "resolution": {
         "status": "resolved",
         "componentId": "a84b87dca0ce7478"
       },
       "filePath": "src/star-reexports/App.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -625,14 +625,14 @@
       "ownerComponentId": "17e3248107ea8d72"
     },
     {
-      "occurrenceId": "abee6e361456ec8d",
+      "occurrenceId": "f753e7e5f20a3b3a",
       "resolution": {
         "status": "resolved",
         "componentId": "638b177beaed7895"
       },
       "filePath": "src/star-reexports/Other.tsx",
       "line": 8,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -648,14 +648,14 @@
       "ownerComponentId": "b7a609de6f636720"
     },
     {
-      "occurrenceId": "58c6f6c28b2d6924",
+      "occurrenceId": "9e16539e4e71ba85",
       "resolution": {
         "status": "resolved",
         "componentId": "1f8816125c4ea18a"
       },
       "filePath": "src/star-reexports/Other.tsx",
       "line": 9,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -671,14 +671,14 @@
       "ownerComponentId": "b7a609de6f636720"
     },
     {
-      "occurrenceId": "0f8227a4f0a6b840",
+      "occurrenceId": "2d392f3adfb02be6",
       "resolution": {
         "status": "resolved",
         "componentId": "a84b87dca0ce7478"
       },
       "filePath": "src/star-reexports/Other.tsx",
       "line": 10,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -694,14 +694,14 @@
       "ownerComponentId": "b7a609de6f636720"
     },
     {
-      "occurrenceId": "aa190c12d242530d",
+      "occurrenceId": "b567d1aa06c1cdb9",
       "resolution": {
         "status": "resolved",
         "componentId": "e158ad2e457a5506"
       },
       "filePath": "src/star-reexports/Other.tsx",
       "line": 11,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -760,14 +760,14 @@
       "ownerComponentId": "86ca8213f1cd45a0"
     },
     {
-      "occurrenceId": "2101c1be293e319f",
+      "occurrenceId": "d32b31965fe4b1c2",
       "resolution": {
         "status": "resolved",
         "componentId": "40d245e00cda4b28"
       },
       "filePath": "src/undeclared-leaf/App.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },

@@ -49,7 +49,7 @@ Whether a component counts once across all your repos, or once per repo, depends
 
 The [version](/docs/reference/glossary#version) shown for a package is the one installed in the repo when the scan ran, not the version range your `package.json` asks for. Components defined in the repo, and web components that belong to no package, have no version and show as unversioned.
 
-The version bar on a package page and on a component's page across repos splits uses by version. It colours the highest version found in your scans and greys out the rest, so the grey share is the code still on an older version.
+The version bar on a package page and on a component's page across repos splits uses by version. It colours the highest version found in your scans and greys out the rest, so the grey share is the code still on an older version. A release is higher than its prereleases: `5.0.0` is above `5.0.0-rc.2`.
 
 The dashboard doesn't check what is published on npm, so "highest" can be behind the newest release. If every repo is on `4.2.0` and `5.0.0` is out, `4.2.0` still takes the colour.
 

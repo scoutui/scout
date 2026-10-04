@@ -64,6 +64,16 @@ export async function setStoredSession(host: string, entry: HostEntry, deps: { f
   }, deps.filePath);
 }
 
+/** Makes `host` the default when no default is set and `host` has a session. */
+export async function setDefaultIfNone(host: string, deps: { filePath?: string } = {}): Promise<void> {
+  const base = normalizeHost(host);
+  await mutateStore((store) => {
+    if (store.default || !Object.hasOwn(store.hosts, base)) return { changed: false, result: undefined };
+    store.default = base;
+    return { changed: true, result: undefined };
+  }, deps.filePath);
+}
+
 export async function removeStoredSession(host: string, deps: { expectedToken: string; filePath?: string }): Promise<boolean> {
   const base = normalizeHost(host);
   return await mutateStore((store) => {

@@ -159,7 +159,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
   const registry = buildComponentRegistry(graph, taggedDeclarations(graph, tagEvaluations));
   const helperIndex = buildHelperCallers(graph, excludeHostElementNames(registry, graph));
 
-  // The admission rule: a local react-component identity pinned to a
+  // The admission rule: a local React or Vue component identity pinned to a
   // first-party path outside the graph (an unparsed first-party file, such as
   // a lazy `import("./PhoneInput")` whose target file wasn't walked) is
   // rejected when that path has an extension that is provably not code
@@ -172,7 +172,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
   const CODE_EXT = /\.(?:[cm]?[jt]sx?|vue)$/i;
   const HAS_EXT = /\.[^./\\]+$/;
   const admit = (id: ComponentId): boolean => {
-    if (id.kind !== "react-component" || id.source.type !== "local") return true;
+    if (id.kind === "custom-element" || id.source.type !== "local") return true;
     const { filePath } = id.source;
     if (graph.files.has(filePath)) return true;
     return !HAS_EXT.test(filePath) || CODE_EXT.test(filePath);
@@ -270,7 +270,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
       }
       const writtenName = [usage.ref.symbol, ...usage.ref.memberChain].join(".");
       const credited = stampComposition(lengthBefore, "jsx", usageIdx, writtenName);
-      if (credited === 0) reportDroppedRender(opts, filePath, fileGraph.dialect, usage, evaluated);
+      if (credited === 0) reportDroppedRender(opts, filePath, usage, evaluated);
     }
 
     // Tag-usage resolution for Vue template references.
@@ -1063,13 +1063,11 @@ function emitTagCredits(
  * component reports nothing, a value supplied elsewhere reports
  * `late-bound-render`, and anything else reports `unresolved-reference`,
  * including a credit the registry's judge, its tagged membership or admission
- * rejected (a render gives one occurrence or one diagnostic). A non-react
- * dialect reports only `lazy-import-unsupported`.
+ * rejected (a render gives one occurrence or one diagnostic).
  */
 function reportDroppedRender(
   opts: ResolveOpts | undefined,
   filePath: string,
-  dialect: Dialect,
   usage: JsxUsage,
   outcome: TagEvaluation,
 ): void {
@@ -1093,7 +1091,6 @@ function reportDroppedRender(
   }
   const decided = renderOutcome(outcome.evaluation);
   if (decided.kind === "silent") return;
-  if (dialect !== "react") return;
   if (decided.kind === "credit") {
     collector.emit({ code: "unresolved-reference", severity: "info", ...positional });
     return;

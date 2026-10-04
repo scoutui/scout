@@ -76,7 +76,7 @@ import * as UI from "@example/ui";
   it.each([
     ["default-exports its options", `<script>\nimport Item from "./MenuItem.vue";\nexport default { name: "Menu", Item };\n</script>`],
     ["passes its options to defineOptions", `<script setup lang="ts">\nimport Item from "./MenuItem.vue";\ndefineOptions({ Item });\n</script>`],
-  ])("claims nothing for a member of an imported SFC whose script %s", (_label, script) => {
+  ])("credits nothing for a member of an imported SFC whose script %s, and reports unresolved-reference", (_label, script) => {
     const collector = createDiagnosticCollector();
     const { occurrences } = runVueScan({
       source: `<template><Menu.Item label="Home" /></template>\n<script setup lang="ts">\nimport Menu from "./Menu.vue";\n</script>`,
@@ -88,7 +88,17 @@ import * as UI from "@example/ui";
       collector,
     });
     expect(occurrences).toEqual([]);
-    expect(collector.drain()).toEqual([]);
+    expect(collector.drain()).toEqual([
+      {
+        code: "unresolved-reference",
+        severity: "info",
+        filePath: "src/App.vue",
+        line: 1,
+        column: 11,
+        symbol: "Menu",
+        memberChain: ["Item"],
+      },
+    ]);
   });
 
   it("claims nothing for a name an SFC's script exports beside its default", () => {
@@ -129,17 +139,21 @@ export default { components: { Foo: FooImpl } };
     expect(occurrences).toEqual([]);
   });
 
-  it("claims nothing for a component imported in the plain <script> beside <script setup>", () => {
+  it.each([
+    [
+      "declares in <script setup>",
+      `<script setup lang="ts">\nimport { defineAsyncComponent } from "vue";\nconst LazyPanel = defineAsyncComponent(() => import("./Panel.vue"));\n</script>`,
+    ],
+    [
+      "registers under components:",
+      `<script lang="ts">\nimport PanelImpl from "./PanelImpl.vue";\nexport default { components: { LazyPanel: PanelImpl } };\n</script>`,
+    ],
+  ])("claims nothing for the kebab-case tag of a component the script %s, and still counts another hyphenated tag", (_label, script) => {
     const { occurrences } = runVueScan({
-      source: `<template><Panel /></template>
-<script lang="ts">
-import Panel from "./Panel.vue";
-export default { inheritAttrs: false };
-</script>
-<script setup lang="ts">
-const title = "x";
-</script>`,
+      source: `<template><lazy-panel /><other-panel /></template>\n${script}`,
     });
-    expect(occurrences).toEqual([]);
+    expect(occurrences.map((o) => o.rawComponentId)).toEqual([
+      { kind: "custom-element", tagName: "other-panel", source: { type: "unknown" } },
+    ]);
   });
 });

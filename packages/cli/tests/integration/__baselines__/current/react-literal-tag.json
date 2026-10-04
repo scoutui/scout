@@ -49,7 +49,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-literal-tag",
       "version": null,
@@ -79,7 +79,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-literal-tag",
       "version": null,
@@ -123,7 +123,7 @@
       },
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-literal-tag",
       "version": null,
@@ -295,14 +295,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "f75df65c5ac28241",
+      "occurrenceId": "8e4349606162a0bd",
       "resolution": {
         "status": "resolved",
         "componentId": "2be238a45c4d2e55"
       },
       "filePath": "app/dynamic-page/page.tsx",
       "line": 8,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -326,14 +326,14 @@
       "ownerComponentId": "807ef2087b018965"
     },
     {
-      "occurrenceId": "7751517581577c0b",
+      "occurrenceId": "fa38311a40820dcd",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "app/page.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -357,14 +357,14 @@
       "ownerComponentId": "4d6d9d59c3b0db27"
     },
     {
-      "occurrenceId": "545964b83397965a",
+      "occurrenceId": "284d1faf19c69d2b",
       "resolution": {
         "status": "resolved",
         "componentId": "4b9fa6b03427ee56"
       },
       "filePath": "app/page.tsx",
       "line": 8,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -384,14 +384,14 @@
       "ownerComponentId": "4d6d9d59c3b0db27"
     },
     {
-      "occurrenceId": "1ca1458061795f0c",
+      "occurrenceId": "f8f582bf06fa628d",
       "resolution": {
         "status": "resolved",
         "componentId": "fa902f4e2fbcb80c"
       },
       "filePath": "app/page.tsx",
       "line": 9,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -405,14 +405,14 @@
       "ownerComponentId": "4d6d9d59c3b0db27"
     },
     {
-      "occurrenceId": "702c340c1a394a0e",
+      "occurrenceId": "987a3f4680b70454",
       "resolution": {
         "status": "resolved",
         "componentId": "2be238a45c4d2e55"
       },
       "filePath": "components/submit-button.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },

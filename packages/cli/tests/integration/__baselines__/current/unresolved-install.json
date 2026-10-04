@@ -47,7 +47,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "unresolved-install",
       "version": null,
@@ -61,7 +61,7 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "edc6bc1106a38b7f",
+      "occurrenceId": "060dc316f892c6cb",
       "resolution": {
         "status": "unresolved",
         "reason": {
@@ -71,7 +71,7 @@
       },
       "filePath": "src/App.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },

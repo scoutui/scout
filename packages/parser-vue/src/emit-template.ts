@@ -109,15 +109,13 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
   opts.fileBuilder.addExport({ kind: "default", local: sfcSymbol });
   if (exportsBesideDefault(opts.wrapper)) opts.fileBuilder.markUnrecordedExports();
 
-  // Script imports are recorded whether or not the template emits anything:
-  // the engine looks up imports by local name to resolve template tags.
+  // Both script blocks' imports are recorded whether or not the template emits
+  // anything: the engine looks up imports by local name to resolve template tags.
   let importSpecs: ImportSpec[] = [];
   if (parts.scriptSource && opts.wrapper.scriptProgram) {
-    const scriptResult = extractScriptImports({
-      file: opts.file,
-      program: opts.wrapper.scriptProgram,
-    });
-    importSpecs = scriptResult.importSpecs;
+    importSpecs = [opts.wrapper.scriptProgram, opts.wrapper.plainScriptProgram].flatMap((program) =>
+      program === undefined ? [] : extractScriptImports({ file: opts.file, program }).importSpecs,
+    );
     for (const spec of importSpecs) {
       opts.fileBuilder.addImport({
         specifier: spec.source,
@@ -153,7 +151,8 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
       scriptBindings.set(form, spec);
     }
   }
-  const scriptOnly = scriptOnlyBindings(opts.file, opts.wrapper);
+  const scriptOnly = scriptOnlyBindings(opts.wrapper);
+  const scriptOnlyForms = new Set([...scriptOnly].flatMap(vueTagForms));
 
   // Per-SFC dedup so a repeated auto-imported tag (`<FooCard>` used twice)
   // emits its synthetic import once, matching how a real script import only
@@ -215,12 +214,13 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
           specifier: auto.specifier,
           import: auto.imported,
         });
-      } else if (isValidCustomElementName(canonicalTagName(rawTag))) {
+      } else if (isValidCustomElementName(canonicalTagName(rawTag)) && !scriptOnlyForms.has(rawTag)) {
         // A valid custom element name with no script binding: a custom
         // element, or Vue's auto-import / runtime global-component convention
         // (e.g. `<x-button>`, Vuetify's `<v-list>` when registered globally).
         // The engine credits it to the tag by name. A reserved name
-        // (`<font-face>`) is not one and falls through below.
+        // (`<font-face>`) is not one and falls through below, and so does the
+        // kebab-case form of a name in `scriptOnly`, which emits nothing.
         const { props, events } = readAttrs(node);
         opts.fileBuilder.addTagUsage({
           tagName: rawTag,

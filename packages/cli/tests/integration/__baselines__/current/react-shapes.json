@@ -48,7 +48,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -78,7 +78,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -108,7 +108,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -141,7 +141,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 0
+        "column": 1
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -171,7 +171,7 @@
       "props": {},
       "definition": {
         "line": 9,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -202,7 +202,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -233,7 +233,7 @@
       "props": {},
       "definition": {
         "line": 13,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -267,7 +267,7 @@
       },
       "definition": {
         "line": 8,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -297,7 +297,7 @@
       "props": {},
       "definition": {
         "line": 21,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -328,7 +328,7 @@
       "props": {},
       "definition": {
         "line": 7,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -359,7 +359,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -390,7 +390,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -420,7 +420,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -456,7 +456,7 @@
       },
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -490,7 +490,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -523,7 +523,7 @@
       ],
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -559,7 +559,7 @@
       },
       "definition": {
         "line": 9,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -591,7 +591,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -621,7 +621,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -651,7 +651,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -683,7 +683,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -715,7 +715,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -745,7 +745,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -775,7 +775,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -805,7 +805,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -835,7 +835,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -865,7 +865,7 @@
       "props": {},
       "definition": {
         "line": 11,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -895,7 +895,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -926,7 +926,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -956,7 +956,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -986,7 +986,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1016,7 +1016,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1058,7 +1058,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1106,7 +1106,7 @@
       },
       "definition": {
         "line": 7,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1138,7 +1138,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1168,7 +1168,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1199,7 +1199,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1229,7 +1229,7 @@
       "props": {},
       "definition": {
         "line": 11,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1259,7 +1259,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1287,7 +1287,7 @@
       "props": {},
       "definition": {
         "line": 8,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1318,7 +1318,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1366,7 +1366,7 @@
       },
       "definition": {
         "line": 3,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1396,7 +1396,7 @@
       "props": {},
       "definition": {
         "line": 23,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1428,7 +1428,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1459,7 +1459,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1489,7 +1489,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1519,7 +1519,7 @@
       "props": {},
       "definition": {
         "line": 9,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1569,7 +1569,7 @@
       },
       "definition": {
         "line": 3,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1601,7 +1601,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1634,7 +1634,7 @@
       ],
       "definition": {
         "line": 4,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1664,7 +1664,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1712,7 +1712,7 @@
       },
       "definition": {
         "line": 4,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1763,7 +1763,7 @@
       },
       "definition": {
         "line": 4,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1793,7 +1793,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1823,7 +1823,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1853,7 +1853,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1885,7 +1885,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1923,7 +1923,7 @@
       },
       "definition": {
         "line": 3,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -1968,7 +1968,7 @@
       ],
       "definition": {
         "line": 4,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2000,7 +2000,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2032,7 +2032,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 34
+        "column": 35
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2065,7 +2065,7 @@
       ],
       "definition": {
         "line": 4,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2098,7 +2098,7 @@
       ],
       "definition": {
         "line": 5,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2129,7 +2129,7 @@
       "props": {},
       "definition": {
         "line": 10,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2161,7 +2161,7 @@
       "props": {},
       "definition": {
         "line": 12,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2192,7 +2192,7 @@
       "props": {},
       "definition": {
         "line": 11,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2227,7 +2227,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2261,7 +2261,7 @@
       ],
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2291,7 +2291,7 @@
       "props": {},
       "definition": {
         "line": 9,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2323,7 +2323,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2355,7 +2355,7 @@
       "props": {},
       "definition": {
         "line": 4,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2386,7 +2386,7 @@
       "props": {},
       "definition": {
         "line": 12,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2416,7 +2416,7 @@
       "props": {},
       "definition": {
         "line": 14,
-        "column": 0
+        "column": 1
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2446,7 +2446,7 @@
       "props": {},
       "definition": {
         "line": 13,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2476,7 +2476,7 @@
       "props": {},
       "definition": {
         "line": 8,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2506,7 +2506,7 @@
       "props": {},
       "definition": {
         "line": 9,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2554,7 +2554,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2602,7 +2602,7 @@
       },
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2632,7 +2632,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2664,7 +2664,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2694,7 +2694,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2724,7 +2724,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2756,7 +2756,7 @@
       "props": {},
       "definition": {
         "line": 14,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2789,7 +2789,7 @@
       ],
       "definition": {
         "line": 17,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2819,7 +2819,7 @@
       "props": {},
       "definition": {
         "line": 20,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2852,7 +2852,7 @@
       "props": {},
       "definition": {
         "line": 3,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2885,7 +2885,7 @@
       ],
       "definition": {
         "line": 12,
-        "column": 15
+        "column": 16
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2917,7 +2917,7 @@
       "props": {},
       "definition": {
         "line": 20,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -2971,7 +2971,7 @@
       "props": {},
       "definition": {
         "line": 7,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3003,7 +3003,7 @@
       "props": {},
       "definition": {
         "line": 15,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3035,7 +3035,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3067,7 +3067,7 @@
       "props": {},
       "definition": {
         "line": 13,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3099,7 +3099,7 @@
       "props": {},
       "definition": {
         "line": 8,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3146,7 +3146,7 @@
       },
       "definition": {
         "line": 14,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3192,7 +3192,7 @@
       },
       "definition": {
         "line": 17,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3242,7 +3242,7 @@
       },
       "definition": {
         "line": 21,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3283,7 +3283,7 @@
       ],
       "definition": {
         "line": 27,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3333,7 +3333,7 @@
       },
       "definition": {
         "line": 28,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3372,7 +3372,7 @@
       },
       "definition": {
         "line": 38,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3404,7 +3404,7 @@
       "props": {},
       "definition": {
         "line": 46,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3454,7 +3454,7 @@
       },
       "definition": {
         "line": 7,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3490,7 +3490,7 @@
       ],
       "definition": {
         "line": 14,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3540,7 +3540,7 @@
       },
       "definition": {
         "line": 16,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3575,7 +3575,7 @@
       ],
       "definition": {
         "line": 23,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3610,7 +3610,7 @@
       ],
       "definition": {
         "line": 24,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3660,7 +3660,7 @@
       },
       "definition": {
         "line": 25,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3696,7 +3696,7 @@
       ],
       "definition": {
         "line": 6,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3728,7 +3728,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3760,7 +3760,7 @@
       "props": {},
       "definition": {
         "line": 19,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3792,7 +3792,7 @@
       "props": {},
       "definition": {
         "line": 12,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3822,7 +3822,7 @@
       "props": {},
       "definition": {
         "line": 6,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3854,7 +3854,7 @@
       "props": {},
       "definition": {
         "line": 15,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3892,7 +3892,7 @@
       },
       "definition": {
         "line": 20,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3925,7 +3925,7 @@
       "props": {},
       "definition": {
         "line": 29,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3960,7 +3960,7 @@
       ],
       "definition": {
         "line": 32,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -3995,7 +3995,7 @@
       ],
       "definition": {
         "line": 36,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -4341,7 +4341,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 6
+        "column": 7
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -4522,7 +4522,7 @@
       "props": {},
       "definition": {
         "line": 14,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "react-shapes",
       "version": null,
@@ -4619,14 +4619,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "9ed5cc81d54578f0",
+      "occurrenceId": "bb74ea15fdb910ba",
       "resolution": {
         "status": "resolved",
         "componentId": "e2884d5bb54e5fcc"
       },
       "filePath": "src/cjs-interop/Interop.tsx",
       "line": 7,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -4636,14 +4636,14 @@
       "ownerComponentId": "df977e51ad44a93d"
     },
     {
-      "occurrenceId": "8f67c38a86e5a613",
+      "occurrenceId": "0f20ab1a2793302f",
       "resolution": {
         "status": "resolved",
         "componentId": "e2884d5bb54e5fcc"
       },
       "filePath": "src/cjs-interop/Through.tsx",
       "line": 7,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -4653,14 +4653,14 @@
       "ownerComponentId": "36cb095df8a26926"
     },
     {
-      "occurrenceId": "7597e6a1ec01bb91",
+      "occurrenceId": "b78675e6ed018f9b",
       "resolution": {
         "status": "resolved",
         "componentId": "0c8e92d8dabef3c0"
       },
       "filePath": "src/cjs-interop/Variant.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -4676,14 +4676,14 @@
       "ownerComponentId": "b5bb487315ec600b"
     },
     {
-      "occurrenceId": "893b3e4f41d500ad",
+      "occurrenceId": "6a7126a8c7789dae",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/composition-edge/App.tsx",
       "line": 13,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4703,14 +4703,14 @@
       "ownerComponentId": "b64fbf93a0f63717"
     },
     {
-      "occurrenceId": "8822bff257ffca6c",
+      "occurrenceId": "b4fcb476c5b211b2",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/composition-edge/App.tsx",
       "line": 14,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4730,14 +4730,14 @@
       "ownerComponentId": "b64fbf93a0f63717"
     },
     {
-      "occurrenceId": "d4c08747051f315e",
+      "occurrenceId": "6fc06e264f654c5a",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/composition-edge/App.tsx",
       "line": 15,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4757,14 +4757,14 @@
       "ownerComponentId": "b64fbf93a0f63717"
     },
     {
-      "occurrenceId": "d20a72d55237af89",
+      "occurrenceId": "20237579b093997c",
       "resolution": {
         "status": "resolved",
         "componentId": "241ce30acd03d4f4"
       },
       "filePath": "src/compound-roots/App.tsx",
       "line": 5,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -4779,14 +4779,14 @@
       "ownerComponentId": "4dbf4086291c7cef"
     },
     {
-      "occurrenceId": "52a2d090c266f863",
+      "occurrenceId": "8b51f7801dea6496",
       "resolution": {
         "status": "resolved",
         "componentId": "a2bc25b06a4938a2"
       },
       "filePath": "src/compound-roots/App.tsx",
       "line": 6,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4806,7 +4806,7 @@
       "ownerComponentId": "4dbf4086291c7cef"
     },
     {
-      "occurrenceId": "d97970a27224dfdf",
+      "occurrenceId": "3e9b904935a5b464",
       "resolution": {
         "status": "unresolved",
         "reason": {
@@ -4816,7 +4816,7 @@
       },
       "filePath": "src/compound-roots/App.tsx",
       "line": 15,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -4825,14 +4825,14 @@
       "ownerComponentId": "10f9e9957af1bca0"
     },
     {
-      "occurrenceId": "8ba3ce84718a44f9",
+      "occurrenceId": "bc774575b51590f9",
       "resolution": {
         "status": "resolved",
         "componentId": "1f67fe506dc184eb"
       },
       "filePath": "src/context/Theme.tsx",
       "line": 23,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -4841,14 +4841,14 @@
       "ownerComponentId": "7424d7f6d833dde9"
     },
     {
-      "occurrenceId": "a6fb79397944464f",
+      "occurrenceId": "216d6e60c6e92bfc",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/context/Theme.tsx",
       "line": 24,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4863,14 +4863,14 @@
       "ownerComponentId": "7424d7f6d833dde9"
     },
     {
-      "occurrenceId": "14483607674c0dec",
+      "occurrenceId": "f919cb149473c5c4",
       "resolution": {
         "status": "resolved",
         "componentId": "fd96bd677271c81d"
       },
       "filePath": "src/deep-compound/Menus.tsx",
       "line": 10,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4886,14 +4886,14 @@
       "ownerComponentId": "ab5778a2fc707da2"
     },
     {
-      "occurrenceId": "2a74e787c0131477",
+      "occurrenceId": "4a1cf2ec72d07308",
       "resolution": {
         "status": "resolved",
         "componentId": "89da3b7de8dcded9"
       },
       "filePath": "src/deep-compound/Menus.tsx",
       "line": 11,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4902,14 +4902,14 @@
       "ownerComponentId": "ab5778a2fc707da2"
     },
     {
-      "occurrenceId": "9eb5568244e36bfd",
+      "occurrenceId": "36dd374ff4fc5339",
       "resolution": {
         "status": "resolved",
         "componentId": "f5c4f566b7ca1140"
       },
       "filePath": "src/default-rewrap-barrel/App.jsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4924,14 +4924,14 @@
       "ownerComponentId": "096a0f80a23ef93e"
     },
     {
-      "occurrenceId": "53f0764f6f17212d",
+      "occurrenceId": "9a5b271c21615ef2",
       "resolution": {
         "status": "resolved",
         "componentId": "8f8642469ed5a18d"
       },
       "filePath": "src/default-rewrap-barrel/App.jsx",
       "line": 8,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -4946,14 +4946,14 @@
       "ownerComponentId": "096a0f80a23ef93e"
     },
     {
-      "occurrenceId": "414cfb89867481c1",
+      "occurrenceId": "a22f351fbcc53787",
       "resolution": {
         "status": "resolved",
         "componentId": "08815f6aaad73dd9"
       },
       "filePath": "src/dynamic-map-via-getter/App.tsx",
       "line": 5,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -4964,7 +4964,7 @@
           "mapLoc": {
             "file": "src/dynamic-map-via-getter/mappings.tsx",
             "line": 3,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -4973,14 +4973,14 @@
       "ownerComponentId": "2ac9f3cfad98d914"
     },
     {
-      "occurrenceId": "2b1245c0d1a70707",
+      "occurrenceId": "ad9748b360b07cb8",
       "resolution": {
         "status": "resolved",
         "componentId": "b18e5761114750c8"
       },
       "filePath": "src/dynamic-map-via-getter/App.tsx",
       "line": 5,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -4991,7 +4991,7 @@
           "mapLoc": {
             "file": "src/dynamic-map-via-getter/mappings.tsx",
             "line": 3,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -5000,14 +5000,14 @@
       "ownerComponentId": "2ac9f3cfad98d914"
     },
     {
-      "occurrenceId": "33867917eb31e8e3",
+      "occurrenceId": "6da554ff215310ce",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/dynamic-map/App.tsx",
       "line": 11,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -5018,7 +5018,7 @@
           "mapLoc": {
             "file": "src/dynamic-map/App.tsx",
             "line": 3,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -5027,14 +5027,14 @@
       "ownerComponentId": "9dc5a316c135ffd6"
     },
     {
-      "occurrenceId": "fd198f308e894fb4",
+      "occurrenceId": "94d88d663eb0d640",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/dynamic-map/App.tsx",
       "line": 11,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -5045,7 +5045,7 @@
           "mapLoc": {
             "file": "src/dynamic-map/App.tsx",
             "line": 3,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -5054,14 +5054,14 @@
       "ownerComponentId": "9dc5a316c135ffd6"
     },
     {
-      "occurrenceId": "eaca6bb5f0252b16",
+      "occurrenceId": "3fd83225146434d4",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/dynamic-map/App.tsx",
       "line": 11,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -5072,7 +5072,7 @@
           "mapLoc": {
             "file": "src/dynamic-map/App.tsx",
             "line": 3,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -5081,14 +5081,14 @@
       "ownerComponentId": "9dc5a316c135ffd6"
     },
     {
-      "occurrenceId": "fe2f2a0e90995b81",
+      "occurrenceId": "2cce182f008ca65b",
       "resolution": {
         "status": "resolved",
         "componentId": "95d78649f63dc64e"
       },
       "filePath": "src/esm-js-specifiers/A.tsx",
       "line": 5,
-      "column": 23,
+      "column": 24,
       "credit": {
         "kind": "render"
       },
@@ -5103,14 +5103,14 @@
       "ownerComponentId": "1f0c9b3151abde37"
     },
     {
-      "occurrenceId": "9fc5380b2548baab",
+      "occurrenceId": "18a879df459a8986",
       "resolution": {
         "status": "resolved",
         "componentId": "5f7a652efc5954b8"
       },
       "filePath": "src/esm-js-specifiers/B.tsx",
       "line": 4,
-      "column": 23,
+      "column": 24,
       "credit": {
         "kind": "render"
       },
@@ -5125,14 +5125,14 @@
       "ownerComponentId": "f690c03d9808b2f3"
     },
     {
-      "occurrenceId": "1a16c1ba69c78802",
+      "occurrenceId": "c8492dbbc8f60c0e",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/esm-js-specifiers/Leaf.tsx",
       "line": 3,
-      "column": 26,
+      "column": 27,
       "credit": {
         "kind": "render"
       },
@@ -5147,14 +5147,14 @@
       "ownerComponentId": "95d78649f63dc64e"
     },
     {
-      "occurrenceId": "4fb23907da304882",
+      "occurrenceId": "1372ce7657fa3f27",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/esm-js-specifiers/index.tsx",
       "line": 3,
-      "column": 25,
+      "column": 26,
       "credit": {
         "kind": "render"
       },
@@ -5169,14 +5169,14 @@
       "ownerComponentId": "5f7a652efc5954b8"
     },
     {
-      "occurrenceId": "b4fbf653e8747f62",
+      "occurrenceId": "8fe7da3db87b1ffa",
       "resolution": {
         "status": "resolved",
         "componentId": "216a9de617ec9640"
       },
       "filePath": "src/helper-chain-three-hops/helpers.tsx",
       "line": 3,
-      "column": 45,
+      "column": 46,
       "credit": {
         "kind": "render"
       },
@@ -5206,14 +5206,14 @@
       "ownerComponentId": "55a84bdaf85ae40c"
     },
     {
-      "occurrenceId": "0ec35c092a3367b1",
+      "occurrenceId": "a4ccedfff93f3325",
       "resolution": {
         "status": "resolved",
         "componentId": "805bf9c1788a69f1"
       },
       "filePath": "src/helper-cross-file-import/utils.tsx",
       "line": 3,
-      "column": 45,
+      "column": 46,
       "credit": {
         "kind": "render"
       },
@@ -5233,14 +5233,14 @@
       "ownerComponentId": "28253e1ee796a113"
     },
     {
-      "occurrenceId": "020cf91d91306597",
+      "occurrenceId": "df4ae8f9ed152f2a",
       "resolution": {
         "status": "resolved",
         "componentId": "b0ba472edc17a66f"
       },
       "filePath": "src/helper-cycle/cycle.tsx",
       "line": 6,
-      "column": 38,
+      "column": 39,
       "credit": {
         "kind": "render"
       },
@@ -5264,14 +5264,14 @@
       "props": {}
     },
     {
-      "occurrenceId": "e23408b59118798b",
+      "occurrenceId": "9db2efa3fdcc661b",
       "resolution": {
         "status": "resolved",
         "componentId": "b0ba472edc17a66f"
       },
       "filePath": "src/helper-cycle/cycle.tsx",
       "line": 11,
-      "column": 31,
+      "column": 32,
       "credit": {
         "kind": "render"
       },
@@ -5280,14 +5280,14 @@
       "ownerComponentId": "f1a929d41ee643b4"
     },
     {
-      "occurrenceId": "f294e3296fc5e762",
+      "occurrenceId": "35ae1ca82193c1e2",
       "resolution": {
         "status": "resolved",
         "componentId": "552ee5a6c2ea895c"
       },
       "filePath": "src/helper-fanout-data-factory/config.tsx",
       "line": 6,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -5307,14 +5307,14 @@
       "ownerComponentId": "39a76fb7597cc943"
     },
     {
-      "occurrenceId": "b3e0902578542e7d",
+      "occurrenceId": "e01002875790d696",
       "resolution": {
         "status": "resolved",
         "componentId": "552ee5a6c2ea895c"
       },
       "filePath": "src/helper-fanout-data-factory/config.tsx",
       "line": 6,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -5334,14 +5334,14 @@
       "ownerComponentId": "4a88af7ca95c244d"
     },
     {
-      "occurrenceId": "90c43fc56eaa1d4d",
+      "occurrenceId": "0ef5139fd8fb893f",
       "resolution": {
         "status": "resolved",
         "componentId": "fd7b1a788c84a77d"
       },
       "filePath": "src/helper-fanout-hook/useOptions.tsx",
       "line": 6,
-      "column": 16,
+      "column": 17,
       "credit": {
         "kind": "render"
       },
@@ -5361,14 +5361,14 @@
       "ownerComponentId": "eea1d2a4f3b5c821"
     },
     {
-      "occurrenceId": "c7061aa3b74e5d32",
+      "occurrenceId": "3bb1809af8e4c26c",
       "resolution": {
         "status": "resolved",
         "componentId": "fd0d615bee77a79a"
       },
       "filePath": "src/helper-jsx-call-of-helper/List.tsx",
       "line": 8,
-      "column": 20,
+      "column": 21,
       "credit": {
         "kind": "render"
       },
@@ -5388,14 +5388,14 @@
       "ownerComponentId": "54ec8e63a4f4af48"
     },
     {
-      "occurrenceId": "d53b66ecf842ec19",
+      "occurrenceId": "f2bca4efbd905741",
       "resolution": {
         "status": "resolved",
         "componentId": "54ec8e63a4f4af48"
       },
       "filePath": "src/helper-jsx-call-of-helper/Page.tsx",
       "line": 5,
-      "column": 26,
+      "column": 27,
       "credit": {
         "kind": "render"
       },
@@ -5415,14 +5415,14 @@
       "ownerComponentId": "73e92c22fadf5aa6"
     },
     {
-      "occurrenceId": "d123720cce3a8ef3",
+      "occurrenceId": "6664c0e4e070020b",
       "resolution": {
         "status": "resolved",
         "componentId": "e7514cd3a6670c2b"
       },
       "filePath": "src/helper-multi-caller-mixed/build.tsx",
       "line": 4,
-      "column": 43,
+      "column": 44,
       "credit": {
         "kind": "render"
       },
@@ -5442,14 +5442,14 @@
       "ownerComponentId": "b419c74e43c3bdc5"
     },
     {
-      "occurrenceId": "e5653c23643d10aa",
+      "occurrenceId": "3989ef2f2ddf3cc0",
       "resolution": {
         "status": "resolved",
         "componentId": "e7514cd3a6670c2b"
       },
       "filePath": "src/helper-multi-caller-mixed/build.tsx",
       "line": 4,
-      "column": 43,
+      "column": 44,
       "credit": {
         "kind": "render"
       },
@@ -5474,14 +5474,14 @@
       "ownerComponentId": "c893c5d3187acb5e"
     },
     {
-      "occurrenceId": "6dbe6c14c41ac0f8",
+      "occurrenceId": "d18630fb272eac7d",
       "resolution": {
         "status": "resolved",
         "componentId": "ce0d80dc8dab463b"
       },
       "filePath": "src/helper-orphan-no-caller/unused.tsx",
       "line": 4,
-      "column": 47,
+      "column": 48,
       "credit": {
         "kind": "render"
       },
@@ -5500,14 +5500,14 @@
       "props": {}
     },
     {
-      "occurrenceId": "4ae1ffd3a25ee127",
+      "occurrenceId": "797896b7ebf4e24e",
       "resolution": {
         "status": "resolved",
         "componentId": "a9628e156cc7f5a6"
       },
       "filePath": "src/helper-prop-forward-interaction/Consumer.tsx",
       "line": 6,
-      "column": 13,
+      "column": 14,
       "credit": {
         "kind": "render"
       },
@@ -5518,7 +5518,7 @@
           "constructionSite": {
             "file": "src/helper-prop-forward-interaction/Consumer.tsx",
             "line": 6,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -5526,14 +5526,14 @@
       "ownerComponentId": "07e020d8579e4499"
     },
     {
-      "occurrenceId": "000f241f98270bae",
+      "occurrenceId": "bba1420717ca8442",
       "resolution": {
         "status": "resolved",
         "componentId": "0ce46491f5012472"
       },
       "filePath": "src/helper-prop-forward-interaction/Consumer.tsx",
       "line": 8,
-      "column": 30,
+      "column": 31,
       "credit": {
         "kind": "render"
       },
@@ -5553,14 +5553,14 @@
       "ownerComponentId": "07e020d8579e4499"
     },
     {
-      "occurrenceId": "6139383302dc9d01",
+      "occurrenceId": "6114fcd0c7903043",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/hoc-composition/App.tsx",
       "line": 26,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5580,14 +5580,14 @@
       "ownerComponentId": "33a8935a8c4f85aa"
     },
     {
-      "occurrenceId": "5c7634524668adae",
+      "occurrenceId": "b3ea8498bd4fbdc3",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/hoc-composition/App.tsx",
       "line": 27,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5607,14 +5607,14 @@
       "ownerComponentId": "33a8935a8c4f85aa"
     },
     {
-      "occurrenceId": "b692c545ca717f93",
+      "occurrenceId": "0a59ef734d8c8c54",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/hoc-composition/App.tsx",
       "line": 28,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5634,14 +5634,14 @@
       "ownerComponentId": "33a8935a8c4f85aa"
     },
     {
-      "occurrenceId": "5dad98c59a1ba8c2",
+      "occurrenceId": "7b3f0281a4744aa4",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/hoc-composition/App.tsx",
       "line": 29,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5661,14 +5661,14 @@
       "ownerComponentId": "33a8935a8c4f85aa"
     },
     {
-      "occurrenceId": "1f039c8044fa86d0",
+      "occurrenceId": "e921e907f1c67555",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/hoc-composition/App.tsx",
       "line": 30,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5692,14 +5692,14 @@
       "ownerComponentId": "33a8935a8c4f85aa"
     },
     {
-      "occurrenceId": "535e60f9c5946ea4",
+      "occurrenceId": "8391388ae2ede536",
       "resolution": {
         "status": "resolved",
         "componentId": "e104551094019ddf"
       },
       "filePath": "src/hoc-cross-module/App.tsx",
       "line": 6,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5723,14 +5723,14 @@
       "ownerComponentId": "50bc8b7ebc2113ca"
     },
     {
-      "occurrenceId": "d40e63e4e202ae2d",
+      "occurrenceId": "d285eadafd634627",
       "resolution": {
         "status": "resolved",
         "componentId": "ef523900b14f3ff0"
       },
       "filePath": "src/hoc-cross-module/App.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -5754,14 +5754,14 @@
       "ownerComponentId": "50bc8b7ebc2113ca"
     },
     {
-      "occurrenceId": "9fb94ef9afba0330",
+      "occurrenceId": "5a7610f71f35d08a",
       "resolution": {
         "status": "resolved",
         "componentId": "61766288291e73f3"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 23,
+      "column": 24,
       "credit": {
         "kind": "render"
       },
@@ -5781,14 +5781,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "822cc96fd57db979",
+      "occurrenceId": "4a48646dd990074a",
       "resolution": {
         "status": "resolved",
         "componentId": "1fb22edb32101842"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 44,
+      "column": 45,
       "credit": {
         "kind": "render"
       },
@@ -5809,14 +5809,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "36913fc9b053f8e2",
+      "occurrenceId": "c9a9e60956c0759a",
       "resolution": {
         "status": "resolved",
         "componentId": "43a3ae8470a6c7d1"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 68,
+      "column": 69,
       "credit": {
         "kind": "render"
       },
@@ -5831,14 +5831,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "91ba137e1539b095",
+      "occurrenceId": "5ded08772758fcf4",
       "resolution": {
         "status": "resolved",
         "componentId": "b5ac13290bf085c3"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 75,
+      "column": 76,
       "credit": {
         "kind": "render"
       },
@@ -5853,14 +5853,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "9124a392a5226a7b",
+      "occurrenceId": "177d79144a98336a",
       "resolution": {
         "status": "resolved",
         "componentId": "d4e9003a492ce170"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 82,
+      "column": 83,
       "credit": {
         "kind": "render"
       },
@@ -5875,14 +5875,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "756899e055b5f55a",
+      "occurrenceId": "e9b438990f3ab6b9",
       "resolution": {
         "status": "resolved",
         "componentId": "8ddf61f36f3fe62c"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 90,
+      "column": 91,
       "credit": {
         "kind": "render"
       },
@@ -5907,14 +5907,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "030efabfb0d0e887",
+      "occurrenceId": "fd16c8cc647a488b",
       "resolution": {
         "status": "resolved",
         "componentId": "0422918d9df11348"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 111,
+      "column": 112,
       "credit": {
         "kind": "render"
       },
@@ -5930,14 +5930,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "88a80fe5348412fc",
+      "occurrenceId": "db61e956d68e277d",
       "resolution": {
         "status": "resolved",
         "componentId": "4dd3209d10445e07"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 122,
+      "column": 123,
       "credit": {
         "kind": "render"
       },
@@ -5952,14 +5952,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "00d2a02416a234bb",
+      "occurrenceId": "2bd1fb0d1390f1b2",
       "resolution": {
         "status": "resolved",
         "componentId": "fc33efb1407a71df"
       },
       "filePath": "src/hoc-factory-products/app.jsx",
       "line": 9,
-      "column": 133,
+      "column": 134,
       "credit": {
         "kind": "render"
       },
@@ -5975,14 +5975,14 @@
       "ownerComponentId": "8c3bc6b751a9fe73"
     },
     {
-      "occurrenceId": "e9b1d60a2fb5efd0",
+      "occurrenceId": "ffb55fe1fd5b5d5a",
       "resolution": {
         "status": "resolved",
         "componentId": "8c877f2453fc7ff5"
       },
       "filePath": "src/hoc-factory-products/mosaic.jsx",
       "line": 3,
-      "column": 81,
+      "column": 82,
       "credit": {
         "kind": "render"
       },
@@ -5996,14 +5996,14 @@
       "ownerComponentId": "428a00add371503a"
     },
     {
-      "occurrenceId": "49bc081f386e2884",
+      "occurrenceId": "3bd49ffa2df6845e",
       "resolution": {
         "status": "resolved",
         "componentId": "32ad8651b2e71ce0"
       },
       "filePath": "src/hoc-factory-products/swatch.jsx",
       "line": 3,
-      "column": 63,
+      "column": 64,
       "credit": {
         "kind": "render"
       },
@@ -6012,7 +6012,7 @@
       "ownerComponentId": "4dd3209d10445e07"
     },
     {
-      "occurrenceId": "64adc55b7e6a2892",
+      "occurrenceId": "125c9cfbc06b78f0",
       "resolution": {
         "status": "unresolved",
         "reason": {
@@ -6021,7 +6021,7 @@
       },
       "filePath": "src/hoc-factory-products/with-loading.jsx",
       "line": 3,
-      "column": 62,
+      "column": 63,
       "credit": {
         "kind": "render"
       },
@@ -6041,7 +6041,7 @@
       "ownerComponentId": "43a3ae8470a6c7d1"
     },
     {
-      "occurrenceId": "e8479b1a5eeb409f",
+      "occurrenceId": "e95b768cbae2b76c",
       "resolution": {
         "status": "unresolved",
         "reason": {
@@ -6050,7 +6050,7 @@
       },
       "filePath": "src/hoc-factory-products/with-loading.jsx",
       "line": 3,
-      "column": 62,
+      "column": 63,
       "credit": {
         "kind": "render"
       },
@@ -6070,14 +6070,14 @@
       "ownerComponentId": "b5ac13290bf085c3"
     },
     {
-      "occurrenceId": "2568ae83136ddf63",
+      "occurrenceId": "ff2cbb02b85145ff",
       "resolution": {
         "status": "resolved",
         "componentId": "45af52ecd859b1b7"
       },
       "filePath": "src/hoc-rescue/Slot.tsx",
       "line": 15,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6086,14 +6086,14 @@
       "ownerComponentId": "8bbada0f2b7bb601"
     },
     {
-      "occurrenceId": "bfa21a761b9c4124",
+      "occurrenceId": "43b8ae18dac0b943",
       "resolution": {
         "status": "resolved",
         "componentId": "549968f95f71ac07"
       },
       "filePath": "src/hoc-rescue/Slot.tsx",
       "line": 16,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6108,14 +6108,14 @@
       "ownerComponentId": "8bbada0f2b7bb601"
     },
     {
-      "occurrenceId": "461db223dffc7f04",
+      "occurrenceId": "ecf5825191d90487",
       "resolution": {
         "status": "resolved",
         "componentId": "e88bd58a2b227472"
       },
       "filePath": "src/lazy-barrel-reexport/App.tsx",
       "line": 14,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6131,14 +6131,14 @@
       "ownerComponentId": "9b9a0f19a20ae2f4"
     },
     {
-      "occurrenceId": "7728189193d2665b",
+      "occurrenceId": "6f4cdbb8b457d531",
       "resolution": {
         "status": "resolved",
         "componentId": "9430c190f758606f"
       },
       "filePath": "src/lazy-barrel-reexport/App.tsx",
       "line": 15,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6154,14 +6154,14 @@
       "ownerComponentId": "9b9a0f19a20ae2f4"
     },
     {
-      "occurrenceId": "2d62f71f35be0e93",
+      "occurrenceId": "104cb4ebd989bf3f",
       "resolution": {
         "status": "resolved",
         "componentId": "e88bd58a2b227472"
       },
       "filePath": "src/lazy-barrel-reexport/App.tsx",
       "line": 16,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6181,14 +6181,14 @@
       "ownerComponentId": "9b9a0f19a20ae2f4"
     },
     {
-      "occurrenceId": "c43122886c549d7c",
+      "occurrenceId": "a730601ec557ca3b",
       "resolution": {
         "status": "resolved",
         "componentId": "9430c190f758606f"
       },
       "filePath": "src/lazy-barrel-reexport/App.tsx",
       "line": 17,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6208,14 +6208,14 @@
       "ownerComponentId": "9b9a0f19a20ae2f4"
     },
     {
-      "occurrenceId": "4d50f666b4e2da61",
+      "occurrenceId": "0bf1184a6c40fb13",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/lazy-import/App.tsx",
       "line": 12,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6235,14 +6235,14 @@
       "ownerComponentId": "9f2e8025da07a739"
     },
     {
-      "occurrenceId": "22da6259fbd689ce",
+      "occurrenceId": "2af4df63f0060692",
       "resolution": {
         "status": "resolved",
         "componentId": "2c077f356eeea974"
       },
       "filePath": "src/lazy-import/App.tsx",
       "line": 13,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6262,14 +6262,14 @@
       "ownerComponentId": "9f2e8025da07a739"
     },
     {
-      "occurrenceId": "40f2f12ef9c5625e",
+      "occurrenceId": "f611cb0894d6a5f8",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/lazy-import/App.tsx",
       "line": 14,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6289,14 +6289,14 @@
       "ownerComponentId": "9f2e8025da07a739"
     },
     {
-      "occurrenceId": "ce261164546cde21",
+      "occurrenceId": "dd8ad1fc34998fd1",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/nesting/Panel.tsx",
       "line": 6,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -6311,14 +6311,14 @@
       "ownerComponentId": "8c608a9d9c1244b3"
     },
     {
-      "occurrenceId": "3bbd044457954a99",
+      "occurrenceId": "248128d69ca4beda",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/nesting/Panel.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6333,14 +6333,14 @@
       "ownerComponentId": "8c608a9d9c1244b3"
     },
     {
-      "occurrenceId": "4bfb286b78030b27",
+      "occurrenceId": "65a69e307559925e",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/nesting/Panel.tsx",
       "line": 8,
-      "column": 8,
+      "column": 9,
       "credit": {
         "kind": "render"
       },
@@ -6355,14 +6355,14 @@
       "ownerComponentId": "8c608a9d9c1244b3"
     },
     {
-      "occurrenceId": "06fd07baa11000fb",
+      "occurrenceId": "e6ab82c056826e69",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/nesting/Panel.tsx",
       "line": 10,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6377,14 +6377,14 @@
       "ownerComponentId": "8c608a9d9c1244b3"
     },
     {
-      "occurrenceId": "143c61c574721106",
+      "occurrenceId": "a5b1d36355919503",
       "resolution": {
         "status": "resolved",
         "componentId": "04594959d71ddf3e"
       },
       "filePath": "src/owner-edges/Page.tsx",
       "line": 6,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -6399,14 +6399,14 @@
       "ownerComponentId": "fa2394095d2836da"
     },
     {
-      "occurrenceId": "6407db8b41157d10",
+      "occurrenceId": "070d7fce04726c6e",
       "resolution": {
         "status": "resolved",
         "componentId": "69042778575c48d0"
       },
       "filePath": "src/owner-edges/Page.tsx",
       "line": 7,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6426,14 +6426,14 @@
       "ownerComponentId": "fa2394095d2836da"
     },
     {
-      "occurrenceId": "c47ddc9896d4d2d3",
+      "occurrenceId": "5156bd82727550f0",
       "resolution": {
         "status": "resolved",
         "componentId": "69042778575c48d0"
       },
       "filePath": "src/owner-edges/Page.tsx",
       "line": 12,
-      "column": 33,
+      "column": 34,
       "credit": {
         "kind": "render"
       },
@@ -6453,14 +6453,14 @@
       "ownerComponentId": "c7ba00c9bf2bddc7"
     },
     {
-      "occurrenceId": "f67191be49b40437",
+      "occurrenceId": "2c74560e3f1b87a7",
       "resolution": {
         "status": "resolved",
         "componentId": "69042778575c48d0"
       },
       "filePath": "src/owner-edges/Page.tsx",
       "line": 15,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -6475,14 +6475,14 @@
       "ownerComponentId": "f5308786ab1f1459"
     },
     {
-      "occurrenceId": "95e47ec79e98bf2b",
+      "occurrenceId": "ea129f14228585d2",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/pass-through/Wrapped.tsx",
       "line": 14,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -6502,14 +6502,14 @@
       "ownerComponentId": "1d6a9aa61e64f28a"
     },
     {
-      "occurrenceId": "cddd0412c79a08d2",
+      "occurrenceId": "f00657f08995be26",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/prop-forward-hoc-owner/Badges.tsx",
       "line": 4,
-      "column": 15,
+      "column": 16,
       "credit": {
         "kind": "render"
       },
@@ -6520,7 +6520,7 @@
           "constructionSite": {
             "file": "src/prop-forward-hoc-owner/Badges.tsx",
             "line": 4,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -6528,14 +6528,14 @@
       "ownerComponentId": "d82620d7e37366aa"
     },
     {
-      "occurrenceId": "0630717ef020d39e",
+      "occurrenceId": "f3b44ad01fa878e4",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/prop-forward-hoc-owner/Badges.tsx",
       "line": 5,
-      "column": 14,
+      "column": 15,
       "credit": {
         "kind": "render"
       },
@@ -6546,7 +6546,7 @@
           "constructionSite": {
             "file": "src/prop-forward-hoc-owner/Badges.tsx",
             "line": 5,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -6554,14 +6554,14 @@
       "ownerComponentId": "e6709688858f00fa"
     },
     {
-      "occurrenceId": "70fda2d44ca36cee",
+      "occurrenceId": "4695472bfa262852",
       "resolution": {
         "status": "resolved",
         "componentId": "17f2e5f7df3717cb"
       },
       "filePath": "src/prop-forward-repeat-read/C.tsx",
       "line": 5,
-      "column": 13,
+      "column": 14,
       "credit": {
         "kind": "render"
       },
@@ -6572,7 +6572,7 @@
           "constructionSite": {
             "file": "src/prop-forward-repeat-read/C.tsx",
             "line": 5,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -6580,14 +6580,14 @@
       "ownerComponentId": "8bac87fb9c605654"
     },
     {
-      "occurrenceId": "7ebc440a52091e81",
+      "occurrenceId": "0c639a063002b048",
       "resolution": {
         "status": "resolved",
         "componentId": "5a84906082b1dfe4"
       },
       "filePath": "src/prop-forward-repeat-read/C.tsx",
       "line": 8,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -6607,14 +6607,14 @@
       "ownerComponentId": "8bac87fb9c605654"
     },
     {
-      "occurrenceId": "fbfb1d42ba3c079c",
+      "occurrenceId": "4157a1c07f8a8f83",
       "resolution": {
         "status": "resolved",
         "componentId": "f7951575d677dbe1"
       },
       "filePath": "src/prop-forward-repeat-read/C.tsx",
       "line": 9,
-      "column": 4,
+      "column": 5,
       "credit": {
         "kind": "render"
       },
@@ -6634,14 +6634,14 @@
       "ownerComponentId": "8bac87fb9c605654"
     },
     {
-      "occurrenceId": "e0e1cfa3a256e15c",
+      "occurrenceId": "3537d1b5ade23d0c",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/prop-forward-shadowed/Tiles.tsx",
       "line": 3,
-      "column": 13,
+      "column": 14,
       "credit": {
         "kind": "render"
       },
@@ -6652,7 +6652,7 @@
           "constructionSite": {
             "file": "src/prop-forward-shadowed/Tiles.tsx",
             "line": 3,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -6660,14 +6660,14 @@
       "ownerComponentId": "3fc21cf7b34593c3"
     },
     {
-      "occurrenceId": "3e8550b681500469",
+      "occurrenceId": "0273eb44c52d0e42",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-builtin-wrappers/App.tsx",
       "line": 5,
-      "column": 65,
+      "column": 66,
       "credit": {
         "kind": "render"
       },
@@ -6686,14 +6686,14 @@
       "ownerComponentId": "fd6259d1f2f0728a"
     },
     {
-      "occurrenceId": "84b7597fe30c79f3",
+      "occurrenceId": "eeefe758fe94e51f",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-builtin-wrappers/App.tsx",
       "line": 14,
-      "column": 65,
+      "column": 66,
       "credit": {
         "kind": "render"
       },
@@ -6711,14 +6711,14 @@
       }
     },
     {
-      "occurrenceId": "4616c1090d7a4722",
+      "occurrenceId": "5c62cad739be0a93",
       "resolution": {
         "status": "resolved",
         "componentId": "fd6259d1f2f0728a"
       },
       "filePath": "src/react-builtin-wrappers/App.tsx",
       "line": 23,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6732,14 +6732,14 @@
       "ownerComponentId": "e7baf388c1acc98b"
     },
     {
-      "occurrenceId": "c6288d093d64b879",
+      "occurrenceId": "402cafdccbd8f859",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-builtin-wrappers/App.tsx",
       "line": 24,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6759,14 +6759,14 @@
       "ownerComponentId": "e7baf388c1acc98b"
     },
     {
-      "occurrenceId": "063e5d725cd29552",
+      "occurrenceId": "5fafa716cc1f6e09",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/react-builtin-wrappers/App.tsx",
       "line": 25,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6786,14 +6786,14 @@
       "ownerComponentId": "e7baf388c1acc98b"
     },
     {
-      "occurrenceId": "c4b9966f2ad5b674",
+      "occurrenceId": "59ac51efed6e494d",
       "resolution": {
         "status": "resolved",
         "componentId": "b55cde9102973908"
       },
       "filePath": "src/react-builtin-wrappers/App.tsx",
       "line": 26,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6816,14 +6816,14 @@
       "ownerComponentId": "e7baf388c1acc98b"
     },
     {
-      "occurrenceId": "6dd7e735ebbe9cf7",
+      "occurrenceId": "4308faf3f7001d8c",
       "resolution": {
         "status": "resolved",
         "componentId": "c1d5a889a7d1bf82"
       },
       "filePath": "src/react-builtin-wrappers/Page.tsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -6843,14 +6843,14 @@
       "ownerComponentId": "c22e0bf98ee16112"
     },
     {
-      "occurrenceId": "84717cc33999b1f1",
+      "occurrenceId": "b5bef91e78f67373",
       "resolution": {
         "status": "resolved",
         "componentId": "e28ec6f006c865d3"
       },
       "filePath": "src/react-engine-shapes/AnonDefault.tsx",
       "line": 12,
-      "column": 21,
+      "column": 22,
       "credit": {
         "kind": "render"
       },
@@ -6865,14 +6865,14 @@
       "ownerComponentId": "064df5a1eff7c8f0"
     },
     {
-      "occurrenceId": "60bed6fd30820777",
+      "occurrenceId": "8411eee29cb5c0ca",
       "resolution": {
         "status": "resolved",
         "componentId": "d9d69aed8cd96426"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 23,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6887,14 +6887,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "50a45050eb09b801",
+      "occurrenceId": "5f891b7bffc8c2e3",
       "resolution": {
         "status": "resolved",
         "componentId": "dc23d2e9eb165b57"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 24,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6909,14 +6909,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "610f9094d1264b03",
+      "occurrenceId": "b2501c79079260ec",
       "resolution": {
         "status": "resolved",
         "componentId": "d6fca0c5db154302"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 25,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6935,14 +6935,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "d5658a456f1a27ac",
+      "occurrenceId": "018a321538cba089",
       "resolution": {
         "status": "resolved",
         "componentId": "728faa835c78e609"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 26,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6958,14 +6958,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "d5b689ab6e44ca64",
+      "occurrenceId": "a533e5605f3e990b",
       "resolution": {
         "status": "resolved",
         "componentId": "65c276a56ee7b2a9"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 27,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -6984,14 +6984,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "195cc9edd402238b",
+      "occurrenceId": "00adb5b37a345cb3",
       "resolution": {
         "status": "resolved",
         "componentId": "a0eee53f4106a4e7"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 28,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7011,14 +7011,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "c331e3b97e05e63b",
+      "occurrenceId": "e987a6f64f649d7b",
       "resolution": {
         "status": "resolved",
         "componentId": "dbeb5885e6ea1a02"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 29,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7038,14 +7038,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "d51155538e9819b6",
+      "occurrenceId": "f314bed7e5c8d403",
       "resolution": {
         "status": "resolved",
         "componentId": "064df5a1eff7c8f0"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 30,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7061,14 +7061,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "0755e2f1dc9855a5",
+      "occurrenceId": "e7248a024cb04861",
       "resolution": {
         "status": "resolved",
         "componentId": "fff241709284e9a5"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 31,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7084,14 +7084,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "2a03dcb2c500c0d8",
+      "occurrenceId": "463cc663aea8ab89",
       "resolution": {
         "status": "resolved",
         "componentId": "cb6bd00fc6c63620"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 32,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7106,14 +7106,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "e4739daee3c764b0",
+      "occurrenceId": "def0d74ce7040a54",
       "resolution": {
         "status": "resolved",
         "componentId": "cb82f12b5948544e"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 33,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7132,14 +7132,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "2d6d672596fa5221",
+      "occurrenceId": "9864f722495a8e88",
       "resolution": {
         "status": "resolved",
         "componentId": "372b66ea16b788d2"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 34,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7162,14 +7162,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "5d7e7198bd0151cd",
+      "occurrenceId": "15f98a0ac45faeaf",
       "resolution": {
         "status": "resolved",
         "componentId": "eaafa8bfc6a7f773"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 35,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7189,14 +7189,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "a1492481c22db130",
+      "occurrenceId": "6d9d70258f605c01",
       "resolution": {
         "status": "resolved",
         "componentId": "c70d1eafd35b1dcb"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 36,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7216,14 +7216,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "05f9bc2a23f08931",
+      "occurrenceId": "c754c40aea7124f3",
       "resolution": {
         "status": "resolved",
         "componentId": "41d5717d013520c3"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 37,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7238,14 +7238,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "92e2086a999b5c5f",
+      "occurrenceId": "c093b6800890f27d",
       "resolution": {
         "status": "resolved",
         "componentId": "f7b2fc532b92e897"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 38,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7260,14 +7260,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "73df4258922ddb93",
+      "occurrenceId": "a55b66dfcb909f61",
       "resolution": {
         "status": "resolved",
         "componentId": "d2516f5e1b01daf0"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 39,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7282,14 +7282,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "3267db057906e0c4",
+      "occurrenceId": "e30f6e16dcf10a99",
       "resolution": {
         "status": "resolved",
         "componentId": "735376cbbaa69071"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 40,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7304,14 +7304,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "93dea88a9703fc26",
+      "occurrenceId": "2ecf29408bd68ed4",
       "resolution": {
         "status": "resolved",
         "componentId": "f2445d7c0d92b91c"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 41,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7326,14 +7326,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "a18cbbe2a83becd0",
+      "occurrenceId": "7dfdc9fff75f6ee7",
       "resolution": {
         "status": "resolved",
         "componentId": "f4da01f81d6c583d"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 42,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7353,14 +7353,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "74cb67b194b64ca3",
+      "occurrenceId": "470ff87c09cd1d08",
       "resolution": {
         "status": "resolved",
         "componentId": "d7f69252a87c118f"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 43,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7380,14 +7380,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "404ef99d9cb5d769",
+      "occurrenceId": "6c731bb551b3eee3",
       "resolution": {
         "status": "resolved",
         "componentId": "b06eed7b5a0a6eaf"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 44,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7407,14 +7407,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "93c7f05d5c439239",
+      "occurrenceId": "801b8787f6387015",
       "resolution": {
         "status": "resolved",
         "componentId": "4e5a4a4439a99bfe"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 45,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7429,14 +7429,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "c74911cf5c0b813f",
+      "occurrenceId": "634014839da143bf",
       "resolution": {
         "status": "resolved",
         "componentId": "df11a583682bb0d7"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 46,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7451,14 +7451,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "d2c9ee925dfc8457",
+      "occurrenceId": "084888dfcb3b2992",
       "resolution": {
         "status": "resolved",
         "componentId": "9accaa1908b42f29"
       },
       "filePath": "src/react-engine-shapes/App.tsx",
       "line": 47,
-      "column": 6,
+      "column": 7,
       "credit": {
         "kind": "render"
       },
@@ -7473,14 +7473,14 @@
       "ownerComponentId": "64b443e583542e9a"
     },
     {
-      "occurrenceId": "f974e12f97f2ec7f",
+      "occurrenceId": "1a26c018dfc0cee2",
       "resolution": {
         "status": "resolved",
         "componentId": "fd96bd677271c81d"
       },
       "filePath": "src/react-engine-shapes/Compound.tsx",
       "line": 8,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7495,14 +7495,14 @@
       "ownerComponentId": "4e5a4a4439a99bfe"
     },
     {
-      "occurrenceId": "f5525d4468290a01",
+      "occurrenceId": "c1865b512b2f6228",
       "resolution": {
         "status": "resolved",
         "componentId": "1684a018d379a817"
       },
       "filePath": "src/react-engine-shapes/Compound.tsx",
       "line": 16,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7511,14 +7511,14 @@
       "ownerComponentId": "df11a583682bb0d7"
     },
     {
-      "occurrenceId": "e230ffc703296268",
+      "occurrenceId": "6083a28cab3a276c",
       "resolution": {
         "status": "resolved",
         "componentId": "e28ec6f006c865d3"
       },
       "filePath": "src/react-engine-shapes/HookSeeding.tsx",
       "line": 6,
-      "column": 27,
+      "column": 28,
       "credit": {
         "kind": "render"
       },
@@ -7533,14 +7533,14 @@
       "ownerComponentId": "c8aba73ebf4d7d91"
     },
     {
-      "occurrenceId": "e55b7a2ce53ed772",
+      "occurrenceId": "7d445c27d83eab05",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 6,
-      "column": 19,
+      "column": 20,
       "credit": {
         "kind": "render"
       },
@@ -7560,14 +7560,14 @@
       "ownerComponentId": "cb6bd00fc6c63620"
     },
     {
-      "occurrenceId": "266228b6e6a7f3f1",
+      "occurrenceId": "cfd8ab71df41bbed",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 14,
-      "column": 69,
+      "column": 70,
       "credit": {
         "kind": "render"
       },
@@ -7587,14 +7587,14 @@
       "ownerComponentId": "cb82f12b5948544e"
     },
     {
-      "occurrenceId": "78fecdb1c4b99473",
+      "occurrenceId": "11a86e7891deb0dc",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 17,
-      "column": 72,
+      "column": 73,
       "credit": {
         "kind": "render"
       },
@@ -7614,14 +7614,14 @@
       "ownerComponentId": "372b66ea16b788d2"
     },
     {
-      "occurrenceId": "73ac96b33897ec1d",
+      "occurrenceId": "bb5a7eadeb462066",
       "resolution": {
         "status": "resolved",
         "componentId": "cb82f12b5948544e"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 23,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7632,7 +7632,7 @@
           "mapLoc": {
             "file": "src/react-engine-shapes/Iteration.tsx",
             "line": 20,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -7645,14 +7645,14 @@
       "ownerComponentId": "eaafa8bfc6a7f773"
     },
     {
-      "occurrenceId": "f7a6bf2cbb8a241c",
+      "occurrenceId": "3ac0b94ef807bc8b",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 27,
-      "column": 18,
+      "column": 19,
       "credit": {
         "kind": "render"
       },
@@ -7667,14 +7667,14 @@
       "ownerComponentId": "3761162c9cc24f17"
     },
     {
-      "occurrenceId": "f338cfa910e7109f",
+      "occurrenceId": "27a1e6c54a3937c6",
       "resolution": {
         "status": "resolved",
         "componentId": "cb82f12b5948544e"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 30,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7688,14 +7688,14 @@
       "ownerComponentId": "c70d1eafd35b1dcb"
     },
     {
-      "occurrenceId": "a150f6d65d9cce6c",
+      "occurrenceId": "394c97b9868577d1",
       "resolution": {
         "status": "resolved",
         "componentId": "3761162c9cc24f17"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 30,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7709,14 +7709,14 @@
       "ownerComponentId": "c70d1eafd35b1dcb"
     },
     {
-      "occurrenceId": "a0ef6fb279cf5166",
+      "occurrenceId": "180c1d62b02c049d",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 39,
-      "column": 41,
+      "column": 42,
       "credit": {
         "kind": "render"
       },
@@ -7731,14 +7731,14 @@
       "ownerComponentId": "41d5717d013520c3"
     },
     {
-      "occurrenceId": "8f4c2080e48be367",
+      "occurrenceId": "d2a84a9d79e2af36",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-engine-shapes/Iteration.tsx",
       "line": 46,
-      "column": 64,
+      "column": 65,
       "credit": {
         "kind": "render"
       },
@@ -7758,14 +7758,14 @@
       "ownerComponentId": "f7b2fc532b92e897"
     },
     {
-      "occurrenceId": "7ed1df1820c25136",
+      "occurrenceId": "49278b49c42f9124",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 9,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7776,7 +7776,7 @@
           "mapLoc": {
             "file": "src/react-engine-shapes/MapControls.tsx",
             "line": 6,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -7785,14 +7785,14 @@
       "ownerComponentId": "f4da01f81d6c583d"
     },
     {
-      "occurrenceId": "f913476c0dceb2ad",
+      "occurrenceId": "c998f09b1e068340",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 9,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7803,7 +7803,7 @@
           "mapLoc": {
             "file": "src/react-engine-shapes/MapControls.tsx",
             "line": 6,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -7812,14 +7812,14 @@
       "ownerComponentId": "f4da01f81d6c583d"
     },
     {
-      "occurrenceId": "8d5ee634df35fb11",
+      "occurrenceId": "adffa381af552a33",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 14,
-      "column": 20,
+      "column": 21,
       "credit": {
         "kind": "render"
       },
@@ -7834,14 +7834,14 @@
       "ownerComponentId": "ddce0b72f99eaf2e"
     },
     {
-      "occurrenceId": "a7d0b1d01f41fc71",
+      "occurrenceId": "8f477bc9b1ec10f3",
       "resolution": {
         "status": "resolved",
         "componentId": "ddce0b72f99eaf2e"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 18,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7852,7 +7852,7 @@
           "mapLoc": {
             "file": "src/react-engine-shapes/MapControls.tsx",
             "line": 15,
-            "column": 6
+            "column": 7
           }
         }
       ],
@@ -7861,14 +7861,14 @@
       "ownerComponentId": "d7f69252a87c118f"
     },
     {
-      "occurrenceId": "9f193b655dcfdb9e",
+      "occurrenceId": "3b0205df44d98a77",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 23,
-      "column": 21,
+      "column": 22,
       "credit": {
         "kind": "render"
       },
@@ -7883,14 +7883,14 @@
       "ownerComponentId": "69472733d7233d45"
     },
     {
-      "occurrenceId": "28f7c0603574dad5",
+      "occurrenceId": "65b15b4dc37dfb4d",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 24,
-      "column": 21,
+      "column": 22,
       "credit": {
         "kind": "render"
       },
@@ -7905,14 +7905,14 @@
       "ownerComponentId": "532ca52b571f9c30"
     },
     {
-      "occurrenceId": "7c47697f9ea24388",
+      "occurrenceId": "6f006958cf921ebc",
       "resolution": {
         "status": "resolved",
         "componentId": "69472733d7233d45"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 27,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7922,14 +7922,14 @@
       "ownerComponentId": "b06eed7b5a0a6eaf"
     },
     {
-      "occurrenceId": "43f3ff83bc703892",
+      "occurrenceId": "73c16cb44e0f8081",
       "resolution": {
         "status": "resolved",
         "componentId": "532ca52b571f9c30"
       },
       "filePath": "src/react-engine-shapes/MapControls.tsx",
       "line": 27,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7939,14 +7939,14 @@
       "ownerComponentId": "b06eed7b5a0a6eaf"
     },
     {
-      "occurrenceId": "2f3e6ab0a6373b31",
+      "occurrenceId": "8c9aece50caa7207",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/react-engine-shapes/NamedDefault.tsx",
       "line": 6,
-      "column": 24,
+      "column": 25,
       "credit": {
         "kind": "render"
       },
@@ -7961,14 +7961,14 @@
       "ownerComponentId": "fff241709284e9a5"
     },
     {
-      "occurrenceId": "534c66475b77f1a8",
+      "occurrenceId": "3686aebaf2e74cfd",
       "resolution": {
         "status": "resolved",
         "componentId": "12b5ef07f34ce270"
       },
       "filePath": "src/react-engine-shapes/NamespaceDefault.tsx",
       "line": 6,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -7984,14 +7984,14 @@
       "ownerComponentId": "d2516f5e1b01daf0"
     },
     {
-      "occurrenceId": "c43ad1516838c7f3",
+      "occurrenceId": "f357f2dd9edc1243",
       "resolution": {
         "status": "resolved",
         "componentId": "618e3d6d2a760a59"
       },
       "filePath": "src/react-engine-shapes/NamespaceDefault.tsx",
       "line": 20,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -8001,14 +8001,14 @@
       "ownerComponentId": "735376cbbaa69071"
     },
     {
-      "occurrenceId": "a402f4e4dc7360d2",
+      "occurrenceId": "589e9d354739bd2d",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 7,
-      "column": 13,
+      "column": 14,
       "credit": {
         "kind": "render"
       },
@@ -8023,14 +8023,14 @@
       "ownerComponentId": "d9d69aed8cd96426"
     },
     {
-      "occurrenceId": "34c8ba9175bf1840",
+      "occurrenceId": "7e3bc2b005c1c9fd",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 16,
-      "column": 2,
+      "column": 3,
       "credit": {
         "kind": "render"
       },
@@ -8053,14 +8053,14 @@
       "ownerComponentId": "dc23d2e9eb165b57"
     },
     {
-      "occurrenceId": "2551f747504c6aff",
+      "occurrenceId": "3aa96217fa29c9cb",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 21,
-      "column": 16,
+      "column": 17,
       "credit": {
         "kind": "render"
       },
@@ -8075,14 +8075,14 @@
       "ownerComponentId": "d6fca0c5db154302"
     },
     {
-      "occurrenceId": "d7ba7dcd44c7bf87",
+      "occurrenceId": "778d1c0fcfff7cd7",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 22,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },
@@ -8097,14 +8097,14 @@
       "ownerComponentId": "d6fca0c5db154302"
     },
     {
-      "occurrenceId": "ec195c00cdb3fa0a",
+      "occurrenceId": "9e6f036be526037f",
       "resolution": {
         "status": "resolved",
         "componentId": "9a25a3b8cbee157e"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 29,
-      "column": 67,
+      "column": 68,
       "credit": {
         "kind": "render"
       },
@@ -8123,14 +8123,14 @@
       "ownerComponentId": "65c276a56ee7b2a9"
     },
     {
-      "occurrenceId": "647d913498f03549",
+      "occurrenceId": "0e5bce3bde57af1d",
       "resolution": {
         "status": "resolved",
         "componentId": "7a9e3882aea97b9f"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 32,
-      "column": 25,
+      "column": 26,
       "credit": {
         "kind": "render"
       },
@@ -8145,14 +8145,14 @@
       "ownerComponentId": "a0eee53f4106a4e7"
     },
     {
-      "occurrenceId": "5f2c49343ce4f747",
+      "occurrenceId": "6ce048ef08a89ef3",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/react-engine-shapes/Wrappers.tsx",
       "line": 36,
-      "column": 26,
+      "column": 27,
       "credit": {
         "kind": "render"
       },
@@ -8167,14 +8167,14 @@
       "ownerComponentId": "dbeb5885e6ea1a02"
     },
     {
-      "occurrenceId": "f3da8f618bb97ce4",
+      "occurrenceId": "ddc0a27db3e858dc",
       "resolution": {
         "status": "resolved",
         "componentId": "7ae2fc44942d201c"
       },
       "filePath": "src/hoc-factory-products/dropdown-control.js",
       "line": 3,
-      "column": 29,
+      "column": 30,
       "credit": {
         "kind": "argument",
         "callee": "makeControl",
@@ -8191,14 +8191,14 @@
       "ownerComponentId": "61766288291e73f3"
     },
     {
-      "occurrenceId": "ec5bbe1a10577ec4",
+      "occurrenceId": "691a3a659e0cffae",
       "resolution": {
         "status": "resolved",
         "componentId": "0a06fd2f53190e24"
       },
       "filePath": "src/hoc-factory-products/products.jsx",
       "line": 5,
-      "column": 31,
+      "column": 32,
       "credit": {
         "kind": "argument",
         "callee": "withLoading",
@@ -8209,14 +8209,14 @@
       "ownerComponentId": "43a3ae8470a6c7d1"
     },
     {
-      "occurrenceId": "6e612b59922f0d83",
+      "occurrenceId": "15e7e0bc040097a0",
       "resolution": {
         "status": "resolved",
         "componentId": "f705f77b4e15ad67"
       },
       "filePath": "src/hoc-factory-products/products.jsx",
       "line": 6,
-      "column": 31,
+      "column": 32,
       "credit": {
         "kind": "argument",
         "callee": "withLoading",
@@ -8227,14 +8227,14 @@
       "ownerComponentId": "b5ac13290bf085c3"
     },
     {
-      "occurrenceId": "b59855aed716cf70",
+      "occurrenceId": "5699fa00164339eb",
       "resolution": {
         "status": "resolved",
         "componentId": "c2005f7ff20e8c71"
       },
       "filePath": "src/hoc-factory-products/signup-form.jsx",
       "line": 4,
-      "column": 47,
+      "column": 48,
       "credit": {
         "kind": "argument",
         "callee": "withErrorBoundary",
@@ -8245,14 +8245,14 @@
       "ownerComponentId": "1fb22edb32101842"
     },
     {
-      "occurrenceId": "48cd43cb5ed2afb9",
+      "occurrenceId": "d748517999174a40",
       "resolution": {
         "status": "resolved",
         "componentId": "549968f95f71ac07"
       },
       "filePath": "src/hoc-rescue/Slot.tsx",
       "line": 10,
-      "column": 31,
+      "column": 32,
       "credit": {
         "kind": "argument",
         "callee": "createSlot",
@@ -8268,14 +8268,14 @@
       "ownerComponentId": "45af52ecd859b1b7"
     },
     {
-      "occurrenceId": "bbf77aafbb837e80",
+      "occurrenceId": "aec853870ae8f240",
       "resolution": {
         "status": "resolved",
         "componentId": "c8aba73ebf4d7d91"
       },
       "filePath": "src/react-engine-shapes/HookSeeding.tsx",
       "line": 9,
-      "column": 44,
+      "column": 45,
       "credit": {
         "kind": "argument",
         "callee": "useModalHolder",
@@ -8298,7 +8298,7 @@
       "severity": "info",
       "filePath": "src/context/Theme.tsx",
       "line": 18,
-      "column": 49,
+      "column": 50,
       "symbol": "Theme",
       "memberChain": []
     },
@@ -8307,7 +8307,7 @@
       "severity": "info",
       "filePath": "src/data-method/Picker.tsx",
       "line": 8,
-      "column": 9,
+      "column": 10,
       "symbol": "Shown",
       "memberChain": []
     },
@@ -8316,7 +8316,7 @@
       "severity": "info",
       "filePath": "src/hoc-factory-products/make-control.jsx",
       "line": 4,
-      "column": 9,
+      "column": 10,
       "symbol": "Component",
       "memberChain": []
     },
@@ -8325,7 +8325,7 @@
       "severity": "info",
       "filePath": "src/hoc-factory-products/with-error-boundary.jsx",
       "line": 3,
-      "column": 36,
+      "column": 37,
       "symbol": "Child",
       "memberChain": []
     },
@@ -8334,7 +8334,7 @@
       "severity": "info",
       "filePath": "src/hoc-factory-products/with-loading.jsx",
       "line": 3,
-      "column": 76,
+      "column": 77,
       "symbol": "C",
       "memberChain": []
     },
@@ -8343,7 +8343,7 @@
       "severity": "info",
       "filePath": "src/hoc-rescue/Slot.tsx",
       "line": 8,
-      "column": 15,
+      "column": 16,
       "symbol": "C",
       "memberChain": []
     },
@@ -8352,7 +8352,7 @@
       "severity": "info",
       "filePath": "src/react-engine-shapes/Styled.tsx",
       "line": 13,
-      "column": 9,
+      "column": 10,
       "symbol": "StyledButton",
       "memberChain": []
     }

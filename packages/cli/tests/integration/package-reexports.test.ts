@@ -90,8 +90,8 @@ describe("integration: package-reexports fixture", () => {
       const S = "leaf-relabel";
       const xButton = pkg("@example/x-button", "XButton", "dist/react");
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:4:9", xButton, local(S, "App.tsx", "App"), [imported("@example/aggregator/react/button", "XButton")]),
-        row("Direct.tsx:4:9", xButton, local(S, "Direct.tsx", "Direct"), [imported("@example/x-button/dist/react.js", "XButton")]),
+        row("App.tsx:4:10", xButton, local(S, "App.tsx", "App"), [imported("@example/aggregator/react/button", "XButton")]),
+        row("Direct.tsx:4:10", xButton, local(S, "Direct.tsx", "Direct"), [imported("@example/x-button/dist/react.js", "XButton")]),
       ]);
     });
   });
@@ -105,7 +105,7 @@ describe("integration: package-reexports fixture", () => {
       expect((await manifest(".")).dependencies).not.toHaveProperty("@example/widget");
       expect((await manifest("node_modules/@example/widget-aggregator")).dependencies).toBeUndefined();
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:4:9", pkg("@example/widget", "XWidget", "dist/react"), local(S, "App.tsx", "App"), [
+        row("App.tsx:4:10", pkg("@example/widget", "XWidget", "dist/react"), local(S, "App.tsx", "App"), [
           imported("@example/widget-aggregator/react/widget", "XWidget"),
         ]),
       ]);
@@ -118,7 +118,7 @@ describe("integration: package-reexports fixture", () => {
     it("credits an import from a pre-bundled entry to that package", () => {
       const S = "bundled-entry";
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:4:9", pkg("@example/bundled-aggregator", "BundledX"), local(S, "App.tsx", "App"), [
+        row("App.tsx:4:10", pkg("@example/bundled-aggregator", "BundledX"), local(S, "App.tsx", "App"), [
           imported("@example/bundled-aggregator", "BundledX"),
         ]),
       ]);
@@ -138,39 +138,39 @@ describe("integration: package-reexports fixture", () => {
       const card = pkg("@example/card", "Card");
       const app = local(S, "App.tsx", "App");
       const page = local(S, "Page.vue", "Page");
-      expect(rendersAt(S, "App.tsx:6:6", "App.tsx:7:6", "Page.vue:6:3", "Page.vue:7:3")).toEqual([
-        row("App.tsx:6:6", button, app, [imported("@example/all", "Button")]),
-        row("App.tsx:7:6", card, app, [imported("@example/all", "Card")]),
+      expect(rendersAt(S, "App.tsx:6:7", "App.tsx:7:7", "Page.vue:6:3", "Page.vue:7:3")).toEqual([
+        row("App.tsx:6:7", button, app, [imported("@example/all", "Button")]),
+        row("App.tsx:7:7", card, app, [imported("@example/all", "Card")]),
         row("Page.vue:6:3", button, page, [imported("@example/all", "Button")]),
         row("Page.vue:7:3", card, page, [imported("@example/all", "Card")]),
       ]);
     });
 
     it("credits an entry's own export ahead of its `export *`", () => {
-      expect(rendersAt(S, "Other.tsx:9:6")).toEqual([
-        row("Other.tsx:9:6", pkg("@example/own", "Button"), local(S, "Other.tsx", "Other"), [imported("@example/own", "Button")]),
+      expect(rendersAt(S, "Other.tsx:9:7")).toEqual([
+        row("Other.tsx:9:7", pkg("@example/own", "Button"), local(S, "Other.tsx", "Other"), [imported("@example/own", "Button")]),
       ]);
     });
 
     it("reads `export * as` as the one name it exports, naming the module it re-exports", () => {
       const other = local(S, "Other.tsx", "Other");
-      expect(rendersAt(S, "Other.tsx:10:6", "Other.tsx:11:6")).toEqual([
-        row("Other.tsx:10:6", pkg("@example/card", "Card"), other, [imported("@example/kit", "Card")]),
-        row("Other.tsx:11:6", pkg("@example/icons", "Icons.Star"), other, [imported("@example/kit", "Icons")]),
+      expect(rendersAt(S, "Other.tsx:10:7", "Other.tsx:11:7")).toEqual([
+        row("Other.tsx:10:7", pkg("@example/card", "Card"), other, [imported("@example/kit", "Card")]),
+        row("Other.tsx:11:7", pkg("@example/icons", "Icons.Star"), other, [imported("@example/kit", "Icons")]),
       ]);
     });
 
     it("credits an alias of a member of a named import, declared in another file, as that member", () => {
-      expect(rendersAt(S, "Aliased.tsx:4:9")).toEqual([
-        row("Aliased.tsx:4:9", pkg("@example/icons", "Icons.Star"), local(S, "Aliased.tsx", "Aliased"), [
+      expect(rendersAt(S, "Aliased.tsx:4:10")).toEqual([
+        row("Aliased.tsx:4:10", pkg("@example/icons", "Icons.Star"), local(S, "Aliased.tsx", "Aliased"), [
           imported("./aliased-star", "AliasedStar"),
         ]),
       ]);
     });
 
     it("does not pass a default import through `export *`", () => {
-      expect(rendersAt(S, "Other.tsx:8:6")).toEqual([
-        row("Other.tsx:8:6", pkg("@example/all", "default"), local(S, "Other.tsx", "Other"), [imported("@example/all", "default")]),
+      expect(rendersAt(S, "Other.tsx:8:7")).toEqual([
+        row("Other.tsx:8:7", pkg("@example/all", "default"), local(S, "Other.tsx", "Other"), [imported("@example/all", "default")]),
       ]);
     });
   });

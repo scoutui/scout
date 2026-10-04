@@ -183,80 +183,80 @@ describe("integration: react-shapes fixture", () => {
       // `FactoryButton` is its factory's product, so the memo(forwardRef())
       // inside the factory adds no hoc step.
       expect(rendersIn(S, "App.tsx")).toEqual([
-        row("App.tsx:23:6", local(S, "Wrappers.tsx", "BoundJsx"), app, [imported("./Wrappers", "BoundJsx")]),
-        row("App.tsx:24:6", local(S, "Wrappers.tsx", "FactoryButton"), app, [imported("./Wrappers", "FactoryButton")]),
-        row("App.tsx:25:6", local(S, "Wrappers.tsx", "Conditional"), app, [imported("./Wrappers", "Conditional"), hoc("memo")]),
-        row("App.tsx:26:6", pkg("RadioArea"), app, [imported("./Wrappers", "Item")]),
-        row("App.tsx:27:6", local(S, "Wrappers.tsx", "NsForwarded"), app, [imported("./Wrappers", "NsForwarded"), hoc("forwardRef")]),
-        row("App.tsx:28:6", local(S, "Wrappers.tsx", "NsMemoView"), app, [imported("./Wrappers", "NsMemo"), hoc("memo")]),
-        row("App.tsx:29:6", local(S, "Wrappers.tsx", "DefaultView"), app, [imported("./Wrappers", "default"), hoc("memo")]),
-        row("App.tsx:30:6", local(S, "AnonDefault.tsx", "default"), app, [imported("./AnonDefault", "default")]),
-        row("App.tsx:31:6", local(S, "NamedDefault.tsx", "NamedView"), app, [imported("./NamedDefault", "default")]),
-        row("App.tsx:32:6", local(S, "Iteration.tsx", "HookLeaf"), app, [imported("./Iteration", "HookLeaf")]),
-        row("App.tsx:33:6", local(S, "Iteration.tsx", "DirectList"), app, [imported("./Iteration", "DirectList")], {
+        row("App.tsx:23:7", local(S, "Wrappers.tsx", "BoundJsx"), app, [imported("./Wrappers", "BoundJsx")]),
+        row("App.tsx:24:7", local(S, "Wrappers.tsx", "FactoryButton"), app, [imported("./Wrappers", "FactoryButton")]),
+        row("App.tsx:25:7", local(S, "Wrappers.tsx", "Conditional"), app, [imported("./Wrappers", "Conditional"), hoc("memo")]),
+        row("App.tsx:26:7", pkg("RadioArea"), app, [imported("./Wrappers", "Item")]),
+        row("App.tsx:27:7", local(S, "Wrappers.tsx", "NsForwarded"), app, [imported("./Wrappers", "NsForwarded"), hoc("forwardRef")]),
+        row("App.tsx:28:7", local(S, "Wrappers.tsx", "NsMemoView"), app, [imported("./Wrappers", "NsMemo"), hoc("memo")]),
+        row("App.tsx:29:7", local(S, "Wrappers.tsx", "DefaultView"), app, [imported("./Wrappers", "default"), hoc("memo")]),
+        row("App.tsx:30:7", local(S, "AnonDefault.tsx", "default"), app, [imported("./AnonDefault", "default")]),
+        row("App.tsx:31:7", local(S, "NamedDefault.tsx", "NamedView"), app, [imported("./NamedDefault", "default")]),
+        row("App.tsx:32:7", local(S, "Iteration.tsx", "HookLeaf"), app, [imported("./Iteration", "HookLeaf")]),
+        row("App.tsx:33:7", local(S, "Iteration.tsx", "DirectList"), app, [imported("./Iteration", "DirectList")], {
           rows: { tier: "dynamic" },
         }),
-        row("App.tsx:34:6", local(S, "Iteration.tsx", "MemoList"), app, [imported("./Iteration", "MemoList"), hoc("memo")], {
+        row("App.tsx:34:7", local(S, "Iteration.tsx", "MemoList"), app, [imported("./Iteration", "MemoList"), hoc("memo")], {
           rows: { tier: "dynamic" },
         }),
-        row("App.tsx:35:6", local(S, "Iteration.tsx", "ViaMap"), app, [imported("./Iteration", "ViaMap")], {
+        row("App.tsx:35:7", local(S, "Iteration.tsx", "ViaMap"), app, [imported("./Iteration", "ViaMap")], {
           k: { tier: "written", value: "list" },
         }),
-        row("App.tsx:36:6", local(S, "Iteration.tsx", "ViaTernary"), app, [imported("./Iteration", "ViaTernary")], {
+        row("App.tsx:36:7", local(S, "Iteration.tsx", "ViaTernary"), app, [imported("./Iteration", "ViaTernary")], {
           c: { tier: "written", value: true },
         }),
-        row("App.tsx:37:6", local(S, "Iteration.tsx", "ChildrenWrapper"), app, [imported("./Iteration", "ChildrenWrapper")]),
-        row("App.tsx:38:6", local(S, "Iteration.tsx", "ExternalArrayList"), app, [imported("./Iteration", "ExternalArrayList")]),
-        row("App.tsx:39:6", local(S, "NamespaceDefault.tsx", "CrossFileNamespace"), app, [
+        row("App.tsx:37:7", local(S, "Iteration.tsx", "ChildrenWrapper"), app, [imported("./Iteration", "ChildrenWrapper")]),
+        row("App.tsx:38:7", local(S, "Iteration.tsx", "ExternalArrayList"), app, [imported("./Iteration", "ExternalArrayList")]),
+        row("App.tsx:39:7", local(S, "NamespaceDefault.tsx", "CrossFileNamespace"), app, [
           imported("./NamespaceDefault", "CrossFileNamespace"),
         ]),
-        row("App.tsx:40:6", local(S, "NamespaceDefault.tsx", "SameFileNamespace"), app, [
+        row("App.tsx:40:7", local(S, "NamespaceDefault.tsx", "SameFileNamespace"), app, [
           imported("./NamespaceDefault", "SameFileNamespace"),
         ]),
-        row("App.tsx:41:6", local(S, "Styled.tsx", "Styled"), app, [imported("./Styled", "Styled")]),
-        row("App.tsx:42:6", local(S, "MapControls.tsx", "ImportValuedMap"), app, [imported("./MapControls", "ImportValuedMap")], {
+        row("App.tsx:41:7", local(S, "Styled.tsx", "Styled"), app, [imported("./Styled", "Styled")]),
+        row("App.tsx:42:7", local(S, "MapControls.tsx", "ImportValuedMap"), app, [imported("./MapControls", "ImportValuedMap")], {
           t: { tier: "written", value: "button" },
         }),
-        row("App.tsx:43:6", local(S, "MapControls.tsx", "PlainBodiedMap"), app, [imported("./MapControls", "PlainBodiedMap")], {
+        row("App.tsx:43:7", local(S, "MapControls.tsx", "PlainBodiedMap"), app, [imported("./MapControls", "PlainBodiedMap")], {
           k: { tier: "written", value: "leafy" },
         }),
-        row("App.tsx:44:6", local(S, "MapControls.tsx", "PlainTernary"), app, [imported("./MapControls", "PlainTernary")], {
+        row("App.tsx:44:7", local(S, "MapControls.tsx", "PlainTernary"), app, [imported("./MapControls", "PlainTernary")], {
           c: { tier: "written", value: true },
         }),
-        row("App.tsx:45:6", local(S, "Compound.tsx", "ExternalCompound"), app, [imported("./Compound", "ExternalCompound")]),
-        row("App.tsx:46:6", local(S, "Compound.tsx", "LocalCompound"), app, [imported("./Compound", "LocalCompound")]),
-        row("App.tsx:47:6", local(S, "HookSeeding.tsx", "HookPage"), app, [imported("./HookSeeding", "HookPage")]),
+        row("App.tsx:45:7", local(S, "Compound.tsx", "ExternalCompound"), app, [imported("./Compound", "ExternalCompound")]),
+        row("App.tsx:46:7", local(S, "Compound.tsx", "LocalCompound"), app, [imported("./Compound", "LocalCompound")]),
+        row("App.tsx:47:7", local(S, "HookSeeding.tsx", "HookPage"), app, [imported("./HookSeeding", "HookPage")]),
       ]);
     });
 
     it("owns each leaf inside a wrapper by the component the wrapper declares", () => {
       expect(rendersIn(S, "Wrappers.tsx")).toEqual([
-        row("Wrappers.tsx:7:13", pkg("Button"), local(S, "Wrappers.tsx", "BoundJsx"), [imported("@example/react-ds", "Button")]),
+        row("Wrappers.tsx:7:14", pkg("Button"), local(S, "Wrappers.tsx", "BoundJsx"), [imported("@example/react-ds", "Button")]),
         row(
-          "Wrappers.tsx:16:2",
+          "Wrappers.tsx:16:3",
           pkg("TextInput"),
           local(S, "Wrappers.tsx", "FactoryButton"),
           [imported("@example/react-ds", "TextInput")],
           { "...rest": { tier: "dynamic" }, ref: { tier: "reference", ref: "ref" } },
         ),
-        row("Wrappers.tsx:21:16", pkg("Button"), local(S, "Wrappers.tsx", "Conditional"), [imported("@example/react-ds", "Button")]),
-        row("Wrappers.tsx:22:9", pkg("Card"), local(S, "Wrappers.tsx", "Conditional"), [imported("@example/react-ds", "Card")]),
+        row("Wrappers.tsx:21:17", pkg("Button"), local(S, "Wrappers.tsx", "Conditional"), [imported("@example/react-ds", "Button")]),
+        row("Wrappers.tsx:22:10", pkg("Card"), local(S, "Wrappers.tsx", "Conditional"), [imported("@example/react-ds", "Card")]),
         row(
-          "Wrappers.tsx:29:67",
+          "Wrappers.tsx:29:68",
           pkg("Card"),
           local(S, "Wrappers.tsx", "NsForwarded"),
           [imported("@example/react-ds", "Card")],
           { "...rest": { tier: "dynamic" } },
         ),
-        row("Wrappers.tsx:32:25", pkg("TextInput"), local(S, "Wrappers.tsx", "NsMemoView"), [imported("@example/react-ds", "TextInput")]),
-        row("Wrappers.tsx:36:26", pkg("Button"), local(S, "Wrappers.tsx", "DefaultView"), [imported("@example/react-ds", "Button")]),
+        row("Wrappers.tsx:32:26", pkg("TextInput"), local(S, "Wrappers.tsx", "NsMemoView"), [imported("@example/react-ds", "TextInput")]),
+        row("Wrappers.tsx:36:27", pkg("Button"), local(S, "Wrappers.tsx", "DefaultView"), [imported("@example/react-ds", "Button")]),
       ]);
     });
 
     it("credits the anonymous and the named default export's leaf to that default", () => {
       expect([...rendersIn(S, "AnonDefault.tsx"), ...rendersIn(S, "NamedDefault.tsx")]).toEqual([
-        row("AnonDefault.tsx:12:21", pkg("Banner"), local(S, "AnonDefault.tsx", "default"), [imported("@example/react-ds", "Banner")]),
-        row("NamedDefault.tsx:6:24", pkg("Card"), local(S, "NamedDefault.tsx", "NamedView"), [imported("@example/react-ds", "Card")]),
+        row("AnonDefault.tsx:12:22", pkg("Banner"), local(S, "AnonDefault.tsx", "default"), [imported("@example/react-ds", "Banner")]),
+        row("NamedDefault.tsx:6:25", pkg("Card"), local(S, "NamedDefault.tsx", "NamedView"), [imported("@example/react-ds", "Card")]),
       ]);
     });
 
@@ -267,8 +267,8 @@ describe("integration: react-shapes fixture", () => {
       // is `Root` in the first test: the identical shape split across two files.
       expect(externalExports(S)).toContain("Leaf");
       expect(rendersIn(S, "NamespaceDefault.tsx")).toEqual([
-        row("NamespaceDefault.tsx:6:9", pkg("Root"), local(S, "NamespaceDefault.tsx", "CrossFileNamespace"), [imported("./ns", "NS")]),
-        row("NamespaceDefault.tsx:20:9", pkg("Leaf"), local(S, "NamespaceDefault.tsx", "SameFileNamespace"), []),
+        row("NamespaceDefault.tsx:6:10", pkg("Root"), local(S, "NamespaceDefault.tsx", "CrossFileNamespace"), [imported("./ns", "NS")]),
+        row("NamespaceDefault.tsx:20:10", pkg("Leaf"), local(S, "NamespaceDefault.tsx", "SameFileNamespace"), []),
       ]);
     });
 
@@ -295,39 +295,39 @@ describe("integration: react-shapes fixture", () => {
       const iteration = (name: string) => local(S, "Iteration.tsx", name);
       const controls = (name: string) => local(S, "MapControls.tsx", name);
       const rowsProp = { rows: { tier: "dynamic" } };
-      expect(rendersIn(S, "Iteration.tsx").filter((r) => ["Iteration.tsx:23:9", "Iteration.tsx:30:9"].includes(r.at))).toEqual([
-        row("Iteration.tsx:23:9", iteration("DirectList"), iteration("ViaMap"), [dynamicMap(S, "Iteration.tsx", "MAP", 20, 6)], rowsProp),
-        row("Iteration.tsx:30:9", iteration("Alt"), iteration("ViaTernary"), [], rowsProp),
-        row("Iteration.tsx:30:9", iteration("DirectList"), iteration("ViaTernary"), [], rowsProp),
+      expect(rendersIn(S, "Iteration.tsx").filter((r) => ["Iteration.tsx:23:10", "Iteration.tsx:30:10"].includes(r.at))).toEqual([
+        row("Iteration.tsx:23:10", iteration("DirectList"), iteration("ViaMap"), [dynamicMap(S, "Iteration.tsx", "MAP", 20, 7)], rowsProp),
+        row("Iteration.tsx:30:10", iteration("Alt"), iteration("ViaTernary"), [], rowsProp),
+        row("Iteration.tsx:30:10", iteration("DirectList"), iteration("ViaTernary"), [], rowsProp),
       ]);
       expect(rendersIn(S, "MapControls.tsx")).toEqual([
-        row("MapControls.tsx:9:9", pkg("Button"), controls("ImportValuedMap"), [dynamicMap(S, "MapControls.tsx", "IMPORT_MAP", 6, 6)]),
-        row("MapControls.tsx:9:9", pkg("Card"), controls("ImportValuedMap"), [dynamicMap(S, "MapControls.tsx", "IMPORT_MAP", 6, 6)]),
-        row("MapControls.tsx:14:20", pkg("TextInput"), controls("Leafy"), [imported("@example/react-ds", "TextInput")]),
-        row("MapControls.tsx:18:9", controls("Leafy"), controls("PlainBodiedMap"), [dynamicMap(S, "MapControls.tsx", "LOCAL_MAP", 15, 6)]),
-        row("MapControls.tsx:23:21", pkg("Button"), controls("PlainA"), [imported("@example/react-ds", "Button")]),
-        row("MapControls.tsx:24:21", pkg("Card"), controls("PlainB"), [imported("@example/react-ds", "Card")]),
-        row("MapControls.tsx:27:9", controls("PlainA"), controls("PlainTernary"), []),
-        row("MapControls.tsx:27:9", controls("PlainB"), controls("PlainTernary"), []),
+        row("MapControls.tsx:9:10", pkg("Button"), controls("ImportValuedMap"), [dynamicMap(S, "MapControls.tsx", "IMPORT_MAP", 6, 7)]),
+        row("MapControls.tsx:9:10", pkg("Card"), controls("ImportValuedMap"), [dynamicMap(S, "MapControls.tsx", "IMPORT_MAP", 6, 7)]),
+        row("MapControls.tsx:14:21", pkg("TextInput"), controls("Leafy"), [imported("@example/react-ds", "TextInput")]),
+        row("MapControls.tsx:18:10", controls("Leafy"), controls("PlainBodiedMap"), [dynamicMap(S, "MapControls.tsx", "LOCAL_MAP", 15, 7)]),
+        row("MapControls.tsx:23:22", pkg("Button"), controls("PlainA"), [imported("@example/react-ds", "Button")]),
+        row("MapControls.tsx:24:22", pkg("Card"), controls("PlainB"), [imported("@example/react-ds", "Card")]),
+        row("MapControls.tsx:27:10", controls("PlainA"), controls("PlainTernary"), []),
+        row("MapControls.tsx:27:10", controls("PlainB"), controls("PlainTernary"), []),
       ]);
     });
 
     it("owns the leaves of hook-returned and .map()-bodied JSX by their component", () => {
       const iteration = (name: string) => local(S, "Iteration.tsx", name);
-      expect(rendersIn(S, "Iteration.tsx").filter((r) => !["Iteration.tsx:23:9", "Iteration.tsx:30:9"].includes(r.at))).toEqual([
-        row("Iteration.tsx:6:19", pkg("Button"), iteration("HookLeaf"), [
+      expect(rendersIn(S, "Iteration.tsx").filter((r) => !["Iteration.tsx:23:10", "Iteration.tsx:30:10"].includes(r.at))).toEqual([
+        row("Iteration.tsx:6:20", pkg("Button"), iteration("HookLeaf"), [
           helperCall(S, "Iteration.tsx", "useModals"),
           imported("@example/react-ds", "Button"),
         ]),
-        row("Iteration.tsx:14:69", pkg("Button"), iteration("DirectList"), [imported("@example/react-ds", "Button")], {
+        row("Iteration.tsx:14:70", pkg("Button"), iteration("DirectList"), [imported("@example/react-ds", "Button")], {
           key: { tier: "reference", ref: "r" },
         }),
-        row("Iteration.tsx:17:72", pkg("TextInput"), iteration("MemoList"), [imported("@example/react-ds", "TextInput")], {
+        row("Iteration.tsx:17:73", pkg("TextInput"), iteration("MemoList"), [imported("@example/react-ds", "TextInput")], {
           key: { tier: "reference", ref: "r" },
         }),
-        row("Iteration.tsx:27:18", pkg("Button"), iteration("Alt"), [imported("@example/react-ds", "Button")]),
-        row("Iteration.tsx:39:41", pkg("Button"), iteration("ChildrenWrapper"), [imported("@example/react-ds", "Button")]),
-        row("Iteration.tsx:46:64", pkg("TextInput"), iteration("ExternalArrayList"), [imported("@example/react-ds", "TextInput")], {
+        row("Iteration.tsx:27:19", pkg("Button"), iteration("Alt"), [imported("@example/react-ds", "Button")]),
+        row("Iteration.tsx:39:42", pkg("Button"), iteration("ChildrenWrapper"), [imported("@example/react-ds", "Button")]),
+        row("Iteration.tsx:46:65", pkg("TextInput"), iteration("ExternalArrayList"), [imported("@example/react-ds", "TextInput")], {
           key: { tier: "reference", ref: "i" },
         }),
       ]);
@@ -344,18 +344,18 @@ describe("integration: react-shapes fixture", () => {
       const holder = out.components.find((c) => c.identity.kind !== "tag" && c.identity.exportName === "LocalInline");
       expect(holder).toBeUndefined();
       expect(rendersIn(S, "Compound.tsx")).toEqual([
-        row("Compound.tsx:8:9", pkg("Toast.Title"), local(S, "Compound.tsx", "ExternalCompound"), [
+        row("Compound.tsx:8:10", pkg("Toast.Title"), local(S, "Compound.tsx", "ExternalCompound"), [
           imported("@example/react-ds", "Toast"),
         ]),
-        row("Compound.tsx:16:9", local(S, "Compound.tsx", "LocalInline.Note"), local(S, "Compound.tsx", "LocalCompound"), []),
+        row("Compound.tsx:16:10", local(S, "Compound.tsx", "LocalInline.Note"), local(S, "Compound.tsx", "LocalCompound"), []),
       ]);
     });
 
     it("credits a component passed to a hook inside a custom hook at the argument, owned by each page that calls it", () => {
       const hooks = (name: string) => local(S, "HookSeeding.tsx", name);
       expect(rendersIn(S, "HookSeeding.tsx")).toEqual([
-        row("HookSeeding.tsx:6:27", pkg("Banner"), hooks("ConfirmModal"), [imported("@example/react-ds", "Banner")]),
-        row("HookSeeding.tsx:9:44", hooks("ConfirmModal"), hooks("HookPage"), [helperCall(S, "HookSeeding.tsx", "useConfirmModal")], {}, {
+        row("HookSeeding.tsx:6:28", pkg("Banner"), hooks("ConfirmModal"), [imported("@example/react-ds", "Banner")]),
+        row("HookSeeding.tsx:9:45", hooks("ConfirmModal"), hooks("HookPage"), [helperCall(S, "HookSeeding.tsx", "useConfirmModal")], {}, {
           credit: { kind: "argument", callee: "useModalHolder", index: 0 },
         }),
       ]);
@@ -364,19 +364,19 @@ describe("integration: react-shapes fixture", () => {
     // The scan emits only an unresolved-reference diagnostic for `StyledButton`.
     it.fails("credits styled(NS.Button) at its render to the wrapped Button", () => {
       expect(rendersIn(S, "Styled.tsx")).toContainEqual(
-        expect.objectContaining({ at: "Styled.tsx:13:9", component: pkg("Button"), owner: local(S, "Styled.tsx", "Styled") }),
+        expect.objectContaining({ at: "Styled.tsx:13:10", component: pkg("Button"), owner: local(S, "Styled.tsx", "Styled") }),
       );
     });
   });
 
   describe("dynamic-map", () => {
     it("credits every entry of an import-valued map at the dispatch", () => {
-      const trace = [dynamicMap("dynamic-map", "App.tsx", "COMPONENT_MAP", 3, 6)];
+      const trace = [dynamicMap("dynamic-map", "App.tsx", "COMPONENT_MAP", 3, 7)];
       const app = local("dynamic-map", "App.tsx", "App");
       expect(rendersIn("dynamic-map")).toEqual([
-        row("App.tsx:11:9", pkg("Button"), app, trace),
-        row("App.tsx:11:9", pkg("Card"), app, trace),
-        row("App.tsx:11:9", pkg("TextInput"), app, trace),
+        row("App.tsx:11:10", pkg("Button"), app, trace),
+        row("App.tsx:11:10", pkg("Card"), app, trace),
+        row("App.tsx:11:10", pkg("TextInput"), app, trace),
       ]);
     });
   });
@@ -384,10 +384,10 @@ describe("integration: react-shapes fixture", () => {
   describe("dynamic-map-via-getter", () => {
     it("follows a getter that returns a map lookup into another file, to every local entry", () => {
       const S = "dynamic-map-via-getter";
-      const trace = [dynamicMap(S, "mappings.tsx", "MAP", 3, 6)];
+      const trace = [dynamicMap(S, "mappings.tsx", "MAP", 3, 7)];
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:5:9", local(S, "components.tsx", "Bar"), local(S, "App.tsx", "App"), trace),
-        row("App.tsx:5:9", local(S, "components.tsx", "Foo"), local(S, "App.tsx", "App"), trace),
+        row("App.tsx:5:10", local(S, "components.tsx", "Bar"), local(S, "App.tsx", "App"), trace),
+        row("App.tsx:5:10", local(S, "components.tsx", "Foo"), local(S, "App.tsx", "App"), trace),
       ]);
     });
   });
@@ -396,9 +396,9 @@ describe("integration: react-shapes fixture", () => {
     it("credits what each lazy loader resolves to: a `.then()` pick, or the module's default", () => {
       const app = local("lazy-import", "App.tsx", "App");
       expect(rendersIn("lazy-import")).toEqual([
-        row("App.tsx:12:6", pkg("Button"), app, [lazy("lazy"), imported("@example/react-ds", "Button")]),
-        row("App.tsx:13:6", pkg("default"), app, [lazy("dynamic"), imported("@example/react-ds", "default")]),
-        row("App.tsx:14:6", pkg("Card"), app, [lazy("loadable"), imported("@example/react-ds", "Card")]),
+        row("App.tsx:12:7", pkg("Button"), app, [lazy("lazy"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:13:7", pkg("default"), app, [lazy("dynamic"), imported("@example/react-ds", "default")]),
+        row("App.tsx:14:7", pkg("Card"), app, [lazy("loadable"), imported("@example/react-ds", "Card")]),
       ]);
     });
   });
@@ -410,10 +410,10 @@ describe("integration: react-shapes fixture", () => {
       const home = local(S, "pages/home-inner.tsx", "Home");
       const settings = local(S, "pages/settings-inner.tsx", "Settings");
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:14:6", home, app, [imported("./pages/home", "default")]),
-        row("App.tsx:15:6", settings, app, [imported("./pages/home", "Settings")]),
-        row("App.tsx:16:6", home, app, [lazy("lazy"), imported("./pages/home", "default")]),
-        row("App.tsx:17:6", settings, app, [lazy("lazy"), imported("./pages/home", "Settings")]),
+        row("App.tsx:14:7", home, app, [imported("./pages/home", "default")]),
+        row("App.tsx:15:7", settings, app, [imported("./pages/home", "Settings")]),
+        row("App.tsx:16:7", home, app, [lazy("lazy"), imported("./pages/home", "default")]),
+        row("App.tsx:17:7", settings, app, [lazy("lazy"), imported("./pages/home", "Settings")]),
       ]);
     });
   });
@@ -422,12 +422,12 @@ describe("integration: react-shapes fixture", () => {
     it("traces each HOC pattern to the wrapped component, withA(withB(TextInput)) through both wrappers", () => {
       const app = local("hoc-composition", "App.tsx", "App");
       expect(rendersIn("hoc-composition")).toEqual([
-        row("App.tsx:26:6", pkg("Button"), app, [hoc("connect"), imported("@example/react-ds", "Button")]),
-        row("App.tsx:27:6", pkg("TextInput"), app, [hoc("withRouter"), imported("@example/react-ds", "TextInput")]),
-        row("App.tsx:28:6", pkg("Card"), app, [hoc("flow"), imported("@example/react-ds", "Card")]),
-        row("App.tsx:29:6", pkg("Button"), app, [hoc("compose"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:26:7", pkg("Button"), app, [hoc("connect"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:27:7", pkg("TextInput"), app, [hoc("withRouter"), imported("@example/react-ds", "TextInput")]),
+        row("App.tsx:28:7", pkg("Card"), app, [hoc("flow"), imported("@example/react-ds", "Card")]),
+        row("App.tsx:29:7", pkg("Button"), app, [hoc("compose"), imported("@example/react-ds", "Button")]),
         // The in-file withB takes no import step.
-        row("App.tsx:30:6", pkg("TextInput"), app, [hoc("withA"), hoc("withB"), imported("@example/react-ds", "TextInput")]),
+        row("App.tsx:30:7", pkg("TextInput"), app, [hoc("withA"), hoc("withB"), imported("@example/react-ds", "TextInput")]),
       ]);
     });
   });
@@ -437,12 +437,12 @@ describe("integration: react-shapes fixture", () => {
       const S = "hoc-cross-module";
       const app = local(S, "App.tsx", "App");
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:6:6", local(S, "components.tsx", "Foo"), app, [
+        row("App.tsx:6:7", local(S, "components.tsx", "Foo"), app, [
           imported("./index.js", "Foo"),
           hoc("flow"),
           imported("./components.tsx", "Foo"),
         ]),
-        row("App.tsx:7:6", local(S, "components.tsx", "Bar"), app, [
+        row("App.tsx:7:7", local(S, "components.tsx", "Bar"), app, [
           imported("./index.js", "Bar"),
           hoc("connect"),
           imported("./components.tsx", "Bar"),
@@ -455,9 +455,9 @@ describe("integration: react-shapes fixture", () => {
     it("traces a memo product and a curried HOC product, directly and through a static map member", () => {
       const app = local("composition-edge", "App.tsx", "App");
       expect(rendersIn("composition-edge")).toEqual([
-        row("App.tsx:13:6", pkg("Button"), app, [hoc("memo"), imported("@example/react-ds", "Button")]),
-        row("App.tsx:14:6", pkg("TextInput"), app, [hoc("connect"), imported("@example/react-ds", "TextInput")]),
-        row("App.tsx:15:6", pkg("Button"), app, [hoc("memo"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:13:7", pkg("Button"), app, [hoc("memo"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:14:7", pkg("TextInput"), app, [hoc("connect"), imported("@example/react-ds", "TextInput")]),
+        row("App.tsx:15:7", pkg("Button"), app, [hoc("memo"), imported("@example/react-ds", "Button")]),
       ]);
     });
   });
@@ -466,34 +466,34 @@ describe("integration: react-shapes fixture", () => {
     const S = "react-builtin-wrappers";
     const declared = (name: string) => local(S, "App.tsx", name);
     // `Nested = memo(forwardRef(...))`: its two defects are the `it.fails` below.
-    const nested = ["App.tsx:14:65", "App.tsx:26:6"];
+    const nested = ["App.tsx:14:66", "App.tsx:26:7"];
 
     it("traces forwardRef and memo over same-file declarations with no import step for that file", () => {
       expect(
         out.occurrences.flatMap((o) => o.trace).filter((s) => isKind(s, "import") && s.specifier === `src/${S}/App.tsx`),
       ).toEqual([]);
       expect(rendersIn(S).filter((r) => !nested.includes(r.at))).toEqual([
-        row("App.tsx:5:65", pkg("Button"), declared("FancyButton"), [imported("@example/react-ds", "Button")], {
+        row("App.tsx:5:66", pkg("Button"), declared("FancyButton"), [imported("@example/react-ds", "Button")], {
           "...rest": { tier: "dynamic" },
         }),
-        row("App.tsx:23:6", declared("FancyButton"), declared("App"), [hoc("forwardRef")]),
-        row("App.tsx:24:6", pkg("TextInput"), declared("App"), [hoc("memo"), imported("@example/react-ds", "TextInput")]),
-        row("App.tsx:25:6", pkg("Card"), declared("App"), [hoc("memo"), imported("@example/react-ds", "Card")]),
-        row("Page.tsx:4:9", declared("Plain"), local(S, "Page.tsx", "Page"), [imported("./App", "default"), hoc("memo")]),
+        row("App.tsx:23:7", declared("FancyButton"), declared("App"), [hoc("forwardRef")]),
+        row("App.tsx:24:7", pkg("TextInput"), declared("App"), [hoc("memo"), imported("@example/react-ds", "TextInput")]),
+        row("App.tsx:25:7", pkg("Card"), declared("App"), [hoc("memo"), imported("@example/react-ds", "Card")]),
+        row("Page.tsx:4:10", declared("Plain"), local(S, "Page.tsx", "Page"), [imported("./App", "default"), hoc("memo")]),
       ]);
     });
 
     it.fails("owns the render inside memo(forwardRef(...)) by the component it declares", () => {
-      expect(rendersIn(S).find((r) => r.at === "App.tsx:14:65")).toEqual(
-        row("App.tsx:14:65", pkg("TextInput"), declared("Nested"), [imported("@example/react-ds", "TextInput")], {
+      expect(rendersIn(S).find((r) => r.at === "App.tsx:14:66")).toEqual(
+        row("App.tsx:14:66", pkg("TextInput"), declared("Nested"), [imported("@example/react-ds", "TextInput")], {
           "...rest": { tier: "dynamic" },
         }),
       );
     });
 
     it.fails("traces memo(forwardRef(...)) through both wrappers, with no import step for forwardRef", () => {
-      expect(rendersIn(S).find((r) => r.at === "App.tsx:26:6")).toEqual(
-        row("App.tsx:26:6", declared("Nested"), declared("App"), [hoc("memo"), hoc("forwardRef")]),
+      expect(rendersIn(S).find((r) => r.at === "App.tsx:26:7")).toEqual(
+        row("App.tsx:26:7", declared("Nested"), declared("App"), [hoc("memo"), hoc("forwardRef")]),
       );
     });
   });
@@ -504,10 +504,10 @@ describe("integration: react-shapes fixture", () => {
     it("resolves `./Leaf.js` and `./index.js` to their `.tsx` sources and emits the cross-file occurrences", () => {
       const S = "esm-js-specifiers";
       expect(rendersIn(S)).toEqual([
-        row("A.tsx:5:23", local(S, "Leaf.tsx", "Leaf"), local(S, "A.tsx", "A"), [imported("./Leaf.js", "Leaf")]),
-        row("B.tsx:4:23", local(S, "index.tsx", "Idx"), local(S, "B.tsx", "B"), [imported("./index.js", "Idx")]),
-        row("Leaf.tsx:3:26", pkg("Button"), local(S, "Leaf.tsx", "Leaf"), [imported("@example/react-ds", "Button")]),
-        row("index.tsx:3:25", pkg("Button"), local(S, "index.tsx", "Idx"), [imported("@example/react-ds", "Button")]),
+        row("A.tsx:5:24", local(S, "Leaf.tsx", "Leaf"), local(S, "A.tsx", "A"), [imported("./Leaf.js", "Leaf")]),
+        row("B.tsx:4:24", local(S, "index.tsx", "Idx"), local(S, "B.tsx", "B"), [imported("./index.js", "Idx")]),
+        row("Leaf.tsx:3:27", pkg("Button"), local(S, "Leaf.tsx", "Leaf"), [imported("@example/react-ds", "Button")]),
+        row("index.tsx:3:26", pkg("Button"), local(S, "index.tsx", "Idx"), [imported("@example/react-ds", "Button")]),
       ]);
     });
   });
@@ -517,8 +517,8 @@ describe("integration: react-shapes fixture", () => {
       const S = "context";
       const theme = (name: string) => local(S, "Theme.tsx", name);
       expect(rendersIn(S)).toEqual([
-        row("Theme.tsx:23:4", theme("ThemeProvider"), theme("ThemedPage"), []),
-        row("Theme.tsx:24:6", pkg("Card"), theme("ThemedPage"), [imported("@example/react-ds", "Card")], {}),
+        row("Theme.tsx:23:5", theme("ThemeProvider"), theme("ThemedPage"), []),
+        row("Theme.tsx:24:7", pkg("Card"), theme("ThemedPage"), [imported("@example/react-ds", "Card")], {}),
       ]);
       expect(diagnosticsIn(S)).toEqual([
         {
@@ -526,7 +526,7 @@ describe("integration: react-shapes fixture", () => {
           severity: "info",
           filePath: `src/${S}/Theme.tsx`,
           line: 18,
-          column: 49,
+          column: 50,
           symbol: "Theme",
           memberChain: [],
         },
@@ -539,16 +539,16 @@ describe("integration: react-shapes fixture", () => {
 
     it("credits `'default' in X ? X.default : X` over a package's default export once, imported directly or through a barrel", () => {
       expect(rendersIn(S, "Interop.tsx")).toEqual([
-        row("Interop.tsx:7:9", pkgOf("@example/design-system", "default"), local(S, "Interop.tsx", "Interop"), []),
+        row("Interop.tsx:7:10", pkgOf("@example/design-system", "default"), local(S, "Interop.tsx", "Interop"), []),
       ]);
       expect(rendersIn(S, "Through.tsx")).toEqual([
-        row("Through.tsx:7:9", pkgOf("@example/design-system", "default"), local(S, "Through.tsx", "Through"), []),
+        row("Through.tsx:7:10", pkgOf("@example/design-system", "default"), local(S, "Through.tsx", "Through"), []),
       ]);
     });
 
     it("credits the `default` member of a default export the scan reads to that member", () => {
       expect(rendersIn(S, "Variant.tsx")).toEqual([
-        row("Variant.tsx:4:9", local(S, "icon-variants.tsx", "DefaultIcon"), local(S, "Variant.tsx", "Variant"), [
+        row("Variant.tsx:4:10", local(S, "icon-variants.tsx", "DefaultIcon"), local(S, "Variant.tsx", "Variant"), [
           imported("./icon-variants", "default"),
         ]),
       ]);
@@ -561,10 +561,10 @@ describe("integration: react-shapes fixture", () => {
       const app = local(S, "App.tsx", "App");
       const tabs = [imported("@example/react-ds", "Tabs")];
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:5:4", pkg("Tabs.Root"), app, tabs),
-        row("App.tsx:6:6", pkg("Tabs.Trigger"), app, tabs, { value: { tier: "written", value: "a" } }),
+        row("App.tsx:5:5", pkg("Tabs.Root"), app, tabs),
+        row("App.tsx:6:7", pkg("Tabs.Trigger"), app, tabs, { value: { tier: "written", value: "a" } }),
         row(
-          "App.tsx:15:4",
+          "App.tsx:15:5",
           { status: "unresolved", reason: { kind: "unbound-name", name: "Disclosure" } },
           local(S, "App.tsx", "Sidebar"),
           [],
@@ -580,8 +580,8 @@ describe("integration: react-shapes fixture", () => {
       const menus = local(S, "Menus.tsx", "Menus");
       expect(rendersIn(S)).toEqual([
         // The namespace import's name is not part of the member's identity.
-        row("Menus.tsx:10:6", pkg("Toast.Title"), menus, [imported("@example/react-ds", "*")]),
-        row("Menus.tsx:11:6", local(S, "Menus.tsx", "Nav.Menu.Item"), menus, []),
+        row("Menus.tsx:10:7", pkg("Toast.Title"), menus, [imported("@example/react-ds", "*")]),
+        row("Menus.tsx:11:7", local(S, "Menus.tsx", "Nav.Menu.Item"), menus, []),
       ]);
     });
   });
@@ -592,10 +592,10 @@ describe("integration: react-shapes fixture", () => {
       const panel = local(S, "Panel.tsx", "Panel");
       const leaf = (name: string) => [imported("@example/react-ds", name)];
       expect(rendersIn(S)).toEqual([
-        row("Panel.tsx:6:4", pkg("Card"), panel, leaf("Card")),
-        row("Panel.tsx:7:6", pkg("Button"), panel, leaf("Button"), {}),
-        row("Panel.tsx:8:8", pkg("TextInput"), panel, leaf("TextInput"), {}),
-        row("Panel.tsx:10:6", pkg("TextInput"), panel, leaf("TextInput"), {}),
+        row("Panel.tsx:6:5", pkg("Card"), panel, leaf("Card")),
+        row("Panel.tsx:7:7", pkg("Button"), panel, leaf("Button"), {}),
+        row("Panel.tsx:8:9", pkg("TextInput"), panel, leaf("TextInput"), {}),
+        row("Panel.tsx:10:7", pkg("TextInput"), panel, leaf("TextInput"), {}),
       ]);
     });
   });
@@ -605,11 +605,11 @@ describe("integration: react-shapes fixture", () => {
       const S = "hoc-rescue";
       const slot = (name: string) => local(S, "Slot.tsx", name);
       expect(rendersIn(S)).toEqual([
-        row("Slot.tsx:10:31", slot("Quiet"), slot("Slot"), [hoc("memo")], {}, {
+        row("Slot.tsx:10:32", slot("Quiet"), slot("Slot"), [hoc("memo")], {}, {
           credit: { kind: "argument", callee: "createSlot", index: 0 },
         }),
-        row("Slot.tsx:15:6", slot("Slot"), slot("SlotPage"), []),
-        row("Slot.tsx:16:6", slot("Quiet"), slot("SlotPage"), [hoc("memo")]),
+        row("Slot.tsx:15:7", slot("Slot"), slot("SlotPage"), []),
+        row("Slot.tsx:16:7", slot("Quiet"), slot("SlotPage"), [hoc("memo")]),
       ]);
       expect(diagnosticsIn(S)).toEqual([
         {
@@ -617,7 +617,7 @@ describe("integration: react-shapes fixture", () => {
           severity: "info",
           filePath: `src/${S}/Slot.tsx`,
           line: 8,
-          column: 15,
+          column: 16,
           symbol: "C",
           memberChain: [],
         },
@@ -635,7 +635,7 @@ describe("integration: react-shapes fixture", () => {
           severity: "info",
           filePath: `src/${S}/Picker.tsx`,
           line: 8,
-          column: 9,
+          column: 10,
           symbol: "Shown",
           memberChain: [],
         },
@@ -647,7 +647,7 @@ describe("integration: react-shapes fixture", () => {
     it("keeps the hoc step for a wrapper that hands back its component through local aliases", () => {
       const S = "pass-through";
       expect(rendersIn(S)).toEqual([
-        row("Wrapped.tsx:14:9", pkg("Card"), local(S, "Wrapped.tsx", "Wrapped"), [
+        row("Wrapped.tsx:14:10", pkg("Card"), local(S, "Wrapped.tsx", "Wrapped"), [
           hoc("withAlias"),
           imported("@example/react-ds", "Card"),
         ]),
@@ -662,7 +662,7 @@ describe("integration: react-shapes fixture", () => {
       const viewA = local(S, "ViewA.tsx", "ViewA");
       const viewB = local(S, "ViewB.tsx", "ViewB");
       const trace = [helperCall(S, "config.tsx", "getRows"), imported("./Leaf", "Leaf")];
-      expect(rendersIn(S)).toEqual([row("config.tsx:6:9", leaf, viewA, trace), row("config.tsx:6:9", leaf, viewB, trace)]);
+      expect(rendersIn(S)).toEqual([row("config.tsx:6:10", leaf, viewA, trace), row("config.tsx:6:10", leaf, viewB, trace)]);
       expect(componentOf(leaf)?.composition.renderedByCount).toEqual({ [idOf(viewA)]: 1, [idOf(viewB)]: 1 });
     });
   });
@@ -673,7 +673,7 @@ describe("integration: react-shapes fixture", () => {
       const cta = local(S, "Cta.tsx", "Cta");
       const panel = local(S, "Panel.tsx", "Panel");
       expect(rendersIn(S)).toEqual([
-        row("useOptions.tsx:6:16", cta, panel, [helperCall(S, "useOptions.tsx", "useOptions"), imported("./Cta", "Cta")]),
+        row("useOptions.tsx:6:17", cta, panel, [helperCall(S, "useOptions.tsx", "useOptions"), imported("./Cta", "Cta")]),
       ]);
       expect(componentOf(cta)?.composition.renderedByCount).toEqual({ [idOf(panel)]: 1 });
     });
@@ -688,7 +688,7 @@ describe("integration: react-shapes fixture", () => {
       // unwinding so the innermost helper (helperC) appears first in the trace
       // and the outermost (helperA, called by View) appears last.
       expect(rendersIn(S)).toEqual([
-        row("helpers.tsx:3:45", inner, view, [
+        row("helpers.tsx:3:46", inner, view, [
           helperCall(S, "helpers.tsx", "helperC"),
           helperCall(S, "helpers.tsx", "helperB"),
           helperCall(S, "helpers.tsx", "helperA"),
@@ -704,7 +704,7 @@ describe("integration: react-shapes fixture", () => {
       const S = "helper-orphan-no-caller";
       const leaf = local(S, "Leaf.tsx", "Leaf");
       expect(rendersIn(S)).toEqual([
-        row("unused.tsx:4:47", leaf, undefined, [helperCall(S, "unused.tsx", "buildRows"), imported("./Leaf", "Leaf")]),
+        row("unused.tsx:4:48", leaf, undefined, [helperCall(S, "unused.tsx", "buildRows"), imported("./Leaf", "Leaf")]),
       ]);
       expect(componentOf(leaf)?.composition.isRootCount).toBe(1);
       expect(componentOf(leaf)?.composition.renderedByCount).toEqual({});
@@ -718,8 +718,8 @@ describe("integration: react-shapes fixture", () => {
       const view = local(S, "cycle.tsx", "View");
       const call = (callee: string) => helperCall(S, "cycle.tsx", callee);
       expect(rendersIn(S)).toEqual([
-        row("cycle.tsx:6:38", leaf, undefined, [call("helperA"), call("helperB"), call("helperA")]),
-        row("cycle.tsx:11:31", leaf, view, [], {}),
+        row("cycle.tsx:6:39", leaf, undefined, [call("helperA"), call("helperB"), call("helperA")]),
+        row("cycle.tsx:11:32", leaf, view, [], {}),
       ]);
       expect(componentOf(leaf)?.composition.renderedByCount).toEqual({ [idOf(view)]: 1 });
     });
@@ -731,7 +731,7 @@ describe("integration: react-shapes fixture", () => {
       const leaf = local(S, "Leaf.tsx", "Leaf");
       const view = local(S, "View.tsx", "View");
       expect(rendersIn(S)).toEqual([
-        row("utils.tsx:3:45", leaf, view, [helperCall(S, "utils.tsx", "getRows"), imported("./Leaf", "Leaf")]),
+        row("utils.tsx:3:46", leaf, view, [helperCall(S, "utils.tsx", "getRows"), imported("./Leaf", "Leaf")]),
       ]);
       expect(componentOf(leaf)?.composition.renderedByCount).toEqual({ [idOf(view)]: 1 });
     });
@@ -744,8 +744,8 @@ describe("integration: react-shapes fixture", () => {
       const viewA = local(S, "Views.tsx", "ViewA");
       const viewB = local(S, "Views.tsx", "ViewB");
       expect(rendersIn(S)).toEqual([
-        row("build.tsx:4:43", leaf, viewA, [helperCall(S, "build.tsx", "build"), imported("./Leaf", "Leaf")]),
-        row("build.tsx:4:43", leaf, viewB, [
+        row("build.tsx:4:44", leaf, viewA, [helperCall(S, "build.tsx", "build"), imported("./Leaf", "Leaf")]),
+        row("build.tsx:4:44", leaf, viewB, [
           helperCall(S, "build.tsx", "build"),
           helperCall(S, "wrap.tsx", "wrap"),
           imported("./Leaf", "Leaf"),
@@ -765,10 +765,10 @@ describe("integration: react-shapes fixture", () => {
       const list = local(S, "List.tsx", "List");
       const page = local(S, "Page.tsx", "Page");
       expect(rendersIn(S)).toEqual([
-        row("List.tsx:8:20", local(S, "Item.tsx", "Item"), list, [imported("./Item", "Item")], {
+        row("List.tsx:8:21", local(S, "Item.tsx", "Item"), list, [imported("./Item", "Item")], {
           key: { tier: "reference", ref: "it.id" },
         }),
-        row("Page.tsx:5:26", list, page, [imported("./List", "List")], { items: { tier: "reference", ref: "data" } }),
+        row("Page.tsx:5:27", list, page, [imported("./List", "List")], { items: { tier: "reference", ref: "data" } }),
       ]);
       expect(componentOf(list)?.usage).toBe("direct");
       expect(componentOf(list)?.composition.renderedByCount).toEqual({ [idOf(page)]: 1 });
@@ -781,8 +781,8 @@ describe("integration: react-shapes fixture", () => {
       const notification = local(S, "Notification.tsx", "Notification");
       const consumer = local(S, "Consumer.tsx", "Consumer");
       expect(rendersIn(S)).toEqual([
-        row("Consumer.tsx:6:13", notification, consumer, [propForward(S, "Consumer.tsx", "slot", 6, 6)]),
-        row("Consumer.tsx:8:30", local(S, "Page.tsx", "Page"), consumer, [imported("./Page", "Page")], {
+        row("Consumer.tsx:6:14", notification, consumer, [propForward(S, "Consumer.tsx", "slot", 6, 7)]),
+        row("Consumer.tsx:8:31", local(S, "Page.tsx", "Page"), consumer, [imported("./Page", "Page")], {
           slot: { tier: "reference", ref: "slot" },
         }),
       ]);
@@ -796,9 +796,9 @@ describe("integration: react-shapes fixture", () => {
       const icon = local(S, "Icon.tsx", "Icon");
       const c = local(S, "C.tsx", "C");
       expect(rendersIn(S)).toEqual([
-        row("C.tsx:5:13", icon, c, [propForward(S, "C.tsx", "icon", 5, 6)]),
-        row("C.tsx:8:4", local(S, "A.tsx", "A"), c, [imported("./A", "A")], { x: { tier: "reference", ref: "icon" } }),
-        row("C.tsx:9:4", local(S, "B.tsx", "B"), c, [imported("./B", "B")], { y: { tier: "reference", ref: "icon" } }),
+        row("C.tsx:5:14", icon, c, [propForward(S, "C.tsx", "icon", 5, 7)]),
+        row("C.tsx:8:5", local(S, "A.tsx", "A"), c, [imported("./A", "A")], { x: { tier: "reference", ref: "icon" } }),
+        row("C.tsx:9:5", local(S, "B.tsx", "B"), c, [imported("./B", "B")], { y: { tier: "reference", ref: "icon" } }),
       ]);
       expect(componentOf(icon)?.composition.renderedByCount).toEqual({ [idOf(c)]: 1 });
     });
@@ -817,23 +817,23 @@ describe("integration: react-shapes fixture", () => {
       const spinner = { status: "unresolved", reason: { kind: "module-not-found" } };
       const spinnerTrace = [helperCall(S, "with-loading.jsx", "withLoading"), imported("ds-icons", "Spinner")];
       expect(rendersIn(S)).toEqual([
-        row("app.jsx:9:23", at("dropdown-control.js", "Dropdown"), app, [imported("./dropdown-control.js", "Dropdown")], {
+        row("app.jsx:9:24", at("dropdown-control.js", "Dropdown"), app, [imported("./dropdown-control.js", "Dropdown")], {
           name: { tier: "written", value: "a" },
         }),
-        row("app.jsx:9:44", at("signup-form.jsx", "default"), app, [imported("./signup-form.jsx", "default")], {
+        row("app.jsx:9:45", at("signup-form.jsx", "default"), app, [imported("./signup-form.jsx", "default")], {
           title: { tier: "written", value: "t" },
         }),
-        row("app.jsx:9:68", at("products.jsx", "Foo"), app, [imported("./products.jsx", "Foo")], {}),
-        row("app.jsx:9:75", at("products.jsx", "Bar"), app, [imported("./products.jsx", "Bar")], {}),
-        row("app.jsx:9:82", at("junk.jsx", "Junk"), app, [imported("./junk.jsx", "Junk")], {}),
-        row("app.jsx:9:90", at("pennant.jsx", "PennantView"), app, [imported("./pennant.jsx", "Pennant"), hoc("forwardRef")], {
+        row("app.jsx:9:69", at("products.jsx", "Foo"), app, [imported("./products.jsx", "Foo")], {}),
+        row("app.jsx:9:76", at("products.jsx", "Bar"), app, [imported("./products.jsx", "Bar")], {}),
+        row("app.jsx:9:83", at("junk.jsx", "Junk"), app, [imported("./junk.jsx", "Junk")], {}),
+        row("app.jsx:9:91", at("pennant.jsx", "PennantView"), app, [imported("./pennant.jsx", "Pennant"), hoc("forwardRef")], {
           label: { tier: "written", value: "p" },
         }),
-        row("app.jsx:9:111", at("marquee.jsx", "MarqueeView"), app, [imported("./marquee.jsx", "Marquee")], {}),
-        row("app.jsx:9:122", at("swatch.jsx", "Gallery"), app, [imported("./swatch.jsx", "Gallery")], {}),
-        row("app.jsx:9:133", at("swatch.jsx", "SwatchImpl"), app, [imported("./swatch.jsx", "Swatch")], {}),
+        row("app.jsx:9:112", at("marquee.jsx", "MarqueeView"), app, [imported("./marquee.jsx", "Marquee")], {}),
+        row("app.jsx:9:123", at("swatch.jsx", "Gallery"), app, [imported("./swatch.jsx", "Gallery")], {}),
+        row("app.jsx:9:134", at("swatch.jsx", "SwatchImpl"), app, [imported("./swatch.jsx", "Swatch")], {}),
         row(
-          "dropdown-control.js:3:29",
+          "dropdown-control.js:3:30",
           pkgOf("@example/design-system", "Dropdown"),
           at("dropdown-control.js", "Dropdown"),
           [imported("@example/design-system", "Dropdown")],
@@ -842,14 +842,14 @@ describe("integration: react-shapes fixture", () => {
         ),
         // The nested `Tessera` has the same file and name as the exported one, so
         // it shares that identity.
-        row("mosaic.jsx:3:81", at("mosaic.jsx", "Tessera"), at("mosaic.jsx", "Mosaic"), [], { inner: { tier: "written", value: "x" } }),
-        row("products.jsx:5:31", at("products.jsx", "FooView"), at("products.jsx", "Foo"), [], {}, argument("withLoading")),
-        row("products.jsx:6:31", at("products.jsx", "BarView"), at("products.jsx", "Bar"), [], {}, argument("withLoading")),
-        row("signup-form.jsx:4:47", at("signup-form.jsx", "SignupForm"), at("signup-form.jsx", "default"), [], {}, argument("withErrorBoundary")),
-        row("swatch.jsx:3:63", at("swatch.jsx", "Swatch"), at("swatch.jsx", "Gallery"), []),
+        row("mosaic.jsx:3:82", at("mosaic.jsx", "Tessera"), at("mosaic.jsx", "Mosaic"), [], { inner: { tier: "written", value: "x" } }),
+        row("products.jsx:5:32", at("products.jsx", "FooView"), at("products.jsx", "Foo"), [], {}, argument("withLoading")),
+        row("products.jsx:6:32", at("products.jsx", "BarView"), at("products.jsx", "Bar"), [], {}, argument("withLoading")),
+        row("signup-form.jsx:4:48", at("signup-form.jsx", "SignupForm"), at("signup-form.jsx", "default"), [], {}, argument("withErrorBoundary")),
+        row("swatch.jsx:3:64", at("swatch.jsx", "Swatch"), at("swatch.jsx", "Gallery"), []),
         // JSX inside a factory body is credited to each product; `<Spinner />` is unresolved.
-        row("with-loading.jsx:3:62", spinner, at("products.jsx", "Foo"), spinnerTrace),
-        row("with-loading.jsx:3:62", spinner, at("products.jsx", "Bar"), spinnerTrace),
+        row("with-loading.jsx:3:63", spinner, at("products.jsx", "Foo"), spinnerTrace),
+        row("with-loading.jsx:3:63", spinner, at("products.jsx", "Bar"), spinnerTrace),
       ]);
       const lateBound = (file: string, line: number, column: number, symbol: string) => ({
         code: "late-bound-render",
@@ -861,9 +861,9 @@ describe("integration: react-shapes fixture", () => {
         memberChain: [],
       });
       expect(diagnosticsIn(S)).toEqual([
-        lateBound("with-error-boundary.jsx", 3, 36, "Child"),
-        lateBound("with-loading.jsx", 3, 76, "C"),
-        lateBound("make-control.jsx", 4, 9, "Component"),
+        lateBound("with-error-boundary.jsx", 3, 37, "Child"),
+        lateBound("with-loading.jsx", 3, 77, "C"),
+        lateBound("make-control.jsx", 4, 10, "Component"),
       ]);
     });
 
@@ -890,12 +890,12 @@ describe("integration: react-shapes fixture", () => {
       const pennant = declared("pennant.jsx", "PennantView");
       expect(pennant).toBeDefined();
       expect(occurrencesOf(pennant?.id)).toHaveLength(1);
-      expect(pennant?.definition).toEqual({ line: 4, column: 6 });
+      expect(pennant?.definition).toEqual({ line: 4, column: 7 });
 
       const marquee = declared("marquee.jsx", "MarqueeView");
       expect(marquee).toBeDefined();
       expect(occurrencesOf(marquee?.id)).toHaveLength(1);
-      expect(marquee?.definition).toEqual({ line: 4, column: 6 });
+      expect(marquee?.definition).toEqual({ line: 4, column: 7 });
     });
 
     it("a row takes the declared props of its own declaration, whether or not anything exports it", () => {
@@ -906,17 +906,17 @@ describe("integration: react-shapes fixture", () => {
     it("an export alias keeps its own declaration's definition when a nested declaration shares the alias name", () => {
       const exported = declared("swatch.jsx", "SwatchImpl");
       expect(exported).toBeDefined();
-      expect(exported?.definition).toEqual({ line: 4, column: 6 });
+      expect(exported?.definition).toEqual({ line: 4, column: 7 });
 
       const nested = declared("swatch.jsx", "Swatch");
       expect(nested).toBeDefined();
-      expect(nested?.definition).toEqual({ line: 3, column: 34 });
+      expect(nested?.definition).toEqual({ line: 3, column: 35 });
     });
 
     it("a component whose name a nested declaration used first keeps its own definition and declared props", () => {
       const tessera = declared("mosaic.jsx", "Tessera");
       expect(tessera).toBeDefined();
-      expect(tessera?.definition).toEqual({ line: 4, column: 13 });
+      expect(tessera?.definition).toEqual({ line: 4, column: 14 });
       expect(tessera?.declared).toEqual({ props: { outer: {} }, hasRest: false });
     });
 
@@ -944,12 +944,12 @@ describe("integration: react-shapes fixture", () => {
       const card = pkgOf("@example/owner-edges", "Card");
       const leaf = (name: string) => [imported("@example/owner-edges", name)];
       expect(rendersIn(S)).toEqual([
-        row("Page.tsx:6:4", card, page, leaf("Card")),
-        row("Page.tsx:7:6", button, page, leaf("Button"), { variant: { tier: "written", value: "primary" } }),
-        row("Page.tsx:12:33", button, footer, leaf("Button"), { variant: { tier: "written", value: "ghost" } }),
-        row("Page.tsx:15:9", button, anonymous, leaf("Button")),
+        row("Page.tsx:6:5", card, page, leaf("Card")),
+        row("Page.tsx:7:7", button, page, leaf("Button"), { variant: { tier: "written", value: "primary" } }),
+        row("Page.tsx:12:34", button, footer, leaf("Button"), { variant: { tier: "written", value: "ghost" } }),
+        row("Page.tsx:15:10", button, anonymous, leaf("Button")),
       ]);
-      expect(componentOf(page)?.definition).toEqual({ line: 4, column: 7 });
+      expect(componentOf(page)?.definition).toEqual({ line: 4, column: 8 });
       expect(componentOf(page)?.composition.rendersByCount).toEqual({ [idOf(card)]: 1, [idOf(button)]: 1 });
       expect(componentOf(footer)?.composition.rendersByCount).toEqual({ [idOf(button)]: 1 });
       expect(componentOf(anonymous)?.composition.rendersByCount).toEqual({ [idOf(button)]: 1 });
@@ -963,8 +963,8 @@ describe("integration: react-shapes fixture", () => {
       const seo = local(S, "seo/seo.jsx", "Seo");
       const widget = local(S, "widget/widget.jsx", "Widget");
       expect(rendersIn(S)).toEqual([
-        row("App.jsx:7:6", seo, app, [imported("./seo", "default")]),
-        row("App.jsx:8:6", widget, app, [imported("./widget", "Widget")]),
+        row("App.jsx:7:7", seo, app, [imported("./seo", "default")]),
+        row("App.jsx:8:7", widget, app, [imported("./widget", "Widget")]),
       ]);
       expect(componentOf(seo)?.composition.renderedByCount).toEqual({ [idOf(app)]: 1 });
       expect(componentOf(widget)?.composition.renderedByCount).toEqual({ [idOf(app)]: 1 });
@@ -975,8 +975,8 @@ describe("integration: react-shapes fixture", () => {
     it("owns a module-scope element by the component a memo or React.forwardRef call declares", () => {
       const S = "prop-forward-hoc-owner";
       expect(rendersIn(S)).toEqual([
-        row("Badges.tsx:4:15", pkg("Button"), local(S, "Badges.tsx", "MemoBadge"), [propForward(S, "Badges.tsx", "action", 4, 6)]),
-        row("Badges.tsx:5:14", pkg("Card"), local(S, "Badges.tsx", "RefBadge"), [propForward(S, "Badges.tsx", "frame", 5, 6)]),
+        row("Badges.tsx:4:16", pkg("Button"), local(S, "Badges.tsx", "MemoBadge"), [propForward(S, "Badges.tsx", "action", 4, 7)]),
+        row("Badges.tsx:5:15", pkg("Card"), local(S, "Badges.tsx", "RefBadge"), [propForward(S, "Badges.tsx", "frame", 5, 7)]),
       ]);
     });
   });
@@ -985,7 +985,7 @@ describe("integration: react-shapes fixture", () => {
     it("owns a module-scope element by the component that reads it, not one whose parameter default reuses its name", () => {
       const S = "prop-forward-shadowed";
       expect(rendersIn(S)).toEqual([
-        row("Tiles.tsx:3:13", pkg("Button"), local(S, "Tiles.tsx", "Toolbar"), [propForward(S, "Tiles.tsx", "icon", 3, 6)]),
+        row("Tiles.tsx:3:14", pkg("Button"), local(S, "Tiles.tsx", "Toolbar"), [propForward(S, "Tiles.tsx", "icon", 3, 7)]),
       ]);
     });
   });

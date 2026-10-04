@@ -74,13 +74,13 @@ export function lineOf(source: string, needle: string): number {
   return at + 1;
 }
 
-/** 0-based column of `ident` on the first line containing `lineNeedle` (the last match when `last`). */
+/** 1-based column of `ident` on the first line containing `lineNeedle` (the last match when `last`). */
 export function columnOf(source: string, lineNeedle: string, ident: string, last = false): number {
   const line = source.split("\n").find((l) => l.includes(lineNeedle));
   if (line === undefined) throw new Error(`no line contains ${lineNeedle}`);
   const at = last ? line.lastIndexOf(ident) : line.indexOf(ident);
   if (at < 0) throw new Error(`${ident} is not on the line containing ${lineNeedle}`);
-  return at;
+  return at + 1;
 }
 
 /** Flattens rawComponentId for order-independent assertions. */

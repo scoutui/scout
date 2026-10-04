@@ -49,7 +49,7 @@
       "props": {},
       "definition": {
         "line": 1,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "baseurl-imports",
       "version": null,
@@ -79,7 +79,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 13
+        "column": 14
       },
       "owningPackage": "baseurl-imports",
       "version": null,
@@ -95,14 +95,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "ee5739fa9d9d11a9",
+      "occurrenceId": "ada54e2a48c2673c",
       "resolution": {
         "status": "resolved",
         "componentId": "917b9fce7b237b59"
       },
       "filePath": "src/Page.tsx",
       "line": 5,
-      "column": 31,
+      "column": 32,
       "credit": {
         "kind": "render"
       },

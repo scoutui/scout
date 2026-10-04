@@ -194,9 +194,10 @@ export type Graph = {
    * `files`, a `true` return means the target is first-party (a workspace
    * member or the root package's own source) and the import names an
    * unparsed local file, pinned through `resolveLocalDefinition`, whatever
-   * the specifier's shape. Otherwise a package specifier names a package
-   * export and any other specifier a failed import. Wired by the host at
-   * `build()` time (CLI wires `isFirstPartyPath`).
+   * the specifier's shape. Otherwise a package specifier, or a target inside
+   * an installed package (`inInstalledPackage`), names a package export and
+   * any other specifier a failed import. Wired by the host at `build()` time
+   * (CLI wires `isFirstPartyPath`).
    */
   firstParty?: (absPath: string) => boolean;
   /**
@@ -234,6 +235,14 @@ export type Graph = {
    * in. Absent → not installed.
    */
   isInstalledPackage?: (fromFile: string, packageName: string) => boolean;
+  /**
+   * Host answer for a resolved import target that is neither in `files` nor
+   * first-party: whether the file lies inside a package installed where
+   * `fromFile` looks for it. Such a target names a package export whatever
+   * the specifier's shape. Graph key and absolute path in. Absent → not
+   * installed.
+   */
+  inInstalledPackage?: (fromFile: string, absPath: string) => boolean;
 };
 
 /**
@@ -244,5 +253,5 @@ export type Graph = {
  */
 export type GraphHostHooks = Pick<
   Graph,
-  "firstParty" | "resolveLocalDefinition" | "isDeclaredDependency" | "isInstalledPackage"
+  "firstParty" | "resolveLocalDefinition" | "isDeclaredDependency" | "isInstalledPackage" | "inInstalledPackage"
 >;

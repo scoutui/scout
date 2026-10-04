@@ -48,7 +48,7 @@
       "props": {},
       "definition": {
         "line": 5,
-        "column": 7
+        "column": 8
       },
       "owningPackage": "external-alias",
       "version": null,
@@ -92,14 +92,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "ec766dd4a85c8cb9",
+      "occurrenceId": "4956ca2d626b4cdc",
       "resolution": {
         "status": "resolved",
         "componentId": "292f9cb89f29bd3a"
       },
       "filePath": "src/App.tsx",
       "line": 6,
-      "column": 9,
+      "column": 10,
       "credit": {
         "kind": "render"
       },

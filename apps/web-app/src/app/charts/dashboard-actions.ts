@@ -105,6 +105,7 @@ export async function pickableForRepo(repoId: string): Promise<ReadModelResult<{
     componentId: r.componentId,
     displayName: r.displayName,
     packageName: r.packageName,
+    disambiguator: r.disambiguator,
     deprecated: r.deprecated,
   }));
   const packages = packageList

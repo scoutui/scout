@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { createDiagnosticCollector } from "@scoutui/reference-graph";
 import { runVueScan } from "./test-utils.js";
 
 /**
@@ -113,12 +114,65 @@ import Foo from "./Foo.vue";
     });
   });
 
+  function scanUnparsedDefaultImport(specifier: string, target: string) {
+    return runVueScan({
+      source: `<script setup>\nimport Logo from "${specifier}";\n</script>\n<template><Logo /></template>`,
+      file: "src/Page.vue",
+      moduleResolver: () => target,
+      repoRoot: "/repo",
+      firstParty: (abs) => abs.startsWith("/repo/"),
+    });
+  }
+
+  it("a tag bound to an import of a repo file that isn't code (`./logo.svg`) is not credited", () => {
+    const { occurrences } = scanUnparsedDefaultImport("./logo.svg", "/repo/src/logo.svg");
+    expect(occurrences).toEqual([]);
+  });
+
+  it("a tag bound to an import of a repo `.vue` file the scan didn't parse is credited to that file", () => {
+    const { occurrences } = scanUnparsedDefaultImport("./Logo.vue", "/repo/src/Logo.vue");
+    expect(occurrences.map((o) => o.rawComponentId)).toEqual([
+      { kind: "vue-component", export: "default", source: { type: "local", filePath: "/repo/src/Logo.vue" } },
+    ]);
+  });
+
   it("a component imported under a lowercase camelCase name is credited at its kebab-case tag", () => {
     const sfc = `<script setup>\nimport vSelect from "fake-select";\n</script>\n<template><v-select :options="opts" /></template>`;
     const { occurrences } = runVueScan({ source: sfc, file: "Page.vue" });
     expect(occurrences.map((o) => o.rawComponentId)).toEqual([
       { kind: "vue-component", export: "default", source: { type: "external", package: "fake-select" } },
     ]);
+  });
+
+  it("a component imported in the plain <script> beside <script setup> is credited at its PascalCase and kebab-case tags", () => {
+    const collector = createDiagnosticCollector();
+    const { occurrences } = runVueScan({
+      source: `<template><LineItem /><line-item /></template>
+<script lang="ts">
+import LineItem from "./LineItem.vue";
+export default { inheritAttrs: false };
+</script>
+<script setup lang="ts">
+const title = "x";
+</script>`,
+      file: "src/Page.vue",
+      sfcSymbol: "Page",
+      repoRoot: "/repo",
+      moduleResolver: (_from, spec) => (spec === "./LineItem.vue" ? "/repo/src/LineItem.vue" : null),
+      extraFiles: [{ file: "src/LineItem.vue", source: "<template><li><slot /></li></template>", sfcSymbol: "LineItem" }],
+      collector,
+    });
+    const lineItem = { kind: "vue-component", export: "LineItem", source: { type: "local", filePath: "src/LineItem.vue" } };
+    const via = { kind: "vue-template", specifier: "./LineItem.vue", import: "default" };
+    expect(occurrences.map((o) => [o.column, o.rawComponentId, o.via])).toEqual([
+      [11, lineItem, via],
+      [23, lineItem, via],
+    ]);
+    expect(occurrences.map((o) => o.rawOwnerComponentId)).toMatchObject([
+      { export: "Page", source: { filePath: "src/Page.vue" } },
+      { export: "Page", source: { filePath: "src/Page.vue" } },
+    ]);
+    expect(collector.drain()).toEqual([]);
   });
 
   it("a component imported under a lowercase name in an Options API script is credited at its tag through the import binding", () => {

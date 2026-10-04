@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentDetail, CompositionGraph } from "@scoutui/web-shared";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -32,6 +32,9 @@ const renderTab = (g: CompositionGraph = tabGraph) =>
 
 const param = (name: string) => new URLSearchParams(window.location.search).get(name);
 const box = (name: string) => screen.findByRole("button", { name: new RegExp(`^${name}, `) });
+
+// Loads the diagram's canvas module before any test renders the tab.
+beforeAll(() => import("@/components/component-detail/composition/flow-canvas"), 30_000);
 
 beforeEach(() => {
   window.history.replaceState(null, "", "http://localhost:3000/x?scan=s1");
