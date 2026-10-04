@@ -77,7 +77,7 @@ describe("runScan upload outcome", () => {
     expect(scanExitCode(result)).toBe(1);
     expect(existsSync(join(dir, "scout-scan.json"))).toBe(false);
     expect(stderr()).toBe(mode === "unauthorized"
-      ? "Error: Session for https://h.example is no longer valid. Run `scout auth login --host https://h.example`.\n"
+      ? "Error: Session for https://h.example is no longer valid. Run scout auth login --host https://h.example.\n"
       : LOST_CONTACT);
     expect(stdout()).not.toMatch(/Uploaded|already on the dashboard/);
     expect(fetchSpy.mock.calls.map(([, init]) => init?.method)).toEqual(["POST", "POST", "GET"]);

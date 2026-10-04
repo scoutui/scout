@@ -124,7 +124,7 @@ describe("runAuthLogin", () => {
 
     expect(await runAuthLogin({ host: BASE, store: { filePath: file } })).toBe(1);
     expect(errors.join("")).toContain(`${file}.lock`);
-    expect(errors.join("")).toMatch(/retry, or remove it only after confirming no CLI process is running/i);
+    expect(errors.join("")).toMatch(/If none is running, delete .*\.lock/i);
     expect(errors.join("")).not.toMatch(/could not reach/i);
     expect(device).not.toHaveBeenCalled();
     expect(await readFile(file, "utf8")).toBe(original);
@@ -311,7 +311,7 @@ describe("runAuthLogin", () => {
     vi.spyOn(process.stdout, "write").mockImplementation(((s: string) => { lines.push(s); return true; }) as typeof process.stdout.write);
     const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger({ ...plain, styled }) });
     expect(code).toBe(0);
-    expect(lines.join("")).toBe(`To authorize this device, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n${end}`);
+    expect(lines.join("")).toBe(`To sign in, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n${end}`);
     expect(errs.join("")).toBe(stderr);
   });
 
@@ -343,7 +343,7 @@ describe("runAuthLogin", () => {
     const code = await runAuthLogin({ host: BASE, store: { filePath: file }, sleep: async () => {}, now: () => 0, log: new Logger(plain) });
     expect(code).toBe(0);
     expect(writes[0]).toBe("Warning: A line from the dashboard.\n");
-    expect(writes[1]).toBe(`To authorize this device, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n`);
+    expect(writes[1]).toBe(`To sign in, open:\n  ${BASE}/login/device\nCode: ABCD-EFGH\n`);
   });
 });
 
@@ -368,7 +368,7 @@ describe("runAuthStatus", () => {
     expect(await runAuthStatus({ store: { filePath: file }, env: {}, write: (s) => lines.push(s) })).toBe(1);
     expect(lines).toEqual([]);
     expect(errors.join("")).toBe(
-      `Error: Timed out waiting for credential store lock at ${file}.lock. Retry, or remove it only after confirming no CLI process is running.\n`,
+      `Error: Another scout command is using your saved sign-in. Try again when it finishes. If none is running, delete ${file}.lock.\n`,
     );
     expect(await readFile(file, "utf8")).toBe(original);
   });
@@ -389,7 +389,7 @@ describe("runAuthStatus", () => {
     expect(await status).toBe(1);
     expect((await loadStore(file)).hosts[BASE]).toEqual({ token: REPLACEMENT_TOKEN, userEmail: "new@example.com" });
     expect(lines).toEqual([]);
-    expect(errors.join("")).toBe(`Error: Session changed for ${BASE}; retry \`scout auth status --host ${BASE}\`.\n`);
+    expect(errors.join("")).toBe(`Error: Your sign-in changed while checking it. Run scout auth status --host ${BASE} again.\n`);
   });
 
   it.each([
@@ -465,7 +465,7 @@ describe("runAuthLogout", () => {
     release();
     expect(await logout).toBe(0);
     expect((await loadStore(file)).hosts[BASE]).toEqual({ token: REPLACEMENT_TOKEN, userEmail: "new@example.com" });
-    expect(lines.join("")).toMatch(/newer sign-in kept/i);
+    expect(lines.join("")).toMatch(/Your newer sign-in is kept/i);
   });
 
   it("deletes the stored entry and clears it as default", async () => {

@@ -1,6 +1,7 @@
 import { readFile, realpath, stat } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import type { ResolvedConfig } from "../types.js";
+import type { ErrorObject } from "ajv";
 import { validateConfig } from "./schema.js";
 import { errorMessage } from "../util/errors.js";
 
@@ -40,15 +41,6 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
     throw new ConfigError("CONFIG_INVALID", `${configPath} isn't valid JSON. Fix it and try again.`, errorMessage(err));
   }
 
-  // A config with the removed `manifests` field is told to use `include`
-  // instead, before validation would name it as a field Scout doesn't use.
-  if (parsed && typeof parsed === "object" && "manifests" in parsed) {
-    throw new ConfigError(
-      "CONFIG_INVALID",
-      `${configPath}: the \`manifests\` field was removed. Replace with \`include\` (array of glob patterns for files to scan).`
-    );
-  }
-
   if (!validateConfig(parsed)) {
     const errors = validateConfig.errors ?? [];
     // Fields the schema doesn't list are named in their own message; any other problem is listed as `<field>: <problem>`.
@@ -62,8 +54,7 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
     if (unknown.length > 1) {
       throw new ConfigError("CONFIG_INVALID", `${configPath} has fields Scout doesn't use: ${unknown.join(", ")}. Remove them and try again.`);
     }
-    const issues = errors.map((e) => `${e.instancePath || "<root>"}: ${e.message}`).join("; ");
-    throw new ConfigError("CONFIG_INVALID", `Invalid config at ${configPath}: ${issues}`);
+    throw new ConfigError("CONFIG_INVALID", invalidValuesMessage(configPath, errors));
   }
 
   // parsed is now narrowed to ConfigFile by the typed validator.
@@ -84,4 +75,28 @@ export async function loadConfig(configPath: string): Promise<ResolvedConfig> {
   if (parsed.aliases !== undefined) resolved.aliases = parsed.aliases;
   if (parsed.install !== undefined) resolved.install = parsed.install;
   return resolved;
+}
+
+const TYPE_WORDS: Record<string, string> = { array: "a list", string: "a string", boolean: "true or false", object: "an object" };
+
+/** One sentence naming each field the schema rejected and what's wrong with it, in the order the schema reports them. */
+function invalidValuesMessage(configPath: string, errors: readonly ErrorObject[]): string {
+  const problems = [...new Set(errors.map((e, i) => fieldProblem(e, i === 0 ? configPath : undefined)))];
+  const sentence = problems.length === 1 ? problems[0] : `${problems.slice(0, -1).join(", ")}, and ${problems.at(-1)}`;
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}. Fix ${problems.length === 1 ? "it" : "them"} and try again.`;
+}
+
+/** `"field" can't be empty`, with ` in <configPath>` after the field when `configPath` is given. */
+function fieldProblem(e: ErrorObject, configPath: string | undefined): string {
+  const [field, ...rest] = e.instancePath.split("/").slice(1);
+  const name = field === undefined ? "the config" : rest.length > 0 ? `entries in "${field}"` : `"${field}"`;
+  return `${name}${configPath === undefined ? "" : ` in ${configPath}`} ${problemText(e)}`;
+}
+
+function problemText(e: ErrorObject): string {
+  const { type } = e.params as { type?: unknown };
+  if (e.keyword === "type" && typeof type === "string") return `should be ${TYPE_WORDS[type] ?? type}`;
+  if (e.keyword === "minItems") return "can't be an empty list";
+  if (e.keyword === "minLength") return "can't be empty";
+  return e.message ?? "isn't valid";
 }

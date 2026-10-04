@@ -170,7 +170,7 @@ describe("loadStore / saveStore", () => {
     clock.mockImplementation(() => { now += 1_000; return now; });
     try {
       await expect(saveStore({ hosts: { "https://new.example": { token: "new", userEmail: "new@example.com" } } }, file))
-        .rejects.toThrow(`Timed out waiting for credential store lock at ${file}.lock. Retry, or remove it only after confirming no CLI process is running.`);
+        .rejects.toThrow(`Another scout command is using your saved sign-in. Try again when it finishes. If none is running, delete ${file}.lock.`);
     } finally {
       clock.mockRestore();
     }
