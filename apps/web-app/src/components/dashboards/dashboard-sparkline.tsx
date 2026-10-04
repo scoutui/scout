@@ -36,7 +36,6 @@ export function DashboardSparkline({
 }
 
 function Frame({ children }: { children: React.ReactNode }) {
-  // Hidden from assistive tech so it stays out of the enclosing link's accessible name.
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false" className="shrink-0">
       {children}
