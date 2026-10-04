@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CohortPoint, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 import { TAG_COLOURS } from "@scoutui/web-shared/client";
 import { chartFigure, type ChartFigure } from "@/lib/chart-figure";
-import { type FigureContext, lightChartColors, paintFigure } from "@/lib/chart-png";
+import { chartPng, type FigureContext, lightChartColors, paintFigure } from "@/lib/chart-png";
 import { type ChartCohort, chartColors } from "@/lib/dashboard-chart-data";
 import { figureTexts } from "../helpers/figure-texts";
 
@@ -114,17 +114,44 @@ describe("paintFigure", () => {
   });
 });
 
+const addStyle = (css: string) => {
+  const style = document.createElement("style");
+  style.textContent = css;
+  document.head.append(style);
+};
+const paletteCss = () => readFileSync(createRequire(import.meta.url).resolve("@scoutui/palette/palette.css"), "utf8");
+
+describe("chartPng", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.head.innerHTML = "";
+    document.documentElement.removeAttribute("style");
+    Reflect.deleteProperty(document, "fonts");
+  });
+
+  it.each([
+    ["the page's faces", { "--font-sans": '"Sans Test", sans-serif', "--font-mono": '"Mono Test", monospace' }, FONTS],
+    ["the browser's sans and mono faces when the page names none", {}, { sans: "sans-serif", mono: "monospace" }],
+  ])("sets its text in %s", async (_, properties: Record<string, string>, fonts) => {
+    addStyle(paletteCss());
+    for (const [name, value] of Object.entries(properties)) document.documentElement.style.setProperty(name, value);
+    Object.defineProperty(document, "fonts", { value: { ready: Promise.resolve() }, configurable: true });
+    const { ctx, calls } = recorder(1);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => ctx as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((done) => done(new Blob(["png"], { type: "image/png" })));
+    const png = await chartPng({ title: "Button adoption", config: config("trend"), view: { kind: "series", series: countSeries, coverage }, host: "scout.example.com", exportedAt: new Date(2026, 9, 4) });
+    expect(png.type).toBe("image/png");
+    const fontOf = (text: string) => calls.find((c) => c.op === "fillText" && c.args[0] === text)?.font;
+    expect(fontOf("Button adoption")).toBe(`600 30px ${fonts.sans}`);
+    expect(fontOf("@example/web")).toBe(`400 15px ${fonts.mono}`);
+  });
+});
+
 describe("lightChartColors", () => {
   afterEach(() => {
     document.head.innerHTML = "";
     document.documentElement.className = "";
   });
-
-  const addStyle = (css: string) => {
-    const style = document.createElement("style");
-    style.textContent = css;
-    document.head.append(style);
-  };
 
   it("reads each colour's light value from the page's :root palette, past a sheet it can't read, even when the page is dark", () => {
     addStyle(`:root { --pal-teal-graphic: #0a7f8c; --pal-neutral-panel: #ffffff; }
@@ -142,7 +169,7 @@ describe("lightChartColors", () => {
   });
 
   it("gives every colour a chart can draw with, and each figure colour role, a value from the palette", () => {
-    addStyle(readFileSync(createRequire(import.meta.url).resolve("@scoutui/palette/palette.css"), "utf8"));
+    addStyle(paletteCss());
     const every: ChartCohort[] = [
       { cohortKey: "deprecated", color: "", role: "deprecated" },
       { cohortKey: "successor", color: "", role: "successor" },

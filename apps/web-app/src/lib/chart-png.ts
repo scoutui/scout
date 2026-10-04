@@ -116,7 +116,10 @@ function rootStyles(sheets: Iterable<CSSStyleSheet>): CSSStyleDeclaration[] {
 
 function pageFonts(): FigureFonts {
   const style = getComputedStyle(document.documentElement);
-  return { sans: style.getPropertyValue("--font-sans").trim(), mono: style.getPropertyValue("--font-mono").trim() };
+  return {
+    sans: style.getPropertyValue("--font-sans").trim() || "sans-serif",
+    mono: style.getPropertyValue("--font-mono").trim() || "monospace",
+  };
 }
 
 /** Draws a figure at twice its size, so a 1280 × 720 figure fills a 2560 × 1440 canvas. */

@@ -275,6 +275,8 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const tree = await page(trackingParams(`retirement:${retired.id}`));
       expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage } })]);
       expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
+      expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Retirement: @sample/core", children: expect.anything() }]);
+      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `retirement:${retired.id}`, canDuplicate: false, visibility: null }]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
       reader = { ...editor, role: "viewer" };
@@ -306,6 +308,19 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await expect(page(trackingParams(`migration:${second.id}`))).rejects.toMatchObject({
         digest: expect.stringContaining(`;/charts/${encodeURIComponent(merged)};`),
       });
+    });
+  });
+
+  it("exports a migration chart under its heading, with no Duplicate or sharing", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const record = await driver.createGovernance({ grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "superseded", by: { packageName: "@sample/mixed", exportName: "Field" } } });
+      await enqueueChartResults(pool);
+      await storeResults(pool);
+      const { default: page } = await import("@/app/charts/[dashboardId]/page");
+      const tree = await page(trackingParams(`migration:${record.id}`));
+      expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Migration: Button · @sample/core → Field · @sample/mixed", children: expect.anything() }]);
+      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null }]);
     });
   });
 

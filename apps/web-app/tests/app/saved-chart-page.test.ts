@@ -143,7 +143,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const viewerGone = await renderSaved(goneRepo, anas);
       expect(editLinks(viewerGone)).toEqual([]);
       expect(propsOf(viewerGone, "DeleteDashboardButton")).toBeUndefined();
-      expect(propsOf(viewerGone, "ChartMenu")).toBeUndefined();
+      expect(propsOf(viewerGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null });
       expect(propsOf(viewerGone, "EmptyState")).toMatchObject({
         title: "This chart's repo no longer exists.",
         description: "There are no scans for repo-gone any more. It may have been renamed or deleted.",
@@ -171,6 +171,17 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const adminGone = await renderSaved(goneRepo, anas);
       expect(editLinks(adminGone)).toHaveLength(1);
       expect(propsOf(adminGone, "DeleteDashboardButton")).toEqual({ id: expect.any(String) });
+    });
+  });
+
+  it("gives a Viewer the chart's menu to export it under its name, and never hands the menu the chart's view", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      reader = { ...editor, role: "viewer" };
+      const tree = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, { name: "Local usage" });
+      expect(propsOf(tree, "LinkedDashboardChart")).toMatchObject({ view: { kind: "series" } });
+      expect(propsOf(tree, "ChartExportProvider")).toEqual({ title: "Local usage", children: expect.anything() });
+      expect(propsOf(tree, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null });
     });
   });
 

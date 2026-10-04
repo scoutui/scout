@@ -1,4 +1,4 @@
-import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardView, RepoCoverage } from "@scoutui/web-shared";
+import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView, RepoCoverage } from "@scoutui/web-shared";
 import { ChartRangeSchema, cohortKey } from "@scoutui/web-shared/client";
 import { CHART_ORDER, looksAlike, paletteToken } from "@/lib/chart-palette";
 import { formatReposAdded } from "@/lib/dashboard-format";
@@ -54,6 +54,16 @@ export function seriesFrom(series: CohortSeries[], from: number): CohortSeries[]
     const onEdge = after[0] !== undefined && Date.parse(after[0].t) === from;
     return { ...s, points: carried && !onEdge ? [{ t: new Date(from).toISOString(), value: carried.value }, ...after] : after };
   });
+}
+
+/**
+ * The view a chart draws at `range`, and where its x-axis starts. A trend or stacked chart draws each series from the
+ * range's start on; any other chart draws its whole view.
+ */
+export function visibleView<V extends DashboardView>(config: DashboardConfig, view: V, range: ChartRange): { view: V; from: number | null } {
+  if ((config.chartType !== "trend" && config.chartType !== "stacked-share") || view.kind !== "series") return { view, from: null };
+  const from = rangeStart(view.series, range);
+  return { view: from === null ? view : { ...view, series: seriesFrom(view.series, from) }, from };
 }
 
 /** One x tick per distinct day (the day's first scan), in epoch ms for the numeric time axis. */

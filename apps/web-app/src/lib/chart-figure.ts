@@ -73,12 +73,19 @@ export type ChartFigureInput = {
   colors: Record<string, string>;
 };
 
+/** True when a chart has an image to export: a trend, stacked or bar chart with something to draw. */
+export function hasFigure(config: DashboardConfig, view: DashboardView): boolean {
+  if (isEmptyView(view)) return false;
+  if (config.chartType === "bars") return view.kind === "snapshot";
+  return (config.chartType === "trend" || config.chartType === "stacked-share") && view.kind === "series";
+}
+
 /**
  * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a
  * table chart or a chart with nothing to draw.
  */
 export function chartFigure({ title, config, view, host, exportedAt, colors }: ChartFigureInput): ChartFigure | null {
-  if (isEmptyView(view)) return null;
+  if (!hasFigure(config, view)) return null;
   const resolve = (key: string): string => {
     const value = colors[key];
     if (value === undefined) throw new Error(`chartFigure needs a colour for ${key}`);
