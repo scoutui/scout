@@ -1,5 +1,148 @@
 # @scoutui/web-app
 
+## 0.3.0
+
+### Minor Changes
+
+- [#80](https://github.com/scoutui/scout/pull/80) [`6d68031`](https://github.com/scoutui/scout/commit/6d68031582347f122dfd805e1e3b2ffab1efce18) Thanks [@siggerzz](https://github.com/siggerzz)! - Charts over time offer a date range (3 months, 6 months, 1 year or All) once their scans span more than 3 months. The range you pick stays in the chart's link, and a saved chart opens at the range picked in the builder when it was saved. Clicking a name in a Trend chart's legend shows only that line. A Trend chart with six or more lines now shows them all on one chart, with a sortable table of each line's latest value in place of the separate small charts.
+
+- [#102](https://github.com/scoutui/scout/pull/102) [`d4b78e4`](https://github.com/scoutui/scout/commit/d4b78e4d8564ba87bbe0563d0f3bbf44e600aa5d) Thanks [@siggerzz](https://github.com/siggerzz)! - A saved chart's **⋯** menu has a new **Export** submenu: **Download PNG** and **Copy image** for a slide or a document, and **Download CSV** and **Copy table** for a spreadsheet. The image is always light, and shows the chart's name, the repos and period it covers, and each series with its latest value. Exports cover the period picked above the chart. Migration and retirement charts list the same items in their **⋯** menu, and everyone who can open a chart can export it.
+
+- [#78](https://github.com/scoutui/scout/pull/78) [`6e621b8`](https://github.com/scoutui/scout/commit/6e621b81d25390a1cf6d57c761616bb1fe31bb9c) Thanks [@siggerzz](https://github.com/siggerzz)! - Charts now belong to the person who made them. Only they or an Admin can change or delete a chart, and its page shows who created it.
+
+  A new chart is private: only its creator and Admins can open it, and it's listed under **Private** on the charts page. **Share with everyone** in the chart's **⋯** menu lists it under **Shared charts** for everyone; **Make private** takes it back. The same menu has **Duplicate**, which opens a copy in the chart builder to save as your own. Admins see everyone else's private charts under **Other people's charts**.
+
+  Charts saved before this release are shared with everyone, so the charts page lists the same charts as before.
+
+- [#110](https://github.com/scoutui/scout/pull/110) [`779a800`](https://github.com/scoutui/scout/commit/779a800b7015502c04c7a6452eec68b203a5a8a8) Thanks [@siggerzz](https://github.com/siggerzz)! - The chart builder has a **Visibility** choice, **Private** or **Shared**, so you can share a chart as you create it. A new chart and a copy start as **Private**; editing a chart shows who can see it now and lets its creator or an Admin change it. A saved chart's page now always says **Private** or **Shared** under its name.
+
+- [#73](https://github.com/scoutui/scout/pull/73) [`034fe05`](https://github.com/scoutui/scout/commit/034fe054e18af326428cde72a67698b1946f6045) Thanks [@siggerzz](https://github.com/siggerzz)! - Migration and retirement rows now say whether the work moved:
+
+  - Each row shows how many uses of the old component are left, such as **24 left**, and how that number changed, such as **6 fewer** in green or **2 more** in red. Deleting uses of the replacement no longer reads as a step back.
+  - On the **charts** page the change covers the last 30 days, comparing each repo with itself, so a repo scanned for the first time is not counted as a change. The row says when one joined, as in **3 fewer · 1 repo added**. A repo's **Adoption** tab shows the change since its previous scan.
+  - Records that name the same replacement, such as one for each part of a compound component, are one migration with one row and one chart. Links to either record's chart open it.
+  - A migration or retirement's chart page shows the row's numbers above the chart.
+
+  Charts over time also start each line at the first scan of a repo that uses it instead of rising from 0, and a small ring marks where another repo joins a line, with the repo named in the tooltip. For a few minutes after upgrading, while the dashboard works out the stored figures again, these pages read **Preparing scan data**.
+
+- [#63](https://github.com/scoutui/scout/pull/63) [`c12db47`](https://github.com/scoutui/scout/commit/c12db478a75de725779f4ab945ad55a9960e3ab8) Thanks [@siggerzz](https://github.com/siggerzz)! - A component's **Composition** tab is now one diagram you can explore, in place of the two lists and the render tree:
+
+  - One line above it says how many components render the component, directly and in total, and how many it renders.
+  - What renders the component is on its left, and what it renders is on its right, with a column for each number of steps away.
+  - **+N more** opens a list inside the diagram that you can filter.
+  - A search box above the diagram finds any component that renders it or that it renders, however far away, and picking one selects it.
+  - Clicking a box selects it and shows the components one step further out. A bar above the diagram writes its route out as a sentence, such as "ProductGrid renders ProductCard 5 times.", with a link to open that component. Links that open the tab with a route drawn still work.
+  - On a phone the tab opens on the list of components, with the diagram as a second view.
+  - The zoom buttons are gone. Scroll or pinch to zoom.
+
+- [#62](https://github.com/scoutui/scout/pull/62) [`1078322`](https://github.com/scoutui/scout/commit/1078322615b83dbb6858fa061462bb7cf33c12c1) Thanks [@siggerzz](https://github.com/siggerzz)! - Adds roles. Viewers can look around; Editors can also upload scans and change charts, governance and tags; Admins can also set people's roles on Settings → People, where they can remove someone too. Everyone who has already signed in becomes an Editor; people who sign in for the first time are Viewers.
+
+  Before upgrading, set `SCOUTUI_ADMINS` (chart `auth.admins`) to your admins' email addresses, or `SCOUTUI_ADMIN_GROUP` (chart `auth.adminGroup`) to a group in your sign-in provider. The dashboard won't start without one of them. An email counts only when your sign-in provider marks it verified. Named admins become Admins at their next browser sign-in, so after upgrading, have them sign out and sign in again: until one of them does, nobody is an Admin.
+
+- [#97](https://github.com/scoutui/scout/pull/97) [`9fca488`](https://github.com/scoutui/scout/commit/9fca4882850c852bf421f52716f46d33d3ca2d90) Thanks [@siggerzz](https://github.com/siggerzz)! - A migration counts only the replacement its record names. Before, when no repo used a replacement component yet, the migration counted every component of the replacement's package instead and read as partly migrated; now it reads **0% migrated** and names the component, such as `Table · tdesign-vue-next`, until a repo uses it.
+
+- [#68](https://github.com/scoutui/scout/pull/68) [`b9a9e40`](https://github.com/scoutui/scout/commit/b9a9e40f8da57739ac255511b080497545c86ef9) Thanks [@siggerzz](https://github.com/siggerzz)! - Removes `SCOUTUI_REQUIRED_GROUP` (chart `auth.requiredGroup`), the group people had to be in to sign in. To limit who can sign in, assign people to the dashboard's application in your sign-in provider, or set `OIDC_ALLOWED_DOMAINS` (chart `auth.oidc.allowedDomains`). People who sign in for the first time are Viewers until an Admin gives them another role on Settings → People.
+
+- [#75](https://github.com/scoutui/scout/pull/75) [`283d7b6`](https://github.com/scoutui/scout/commit/283d7b6b2aeb00da78d200773bc3205ad6c6ab96) Thanks [@siggerzz](https://github.com/siggerzz)! - Admins can now remove a scan, such as a test run or a scan of the wrong branch, from a repo's **Scan history**, and delete a repo from its page. Charts leave out what was removed, and **History** on the **Settings** page records who removed or deleted what. A deleted repo comes back the next time a scan of it is uploaded.
+
+- [#66](https://github.com/scoutui/scout/pull/66) [`2db8119`](https://github.com/scoutui/scout/commit/2db81199abee67562eff5010ccc454ff84ae602a) Thanks [@siggerzz](https://github.com/siggerzz)! - In a monorepo, the dashboard now shows which package each use sits in:
+
+  - The Components table's **Used in** filter shows only the components used in one package, with that package's uses and files. Its link keeps the package in `used-in=`; after a package is renamed, a saved link matches nothing until you pick the new name. Opening a component while a package is picked keeps it picked on the component's Usage tab.
+  - A component's Usage tab lists its uses by package when they sit in more than one.
+
+  Scans uploaded by older CLI versions show none of these. A component's page now also names its package after **From**, as in **From** `@acme/ui`. For a few minutes after upgrading, while the dashboard prepares every stored scan again, pages read **Preparing scan data**.
+
+- [#74](https://github.com/scoutui/scout/pull/74) [`8900f2b`](https://github.com/scoutui/scout/commit/8900f2b8f3027b563a84cc66477e55a4850f9685) Thanks [@siggerzz](https://github.com/siggerzz)! - Tags take one of five colours: teal, violet, blue, berry and orchid. Every pair stays easy to tell apart, including for colour-blind readers, in light and dark mode.
+
+  - Teal, violet and blue tags keep their colour, though violet and blue are now deeper.
+  - Grey tags, and tags with a colour from outside the set, change to a colour no other tag uses, or to the one fewest tags use.
+  - Chart lines without a tag's colour, such as packages and components, take the same five, so a chart repeats a colour only from its sixth line.
+  - In dark mode, Local's ring on the **Composition** tab and the dots for older versions are easier to see.
+
+- [#59](https://github.com/scoutui/scout/pull/59) [`4b825f6`](https://github.com/scoutui/scout/commit/4b825f6141b60e4da57ff3c6502cdf3803db9fe8) Thanks [@siggerzz](https://github.com/siggerzz)! - The dashboard now uses one word for each thing, the same on every page:
+
+  - **Uses.** Each place a component is used is a **use**. The **Occurrences** columns are now **Uses**, the Usage tab counts uses instead of calls, the Composition tab's tooltips count uses instead of call sites, the governance table shows **Uses left**, and the charts' **Count** toggle is now **Uses**.
+  - **Type.** On a repo page, the **Framework** filter is now **Type**, and its pill reads `type`. Its **Tag** value is now **Undefined element**: a web component that nothing in the scan defines. **Tag** now means only your library tags.
+  - **Replaced.** On Governance, the record type **Superseded** is now **Replaced**, rows read **Replaced by**, and the warning reads **Replacement deprecated**. Migrations and retirements read **in progress** instead of **active**, and a retirement counts the uses **left** instead of **remaining**.
+  - **External and Local.** The **Origin** filter says what each value means: **From outside this repo** or **Defined in this repo**. A component's **External** or **Local** badge says the same on hover, and badges are capitalised.
+  - **Smaller changes.** Commit dates are under **Committed** instead of **Updated**, a package's components count **Repos** instead of **Consumers**, the repo page's changed view counts **changes** instead of **moved**, and the change since the previous scan reads `±0 since previous scan` or `up from 34.8% previously`.
+
+  Four keys in links and queries change with it, and the old ones no longer work:
+
+  - The repo page's uses filter: `?occurrences=gte:10` is now `?uses=gte:10`. A saved link with `occurrences=` opens the page without that filter.
+  - The repo page's type filter: `?kind=tag` is now `?kind=undefined-element`. A saved link with `kind=tag` opens the page without that filter.
+  - The Usage tab's sort: `sort=calls~asc` is now `sort=uses~asc`. A saved link with `calls~` opens the tab in its default order.
+  - The `q` query on `/api/repos/<repo>/components`: `occurrences:>10` is now `uses:>10`, and `kind:tag` is now `kind:undefined-element`. A query with the old ones matches no components.
+
+- [#108](https://github.com/scoutui/scout/pull/108) [`1a9254e`](https://github.com/scoutui/scout/commit/1a9254ee87a435e2a57b2d5fb74f30ea5f747e8f) Thanks [@siggerzz](https://github.com/siggerzz)! - A repo's page now says when its scan couldn't see everything, such as uses of components that aren't imported or web components that no package defines, and what to change for each. For a few minutes after upgrading, while the dashboard prepares every stored scan again, pages read **Preparing scan data**.
+
+- [#50](https://github.com/scoutui/scout/pull/50) [`cbe9174`](https://github.com/scoutui/scout/commit/cbe91740c55b7e46394f00dfd6be804051312986) Thanks [@siggerzz](https://github.com/siggerzz)! - Lifecycle records now cover packages written in the same monorepo as the apps that use them. The record pickers list these packages after the installed ones, and their components once you search in one. Typing a component name lists the packages that have it after the results. A record on such a package marks its components deprecated in that monorepo too, back to the first scan, with no rescan. After upgrading, the governance page reads Preparing scan data until the dashboard has recalculated, and monorepo components show as deprecated once each repo's scans have been rebuilt.
+
+### Patch Changes
+
+- [#68](https://github.com/scoutui/scout/pull/68) [`b9a9e40`](https://github.com/scoutui/scout/commit/b9a9e40f8da57739ac255511b080497545c86ef9) Thanks [@siggerzz](https://github.com/siggerzz)! - The allowed email domains rule (`OIDC_ALLOWED_DOMAINS`, chart `auth.oidc.allowedDomains`) now counts your sign-in provider's verified mark only when the provider's email is the one the dashboard has on record for that person, ignoring letter case. Admin emails already worked this way.
+
+- [#109](https://github.com/scoutui/scout/pull/109) [`759cd6c`](https://github.com/scoutui/scout/commit/759cd6caf32a63d903f5fbdefd1fcbceb710df08) Thanks [@siggerzz](https://github.com/siggerzz)! - A repo's **Adoption** tab and a table chart of one repo now show the change over the last 30 days, as the **charts** page does, instead of the change since the previous scan.
+
+- [#70](https://github.com/scoutui/scout/pull/70) [`536d36a`](https://github.com/scoutui/scout/commit/536d36a77c77beeaa103a5f2c89012c03b247eb6) Thanks [@siggerzz](https://github.com/siggerzz)! - Text fields, menus and checkboxes have a clearer border, the top bar is solid, the labels on red buttons are easier to read, warnings stay readable on a selected Governance record, and the chart builder's example chart follows dark mode.
+
+- [#72](https://github.com/scoutui/scout/pull/72) [`ca846d4`](https://github.com/scoutui/scout/commit/ca846d429716419b29135db3f78874beef772ed5) Thanks [@siggerzz](https://github.com/siggerzz)! - On the **Composition** tab:
+
+  - The selected box now shows a focus ring when it has keyboard focus.
+  - **Find**'s results close when you tab away.
+  - In **Find**, the result the arrow keys are on is outlined and scrolls into view.
+  - Clearing a route keeps keyboard focus on the diagram instead of losing it.
+  - Long names show in full when you hover them.
+  - File paths in lists and **Find** are easier to read.
+  - On a phone, tapping a search box no longer zooms the page.
+  - A filter with no results says what you searched for.
+  - Box and button animations stop when your system asks for reduced motion.
+
+  On **Governance**, the record picker outlines the result the arrow keys are on.
+
+- [#67](https://github.com/scoutui/scout/pull/67) [`2545036`](https://github.com/scoutui/scout/commit/2545036f08b74f5fae8650dc2ebcf8bf544a31c6) Thanks [@siggerzz](https://github.com/siggerzz)! - On the **Composition** tab, a list opened from **+N more** is no longer greyed out while a route is selected, and lists open in neighbouring columns no longer overlap: the next column moves out to make room. Boxes off a selected route now show their names in grey instead of fading, so they stay readable. A list opened while a route is selected is shown in full, and tabbing through a list keeps it in view.
+
+- [#49](https://github.com/scoutui/scout/pull/49) [`24fb33c`](https://github.com/scoutui/scout/commit/24fb33c3ad2c381cd2146dca3619eb6aa23ad186) Thanks [@siggerzz](https://github.com/siggerzz)! - A long "defined at" path now wraps, so a component's page fits a phone screen.
+
+- [#69](https://github.com/scoutui/scout/pull/69) [`cb445f3`](https://github.com/scoutui/scout/commit/cb445f3f0bf1ae4b4b9b9030754cd4f02ef046b9) Thanks [@siggerzz](https://github.com/siggerzz)! - Clearer wording across the dashboard:
+
+  - The commands shown on an empty Repos or Packages page start with `scout init`.
+  - Error pages say what couldn't load, such as "Couldn't load charts.", and to try again or reload the page.
+  - The Repos table's **Δ components** column is now **Changes**.
+  - Lines that explained how numbers are counted are gone from Governance, trend charts, the chart builder and the older-scan banner.
+  - Pages that need another role say to ask an Admin, including Settings and role changes. Settings says what each role can see.
+  - Clearer empty states on package pages and charts, and no hover text on the Charts list's small previews.
+
+- [#96](https://github.com/scoutui/scout/pull/96) [`7024e52`](https://github.com/scoutui/scout/commit/7024e52f4a89727c3a66cccb218de93c80f81308) Thanks [@siggerzz](https://github.com/siggerzz)! - A web component your repo registers in two places now counts as Local, as one registered once does, instead of External. After the upgrade, the dashboard rebuilds its stored scans in the background to apply it to earlier scans.
+
+- [#100](https://github.com/scoutui/scout/pull/100) [`394ab44`](https://github.com/scoutui/scout/commit/394ab4457ebc4239f04d1d17007c145c178f4a4c) Thanks [@siggerzz](https://github.com/siggerzz)! - A scan whose repository address has an unusually long run of slashes no longer slows the dashboard.
+
+- [#64](https://github.com/scoutui/scout/pull/64) [`a05f7c2`](https://github.com/scoutui/scout/commit/a05f7c26d06062ef1fb6feed6fd9afe570273b3b) Thanks [@siggerzz](https://github.com/siggerzz)! - A component with no package shows a dash under its name, as the components table does, in place of `<no package>`. A search box over a single repo, package or component says so in the singular, such as `Search 1 repo…` or `Search 1 component by name…`.
+
+- [#81](https://github.com/scoutui/scout/pull/81) [`7c2086e`](https://github.com/scoutui/scout/commit/7c2086ebfdaf4a2d84197ac47fec191e0284c260) Thanks [@siggerzz](https://github.com/siggerzz)! - Keyboard focus looks the same on every control: a solid 2px line around it, in the text colour. It shows only when you move with the keyboard; a text field also shows it, on its own edge, when you click into it. A row in the Packages tables is now one Tab stop instead of one per column, and a chart shows focus when you tab to it.
+
+- [#86](https://github.com/scoutui/scout/pull/86) [`44ffa7f`](https://github.com/scoutui/scout/commit/44ffa7f70b437f8399365a154791e2f18df54025) Thanks [@siggerzz](https://github.com/siggerzz)! - The **Deprecated** column on the Packages page and the **deprecated components in use** line on a package page count each deprecated component once, as the package's **deprecated** chip does. Before, a component used in three repos counted three times. Components that share a name, such as `Button` from `@acme/ui` and from `@acme/ui/button`, show their entry point under the name on a package page's **Components** table and beside the package in the chart picker, as a repo's **Components** tab already does.
+
+- [#105](https://github.com/scoutui/scout/pull/105) [`3e23173`](https://github.com/scoutui/scout/commit/3e23173e9103d69c0aabe75ec49e030f1b159a2b) Thanks [@siggerzz](https://github.com/siggerzz)! - A chart's **Share** metric is now called **% of uses**, so the switch reads **Uses | % of uses** and no longer looks like a button that shares the chart. Its table column and the exported CSV and copied table use the same name.
+
+- [#89](https://github.com/scoutui/scout/pull/89) [`a89e192`](https://github.com/scoutui/scout/commit/a89e192789f2c1a77173c56e412be30878211b99) Thanks [@siggerzz](https://github.com/siggerzz)! - A release now counts as newer than its prereleases. Before, `5.0.0-beta.1` took the colour in a version bar as the highest version and `5.0.0` showed as older; the **Version** column on a repo's **Components** tab sorts the same way.
+
+- [#52](https://github.com/scoutui/scout/pull/52) [`b4d0984`](https://github.com/scoutui/scout/commit/b4d09845c957927843aec4e9c7024c9caf9ce88b) Thanks [@siggerzz](https://github.com/siggerzz)! - In the lifecycle record form, **Package or component** and **Superseded by** now show a package only while you search in it or once you've picked it. After you create a record, both start blank for the next one. Selecting a package to search in it and then clicking away also leaves the field blank, instead of keeping the package as a chip that looked like a pick. Before, Create could refuse with "Choose what supersedes it." while a package still showed in the field.
+
+- [#57](https://github.com/scoutui/scout/pull/57) [`b31629d`](https://github.com/scoutui/scout/commit/b31629d5fd3e65a6a2d8ded8cb9c7dc1fb34b475) Thanks [@siggerzz](https://github.com/siggerzz)! - The dashboard now tells the CLI which scan formats it reads when the CLI checks a scan before uploading it, so the CLI can tell people not to update to a version whose scans the dashboard can't read yet.
+
+- [#82](https://github.com/scoutui/scout/pull/82) [`82423f4`](https://github.com/scoutui/scout/commit/82423f48fb35182f4dcd6103783bfbd0fee6c87a) Thanks [@siggerzz](https://github.com/siggerzz)! - When the database refuses the connection, the web server and the worker log why they couldn't start, such as `[worker] couldn't start: connect ECONNREFUSED 127.0.0.1:5432`. Before, a database at `localhost` left the reason empty.
+
+- [#106](https://github.com/scoutui/scout/pull/106) [`5143e39`](https://github.com/scoutui/scout/commit/5143e39630414731b840d15f666f17ca04ca4b8e) Thanks [@siggerzz](https://github.com/siggerzz)! - A table chart's **Change** column no longer reads 0 just because another repo was scanned last. For a chart of all repos it now shows the change over the last 30 days, each repo compared with itself, as the migration and retirement rows do; for a chart of one repo it is still the change since that repo's previous scan. A repo's first scan no longer reads **repo added**, and a series with nothing to compare yet reads **—**.
+
+- [#71](https://github.com/scoutui/scout/pull/71) [`8789cfb`](https://github.com/scoutui/scout/commit/8789cfbdd9569167748829311d6b639e402527a6) Thanks [@siggerzz](https://github.com/siggerzz)! - On a phone, tapping into a search box, the **Repos** menu in the chart builder or a role menu on **People** no longer zooms the page. Small text is easier to read: hints, counts and details that were 11px are now 12px, and chart axis labels are 11px. On a phone, a chart's title is smaller and breaks a scoped package name after its scope, and the names in a migration or retirement row wrap instead of being cut off. The separators in a repo's details line no longer start or end a line when it wraps.
+
+- [#99](https://github.com/scoutui/scout/pull/99) [`e41168c`](https://github.com/scoutui/scout/commit/e41168c0094c073f3b3cb1098fa029b7bc694f3a) Thanks [@siggerzz](https://github.com/siggerzz)! - After you save or delete a lifecycle record, tag or chart, or a new scan arrives, the **governance** page, the **charts** page, a migration's chart and a repo's **Adoption** tab show **Preparing scan data** above their numbers until the new ones are worked out, then update by themselves. Before, they kept the old numbers with no sign they were out of date until you reloaded. A deleted record's chart now says the page isn't found.
+
+- [#90](https://github.com/scoutui/scout/pull/90) [`6667e6c`](https://github.com/scoutui/scout/commit/6667e6c6ee47cacf43904092a20204fee1c0960d) Thanks [@siggerzz](https://github.com/siggerzz)! - The Usage tab lists a prop under **Events** only when the scan counted it as an event. A prop such as `onLabel="On"` from a newer CLI now shows its values with the other props, and can be a value column.
+
+- [#85](https://github.com/scoutui/scout/pull/85) [`9fb9982`](https://github.com/scoutui/scout/commit/9fb9982b2ab8edfac38e74e18984174d29baab70) Thanks [@siggerzz](https://github.com/siggerzz)! - A web component that more than one package or file defines now names each of them on its page, such as `From @acme/ui or @other/ui`, instead of showing a dash.
+
 ## 0.2.0
 
 ### Minor Changes
