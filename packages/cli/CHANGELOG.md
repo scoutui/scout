@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.3.1
+
+### Patch Changes
+
+- [#111](https://github.com/scoutui/scout/pull/111) [`9555311`](https://github.com/scoutui/scout/commit/9555311bb94a714e6a8a6a1f8ff4c45bbdfd0545) Thanks [@siggerzz](https://github.com/siggerzz)! - `scan` no longer refuses to upload because a new `scout.config.json` or scan file is staged but not committed. A staged new file now counts the same as an untracked one: it blocks the upload only when the scan reads it. When the only uncommitted changes are to `package.json` or its lockfile, as after installing the CLI, the error now names them and says to commit and push them.
+
 ## 0.3.0
 
 ### Minor Changes
