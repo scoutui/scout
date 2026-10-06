@@ -102,6 +102,9 @@ function expandPackages(absRoot: string, entries: string[]): WorkspacePackage[] 
         onlyDirectories: true,
         absolute: true,
         suppressErrors: true,
+        // Package managers never take an installed package as a workspace
+        // member, so a `packages/**` glob must not reach into node_modules.
+        ignore: ["**/node_modules/**"],
       }),
     );
   }

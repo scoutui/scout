@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildWorkspaceGraph } from "../../../src/workspace/build-graph.js";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { isFirstPartyPath } from "../../../src/workspace/find-owning-package.js";
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -185,6 +186,28 @@ describe("buildWorkspaceGraph: workspace detection", () => {
       write(dir, "packages/b/package.json", JSON.stringify({ name: "@fix/b" }));
       const g = buildWorkspaceGraph(dir, "example-repo");
       expect(g.packages.map((p) => p.name)).toEqual(["@fix/b"]);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("never takes an installed package under a ** glob as a member", () => {
+    const dir = makeFixture();
+    try {
+      write(dir, "package.json", JSON.stringify({ name: "root", workspaces: ["packages/**"] }));
+      write(dir, "yarn.lock", "");
+      write(dir, "packages/a/package.json", JSON.stringify({ name: "@fix/a" }));
+      write(dir, "packages/b/package.json", JSON.stringify({ name: "@fix/b" }));
+      write(dir, "packages/a/node_modules/lodash/package.json", JSON.stringify({ name: "lodash" }));
+      write(dir, "packages/a/node_modules/lodash/index.js", "");
+      write(dir, "packages/node_modules/left-pad/package.json", JSON.stringify({ name: "left-pad" }));
+      // Yarn's node-modules linker symlinks a sibling member into node_modules.
+      mkdirSync(join(dir, "packages/a/node_modules/@fix"), { recursive: true });
+      symlinkSync(join(dir, "packages/b"), join(dir, "packages/a/node_modules/@fix/b"), "dir");
+      const g = buildWorkspaceGraph(dir, "example-repo");
+      expect(g.packages.map((p) => [p.name, p.absolutePath]).sort()).toEqual([
+        ["@fix/a", join(dir, "packages/a")],
+        ["@fix/b", join(dir, "packages/b")],
+      ]);
+      expect(isFirstPartyPath(g, join(dir, "packages/a/node_modules/lodash/index.js"))).toBe(false);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });
