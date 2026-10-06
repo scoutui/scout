@@ -17,6 +17,8 @@ dist/
 .pnp.*
 .turbo/
 coverage/
+.nyc_output/
+.nyc_output_raw/
 
 # Artifacts a scan writes inside a fixture; baselines live in
 # packages/cli/tests/integration/__baselines__/current/

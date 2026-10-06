@@ -48,7 +48,63 @@ jobs:
       # stop applying without a web app change.
       - name: Migrate the test database
         run: yarn workspace @scoutui/web-app db:migrate
-      - run: yarn turbo run lint typecheck test build smoke --affected
+      - run: yarn turbo run lint typecheck build smoke --affected
+      # Separate from the command above so --coverage only reaches the test
+      # task: turbo forwards trailing args to every task named on the line,
+      # and lint/typecheck/build/smoke don't accept it. build is already
+      # cached from the step above, so this doesn't rebuild anything.
+      - name: Test (affected) with coverage
+        run: yarn turbo run test --affected -- --coverage
+      # Each package's vitest.config.ts writes its own coverage/coverage-final.json
+      # (Istanbul format, alongside the per-package Cobertura report developers and
+      # IDEs use locally). nyc merge combines them because nyc report can only
+      # read from a single directory, then nyc report's own Cobertura reporter -
+      # the same tool, just pointed at the combined data - produces one repo-wide
+      # report for the upload below.
+      - name: Merge coverage reports
+        shell: bash
+        run: |
+          mkdir -p .nyc_output_raw .nyc_output
+          n=0
+          while IFS= read -r f; do
+            n=$((n + 1))
+            cp "$f" ".nyc_output_raw/coverage-$n.json"
+          done < <(find . -path '*/node_modules' -prune -o -path '*/.turbo' -prune -o -name 'coverage-final.json' -print)
+          if [ "$n" -eq 0 ]; then
+            echo "No coverage-final.json files found; nothing to merge." >&2
+            exit 0
+          fi
+          node_modules/.bin/nyc merge .nyc_output_raw .nyc_output/out.json
+          node_modules/.bin/nyc report --reporter cobertura --report-dir coverage --temp-dir .nyc_output --cwd "$PWD"
+      - name: Upload coverage artifact
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: coverage-report-typescript
+          path: coverage/cobertura-coverage.xml
+          if-no-files-found: ignore
+
+  # Downloads the Cobertura report lint-test-build produced and uploads it to
+  # GitHub's code coverage API. Split into its own job because the upload needs
+  # code-quality: write, and the job above runs repository code and third-party
+  # dependencies that shouldn't hold that permission.
+  upload-coverage-typescript:
+    needs: lint-test-build
+    if: ${{ !cancelled() && needs.lint-test-build.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      code-quality: write
+    steps:
+      - name: Download coverage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
+        with:
+          name: coverage-report-typescript
+      - uses: actions/upload-code-coverage@2b21a77928be8d5168c2b9581a67f2adbebacc52 # v1.4.4
+        with:
+          file: cobertura-coverage.xml
+          language: TypeScript
+          label: code-coverage-agent
 
   # Runs the chart's helm-unittest suites.
   chart-test:

@@ -14,6 +14,12 @@ export default defineConfig({
     // externalised next-auth fails to load. Inlining it hands the import to
     // Vite's resolver instead.
     server: { deps: { inline: ["next-auth"] } },
+    coverage: {
+      provider: "v8",
+      reporter: ["cobertura", "json"],
+      reportOnFailure: true,
+      include: ["src/**"],
+    },
   },
   resolve: {
     alias: { "@": new URL("./src", import.meta.url).pathname },

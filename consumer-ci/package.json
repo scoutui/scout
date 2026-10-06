@@ -15,6 +15,7 @@
   "devDependencies": {
     "@scoutui/scan-format": "0.1.0",
     "@types/node": "24.12.2",
+    "@vitest/coverage-v8": "4.1.11",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
