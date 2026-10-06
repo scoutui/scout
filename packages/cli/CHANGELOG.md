@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.3.2
+
+### Patch Changes
+
+- [#116](https://github.com/scoutui/scout/pull/116) [`97d3446`](https://github.com/scoutui/scout/commit/97d3446f4a646d9f752c4cad0e444efcb48bc8bc) Thanks [@siggerzz](https://github.com/siggerzz)! - A workspace glob such as `packages/**` no longer takes the packages installed in `node_modules` as workspace members. Before, `scout init` offered them as packages to leave out, and a scan read their published files as your own source, so it could count uses inside your dependencies or stop on their build output.
+
 ## 0.3.1
 
 ### Patch Changes
