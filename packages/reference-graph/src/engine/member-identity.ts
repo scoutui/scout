@@ -1,4 +1,5 @@
 import type { InferredType } from "../types/inferred-type.js";
+import { ownProp } from "./own-prop.js";
 
 /**
  * Seam: derive the export name a JSX usage attributes to, resolving
@@ -65,7 +66,7 @@ export function memberOfObjectPath(
   let cur = holder;
   for (const segment of path) {
     if (cur?.kind !== "Object") return { member: undefined, ...(cur !== undefined ? { stoppedOn: cur } : {}) };
-    const next = cur.props[segment];
+    const next = ownProp(cur, segment);
     if (next === undefined) return { member: undefined, stoppedOn: cur };
     cur = next;
   }

@@ -643,6 +643,24 @@ describe("integration: react-shapes fixture", () => {
     });
   });
 
+  describe("inherited-member", () => {
+    it("reads only the members an object literal writes, never one every object inherits", () => {
+      const S = "inherited-member";
+      const unresolved = (line: number, symbol: string) => ({
+        code: "unresolved-reference",
+        severity: "info",
+        filePath: `src/${S}/Picker.tsx`,
+        line,
+        column: 7,
+        symbol,
+        memberChain: [],
+      });
+      expect(rendersIn(S)).toEqual([row("Picker.tsx:18:7", pkg("Card"), local(S, "Picker.tsx", "Picker"), [])]);
+      expect(diagnosticsIn(S)).toEqual([unresolved(16, "Alias"), unresolved(17, "Read")]);
+      expect(localExports(S)).toEqual(["Picker"]);
+    });
+  });
+
   describe("pass-through", () => {
     it("keeps the hoc step for a wrapper that hands back its component through local aliases", () => {
       const S = "pass-through";
