@@ -1,4 +1,4 @@
-import { relative, resolve } from "node:path";
+import { basename, relative, resolve } from "node:path";
 import { gitFailed, type Checkout } from "../scan/meta.js";
 import { firstParentPosition, hasCommit, localChanges, recordedDefaultBranch, severalRemotesLine, shortCommit } from "../util/git.js";
 
@@ -54,10 +54,13 @@ export async function checkTrackedBranch(
   return { kind: "ok", remote: remote.name, branch };
 }
 
+/** Files an install of the CLI changes. */
+const MANIFESTS = new Set(["package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lock", "bun.lockb"]);
+
 /**
- * Why an upload can't go ahead with the checkout's local changes, or null when it can: a change to any tracked file, or an
- * untracked file among `files` (the files the scan reads) that isn't in `exempt`. Changes to `ignore` never count, tracked or
- * untracked. `detail` lists the files from the repository's top folder.
+ * Why an upload can't go ahead with the checkout's local changes, or null when it can: a change to any tracked file, or a new
+ * file, untracked or staged, among `files` (the files the scan reads) that isn't in `exempt`. Changes to `ignore` never count,
+ * tracked or untracked. `detail` lists the files from the repository's top folder.
  */
 export async function uncommittedRefusal(
   cwd: string,
@@ -68,12 +71,13 @@ export async function uncommittedRefusal(
   const read = new Set(opts.files.map((file) => resolve(file)));
   const exempt = new Set(opts.exempt.map((file) => resolve(file)));
   const ignored = opts.ignore === undefined ? undefined : resolve(opts.ignore);
-  const blocking = [...changes.tracked, ...changes.untracked.filter((file) => read.has(file) && !exempt.has(file))].filter(
+  const created = [...changes.added, ...changes.untracked];
+  const blocking = [...changes.tracked, ...created.filter((file) => read.has(file) && !exempt.has(file))].filter(
     (file) => file !== ignored,
   );
   if (blocking.length === 0) return null;
-  return {
-    message: `${REFUSED} you have uncommitted changes. Commit or stash them and try again.`,
-    detail: blocking.map((file) => relative(changes.top, file)).join("\n"),
-  };
+  const message = blocking.every((file) => MANIFESTS.has(basename(file)))
+    ? `${REFUSED} package.json or its lockfile has uncommitted changes. If you installed the CLI, commit and push them, then try again.`
+    : `${REFUSED} you have uncommitted changes. Commit or stash them and try again.`;
+  return { message, detail: blocking.map((file) => relative(changes.top, file)).join("\n") };
 }
