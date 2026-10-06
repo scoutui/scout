@@ -206,11 +206,13 @@ export async function firstParentPosition(root: string, ref: string, commit: str
 }
 
 /** The checkout's uncommitted changes, as absolute paths, or git's message when it can't list them. */
-export type LocalChanges = { ok: true; top: string; tracked: string[]; untracked: string[] } | { ok: false; detail: string };
+export type LocalChanges =
+  | { ok: true; top: string; tracked: string[]; added: string[]; untracked: string[] }
+  | { ok: false; detail: string };
 
 /**
- * Lists the checkout's uncommitted changes: `tracked` files changed, staged or deleted, and `untracked` files git doesn't
- * ignore, each file listed on its own rather than by folder. `top` is the repository's top folder.
+ * Lists the checkout's uncommitted changes: `tracked` files changed, staged or deleted, `added` files staged as new, and
+ * `untracked` files git doesn't ignore, each file listed on its own rather than by folder. `top` is the repository's top folder.
  */
 export async function localChanges(root: string): Promise<LocalChanges> {
   const top = await runGit(root, ["rev-parse", "--show-toplevel"]);
@@ -218,6 +220,7 @@ export async function localChanges(root: string): Promise<LocalChanges> {
   const status = await runGit(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"], { raw: true, maxBuffer: STATUS_MAX_BUFFER });
   if (!status.ok) return { ok: false, detail: status.detail };
   const tracked: string[] = [];
+  const added: string[] = [];
   const untracked: string[] = [];
   const entries = status.stdout.split("\0");
   for (let index = 0; index < entries.length; index++) {
@@ -226,11 +229,12 @@ export async function localChanges(root: string): Promise<LocalChanges> {
     const code = entry.slice(0, 2);
     const path = resolve(top.stdout, entry.slice(3));
     if (code === "??") untracked.push(path);
+    else if (code[0] === "A") added.push(path);
     else tracked.push(path);
     // A rename or a copy is followed by the path it came from.
     if (/[RC]/.test(code)) index++;
   }
-  return { ok: true, top: top.stdout, tracked, untracked };
+  return { ok: true, top: top.stdout, tracked, added, untracked };
 }
 
 export async function readGitBranch(root: string): Promise<string | null> {

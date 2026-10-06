@@ -146,11 +146,30 @@ describe("an upload refuses uncommitted changes, listing the files under debug",
     ["a change to a tracked file", (dir) => writeFileSync(join(dir, "src", "App.tsx"), "export function App() { return <div />; }\n"), "src/App.tsx"],
     ["an untracked file the scan would read", (dir) => writeFileSync(join(dir, "src", "New.tsx"), "export function New() { return <div />; }\n"), "src/New.tsx"],
     ["an edit to the committed config", (dir) => writeFileSync(join(dir, "scout.config.json"), JSON.stringify({ ...config, exclude: ["**/*.test.tsx"] })), "scout.config.json"],
+    ["a staged new file the scan would read", (dir) => {
+      writeFileSync(join(dir, "src", "New.tsx"), "export function New() { return <div />; }\n");
+      git(dir, "add", "src/New.tsx");
+    }, "src/New.tsx"],
   ])("%s", async (_, change, file) => {
     const dir = pushedRepo();
     change(dir);
     const result = await runScan({ cwd: dir, upload: true, log: new Logger({ quiet: true, debug: true }) });
     expect(stderr()).toBe(`Error: ${REFUSED} you have uncommitted changes. Commit or stash them and try again.\n${file}\n`);
+    expect(scanExitCode(result)).toBe(1);
+    expect(createAuthedUploader).not.toHaveBeenCalled();
+  });
+
+  it("naming package.json and its lockfile when they're all that changed", async () => {
+    const dir = pushedRepo();
+    writeFileSync(join(dir, "yarn.lock"), "# lockfile\n");
+    commitAll(dir, "lockfile");
+    git(dir, "push", "-q", "origin", "main");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "git-state", private: true, devDependencies: { "@scoutui/cli": "1.0.0" } }));
+    writeFileSync(join(dir, "yarn.lock"), "# lockfile\n# @scoutui/cli\n");
+    const result = await runScan({ cwd: dir, upload: true, log: new Logger({ quiet: true, debug: true }) });
+    expect(stderr()).toBe(
+      `Error: ${REFUSED} package.json or its lockfile has uncommitted changes. If you installed the CLI, commit and push them, then try again.\npackage.json\nyarn.lock\n`,
+    );
     expect(scanExitCode(result)).toBe(1);
     expect(createAuthedUploader).not.toHaveBeenCalled();
   });
@@ -193,6 +212,17 @@ describe("an upload goes ahead", () => {
     }],
     ["with a config that was never committed, even when include matches it", () =>
       pushedRepo({ config: { ...config, include: ["**/*"] }, commitConfig: false })],
+    ["with a new config that's staged but not committed, even when include matches it", () => {
+      const dir = pushedRepo({ config: { ...config, include: ["**/*"] }, commitConfig: false });
+      git(dir, "add", "scout.config.json");
+      return dir;
+    }],
+    ["with the scan file of an earlier run staged", () => {
+      const dir = pushedRepo({ config: { ...config, include: ["**/*"] } });
+      writeFileSync(join(dir, "scout-scan.json"), "{}\n");
+      git(dir, "add", "scout-scan.json");
+      return dir;
+    }],
     ["with the scan file of an earlier run inside include", () => {
       const dir = pushedRepo({ config: { ...config, include: ["**/*"] } });
       writeFileSync(join(dir, "scout-scan.json"), "{}\n");

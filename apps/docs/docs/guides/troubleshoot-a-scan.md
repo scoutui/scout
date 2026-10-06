@@ -111,7 +111,8 @@ jq -r '.diagnostics[] | select(.code == "late-bound-render" or .code == "unresol
 | `Error: Couldn't upload the scan: you're on <branch>, and the dashboard tracks <branch>.` | Switch to the tracked branch, pull, and scan again. Scans of other branches never reach the dashboard. |
 | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>.` | Check out the tracked branch and scan again. A commit that came into the branch through a merge doesn't count, even though the branch contains it: scan the merge commit instead. |
 | `Error: Couldn't upload the scan: this checkout doesn't have the full history.` | Run `git fetch --unshallow`, then scan again. In CI, see [Fetch full history](/docs/guides/run-in-ci#fetch-full-history). |
-| `Error: Couldn't upload the scan: you have uncommitted changes.` | Commit or stash them. A change to any tracked file counts, and so does a new file the scan would read. Add `--debug` to list the files. |
+| `Error: Couldn't upload the scan: you have uncommitted changes.` | Commit or stash them. A change to any tracked file counts, and so does a new file the scan would read, staged or not. A new `scout.config.json` or scan file doesn't. Add `--debug` to list the files. |
+| `Error: Couldn't upload the scan: package.json or its lockfile has uncommitted changes.` | You installed the CLI, or another package, without committing it. Commit and push `package.json` and the lockfile, then scan again. |
 | `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed.` | [Install dependencies](#dependencies-arent-installed), then scan again. |
 | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared.` | Run `npx nuxt prepare`, then scan again. |
 | `Error: Couldn't upload the scan: no uses were found.` | The scan found no uses. See [Check that the scan reads your files](/docs/guides/configure-a-scan#check-that-the-scan-reads-your-files). |
