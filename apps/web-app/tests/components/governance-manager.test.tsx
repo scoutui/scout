@@ -186,18 +186,22 @@ describe("GovernanceManager", () => {
     expect(countText(groupHeader("@acme/forms"))).toContain("17");
   });
 
-  it("folds finished packages behind Show N complete", () => {
+  it("folds finished packages behind Show N complete, which opens with each package open, and each still folds from its own button", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const toggle = screen.getByRole("button", { name: "Show 1 complete" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(row("r-done")).toBeNull();
     fireEvent.click(toggle);
-    openPackages();
     expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+    const fold = screen.getByRole("button", { name: "Records in @legacy/ui" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
     expect(within(row("r-done")).getByRole("link", { name: "None left , trend for OldThing" })).toHaveAttribute(
       "href",
       "/charts/retirement%3Ar-done",
     );
+    fireEvent.click(fold);
+    expect(fold).toHaveAttribute("aria-expanded", "false");
+    expect(row("r-done")).toBeNull();
   });
 
   it("starts every package folded and opens and folds one from its own button, and a search shows matches in a folded package, without fold buttons, until it's cleared", () => {
@@ -261,7 +265,6 @@ describe("GovernanceManager", () => {
   it("keeps the edit form as it is, and focus on the toggle, when the complete section folds", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Show 1 complete" }));
-    openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit OldThing" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     const heading = screen.getByRole("heading", { name: "Edit record" });
