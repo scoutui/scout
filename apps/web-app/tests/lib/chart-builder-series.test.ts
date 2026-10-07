@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { CohortSelector } from "@scoutui/web-shared";
-import { deprecatedShare, deprecatedShareText, offersDeprecatedOnly, type LibraryTag } from "@/lib/chart-builder-series";
-import type { PickableComponent } from "@/components/dashboards/series-picker";
+import { deprecatedShare, deprecatedShareText, offersDeprecatedOnly, type LibraryTag, type PickableComponent } from "@/lib/chart-builder-series";
 
 const comp = (componentId: string, packageName: string | null, deprecated = false): PickableComponent =>
-  ({ componentId, displayName: componentId, packageName, disambiguator: null, deprecated });
+  ({ componentId, displayName: componentId, packageName, disambiguator: null, deprecated, occurrences: 1, local: false });
 const vueKits: LibraryTag = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: ["ant-design-vue*"], exact: ["naive-ui"] } };
 const reactKits: LibraryTag = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const components = [

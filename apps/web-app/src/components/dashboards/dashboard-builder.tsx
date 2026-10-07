@@ -1,15 +1,16 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CircleX } from "lucide-react";
 import type { ChartRange, ChartType, ChartVisibility, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
-import { type LibraryTag, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
+import { type LibraryTag, type PickableComponent, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
+import { searchSeries } from "@/lib/identity-search";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
 import { type ChartCohort, chartColors, deprecatedOnlyKeys, drawnChartCohorts } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
-import { SeriesPicker, type PickableComponent } from "@/components/dashboards/series-picker";
+import { GroupedIdentityPicker } from "@/components/governance/grouped-identity-picker";
 import { SeriesLegend, type LegendSeries } from "@/components/dashboards/series-legend";
 import { SeriesEmptyState } from "@/components/dashboards/series-empty-state";
 import { Input } from "@/components/ui/input";
@@ -70,7 +71,7 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; glyph: React.ReactNo
  * Chart builder. A controls strip holds the name, scope, chart type and metric, then
  * the description, who can see the chart, Cancel and Save; a series rail beside the
  * chart lists the current series (remove, or narrow a package or tag series to its
- * deprecated components from the row menu) above an always-open picker. Controls build a
+ * deprecated components from the row menu) above a search box that adds them. Controls build a
  * DashboardConfig, and the preview re-projects it through previewDashboard, keeping
  * only the latest request's result.
  */
@@ -180,17 +181,21 @@ export function DashboardBuilder({
   // stacked-share is inherently a share view; force the metric so preview + save agree.
   const effectiveMetric: DashboardMetric = chartType === "stacked-share" ? "share" : metric;
 
-  // The picker's Groups section holds the library tags, only those the repo's components
-  // use under a repo scope, plus a synthetic entry that adds the `local` series.
-  const pickerGroups = useMemo(
-    () => [
-      ...(scopedPickable ? tagsInUse(libraryTags, scopedPickable.components) : libraryTags).map((t) => ({ id: t.id, label: t.label })),
-      { id: "__local", label: "Local components", selector: { kind: "local" as const } },
-    ],
+  // Under a repo scope, the search offers only the tags the repo's components use.
+  const pickerTags = useMemo(
+    () => (scopedPickable ? tagsInUse(libraryTags, scopedPickable.components) : libraryTags),
     [libraryTags, scopedPickable],
   );
+  const pickerPackages = scopedPickable?.packages ?? packages;
+  const selectedKeys = useMemo(() => new Set(cohorts.map(selectorKey)), [cohorts]);
+  const [seriesScope, setSeriesScope] = useState<string | null>(null);
+  const searchSeriesRows = useCallback(
+    (query: string, scope: string | null) =>
+      searchSeries({ tags: pickerTags, components: pickable, packages: pickerPackages, query, scope, added: selectedKeys }),
+    [pickerTags, pickable, pickerPackages, selectedKeys],
+  );
 
-  // The picker toggles: picking an already-added selector removes it (the picker
+  // The search toggles: picking an already-added selector removes it (the list
   // stays open for multi-add, so rows behave like checkable entries).
   function toggleSeries(sel: CohortSelector) {
     setCohorts((prev) =>
@@ -319,8 +324,6 @@ export function DashboardBuilder({
     setError(actionErrorMessage(res?.error, "save this chart", "Couldn't save the chart. Try again."));
   }
 
-
-  const selectedKeys = new Set(cohorts.map(selectorKey));
   const nameMissing = !name.trim();
 
   return (
@@ -483,13 +486,24 @@ export function DashboardBuilder({
             <BuilderReadError message="Couldn't load this repo's components." retryLabel="Try again" onRetry={() => setPickerRetry(n => n + 1)} />
           ) : scopeRepoId && !scopedPickable ? (
             <output className="text-sm text-muted-foreground">Loading…</output>
-          ) : <SeriesPicker
-            components={pickable}
-            packages={scopedPickable?.packages ?? packages}
-            groups={pickerGroups}
-            selectedKeys={selectedKeys}
-            onPick={toggleSeries}
-          />}
+          ) : (
+            <div>
+              <label id="series-search-label" htmlFor="series-search" className="sr-only">
+                Add a series
+              </label>
+              <GroupedIdentityPicker
+                id="series-search"
+                labelId="series-search-label"
+                search={searchSeriesRows}
+                multiple
+                onSelect={toggleSeries}
+                scope={seriesScope}
+                onScopeChange={setSeriesScope}
+                placeholder="Add a series"
+                emptyText="Nothing scanned yet"
+              />
+            </div>
+          )}
         </aside>
 
         <div className="min-w-0 space-y-4">

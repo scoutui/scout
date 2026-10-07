@@ -9,7 +9,7 @@ import { readModelPage } from "@/lib/read-model-page";
 import type { ReadModelResult } from "@/lib/read-model-state";
 import { isDerivedId } from "@/lib/derived-dashboards";
 import { loadDashboardView, type DashboardView } from "@/lib/dashboard-load";
-import type { PickableComponent } from "@/components/dashboards/series-picker";
+import type { PickableComponent } from "@/lib/chart-builder-series";
 
 const ChartFormSchema = DashboardInputSchema.omit({ createdByUserId: true });
 
@@ -107,6 +107,8 @@ export async function pickableForRepo(repoId: string): Promise<ReadModelResult<{
     packageName: r.packageName,
     disambiguator: r.disambiguator,
     deprecated: r.deprecated,
+    occurrences: r.occurrenceCount,
+    local: r.scope === "local",
   }));
   const packages = packageList
     .map((p) => p.packageName)

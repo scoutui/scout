@@ -45,23 +45,23 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
 5. Under **Metric**, keep **Uses** to chart uses, or pick **% of uses** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **% of uses** when you pick it.
-6. In the **Series** panel, on the **Tags** tab, press `acme-ui`, then `acme-ui-legacy`. Each gets a `✓` and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
+6. In the **Series** panel, press **Add a series** and pick `acme-ui`, then `acme-ui-legacy`; tags come first in the list. Each gets a check and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
 7. Under **Visibility**, keep **Private** so only you and Admins can open the chart, or pick **Shared** so everyone signed in can.
 8. Press **Save chart**. The chart opens on its own page and appears under **Private** or **Shared charts** on the charts page.
 
-![The new chart builder with All repos, Trend, the vben and payload-ui tags as series, Private picked under Visibility, and the live preview](/img/dashboard/chart-builder.png)
+![The new chart builder with the vben and payload-ui tags as series and the live preview, and the Add a series list open on the tags, the two added ones checked](/img/dashboard/chart-builder.png)
 
 If the preview reads **Trends appear once these repos have been scanned more than once.**, the repos in scope have only been scanned once. Save the chart anyway: it fills in as new scans arrive.
 
 ### Add other kinds of series
 
-The picker's other entries chart more than tags:
+**Add a series** charts more than tags. With nothing typed, it lists your tags, then **Local components**, then packages, most used first. Type to search: matching tags and packages come first, then components, best match first.
 
-- **Local components**, at the end of the **Tags** tab, counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
-- The **Packages** tab adds one package, such as `@acme/icons`.
-- The **Components** tab adds one component, such as `Button` from `@acme/ui`. When two components share a name, the subpath one shows its entry point beside the package, such as `@acme/ui · button`.
+- **Local components** counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
+- A package narrows the search to itself. Its first row, **All of** and the package's name, adds the whole package, such as `@acme/icons`, as one series. Press **×** beside the package in the box to search everything again.
+- A component adds just that component, such as `Button` from `@acme/ui`. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
 
-With one repo picked under **Repos**, the **Tags**, **Packages** and **Components** tabs list only what that repo's latest scan contains. A tab shows at most 50 entries, so type into the search box to find the rest. To remove a series, press its **×** in the list, or press its entry in the picker again.
+With one repo picked under **Repos**, the list holds only what that repo's latest scan contains. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list, or pick it in **Add a series** again.
 
 ### Count only deprecated components
 

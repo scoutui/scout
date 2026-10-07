@@ -11,7 +11,7 @@ export function PackageName({ name }: { name: string }) {
   return (
     <span className="@container flex min-w-0 font-mono" style={{ "--chars": name.length } as CSSProperties}>
       <span className="if-name-fits shrink-0 text-faint">{name.slice(0, slash)}</span>
-      <span className="if-name-overflows shrink-0 text-faint">@…</span>
+      <span aria-hidden className="if-name-overflows shrink-0 text-faint">@…</span>
       <span className="min-w-0 truncate">{name.slice(slash)}</span>
     </span>
   );

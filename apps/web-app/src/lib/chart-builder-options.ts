@@ -1,6 +1,5 @@
 import { libraryTags, type StorageDriver } from "@scoutui/web-shared";
-import type { PickableComponent } from "@/components/dashboards/series-picker";
-import type { LibraryTag } from "@/lib/chart-builder-series";
+import type { LibraryTag, PickableComponent } from "@/lib/chart-builder-series";
 
 export type ChartBuilderOptions = {
   libraryTags: LibraryTag[];
@@ -24,6 +23,8 @@ export async function chartBuilderOptions(snapshot: StorageDriver): Promise<Char
       packageName: c.packageName,
       disambiguator: c.disambiguator,
       deprecated: c.deprecated,
+      occurrences: c.totalOccurrences,
+      local: c.scope === "local",
     })),
     packages: packageList.map((p) => p.packageName).sort((a, b) => a.localeCompare(b)),
   };

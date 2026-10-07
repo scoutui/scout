@@ -38,7 +38,7 @@ describe("pickableForRepo", () => {
     expect(result.state).toBe("ready");
     if (result.state !== "ready") throw new Error("Expected ready picker");
     expect(result.value.packages).toEqual(["@x/aggregate", "@x/lib"]);
-    expect(result.value.components).toEqual([{ componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", disambiguator: null, deprecated: true }]);
+    expect(result.value.components).toEqual([{ componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", disambiguator: null, deprecated: true, occurrences: 3, local: false }]);
   });
 
   it("returns no options when the repo has no scan", async () => {
