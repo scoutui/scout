@@ -127,6 +127,25 @@ describe("deriveGovernanceTracking: migrations", () => {
     expect(m?.active).toBe(false);
     expect(m?.remaining).toBe(0);
   });
+
+  it.each([
+    ["a repo with only replacement uses doesn't count", [...scans, digest("r2", "2026-01-03T00:00:00Z", [[pb, 90]])], 6 / 10, [2, 6], 1],
+    ["a repo with the old component at 0 uses doesn't count", [...scans, digest("r2", "2026-01-03T00:00:00Z", [[btn, 0], [pb, 90]])], 6 / 10, [2, 6], 1],
+    ["a repo that used the old component in an earlier scan and has none left counts", [
+      digest("r2", "2026-01-01T00:00:00Z", [[btn, 5], [pb, 1]]),
+      digest("r2", "2026-01-03T00:00:00Z", [[btn, 0], [pb, 7]]),
+    ], 1, [1, 7], 1],
+    ["two repos with old uses both count", [...scans, digest("r2", "2026-01-03T00:00:00Z", [[btn, 30], [pb, 90]])], 96 / 130, [2, 6, 96], 2],
+    ["no repo has used the old component: no percentage", [
+      digest("r2", "2026-01-01T00:00:00Z", [[btn, 0], [pb, 5]]),
+      digest("r2", "2026-01-03T00:00:00Z", [[btn, 0], [pb, 9]]),
+    ], null, [], 0],
+  ])("only repos that have used the old component count: %s", (_, digests, progress, successor, repos) => {
+    const [m] = deriveGovernanceTracking([record("g1", {})], digests, { kind: "all" }, asOf);
+    expect(m?.progress).toEqual(progress === null ? null : expect.closeTo(progress));
+    expect(m?.series[1]?.points.map((p) => p.value)).toEqual(successor);
+    expect(m?.coverage.total).toBe(repos);
+  });
 });
 
 describe("deriveGovernanceTracking: retirements", () => {

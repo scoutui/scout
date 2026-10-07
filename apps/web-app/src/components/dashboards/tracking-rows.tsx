@@ -159,12 +159,16 @@ function RepoRow({ entry, defaultOpen }: { entry: GovernanceTracking; defaultOpe
       <div className="border-t px-4 pb-4 pt-4">
         {/* Both kinds open onto counts over time: a migration is the
             deprecated + successor pair, a retirement the lone deprecated series. */}
-        <LazyCohortTrendChart
-          series={entry.series}
-          coverage={entry.coverage}
-          colors={chartColors(savedChartCohorts(entry.config.cohorts, entry.series))}
-          metric="count"
-        />
+        {entry.coverage.total === 0 ? (
+          <p className="text-sm text-muted-foreground">This repo hasn't used {entry.fromLabel}, so there's nothing to migrate.</p>
+        ) : (
+          <LazyCohortTrendChart
+            series={entry.series}
+            coverage={entry.coverage}
+            colors={chartColors(savedChartCohorts(entry.config.cohorts, entry.series))}
+            metric="count"
+          />
+        )}
       </div>
     </details>
   );

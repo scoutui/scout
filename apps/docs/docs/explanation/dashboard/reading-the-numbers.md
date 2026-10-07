@@ -80,9 +80,9 @@ If `checkout` has 30 uses of `LegacyButton` and 90 of its replacement `Button`, 
 
 The denominator is the pair, not every use in the repo. A migration asks how much of the old one is left and how much of the new one has arrived, so the rest of the repo doesn't dilute it. A repo that also uses a charting library and a router shows the same progress as a repo that uses nothing else.
 
-The replacement side counts every use of the replacement within the scope, including uses that never replaced anything. On a repo's **Adoption** tab the scope is that repo; on the **charts** page it is every repo. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page reads **94.2% migrated** (490 ÷ 520), while `checkout`'s **Adoption** tab still reads 75%.
+The replacement side counts only in repos that have used the deprecated side in some scan, so a repo that never needed to migrate doesn't raise the figure. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page still reads **75% migrated**, the same as `checkout`'s **Adoption** tab. A repo that has finished still counts, at 100%, because it used `LegacyButton` before. A repo first scanned after it finished has no uses of `LegacyButton` on record, so it isn't counted until you [fill in its history](/docs/guides/fill-in-a-repos-history).
 
-The replacement side counts only the component or package the record names. Until a repo in the scope uses it, the row reads **0% migrated**.
+The replacement side counts only the component or package the record names. Until a repo that used the deprecated side uses it, the row reads **0% migrated**.
 
 A retirement has no replacement, so there is nothing to divide. It reads **N left**, the uses still in the code.
 
