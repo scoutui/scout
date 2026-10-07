@@ -50,7 +50,7 @@ The **Usage** tab has a column of filters beside the list of files that use the 
 
 ### Filter by package or folder
 
-**Where it’s used** lists the folders the uses are in, with how many uses each holds. When every use sits under one folder, the heading says so, as in **under** `src/`, and the list starts one level below it. When the uses sit in more than one of the repo's packages, as in a monorepo, **Where it’s used** reads **Used in** and lists those packages instead of folders, such as `@acme/web` and `@acme/admin`.
+**Where it’s used** lists the folders the uses are in, with how many uses each holds. When every use sits under one folder, the heading says so, as in **under** `src/`, and the list starts one level below it. When the uses sit in more than one of the repo's packages, as in a monorepo, **Where it’s used** reads **Used in** and lists those packages instead of folders, such as `@acme/web` and `@acme/admin`. When they all sit in one package, the heading names it, as in **Used in** `@acme/web`, and the list shows that package's folders.
 
 Press a folder or package to keep only its uses, and press it again to remove the filter. For a [deprecated](/docs/reference/glossary#deprecated) component the heading reads **Where it’s still used**, or **Still used in** for packages.
 
