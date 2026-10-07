@@ -142,6 +142,7 @@ export function CohortBarChart({
           tick={<BarTick rows={rows} />}
         />
         <ChartTooltip
+          isAnimationActive={false}
           content={
             <ChartTooltipContent
               hideLabel

@@ -84,6 +84,15 @@ export function dayTicks(rows: Array<Record<string, string | number>>): number[]
   return ticks;
 }
 
+const TOOLTIP_ROWS = 10;
+
+/** A tooltip's rows: the largest values at that scan first, at most ten, and how many series that leaves out. */
+export function tooltipRows<T extends { value?: unknown }>(payload: readonly T[] | undefined): { rows: T[]; more: number } {
+  const size = (item: T) => (item.value === undefined ? Number.NEGATIVE_INFINITY : Number(item.value));
+  const sorted = [...(payload ?? [])].sort((a, b) => size(b) - size(a));
+  return { rows: sorted.slice(0, TOOLTIP_ROWS), more: Math.max(0, sorted.length - TOOLTIP_ROWS) };
+}
+
 /**
  * Reads the epoch-ms `ts` off the hovered or focused tooltip row, for the numeric
  * time axis. Once the x-axis is numeric, shadcn's `ChartTooltipContent` passes

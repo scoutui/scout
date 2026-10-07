@@ -64,24 +64,15 @@ const drawn = (chartConfig: DashboardConfig, view: DashboardView): ChartFigure =
 
 describe("chartFigure", () => {
   const cases: Array<[string, DashboardConfig, DashboardView, string, Array<{ label: string; value: string; color: string }>]> = [
+    ["a trend: no legend, since its line ends are named", config("trend"), trendView, "1 Sep – 3 Sep 2026 · 2 repos", []],
     [
-      "a trend: each series' latest value",
-      config("trend"),
-      trendView,
-      "1 Sep – 3 Sep 2026 · 2 repos",
-      [
-        { label: "@example/web", value: "50", color: "#008080" },
-        { label: "Button · @example/ui", value: "125", color: "#7a3fd1" },
-      ],
-    ],
-    [
-      "a stacked chart: each series' latest share of the latest total",
+      "a stacked chart: each series' latest share of the latest total, largest first",
       config("stacked-share"),
       stackedView,
       "1 Sep – 3 Sep 2026 · 2 repos",
       [
-        { label: "@example/web", value: "25%", color: "#008080" },
         { label: "Button · @example/ui", value: "75%", color: "#7a3fd1" },
+        { label: "@example/web", value: "25%", color: "#008080" },
       ],
     ],
     ["bars: no legend", config("bars"), barsView, "All repos · latest scans", []],
@@ -133,7 +124,7 @@ describe("chartFigure", () => {
   const frameTexts = ["Button adoption", "Scout · scout.example.com · exported 4 Oct 2026"];
   const textCases: Array<[string, DashboardConfig, DashboardView, string[]]> = [
     [
-      "a trend: title, subtitle, axes, legend, end labels and footer",
+      "a trend: title, subtitle, axes, end labels and footer",
       config("trend"),
       trendView,
       [
@@ -141,7 +132,6 @@ describe("chartFigure", () => {
         ...["0", "50", "100", "150"],
         ...["1 Sep", "3 Sep"],
         ...["@example/web", "50", "Button · @example/ui", "125"],
-        ...["50", "125"],
       ],
     ],
     [
@@ -232,18 +222,94 @@ describe("chartFigure", () => {
     expect(result.plot.x - (result.marks.bars[0]?.name.x ?? 0)).toBe(gap);
   });
 
-  const endLabels: Array<[string, number, string[]]> = [
-    ["labels each line's end when the labels stand apart", 5, ["50", "5"]],
-    ["labels no line's end when two labels would overlap", 49, []],
-  ];
+  const endLabelTexts = (result: ChartFigure) =>
+    result.marks.kind === "lines" ? result.marks.endLabels.map((l) => [l.name.text, l.value.text]) : null;
+  const twoLines = (webLatest: number, buttonLatest: number): DashboardView => ({
+    kind: "series",
+    series: [
+      { ...web, points: [{ t: MORNING, value: 30 }, { t: LATER, value: webLatest }] },
+      { ...button, points: [{ t: MORNING, value: 20 }, { t: LATER, value: buttonLatest }] },
+    ],
+    coverage,
+  });
 
-  it.each(endLabels)("%s", (_, otherLatest, labels) => {
-    const series: CohortSeries[] = [
-      { ...web, points: [{ t: MORNING, value: 30 }, { t: LATER, value: 50 }] },
-      { ...button, points: [{ t: MORNING, value: 20 }, { t: LATER, value: otherLatest }] },
-    ];
-    const result = drawn(config("trend"), { kind: "series", series, coverage });
-    expect(result.marks.kind === "lines" ? result.marks.endLabels.map((l) => l.text) : null).toEqual(labels);
+  it("names each line's end with its latest value, top to bottom", () => {
+    expect(endLabelTexts(drawn(config("trend"), twoLines(5, 50)))).toEqual([
+      ["Button · @example/ui", "50"],
+      ["@example/web", "5"],
+    ]);
+  });
+
+  it("moves a label clear of the one above it and joins it to its line's end", () => {
+    const result = drawn(config("trend"), twoLines(50, 49));
+    if (result.marks.kind !== "lines") throw new Error("expected lines");
+    const [upper, lower] = result.marks.endLabels;
+    expect(upper?.name.text).toBe("@example/web");
+    expect((lower?.name.y ?? 0) - (upper?.name.y ?? 0)).toBeGreaterThanOrEqual(18);
+    const end = result.marks.lines[1]?.points.at(-1);
+    expect(lower?.leader[0]?.y).toBe(end?.y);
+    expect(lower?.leader.at(-1)?.y).toBe(lower?.name.y);
+    expect(lower?.value.y).toBe(lower?.name.y);
+  });
+
+  const many = (n: number): CohortSeries[] =>
+    Array.from({ length: n }, (_, i) => ({
+      cohortKey: `package:@example/p${i}`,
+      label: `@example/p${i}`,
+      color: "",
+      points: [{ t: MORNING, value: 100 }, { t: LATER, value: i }],
+    }));
+  const manyConfig = (chartType: DashboardConfig["chartType"], series: CohortSeries[]): DashboardConfig => ({
+    ...config(chartType),
+    cohorts: series.map((s) => ({ kind: "package", packageName: s.label })),
+  });
+  const manyFigure = (chartType: DashboardConfig["chartType"], n: number) =>
+    drawn(manyConfig(chartType, many(n)), { kind: "series", series: many(n), coverage });
+
+  it("names the ten lines with the highest latest value, apart and inside the plot, and counts the rest under it", () => {
+    const result = manyFigure("trend", 12);
+    if (result.marks.kind !== "lines") throw new Error("expected lines");
+    expect(result.marks.lines).toHaveLength(12);
+    expect(result.marks.endLabels.map((l) => l.name.text)).toEqual(Array.from({ length: 10 }, (_, i) => `@example/p${11 - i}`));
+    result.marks.endLabels.slice(1).forEach((label, i) => {
+      expect(label.name.y - (result.marks.kind === "lines" ? (result.marks.endLabels[i]?.name.y ?? 0) : 0)).toBeGreaterThanOrEqual(18);
+    });
+    for (const label of result.marks.endLabels) {
+      expect(label.name.y).toBeGreaterThanOrEqual(result.plot.y);
+      expect(label.name.y).toBeLessThanOrEqual(result.plot.y + result.plot.height);
+    }
+    expect(result.note?.text).toBe("2 more series");
+    expect(result.note?.y).toBeGreaterThan(result.plot.y + result.plot.height);
+  });
+
+  it("lists a stacked chart's eight largest series and counts the rest", () => {
+    const result = manyFigure("stacked-share", 12);
+    expect(result.legend.map((e) => e.label)).toEqual(Array.from({ length: 8 }, (_, i) => `@example/p${11 - i}`));
+    expect(result.note?.text).toBe("4 more series");
+  });
+
+  it.each([["trend", 12] as const, ["stacked-share", 10] as const])("keeps a %s chart's plot as tall with 50 series as with %i", (chartType, fewer) => {
+    expect(manyFigure(chartType, 50).plot.height).toBe(manyFigure(chartType, fewer).plot.height);
+  });
+
+  it.each([["trend"] as const, ["bars"] as const])("names a package every series shares once, in a %s chart's subtitle", (chartType) => {
+    const card = { cohortKey: "component:card", label: "Card · @example/ui", color: "" };
+    const shared: DashboardConfig = { ...config(chartType), cohorts: [{ kind: "component", componentId: "btn" }, { kind: "component", componentId: "card" }] };
+    const view: DashboardView =
+      chartType === "bars"
+        ? { kind: "snapshot", points: [{ ...button, value: 125, componentCount: 1 }, { ...card, value: 40, componentCount: 1 }] }
+        : {
+            kind: "series",
+            series: [
+              { ...button, points: [{ t: MORNING, value: 5 }, { t: LATER, value: 125 }] },
+              { ...card, points: [{ t: MORNING, value: 30 }, { t: LATER, value: 40 }] },
+            ],
+            coverage,
+          };
+    const result = drawn(shared, view);
+    expect(result.subtitle.text).toMatch(/ · @example\/ui$/);
+    const names = result.marks.kind === "lines" ? result.marks.endLabels.map((l) => l.name.text) : result.marks.kind === "bars" ? result.marks.bars.map((b) => b.name.text) : [];
+    expect(names).toEqual(["Button", "Card"]);
   });
 
   const scannedOnce: CohortSeries[] = countSeries.map((s) => ({ ...s, points: s.points.slice(-1) }));

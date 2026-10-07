@@ -35,6 +35,10 @@ const points: CohortPoint[] = [
 const colors: Record<string, string> = {
   "var(--viz-primary)": "#008080",
   "var(--viz-cat-2)": "#7a3fd1",
+  "var(--viz-cat-3)": "#1f5fa8",
+  "var(--viz-cat-4)": "#b0306a",
+  "var(--viz-cat-5)": "#c45bd6",
+  "var(--viz-local)": "#b5b8bd",
   background: "#ffffff",
   ink: "#1c1d20",
   muted: "#5d6067",
@@ -83,10 +87,23 @@ function recorder(charWidth: number): { ctx: FigureContext; calls: Call[] } {
 
 const textsDrawn = (calls: Call[]) => calls.filter((c) => c.op === "fillText").map((c) => String(c.args[0]));
 
+const many: CohortSeries[] = Array.from({ length: 12 }, (_, i) => ({
+  cohortKey: `package:@example/p${i}`,
+  label: `@example/p${i}`,
+  color: "",
+  points: [{ t: MORNING, value: 100 }, { t: LATER, value: i }],
+}));
+const manyConfig = (chartType: DashboardConfig["chartType"]): DashboardConfig => ({
+  ...config(chartType),
+  cohorts: many.map((s) => ({ kind: "package", packageName: s.label })),
+});
+
 describe("paintFigure", () => {
   const cases: Array<[string, DashboardConfig, DashboardView]> = [
     ["a trend", config("trend"), { kind: "series", series: countSeries, coverage }],
+    ["a trend with more lines than it names", manyConfig("trend"), { kind: "series", series: many, coverage }],
     ["a stacked chart", config("stacked-share"), { kind: "series", series: shareSeries, coverage }],
+    ["a stacked chart with more series than its legend lists", manyConfig("stacked-share"), { kind: "series", series: many, coverage }],
     ["bars", config("bars"), { kind: "snapshot", points }],
   ];
 
