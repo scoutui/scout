@@ -46,7 +46,7 @@ It has two tabs: **Usage** (the default) and **Composition**. The tab you pick, 
 
 ![The Usage tab for Button in payloadcms/payload, with secondary picked under buttonStyle, its pill above the file list, and one file open to its uses with Rendered by](/img/dashboard/component-usage-tab.png)
 
-The **Usage** tab has a column of filters beside the list of files that use the component. On a narrow window the filters fold away above the list: press **Filter**, or **Where it’s used and prop values**, to show them.
+The **Usage** tab has a column of filters beside the list of files that use the component. On a narrow window the filters fold away above the list: press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show them.
 
 ### Filter by package or folder
 
