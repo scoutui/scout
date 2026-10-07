@@ -78,6 +78,13 @@ const groupHeader = (packageName: string) =>
 const countCell = (tr: HTMLElement) => tr.children[tr.children.length - 2] as HTMLElement;
 const countText = (tr: HTMLElement) => countCell(tr).textContent?.trim();
 
+/** Opens every folded package, as packages start folded. */
+function openPackages() {
+  for (const button of screen.queryAllByRole("button", { name: /^Records in / })) {
+    if (button.getAttribute("aria-expanded") === "false") fireEvent.click(button);
+  }
+}
+
 describe("GovernanceManager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -86,6 +93,7 @@ describe("GovernanceManager", () => {
 
   it("shows one Records table with the name, replacement or reason, and uses left columns", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     expect(screen.getByText("6 records")).toBeInTheDocument();
     const table = screen.getByRole("table", { name: "Records" });
     expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
@@ -100,6 +108,7 @@ describe("GovernanceManager", () => {
 
   it("says on every row whether the record is superseded or retired", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     const button = row("r1");
     expect(button.children[1]?.textContent).toBe("Replaced by");
     expect(button.children[2]?.textContent).toContain("Button · @acme/new");
@@ -110,6 +119,7 @@ describe("GovernanceManager", () => {
 
   it("links each count to the record's trend, named by its visible text and the record", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     const button = screen.getByRole("link", { name: "20 left in 2 repos , trend for Button" });
     expect(button).toHaveAttribute("href", "/charts/migration%3Ar1");
     expect(button).not.toHaveAttribute("aria-label");
@@ -121,6 +131,7 @@ describe("GovernanceManager", () => {
 
   it("drops the repo from counts when fewer than two repos are scanned", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={1} summary={null} authors={{}} notice={null} />);
+    openPackages();
     expect(screen.getByRole("link", { name: "17 left , trend for Field" })).toBeInTheDocument();
     expect(countText(row("r3"))).not.toContain("repo-a");
   });
@@ -137,6 +148,7 @@ describe("GovernanceManager", () => {
 
   it("links a name to its component page, or its package page for a whole package, and leaves it plain when nothing is left to show", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     expect(within(row("r1")).getByRole("link", { name: "Button" })).toHaveAttribute("href", "/components/c-button");
     expect(within(row("r-icons")).getByRole("link", { name: "old-icons" })).toHaveAttribute("href", "/packages/old-icons");
     expect(row("r-icons").textContent).toContain("Whole package · 2 components");
@@ -154,6 +166,7 @@ describe("GovernanceManager", () => {
 
   it("shows no data in every count and total while results are rebuilding", () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     const table = screen.getByRole("table", { name: "Records" });
     const rows = [...table.querySelectorAll<HTMLElement>("tbody > tr")];
     expect(rows).toHaveLength(9);
@@ -166,29 +179,41 @@ describe("GovernanceManager", () => {
   it("shows no data for a record saved since the last rebuild, and for its package's total, keeping the other counts", () => {
     const { r2: _saved, ...rest } = stats;
     render(<GovernanceManager records={records} sources={sources} stats={rest} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     expect(countText(row("r2"))).toBe("No data");
     expect(countText(groupHeader("@acme/old"))).toBe("No data");
     expect(screen.getByRole("link", { name: "20 left in 2 repos , trend for Button" })).toBeInTheDocument();
     expect(countText(groupHeader("@acme/forms"))).toContain("17");
   });
 
-  it("folds finished packages behind Show N complete", () => {
+  it("folds finished packages behind Show N complete, which opens with each package open, and each still folds from its own button", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const toggle = screen.getByRole("button", { name: "Show 1 complete" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(row("r-done")).toBeNull();
     fireEvent.click(toggle);
     expect(screen.getByRole("button", { name: "1 complete" })).toHaveAttribute("aria-expanded", "true");
+    const fold = screen.getByRole("button", { name: "Records in @legacy/ui" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
     expect(within(row("r-done")).getByRole("link", { name: "None left , trend for OldThing" })).toHaveAttribute(
       "href",
       "/charts/retirement%3Ar-done",
     );
+    fireEvent.click(fold);
+    expect(fold).toHaveAttribute("aria-expanded", "false");
+    expect(row("r-done")).toBeNull();
   });
 
-  it("folds and unfolds a package from its own button, and a search shows matches in a folded package, without fold buttons, until it's cleared", () => {
+  it("starts every package folded and opens and folds one from its own button, and a search shows matches in a folded package, without fold buttons, until it's cleared", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const fold = screen.getByRole("button", { name: "Records in @acme/old" });
+    expect(fold).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Records in @acme/forms" })).toHaveAttribute("aria-expanded", "false");
+    expect(row("r1")).toBeNull();
+    expect(row("r3")).toBeNull();
+    fireEvent.click(fold);
     expect(fold).toHaveAttribute("aria-expanded", "true");
+    expect(row("r1")).not.toBeNull();
     fireEvent.click(fold);
     expect(fold).toHaveAttribute("aria-expanded", "false");
     expect(row("r1")).toBeNull();
@@ -203,6 +228,17 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("button", { name: "Records in @acme/old" })).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(screen.getByRole("button", { name: "Records in @acme/old" }));
     expect(row("r1")).not.toBeNull();
+  });
+
+  it("opens the package of a record linked from another page, leaving the other packages folded, and keeps it open once the mark clears", () => {
+    window.location.hash = "#record-r3";
+    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    expect(row("r3")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("button", { name: "Records in @acme/forms" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Records in @acme/old" })).toHaveAttribute("aria-expanded", "false");
+    fireEvent.pointerDown(document.body);
+    expect(row("r3")).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: "Records in @acme/forms" })).toHaveAttribute("aria-expanded", "true");
   });
 
   it("opens the complete section, without its toggle, while a search matches a finished package", () => {
@@ -244,6 +280,7 @@ describe("GovernanceManager", () => {
 
   it("keeps the edit form as it is, and focus on the fold button, when its package folds", () => {
     render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     const heading = screen.getByRole("heading", { name: "Edit record" });
@@ -264,6 +301,7 @@ describe("GovernanceManager", () => {
     ];
     const chainStats = { a: { status: "active", left: 1, leftIn: ["repo-a"], componentIds: [], trackingId: "migration:a", successorDeprecated: true } as RecordStat };
     render(<GovernanceManager records={chain} sources={sources} stats={chainStats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     expect(screen.getByText("Replacement deprecated")).toBeInTheDocument();
     expect(screen.getByText("→ Input · @acme/new")).toBeInTheDocument();
   });
@@ -316,6 +354,7 @@ describe("GovernanceManager", () => {
 
   it("opens the form via Add record for a non-empty registry, closing an open edit form", () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    openPackages();
     expect(screen.queryByRole("heading", { level: 2, name: "New record" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: /add record/i }));
@@ -337,6 +376,7 @@ describe("GovernanceManager", () => {
 
   it("opens Edit in the record's row and moves focus into the form, and Cancel returns focus to its Edit button", () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     const row = document.getElementById("record-r1");
     expect(row).not.toBeNull();
@@ -356,6 +396,7 @@ describe("GovernanceManager", () => {
       );
       const authors = { r1: { createdBy: "Ana", updatedBy: "Sam" } };
       render(<GovernanceManager records={changed} sources={sources} stats={{}} repoCount={3} summary={null} authors={authors} notice={null} />);
+      openPackages();
       fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
       expect(within(row("r1")).getByText("Added by Ana on 2 Oct · changed by Sam on 3 Oct")).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Add record" }));
@@ -368,6 +409,7 @@ describe("GovernanceManager", () => {
 
   it("deletes from the edit form after a confirm, then focuses Add record", async () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(screen.getByRole("button", { name: "Delete" })).toHaveAccessibleDescription("Delete this record?");
@@ -381,6 +423,7 @@ describe("GovernanceManager", () => {
 
   it("keeps the edited row on screen while the search hides its record", () => {
     render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "chip" } });
     expect(screen.getByRole("heading", { name: "Edit record" })).toBeInTheDocument();
@@ -397,6 +440,7 @@ describe("GovernanceManager", () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     vi.mocked(saveGovernance).mockResolvedValueOnce({ ok: true, id: "r1" });
     const { rerender } = render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "chip" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));

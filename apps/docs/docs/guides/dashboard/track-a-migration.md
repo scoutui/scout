@@ -46,7 +46,9 @@ Retire a component when it is being removed with no replacement, for example `Mo
 
 As soon as you save, every component the record covers shows as deprecated in every repo: warning icons, **deprecated** chips and the **Deprecated** columns. That includes scans already uploaded, so no rescan is needed. A record on `Card` covers it from every import path, such as `@acme/ui` and `@acme/ui/card`, and its parts, such as `Card.Header`.
 
-The **governance** page then shows how much of each record's package or component is still in use, and where. Each record's **Uses left** reads one of these:
+The **governance** page then shows how much of each record's package or component is still in use, and where. Records are listed by package, and each package starts folded to one line with its name, how many records it holds and its uses left in total. Press the arrow beside a package's name to see its records. A search shows every matching record, and a record you've just added, or followed a link to, opens its package.
+
+Each record's **Uses left** reads one of these:
 
 - A count of [uses](/docs/reference/glossary#use) across every repo's latest scan, such as `17 in acme/storefront`, or `20 in 2 repos` when several repos use it. With only one repo scanned, it's just the number.
 - **None left**: it has been used before, and no repo's latest scan uses it now.

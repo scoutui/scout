@@ -1,7 +1,8 @@
+// @vitest-environment jsdom
 import type { Pool } from "pg";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { enqueueChartResults, PostgresDriver, PROJECTION_VERSION, type Dashboard, type GovernanceRecord, type StorageDriver } from "@scoutui/web-shared";
 import { artifact, component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
@@ -241,12 +242,14 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await driver.updateGovernance(changed.id, { ...button, disposition: { kind: "retired", reason: "Use the new button" } });
       const { default: page } = await import("@/app/governance/page");
       const tree = await page();
-      const rows = renderToStaticMarkup(tree).split("<tr").slice(1).map(tr => tr.slice(0, tr.indexOf("</tr>")));
-      const count = (tr: string | undefined) => tr?.split("<td").at(-2)?.replace(/^[^>]*>|<[^>]+>/g, "").trim();
-      expect(count(rows.find(tr => tr.includes(`id="record-${changed.id}"`)))).toBe("No data");
-      expect(count(rows.find(tr => tr.includes('aria-label="Records in @sample/core"')))).toBe("No data");
-      expect(count(rows.find(tr => tr.includes(`id="record-${kept.id}"`)))).toBe("2 left in 2 repos, trend for Field");
-      expect(count(rows.find(tr => tr.includes('aria-label="Records in @sample/mixed"')))).toBe("2 left in 2 repos");
+      render(tree);
+      const header = (packageName: string) => screen.getByRole("button", { name: `Records in ${packageName}` });
+      for (const packageName of ["@sample/core", "@sample/mixed"]) fireEvent.click(header(packageName));
+      const count = (row: Element | null) => [...(row?.closest("tr")?.querySelectorAll("td") ?? [])].at(-2)?.textContent.trim();
+      expect(count(document.getElementById(`record-${changed.id}`))).toBe("No data");
+      expect(count(header("@sample/core"))).toBe("No data");
+      expect(count(document.getElementById(`record-${kept.id}`))).toBe("2 left in 2 repos, trend for Field");
+      expect(count(header("@sample/mixed"))).toBe("2 left in 2 repos");
       expect(allPropsFor(tree, "GovernanceManager")).toEqual([expect.objectContaining({ summary: "1 in progress" })]);
     });
   });
