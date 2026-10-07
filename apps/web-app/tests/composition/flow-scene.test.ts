@@ -105,6 +105,20 @@ describe("buildScene", () => {
     expect(scene(m, { pin: { dir: "up", id: "P" } }).headings.map((h) => h.text)).toEqual(["Directly · 4", "2 steps away · 4"]);
   });
 
+  // F and d0 are both called PaymentCard; d0 renders F.
+  const namesake = (focusName: string) =>
+    model(graph([node("F", { displayName: focusName, filePath: "src/ui/PaymentCard.tsx" }), node("d0", { displayName: "PaymentCard", filePath: "src/checkout/PaymentCard.tsx" })], [["d0", "F"]]));
+  const box = (s: ReturnType<typeof scene>, id: string) => chips(s).find((c) => c.id === id) as ChipItem;
+
+  it("labels a box that shares the focus's name with what tells it apart, but not the focus", () => {
+    const s = scene(namesake("PaymentCard"));
+    expect([box(s, "focus").fragment, box(s, "up:d0").fragment]).toEqual([null, "checkout"]);
+  });
+
+  it("sizes a box for its name and its label", () => {
+    expect(box(scene(namesake("PaymentCard")), "up:d0").w).toBeGreaterThan(box(scene(namesake("Other")), "up:d0").w);
+  });
+
   // F is rendered directly by d0 and d1, and d0 by p0 and p1 (rendered by,
   // for "down"). Selecting p0 leaves a "+1 more" in each column, both open.
   it.each(["up", "down"] as const)("%s: overlaps nothing with lists open in neighbouring columns", (dir) => {
