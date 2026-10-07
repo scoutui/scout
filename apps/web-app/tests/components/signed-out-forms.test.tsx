@@ -79,6 +79,7 @@ describe("forms after the session has ended", () => {
 
   it("tells the governance form to sign in again to save", async () => {
     governance();
+    fireEvent.click(screen.getByRole("button", { name: "Records in @example/old" }));
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this record.")).toBeInTheDocument();
@@ -86,6 +87,7 @@ describe("forms after the session has ended", () => {
 
   it("tells governance delete to sign in again", async () => {
     governance();
+    fireEvent.click(screen.getByRole("button", { name: "Records in @example/old" }));
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
