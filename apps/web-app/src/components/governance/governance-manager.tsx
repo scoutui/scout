@@ -197,8 +197,8 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   // Only a form the user opens takes focus, not the one that opens on its own.
   const [focusForm, setFocusForm] = useState(false);
   const [query, setQuery] = useState("");
-  /** Packages the user folded; a search shows its matches open without changing this. */
-  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+  /** Packages the user opened; the rest start folded. A search shows its matches open without changing this. */
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
   const [completeOpen, setCompleteOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   /** The record to scroll to and focus once its row is on the page. */
@@ -215,28 +215,27 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   const visible = records.filter((r) => r.id === editingId || matchesRecordQuery(r, query));
   const map = groupRecords({ visible, all: records, stats, sources });
 
-  // Scrolls to the record and focuses its name once its row is on the page, opening what hides it first.
+  // Opens what hides the highlighted or revealed record, its package or the complete section, once it's in the list.
   useEffect(() => {
-    const id = revealId.current;
+    const id = highlightId ?? revealId.current;
     if (!id) return;
-    const row = document.getElementById(`record-${id}`);
-    if (row) {
-      revealId.current = null;
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      row.scrollIntoView({ block: "center", behavior: reduceMotion ? "instant" : "smooth" });
-      (row.querySelector<HTMLElement>("th a") ?? row).focus({ preventScroll: true });
-      return;
-    }
     const complete = map.complete.find((g) => rowsOf(g).some((r) => r.record.id === id));
     const group = complete ?? map.groups.find((g) => rowsOf(g).some((r) => r.record.id === id));
     if (!group) return;
     if (complete) setCompleteOpen(true);
-    setFolded((prev) => {
-      if (!prev.has(group.packageName)) return prev;
-      const next = new Set(prev);
-      next.delete(group.packageName);
-      return next;
-    });
+    setOpened((prev) => (prev.has(group.packageName) ? prev : new Set(prev).add(group.packageName)));
+  });
+
+  // Scrolls to the record and focuses its name once its row is on the page.
+  useEffect(() => {
+    const id = revealId.current;
+    if (!id) return;
+    const row = document.getElementById(`record-${id}`);
+    if (!row) return;
+    revealId.current = null;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    row.scrollIntoView({ block: "center", behavior: reduceMotion ? "instant" : "smooth" });
+    (row.querySelector<HTMLElement>("th a") ?? row).focus({ preventScroll: true });
   });
 
   useEffect(() => {
@@ -314,7 +313,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
   }
 
   function toggleFold(packageName: string) {
-    setFolded((prev) => {
+    setOpened((prev) => {
       const next = new Set(prev);
       if (!next.delete(packageName)) next.add(packageName);
       return next;
@@ -387,7 +386,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
               editForm={recordForm}
               highlightId={highlightId}
               searching={searching}
-              folded={folded}
+              opened={opened}
               completeOpen={completeOpen}
               onFold={toggleFold}
               onToggleComplete={() => setCompleteOpen((open) => !open)}
@@ -424,7 +423,7 @@ function RecordTable({
   editForm,
   highlightId,
   searching,
-  folded,
+  opened,
   completeOpen,
   onFold,
   onToggleComplete,
@@ -439,7 +438,7 @@ function RecordTable({
   highlightId: string | null;
   /** While a search runs, every group shows open and nothing folds. */
   searching: boolean;
-  folded: ReadonlySet<string>;
+  opened: ReadonlySet<string>;
   completeOpen: boolean;
   onFold: (packageName: string) => void;
   onToggleComplete: () => void;
@@ -473,7 +472,7 @@ function RecordTable({
         </tbody>
       );
     }
-    const open = shown && (searching || !folded.has(group.packageName));
+    const open = shown && (searching || opened.has(group.packageName));
     return (
       <tbody key={group.packageName} className="block pt-1 pb-1.5">
         <GroupHeader
