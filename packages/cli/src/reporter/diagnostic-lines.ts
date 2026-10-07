@@ -40,8 +40,8 @@ function countLine(code: Info["code"], n: number): string {
         : `${n} renders couldn't be followed to a component and weren't counted as uses.`;
     case "late-bound-render":
       return n === 1
-        ? "1 component passed in as a prop or argument wasn't counted."
-        : `${n} components passed in as a prop or argument weren't counted.`;
+        ? "1 use of a component passed in as a prop or argument wasn't counted."
+        : `${n} uses of components passed in as a prop or argument weren't counted.`;
     default:
       return assertUnreachable(code);
   }

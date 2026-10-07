@@ -90,7 +90,7 @@ A tag such as `<acme-button>` shows a dash in place of a package on its page in 
 Scan with `--dry-run --debug` and read the count lines before the summary:
 
 ```text
-1 component passed in as a prop or argument wasn't counted.
+1 use of a component passed in as a prop or argument wasn't counted.
 ```
 
 These are renders the scan saw but couldn't tie to a component, such as `<Icon />` where `Icon` arrives as a prop. They aren't config problems, and the [diagnostics reference](/docs/reference/diagnostics) says what to do about each code. List them with their file and line:

@@ -66,7 +66,7 @@ const KINDS: Record<ScanFindingKind, { label: [string, string]; fix: ReactNode; 
     toFix: false,
   },
   "passed-in": {
-    label: ["component passed in as a prop or argument wasn't counted", "components passed in as a prop or argument weren't counted"],
+    label: ["use of a component passed in as a prop or argument wasn't counted", "uses of components passed in as a prop or argument weren't counted"],
     fix: "Nothing to change.",
     docs: "reference/diagnostics#late-bound-render",
     toFix: false,
@@ -78,7 +78,7 @@ const Dot = () => <span aria-hidden className="text-muted-foreground/60">·</spa
 /** What the shown scan couldn't see, closed to one line; nothing when it reported nothing. */
 export function ScanFindings({ findings }: { findings: ScanFinding[] }) {
   if (findings.length === 0) return null;
-  const toFix = findings.filter(finding => KINDS[finding.kind].toFix).length;
+  const toFix = findings.reduce((sum, finding) => sum + (KINDS[finding.kind].toFix ? finding.count : 0), 0);
   return (
     <details className="group rounded-md border border-border bg-accent/40 text-xs">
       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 [&::-webkit-details-marker]:hidden">
