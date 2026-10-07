@@ -96,7 +96,7 @@ const GAP_Y = 10;
 const BLOCK_GAP = 22;
 export const GAP_X = 68;
 const MIN_W = 128;
-const MAX_W = 232;
+const MAX_W = 400;
 const LIST_W = 272;
 /** Direct neighbours of the focus shown before the rest fold into "+N more". */
 export const FOCUS_CAP = 10;

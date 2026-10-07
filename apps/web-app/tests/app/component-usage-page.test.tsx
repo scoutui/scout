@@ -253,6 +253,15 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder checkout, 3 uses", "Folder settings, 3 uses", "Folder home, 1 use"]);
   });
 
+  it.each<[string, Component, boolean]>([
+    ["lists Prop values for a component with props", button, true],
+    ["leaves Prop values out for a component that declares no props and whose uses set none", badge, false],
+  ])("%s", async (_title, shown, listed) => {
+    await show(shown.id);
+    const fold = listed ? "Where it’s used and prop values" : "Where it’s used";
+    expect([screen.queryByRole("heading", { name: "Prop values" }) !== null, screen.getByRole("button", { name: fold })]).toEqual([listed, expect.anything()]);
+  });
+
   it("lists the packages it's used in when its calls span more than one, and filters by one", async () => {
     await show(link.id);
     expect(screen.getByRole("heading", { name: "Used in" })).toBeInTheDocument();

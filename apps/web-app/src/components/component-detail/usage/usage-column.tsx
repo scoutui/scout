@@ -81,13 +81,14 @@ export function UsageColumn({
   columnRef: RefObject<HTMLElement | null>;
   spacerRef: RefObject<HTMLDivElement | null>;
 }) {
+  const title = view.props.length > 0 ? "Where it’s used and prop values" : "Where it’s used";
   return (
     // From lg this fills its grid area, and the spacer sets where in that area the sticky column sits.
     <div className="min-w-0">
       <div ref={spacerRef} aria-hidden className="max-lg:hidden" />
       <aside ref={columnRef} aria-labelledby="usage-column-title" className="max-lg:@container max-lg:border-b lg:sticky" style={{ scrollMarginTop: "var(--pin-top, 3.5rem)" }}>
         <h2 id="usage-column-title" className="sr-only">
-          Where it’s used and prop values
+          {title}
         </h2>
         <button
           type="button"
@@ -97,7 +98,7 @@ export function UsageColumn({
           className="focus-inset flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted/50 hover:text-foreground motion-reduce:transition-none lg:hidden"
         >
           <ChevronRight aria-hidden className={cn(CHEVRON, open && "rotate-90")} />
-          Where it’s used and prop values
+          {title}
         </button>
         {/* Folded above the files: from sm at most 24rem wide, and two columns once the panel has room for two columns of
             at least 20rem, the column's width from lg. Where it's used is on the left, the props on the right. */}
@@ -130,9 +131,11 @@ export function UsageColumn({
               <FolderRows view={view} onArea={onArea} />
             </section>
           ) : null}
-          <div className="space-y-5 @min-[43.5rem]:col-start-2">
-            <PropValues view={view} onPick={onPick} />
-          </div>
+          {view.props.length > 0 ? (
+            <div className="space-y-5 @min-[43.5rem]:col-start-2">
+              <PropValues view={view} onPick={onPick} />
+            </div>
+          ) : null}
         </div>
       </aside>
     </div>

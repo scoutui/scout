@@ -7,6 +7,7 @@ import {
   routeSentence,
   type ChipItem,
   type GroupItem,
+  type Scene,
   type SceneState,
 } from "@/components/component-detail/composition/flow-scene";
 import {
@@ -117,6 +118,12 @@ describe("buildScene", () => {
 
   it("sizes a box for its name and its label", () => {
     expect(box(scene(namesake("PaymentCard")), "up:d0").w).toBeGreaterThan(box(scene(namesake("Other")), "up:d0").w);
+  });
+
+  it("widens a box, the focus too, for a name of up to 48 characters", () => {
+    const named = (length: number) => scene(model(graph([node("F", { displayName: "F".repeat(length) }), node("d0", { displayName: "D".repeat(length) })], [["d0", "F"]])));
+    const [short, long, longest] = [25, 41, 48].map(named) as [Scene, Scene, Scene];
+    for (const id of ["focus", "up:d0"]) expect(box(short, id).w < box(long, id).w && box(long, id).w < box(longest, id).w, id).toBe(true);
   });
 
   // F is rendered directly by d0 and d1, and d0 by p0 and p1 (rendered by,
