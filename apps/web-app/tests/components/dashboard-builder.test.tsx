@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
 
@@ -20,6 +20,17 @@ function selectRepo(repoId: string) {
   fireEvent.change(screen.getByLabelText("Repos"), { target: { value: repoId } });
 }
 
+const seriesBox = () => screen.getByRole("combobox", { name: "Add a series" });
+
+function addSeries(name: string) {
+  fireEvent.click(seriesBox());
+  fireEvent.click(screen.getByRole("option", { name: new RegExp(`^${name}`) }));
+}
+
+beforeAll(() => {
+  Element.prototype.scrollIntoView = () => {};
+});
+
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.resetAllMocks();
@@ -32,7 +43,7 @@ describe("chart builder read availability", () => {
   it("shows preparing history in the preview and loads it on its own", async () => {
     actions.preview.mockResolvedValueOnce({ state: "preparing", scans: [], retryable: true });
     builder();
-    fireEvent.click(screen.getByRole("button", { name: "Local components" }));
+    addSeries("Local components");
     const status = (await screen.findByText("Preparing scan data")).closest("[role=status]");
     expect(status?.closest(".panel")?.parentElement?.closest(".panel")).toBeNull();
     await act(async () => {});
@@ -49,7 +60,7 @@ describe("chart builder read availability", () => {
     const title = await screen.findByText(state === "preparing" ? "Preparing scan data" : "Scan data couldn't be prepared");
     const status = title.closest(state === "preparing" ? "[role=status]" : "[role=alert]");
     expect(status).not.toBeNull();
-    expect(screen.queryByRole("textbox", { name: "Search tags" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Add a series" })).toBeNull();
     if (state === "failed") {
       expect(status).toHaveTextContent("repo-a · 0123456");
       selectRepo("repo-b");
@@ -58,28 +69,28 @@ describe("chart builder read availability", () => {
       await act(async () => {});
       await act(async () => { vi.advanceTimersByTime(5_000); });
     }
-    await screen.findByRole("textbox", { name: "Search tags" });
-    fireEvent.click(screen.getByRole("button", { name: /Packages/ }));
-    expect(screen.getByRole("button", { name: "@sample/scoped" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "@sample/estate" })).toBeNull();
+    await screen.findByRole("combobox", { name: "Add a series" });
+    fireEvent.click(seriesBox());
+    expect(screen.getByRole("option", { name: /^@sample\s*\/scoped/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /^@sample\s*\/estate/ })).toBeNull();
     expect(screen.queryByText(/Scan data|Preparing/)).toBeNull();
   });
 
   it.each(["preview", "picker"] as const)("makes an unexpected %s failure visible and retryable", async target => {
     actions[target].mockRejectedValueOnce(new Error("Database connection lost"));
     builder();
-    if (target === "preview") fireEvent.click(screen.getByRole("button", { name: "Local components" }));
+    if (target === "preview") addSeries("Local components");
     else selectRepo("repo-a");
     expect(await screen.findByRole("alert")).toHaveTextContent(target === "preview" ? "Couldn't load the preview." : "Couldn't load this repo's components.");
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     if (target === "preview") await screen.findByText("Couldn't find the components in this chart.");
-    else await screen.findByRole("textbox", { name: "Search tags" });
+    else await screen.findByRole("combobox", { name: "Add a series" });
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("clears a stale preview when a subsequent request is unavailable", async () => {
     builder();
-    fireEvent.click(screen.getByRole("button", { name: "Local components" }));
+    addSeries("Local components");
     await screen.findByText("Couldn't find the components in this chart.");
     actions.preview.mockResolvedValueOnce({ state: "failed", scans: [{ scanId: "scan-rebuild", repoId: "repo-a", commit: "0123456789" }], retryable: false });
     fireEvent.click(screen.getByRole("button", { name: "% of uses" }));
@@ -100,16 +111,16 @@ describe("chart builder read availability", () => {
     selectRepo("");
     await act(async () => { finish?.({ state: "failed", scans: [{ scanId: "obsolete", repoId: "obsolete", commit: "0123456789" }], retryable: false }); });
     expect(screen.queryByText("obsolete · 0123456")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Packages/ }));
-    expect(screen.getByRole("button", { name: "@sample/estate" })).toBeInTheDocument();
+    fireEvent.click(seriesBox());
+    expect(screen.getByRole("option", { name: /^@sample\s*\/estate/ })).toBeInTheDocument();
   });
 
   it("ignores a pending preview after every series is removed", async () => {
     let finish: ((result: unknown) => void) | undefined;
     actions.preview.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     builder();
-    fireEvent.click(screen.getByRole("button", { name: "Local components" }));
-    fireEvent.click(screen.getByRole("button", { name: "Local components" }));
+    addSeries("Local components");
+    addSeries("Local components");
     await act(async () => { finish?.({ state: "failed", scans: [{ scanId: "obsolete", repoId: "obsolete", commit: "0123456789" }], retryable: false }); });
     await waitFor(() => expect(screen.queryByText("Updating…")).toBeNull());
     expect(screen.queryByText("obsolete · 0123456")).toBeNull();
@@ -259,9 +270,9 @@ describe("chart details and saving", () => {
 const vueKits = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: [], exact: ["ant-design-vue", "naive-ui"] } };
 const reactKits = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const kitComponents = [
-  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", disambiguator: null, deprecated: true },
-  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", disambiguator: null, deprecated: false },
-  { componentId: "c", displayName: "NButton", packageName: "naive-ui", disambiguator: null, deprecated: false },
+  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", disambiguator: null, deprecated: true, occurrences: 1, local: false },
+  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", disambiguator: null, deprecated: false, occurrences: 1, local: false },
+  { componentId: "c", displayName: "NButton", packageName: "naive-ui", disambiguator: null, deprecated: false, occurrences: 1, local: false },
 ];
 const savedWith = (cohorts: CohortSelector[]) => ({
   id: "chart-1", name: "Old kits", description: null,
@@ -270,15 +281,15 @@ const savedWith = (cohorts: CohortSelector[]) => ({
 });
 const spokenDeprecated = () => screen.getAllByText("deprecated").filter((el) => !el.closest('[aria-hidden="true"]'));
 
-describe("series picker", () => {
-  it("shows the entry point under components that share a name", () => {
+describe("series search", () => {
+  it("shows the entry point beside components that share a name", () => {
     render(<DashboardBuilder libraryTags={[]} repos={[]} components={[
-      { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false },
-      { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false },
+      { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false, occurrences: 2, local: false },
+      { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false, occurrences: 1, local: false },
     ]} packages={[]} />);
-    fireEvent.click(screen.getByRole("button", { name: /Components/ }));
-    expect(screen.getByRole("button", { name: "Button @example/ui" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Button @example/ui · …/button/index" })).toBeInTheDocument();
+    fireEvent.change(seriesBox(), { target: { value: "button" } });
+    expect(screen.getByRole("option", { name: /^Button\s*@example\s*\/ui$/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /^Button\s*@example\s*\/ui\s*…\/button\/index$/ })).toBeInTheDocument();
   });
 });
 
@@ -298,7 +309,7 @@ describe("series options", () => {
   });
 
   it("offers no menu for a library with nothing deprecated", () => {
-    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false, occurrences: 1, local: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
     expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
   });
 
@@ -328,12 +339,15 @@ describe("series options", () => {
   it("offers only the libraries the chosen repo uses, and all of them again for All repos", async () => {
     actions.picker.mockResolvedValue({ state: "ready", value: { components: [kitComponents[2]], packages: ["naive-ui"] } });
     render(<DashboardBuilder libraryTags={[reactKits, vueKits]} repos={["repo-a"]} components={kitComponents} packages={[]} />);
-    expect(screen.getByRole("button", { name: "react-ui-kits" })).toBeInTheDocument();
+    fireEvent.click(seriesBox());
+    expect(screen.getByRole("option", { name: /^react-ui-kits/ })).toBeInTheDocument();
     selectRepo("repo-a");
-    expect(await screen.findByRole("button", { name: "vue-ui-kits" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "react-ui-kits" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Local components" })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("combobox", { name: "Add a series" }));
+    expect(screen.getByRole("option", { name: /^vue-ui-kits/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /^react-ui-kits/ })).toBeNull();
+    expect(screen.getByRole("option", { name: /^Local components/ })).toBeInTheDocument();
     selectRepo("");
-    expect(await screen.findByRole("button", { name: "react-ui-kits" })).toBeInTheDocument();
+    fireEvent.click(seriesBox());
+    expect(await screen.findByRole("option", { name: /^react-ui-kits/ })).toBeInTheDocument();
   });
 });

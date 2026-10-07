@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ChevronRight, CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
@@ -20,7 +20,7 @@ import { toggleVariants } from "@/components/ui/toggle";
 import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/components/governance/grouped-identity-picker";
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
-import { componentCounts } from "@/lib/identity-search";
+import { componentCounts, searchTargets } from "@/lib/identity-search";
 import { readModelTitle, type SkippedState } from "@/lib/read-model-state";
 import {
   authorLine,
@@ -1019,6 +1019,17 @@ function RecordForm({
     [form.supersededByPackage, form.supersededByExport],
   );
 
+  const similarTo = form.grain === "component" ? form.targetExport || null : null;
+  const searchSources = useCallback(
+    (query: string, scope: string | null) => searchTargets({ mode: "source", sources, query, scope, records, editingId: form.id }),
+    [sources, records, form.id],
+  );
+  const searchReplacements = useCallback(
+    (query: string, scope: string | null) =>
+      searchTargets({ mode: "successor", sources, query, scope, records, exclude: sourcePick, similarTo }),
+    [sources, records, sourcePick, similarTo],
+  );
+
   return (
     <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
       <div>
@@ -1054,10 +1065,7 @@ function RecordForm({
         <GroupedIdentityPicker
           id="gov-source"
           labelId="gov-source-label"
-          mode="source"
-          sources={sources}
-          records={records}
-          editingId={form.id}
+          search={searchSources}
           value={sourcePick}
           onSelect={handleSourcePick}
           scope={sourceScope}
@@ -1099,11 +1107,7 @@ function RecordForm({
             <GroupedIdentityPicker
               id="gov-by"
               labelId="gov-by-label"
-              mode="successor"
-              sources={sources}
-              records={records}
-              exclude={sourcePick}
-              similarTo={form.grain === "component" ? form.targetExport || null : null}
+              search={searchReplacements}
               value={supersededByPick}
               onSelect={(pick) => {
                 patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });

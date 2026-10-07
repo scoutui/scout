@@ -59,7 +59,7 @@ function pickAcmeOldPackage() {
   fireEvent.change(source, { target: { value: "@acme/old" } });
   fireEvent.keyDown(source, { key: "ArrowUp" });
   fireEvent.keyDown(source, { key: "Enter" });
-  fireEvent.click(screen.getByRole("option", { name: /^All of @acme\/old/ }));
+  fireEvent.click(screen.getByRole("option", { name: /^All of\s*@acme\s*\/old/ }));
 }
 
 const stats = {
@@ -444,7 +444,7 @@ describe("GovernanceManager", () => {
 
     for (const [box, packageName] of [[source, "old-icons"], [by, "@acme/new"]] as const) {
       fireEvent.change(box, { target: { value: packageName } });
-      fireEvent.click(screen.getByRole("option", { name: new RegExp(`^${packageName}`) }));
+      fireEvent.click(screen.getByRole("option", { name: new RegExp(`^${packageName.replace("/", "\\s*/")}`) }));
       expect(box).toHaveAccessibleDescription(packageName);
       fireEvent.blur(box);
       expect(box).toHaveValue("");

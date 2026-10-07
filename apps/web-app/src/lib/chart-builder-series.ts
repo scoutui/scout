@@ -1,6 +1,17 @@
 import type { CohortSelector, TagRule } from "@scoutui/web-shared";
 import { tagMatchesPackage } from "@scoutui/web-shared/client";
-import type { PickableComponent } from "@/components/dashboards/series-picker";
+
+/** A component the chart builder can add as a series, with its uses in each repo's latest scan. */
+export type PickableComponent = {
+  componentId: string;
+  displayName: string;
+  packageName: string | null;
+  disambiguator: string | null;
+  deprecated: boolean;
+  occurrences: number;
+  /** Defined in a scanned repo rather than imported from a package. */
+  local: boolean;
+};
 
 export type LibraryTag = { id: string; label: string; color: string; rule: TagRule };
 export type DeprecatableSelector = Extract<CohortSelector, { kind: "package" | "tag" }>;

@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { GovernanceRecord } from "@scoutui/web-shared";
+import type { CohortSelector, GovernanceRecord } from "@scoutui/web-shared";
+import { cohortKey } from "@scoutui/web-shared/client";
 import { GroupedIdentityPicker, type IdentityPick } from "@/components/governance/grouped-identity-picker";
 import type { GovernanceTarget } from "@scoutui/web-shared";
+import type { PickableComponent } from "@/lib/chart-builder-series";
+import { searchSeries, searchTargets } from "@/lib/identity-search";
 
 const sources: GovernanceTarget[] = [
   { packageName: "@example/old-ui", occurrences: 70 },
@@ -20,11 +23,17 @@ const recorded: GovernanceRecord = {
 
 function Field(props: { sources?: GovernanceTarget[]; records?: GovernanceRecord[]; value?: IdentityPick | null; scope?: string | null; onSelect?: (p: IdentityPick) => void; onScopeChange?: (s: string | null) => void }) {
   const [scope, setScope] = useState(props.scope ?? null);
+  const list = props.sources ?? sources;
+  const records = props.records ?? [];
+  const search = useCallback(
+    (query: string, scope: string | null) => searchTargets({ mode: "source", sources: list, query, scope, records }),
+    [list, records],
+  );
   return (
     <>
       <label id="source-label" htmlFor="source">Package or component</label>
       <GroupedIdentityPicker
-        id="source" labelId="source-label" mode="source" sources={props.sources ?? sources} records={props.records ?? []}
+        id="source" labelId="source-label" search={search}
         value={props.value ?? null} onSelect={props.onSelect ?? (() => {})}
         scope={scope} onScopeChange={(s) => { setScope(s); props.onScopeChange?.(s); }}
         placeholder="Search packages and components"
@@ -69,10 +78,10 @@ describe("GroupedIdentityPicker", () => {
     const cardOption = input().getAttribute("aria-activedescendant");
     fireEvent.change(input(), { target: { value: "button" } });
     expect(input().getAttribute("aria-activedescendant")).not.toBe(cardOption);
-    expect(active().textContent).toContain("@example/new-ui");
+    expect(active()).toHaveAccessibleName(/@example\s*\/new-ui/);
     fireEvent.keyDown(input(), { key: "ArrowDown" });
     expect(active()).toHaveAttribute("aria-disabled", "true");
-    expect(active()).toHaveAccessibleName(/Button.*@example\/old-ui.*Already recorded/);
+    expect(active()).toHaveAccessibleName(/Button.*@example\s*\/old-ui.*Already recorded/);
     fireEvent.keyDown(input(), { key: "Enter" });
     expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByRole("listbox", { name: "Package or component" })).toBeInTheDocument();
@@ -84,11 +93,11 @@ describe("GroupedIdentityPicker", () => {
     render(<Field onScopeChange={onScopeChange} onSelect={onSelect} />);
     fireEvent.change(input(), { target: { value: "old" } });
     fireEvent.keyDown(input(), { key: "ArrowUp" });
-    expect(active().textContent).toMatch(/^@example\/old-ui/);
+    expect(active()).toHaveAccessibleName(/^@example\s*\/old-ui/);
     fireEvent.keyDown(input(), { key: "Enter" });
     expect(onScopeChange).toHaveBeenLastCalledWith("@example/old-ui");
     expect(onSelect).not.toHaveBeenCalled();
-    expect(screen.getByRole("option", { name: /All of @example\/old-ui/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /All of\s*@example\s*\/old-ui/ })).toBeInTheDocument();
     fireEvent.keyDown(input(), { key: "Backspace" });
     expect(onScopeChange).toHaveBeenLastCalledWith(null);
   });
@@ -102,7 +111,7 @@ describe("GroupedIdentityPicker", () => {
     ];
     render(<Field sources={local} onScopeChange={onScopeChange} />);
     fireEvent.change(input(), { target: { value: "ui button" } });
-    expect(screen.getByRole("option")).toHaveAccessibleName(/@example\/ui.*1 match/);
+    expect(screen.getByRole("option")).toHaveAccessibleName(/@example\s*\/ui.*1 match/);
     fireEvent.keyDown(input(), { key: "Enter" });
     expect(onScopeChange).toHaveBeenLastCalledWith("@example/ui");
     expect(input()).toHaveValue("button");
@@ -116,7 +125,7 @@ describe("GroupedIdentityPicker", () => {
     const listbox = screen.getByRole("listbox", { name: "Package or component" });
     expect(input()).toHaveAttribute("aria-controls", listbox.id);
     expect(active()).toHaveAttribute("aria-selected", "true");
-    expect(within(listbox).getAllByRole("option")[0]).toHaveAccessibleName(/All of @example\/old-ui/);
+    expect(within(listbox).getAllByRole("option")[0]).toHaveAccessibleName(/All of\s*@example\s*\/old-ui/);
     fireEvent.keyDown(input(), { key: "Enter" });
     expect(onSelect).toHaveBeenCalledWith({ packageName: "@example/old-ui", exportName: "Button" });
   });
@@ -145,7 +154,7 @@ describe("GroupedIdentityPicker", () => {
     const onScopeChange = vi.fn();
     render(<Field onScopeChange={onScopeChange} />);
     fireEvent.click(input());
-    expect(active().textContent).toMatch(/^@example\/old-ui/);
+    expect(active()).toHaveAccessibleName(/^@example\s*\/old-ui/);
     expect(fireEvent.keyDown(input(), { key: "Tab" })).toBe(true);
     expect(onScopeChange).not.toHaveBeenCalled();
     fireEvent.blur(input());
@@ -161,5 +170,63 @@ describe("GroupedIdentityPicker", () => {
     render(<Field />);
     fireEvent.mouseDown(input().parentElement?.querySelector(".lucide-chevrons-up-down") as Element);
     expect(screen.getByRole("listbox", { name: "Package or component" })).toBeInTheDocument();
+  });
+});
+
+const charted: PickableComponent[] = [
+  { componentId: "c1", displayName: "Button", packageName: "@example/old-ui", disambiguator: null, deprecated: false, occurrences: 60, local: false },
+  { componentId: "c2", displayName: "Button", packageName: "@example/new-ui", disambiguator: "src/button/index.ts", deprecated: false, occurrences: 8, local: false },
+  { componentId: "c3", displayName: "Button", packageName: "@example/new-ui", disambiguator: "src/legacy/button.ts", deprecated: false, occurrences: 3, local: false },
+];
+
+function SeriesField({ onSelect }: { onSelect: (sel: CohortSelector) => void }) {
+  const [scope, setScope] = useState<string | null>(null);
+  const [added, setAdded] = useState<CohortSelector[]>([]);
+  const search = useCallback(
+    (query: string, scope: string | null) =>
+      searchSeries({ tags: [], components: charted, packages: ["@example/old-ui", "@example/new-ui"], query, scope, added: new Set(added.map(cohortKey)) }),
+    [added],
+  );
+  return (
+    <>
+      <label id="series-label" htmlFor="series">Add a series</label>
+      <GroupedIdentityPicker
+        id="series" labelId="series-label" search={search} multiple
+        onSelect={(sel) => {
+          onSelect(sel);
+          setAdded((prev) => (prev.some((p) => cohortKey(p) === cohortKey(sel)) ? prev.filter((p) => cohortKey(p) !== cohortKey(sel)) : [...prev, sel]));
+        }}
+        scope={scope} onScopeChange={setScope}
+        placeholder="Add a series"
+        emptyText="Nothing scanned yet"
+      />
+    </>
+  );
+}
+
+describe("GroupedIdentityPicker adding several", () => {
+  const seriesInput = () => screen.getByRole("combobox", { name: "Add a series" });
+  const option = (name: RegExp) => screen.getByRole("option", { name });
+
+  it("stays open with the search while it adds, marks each added row, and hands back an added row to remove it", () => {
+    const onSelect = vi.fn();
+    render(<SeriesField onSelect={onSelect} />);
+    fireEvent.change(seriesInput(), { target: { value: "button" } });
+    fireEvent.keyDown(seriesInput(), { key: "Enter" });
+    expect(onSelect).toHaveBeenLastCalledWith({ kind: "component", componentId: "c1" });
+    expect(seriesInput()).toHaveValue("button");
+    expect(screen.getByRole("listbox", { name: "Add a series" })).toHaveAttribute("aria-multiselectable", "true");
+    fireEvent.click(option(/legacy\/button\.ts/));
+    expect(onSelect).toHaveBeenLastCalledWith({ kind: "component", componentId: "c3" });
+    expect(screen.getAllByRole("option").map((o) => o.getAttribute("aria-selected"))).toEqual(["true", "false", "true"]);
+    fireEvent.click(option(/legacy\/button\.ts/));
+    expect(onSelect).toHaveBeenLastCalledWith({ kind: "component", componentId: "c3" });
+    expect(screen.getAllByRole("option").map((o) => o.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
+  });
+
+  it("names a component's whole package to screen readers, not the shortened form", () => {
+    render(<SeriesField onSelect={() => {}} />);
+    fireEvent.change(seriesInput(), { target: { value: "button" } });
+    expect(screen.getAllByRole("option")[0]).toHaveAccessibleName(/^Button\s*@example\s*\/old-ui$/);
   });
 });

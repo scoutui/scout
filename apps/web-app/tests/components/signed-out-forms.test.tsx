@@ -65,7 +65,8 @@ describe("forms after the session has ended", () => {
   it("tells the chart builder to sign in again to save", async () => {
     render(<DashboardBuilder libraryTags={[]} repos={["repo-a"]} components={[]} packages={[]} />);
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Adoption" } });
-    fireEvent.click(screen.getByRole("button", { name: "Local components" }));
+    fireEvent.click(screen.getByRole("combobox", { name: "Add a series" }));
+    fireEvent.click(screen.getByRole("option", { name: /^Local components/ }));
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this chart.")).toBeInTheDocument();
   });

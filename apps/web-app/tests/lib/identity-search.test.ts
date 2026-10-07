@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { GovernanceRecord } from "@scoutui/web-shared";
 import type { GovernanceTarget } from "@scoutui/web-shared";
-import { MAX_COMPONENT_ROWS, type SearchInput, type SearchRow, searchTargets } from "@/lib/identity-search";
+import type { CohortSelector } from "@scoutui/web-shared";
+import { cohortKey } from "@scoutui/web-shared/client";
+import type { PickableComponent } from "@/lib/chart-builder-series";
+import { MAX_COMPONENT_ROWS, type SearchInput, type SearchRow, type SeriesSearchInput, searchSeries, searchTargets } from "@/lib/identity-search";
 
 const target = (packageName: string, exportName: string, occurrences: number): GovernanceTarget => ({ packageName, exportName, occurrences });
 const pkg = (packageName: string, occurrences: number): GovernanceTarget => ({ packageName, occurrences });
@@ -14,10 +17,12 @@ const record = (id: string, targetPackage: string, targetExport: string | null):
 const search = (over: Partial<SearchInput>) =>
   searchTargets({ mode: "source", sources: [], query: "", scope: null, records: [], ...over });
 
-const label = (row: SearchRow) =>
+const label = (row: SearchRow<unknown>) =>
   row.kind === "package" ? `package ${row.packageName}`
     : row.kind === "whole" ? `all ${row.packageName}${row.refusal ? ` (${row.refusal})` : ""}`
-      : `${row.exportName} ${row.packageName}${row.refusal ? ` (${row.refusal})` : ""}`;
+      : row.kind === "tag" ? `tag ${row.label}`
+        : row.kind === "local" ? row.label
+          : `${row.exportName} ${row.packageName}${row.refusal ? ` (${row.refusal})` : ""}`;
 const labels = (over: Partial<SearchInput>) => search(over).rows.map(label);
 
 const tiers = [
@@ -222,5 +227,58 @@ describe("searchTargets: refusals", () => {
     const wholeExcluded = labels({ mode: "successor", sources: estate, records, scope: "@example/old-ui", exclude: { packageName: "@example/old-ui" } });
     expect(wholeExcluded).toContain("SkeletonText @example/old-ui");
     expect(wholeExcluded).not.toContain("all @example/old-ui");
+  });
+});
+
+describe("searchSeries", () => {
+  const comp = (componentId: string, displayName: string, packageName: string | null, occurrences: number, disambiguator: string | null = null): PickableComponent =>
+    ({ componentId, displayName, packageName, disambiguator, deprecated: false, occurrences, local: packageName === null });
+  const charted = [
+    comp("c1", "Button", "@example/old-ui", 60), comp("c2", "ButtonGroup", "@example/old-ui", 6), comp("c3", "Card", "@example/old-ui", 10),
+    comp("c4", "Button", "@example/new-ui", 8, "src/button/index.ts"), comp("c5", "Button", "@example/new-ui", 3, "src/legacy/button.ts"),
+    comp("c6", "Header", null, 4, "src/Header.tsx"),
+  ];
+  const tags = [
+    { id: "t-old", label: "old-ui", rule: { glob: [], exact: ["@example/old-ui"] } },
+    { id: "t-new", label: "new-ui", rule: { glob: ["@example/*"], exact: [] } },
+  ];
+  const series = (over: Partial<SeriesSearchInput>) =>
+    searchSeries({ tags, components: charted, packages: ["@example/new-ui", "@example/old-ui"], query: "", scope: null, added: new Set(), ...over });
+  const seriesLabels = (over: Partial<SeriesSearchInput>) => series(over).rows.map(label);
+  const keys = (...sels: CohortSelector[]) => new Set(sels.map(cohortKey));
+
+  it("lists the tags, Local components, then packages by use when nothing is typed, each tag with the packages it matches", () => {
+    const { rows } = series({});
+    expect(rows.map(label)).toEqual(["tag old-ui", "tag new-ui", "Local components", "package @example/old-ui", "package @example/new-ui"]);
+    expect(rows.slice(0, 3)).toMatchObject([{ packages: 1 }, { packages: 2 }, { components: 1 }]);
+  });
+
+  it("puts the tags and packages a search matches before the components it ranks, the first row active", () => {
+    const result = series({ query: "new" });
+    expect(result.rows.map(label)).toEqual(["tag new-ui", "package @example/new-ui", "Button @example/new-ui", "Button @example/new-ui"]);
+    expect(result.defaultIndex).toBe(0);
+    expect(seriesLabels({ query: "button" })).toEqual(["Button @example/old-ui", "Button @example/new-ui", "Button @example/new-ui", "ButtonGroup @example/old-ui"]);
+    expect(seriesLabels({ query: "local" })).toEqual(["Local components"]);
+    expect(seriesLabels({ query: "header" })).toEqual(["Header null"]);
+  });
+
+  it("shows at most 50 components across every package, and all of them in one package", () => {
+    const icons = Array.from({ length: 60 }, (_, i) => comp(`i${i}`, `Icon${i}`, "@example/glyphs", 1));
+    expect(series({ components: icons, packages: ["@example/glyphs"], query: "icon" })).toMatchObject({ total: 60, rows: { length: MAX_COMPONENT_ROWS } });
+    expect(series({ components: icons, packages: ["@example/glyphs"], query: "icon", scope: "@example/glyphs" }).rows).toHaveLength(60);
+  });
+
+  it("narrowed to a package, offers the whole package as a series, then each component by its id with its path", () => {
+    expect(series({ scope: "@example/new-ui" }).rows).toMatchObject([
+      { kind: "whole", components: 2, pick: { kind: "package", packageName: "@example/new-ui" } },
+      { kind: "component", exportName: "Button", disambiguator: "src/button/index.ts", pick: { kind: "component", componentId: "c4" } },
+      { kind: "component", exportName: "Button", disambiguator: "src/legacy/button.ts", pick: { kind: "component", componentId: "c5" } },
+    ]);
+  });
+
+  it("marks the rows whose series are already added", () => {
+    const added = keys({ kind: "tag", tagId: "t-new" }, { kind: "package", packageName: "@example/new-ui" }, { kind: "component", componentId: "c4" });
+    expect(series({ query: "new", added }).rows.map((r) => (r.kind === "package" ? null : r.added))).toEqual([true, null, true, false]);
+    expect(series({ scope: "@example/new-ui", added }).rows[0]).toMatchObject({ kind: "whole", added: true });
   });
 });

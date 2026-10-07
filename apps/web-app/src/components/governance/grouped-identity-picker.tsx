@@ -1,14 +1,15 @@
 "use client";
-// The governance target picker: one search box per field. Results are ranked by
-// lib/identity-search, and a package row narrows the search to that package, shown
-// as a chip in the box. A component pick makes a component-grain record, an
-// `All of` pick a package-grain one.
+// A search box over packages and components, used by Governance's target fields and the
+// chart builder's series. The caller's search ranks the rows (lib/identity-search), and a
+// package row narrows the search to that package, shown as a chip in the box. With
+// `multiple`, the list stays open while you pick, and an added row shows a check.
 import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { autoUpdate, flip, offset, size, useFloating } from "@floating-ui/react-dom";
-import { ChevronsUpDown, X } from "lucide-react";
-import type { GovernanceRecord, GovernanceTarget } from "@scoutui/web-shared";
-import { type IdentityPick, MAX_COMPONENT_ROWS, type SearchRow, searchTargets } from "@/lib/identity-search";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { PackageName } from "@/components/package-name";
+import { shortenPath } from "@/components/repos/components-table";
+import { type IdentityPick, MAX_COMPONENT_ROWS, type SearchResult, type SearchRow } from "@/lib/identity-search";
 import { cn } from "@/lib/utils";
 
 export type { IdentityPick } from "@/lib/identity-search";
@@ -23,6 +24,7 @@ const keepFocus = (e: React.MouseEvent) => {
 };
 
 const components = (n: number) => `${n.toLocaleString()} component${n === 1 ? "" : "s"}`;
+const packages = (n: number) => `${n.toLocaleString()} package${n === 1 ? "" : "s"}`;
 const matches = (n: number) => `${n.toLocaleString()} match${n === 1 ? "" : "es"}`;
 
 /** The name with each matched range in bold. */
@@ -46,11 +48,22 @@ function Refusal({ text }: { text: string | null }) {
   return text ? <span className="shrink-0 text-xs text-muted-foreground">{text}</span> : null;
 }
 
-function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean; narrowed: boolean }) {
+/** A package's name in a cell as wide as the name, narrower only when the row is, so `PackageName` can tell whether it fits. */
+function PackageCell({ name, className }: { name: string; className?: string }) {
+  return (
+    <span className={cn("grid min-w-0 font-mono text-xs", className)} style={{ flex: `0 1 calc(${name.length}ch + 1px)` }}>
+      <PackageName name={name} />
+    </span>
+  );
+}
+
+const refused = (row: SearchRow<unknown>) => (row.kind === "whole" || row.kind === "component") && row.refusal !== null;
+
+function RowContent({ row, active, narrowed }: { row: SearchRow<unknown>; active: boolean; narrowed: boolean }) {
   if (row.kind === "package") {
     return (
       <>
-        <span className="min-w-0 truncate font-mono text-xs">{row.packageName}</span>
+        <PackageCell name={row.packageName} />
         <span className="shrink-0 text-xs text-muted-foreground">
           {row.matches === null ? components(row.components) : matches(row.matches)}
         </span>
@@ -68,12 +81,20 @@ function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean
   if (row.kind === "whole") {
     return (
       <>
-        <span className="min-w-0 truncate text-xs">
-          <span className="text-muted-foreground">All of </span>
-          <span className="font-mono">{row.packageName}</span>
-          <span className="text-muted-foreground"> · {components(row.components)}</span>
-        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">All of</span>
+        <PackageCell name={row.packageName} />
+        <span className="shrink-0 text-xs text-muted-foreground">{components(row.components)}</span>
         <Refusal text={row.refusal} />
+      </>
+    );
+  }
+  if (row.kind === "tag" || row.kind === "local") {
+    return (
+      <>
+        <span className={cn("min-w-0 truncate text-xs", row.kind === "tag" && "font-mono")}>{marked(row.label, row.matched)}</span>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {row.kind === "tag" ? `tag · ${packages(row.packages)}` : components(row.components)}
+        </span>
       </>
     );
   }
@@ -82,27 +103,32 @@ function RowContent({ row, active, narrowed }: { row: SearchRow; active: boolean
       <span className="min-w-0 truncate font-mono text-xs">
         {row.refusal === null ? marked(row.exportName, row.matched) : row.exportName}
       </span>
-      {narrowed ? null : <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">{row.packageName}</span>}
+      {narrowed || row.packageName === null ? null : <PackageCell name={row.packageName} className="text-muted-foreground" />}
+      {row.disambiguator ? (
+        <span title={row.disambiguator} className="min-w-0 flex-1 truncate text-right font-mono text-xs text-muted-foreground">
+          {shortenPath(row.disambiguator)}
+        </span>
+      ) : null}
       <Refusal text={row.refusal} />
     </>
   );
 }
 
-const rowKey = (row: SearchRow) => `${row.kind}:${row.packageName}:${row.kind === "component" ? row.exportName : ""}`;
+const rowKey = (row: SearchRow<unknown>) =>
+  row.kind === "tag" ? `tag:${row.tagId}`
+    : row.kind === "local" ? "local"
+      : row.kind === "component" ? `component:${row.componentId ?? `${row.packageName}:${row.exportName}`}`
+        : `${row.kind}:${row.packageName}`;
 
-const optionId = (listId: string, row: SearchRow) => `${listId}-${rowKey(row)}`;
+const optionId = (listId: string, row: SearchRow<unknown>) => `${listId}-${rowKey(row)}`;
 
-export function GroupedIdentityPicker({
+export function GroupedIdentityPicker<T>({
   id,
   labelId,
-  mode,
-  sources,
-  records,
-  editingId,
-  exclude,
-  similarTo,
-  value,
+  search,
+  value = null,
   onSelect,
+  multiple = false,
   scope,
   onScopeChange,
   placeholder,
@@ -115,19 +141,18 @@ export function GroupedIdentityPicker({
   id: string;
   /** The field label's id; it names the list. */
   labelId: string;
-  mode: "source" | "successor";
-  sources: GovernanceTarget[];
-  records: GovernanceRecord[];
-  editingId?: string | undefined;
-  exclude?: IdentityPick | null | undefined;
-  similarTo?: string | null | undefined;
-  value: IdentityPick | null;
-  onSelect: (pick: IdentityPick) => void;
+  /** The rows for a search, narrowed to a package or not. Keep it stable while its inputs are. */
+  search: (query: string, scope: string | null) => SearchResult<T>;
+  /** Shown in the box while the list is closed. */
+  value?: IdentityPick | null | undefined;
+  onSelect: (pick: T) => void;
+  /** Keeps the list open after a pick and marks the rows the search says are added. */
+  multiple?: boolean | undefined;
   /** The package the search is narrowed to. */
   scope: string | null;
   onScopeChange: (scope: string | null) => void;
   placeholder: string;
-  /** Shown in the list when there is nothing to search. */
+  /** Shown in the list when a search with nothing typed has no rows. */
   emptyText: string;
   ariaDescribedBy?: string | undefined;
   invalid?: boolean | undefined;
@@ -136,30 +161,25 @@ export function GroupedIdentityPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState<number | null>(null);
-  const search = `${scope ?? ""}\u0000${query}`;
-  const [searched, setSearched] = useState(search);
-  if (searched !== search) {
-    setSearched(search);
+  const searchKey = `${scope ?? ""}\u0000${query}`;
+  const [searched, setSearched] = useState(searchKey);
+  if (searched !== searchKey) {
+    setSearched(searchKey);
     setHighlight(null);
   }
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { rows, defaultIndex, total } = useMemo(
-    () => searchTargets({ mode, sources, query, scope, records, editingId, exclude, similarTo }),
-    [mode, sources, query, scope, records, editingId, exclude, similarTo],
-  );
+  const { rows, defaultIndex, total } = useMemo(() => search(query, scope), [search, query, scope]);
   const activeIndex = highlight !== null && highlight < rows.length ? highlight : defaultIndex;
   const active = activeIndex === null ? undefined : rows[activeIndex];
   const hasRows = rows.length > 0;
   const message = !open
     ? null
-    : sources.length === 0
-      ? emptyText
-      : !hasRows
-        ? "No matches"
-        : total !== null
+    : !hasRows
+      ? query.trim() === "" && scope === null ? emptyText : "No matches"
+      : total !== null
           ? `Showing ${MAX_COMPONENT_ROWS} of ${total.toLocaleString()}. Type to narrow the list.`
-          : null;
+        : null;
   const listShown = open && (hasRows || message !== null);
   const listId = `${id}-list`;
   const scopeId = `${id}-scope`;
@@ -208,17 +228,17 @@ export function GroupedIdentityPicker({
     if (value === null && scope !== null) onScopeChange(null);
   }
 
-  function narrow(row: Extract<SearchRow, { kind: "package" }>) {
+  function narrow(row: Extract<SearchRow<T>, { kind: "package" }>) {
     onScopeChange(row.packageName);
     setQuery(row.narrowedQuery);
   }
 
-  function choose(row: SearchRow) {
+  function choose(row: SearchRow<T>) {
     if (row.kind === "package") {
       narrow(row);
-    } else if (row.refusal === null) {
-      onSelect(row.kind === "component" ? { packageName: row.packageName, exportName: row.exportName } : { packageName: row.packageName });
-      close();
+    } else if (!refused(row)) {
+      onSelect(row.pick);
+      if (!multiple) close();
     }
   }
 
@@ -300,7 +320,7 @@ export function GroupedIdentityPicker({
         spellCheck={false}
         disabled={disabled}
         value={inputValue}
-        placeholder={scope === null ? placeholder : `Search in ${scope}`}
+        placeholder={scope === null ? placeholder : "Search this package"}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
@@ -340,9 +360,10 @@ export function GroupedIdentityPicker({
             >
               {hasRows ? (
                 // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox list of rich rows
-                <div id={listId} role="listbox" aria-labelledby={labelId} tabIndex={-1}>
+                <div id={listId} role="listbox" aria-labelledby={labelId} aria-multiselectable={multiple || undefined} tabIndex={-1}>
                   {rows.map((row, i) => {
-                    const refused = row.kind !== "package" && row.refusal !== null;
+                    const off = refused(row);
+                    const added = row.kind !== "package" && row.added === true;
                     return (
                       // biome-ignore lint/a11y/useKeyWithClickEvents: the combobox input handles the keys for every option
                       <div
@@ -350,17 +371,24 @@ export function GroupedIdentityPicker({
                         id={optionId(listId, row)}
                         // biome-ignore lint/a11y/useSemanticElements: an ARIA combobox option of rich content
                         role="option"
-                        aria-selected={i === activeIndex}
-                        aria-disabled={refused || undefined}
+                        aria-selected={multiple ? added : i === activeIndex}
+                        aria-disabled={off || undefined}
                         tabIndex={-1}
                         onClick={() => choose(row)}
                         className={cn(
                           "flex cursor-default items-baseline gap-2 px-2.5 py-1.5",
                           i === activeIndex ? "focus-current bg-muted" : "hover:bg-muted/60",
-                          refused && "text-muted-foreground",
+                          off && "text-muted-foreground",
                         )}
                       >
-                        <RowContent row={row} active={i === activeIndex} narrowed={scope !== null} />
+                        <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                          <RowContent row={row} active={i === activeIndex} narrowed={scope !== null} />
+                        </span>
+                        {multiple ? (
+                          <span aria-hidden className="flex size-3.5 shrink-0 self-center">
+                            {added ? <Check className="size-3.5" /> : null}
+                          </span>
+                        ) : null}
                       </div>
                     );
                   })}
