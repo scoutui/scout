@@ -263,6 +263,20 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     expect(screen.getByRole("button", { name: "Remove the filter package @example/admin" })).toBeInTheDocument();
   });
 
+  it("shortens a package's scope to @… on a row too narrow for its whole name", async () => {
+    // A character 8px wide, from the tab's ten-character probe, in a name 100px wide.
+    const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 80, 16));
+    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(100);
+    try {
+      await show(link.id);
+      const label = (name: RegExp) => screen.getByRole("button", { name }).firstElementChild?.textContent;
+      expect([label(/^Package @example\/web,/), label(/^Package @example\/admin,/)]).toEqual(["@example/web", "@…/admin"]);
+    } finally {
+      rect.mockRestore();
+      width.mockRestore();
+    }
+  });
+
   it("names the one package its calls are in above their folders", async () => {
     await show(chip.id);
     const heading = screen.getByRole("heading", { name: "Used in" });

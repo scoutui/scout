@@ -1,6 +1,6 @@
 "use client";
 import { ChevronRight, ListFilter, X } from "lucide-react";
-import type { ReactElement, ReactNode, RefObject } from "react";
+import { type ReactElement, type ReactNode, type RefObject, useRef } from "react";
 import {
   oneFolderText,
   plural,
@@ -17,6 +17,7 @@ import {
 } from "@scoutui/web-shared/client";
 import { useKept } from "@/lib/usage-url";
 import { cn } from "@/lib/utils";
+import { useElementWidth } from "./usage-layout-hooks";
 import { SWAP, SWAP_OFF, SWAP_ON } from "./usage-toolbar";
 
 type Section = UsagePropSections["groups"][number]["group"];
@@ -57,6 +58,7 @@ export function UsageColumn({
   view,
   prefix,
   onePackage,
+  chPx,
   onArea,
   onPick,
   due,
@@ -70,6 +72,8 @@ export function UsageColumn({
   prefix: string;
   /** The package every call is in, when that's one package. */
   onePackage: string | null;
+  /** The width of one character of the column's monospace text, or 0 before it's measured. */
+  chPx: number;
   onArea: (area: string | null) => void;
   /** A value row of `prop` was pressed. */
   onPick: (prop: string, value: UsageValue) => void;
@@ -126,7 +130,7 @@ export function UsageColumn({
                   </span>
                 ) : null}
               </div>
-              <FolderRows view={view} onArea={onArea} />
+              <FolderRows view={view} chPx={chPx} onArea={onArea} />
             </section>
           ) : null}
           <div className="space-y-5 @min-[43.5rem]:col-start-2">
@@ -211,7 +215,25 @@ function FilterCue({ selected }: { selected: boolean }) {
   );
 }
 
-function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string | null) => void }) {
+/**
+ * A package's name, its scope faint. On a row too narrow for the whole name the scope reads `@…`, and a name still too
+ * long is cut at the end.
+ */
+function PackageName({ name, chPx }: { name: string; chPx: number }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const width = useElementWidth(ref);
+  const slash = name.startsWith("@") ? name.indexOf("/") : -1;
+  if (slash < 0) return <span className="font-mono">{name}</span>;
+  const whole = chPx === 0 || width === 0 || name.length * chPx <= width;
+  return (
+    <span ref={ref} className="flex min-w-0 font-mono">
+      <span className="shrink-0 text-faint">{whole ? name.slice(0, slash) : "@…"}</span>
+      <span className="min-w-0 truncate">{name.slice(slash)}</span>
+    </span>
+  );
+}
+
+function FolderRows({ view, chPx, onArea }: { view: UsageView; chPx: number; onArea: (area: string | null) => void }) {
   const sentence = oneFolderText(view);
   if (sentence) {
     return (
@@ -229,7 +251,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
         <li key={area.key}>
           <FilterRow
             filterKey={areaFilterKey(area.key)}
-            label={<span className="font-mono">{area.label}</span>}
+            label={view.byPackage ? <PackageName name={area.label} chPx={chPx} /> : <span className="font-mono">{area.label}</span>}
             count={area.count}
             share={area.count / inView}
             selected={area.picked}
