@@ -17,23 +17,24 @@ describe("ScanFindings", () => {
   });
 
   it.each([
-    ["two kinds to fix", [notImported, element, passedIn], "This scan couldn't see everything · 2 things to fix"],
-    ["one kind to fix", [element], "This scan couldn't see everything · 1 thing to fix"],
+    ["rows to fix and a row with nothing to change", [notImported, element, passedIn], "This scan couldn't see everything · 12 things to fix"],
+    ["one thing to fix", [element], "This scan couldn't see everything · 1 thing to fix"],
     ["nothing to fix", [passedIn], "This scan couldn't see everything"],
-  ])("closes to one line that counts the kinds to fix: %s", (_, findings, line) => {
+  ])("closes to one line that adds up the rows to fix: %s", (_, findings, line) => {
     const { container } = render(<ScanFindings findings={findings} />);
     expect(container.querySelector("details")).not.toHaveAttribute("open");
     expect(container.querySelector("summary")).toHaveTextContent(new RegExp(`^${line}$`));
   });
 
   it("lists each kind with its count, its most frequent examples, how many more, its fix and a link to the docs", () => {
-    render(<ScanFindings findings={[notImported, element]} />);
-    const [first, second] = screen.getAllByRole("listitem");
+    render(<ScanFindings findings={[notImported, element, passedIn]} />);
+    const [first, second, third] = screen.getAllByRole("listitem");
     expect(first).toHaveTextContent(/^11 uses of components that aren't imported/);
     expect(first).toHaveTextContent("VDropdown 8 · VMenu 2 · VTooltip 1 · 2 more");
     expect(first).toHaveTextContent("Import each component where it's used, or list it in an auto-import file.");
     expect(within(first as HTMLElement).getByRole("link", { name: "Learn more" })).toHaveAttribute("href", "https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences");
     expect(second).toHaveTextContent(/^1 undefined element/);
     expect(second).toHaveTextContent("<i18n-t> 16");
+    expect(third).toHaveTextContent(/^7 uses of components passed in as a prop or argument weren't counted/);
   });
 });

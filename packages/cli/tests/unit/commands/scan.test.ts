@@ -154,7 +154,7 @@ describe("runScan warnings about files it reads", () => {
     await runScan({ configPath: join(dir, "scout.config.json"), quiet: true });
     expect(stderrOf(stderr)).toBe("");
     await runScan({ configPath: join(dir, "scout.config.json"), log: new Logger({ quiet: true, debug: true }) });
-    expect(stderrOf(stderr)).toBe("1 component passed in as a prop or argument wasn't counted.\n");
+    expect(stderrOf(stderr)).toBe("1 use of a component passed in as a prop or argument wasn't counted.\n");
   });
 
   it("prints a tsconfig problem under the Warning label, the tsconfig it reads aliases from, and its progress through the files it reads", async () => {

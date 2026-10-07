@@ -54,10 +54,12 @@ describe("diagnosticLogLines", () => {
       warnings: [],
       counts: [
         "2 renders couldn't be followed to a component and weren't counted as uses.",
-        "1 component passed in as a prop or argument wasn't counted.",
+        "1 use of a component passed in as a prop or argument wasn't counted.",
       ],
     });
     expect(diagnosticLogLines([ref(1)]).counts).toEqual(["1 render couldn't be followed to a component and wasn't counted as a use."]);
+    const passedIn = (line: number): Diagnostic => ({ code: "late-bound-render", severity: "info", filePath: "src/App.tsx", line, column: 1, symbol: "Comp", memberChain: [] });
+    expect(diagnosticLogLines([passedIn(1), passedIn(2)]).counts).toEqual(["2 uses of components passed in as a prop or argument weren't counted."]);
   });
 
   it("prints nothing for no diagnostics", () => {

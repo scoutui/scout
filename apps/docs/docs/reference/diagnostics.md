@@ -255,7 +255,7 @@ Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads
 The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): one line per code, with a count. The individual entries are only in the scan file.
 
 ```text
-1 component passed in as a prop or argument wasn't counted.
+1 use of a component passed in as a prop or argument wasn't counted.
 5 renders couldn't be followed to a component and weren't counted as uses.
 ```
 
