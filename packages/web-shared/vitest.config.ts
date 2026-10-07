@@ -6,5 +6,11 @@ export default defineConfig({
     environment: "node",
     globals: false,
     globalSetup: ["../../apps/web-app/tests/helpers/template-db.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["cobertura", "json"],
+      reportOnFailure: true,
+      include: ["src/**"],
+    },
   },
 });

@@ -6,5 +6,11 @@ export default defineConfig({
     environment: "node",
     globals: false,
     setupFiles: ["tests/setup/no-keychain.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["cobertura", "json"],
+      reportOnFailure: true,
+      include: ["src/**"],
+    },
   },
 });

@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@types/node": "24.12.2",
+    "@vitest/coverage-v8": "4.1.11",
     "typescript": "5.9.3",
     "vitest": "4.1.11",
     "zod-to-json-schema": "3.25.2"
