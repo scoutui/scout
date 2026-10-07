@@ -184,6 +184,21 @@
   }
 }
 
+/* Text shown only while a monospace name fits its container (if-name-fits),
+   or only while it doesn't (if-name-overflows). The name's length in
+   characters is --chars, and the container is an @container, so each resolves
+   max-width to 0 or to the container's width. */
+@utility if-name-fits {
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: clamp(0px, (100cqw - var(--chars) * 1ch + 0.5px) * 1000, 100%);
+}
+@utility if-name-overflows {
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: clamp(0px, (var(--chars) * 1ch - 100cqw - 0.5px) * 1000, 100%);
+}
+
 /* Label role for column headers and tag keys. */
 @utility text-label {
   font-size: 0.6875rem;

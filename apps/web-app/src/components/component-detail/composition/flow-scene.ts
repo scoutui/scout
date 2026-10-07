@@ -1,7 +1,9 @@
 import type { CompositionGraphNode } from "@scoutui/web-shared";
 import {
   byCallSites,
+  chipFaceFragments,
   edgeCounts,
+  pathValueOf,
   routeIds,
   usesBetween,
   type BothRoutes,
@@ -41,6 +43,8 @@ export type ChipItem = Box & {
   innerId: string | null;
   /** Uses between this component and the one at `innerId`. */
   usesToInner: number;
+  /** What tells this box apart from another box of the same name, shown after its name; never on the focus. */
+  fragment: string | null;
 };
 
 export type GroupItem = Box & {
@@ -101,10 +105,11 @@ export const OPEN_CAP = 5;
 /** Height above a column's top box where its heading sits. */
 export const HEADING_H = 26;
 
-function chipWidth(name: string): number {
+function chipWidth(name: string, fragment: string | null): number {
   // Mono 12px is about 7.2px per character; the glyph, padding and the
-  // deprecated mark take the rest.
-  return Math.min(MAX_W, Math.max(MIN_W, Math.ceil(name.length * 7.2) + 48));
+  // deprecated mark take the rest. A label adds its "· " and the gap before it.
+  const chars = name.length + (fragment ? fragment.length + 2 : 0);
+  return Math.min(MAX_W, Math.max(MIN_W, Math.ceil(chars * 7.2) + (fragment ? 6 : 0) + 48));
 }
 
 type Placed = SceneItem & { parentFlowId: string | null };
@@ -187,9 +192,10 @@ function buildSide(
           steps: col,
           innerId: v.flowId,
           usesToInner: usesBetween(counts, dir, v.id, node.id),
+          fragment: null,
           x: 0,
           y: 0,
-          w: chipWidth(node.displayName),
+          w: chipWidth(node.displayName, null),
           h: CHIP_H,
           parentFlowId: v.flowId,
         });
@@ -271,9 +277,10 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
     steps: 0,
     innerId: null,
     usesToInner: 0,
+    fragment: null,
     x: 0,
     y: -CHIP_H / 2,
-    w: chipWidth(focusNode.displayName),
+    w: chipWidth(focusNode.displayName, null),
     h: CHIP_H,
     parentFlowId: null,
   };
@@ -283,8 +290,22 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
   const headings: ColumnHeading[] = [];
   const pathIds = new Set<string>();
 
+  const sides = new Map<Dir, SideResult>();
   for (const dir of ["up", "down"] as const) {
-    if (collapseOther && state.pin?.dir !== dir) {
+    if (!collapseOther || state.pin?.dir === dir) sides.set(dir, buildSide(model, focusId, dir, routes[dir], counts, state, pathSetFor(dir)));
+  }
+  // Labels are worked out over every box drawn, the focus included, but the focus never shows one.
+  const chips = [focusItem, ...[...sides.values()].flatMap((side) => side.columns.flat())].filter((i): i is Placed & ChipItem => i.kind === "chip");
+  const fragments = chipFaceFragments(chips.map((c) => ({ name: c.node.displayName, path: pathValueOf(c.node) })));
+  chips.forEach((chip, i) => {
+    if (chip.id === FOCUS) return;
+    chip.fragment = fragments[i] ?? null;
+    chip.w = chipWidth(chip.node.displayName, chip.fragment);
+  });
+
+  for (const dir of ["up", "down"] as const) {
+    const side = sides.get(dir);
+    if (!side) {
       let direct = 0;
       for (const s of routes[dir].steps.values()) if (s === 1) direct++;
       if (direct === 0) continue;
@@ -302,7 +323,6 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
       });
       continue;
     }
-    const side = buildSide(model, focusId, dir, routes[dir], counts, state, pathSetFor(dir));
     edges.push(...side.edges);
     if (state.pin?.dir === dir) {
       for (const id of pinRoute) {

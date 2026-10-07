@@ -64,9 +64,14 @@ const linkCalls = [
   ...Array.from({ length: 4 }, (_, n) => resolvedAt(link, `apps/web/src/Page${n}.tsx`, 1, { usedIn: "@example/web" })),
   ...Array.from({ length: 2 }, (_, n) => resolvedAt(link, `apps/admin/src/Page${n}.tsx`, 1, { usedIn: "@example/admin" })),
 ];
+const chip = component(packageExport("@example/ui", "Chip"));
+const chipCalls = [
+  ...Array.from({ length: 2 }, (_, n) => resolvedAt(chip, `apps/web/src/home/Hero${n}.tsx`, 1, { usedIn: "@example/web" })),
+  resolvedAt(chip, "apps/web/src/cart/Cart.tsx", 1, { usedIn: "@example/web" }),
+];
 /** Every component the page tests open. */
-const components: Component[] = [button, tag, card, payForm, payDialog, panel, unused, badge, oldButton, link];
-const occurrences = [...buttonCalls, ...tagCalls, ...cardCalls, ...badgeCalls, ...oldCalls, ...linkCalls];
+const components: Component[] = [button, tag, card, payForm, payDialog, panel, unused, badge, oldButton, link, chip];
+const occurrences = [...buttonCalls, ...tagCalls, ...cardCalls, ...badgeCalls, ...oldCalls, ...linkCalls, ...chipCalls];
 
 async function show(componentId: string, search = "") {
   window.history.replaceState(null, "", `/repos/shop/components/${encodeURIComponent(componentId)}${search}`);
@@ -256,6 +261,24 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     fireEvent.click(screen.getByRole("button", { name: "Package @example/admin, 2 uses" }));
     expect(query().get("area")).toBe("@example/admin");
     expect(screen.getByRole("button", { name: "Remove the filter package @example/admin" })).toBeInTheDocument();
+  });
+
+  it("gives a package's scope a short form, @…, for a row too narrow for its whole name", async () => {
+    await show(link.id);
+    const name = screen.getByRole("button", { name: /^Package @example\/admin,/ }).firstElementChild?.firstElementChild as HTMLElement;
+    expect(name.style.getPropertyValue("--chars")).toBe("14");
+    expect([...name.children].map(part => [part.textContent, part.className.match(/if-name-\w+/)?.[0] ?? null])).toEqual([
+      ["@example", "if-name-fits"],
+      ["@…", "if-name-overflows"],
+      ["/admin", null],
+    ]);
+  });
+
+  it("names the one package its calls are in above their folders", async () => {
+    await show(chip.id);
+    const heading = screen.getByRole("heading", { name: "Used in" });
+    expect(within(heading.parentElement as HTMLElement).getByText("@example/web")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder home, 2 uses", "Folder cart, 1 use"]);
   });
 
   it("opens every file row from Expand all rows", async () => {

@@ -16,6 +16,7 @@ import {
   whereHeading,
 } from "@scoutui/web-shared/client";
 import { useKept } from "@/lib/usage-url";
+import { PackageName } from "@/components/package-name";
 import { cn } from "@/lib/utils";
 import { SWAP, SWAP_OFF, SWAP_ON } from "./usage-toolbar";
 
@@ -56,6 +57,7 @@ export const valueFilterKey = (pick: UsagePick) => `prop:${pick.prop}:${pick.kin
 export function UsageColumn({
   view,
   prefix,
+  onePackage,
   onArea,
   onPick,
   due,
@@ -67,6 +69,8 @@ export function UsageColumn({
   view: UsageView;
   /** The folders every call shares, or "" when they share none. */
   prefix: string;
+  /** The package every call is in, when that's one package. */
+  onePackage: string | null;
   onArea: (area: string | null) => void;
   /** A value row of `prop` was pressed. */
   onPick: (prop: string, value: UsageValue) => void;
@@ -111,9 +115,13 @@ export function UsageColumn({
             <section aria-labelledby="usage-where">
               <div className="mb-1 flex items-baseline gap-2 px-1.5">
                 <h3 id="usage-where" className="text-label shrink-0 text-muted-foreground">
-                  {whereHeading(due, view.byPackage)}
+                  {whereHeading(due, view.byPackage || onePackage !== null)}
                 </h3>
-                {prefix ? (
+                {onePackage ? (
+                  <span className="min-w-0 truncate font-mono text-xs text-muted-foreground" title={onePackage}>
+                    {onePackage}
+                  </span>
+                ) : prefix ? (
                   <span className="min-w-0 truncate text-xs text-muted-foreground" title={`${prefix}/`}>
                     under <span className="font-mono">{prefix}/</span>
                   </span>
@@ -222,7 +230,7 @@ function FolderRows({ view, onArea }: { view: UsageView; onArea: (area: string |
         <li key={area.key}>
           <FilterRow
             filterKey={areaFilterKey(area.key)}
-            label={<span className="font-mono">{area.label}</span>}
+            label={view.byPackage ? <PackageName name={area.label} /> : <span className="font-mono">{area.label}</span>}
             count={area.count}
             share={area.count / inView}
             selected={area.picked}

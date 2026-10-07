@@ -218,6 +218,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
         <UsageColumn
           view={view}
           prefix={index.prefix}
+          onePackage={index.onePackage}
           onArea={pickArea}
           onPick={pickValue}
           due={due}

@@ -34,7 +34,6 @@ import { ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
 import { cn } from "@/lib/utils";
 import { useMedia } from "../usage/usage-layout-hooks";
 import {
-  chipFaceFragments,
   distinctTails,
   findRows,
   pathValueOf,
@@ -101,7 +100,7 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-type ChipData = { item: ChipItem; fragment: string | null; pinned: boolean; dim: boolean };
+type ChipData = { item: ChipItem; pinned: boolean; dim: boolean };
 type GroupData = { item: GroupItem; parentName: string; dim: boolean };
 type SummaryData = { item: SummaryItem };
 
@@ -118,7 +117,7 @@ function chipLabel(item: ChipItem, focusName: string): string {
 }
 
 const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
-  const { item, fragment, pinned, dim } = data as unknown as ChipData;
+  const { item, pinned, dim } = data as unknown as ChipData;
   const { setPin, clearPin, hover, reveal, store, focusName } = useFlow();
   const lit = useNodeHighlight(store, id) === "chain";
   const isFocus = item.id === FOCUS;
@@ -160,12 +159,12 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         )}
       >
         <ScopeGlyph scope={node.scope} />
-        <span title={node.displayName} className={cn("min-w-0 truncate font-mono text-xs", isFocus && "font-semibold")}>
+        <span title={node.displayName} className={cn("max-w-full shrink-0 truncate font-mono text-xs", isFocus && "font-semibold")}>
           {node.displayName}
         </span>
         {node.deprecated ? <DeprecatedMark /> : null}
-        {fragment ? (
-          <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground">{`· ${fragment}`}</span>
+        {item.fragment ? (
+          <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground">{`· ${item.fragment}`}</span>
         ) : null}
       </button>
       <Handle type="source" position={Position.Right} className="!pointer-events-none !opacity-0" />
@@ -409,8 +408,6 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
 
   const nodes = useMemo<FlowNode[]>(() => {
     const chips = scene.items.filter((i): i is ChipItem => i.kind === "chip");
-    const fragments = chipFaceFragments(chips.map((c) => ({ name: c.node.displayName, path: pathValueOf(c.node) })));
-    const fragmentOf = new Map(chips.map((c, i) => [c.id, fragments[i] ?? null]));
     const nameOf = (flowId: string) => chips.find((c) => c.id === flowId)?.node.displayName ?? "";
     return scene.items.map((item): FlowNode => {
       const dim = selected && !scene.pathIds.has(item.id) && !revealed.has(item.id);
@@ -424,7 +421,7 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
         focusable: false,
       };
       if (item.kind === "chip") {
-        const data: ChipData = { item, fragment: fragmentOf.get(item.id) ?? null, pinned: item.id === pinFlowId, dim };
+        const data: ChipData = { item, pinned: item.id === pinFlowId, dim };
         return { ...base, type: "chip", data };
       }
       if (item.kind === "summary") return { ...base, type: "summary", data: { item } satisfies SummaryData };

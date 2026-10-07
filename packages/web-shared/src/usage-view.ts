@@ -35,6 +35,8 @@ export type UsageIndex = {
   readonly few: boolean;
   /** Every call is in a package and they name more than one: the calls are listed by package, not by folder. */
   readonly byPackage: boolean;
+  /** The package every call is in, when that's one package; null when they're in several or name none. */
+  readonly onePackage: string | null;
   readonly prefix: string;
   readonly rows: readonly UsagePropInfo[];
   readonly calls: readonly IndexedCall[];
@@ -351,6 +353,7 @@ export function usageIndex(input: UsageInput): UsageIndex {
     total: input.occurrences.length,
     few,
     byPackage,
+    onePackage: packages.size === 1 ? ([...packages][0] ?? null) : null,
     prefix: byPackage ? "" : prefix.join("/"),
     rows,
     calls,
