@@ -2176,6 +2176,36 @@
       }
     },
     {
+      "id": "e3cb663d7339f01c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "react-shapes",
+        "filePath": "src/inherited-member/Picker.tsx",
+        "exportName": "Picker"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 13,
+        "column": 8
+      },
+      "owningPackage": "react-shapes",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "9a25a3b8cbee157e": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "9b9a0f19a20ae2f4",
       "identity": {
         "kind": "repository-declaration",
@@ -4254,15 +4284,15 @@
       },
       "framework": "react",
       "stats": {
-        "occurrenceCount": 13,
-        "fileCount": 11
+        "occurrenceCount": 14,
+        "fileCount": 12
       },
       "usage": "direct",
       "props": {
         "...rest": {
           "values": [],
           "dynamic": 1,
-          "omitted": 12
+          "omitted": 13
         }
       },
       "writtenNames": [
@@ -4271,7 +4301,8 @@
         "Comp",
         "FlowCard",
         "MemoCard",
-        "Modal"
+        "Modal",
+        "PARTS.constructor"
       ],
       "version": "0.0.0",
       "composition": {
@@ -4280,6 +4311,7 @@
           "7424d7f6d833dde9": 1,
           "9dc5a316c135ffd6": 1,
           "33a8935a8c4f85aa": 1,
+          "e3cb663d7339f01c": 1,
           "9f2e8025da07a739": 1,
           "8c608a9d9c1244b3": 1,
           "1d6a9aa61e64f28a": 1,
@@ -4292,7 +4324,7 @@
           "65c276a56ee7b2a9": 1
         },
         "isRootCount": 0,
-        "isLeafCount": 13
+        "isLeafCount": 14
       }
     },
     {
@@ -6106,6 +6138,23 @@
       "writtenName": "Held",
       "props": {},
       "ownerComponentId": "8bbada0f2b7bb601"
+    },
+    {
+      "occurrenceId": "c8c3c85bfbde44c7",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "9a25a3b8cbee157e"
+      },
+      "filePath": "src/inherited-member/Picker.tsx",
+      "line": 18,
+      "column": 7,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "writtenName": "PARTS.constructor",
+      "props": {},
+      "ownerComponentId": "e3cb663d7339f01c"
     },
     {
       "occurrenceId": "ecf5825191d90487",
@@ -8345,6 +8394,24 @@
       "line": 8,
       "column": 16,
       "symbol": "C",
+      "memberChain": []
+    },
+    {
+      "code": "unresolved-reference",
+      "severity": "info",
+      "filePath": "src/inherited-member/Picker.tsx",
+      "line": 16,
+      "column": 7,
+      "symbol": "Alias",
+      "memberChain": []
+    },
+    {
+      "code": "unresolved-reference",
+      "severity": "info",
+      "filePath": "src/inherited-member/Picker.tsx",
+      "line": 17,
+      "column": 7,
+      "symbol": "Read",
       "memberChain": []
     },
     {

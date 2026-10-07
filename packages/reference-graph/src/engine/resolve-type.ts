@@ -6,6 +6,7 @@ import { dynamicImportBinding } from "./wrapper-folding.js";
 import { createCycleGuard, type CycleGuard } from "./cycle-detection.js";
 import { libraryStubFor } from "./library-stubs.js";
 import { assertNever } from "./assert-never.js";
+import { ownProp } from "./own-prop.js";
 
 /** Sentinel for dynamic member access (`obj[expr]` where expr isn't a literal). */
 export const DYNAMIC_MEMBER_KEY = "";
@@ -73,7 +74,7 @@ export function reachMember(
     if (holder.ref !== null) return reachMember(graph, fileGraph, { kind: "TypeOf", ref: holder.ref }, member, argMap, guard);
     const held = new Map<InferredType, ResolvedTerminal[]>();
     for (const { type } of holder.terminals) {
-      const value = type.kind === "Object" ? type.props[obj.member] : undefined;
+      const value = type.kind === "Object" ? ownProp(type, obj.member) : undefined;
       if ((value?.kind !== "TypeOf" && value?.kind !== "MemberOf") || held.has(value)) continue;
       const through = reachMember(graph, fileGraph, value, member, argMap, guard);
       if (through.ref !== null) return through;
@@ -139,7 +140,7 @@ function memberTerminals(
           }
         }
       } else {
-        const v = obj.props[member];
+        const v = ownProp(obj, member);
         if (v) results.push(...property(v));
         else results.push({ type: { kind: "Unknown" }, source: null });
       }

@@ -11,6 +11,7 @@ import { packageNameFromSpecifier } from "./specifier.js";
 import { containsDynamicImport, evalKind, isImportBackedLeaf, nonComponentProduct } from "./component-shape.js";
 import { HOOK_NAME } from "./host-element.js";
 import { assertNever } from "./assert-never.js";
+import { ownProp } from "./own-prop.js";
 import { creditedTerminals, isCallable, matchDenotation, type Denotation, type DenotationCases, type Evaluation, type LateBoundSource, type OpaqueSemantics, type Terminal } from "./denotation.js";
 
 /** True when a `ReturnTypeOf`'s callee is a data-method render
@@ -38,7 +39,7 @@ function isLoader(value: InferredType, graph: Graph, fileGraph: FileGraph, guard
     const holder = objectLiteralOf(value.obj, graph, fileGraph, guard);
     if (holder === null) return false;
     if (value.member !== DYNAMIC_MEMBER_KEY) {
-      const held = holder.props[value.member];
+      const held = ownProp(holder, value.member);
       return held !== undefined && isLoader(held, graph, fileGraph, guard);
     }
     const all = Object.values(holder.props);
@@ -784,7 +785,7 @@ function walkStaticMember(
     }
     const out: Walked[] = [];
     for (const obj of objects) {
-      const value = obj.props[type.member];
+      const value = ownProp(obj, type.member);
       if (value === undefined) continue;
       out.push(...walkInner(graph, fileGraph, value, argMap, guard, fallback, position));
     }

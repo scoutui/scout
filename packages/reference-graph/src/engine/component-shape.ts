@@ -5,6 +5,7 @@ import { resolveReference } from "./resolve-reference.js";
 import { bindingImport, fileGraphForRef, findLocalDeclaration } from "./binding.js";
 import { reachMember, resolveToFunctions, resolveType, DYNAMIC_MEMBER_KEY, type FnEntry } from "./resolve-type.js";
 import { assertNever } from "./assert-never.js";
+import { ownProp } from "./own-prop.js";
 import type { OpaqueSemantics } from "./denotation.js";
 import { libraryExportFor } from "./library-stubs.js";
 
@@ -81,7 +82,7 @@ function evalInner(t: InferredType, ctx: Ctx): ValueKind {
             for (const prop of Object.values(obj.props)) kinds.push(evalInner(prop, ctx));
             continue;
           }
-          const prop = obj.props[t.member];
+          const prop = ownProp(obj, t.member);
           if (prop) kinds.push(evalInner(prop, ctx));
         }
         return kinds.length === 0 ? "other" : merge(kinds);

@@ -452,7 +452,7 @@ describe.skipIf(!databaseUrl)("what a scan couldn't see", { timeout: 30_000 }, (
     ["react-shapes", [
       { kind: "import-not-found", count: 2, examples: [{ text: "ds-icons", count: 2 }], more: 0 },
       { kind: "not-imported", count: 1, examples: [{ text: "Disclosure", count: 1 }], more: 0 },
-      { kind: "not-matched", count: 2, examples: [{ text: "Shown", count: 1 }, { text: "StyledButton", count: 1 }], more: 0 },
+      { kind: "not-matched", count: 4, examples: [{ text: "Alias", count: 1 }, { text: "Read", count: 1 }, { text: "Shown", count: 1 }], more: 1 },
       { kind: "passed-in", count: 5, examples: [{ text: "C", count: 2 }, { text: "Child", count: 1 }, { text: "Component", count: 1 }], more: 1 },
     ]],
     ["unresolved-install", [{ kind: "package-not-installed", count: 1, examples: [{ text: "@example/ui", count: 1 }], more: 0 }]],
