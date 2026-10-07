@@ -219,7 +219,6 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
           view={view}
           prefix={index.prefix}
           onePackage={index.onePackage}
-          chPx={chPx}
           onArea={pickArea}
           onPick={pickValue}
           due={due}
