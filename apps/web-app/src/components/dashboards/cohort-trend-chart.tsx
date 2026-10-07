@@ -3,8 +3,8 @@ import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, seriesToRows, seriesWashes, tooltipRowTimestamp } from "@/lib/dashboard-chart-data";
-import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp } from "@/lib/dashboard-format";
+import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
+import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, moreSeries, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
@@ -63,6 +63,7 @@ export function CohortTrendChart({
   const toggleShown = (key: string) => setShown((current) => (current === key ? null : key));
   const highlighted = shown === null ? hovered : null;
   const config = cohortChartConfig(allSeries);
+  const shared = sharedPackage(allSeries.map((s) => s.label));
   const lastTByKey = new Map(series.map((s) => [s.cohortKey, s.points[s.points.length - 1]?.t]));
   const joins = lineJoins(series);
   // Reserve just enough right margin for the longest (capped) end label.
@@ -132,28 +133,35 @@ export function CohortTrendChart({
           />
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
-            content={(props) => (
-              <ChartTooltipContent
-                active={props.active && tooltipRowTimestamp(props.payload) !== from}
-                payload={props.payload}
-                label={props.label}
-                labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, series)}
-                formatter={(value, name, item) => (
-                  <>
-                    <span
-                      className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: item?.color }}
-                    />
-                    <div className="flex flex-1 items-center justify-between gap-3 leading-none">
-                      <TooltipSeriesName name={config[String(name)]?.label ?? name} deprecatedOnly={deprecatedOnly.has(String(name))} />
-                      <span className="font-medium tabular-nums text-foreground">
-                        {formatMetric(Number(value), metric)}
-                      </span>
-                    </div>
-                  </>
-                )}
-              />
-            )}
+            isAnimationActive={false}
+            wrapperStyle={{ zIndex: 10 }}
+            content={(props) => {
+              const { rows, more } = tooltipRows(props.payload);
+              return (
+                <ChartTooltipContent
+                  active={props.active && tooltipRowTimestamp(props.payload) !== from}
+                  payload={rows}
+                  label={props.label}
+                  className={more > 0 ? "w-64" : undefined}
+                  footer={more > 0 ? moreSeries(more) : null}
+                  labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, series)}
+                  formatter={(value, name, item) => (
+                    <>
+                      <span
+                        className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: item?.color }}
+                      />
+                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
+                        <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} />
+                        <span className="font-medium tabular-nums text-foreground">
+                          {formatMetric(Number(value), metric)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                />
+              );
+            }}
           />
           {series.map((s, i) => {
             const color = colors.get(s.cohortKey) ?? "";
@@ -252,6 +260,11 @@ export function CohortTrendChart({
       ) : null}
     </div>
   );
+}
+
+/** A tooltip row's series name, without the package when every series on the chart shares it. */
+export function seriesName(label: ReactNode, shared: string | null): ReactNode {
+  return shared !== null && typeof label === "string" ? splitCohortLabel(label).name : label;
 }
 
 /** A ring on a line where a repo joins it, in the line's colour on the card surface. */

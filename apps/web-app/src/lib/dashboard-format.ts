@@ -32,6 +32,18 @@ export function splitCohortLabel(label: string): { name: string; packageName?: s
   return { name, ...(mid.length > 0 ? { packageName: mid } : {}) };
 }
 
+/** How many series a chart or tooltip leaves unnamed. */
+export function moreSeries(n: number): string {
+  return `${n} more series`;
+}
+
+/** The package two or more cohort labels all name, or null when there's one label, one names none or two differ. */
+export function sharedPackage(labels: readonly string[]): string | null {
+  const packages = new Set(labels.map((label) => splitCohortLabel(label).packageName));
+  const [only] = packages;
+  return labels.length > 1 && packages.size === 1 && only !== undefined ? only : null;
+}
+
 /**
  * The distinctive part of a cohort label for tight chart space (end-of-line
  * labels): a package's last path segment (not the shared "@scope/" prefix) or a

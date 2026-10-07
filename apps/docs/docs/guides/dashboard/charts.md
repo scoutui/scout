@@ -91,7 +91,7 @@ To see one line of a **Trend** chart on its own, press its name under the chart.
 
 On a saved chart's page, press **⋯**, then **Export**. On a migration or retirement chart, the same items are in the **⋯** menu itself.
 
-- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value. The image is always light, whichever theme you use.
+- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value. On a **Trend** or **Stacked** chart with many series, it names only the largest and says how many more there are. The image is always light, whichever theme you use.
 - **Download CSV** saves a file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
 - **Copy image** copies the same image as **Download PNG**, ready to paste. Browsers that can't copy images don't show it.
 - **Copy table** copies the same table as **Download CSV**, ready to paste into a spreadsheet.

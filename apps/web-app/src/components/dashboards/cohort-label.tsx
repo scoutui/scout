@@ -34,8 +34,8 @@ function DeprecatedOnlyText() {
 
 export function TooltipSeriesName({ name, deprecatedOnly }: { name: ReactNode; deprecatedOnly: boolean }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className="font-mono text-muted-foreground">{name}</span>
+    <span className="inline-flex min-w-0 items-baseline gap-1.5">
+      <span className="truncate font-mono text-muted-foreground">{name}</span>
       {deprecatedOnly ? <DeprecatedOnlyText /> : null}
     </span>
   );

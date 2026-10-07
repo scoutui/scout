@@ -21,6 +21,7 @@ const ROLE_PRIMITIVES: Record<FigureColorRole, string> = {
 const LINE_WIDTH = 2.5;
 const DOT_RADIUS = 4;
 const DOT_RING = 2;
+const LEADER_WIDTH = 1;
 const AREA_ALPHA = 0.3;
 const AREA_EDGE = 2;
 const SWATCH = 10;
@@ -166,7 +167,14 @@ export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: Figu
         ctx.stroke();
       }
     }
-    for (const label of marks.endLabels) write(ctx, label, mono(14), label.color);
+    ctx.strokeStyle = palette.muted;
+    ctx.lineWidth = LEADER_WIDTH;
+    for (const label of marks.endLabels) {
+      trace(ctx, label.leader);
+      ctx.stroke();
+      write(ctx, label.name, mono(BAR_TEXT_SIZE), palette.ink);
+      write(ctx, label.value, mono(BAR_TEXT_SIZE), palette.muted);
+    }
   } else if (marks.kind === "areas") {
     for (const area of marks.areas) {
       trace(ctx, [...area.top, ...[...area.bottom].reverse()]);
@@ -201,6 +209,7 @@ export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: Figu
     write(ctx, { text: entry.value, x: valueX, y: entry.y, align: "left", maxWidth: valueWidth }, mono(15), palette.muted);
   }
 
+  if (figure.note) write(ctx, figure.note, sans(400, 15), palette.muted);
   write(ctx, figure.title, sans(600, 30), palette.ink);
   write(ctx, figure.subtitle, sans(400, 18), palette.muted);
   write(ctx, figure.footer, sans(400, 14), palette.muted);
