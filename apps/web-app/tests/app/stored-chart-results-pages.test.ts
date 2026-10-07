@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { enqueueChartResults, PostgresDriver, PROJECTION_VERSION, type Dashboard, type GovernanceRecord, type StorageDriver } from "@scoutui/web-shared";
+import { artifact, component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { processChartResultsJob } from "../../src/lib/chart-results-job.ts";
 import { claimScanJob, enqueueScanJob, failScanJob, SCAN_JOB_PRIORITY } from "../../src/lib/scan-jobs.ts";
@@ -322,6 +323,24 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const tree = await page(trackingParams(`migration:${record.id}`));
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Migration: Button · @sample/core → Field · @sample/mixed", children: expect.anything() }]);
       expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
+    });
+  });
+
+  it("says there's nothing to migrate on a migration chart whose old component no scan has a use of", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const unused = component(packageExport("@sample/legacy", "Badge"));
+      await publishScan(pool, artifact({ repoId: "repo-c", scanId: "scan-unused", scannedAt: "2026-06-02T00:00:00Z", components: [unused], occurrences: [] }), { uploadedByUserId: null });
+      const record = await driver.createGovernance({ grain: "component", targetPackage: "@sample/legacy", targetExport: "Badge", disposition: { kind: "superseded", by: { packageName: "@sample/core", exportName: "Button" } } });
+      await enqueueChartResults(pool);
+      await storeResults(pool);
+      const { default: page } = await import("@/app/charts/[dashboardId]/page");
+      const tree = await page(trackingParams(`migration:${record.id}`));
+      expect(allPropsFor(tree, "EmptyState")).toEqual([expect.objectContaining({
+        title: "No scan has found a use of Badge · @sample/legacy, so there's nothing to migrate.",
+        description: "To count a repo that used it before its first scan, upload scans of that repo's older commits.",
+      })]);
+      expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([]);
     });
   });
 

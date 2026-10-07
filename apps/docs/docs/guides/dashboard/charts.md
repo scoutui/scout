@@ -119,7 +119,7 @@ A chart leaves off any series the dashboard can no longer find, and its row on t
 
 ## Migration and retirement charts
 
-You don't build these. Each comes from a lifecycle record on the **governance** page, and shows uses over time across every repo: the deprecated side and its replacement for a migration, the retired side alone for a retirement. A record only gets a row once a scan has used what it names.
+You don't build these. Each comes from a lifecycle record on the **governance** page. A migration's chart shows uses over time of the deprecated side and its replacement, across the repos that have used the deprecated side. A retirement's chart shows the retired side alone, across every repo. A record only gets a row once a scan has used what it names.
 
 These charts have no **Edit** or **Delete**, but you can [export](#export-a-chart) them. One goes away when its record is deleted. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 

@@ -74,6 +74,7 @@ describe("TrackingReadout", () => {
     [{}, "50% migrated · 5 left · 2 more in the last 30 days"],
     [{ delta: -14, reposAdded: 1 }, "50% migrated · 5 left · 14 fewer in the last 30 days · 1 repo added"],
     [{ delta: null }, "50% migrated · 5 left"],
+    [{ progress: null, remaining: 0, delta: null }, "— migrated · 0 left"],
     [{ kind: "retirement" as const, progress: null, delta: 0 }, "5 left · no change in the last 30 days"],
   ])("reads %o as %s", (over, text) => {
     const { container } = render(<TrackingReadout entry={entry(over)} />);
@@ -136,5 +137,13 @@ describe("RepoRow expanded chart", () => {
     render(<TrackingSection kind="migration" entries={[entry({})]} surface="repo" preExpand />);
     expect((await screen.findByTestId("trend-chart")).getAttribute("data-metric")).toBe("count");
     expect(screen.getAllByTestId("trend-chart")).toHaveLength(1);
+  });
+
+  it("a migration row whose repo has no use of the old component says there's nothing to migrate instead of a chart", async () => {
+    const unused = entry({ id: "migration:unused", active: false, remaining: 0, progress: null, delta: null, coverage: { total: 0, points: [] } });
+    const done = entry({ id: "migration:done", active: false, remaining: 0, progress: 1, delta: null });
+    render(<TrackingSection kind="migration" entries={[]} complete={[unused, done]} surface="repo" />);
+    expect(screen.getByText("No scan of this repo has found a use of OldButton · old-ds, so there's nothing to migrate.")).toBeInTheDocument();
+    expect(await screen.findAllByTestId("trend-chart")).toHaveLength(1);
   });
 });

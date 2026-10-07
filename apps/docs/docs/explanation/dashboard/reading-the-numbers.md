@@ -80,9 +80,11 @@ If `checkout` has 30 uses of `LegacyButton` and 90 of its replacement `Button`, 
 
 The denominator is the pair, not every use in the repo. A migration asks how much of the old one is left and how much of the new one has arrived, so the rest of the repo doesn't dilute it. A repo that also uses a charting library and a router shows the same progress as a repo that uses nothing else.
 
-The replacement side counts every use of the replacement within the scope, including uses that never replaced anything. On a repo's **Adoption** tab the scope is that repo; on the **charts** page it is every repo. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page reads **94.2% migrated** (490 ÷ 520), while `checkout`'s **Adoption** tab still reads 75%.
+The replacement side counts only in repos that have used the deprecated side in any of their scans, so a repo that never needed to migrate doesn't raise the figure. If `storefront` uses `Button` 400 times and never used `LegacyButton`, the **charts** page still reads **75% migrated**, the same as `checkout`'s **Adoption** tab.
 
-The replacement side counts only the component or package the record names. Until a repo in the scope uses it, the row reads **0% migrated**.
+A repo that has finished still counts its uses of `Button`, because an earlier scan of it used `LegacyButton`. A repo first scanned after it finished has no uses of `LegacyButton` on record, so it isn't counted until you [fill in its history](/docs/guides/fill-in-a-repos-history) back to a commit that used it.
+
+The replacement side counts only the component or package the record names. Until a repo that has used the deprecated side uses it, the row reads **0% migrated**.
 
 A retirement has no replacement, so there is nothing to divide. It reads **N left**, the uses still in the code.
 
@@ -96,7 +98,7 @@ The change covers the last 30 days, on the **charts** page and on a repo's **Ado
 
 A table chart's **Change** column counts the same way, whether the chart covers all repos or one. With **% of uses**, the change compares the same repos at both ends, so a repo joining doesn't move it. A series with nothing to compare yet reads **—**.
 
-A record is complete when the deprecated side has no uses in any latest scan within the scope. So a migration can be complete on one repo's **Adoption** tab and still in progress on the **charts** page. A repo that never used `LegacyButton` has no row for it on its **Adoption** tab.
+A record is complete when the deprecated side has no uses in any latest scan: on a repo's **Adoption** tab, that repo's; on the **charts** page, every repo's. So a migration can be complete on one repo's **Adoption** tab and still in progress on the **charts** page. A repo that never used `LegacyButton` has no row for it on its **Adoption** tab.
 
 ## Why there is no single adoption percentage
 

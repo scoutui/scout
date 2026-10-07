@@ -30,6 +30,9 @@ const trackingMemo = new WeakMap<object, Map<string, GovernanceTracking[]>>();
  * components its rule governs in each scan (`governedComponentIds`); the
  * config's cohorts name them: the package for a package-wide side, else one
  * component cohort per component the side governs in some in-scope scan.
+ * A migration's successor cohorts, series, coverage and progress cover only
+ * the repos that have used the deprecated side in some scan, so a repo that
+ * only uses the successor doesn't count; with no such repo, `progress` is null.
  *
  * `delta` is the change in `remaining` over the 30 days up to the derivation's
  * `asOf`, each repo in scope compared with itself (from its first scan when it
@@ -217,12 +220,15 @@ function deriveOne(
     };
   }
 
-  // Successor side: the component or package `by` names, matched like the deprecated side; 0 uses until a scan in scope holds it.
+  // Both sides count only in the repos that have used the deprecated side in some scan.
+  const used = reposWithUses(scans, from.occurrences);
+  const counting = scans.filter((s) => used.has(s.meta.repo.id));
+  // Successor side: the component or package `by` names, matched like the deprecated side; 0 uses until a counting scan holds it.
   const by = record.disposition.by;
   const successorRule: GovernanceRule = by.exportName === undefined
     ? { grain: "package", targetPackage: by.packageName, targetExport: null }
     : { grain: "component", targetPackage: by.packageName, targetExport: by.exportName };
-  const to = sideOf([successorRule], records, scans, "successor");
+  const to = sideOf([successorRule], records, counting, "successor");
   const toLabel = labelOf([successorRule]);
   const successor: SeriesCohort = { key: `successor:${record.id}`, label: toLabel, color: "", role: "successor", occurrences: to.occurrences };
 
@@ -230,7 +236,7 @@ function deriveOne(
   // snapshot carried by the row readout.
   const config: DashboardConfig = { scope, cohorts: [...from.cohorts, ...to.cohorts], chartType: "trend", metric: "count" };
   // Counts are both the display series and the maths (progress = successor ÷ pair).
-  const { series: counts, coverage } = clipToObservation(projectSeries(scans, [deprecated, successor], "count"), projectRepoCoverage(scans));
+  const { series: counts, coverage } = clipToObservation(projectSeries(counting, [deprecated, successor], "count"), projectRepoCoverage(counting));
   const [dep, succ] = counts;
   const remaining = at(dep, 1);
   const progress = pairShare(at(dep, 1), at(succ, 1));
@@ -264,6 +270,15 @@ function scansByRepo(scans: DigestScan[]): DigestScan[][] {
   return [...byRepo.values()].map((repoScans) => repoScans.sort((a, b) => newestScanFirst(a.meta, b.meta)));
 }
 
+/** The repos with at least one scan where the count is above 0. */
+function reposWithUses(scans: DigestScan[], countOf: (scan: DigestScan) => number): Set<string> {
+  const used = new Set<string>();
+  for (const scan of scans) {
+    if (!used.has(scan.meta.repo.id) && countOf(scan) > 0) used.add(scan.meta.repo.id);
+  }
+  return used;
+}
+
 /**
  * The change in a count per scan over the 30 days up to `asOf`: each repo's latest scan compared with its latest scan
  * on or before the window's start (its first scan when it joined inside the window), added up across repos.
@@ -273,6 +288,7 @@ function scansByRepo(scans: DigestScan[]): DigestScan[][] {
 export function changeIn(scans: DigestScan[], countOf: (scan: DigestScan) => number, asOf: string): Change {
   const counts = new Map(scans.map((scan) => [scan.meta.scanId, countOf(scan)]));
   const occurrences = (scan: DigestScan) => counts.get(scan.meta.scanId) ?? 0;
+  const used = reposWithUses(scans, occurrences);
   const start = Date.parse(asOf) - CHANGE_WINDOW_MS;
   const before = (scan: DigestScan) => Date.parse(scanOrderTime(scan.meta)) <= start;
   const firstMonth = !scans.some(before);
@@ -280,8 +296,8 @@ export function changeIn(scans: DigestScan[], countOf: (scan: DigestScan) => num
   let reposAdded = 0;
   let reading = false;
   for (const repoScans of scansByRepo(scans)) {
-    if (!repoScans.some((scan) => occurrences(scan) > 0)) continue;
     const latest = repoScans[0] as DigestScan;
+    if (!used.has(latest.meta.repo.id)) continue;
     const first = repoScans[repoScans.length - 1] as DigestScan;
     const baseline = repoScans.find(before) ?? first;
     reading ||= repoScans.length >= 2;

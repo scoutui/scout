@@ -237,6 +237,12 @@ export default async function DashboardViewPage({
                 : `There are no scans for ${missingRepo.repoId} any more. It may have been renamed or deleted.`
             }
           />
+        ) : derivedEntry?.coverage.total === 0 ? (
+          <EmptyState
+            icon={<SearchX className="size-6" />}
+            title={`No scan has found a use of ${derivedEntry.fromLabel}, so there's nothing to migrate.`}
+            description="To count a repo that used it before its first scan, upload scans of that repo's older commits."
+          />
         ) : isEmptyView(view) ? (
           <EmptyState
             icon={<SearchX className="size-6" />}
