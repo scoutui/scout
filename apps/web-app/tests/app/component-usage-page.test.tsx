@@ -263,22 +263,15 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     expect(screen.getByRole("button", { name: "Remove the filter package @example/admin" })).toBeInTheDocument();
   });
 
-  it("shortens a package's scope to @… on a row too narrow for its whole name", async () => {
-    // A whole name takes 8px a character, measured from its hidden copy, and every row has 100px for it.
-    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
-      return this.getAttribute("aria-hidden") === "true" ? (this.textContent?.length ?? 0) * 8 : 100;
-    });
-    try {
-      await show(link.id);
-      const label = (name: RegExp) => {
-        const shown = screen.getByRole("button", { name }).firstElementChild?.cloneNode(true) as HTMLElement;
-        for (const hidden of shown.querySelectorAll("[aria-hidden='true']")) hidden.remove();
-        return shown.textContent;
-      };
-      expect([label(/^Package @example\/web,/), label(/^Package @example\/admin,/)]).toEqual(["@example/web", "@…/admin"]);
-    } finally {
-      width.mockRestore();
-    }
+  it("gives a package's scope a short form, @…, for a row too narrow for its whole name", async () => {
+    await show(link.id);
+    const name = screen.getByRole("button", { name: /^Package @example\/admin,/ }).firstElementChild?.firstElementChild as HTMLElement;
+    expect(name.style.getPropertyValue("--chars")).toBe("14");
+    expect([...name.children].map(part => [part.textContent, part.className.match(/if-name-\w+/)?.[0] ?? null])).toEqual([
+      ["@example", "if-name-fits"],
+      ["@…", "if-name-overflows"],
+      ["/admin", null],
+    ]);
   });
 
   it("names the one package its calls are in above their folders", async () => {
