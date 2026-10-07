@@ -2,8 +2,8 @@ import type { CSSProperties } from "react";
 
 /**
  * A package's name in the monospace face, its scope faint. Where the whole name doesn't fit its box, the scope reads
- * `@…`, and a name still too long is cut at the end. CSS picks the form from the name's length in characters, so it's
- * right from the first paint. The box takes its width from where it sits, such as a grid cell, not from the name.
+ * `@…`, and a name still too long is cut at the end. CSS picks the form from the name's length in characters. The box
+ * takes its width from where it sits, such as a grid cell, not from the name.
  */
 export function PackageName({ name }: { name: string }) {
   const slash = name.startsWith("@") ? name.indexOf("/") : -1;
