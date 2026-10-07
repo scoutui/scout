@@ -30,9 +30,9 @@ const trackingMemo = new WeakMap<object, Map<string, GovernanceTracking[]>>();
  * components its rule governs in each scan (`governedComponentIds`); the
  * config's cohorts name them: the package for a package-wide side, else one
  * component cohort per component the side governs in some in-scope scan.
- * A migration's series, coverage and progress cover only the repos that have
- * used the deprecated side in some scan, so a repo that only uses the
- * successor doesn't count; with no such repo, `progress` is null.
+ * A migration's successor cohorts, series, coverage and progress cover only
+ * the repos that have used the deprecated side in some scan, so a repo that
+ * only uses the successor doesn't count; with no such repo, `progress` is null.
  *
  * `delta` is the change in `remaining` over the 30 days up to the derivation's
  * `asOf`, each repo in scope compared with itself (from its first scan when it

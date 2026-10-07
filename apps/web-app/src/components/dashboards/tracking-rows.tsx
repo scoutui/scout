@@ -158,9 +158,11 @@ function RepoRow({ entry, defaultOpen }: { entry: GovernanceTracking; defaultOpe
       </summary>
       <div className="border-t px-4 pb-4 pt-4">
         {/* Both kinds open onto counts over time: a migration is the
-            deprecated + successor pair, a retirement the lone deprecated series. */}
+            deprecated + successor pair, a retirement the lone deprecated series.
+            A migration with no use of the deprecated side in this repo has
+            nothing to chart. */}
         {entry.coverage.total === 0 ? (
-          <p className="text-sm text-muted-foreground">This repo hasn't used {entry.fromLabel}, so there's nothing to migrate.</p>
+          <p className="text-sm text-muted-foreground">No scan of this repo has found a use of {entry.fromLabel}, so there's nothing to migrate.</p>
         ) : (
           <LazyCohortTrendChart
             series={entry.series}

@@ -240,7 +240,8 @@ export default async function DashboardViewPage({
         ) : derivedEntry?.coverage.total === 0 ? (
           <EmptyState
             icon={<SearchX className="size-6" />}
-            title={`No repo has used ${derivedEntry.fromLabel}, so there's nothing to migrate.`}
+            title={`No scan has found a use of ${derivedEntry.fromLabel}, so there's nothing to migrate.`}
+            description="To count a repo that used it before its first scan, upload scans of that repo's older commits."
           />
         ) : isEmptyView(view) ? (
           <EmptyState

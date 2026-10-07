@@ -326,7 +326,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     });
   });
 
-  it("says there's nothing to migrate on a migration chart whose old component no repo has used", async () => {
+  it("says there's nothing to migrate on a migration chart whose old component no scan has a use of", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const unused = component(packageExport("@sample/legacy", "Badge"));
@@ -336,7 +336,10 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await storeResults(pool);
       const { default: page } = await import("@/app/charts/[dashboardId]/page");
       const tree = await page(trackingParams(`migration:${record.id}`));
-      expect(allPropsFor(tree, "EmptyState")).toEqual([expect.objectContaining({ title: "No repo has used Badge · @sample/legacy, so there's nothing to migrate." })]);
+      expect(allPropsFor(tree, "EmptyState")).toEqual([expect.objectContaining({
+        title: "No scan has found a use of Badge · @sample/legacy, so there's nothing to migrate.",
+        description: "To count a repo that used it before its first scan, upload scans of that repo's older commits.",
+      })]);
       expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([]);
     });
   });

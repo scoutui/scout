@@ -139,10 +139,11 @@ describe("RepoRow expanded chart", () => {
     expect(screen.getAllByTestId("trend-chart")).toHaveLength(1);
   });
 
-  it("a migration row whose repo hasn't used the old component says there's nothing to migrate, with no chart", () => {
-    const unused = entry({ active: false, remaining: 0, progress: null, delta: null, coverage: { total: 0, points: [] } });
-    render(<TrackingSection kind="migration" entries={[]} complete={[unused]} surface="repo" />);
-    expect(screen.getByText("This repo hasn't used OldButton · old-ds, so there's nothing to migrate.")).toBeInTheDocument();
-    expect(screen.queryByTestId("trend-chart")).toBeNull();
+  it("a migration row whose repo has no use of the old component says there's nothing to migrate instead of a chart", async () => {
+    const unused = entry({ id: "migration:unused", active: false, remaining: 0, progress: null, delta: null, coverage: { total: 0, points: [] } });
+    const done = entry({ id: "migration:done", active: false, remaining: 0, progress: 1, delta: null });
+    render(<TrackingSection kind="migration" entries={[]} complete={[unused, done]} surface="repo" />);
+    expect(screen.getByText("No scan of this repo has found a use of OldButton · old-ds, so there's nothing to migrate.")).toBeInTheDocument();
+    expect(await screen.findAllByTestId("trend-chart")).toHaveLength(1);
   });
 });

@@ -57,7 +57,7 @@ The **governance** page then shows how much of each record's package or componen
 
 ## Follow progress
 
-On the **governance** page, select a record's count to open its chart: uses over time of `LegacyButton` and `Button`, added up across the repos that have used `LegacyButton`. Each side counts its component from every import path, together with its parts. Until one of them uses `Button`, its line stays at 0. A retirement's chart shows the retired component alone.
+On the **governance** page, select a record's count to open its chart: uses over time of `LegacyButton` and `Button`, added up across the repos that have used `LegacyButton`. Each side counts its component from every import path, together with its parts. Until one of those repos uses `Button`, the `Button` line stays at 0. A retirement's chart shows the retired component alone.
 
 To see where a record's component or package is still used, select the record's name.
 
