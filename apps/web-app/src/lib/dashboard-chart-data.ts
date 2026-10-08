@@ -113,6 +113,17 @@ export function tooltipRows<T extends { value?: unknown; dataKey?: unknown }>(pa
 }
 
 /**
+ * Where a tooltip's list of rows scrolls to, and whether rows lie beyond its top and bottom edges there. The list is
+ * `height` tall, holds `content` of rows `pitch` apart and sits at `scrollTop`. With `rowTop`, it scrolls as little as
+ * keeps that row and one row either side in view, landing on a row's top edge.
+ */
+export function tooltipListScroll({ scrollTop, height, content, pitch, rowTop }: { scrollTop: number; height: number; content: number; pitch: number; rowTop?: number | undefined }): { scrollTop: number; above: boolean; below: boolean } {
+  const fit = rowTop === undefined ? scrollTop : Math.min(Math.max(scrollTop, rowTop + 2 * pitch - height), rowTop - pitch);
+  const top = Math.min(Math.max(0, Math.ceil(fit / pitch) * pitch), Math.max(0, content - height));
+  return { scrollTop: top, above: top > 0, below: top + height < content };
+}
+
+/**
  * Reads the epoch-ms `ts` off the hovered or focused tooltip row, for the numeric
  * time axis. Once the x-axis is numeric, shadcn's `ChartTooltipContent` passes
  * `labelFormatter` a cohort's label (`itemConfig?.label`), not the axis value

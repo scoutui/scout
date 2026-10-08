@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "rea
 import { Area, AreaChart, CartesianGrid, type TooltipContentProps, XAxis, YAxis, useYAxisInverseScale } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, scanDetail, searchedSeries, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
+import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, scanDetail, searchedSeries, seriesToRows, seriesWashes, tooltipListScroll, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
@@ -276,8 +276,8 @@ function JoinMarker({ cx, cy, color, dimmed }: { cx: number; cy: number; color: 
 
 /**
  * A chart over time's tooltip at the hovered scan, headed by `scanTooltipLabel`, with a row for every series. Past about
- * ten rows the list scrolls, and the row under the pointer is bold and kept in view. With `stack`, the series are bands
- * stacked in that order. `format` sets each value.
+ * ten rows the list scrolls and fades at an edge with rows beyond it, and the row under the pointer is bold and kept in
+ * view. With `stack`, the series are bands stacked in that order. `format` sets each value.
  */
 export function ScanTooltip({
   active,
@@ -305,15 +305,20 @@ export function ScanTooltip({
   const toValue = useYAxisInverseScale();
   const at = coordinate === undefined || toValue === undefined ? undefined : Number(toValue(coordinate.y));
   const { rows, under } = tooltipRows(payload, at, stack);
-  const marked = useRef<HTMLDivElement>(null);
+  const anchor = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const row = marked.current?.parentElement;
+    const row = anchor.current?.parentElement;
     const list = row?.parentElement;
     if (!row || !list) return;
-    const pitch = row.offsetHeight + Number.parseFloat(getComputedStyle(list).rowGap);
-    const top = row.offsetTop - list.offsetTop;
-    const fit = Math.min(Math.max(list.scrollTop, top + 2 * pitch - list.clientHeight), top - pitch);
-    list.scrollTop = Math.ceil(fit / pitch) * pitch;
+    const { scrollTop, above, below } = tooltipListScroll({
+      scrollTop: list.scrollTop,
+      height: list.clientHeight,
+      content: list.scrollHeight,
+      pitch: row.offsetHeight + Number.parseFloat(getComputedStyle(list).rowGap),
+      rowTop: under === undefined ? undefined : row.offsetTop - list.offsetTop,
+    });
+    list.scrollTop = scrollTop;
+    list.style.maskImage = `linear-gradient(to bottom, transparent, #000 ${above ? "1rem" : "0px"}, #000 calc(100% - ${below ? "1rem" : "0px"}), transparent)`;
   });
   return (
     <ChartTooltipContent
@@ -325,7 +330,7 @@ export function ScanTooltip({
       formatter={(value, name, item) => (
         <>
           <span className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item?.color }} />
-          <div ref={item === under ? marked : undefined} className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
+          <div ref={item === (under ?? rows[0]) ? anchor : undefined} className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
             <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} marked={item === under} />
             <span className={cn("tabular-nums text-foreground", item === under ? "font-semibold" : "font-medium")}>{format(Number(value))}</span>
           </div>

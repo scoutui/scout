@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, scanDetail, seriesFrom, seriesWashes, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, scanDetail, seriesFrom, seriesWashes, tooltipListScroll, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -256,6 +256,32 @@ describe("repoCoverageAt", () => {
     ["a chart of one repo", oneRepo, "2026-06-01T00:00:00Z", null],
   ])("labels %s", (_, coverage, t, label) => {
     expect(repoCoverageAt(coverage, Date.parse(t))).toBe(label);
+  });
+});
+
+describe("tooltipListScroll", () => {
+  const list = { height: 188, content: 1076, pitch: 18 };
+
+  it.each([
+    ["stays put while the row and its neighbours are in view", 0, 36, 0],
+    ["scrolls down to show the row and the one below, landing on a row", 0, 500, 360],
+    ["scrolls up to show the row and the one above", 360, 90, 72],
+    ["stops at the end of the list", 0, 1058, 888],
+    ["stays put without a row under the pointer", 360, undefined, 360],
+  ])("%s", (_, scrollTop, rowTop, top) => {
+    expect(tooltipListScroll({ ...list, scrollTop, rowTop }).scrollTop).toBe(top);
+  });
+
+  it.each([
+    ["at the top, rows below only", 0, { above: false, below: true }],
+    ["scrolled part way, rows both ways", 360, { above: true, below: true }],
+    ["at the end, rows above only", 888, { above: true, below: false }],
+  ])("says which edges have rows beyond them: %s", (_, scrollTop, edges) => {
+    expect(tooltipListScroll({ ...list, scrollTop })).toMatchObject(edges);
+  });
+
+  it("says a list that fits has no rows beyond either edge", () => {
+    expect(tooltipListScroll({ ...list, content: 120, scrollTop: 0 })).toMatchObject({ above: false, below: false });
   });
 });
 
