@@ -162,7 +162,7 @@ Every component has exactly one value. The first row that applies wins.
 | Value | When |
 | --- | --- |
 | `direct` | The component has at least one use. |
-| `root` | A component defined in the repo, with no uses, that is the default export of a framework entry file: `{page,layout,template,error,loading,not-found}.{tsx,jsx}` anywhere under an `app/` folder, or any `.tsx` or `.jsx` file under a `pages/` folder except `pages/api/`. The folders can be at any depth, such as `src/app/`. |
+| `root` | A component defined in the repo, with no uses, that is the default export of a route file, such as `app/page.tsx` or a file under `pages/` other than `pages/api/`. |
 | `none` | Anything else, such as a component defined in the repo that renders others but that nothing renders. |
 
 ### Prop value counts {#component-props}
@@ -200,7 +200,7 @@ The props a component defined in the repo declares in its own code. Read from a 
 
 ### `composition` {#composition}
 
-Which components this one renders and which render it. Component A *renders* component B when a place B is used sits inside A's own code, so A is that use's `ownerComponentId`. Unmatched uses don't count. [Composition: renders and rendered by](/docs/explanation/composition-and-ownership) explains how this is worked out.
+Which components this one renders and which render it. Component A *renders* component B when a place B is used sits inside A's own code, so A is that use's `ownerComponentId`. Unmatched uses don't count. [Composition: renders and rendered by](/docs/explanation/composition-and-ownership) explains it.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -217,7 +217,7 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `occurrenceId` | `string` | 16-character id computed from what the use names, its position and its owner. Unique within the scan file. |
+| `occurrenceId` | `string` | 16-character id, unique within the scan file. |
 | `resolution` | object | Which component this is, or why the scan couldn't tell. See [`resolution`](#resolution). |
 | `filePath` | `string` | The file the use is in. |
 | `usedIn` | `string` \| absent | The name of the package the file belongs to: the deepest package in [`meta.scope.packages`](#meta) whose folder holds it. Present only when `meta.scope.packages` has more than one entry. |
@@ -225,7 +225,7 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 | `column` | `number` | Column of the use, counted from 1. |
 | `credit` | object | Whether the component is rendered here or passed to a call. See [`credit`](#credit). |
 | `trace` | array | The steps between this use and the component, such as an import or a wrapper. See [`trace`](#trace). |
-| `writtenName` | `string` \| absent | The name this file renders the component under, with any member path, such as `SettingsHeader` after `import SettingsHeader from "./Header"`, or `Filters.FilterBar`. Present only on a matched use, and only when the name differs from the component's own `exportName`, or `tagName` for a tag. A difference in letter case or hyphens alone doesn't count. A package's default export has no name of its own, so it always has one. |
+| `writtenName` | `string` \| absent | The name this file renders the component under, with any member path, such as `SettingsHeader` after `import SettingsHeader from "./Header"`, or `Filters.FilterBar`. Present only on a matched use, and only when the name differs from the component's own `exportName`, or `tagName` for a tag. |
 | `props` | object | The value passed for each prop here. See [Prop values at one place](#occurrence-props). |
 | `events` | `string[]` \| absent | Vue event listeners bound here, such as `remove` for `@remove`. Handlers passed as props, such as `onClick`, stay in `props`. Absent when none are bound. |
 | `ownerComponentId` | `string` \| absent | The `components[].id` of the component whose code contains this use. Absent outside any component. |
@@ -253,13 +253,13 @@ One entry per [use](/docs/reference/glossary#use): a place in the code where a c
 
 ### Unmatched uses {#unresolved-occurrences}
 
-An [unmatched use](/docs/reference/glossary#unmatched-use) is a place where the scan saw a component used but couldn't tie it to one. It has no `componentId`, and nothing in `components[]` stands for it. It keeps its file, position, `credit`, `trace`, `props` and owner, but doesn't count toward any component's `stats`, `props` or `composition`. When the use came through an import, `trace` keeps that import as written, so it shows which import failed. The scan summary counts them, as in `Scout couldn't match 4 more uses to a component.`
+An [unmatched use](/docs/reference/glossary#unmatched-use) is a place where the scan saw a component used but couldn't tie it to one. It has no `componentId`, and nothing in `components[]` stands for it. It keeps its file, position, `credit`, `trace`, `props` and owner, but doesn't count toward any component's `stats`, `props` or `composition`. When the use came through an import, `trace` keeps that import as written, so it shows which import failed.
 
 `reason.kind` says why:
 
 | `reason.kind` | Other fields | Meaning |
 | --- | --- | --- |
-| `package-not-installed` | `packageName` | The import names a package that a `package.json` declares, either the importing file's workspace package or the workspace root, but the package isn't installed. Each such package also gets a [`dependency-not-installed`](/docs/reference/diagnostics#dependency-not-installed) diagnostic. A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans, unless it's a dry run. One listed only in `peerDependencies` or `optionalDependencies` doesn't: the scan uploads with these uses unmatched. |
+| `package-not-installed` | `packageName` | The import names a package that a `package.json` declares, either the importing file's workspace package or the workspace root, but the package isn't installed. Each such package also gets a [`dependency-not-installed`](/docs/reference/diagnostics#dependency-not-installed) diagnostic. |
 | `module-not-found` | none | The import can't be followed: a path to a missing file, a path to a file outside the scanned folder (outside the monorepo, when the folder is part of one) unless the file is in an installed package, an alias your config or `tsconfig.json` doesn't define, or a package that no `package.json` declares and that isn't installed. |
 | `unbound-name` | `name` | Nothing in the file imports or declares the name, such as `<Widget />` with no import. In a Vue template it also covers a tag whose import lacks the name, such as `<Menu.Item>` when the imported `Menu` has no `Item`. |
 | `chain-bailed` | `code` | Following a package's re-exports to the file that defines the component looped back on itself (`"cycle-detected"`) or passed through more than 32 files (`"chain-too-deep"`). The same problem is reported as a [diagnostic](/docs/reference/diagnostics#package-re-export-codes). |
@@ -333,15 +333,15 @@ A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a 
 | Field | Type | Description |
 | --- | --- | --- |
 | `schemaVersion` | `number` | Version of the file format: `2`. |
-| `scannerName` | `string` | Package name of the CLI that wrote the file: `@scoutui/cli`. The dashboard refuses a scan without it. |
+| `scannerName` | `string` | Package name of the CLI that wrote the file: `@scoutui/cli`. |
 | `scannerVersion` | `string` | Version of the CLI that wrote the file. |
 | `scanId` | `string` | ULID, new for every scan. |
-| `scannedAt` | `string` | When the scan ran, as an ISO 8601 UTC timestamp. The dashboard dates a scan by `repo.committedAt`, not by this field. |
+| `scannedAt` | `string` | When the scan ran, as an ISO 8601 UTC timestamp. |
 | `repo.id` | `string` | The [repo id](/docs/reference/glossary#repo-id). [Repo identity](/docs/reference/config#repo-identity) says how it's chosen. |
-| `repo.gitRemote` | `string \| null` | URL of the remote: the one `git config scout.remote` names, else `upstream` when there is one, else the only remote, else `origin`. It's the URL `git remote get-url` gives, so `url.<base>.insteadOf` rewrites apply, with an SSH host alias replaced by the host name `ssh -G` gives for it. When that host name is a subdomain of the host as written, as with GitHub's, GitLab's and Bitbucket's port-443 endpoints (`Host github.com` with `HostName ssh.github.com`), the host is kept as written. Any `user:password@` in an `https://` URL is left out. `null` when there is none. |
-| `repo.commit` | `string` | SHA of the checked-out commit. The dashboard keeps one scan per repo id and commit: it skips a scan of a commit it already has, unless the scan is uploaded with [`--rescan`](/docs/reference/cli#scan) or the dashboard couldn't prepare the stored scan: then it replaces it. |
+| `repo.gitRemote` | `string \| null` | URL of the remote: the one `git config scout.remote` names, else `upstream` when there is one, else the only remote, else `origin`. Any `user:password@` in an `https://` URL is left out. `null` when there is none. |
+| `repo.commit` | `string` | SHA of the checked-out commit. |
 | `repo.committedAt` | `string` | Committer date of that commit, as an ISO 8601 UTC timestamp. |
-| `repo.branchPosition` | `number` (optional) | In an uploaded scan: how many commits the tracked branch's first-parent history has up to and including `repo.commit`. The dashboard uses it to order scans of commits with the same date. Absent on a dry run. |
+| `repo.branchPosition` | `number` (optional) | In an uploaded scan: how many commits the tracked branch's first-parent history has up to and including `repo.commit`. Absent on a dry run. |
 | `repo.initialCommit` | `string \| null` | SHA of the first commit in the history. `null` in a shallow clone, so [fetch full history](/docs/guides/run-in-ci#fetch-full-history) in CI. |
 | `repo.branch` | `string \| null` | In an uploaded scan, the branch the dashboard tracks. On a dry run, the checked-out branch, `null` on a detached HEAD. |
 | `scope.folder` | `string` | The config folder. `""` when it is the repository root. |
