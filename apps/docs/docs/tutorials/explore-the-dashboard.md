@@ -139,13 +139,13 @@ We select **repos** and open `acme/storefront`:
 
 - The status line now starts with `1 deprecated component in use`.
 - In the **Components** table, `LegacyButton` has a warning icon after its name.
-- On the **Adoption** tab, `Migrations in this repo · 1 in progress · change over the last 30 days` has one row, `LegacyButton · @acme/ui-legacy` above `to Button · @acme/ui`, reading `66.7% migrated` and `1 left`. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)). The row is already open on its chart, which stays empty until step 8.
+- On the **Adoption** tab, **Migrations and retirements in this repo** has one row, `@acme/ui-legacy`, with `1` under **Uses left**. We select it, and its one migration, `LegacyButton` above `to Button · @acme/ui`, reads `66.7%` under **Migrated**. That is `Button`'s 2 uses out of the 3 uses of the two buttons together ([how a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted)).
 
 ## Step 7: See the migration's chart
 
-We select **charts** in the top navigation. Under `Migrations · 1 in progress · change over the last 30 days` is the same row, reading `66.7% migrated` and `1 left`. We didn't have to build this chart; the dashboard made it from our record.
+We select **charts** in the top navigation. Under **Migrations and retirements** is the same `@acme/ui-legacy` row. We select it, and `LegacyButton` reads `66.7%` under **Migrated** and `1` under **Uses left**. We didn't have to build this chart; the dashboard made it from our record.
 
-We click the row. The chart page opens with the heading `Migration: LegacyButton · @acme/ui-legacy → Button · @acme/ui`. The chart area reads `Trends appear once these repos have been scanned more than once.` A trend needs two points in time, and we have one scan.
+We click `LegacyButton`. The chart page opens with the heading `Migration: LegacyButton · @acme/ui-legacy → Button · @acme/ui`. The chart area reads `Trends appear once these repos have been scanned more than once.` A trend needs two points in time, and we have one scan.
 
 ## Step 8: Scan again
 

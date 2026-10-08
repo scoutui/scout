@@ -18,7 +18,7 @@ When a repo's latest scan isn't ready, its numbers come from its newest scan tha
 Two places read more than the latest scan:
 
 - A repo page opened on an older scan shows that scan.
-- Charts over time, including the charts on a repo page's **Adoption** tab, read the whole history. Each point in time uses every repo's most recent ready scan as of that moment.
+- Charts over time, including the migration and retirement charts opened from a repo's **Adoption** tab, read the whole history. Each point in time uses every repo's most recent ready scan as of that moment.
 
 A repo joins a chart over time at its first scan. A line starts at the first scan of a repo that uses it, and when another repo that uses it is scanned for the first time, the line can jump though no code changed. A small ring marks that point.
 
