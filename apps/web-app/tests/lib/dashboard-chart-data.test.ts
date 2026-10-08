@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesFrom, seriesWashes, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, scanDetail, seriesFrom, seriesWashes, tooltipListScroll, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -189,20 +189,44 @@ describe("time axis", () => {
 
 describe("tooltipRows", () => {
   const row = (name: string, value: number | undefined) => ({ name, value });
+  const names = (rows: { name: string }[]) => rows.map((r) => r.name);
 
-  it("lists every series, largest value first, when there are ten or fewer", () => {
-    expect(tooltipRows([row("a", 3), row("b", 9), row("c", 5)])).toEqual({ rows: [row("b", 9), row("c", 5), row("a", 3)], more: 0 });
-  });
-
-  it("lists the ten largest values and counts the rest", () => {
-    const payload = Array.from({ length: 12 }, (_, i) => row(`s${i}`, i));
-    const { rows, more } = tooltipRows(payload);
-    expect(rows.map((r) => r.name)).toEqual(["s11", "s10", "s9", "s8", "s7", "s6", "s5", "s4", "s3", "s2"]);
-    expect(more).toBe(2);
+  it("lists every series, largest value first, however many there are", () => {
+    const eleven = Array.from({ length: 11 }, (_, i) => row(`s${i}`, i * 10));
+    expect(names(tooltipRows(eleven, 0).rows)).toEqual(["s10", "s9", "s8", "s7", "s6", "s5", "s4", "s3", "s2", "s1", "s0"]);
   });
 
   it("puts a series with no value at that scan after those with one", () => {
-    expect(tooltipRows([row("a", undefined), row("b", 0)]).rows.map((r) => r.name)).toEqual(["b", "a"]);
+    expect(names(tooltipRows([row("a", undefined), row("b", 0)], 0).rows)).toEqual(["b", "a"]);
+  });
+
+  const lines = [row("a", 0), row("b", 0), row("c", 40), row("d", 50)];
+
+  it.each([
+    ["on a line", 40, "c"],
+    ["between two lines, nearer the lower", 43, "c"],
+    ["between two lines, nearer the upper", 47, "d"],
+    ["above every line", 500, "d"],
+    ["on lines that share a value, the one drawn last", 0, "b"],
+  ])("marks the line under the pointer: %s", (_, at, name) => {
+    expect(tooltipRows(lines, at).under?.name).toBe(name);
+  });
+
+  it.each([
+    ["without a pointer", lines, undefined],
+    ["with a single line", [row("a", 40)], 40],
+  ])("marks no line %s", (_, payload, at) => {
+    expect(tooltipRows(payload, at).under).toBeUndefined();
+  });
+
+  it.each([
+    ["in the bottom band", 0.05, "s1"],
+    ["in a band stacked above it", 0.15, "s0"],
+    ["above the stack", 1.2, "s10"],
+  ])("marks the band under the pointer, stacked in series order: %s", (_, at, name) => {
+    const bands = Array.from({ length: 11 }, (_, i) => ({ name: `s${i}`, dataKey: `s${i}`, value: i === 1 ? 0.1 : 0.09 }));
+    const order = ["s1", "s0", ...bands.slice(2).map((b) => b.dataKey)];
+    expect(tooltipRows(bands, at, order).under?.name).toBe(name);
   });
 });
 
@@ -235,6 +259,32 @@ describe("repoCoverageAt", () => {
   });
 });
 
+describe("tooltipListScroll", () => {
+  const list = { height: 188, content: 1076, pitch: 18 };
+
+  it.each([
+    ["stays put while the row and its neighbours are in view", 0, 36, 0],
+    ["scrolls down to show the row and the one below, landing on a row", 0, 500, 360],
+    ["scrolls up to show the row and the one above", 360, 90, 72],
+    ["stops at the end of the list", 0, 1058, 888],
+    ["stays where it was scrolled without a row under the pointer", 365, undefined, 365],
+  ])("%s", (_, scrollTop, rowTop, top) => {
+    expect(tooltipListScroll({ ...list, scrollTop, rowTop }).scrollTop).toBe(top);
+  });
+
+  it.each([
+    ["at the top, rows below only", 0, { above: false, below: true }],
+    ["scrolled part way, rows both ways", 360, { above: true, below: true }],
+    ["at the end, rows above only", 888, { above: true, below: false }],
+  ])("says which edges have rows beyond them: %s", (_, scrollTop, edges) => {
+    expect(tooltipListScroll({ ...list, scrollTop })).toMatchObject(edges);
+  });
+
+  it("says a list that fits has no rows beyond either edge", () => {
+    expect(tooltipListScroll({ ...list, content: 120, scrollTop: 0 })).toMatchObject({ above: false, below: false });
+  });
+});
+
 describe("repos joining a line", () => {
   const [t1, t2, t3] = ["2026-06-01T00:00:00Z", "2026-07-01T00:00:00Z", "2026-08-01T00:00:00Z"];
   const line = (key: string, points: Array<{ t: string; value: number; added?: string[] }>) => ({ cohortKey: key, label: key, color: "", points });
@@ -258,6 +308,19 @@ describe("repos joining a line", () => {
   it("names two repos joining at once", () => {
     expect(reposJoiningAt([line("a", [{ t: t1, value: 1 }, { t: t2, value: 4, added: ["checkout", "storefront"] }])], Date.parse(t2)))
       .toBe("checkout and storefront added");
+  });
+
+  const coverage = { total: 3, repoIds: ["account", "checkout", "storefront"], points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }, { t: t3, repos: 3 }] };
+  const bands = [
+    line("a", [{ t: t1, value: 0.6, added: ["storefront"] }, { t: t2, value: 0.5, added: ["checkout"] }, { t: t3, value: 0.5 }]),
+    line("b", [{ t: t1, value: 0.4, added: ["storefront"] }, { t: t2, value: 0.5 }, { t: t3, value: 0.5 }]),
+  ];
+
+  it.each([
+    ["the repos it covers and those joining its bands there", t2, "2 of 3 repos · checkout added"],
+    ["only the repos it covers where none join", t3, "3 of 3 repos"],
+  ])("describes a stacked chart's scan by %s", (_, t, text) => {
+    expect(scanDetail(coverage, bands, Date.parse(t))).toBe(text);
   });
 });
 

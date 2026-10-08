@@ -1,14 +1,15 @@
 "use client";
-import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Area, AreaChart, CartesianGrid, type TooltipContentProps, XAxis, YAxis, useYAxisInverseScale } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, searchedSeries, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
-import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, moreSeries, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, scanDetail, searchedSeries, seriesToRows, seriesWashes, tooltipListScroll, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
+import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 import { type SeriesChange, TrendLegendTable } from "@/components/dashboards/trend-legend-table";
+import { usePinnedTooltip } from "@/components/dashboards/use-pinned-tooltip";
 
 // From this many series the legend is a sortable table, unless the chart has each series' change.
 const TABLE_LEGEND_FROM = 6;
@@ -61,6 +62,7 @@ export function CohortTrendChart({
   const query = shownQuery ?? ownQuery;
   const setQuery = onQueryChange ?? setOwnQuery;
   const gradientId = useId();
+  const pin = usePinnedTooltip();
 
   const rows = useMemo(() => seriesToRows(allSeries), [allSeries]);
   const ticks = useMemo(() => dayTicks(rows).filter((t) => from === null || t >= from), [rows, from]);
@@ -115,8 +117,8 @@ export function CohortTrendChart({
 
   return (
     <div>
-      <ChartContainer config={config} className="h-[280px] w-full">
-        <AreaChart data={rows} margin={{ left: 8, right: rightMargin, top: 12, bottom: 4 }}>
+      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className={cn("h-[280px] w-full", pin.className)}>
+        <AreaChart data={rows} margin={{ left: 8, right: rightMargin, top: 12, bottom: 4 }} onClick={pin.onClick}>
           <defs>
             {series.map((s, i) => (
               <linearGradient key={s.cohortKey} id={`${gradientId}-${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -147,34 +149,21 @@ export function CohortTrendChart({
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             isAnimationActive={false}
-            wrapperStyle={{ zIndex: 10 }}
-            content={(props) => {
-              const { rows, more } = tooltipRows(props.payload);
-              return (
-                <ChartTooltipContent
-                  active={props.active && tooltipRowTimestamp(props.payload) !== from}
-                  payload={rows}
-                  label={props.label}
-                  className={more > 0 ? "w-64" : undefined}
-                  footer={more > 0 ? moreSeries(more) : null}
-                  labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, series)}
-                  formatter={(value, name, item) => (
-                    <>
-                      <span
-                        className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: item?.color }}
-                      />
-                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
-                        <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} />
-                        <span className="font-medium tabular-nums text-foreground">
-                          {formatMetric(Number(value), metric)}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                />
-              );
-            }}
+            trigger={pin.pinned ? "click" : "hover"}
+            wrapperStyle={{ zIndex: 10, pointerEvents: pin.pinned ? "auto" : "none" }}
+            content={(props) => (
+              <ScanTooltip
+                {...props}
+                from={from}
+                coverage={coverage}
+                series={series}
+                config={config}
+                shared={shared}
+                deprecatedOnly={deprecatedOnly}
+                pinned={pin.pinned}
+                format={(value) => formatMetric(value, metric)}
+              />
+            )}
           />
           {series.map((s, i) => {
             const color = colors.get(s.cohortKey) ?? "";
@@ -280,7 +269,7 @@ export function CohortTrendChart({
 }
 
 /** A tooltip row's series name, without the package when every series on the chart shares it. */
-export function seriesName(label: ReactNode, shared: string | null): ReactNode {
+function seriesName(label: ReactNode, shared: string | null): ReactNode {
   return shared !== null && typeof label === "string" ? splitCohortLabel(label).name : label;
 }
 
@@ -290,13 +279,90 @@ function JoinMarker({ cx, cy, color, dimmed }: { cx: number; cy: number; color: 
 }
 
 /**
+ * A chart over time's tooltip at the hovered scan, headed by `scanTooltipLabel`, with a row for every series. Past about
+ * ten rows the list scrolls and fades at an edge with rows beyond it, and the row under the pointer is bold and kept in
+ * view. `pinned`, the list stays where it is scrolled once it shows that row, and the tooltip's edge darkens. With `stack`, the series are
+ * bands stacked in that order. `format` sets each value.
+ */
+export function ScanTooltip({
+  active,
+  payload,
+  label,
+  coordinate,
+  from,
+  coverage,
+  series,
+  config,
+  shared,
+  deprecatedOnly,
+  format,
+  stack,
+  pinned = false,
+}: Pick<TooltipContentProps, "active" | "payload" | "label" | "coordinate"> & {
+  from: number | null;
+  coverage: RepoCoverage;
+  series: CohortSeries[];
+  config: ChartConfig;
+  shared: string | null;
+  deprecatedOnly: ReadonlySet<string>;
+  format: (value: number) => string;
+  stack?: readonly string[];
+  pinned?: boolean;
+}) {
+  const toValue = useYAxisInverseScale();
+  const at = coordinate === undefined || toValue === undefined ? undefined : Number(toValue(coordinate.y));
+  const { rows, under } = tooltipRows(payload, at, stack);
+  const anchor = useRef<HTMLDivElement>(null);
+  const placedPinned = useRef(false);
+  useEffect(() => {
+    const row = anchor.current?.parentElement;
+    const list = row?.parentElement;
+    if (!row || !list) return;
+    const place = (rowTop?: number) => {
+      const { scrollTop, above, below } = tooltipListScroll({
+        scrollTop: list.scrollTop,
+        height: list.clientHeight,
+        content: list.scrollHeight,
+        pitch: row.offsetHeight + Number.parseFloat(getComputedStyle(list).rowGap),
+        rowTop,
+      });
+      if (list.scrollTop !== scrollTop) list.scrollTop = scrollTop;
+      list.style.maskImage = `linear-gradient(to bottom, transparent, #000 ${above ? "1rem" : "0px"}, #000 calc(100% - ${below ? "1rem" : "0px"}), transparent)`;
+    };
+    place(under === undefined || (pinned && placedPinned.current) ? undefined : row.offsetTop - list.offsetTop);
+    placedPinned.current = pinned;
+    const onScroll = () => place();
+    list.addEventListener("scroll", onScroll);
+    return () => list.removeEventListener("scroll", onScroll);
+  });
+  return (
+    <ChartTooltipContent
+      active={active && tooltipRowTimestamp(payload) !== from}
+      payload={rows}
+      label={label}
+      className={cn("[&>div:last-child]:max-h-[11.75rem] [&>div:last-child]:overflow-y-auto [&>div:last-child]:overscroll-contain", pinned && "border-foreground/30")}
+      labelFormatter={(_, rows) => scanTooltipLabel(rows, coverage, series)}
+      formatter={(value, name, item) => (
+        <>
+          <span className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item?.color }} />
+          <div ref={item === (under ?? rows[0]) ? anchor : undefined} className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
+            <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} marked={item === under} />
+            <span className={cn("tabular-nums text-foreground", item === under ? "font-semibold" : "font-medium")}>{format(Number(value))}</span>
+          </div>
+        </>
+      )}
+    />
+  );
+}
+
+/**
  * A tooltip's heading: the scan time, and beneath it how many repos the point covers when the chart covers more than
  * one, and which repos join `series` there.
  */
-export function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage, series: CohortSeries[] = []): ReactNode {
+function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage, series: CohortSeries[]): ReactNode {
   const ts = tooltipRowTimestamp(payload);
   if (ts === null) return "";
-  const detail = [repoCoverageAt(coverage, ts), reposJoiningAt(series, ts)].filter(Boolean).join(" · ");
+  const detail = scanDetail(coverage, series, ts);
   return (
     <>
       {formatScanStamp(ts)}

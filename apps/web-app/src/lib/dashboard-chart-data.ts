@@ -88,13 +88,39 @@ export function dayTicks(rows: Array<Record<string, string | number>>): number[]
   return ticks;
 }
 
-const TOOLTIP_ROWS = 10;
-
-/** A tooltip's rows: the largest values at that scan first, at most ten, and how many series that leaves out. */
-export function tooltipRows<T extends { value?: unknown }>(payload: readonly T[] | undefined): { rows: T[]; more: number } {
+/**
+ * A tooltip's rows: every series at that scan, largest value first, and `under`, the series under the pointer at `at`,
+ * a value on the y-axis. That is the line nearest it, the one drawn last where lines share a value, or with `stack`, the
+ * band that holds it, with the bands stacked from the bottom in `stack`'s order. No series is under the pointer when
+ * there is only one.
+ */
+export function tooltipRows<T extends { value?: unknown; dataKey?: unknown }>(payload: readonly T[] | undefined, at: number | undefined, stack?: readonly string[]): { rows: T[]; under: T | undefined } {
   const size = (item: T) => (item.value === undefined ? Number.NEGATIVE_INFINITY : Number(item.value));
-  const sorted = [...(payload ?? [])].sort((a, b) => size(b) - size(a));
-  return { rows: sorted.slice(0, TOOLTIP_ROWS), more: Math.max(0, sorted.length - TOOLTIP_ROWS) };
+  const items = payload ?? [];
+  const rows = [...items].sort((a, b) => size(b) - size(a));
+  if (rows.length < 2 || at === undefined) return { rows, under: undefined };
+  if (stack) {
+    const bands = stack.flatMap((key) => items.filter((item) => item.dataKey === key));
+    let top = 0;
+    const under = bands.find((band) => {
+      top += Number(band.value ?? 0);
+      return at <= top;
+    });
+    return { rows, under: under ?? bands[bands.length - 1] };
+  }
+  const distance = (item: T) => (item.value === undefined ? Number.POSITIVE_INFINITY : Math.abs(Number(item.value) - at));
+  return { rows, under: items.reduce((best, item) => (distance(item) <= distance(best) ? item : best)) };
+}
+
+/**
+ * Where a tooltip's list of rows scrolls to, and whether rows lie beyond its top and bottom edges there. The list is
+ * `height` tall, holds `content` of rows `pitch` apart and sits at `scrollTop`. With `rowTop`, it scrolls as little as
+ * keeps that row and one row either side in view, landing on a row's top edge.
+ */
+export function tooltipListScroll({ scrollTop, height, content, pitch, rowTop }: { scrollTop: number; height: number; content: number; pitch: number; rowTop?: number | undefined }): { scrollTop: number; above: boolean; below: boolean } {
+  const fit = rowTop === undefined ? scrollTop : Math.min(Math.max(scrollTop, rowTop + 2 * pitch - height), rowTop - pitch);
+  const top = rowTop === undefined ? scrollTop : Math.min(Math.max(0, Math.ceil(fit / pitch) * pitch), Math.max(0, content - height));
+  return { scrollTop: top, above: top > 0, below: top + height < content };
 }
 
 /**
@@ -129,6 +155,11 @@ export function reposJoiningAt(series: CohortSeries[], ts: number): string | nul
   const repos = [...new Set(series.flatMap((s) => s.points.slice(1).filter((p) => Date.parse(p.t) === ts).flatMap((p) => p.added ?? [])))].sort();
   if (repos.length === 0) return null;
   return repos.length <= 2 ? `${repos.join(" and ")} added` : formatReposAdded(repos.length);
+}
+
+/** "3 of 4 repos · checkout added": how many repos the point at `ts` covers, and which repos join `series` there. Null for neither. */
+export function scanDetail(coverage: RepoCoverage, series: CohortSeries[], ts: number): string | null {
+  return [repoCoverageAt(coverage, ts), reposJoiningAt(series, ts)].filter(Boolean).join(" · ") || null;
 }
 
 /**

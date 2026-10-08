@@ -50,10 +50,10 @@ function DeprecatedOnlyText() {
   return <span className="shrink-0 whitespace-nowrap font-sans text-xs text-muted-foreground">{DEPRECATED_ONLY}</span>;
 }
 
-export function TooltipSeriesName({ name, deprecatedOnly }: { name: ReactNode; deprecatedOnly: boolean }) {
+export function TooltipSeriesName({ name, deprecatedOnly, marked = false }: { name: ReactNode; deprecatedOnly: boolean; marked?: boolean }) {
   return (
     <span className="inline-flex min-w-0 items-baseline gap-1.5">
-      <span className="truncate font-mono text-muted-foreground">{name}</span>
+      <span className={cn("truncate font-mono", marked ? "font-semibold text-foreground" : "text-muted-foreground")}>{name}</span>
       {deprecatedOnly ? <DeprecatedOnlyText /> : null}
     </span>
   );

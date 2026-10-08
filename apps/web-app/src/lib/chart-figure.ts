@@ -44,6 +44,7 @@ const BAR_ROW_MAX = 64;
 const BAR_MAX = 36;
 /** The size of a bar's name and value, and of a line's end label, in layout units. */
 export const BAR_TEXT_SIZE = 15;
+const BAR_ROW_MIN = 2 * BAR_TEXT_SIZE;
 const TEXT_GAP = 8;
 
 export type FigurePoint = { x: number; y: number };
@@ -107,8 +108,9 @@ export function hasFigure(config: DashboardConfig, view: DashboardView): boolean
 }
 
 /**
- * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a chart `hasFigure`
- * gives no image. A title or subtitle too wide for one line wraps, and the image grows taller by the lines it adds.
+ * The layout of a chart's image in 1280 × 720 units, or taller for a bar chart whose bars need more room, with every
+ * colour resolved, or null for a chart `hasFigure` gives no image. A title or subtitle too wide for one line wraps, and
+ * the image grows taller by the lines it adds.
  */
 export function chartFigure({ title, config, view, whole = view, host, exportedAt, colors, nameWidth, headingWidth, paths = {} }: ChartFigureInput): ChartFigure | null {
   if (!hasFigure(config, view)) return null;
@@ -154,7 +156,9 @@ export function chartFigure({ title, config, view, whole = view, host, exportedA
   if (config.chartType === "bars") {
     if (view.kind !== "snapshot") return null;
     const { frame, body } = heading(inPackage(repo ? `${repo} · latest scan` : "All repos · latest scans"));
-    return { ...frame, ...barsLayout(view.points, config.metric, style, body) };
+    const bars = barsLayout(view.points, config.metric, style, body);
+    const grow = bars.plot.height - (body.bottom - body.top);
+    return { ...frame, ...bars, height: frame.height + grow, footer: { ...frame.footer, y: frame.footer.y + grow } };
   }
   if (view.kind !== "series") return null;
   const { frame, body } = heading(inPackage(`${dateRange(view.series)} · ${repo ?? reposCovered(view.coverage)}`));
@@ -329,6 +333,7 @@ function spread(wanted: number[], bottom: number, heights: number[]): number[] {
   return placed;
 }
 
+/** A bar chart's layout. Its plot fills `body`, and grows past it so that every bar's row is at least `BAR_ROW_MIN` tall. */
 function barsLayout(points: CohortPoint[], metric: "count" | "share", style: SeriesStyle, body: Body): Layout {
   const bars = barOrder(points);
   const names = bars.map((p) => style.label(p));
@@ -337,7 +342,7 @@ function barsLayout(points: CohortPoint[], metric: "count" | "share", style: Ser
     x: PAD + nameColumn,
     y: body.top,
     width: FIGURE_WIDTH - PAD - VALUE_COLUMN - (PAD + nameColumn),
-    height: body.bottom - body.top,
+    height: Math.max(body.bottom - body.top, bars.length * BAR_ROW_MIN),
   };
   const rowHeight = Math.min(BAR_ROW_MAX, plot.height / bars.length);
   const thickness = Math.min(BAR_MAX, rowHeight * 0.6);

@@ -1,5 +1,5 @@
 import type { CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { chartColors, drawnChartCohorts, savedChartCohorts, seriesWashes } from "@/lib/dashboard-chart-data";
+import { chartColors, drawnChartCohorts, expandRowShares, savedChartCohorts, seriesToRows, seriesWashes, visibleView } from "@/lib/dashboard-chart-data";
 
 const W = 112;
 const H = 32;
@@ -11,7 +11,8 @@ type SparkPoint = { cohortKey: string; color: string; value: number };
 /**
  * A small SVG preview of a dashboard, sized for a list row. Each kind mirrors its
  * full chart: trend lines washed per `seriesWashes`, horizontal bars, or stacked
- * share bands. `uid` namespaces the SVG gradient ids per row.
+ * share bands. A chart over time shows its saved range, with its scans spaced by date.
+ * `uid` namespaces the SVG gradient ids per row.
  */
 export function DashboardSparkline({
   uid,
@@ -25,11 +26,12 @@ export function DashboardSparkline({
   if (!view) return <EmptySpark />;
   const gid = `spark-${uid.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
   const colors = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
+  const { view: shown } = visibleView(config, view, config.range ?? "all");
   if (config.chartType === "trend") {
-    return view.kind === "series" ? <TrendSpark gid={gid} series={view.series} colors={colors} /> : <EmptySpark />;
+    return shown.kind === "series" ? <TrendSpark gid={gid} series={shown.series} colors={colors} /> : <EmptySpark />;
   }
   if (config.chartType === "stacked-share") {
-    return view.kind === "series" ? <ShareSpark series={view.series} colors={colors} /> : <EmptySpark />;
+    return shown.kind === "series" ? <ShareSpark series={shown.series} colors={colors} /> : <EmptySpark />;
   }
   if (view.kind === "series") return <EmptySpark />;
   return <BarsSpark points={view.points.map((p) => ({ cohortKey: p.cohortKey, color: colors.get(p.cohortKey) ?? "", value: p.value }))} />;
@@ -47,8 +49,7 @@ function TrendSpark({ gid, series, colors }: { gid: string; series: CohortSeries
   const values = series.flatMap((s) => s.points.map((p) => p.value));
   if (values.length === 0) return <EmptySpark />;
   const max = Math.max(1, ...values);
-  const n = Math.max(...series.map((s) => s.points.length));
-  const xAt = (i: number) => (n <= 1 ? W / 2 : PAD + (i / (n - 1)) * (W - 2 * PAD));
+  const xAt = dateScale(series.flatMap((s) => s.points.map((p) => Date.parse(p.t))));
   const yAt = (v: number) => H - PAD - (v / max) * (H - 2 * PAD);
   const washes = seriesWashes(series);
   return (
@@ -65,18 +66,19 @@ function TrendSpark({ gid, series, colors }: { gid: string; series: CohortSeries
         const color = colors.get(s.cohortKey);
         const [first] = s.points;
         const last = s.points[s.points.length - 1];
-        if (s.points.length === 1 && first) {
-          return <circle key={s.cohortKey} cx={xAt(0)} cy={yAt(first.value)} r={2} fill={color} />;
+        if (first === undefined || last === undefined) return null;
+        if (s.points.length === 1) {
+          return <circle key={s.cohortKey} cx={xAt(Date.parse(first.t))} cy={yAt(first.value)} r={2} fill={color} />;
         }
         const line = s.points
-          .map((p, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(p.value).toFixed(1)}`)
+          .map((p, i) => `${i === 0 ? "M" : "L"}${xAt(Date.parse(p.t)).toFixed(1)},${yAt(p.value).toFixed(1)}`)
           .join(" ");
-        const area = `${line} L${xAt(s.points.length - 1).toFixed(1)},${H - PAD} L${xAt(0).toFixed(1)},${H - PAD} Z`;
+        const area = `${line} L${xAt(Date.parse(last.t)).toFixed(1)},${H - PAD} L${xAt(Date.parse(first.t)).toFixed(1)},${H - PAD} Z`;
         return (
           <g key={s.cohortKey}>
             {washes[si] ? <path d={area} fill={`url(#${gid}-${si})`} stroke="none" /> : null}
             <path d={line} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-            {last ? <circle cx={xAt(s.points.length - 1)} cy={yAt(last.value)} r={2} fill={color} /> : null}
+            <circle cx={xAt(Date.parse(last.t))} cy={yAt(last.value)} r={2} fill={color} />
           </g>
         );
       })}
@@ -104,23 +106,25 @@ function BarsSpark({ points }: { points: SparkPoint[] }) {
 
 /** 100%-stacked mini area over scans; a single-scan dashboard falls back to the flat bands. */
 function ShareSpark({ series, colors }: { series: CohortSeries[]; colors: ReadonlyMap<string, string> }) {
-  const n = Math.max(0, ...series.map((s) => s.points.length));
-  if (n === 0) return <EmptySpark />;
-  if (n === 1) {
-    const segs = series.map((s) => ({ cohortKey: s.cohortKey, color: colors.get(s.cohortKey) ?? "", value: s.points[0]?.value ?? 0 }));
+  const keys = series.map((s) => s.cohortKey);
+  const rows = expandRowShares(seriesToRows(series), keys);
+  const [firstRow] = rows;
+  if (firstRow === undefined) return <EmptySpark />;
+  if (rows.length === 1) {
+    const segs = series.map((s) => ({ cohortKey: s.cohortKey, color: colors.get(s.cohortKey) ?? "", value: Number(firstRow[s.cohortKey] ?? 0) }));
     return <StackedBandsSpark points={segs} />;
   }
-  const xAt = (i: number) => PAD + (i / (n - 1)) * (W - 2 * PAD);
+  // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
+  const times = rows.map((row) => Number(row["ts"]));
+  const xAt = dateScale(times);
   const yAt = (frac: number) => PAD + (1 - frac) * (H - 2 * PAD);
-  // Cumulative share per timestamp, normalised so bands always fill the frame.
-  const totals = Array.from({ length: n }, (_, ti) => Math.max(1e-9, series.reduce((sum, s) => sum + (s.points[ti]?.value ?? 0), 0)));
-  let lower = Array.from({ length: n }, () => 0);
+  let lower = rows.map(() => 0);
   const bands = series.map((s) => {
-    const upper = lower.map((lo, ti) => lo + (s.points[ti]?.value ?? 0) / (totals[ti] ?? 1));
-    const top = upper.map((u, ti) => `${ti === 0 ? "M" : "L"}${xAt(ti).toFixed(1)},${yAt(u).toFixed(1)}`).join(" ");
+    const upper = lower.map((lo, ti) => lo + Number(rows[ti]?.[s.cohortKey] ?? 0));
+    const top = upper.map((u, ti) => `${ti === 0 ? "M" : "L"}${xAt(times[ti] ?? 0).toFixed(1)},${yAt(u).toFixed(1)}`).join(" ");
     const back = [...lower.keys()]
       .reverse()
-      .map((ti) => `L${xAt(ti).toFixed(1)},${yAt(lower[ti] ?? 0).toFixed(1)}`)
+      .map((ti) => `L${xAt(times[ti] ?? 0).toFixed(1)},${yAt(lower[ti] ?? 0).toFixed(1)}`)
       .join(" ");
     const d = `${top} ${back} Z`;
     lower = upper;
@@ -133,6 +137,13 @@ function ShareSpark({ series, colors }: { series: CohortSeries[]; colors: Readon
       ))}
     </Frame>
   );
+}
+
+/** Where a time falls across the frame, from the earliest of `times` to the latest; the middle when they are all one. */
+function dateScale(times: number[]): (t: number) => number {
+  const first = Math.min(...times);
+  const last = Math.max(...times);
+  return (t) => (last === first ? W / 2 : PAD + ((t - first) / (last - first)) * (W - 2 * PAD));
 }
 
 function StackedBandsSpark({ points }: { points: SparkPoint[] }) {

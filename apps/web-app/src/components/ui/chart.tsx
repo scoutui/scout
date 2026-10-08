@@ -131,10 +131,8 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-  footer,
 }: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
   React.ComponentProps<"div"> & {
-    footer?: React.ReactNode
     hideLabel?: boolean
     hideIndicator?: boolean
     indicator?: "line" | "dot" | "dashed"
@@ -270,7 +268,6 @@ function ChartTooltipContent({
             )
           })}
       </div>
-      {footer ? <div className="text-muted-foreground">{footer}</div> : null}
     </div>
   )
 }

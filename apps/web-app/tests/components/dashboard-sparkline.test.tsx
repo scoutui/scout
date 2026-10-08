@@ -31,6 +31,31 @@ describe("DashboardSparkline trend mini", () => {
   });
 });
 
+describe("DashboardSparkline over time", () => {
+  const at = (days: string[], values: number[]) => days.map((day, i) => ({ t: `${day}T00:00:00Z`, value: values[i] ?? 0 }));
+  const xs = (container: HTMLElement) => {
+    const d = container.querySelector("svg path:not([fill^='url('])")?.getAttribute("d") ?? "";
+    return [...new Set([...d.matchAll(/[ML]([\d.]+),/g)].map((m) => Number(m[1])))].sort((a, b) => a - b);
+  };
+  const eleventhDay = ["2026-01-01", "2026-01-02", "2026-01-11"];
+  const overAYear = ["2025-11-01", "2026-07-01", "2026-10-01", "2026-11-01"];
+
+  it.each([
+    ["a trend spaces its scans by date", "trend", undefined, eleventhDay, [3, 13.6, 109]],
+    ["a stacked chart spaces its scans by date", "stacked-share", undefined, eleventhDay, [3, 13.6, 109]],
+    ["a trend shows only its saved range", "trend", "3m", overAYear, [3, 73.3, 109]],
+    ["a stacked chart shows only its saved range", "stacked-share", "3m", overAYear, [3, 73.3, 109]],
+  ] as const)("%s", (_, chartType, range, days, expected) => {
+    const config: DashboardConfig = { ...trend, chartType, ...(range ? { range } : {}) };
+    const series: CohortSeries[] = [
+      { cohortKey: "a", label: "A", color: "", points: at(days, [4, 5, 6, 7]) },
+      { cohortKey: "b", label: "B", color: "", points: at(days, [2, 2, 3, 3]) },
+    ];
+    const { container } = render(<DashboardSparkline uid="d" config={config} view={{ kind: "series", series, coverage }} />);
+    expect(xs(container)).toEqual(expected);
+  });
+});
+
 describe("DashboardSparkline without a stored preview", () => {
   it("renders the empty mini", () => {
     const { container } = render(<DashboardSparkline uid="none" config={trend} view={null} />);
