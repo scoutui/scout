@@ -117,7 +117,7 @@ export function CohortTrendChart({
 
   return (
     <div>
-      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className="h-[280px] w-full">
+      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className={cn("h-[280px] w-full", pin.className)}>
         <AreaChart data={rows} margin={{ left: 8, right: rightMargin, top: 12, bottom: 4 }} onClick={pin.onClick}>
           <defs>
             {series.map((s, i) => (

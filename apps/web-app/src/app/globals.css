@@ -110,10 +110,13 @@
     @apply border-border;
   }
   /* Keyboard focus: a 2px ink line 2px outside the control, or on a text
-     field's own edge. */
+     field's own edge. No line after a click or tap. */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
   }
   :is(input:not([type="checkbox"], [type="radio"]), textarea, select):focus-visible {
     outline-offset: -1px;

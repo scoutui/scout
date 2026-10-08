@@ -5,6 +5,7 @@ import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { NO_KEYS, cohortChartConfig, dayTicks, expandRowShares, seriesToRows } from "@/lib/dashboard-chart-data";
 import { formatDayTick, formatPct, sharedPackage } from "@/lib/dashboard-format";
+import { cn } from "@/lib/utils";
 import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
 import { ScanTooltip } from "./cohort-trend-chart";
 import { usePinnedTooltip } from "./use-pinned-tooltip";
@@ -64,7 +65,7 @@ export function CohortShareOverTime({
     <div className="space-y-4">
       <CohortShareBar points={latest} colors={colors} hovered={hovered} {...(showLegend ? { onHover: setHovered } : {})} />
 
-      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className="h-[240px] w-full">
+      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className={cn("h-[240px] w-full", pin.className)}>
         <AreaChart data={shareRows} margin={{ left: 8, right: 8, top: 6, bottom: 4 }} onClick={pin.onClick}>
           <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.6} />
           <XAxis

@@ -6,8 +6,9 @@ const stop = (event: Event) => event.stopPropagation();
 /**
  * Pins a chart over time's tooltip at a scan. A click or tap while the tooltip shows a scan pins it there, and so does
  * Enter on the focused plot, at the scan the arrow keys reached. A second click or Enter, Escape, or a press outside the chart unpins it, while
- * clicks in the pinned tooltip stay there. `ref` and `onKeyDown` go on the chart's container and `onClick` on the
- * chart; while `pinned`, the tooltip's `trigger` is `"click"`.
+ * clicks in the pinned tooltip stay there. `ref`, `onKeyDown` and `className` go on the chart's container and `onClick`
+ * on the chart; while `pinned`, the tooltip's `trigger` is `"click"`. `className` shows a pointer while the tooltip
+ * shows a scan, except over the tooltip.
  */
 export function usePinnedTooltip() {
   const [pinned, setPinned] = useState(false);
@@ -33,6 +34,8 @@ export function usePinnedTooltip() {
   return {
     pinned,
     ref,
+    className:
+      "has-[.recharts-tooltip-cursor]:cursor-pointer [&_.recharts-wrapper]:cursor-[inherit]! [&_.recharts-tooltip-wrapper]:cursor-auto",
     onClick: () => {
       const showing = ref.current?.querySelector(".recharts-tooltip-cursor") != null;
       setPinned((was) => !was && showing);
