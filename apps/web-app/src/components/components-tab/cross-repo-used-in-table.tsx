@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CellLink } from "@/components/ui/cell-link";
+import { SlashBreaks } from "@/components/dashboards/cohort-label";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { computeVersionShare, latestVersion } from "@/components/viz/version-composition";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
@@ -72,7 +73,7 @@ export function CrossRepoUsedInTable({
             return (
               <TableRow key={u.repoId} className="cursor-pointer hover:bg-muted/50">
                 <CellLink href={href} cellClassName="w-full max-w-0" title={u.repoId}>
-                  <span className="block truncate text-code">{u.repoId}</span>
+                  <span className="block text-code max-sm:whitespace-normal max-sm:wrap-anywhere sm:truncate"><SlashBreaks text={u.repoId} /></span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs tabular-nums text-muted-foreground sm:hidden">
                     <span className="inline-flex items-center gap-1.5 font-mono">{dot}{u.version ?? "unversioned"}</span>
                     <Dot />
