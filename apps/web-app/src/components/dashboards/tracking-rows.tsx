@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { GovernanceTracking } from "@scoutui/web-shared";
 import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline";
@@ -14,8 +13,7 @@ const ROW_CAP = 5;
 const DISCLOSURE_BAND = "flex cursor-pointer list-none items-center gap-1.5 bg-muted px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground dark:hover:bg-accent [&::-webkit-details-marker]:hidden focus-inset";
 
 /**
- * The shared summary for governance-tracking rows. An estate row links to the
- * chart's detail page; a repo row expands inline. Migration rows show the `from`
+ * The summary of a repo's governance-tracking row, which expands inline. Migration rows show the `from`
  * name, `to <successor>` beneath it, "N% migrated", "N left", the change in what
  * is left and a small count trend of the pair. Retirement rows show the name,
  * "N left" in plain ink, the change in what is left and a small count trend in
@@ -27,21 +25,19 @@ const DISCLOSURE_BAND = "flex cursor-pointer list-none items-center gap-1.5 bg-m
  * the identifier only at `xl`, because below ~1100px the column left for the
  * identifier is too narrow.
  */
-function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTracking; uid: string; archived?: boolean }) {
+function TrackingSummary({ entry, uid }: { entry: GovernanceTracking; uid: string }) {
   const migration = entry.kind === "migration";
-  const direction = archived ? "none" : deltaDirection(entry.delta);
-  const reposAdded = archived ? null : formatReposAdded(entry.reposAdded);
+  const direction = deltaDirection(entry.delta);
+  const reposAdded = formatReposAdded(entry.reposAdded);
   // Green marks a gain, so it follows the value, not the row kind: a stalled
-  // migration and an archived row are plain ink, an unknown one is muted.
-  const tone = archived
-    ? "text-foreground"
-    : !migration
-      ? undefined // retirement counts are plain ink
-      : entry.progress === null
-        ? "text-muted-foreground" // no reading yet
-        : entry.progress > 0
-          ? "text-status-ok" // real progress
-          : "text-foreground"; // 0%: not a gain
+  // migration is plain ink, an unknown one is muted.
+  const tone = !migration
+    ? undefined // retirement counts are plain ink
+    : entry.progress === null
+      ? "text-muted-foreground" // no reading yet
+      : entry.progress > 0
+        ? "text-status-ok" // real progress
+        : "text-foreground"; // 0%: not a gain
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1 xl:flex-row xl:items-center xl:gap-4">
@@ -89,7 +85,7 @@ function TrackingSummary({ entry, uid, archived = false }: { entry: GovernanceTr
                   : "text-muted-foreground",
             )}
           >
-            {archived ? "complete" : formatChange(entry.delta)}
+            {formatChange(entry.delta)}
           </span>
           {reposAdded ? <span className="text-muted-foreground"> · {reposAdded}</span> : null}
         </span>
@@ -124,20 +120,6 @@ export function TrackingReadout({ entry }: { entry: GovernanceTracking }) {
       )}
       {reposAdded ? ` · ${reposAdded}` : null}
     </p>
-  );
-}
-
-function EstateRow({ entry, archived = false }: { entry: GovernanceTracking; archived?: boolean }) {
-  return (
-    <Link
-      href={`/charts/${encodeURIComponent(entry.id)}`}
-      className={cn(
-        "flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent",
-        "focus-inset",
-      )}
-    >
-      <TrackingSummary entry={entry} uid={entry.id} archived={archived} />
-    </Link>
   );
 }
 
@@ -177,27 +159,24 @@ function RepoRow({ entry, defaultOpen }: { entry: GovernanceTracking; defaultOpe
 }
 
 /**
- * A dense-row governance-tracking section. Callers pass active entries in
+ * A dense-row section of a repo's governance tracking. Callers pass active entries in
  * `entries`, most remaining first, and finished ones in `complete`. At most 5
  * active rows show; the rest, and the complete ones, sit behind native details
  * expanders, and the heading always carries the totals. Renders nothing when
  * both lists are empty.
  *
- * `preExpand` (repo surface only) opens rows on arrival. Callers set it when the
- * whole tab has exactly one tracking entry, not when one section happens to hold
- * one row.
+ * `preExpand` opens rows on arrival. Callers set it when the whole tab has exactly
+ * one tracking entry, not when one section happens to hold one row.
  */
 export function TrackingSection({
   kind,
   entries,
   complete = [],
-  surface,
   preExpand = false,
 }: {
   kind: "migration" | "retirement";
   entries: GovernanceTracking[];
   complete?: GovernanceTracking[];
-  surface: "estate" | "repo";
   preExpand?: boolean;
 }) {
   const completeCount = complete.length;
@@ -208,19 +187,14 @@ export function TrackingSection({
   // it would take ~95px from the identifier.
   const noun = kind === "migration" ? "Migrations" : "Retirements";
   const heading = [
-    `${noun}${surface === "repo" ? " in this repo" : ""}`,
+    `${noun} in this repo`,
     entries.length > 0 ? `${entries.length.toLocaleString()} in progress` : null,
     completeCount > 0 ? `${completeCount.toLocaleString()} complete` : null,
     entries.length > 0 ? "change over the last 30 days" : null,
   ]
     .filter(Boolean)
     .join(" · ");
-  const row = (entry: GovernanceTracking) =>
-    surface === "estate" ? (
-      <EstateRow key={entry.id} entry={entry} />
-    ) : (
-      <RepoRow key={entry.id} entry={entry} defaultOpen={preExpand} />
-    );
+  const row = (entry: GovernanceTracking) => <RepoRow key={entry.id} entry={entry} defaultOpen={preExpand} />;
 
   return (
     <section className="mb-6">
@@ -251,13 +225,9 @@ export function TrackingSection({
               <span className="hidden group-open/complete:inline">{completeCount.toLocaleString()} complete</span>
             </summary>
             <div className="divide-y divide-border border-t">
-              {complete.map((entry) =>
-                surface === "estate" ? (
-                  <EstateRow key={entry.id} entry={entry} archived />
-                ) : (
-                  <RepoRow key={entry.id} entry={entry} defaultOpen={false} />
-                ),
-              )}
+              {complete.map((entry) => (
+                <RepoRow key={entry.id} entry={entry} defaultOpen={false} />
+              ))}
             </div>
           </details>
         ) : null}

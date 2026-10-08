@@ -40,7 +40,6 @@ describe("TrackingSection change in what is left", () => {
     render(
       <TrackingSection
         kind={kind}
-        surface="estate"
         entries={[
           entry({ id: `${kind}:fewer`, kind, delta: -3, reposAdded: 1 }),
           entry({ id: `${kind}:more`, kind, delta: 2 }),
@@ -55,18 +54,15 @@ describe("TrackingSection change in what is left", () => {
   });
 
   it("a migration row reads what is left beside the share migrated", () => {
-    render(<TrackingSection kind="migration" surface="estate" entries={[entry({ remaining: 24, progress: 0.4 })]} />);
+    render(<TrackingSection kind="migration" entries={[entry({ remaining: 24, progress: 0.4 })]} />);
     expect(screen.getByText("40%")).toBeInTheDocument();
     expect(screen.getByText("24")).toBeInTheDocument();
     expect(screen.getByText("left")).toBeInTheDocument();
   });
 
-  it.each([
-    ["estate", "Migrations · 1 in progress · change over the last 30 days"],
-    ["repo", "Migrations in this repo · 1 in progress · change over the last 30 days"],
-  ] as const)("the %s heading names the period the change covers", (surface, heading) => {
-    render(<TrackingSection kind="migration" surface={surface} entries={[entry({})]} />);
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(heading);
+  it("the heading names the repo and the period the change covers", () => {
+    render(<TrackingSection kind="migration" entries={[entry({})]} />);
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations in this repo · 1 in progress · change over the last 30 days");
   });
 });
 
@@ -84,20 +80,17 @@ describe("TrackingReadout", () => {
 });
 
 describe("TrackingSection complete ledger", () => {
-  it("renders in-progress rows plus a 'Show N complete' band; archived row reads plain 'complete'", () => {
+  it("renders in-progress rows plus a 'Show N complete' band", () => {
     render(
       <TrackingSection
         kind="migration"
         entries={[entry({ progress: null, delta: null })]}
         complete={[entry({ id: "migration:r2", active: false, remaining: 0, progress: 1, delta: null })]}
-        surface="estate"
       />,
     );
-    expect(screen.getByText(/Migrations · 1 in progress · 1 complete · change over the last 30 days/)).toBeDefined();
+    expect(screen.getByText(/Migrations in this repo · 1 in progress · 1 complete · change over the last 30 days/)).toBeDefined();
     expect(screen.getByText("Show 1 complete")).toBeDefined();
     expect(screen.getByText("100%")).toBeDefined(); // formatPct trim
-    expect(screen.getByText("complete")).toBeDefined(); // archived Δ slot label
-    expect(screen.queryByText("no change")).toBeNull();
   });
 
   it("a complete-only section renders with no in-progress fragment in the heading", () => {
@@ -106,15 +99,14 @@ describe("TrackingSection complete ledger", () => {
         kind="migration"
         entries={[]}
         complete={[entry({ id: "migration:r2", active: false, remaining: 0, progress: 1, delta: null })]}
-        surface="estate"
       />,
     );
-    expect(screen.getByText("Migrations · 1 complete")).toBeDefined();
+    expect(screen.getByText("Migrations in this repo · 1 complete")).toBeDefined();
     expect(screen.queryByText(/0 in progress/)).toBeNull();
   });
 
   it("renders nothing with zero entries of either kind", () => {
-    const { container } = render(<TrackingSection kind="retirement" entries={[]} complete={[]} surface="estate" />);
+    const { container } = render(<TrackingSection kind="retirement" entries={[]} complete={[]} />);
     expect(container.innerHTML).toBe("");
   });
 });
@@ -125,17 +117,16 @@ describe("TrackingSection heading", () => {
       <TrackingSection
         kind="migration"
         entries={[entry({ id: "migration:r1", progress: 0.13 }), entry({ id: "migration:r2", progress: 0.5 })]}
-        surface="estate"
       />,
     );
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations · 2 in progress · change over the last 30 days");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Migrations in this repo · 2 in progress · change over the last 30 days");
     expect(screen.queryByText(/median/)).toBeNull();
   });
 });
 
 describe("RepoRow expanded chart", () => {
   it("a migration row opens onto the count-trend chart: share is the readout, never a second chart", async () => {
-    render(<TrackingSection kind="migration" entries={[entry({})]} surface="repo" preExpand />);
+    render(<TrackingSection kind="migration" entries={[entry({})]} preExpand />);
     expect((await screen.findByTestId("trend-chart")).getAttribute("data-metric")).toBe("count");
     expect(screen.getAllByTestId("trend-chart")).toHaveLength(1);
   });
@@ -143,7 +134,7 @@ describe("RepoRow expanded chart", () => {
   it("a migration row whose repo has no use of the old component says there's nothing to migrate instead of a chart", async () => {
     const unused = entry({ id: "migration:unused", active: false, remaining: 0, progress: null, delta: null, coverage: { total: 0, points: [] } });
     const done = entry({ id: "migration:done", active: false, remaining: 0, progress: 1, delta: null });
-    render(<TrackingSection kind="migration" entries={[]} complete={[unused, done]} surface="repo" />);
+    render(<TrackingSection kind="migration" entries={[]} complete={[unused, done]} />);
     expect(screen.getByText("No scan of this repo has found a use of OldButton · old-ds, so there's nothing to migrate.")).toBeInTheDocument();
     expect(await screen.findAllByTestId("trend-chart")).toHaveLength(1);
   });

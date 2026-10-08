@@ -26,7 +26,7 @@ vi.mock("next/navigation", async () => ({
   useRouter: () => ({ refresh: () => {} }),
 }));
 
-type Props = { children?: ReactNode; kind?: string; entries?: { id: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[]; description?: string; action?: ReactNode };
+type Props = { children?: ReactNode; entries?: { id: string; kind: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[]; description?: string; action?: ReactNode };
 
 /** The text the page renders itself, joined; child components are not rendered. */
 function textOf(node: ReactNode): string {
@@ -118,9 +118,9 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(digests).not.toHaveBeenCalled();
       expect(tags).not.toHaveBeenCalled();
       const stored = await driver.getStoredTracking({ kind: "all" });
-      const retirements = allPropsFor(tree, "TrackingSection").find(section => section.kind === "retirement");
-      expect(retirements?.entries).toEqual(stored?.filter(entry => entry.kind === "retirement" && entry.active));
-      expect(retirements?.entries?.map(entry => entry.id)).toEqual([`retirement:${retired.id}`]);
+      const [list] = allPropsFor(tree, "TrackingList");
+      expect(list?.entries).toEqual(stored);
+      expect(list?.entries?.filter(entry => entry.kind === "retirement").map(entry => entry.id)).toEqual([`retirement:${retired.id}`]);
       const previews = await driver.getStoredPreviews();
       expect([previews[gone.id]?.missing, previews[saved.id]?.missing]).toEqual([true, false]);
       expect(allPropsFor(tree, "DashboardSparkline")).toEqual([
@@ -180,7 +180,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const { default: page } = await import("@/app/charts/page");
       const tree = await page();
       expect(allPropsFor(tree, "ChartResultsState")).toEqual([{ notice: { unavailable: preparing, fallbacks: [] }, besideNumbers: false }]);
-      expect(allPropsFor(tree, "TrackingSection")).toEqual([]);
+      expect(allPropsFor(tree, "TrackingList")).toEqual([]);
       expect(allPropsFor(tree, "DashboardSparkline")).toEqual([expect.objectContaining({ uid: saved.id, view: null })]);
     });
   });
@@ -399,8 +399,8 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const charts = await import("@/app/charts/page");
       const chartsTree = await charts.default();
       expect(allPropsFor(chartsTree, "ChartResultsState")).toEqual([{ notice: failed, besideNumbers: true }]);
-      const retirements = allPropsFor(chartsTree, "TrackingSection").find(section => section.kind === "retirement");
-      expect(retirements?.entries?.map(entry => entry.id).sort()).toEqual([`retirement:${retired.id}`, `retirement:${added.id}`].sort());
+      const [list] = allPropsFor(chartsTree, "TrackingList");
+      expect(list?.entries?.filter(entry => entry.kind === "retirement").map(entry => entry.id).sort()).toEqual([`retirement:${retired.id}`, `retirement:${added.id}`].sort());
       const repo = await import("@/app/repos/[repoId]/page");
       const repoTree = await repo.default({ params: Promise.resolve({ repoId: "repo-b" }), searchParams: Promise.resolve({}) });
       expect(repoStored).not.toBeNull();

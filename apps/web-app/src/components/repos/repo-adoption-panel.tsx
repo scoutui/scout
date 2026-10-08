@@ -47,14 +47,12 @@ export function RepoAdoptionPanel({ tracking, notice, canEdit }: {
                 kind="migration"
                 entries={migrations.filter((t) => t.active)}
                 complete={migrations.filter((t) => !t.active)}
-                surface="repo"
                 preExpand={soloEntry}
               />
               <TrackingSection
                 kind="retirement"
                 entries={retirements.filter((t) => t.active)}
                 complete={retirements.filter((t) => !t.active)}
-                surface="repo"
                 preExpand={soloEntry}
               />
             </>
