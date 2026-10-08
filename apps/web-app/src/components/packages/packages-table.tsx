@@ -2,6 +2,7 @@
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { PackageSummary } from "@scoutui/web-shared";
+import { plural } from "@scoutui/web-shared/client";
 import {
   Table, TableBody, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -81,7 +82,7 @@ export function PackagesTable({
                   <span aria-hidden className="text-border">·</span>
                   <span className={p.distinctVersionCount === 1 && p.soleVersion ? "font-mono" : undefined}>{versionLabel(p)}</span>
                   <span aria-hidden className="text-border">·</span>
-                  <span>{p.totalOccurrences.toLocaleString()} uses</span>
+                  <span>{plural(p.totalOccurrences, "use")}</span>
                 </span>
                 {p.deprecatedCount > 0 ? (
                   <span className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-status-warn-text sm:hidden">

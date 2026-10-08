@@ -111,6 +111,11 @@ describe("PackagesTable", () => {
       expect(link).toHaveAttribute("href", "/packages/%40x%2Flib");
     }
   });
+
+  it("counts a single use as `1 use` in the stacked phone row", () => {
+    render(<PackagesTable rows={[{ packageName: "@x/wc", consumerCount: 1, componentCount: 1, totalOccurrences: 1, deprecatedCount: 0, distinctVersionCount: 1, soleVersion: "2.1.0" }]} />);
+    expect(screen.getByText("1 use")).toBeInTheDocument();
+  });
 });
 
 describe("PackagesExplorer", () => {

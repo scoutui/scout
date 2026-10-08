@@ -23,7 +23,7 @@ export default async function LoginPage({
   const oidcEnabled = isOidcConfigured();
 
   return (
-    <div className="flex min-h-[calc(100vh-2.75rem)] items-center justify-center px-6 py-12">
+    <div className="flex min-h-[calc(100svh-2.75rem)] items-center justify-center px-6 py-12">
       <div className="panel w-full max-w-xs p-7">
         <div className="flex flex-col items-center gap-3 text-center">
           <BrandMark className="size-10 rounded-lg" />

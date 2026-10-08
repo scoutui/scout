@@ -77,7 +77,7 @@ export function DetailTabs({
                 "relative -mb-px inline-flex shrink-0 cursor-pointer items-baseline gap-1.5 whitespace-nowrap border-b-2 py-3 text-sm transition-colors duration-150 ease-out motion-reduce:transition-none",
                 active
                   ? "border-foreground text-foreground"
-                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground active:border-muted-foreground active:text-foreground",
               )}
             >
               <span className={active ? "font-medium" : ""}>{t.label}</span>

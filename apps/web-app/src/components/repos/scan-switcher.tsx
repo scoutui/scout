@@ -42,7 +42,8 @@ export function ScanSwitcher({
         aria-label={`Switch scan; currently scan ${shortScanId(currentScanId)}`}
         title={currentScanId}
         className={cn(
-          "group inline-flex items-baseline gap-1 rounded-sm text-xs text-muted-foreground",
+          "group relative inline-flex items-baseline gap-1 rounded-sm text-xs text-muted-foreground",
+          "after:absolute after:inset-[min(0px,(100%_-_24px)/2)] after:content-['']",
           "transition-colors hover:text-foreground",
         )}
       >
