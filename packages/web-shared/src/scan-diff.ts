@@ -5,6 +5,7 @@ import { componentDeprecated } from "./governance.js";
 import { presentIdentity } from "./present-identity.js";
 import { newestScanFirst } from "./scan-order.js";
 import { resolveTags } from "./tags.js";
+import { isUsed } from "./usage.js";
 
 /**
  * The scan diff: what moved between two digest scans of one repo, keyed by
@@ -31,7 +32,7 @@ export function diffDigests(current: DigestScan, previous: DigestScan, governanc
   let deprecatedNow = 0;
 
   for (const [id, a] of now) {
-    if (a.deprecated) deprecatedNow++;
+    if (a.deprecated && isUsed(a.component)) deprecatedNow++;
     const b = then.get(id);
     if (b === undefined) {
       marks[id] = { kind: "added" };
@@ -43,7 +44,7 @@ export function diffDigests(current: DigestScan, previous: DigestScan, governanc
   }
 
   for (const [id, b] of then) {
-    if (b.deprecated) deprecatedPrev++;
+    if (b.deprecated && isUsed(b.component)) deprecatedPrev++;
     if (now.has(id)) continue;
     marks[id] = { kind: "removed" };
     removed++;

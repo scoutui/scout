@@ -96,6 +96,13 @@ describe("facetOptions: every count follows the other filters", () => {
     expect(facetOptions(rows, null, emptyFacets())).toMatchObject({ deprecatedMax: 1, changedMax: 0 });
   });
 
+  it("counts and keeps only deprecated rows with uses under the deprecated chip", () => {
+    const unused: ComponentRow = { ...row, componentId: "u", displayName: "Unused", packageName: "@x/lib", deprecated: true, occurrenceCount: 0, fileCount: 0 };
+    const all = [...rows, unused];
+    expect(facetOptions(all, null, emptyFacets())).toMatchObject({ deprecatedCount: 1, deprecatedMax: 1 });
+    expect(filterRows(all, { ...emptyFacets(), deprecated: true }).map(r => r.componentId)).toEqual(["a"]);
+  });
+
   it("lists a selected value the page doesn't know, at 0, so a pasted URL's selection can be unticked", () => {
     const o = facetOptions(rows, null, { ...emptyFacets(), packages: ["@nope/pkg"], tags: ["gone"] });
     expect(o.packages).toContainEqual({ value: "@nope/pkg", count: 0 });

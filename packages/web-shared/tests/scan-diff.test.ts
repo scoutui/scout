@@ -81,6 +81,14 @@ describe("diffDigests", () => {
     expect(diffDigests(after, before, [], []).deprecatedPrev).toBe(0);
   });
 
+  it("counts a deprecated component only while it has uses", () => {
+    const button = lib("Button");
+    const before = scan("S1", "2026-09-01T00:00:00.000Z", [[button, 3]]);
+    const after = scan("S2", "2026-09-02T00:00:00.000Z", [[button, 0]]);
+    const d = diffDigests(after, before, retireButton, []);
+    expect({ deprecatedPrev: d.deprecatedPrev, deprecatedNow: d.deprecatedNow }).toEqual({ deprecatedPrev: 1, deprecatedNow: 0 });
+  });
+
   it("treats an empty previous scan as everything added", () => {
     const d = diffDigests(cur, scan("S0", "2026-08-31T00:00:00.000Z", []), [], []);
     expect(d.added).toBe(3);

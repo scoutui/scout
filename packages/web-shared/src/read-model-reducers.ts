@@ -21,7 +21,7 @@ import type {
 import { resolveTags } from "./tags.js";
 import { resolveGovernance, isDeprecated, governingRecord, componentDeprecated, type GovernanceLookup } from "./governance.js";
 import { parseQuery, matchesQuery } from "./query.js";
-import { strongerUsage } from "./usage.js";
+import { isUsed, strongerUsage } from "./usage.js";
 import type { DigestScan } from "./digest.js";
 import { disambiguatorOf, governanceKey, presentIdentity, tagClaimants, type GovernanceIdentity, type PresentableComponent } from "./present-identity.js";
 import { displayNameCollisionKey } from "./projection-context.js";
@@ -116,7 +116,7 @@ export function reduceRepoSummary(
     const { scope, packageName, kind } = presentIdentity(c);
     if (scope === "external") external++;
     else local++;
-    if (componentDeprecated(c, governance)) deprecated++;
+    if (isUsed(c) && componentDeprecated(c, governance)) deprecated++;
     totalOccurrences += c.stats.occurrenceCount;
     if (packageName) packages.add(packageName);
     frameworks.set(kind, (frameworks.get(kind) ?? 0) + 1);
@@ -229,7 +229,7 @@ export function reducePackagesAcrossScans(artifacts: FactScan<PackageFact>[], go
         entry.consumers.add(a.meta.repo.id);
         if (c.usedIdentityKey !== null) entry.usedKeys.add(c.usedIdentityKey);
         entry.totalOccurrences += c.stats.occurrenceCount;
-        if (componentDeprecated(c, governance)) entry.deprecatedIds.add(c.id);
+        if (c.usedIdentityKey !== null && componentDeprecated(c, governance)) entry.deprecatedIds.add(c.id);
         for (const version of versions) entry.versions.add(version);
       }
     }
@@ -307,7 +307,7 @@ export function reducePackageDetail(
     consumerCount: consumers.size,
     componentCount: usedKeys.size,
     totalOccurrences,
-    deprecatedCount: components.filter(row => row.deprecated).length,
+    deprecatedCount: components.filter(row => row.deprecated && isUsed(row)).length,
     distinctVersionCount: versions.size,
     soleVersion: soleVersionOf(versions),
     cells: [...cells.values()],

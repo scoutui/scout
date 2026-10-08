@@ -8,6 +8,7 @@ import { ComponentsTable } from "@/components/repos/components-table";
 import { FilterBar } from "@/components/repos/filter-bar";
 import { useQueryParamsState } from "@/lib/use-query-synced-state";
 import {
+  deprecatedInUse,
   emptyFacets,
   FACET_PARAMS,
   facetOptions,
@@ -92,7 +93,7 @@ export function ComponentsExplorer({
         packageFolders={packageFolders}
         resultCount={filtered.length}
         total={scoped.length}
-        deprecatedTotal={facets.usedIn ? scoped.filter((r) => r.deprecated).length : deprecatedTotal}
+        deprecatedTotal={facets.usedIn ? scoped.filter(deprecatedInUse).length : deprecatedTotal}
         diffShown={diffShown}
         filtering={isFiltering({ ...facets, changed: false, usedIn: null })}
         canEdit={canEdit}

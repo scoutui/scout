@@ -95,7 +95,7 @@ A **Replaced** record tracks a [migration](#migration) and a **Retired** one a [
 
 A component a lifecycle record covers: a record on the component itself, on the component it belongs to (a record on `Card` covers `Card.Header`), or on its whole package. Only records count. A record covers a web component only when the scan links the tag to the record's package, so ship a [Custom Elements Manifest](#custom-elements-manifest) for your tags.
 
-Deprecated components carry a warning icon, and the **deprecated** chip and **Deprecated** columns count them. See [Where "deprecated" comes from](/docs/explanation/dashboard/reading-the-numbers#where-deprecated-comes-from).
+Deprecated components carry a warning icon, and the **deprecated** chip and **Deprecated** columns count the ones in use. See [Where "deprecated" comes from](/docs/explanation/dashboard/reading-the-numbers#where-deprecated-comes-from).
 
 ## Migration
 

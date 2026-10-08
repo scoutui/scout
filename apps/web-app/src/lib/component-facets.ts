@@ -18,7 +18,7 @@ export type FacetState = {
   kinds: KindValue[]; // OR within
   packages: string[]; // OR within
   tags: string[]; // OR within (a row matches if it carries any selected tag)
-  deprecated: boolean | null; // true = only deprecated, false = only not-deprecated, null = any
+  deprecated: boolean | null; // true = only deprecated with uses, false = only not-deprecated, null = any
   changed: boolean; // true = only rows that moved since the last scan (needs the diff's marks; applied by the explorer)
   occurrences: { op: OccurrenceOp; value: number } | null;
   usedIn: string | null; // one package; every count becomes that package's
@@ -79,6 +79,11 @@ export function writtenNameMatch(r: ComponentRow, text: string): string | undefi
   return r.writtenNames?.find((name) => name.toLowerCase().includes(needle));
 }
 
+/** A deprecated row with at least one use: what the deprecated chip counts and keeps. */
+export function deprecatedInUse(r: ComponentRow): boolean {
+  return r.deprecated && r.occurrenceCount > 0;
+}
+
 /** Does a row match the facets? `changed` is the explorer's to apply; this never reads it. */
 function matchesRow(r: ComponentRow, f: FacetState): boolean {
   const text = f.text.trim().toLowerCase();
@@ -90,7 +95,8 @@ function matchesRow(r: ComponentRow, f: FacetState): boolean {
     const rowTags = r.tags ?? [];
     if (!rowTags.some((t) => f.tags.includes(t.value))) return false;
   }
-  if (f.deprecated !== null && r.deprecated !== f.deprecated) return false;
+  if (f.deprecated === true && !deprecatedInUse(r)) return false;
+  if (f.deprecated === false && r.deprecated) return false;
   if (f.occurrences && !occurrenceMatches(r.occurrenceCount, f.occurrences.op, f.occurrences.value)) return false;
   return true;
 }
@@ -129,7 +135,7 @@ export type FacetOptions = {
    *  changed view to offer (a first scan, or no row moved). */
   changedCount: number | null;
   /** The most each chip's count can read under any filters (every deprecated
-   *  row, ghosts included; every changed-view row), so a chip can reserve that
+   *  row with uses, ghosts included; every changed-view row), so a chip can reserve that
    *  width and a count narrowing from 14 to 7 never slides the controls after it. */
   deprecatedMax: number;
   changedMax: number;
@@ -186,7 +192,7 @@ export function facetOptions(
     for (const [value, color] of new Map((r.tags ?? []).map((t) => [t.value, t.color]))) {
       tagCounts.set(value, { color, count: (tagCounts.get(value)?.count ?? 0) + inTags });
     }
-    if (counted && r.deprecated && matchesRow(r, withoutDeprecated)) deprecatedCount++;
+    if (counted && deprecatedInUse(r) && matchesRow(r, withoutDeprecated)) deprecatedCount++;
   }
 
   const kinds = (Object.keys(KIND_LABEL) as KindValue[])
@@ -208,7 +214,7 @@ export function facetOptions(
     tags,
     deprecatedCount,
     changedCount,
-    deprecatedMax: known.filter((r) => r.deprecated).length,
+    deprecatedMax: known.filter(deprecatedInUse).length,
     changedMax: changed?.length ?? 0,
   };
 }
