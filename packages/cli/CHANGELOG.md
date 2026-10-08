@@ -1,5 +1,17 @@
 # @scoutui/cli
 
+## 0.3.3
+
+### Patch Changes
+
+- [#126](https://github.com/scoutui/scout/pull/126) [`7d48cf7`](https://github.com/scoutui/scout/commit/7d48cf7246bcef0c31b64531e213ab3b8188468e) Thanks [@siggerzz](https://github.com/siggerzz)! - `scout scan --debug` now says it counts uses of components passed in as a prop or argument, as in **41 uses of components passed in as a prop or argument weren't counted**, instead of calling each one a component.
+
+- [#145](https://github.com/scoutui/scout/pull/145) [`041fea3`](https://github.com/scoutui/scout/commit/041fea3042bfd056767f00752c1694b23122c4ff) Thanks [@siggerzz](https://github.com/siggerzz)! - The npm package is now published with provenance, so its page on npmjs.com shows the commit and workflow that built it. Each CLI release on GitHub also carries the package and its build provenance.
+
+- [#115](https://github.com/scoutui/scout/pull/115) [`1dc606c`](https://github.com/scoutui/scout/commit/1dc606c924af14906ea0be0920a90b7ee3f983c1) Thanks [@siggerzz](https://github.com/siggerzz)! - A scan no longer stops with "Unhandled InferredType kind: undefined" when code reads a member every object inherits, such as `constructor` or `propertyIsEnumerable`, from an object literal. Scout now treats that member like any other the object doesn't have.
+
+- [#119](https://github.com/scoutui/scout/pull/119) [`8145392`](https://github.com/scoutui/scout/commit/81453922a1a1fcc6dd0c6939ba2d49442c2337a3) Thanks [@siggerzz](https://github.com/siggerzz)! - A scan no longer stops on a large file, such as a minified bundle of several megabytes. Before, the time to read a file grew with the square of its size, so "Reading files" could stay on one file for hours.
+
 ## 0.3.2
 
 ### Patch Changes
