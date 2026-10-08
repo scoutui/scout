@@ -65,8 +65,14 @@ export type Dir = "up" | "down";
 export type Routes = { steps: Map<string, number>; toward: Map<string, string> };
 
 /** Breadth-first from the focus, so each component settles once, at its
- *  shortest distance, and a cycle terminates. */
-export function routesFrom(model: GraphModel, focusId: string, dir: Dir): Routes {
+ *  shortest distance, and a cycle terminates. The walk never steps on a
+ *  component in `blocked`. */
+export function routesFrom(
+  model: GraphModel,
+  focusId: string,
+  dir: Dir,
+  blocked: ReadonlySet<string> = new Set(),
+): Routes {
   const next = dir === "up" ? model.parentsOf : model.childrenOf;
   const steps = new Map<string, number>([[focusId, 0]]);
   const toward = new Map<string, string>();
@@ -74,7 +80,7 @@ export function routesFrom(model: GraphModel, focusId: string, dir: Dir): Routes
   while (queue.length > 0) {
     const cur = queue.shift() as string;
     for (const { id } of next.get(cur) ?? []) {
-      if (steps.has(id)) continue;
+      if (steps.has(id) || blocked.has(id)) continue;
       steps.set(id, (steps.get(cur) as number) + 1);
       toward.set(id, cur);
       queue.push(id);
@@ -101,6 +107,52 @@ export function routeIds(routes: Routes, focusId: string, id: string): string[] 
     at = next;
   }
   return ids;
+}
+
+/** Nothing in the repo renders it, a self-render aside. */
+export function isTopLevel(model: GraphModel, id: string): boolean {
+  return !(model.parentsOf.get(id) ?? []).some((p) => p.id !== id);
+}
+
+/** The top-level components above the focus: the outer end of every route up. */
+export function topLevelIds(model: GraphModel, focusId: string, up: Routes): string[] {
+  return [...up.steps.keys()].filter((id) => id !== focusId && isTopLevel(model, id));
+}
+
+/** Routes up from `via` that never step on the route from `via` down to the
+ *  focus, so a route through `via` can't go round a loop. */
+function routesAboveVia(model: GraphModel, focusId: string, up: Routes, via: string): Routes {
+  return routesFrom(model, via, "up", new Set(routeIds(up, focusId, via).slice(1)));
+}
+
+/** Top-level components a route through `via` reaches, each with its steps
+ *  to the focus through `via`. `via` counts when it is top level itself. */
+export function topsThrough(model: GraphModel, focusId: string, up: Routes, via: string): Map<string, number> {
+  const toVia = up.steps.get(via);
+  const out = new Map<string, number>();
+  if (toVia === undefined) return out;
+  for (const [id, steps] of routesAboveVia(model, focusId, up, via).steps) {
+    if (id !== focusId && isTopLevel(model, id)) out.set(id, toVia + steps);
+  }
+  return out;
+}
+
+/** The route in render order, outermost first, ending at the focus: from `top`
+ *  (or from `via` when no top is picked) through `via` when one is set. Empty
+ *  when neither is set or no route from `top` runs through `via`. */
+export function routeThrough(
+  model: GraphModel,
+  focusId: string,
+  up: Routes,
+  via: string | null,
+  top: string | null,
+): string[] {
+  if (!via) return top ? routeIds(up, focusId, top) : [];
+  const lower = routeIds(up, focusId, via);
+  if (lower.length === 0) return [];
+  if (!top || top === via) return lower;
+  const upper = routeIds(routesAboveVia(model, focusId, up, via), via, top);
+  return upper.length === 0 ? [] : [...upper.slice(0, -1), ...lower];
 }
 
 /** Uses per render edge, keyed `source>target`. */
