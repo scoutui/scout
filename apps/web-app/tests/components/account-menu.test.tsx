@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Person } from "@/lib/access";
 
+const nav = vi.hoisted(() => ({ pathname: "/repos" }));
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/repos" }));
+vi.mock("next/navigation", () => ({ usePathname: () => nav.pathname }));
 
 import { signOut } from "next-auth/react";
 import { AccountMenu } from "@/components/auth/account-menu";
@@ -50,11 +51,52 @@ describe("AccountMenu", () => {
 });
 
 describe("TopTabs", () => {
+  beforeEach(() => {
+    nav.pathname = "/repos";
+  });
+
   it("shows the governance tab only when showGovernance is set", () => {
     const { rerender } = render(<TopTabs showGovernance={false} />);
     expect(screen.getByRole("link", { name: "charts" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "governance" })).toBeNull();
     rerender(<TopTabs showGovernance />);
     expect(screen.getByRole("link", { name: "governance" })).toHaveAttribute("href", "/governance");
+  });
+
+  it.each([
+    { pathname: "/packages", label: "packages" },
+    { pathname: "/charts/trend", label: "charts" },
+    { pathname: "/components/a0c37f735b019024", label: "menu" },
+  ])("names the page menu $label on $pathname", ({ pathname, label }) => {
+    nav.pathname = pathname;
+    render(<TopTabs showGovernance />);
+    expect(screen.getByRole("button", { name: label })).toHaveAttribute("aria-haspopup", "menu");
+  });
+
+  it.each([
+    { role: "a Viewer", showGovernance: false, pages: ["repos", "packages", "charts"] },
+    { role: "an Admin", showGovernance: true, pages: ["repos", "packages", "charts", "governance"] },
+  ])("lists every page $role can see in the page menu, marking the current one", async ({ showGovernance, pages }) => {
+    nav.pathname = "/packages";
+    render(<TopTabs showGovernance={showGovernance} />);
+    fireEvent.click(screen.getByRole("button", { name: "packages" }));
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map(item => [item.textContent, item.getAttribute("href"), item.getAttribute("aria-current")])).toEqual(
+      pages.map(page => [page, `/${page}`, page === "packages" ? "page" : null]),
+    );
+  });
+
+  it("moves through the page menu with the arrow keys and closes it with Escape", async () => {
+    nav.pathname = "/packages";
+    render(<TopTabs showGovernance />);
+    const button = screen.getByRole("button", { name: "packages" });
+    button.focus();
+    fireEvent.keyDown(button, { key: "ArrowDown" });
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "repos" })).toHaveFocus());
+    fireEvent.keyDown(document.activeElement as Element, { key: "ArrowDown" });
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "packages" })).toHaveFocus());
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(button).toHaveFocus();
   });
 });
