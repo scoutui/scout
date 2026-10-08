@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentDetail, CompositionGraph } from "@scoutui/web-shared";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -10,16 +10,33 @@ vi.mock("next/navigation", async () => (await import("../helpers/search-params-m
 
 const detail = { componentId: "F", repoId: "r/x", displayName: "F" } as unknown as ComponentDetail;
 
-// F is rendered directly by d0..d11, d0 using it most, so d10 and d11 fold
-// into "+2 more". d0 is also rendered by d1 (as near F as d0) and by p0, one
-// step further out. F renders kid.
+// Pages P0 (app/a/page.tsx) and P1 (app/b/page.tsx), both named Page:
+// P0 → Shell → Card → F, P1 → Card, Card renders F 5 times, Solo renders F
+// once and nothing renders Solo, F → Kid → Leaf. d0..d11 render F, d0 most;
+// nothing renders them. d1 is an external, deprecated component.
 const tabGraph: CompositionGraph = graph(
-  [node("F"), node("p0"), node("kid"), ...Array.from({ length: 12 }, (_, i) => node(`d${i}`))],
   [
+    node("F"),
+    node("Card"),
+    node("Shell"),
+    node("Solo"),
+    node("Kid"),
+    node("Leaf"),
+    node("P0", { displayName: "Page", filePath: "app/a/page.tsx" }),
+    node("P1", { displayName: "Page", filePath: "app/b/page.tsx" }),
+    ...Array.from({ length: 12 }, (_, i) =>
+      node(`d${i}`, i === 1 ? { scope: "external", deprecated: true, packageName: "@x/ui", filePath: null } : {}),
+    ),
+  ],
+  [
+    ["P0", "Shell"],
+    ["Shell", "Card"],
+    ["Card", "F", 5],
+    ["P1", "Card"],
+    ["Solo", "F"],
+    ["F", "Kid"],
+    ["Kid", "Leaf"],
     ...Array.from({ length: 12 }, (_, i) => [`d${i}`, "F", 12 - i] as [string, string, number]),
-    ["d1", "d0", 1],
-    ["p0", "d0", 1],
-    ["F", "kid", 2],
   ],
 );
 
@@ -31,215 +48,168 @@ const renderTab = (g: CompositionGraph = tabGraph) =>
   );
 
 const param = (name: string) => new URLSearchParams(window.location.search).get(name);
-const box = (name: string) => screen.findByRole("button", { name: new RegExp(`^${name}, `) });
-
-// Loads the diagram's canvas module before any test renders the tab.
-beforeAll(() => import("@/components/component-detail/composition/flow-canvas"), 30_000);
+const list = (name: RegExp) => screen.getByRole("list", { name });
+const rowsOf = (name: RegExp) => within(list(name)).getAllByRole("listitem");
+/** A row by its name as a browser reads it: jsdom has no layout, so it puts a space before each comma. */
+const row = (listName: RegExp, name: RegExp) =>
+  within(list(listName)).getByRole("button", { name: (accessible) => name.test(accessible.replace(/ ,/g, ",")) });
 
 beforeEach(() => {
   window.history.replaceState(null, "", "http://localhost:3000/x?scan=s1");
 });
 
 describe("CompositionTab", () => {
-  it("selects a box into ?pin= with what renders it, and clears both on a second click, keeping other parameters", async () => {
+  it("lists every top-level component and every direct renderer in full, and what it renders", () => {
     renderTab();
-    fireEvent.click(await box("d0"));
-    expect(param("pin")).toBe("up:d0");
+    expect(rowsOf(/^Top level · 15$/)).toHaveLength(15);
+    expect(rowsOf(/^Directly · 14$/)).toHaveLength(14);
+    expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
+    expect(screen.queryByText(/more$/)).toBeNull();
+    expect(screen.getByText("17 render F · F renders 2")).toBeInTheDocument();
+  });
+
+  it("picks a top-level row into ?top= and draws its route as boxes that each open their page", () => {
+    renderTab();
+    fireEvent.click(row(/^Top level/, /^Page, b/));
+    fireEvent.click(row(/^Top level/, /^Page, a/));
+    expect(param("top")).toBe("P0");
     expect(param("scan")).toBe("s1");
-    expect(await box("d0")).toHaveAttribute("aria-pressed", "true");
-    expect(within(await box("d0")).getByTitle("d0")).toBeInTheDocument();
-    expect(await box("p0")).toHaveAccessibleName(/^p0, local, src\/p0\.tsx\. 2 steps from F\.$/);
-    fireEvent.click(await box("d0"));
+    expect(row(/^Top level/, /^Page, a/)).toHaveAttribute("aria-pressed", "true");
+    const route = screen.getByRole("list", { name: "Route" });
+    expect(within(route).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(route).getByRole("link", { name: "Open Shell" })).toHaveAttribute(
+      "href",
+      "/repos/r%2Fx/components/Shell?tab=composition",
+    );
+    fireEvent.click(row(/^Top level/, /^Page, a/));
+    expect(param("top")).toBeNull();
+    expect(screen.queryByRole("list", { name: "Route" })).toBeNull();
+  });
+
+  it("picks a direct renderer into ?pin=up: and narrows the top level to the routes through it, until Show all", () => {
+    renderTab();
+    fireEvent.click(row(/^Directly/, /^Card,/));
+    expect(param("pin")).toBe("up:Card");
+    expect(row(/^Directly/, /^Card,/)).toHaveAttribute("aria-pressed", "true");
+    expect(rowsOf(/^Top level · 2 of 15$/)).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Show all 15 top-level components" }));
     expect(param("pin")).toBeNull();
-    expect(param("scan")).toBe("s1");
-    await waitFor(() => expect(screen.queryByRole("button", { name: /^p0, / })).not.toBeInTheDocument());
+    expect(rowsOf(/^Top level · 15$/)).toHaveLength(15);
+  });
+
+  it("runs the route through a component picked in Find", () => {
+    renderTab();
+    const find = screen.getByRole("combobox");
+    fireEvent.change(find, { target: { value: "Shell" } });
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: /^Shell/ }));
+    expect(param("pin")).toBe("up:Shell");
+    expect(within(screen.getByRole("list", { name: "Route" })).getByText("Shell")).toBeInTheDocument();
+    expect(rowsOf(/^Top level · 1 of 15$/)).toHaveLength(1);
+  });
+
+  it("draws a route on the renders side for a component picked in Find", () => {
+    renderTab();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Leaf" } });
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: /^Leaf/ }));
+    expect(param("pin")).toBe("down:Leaf");
+    expect(within(screen.getByRole("list", { name: "Route" })).getByRole("link", { name: "Open Leaf" })).toBeInTheDocument();
   });
 
   it.each([
-    ["a box on the diagram", "up:d0", "true"],
-    ["a malformed value", "d0", "false"],
-    ["a component this graph doesn't have", "up:gone", "false"],
-  ])("restores ?pin= on load: %s", async (_, pin, pressed) => {
-    window.history.replaceState(null, "", `http://localhost:3000/x?pin=${pin}`);
+    ["a direct renderer", "pin=up:Card", /^Directly/, /^Card,/],
+    ["a top-level component", "pin=up:Solo", /^Top level/, /^Solo,/],
+    ["a top-level end", "top=P1", /^Top level/, /^Page, b/],
+  ])("restores %s from the link", (_, query, listName, name) => {
+    window.history.replaceState(null, "", `http://localhost:3000/x?${query}`);
     renderTab();
-    expect(await box("d0")).toHaveAttribute("aria-pressed", pressed);
+    expect(row(listName, name)).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("writes the selected route out, links to the component, and clears from the bar", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:p0");
+  it("scrolls a picked row into view", () => {
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
     renderTab();
-    expect(await screen.findByText("Showing the route to p0")).toBeInTheDocument();
-    expect(screen.getByText("2 steps away")).toBeInTheDocument();
-    expect(screen.getByText("· src/p0.tsx")).toBeInTheDocument();
-    expect(screen.getByText("p0 renders d0 once, and d0 renders F 12 times. Nothing in this repo renders p0.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open p0" })).toHaveAttribute("href", "/repos/r%2Fx/components/p0?tab=composition");
-    fireEvent.click(screen.getByRole("button", { name: "Clear the route (Escape)" }));
-    expect(param("pin")).toBeNull();
-    expect(await screen.findByText("Route cleared")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Page" } });
+    fireEvent.click(within(screen.getByRole("listbox")).getAllByRole("option", { name: /^Page/ })[0] as HTMLElement);
+    expect(param("top")).toBe("P1");
+    const picked = row(/^Top level/, /^Page, b/).closest("[data-key]");
+    expect(scroll.mock.contexts).toContain(picked);
+    scroll.mockRestore();
   });
 
-  it("clears the selection on Escape, but Escape in Find only closes Find", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0");
+  it("clears the picks on Escape, but Escape in Find only closes Find", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:Card&top=P0");
     renderTab();
-    const find = await screen.findByRole("combobox");
+    const find = screen.getByRole("combobox");
     fireEvent.focus(find);
     expect(screen.getByRole("listbox")).toBeInTheDocument();
     fireEvent.keyDown(find, { key: "Escape" });
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(param("pin")).toBe("up:d0");
-    fireEvent.keyDown(await box("d0"), { key: "Escape" });
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(param("pin")).toBe("up:Card");
+    fireEvent.keyDown(row(/^Directly/, /^Card,/), { key: "Escape" });
     expect(param("pin")).toBeNull();
+    expect(param("top")).toBeNull();
   });
 
-  it("closes Find when focus leaves it, and keeps it open while focus moves into its list", async () => {
+  it("tells screen readers each row's origin, and that it's deprecated", () => {
     renderTab();
-    const find = await screen.findByRole("combobox");
-    expect(find).not.toHaveAttribute("aria-controls");
-    fireEvent.focus(find);
-    const list = screen.getByRole("listbox", { name: "Components that render F or that it renders" });
-    expect(find).toHaveAttribute("aria-controls", list.id);
-    fireEvent.blur(find, { relatedTarget: screen.getByRole("listbox") });
-    expect(screen.getByRole("listbox")).toBeInTheDocument();
-    fireEvent.blur(find, { relatedTarget: await box("d0") });
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(find).toHaveAttribute("aria-expanded", "false");
+    expect(row(/^Directly/, /^d1, deprecated, External, 11 uses$/)).toBeInTheDocument();
+    expect(row(/^Directly/, /^d0, Local, 12 uses$/)).toBeInTheDocument();
+    expect(row(/^Top level/, /^Page, a, Local, 3 steps$/)).toBeInTheDocument();
   });
 
-  it("moves focus to the route's first step when the bar clears the route", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:p0");
+  it("keeps each list to one tab stop and moves through it with the arrow keys", async () => {
     renderTab();
-    const clear = await screen.findByRole("button", { name: "Clear the route (Escape)" });
-    clear.focus();
-    fireEvent.click(clear);
-    await waitFor(() => expect(screen.getByRole("button", { name: /^d0, / })).toHaveFocus());
+    const top = list(/^Top level/);
+    const stops = () => [...top.querySelectorAll<HTMLElement>("button, a")].filter((el) => el.tabIndex === 0);
+    expect(stops()).toHaveLength(1);
+    const first = stops()[0] as HTMLElement;
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    const second = within(top).getAllByRole("button")[1] as HTMLElement;
+    expect(second).toHaveFocus();
+    fireEvent.keyDown(second, { key: "ArrowRight" });
+    expect(within(second.closest("li") as HTMLElement).getByRole("link")).toHaveFocus();
+    await waitFor(() => expect(stops()).toEqual([document.activeElement]));
   });
 
-  it.each([
-    ["the +N more", "pin=up:q0", () => screen.getByRole("button", { name: "Show 2 more components that render F" })],
-    ["the open list's filter", "list=up:F&pin=up:q0", () => screen.getByRole("textbox", { name: "Filter the 2 components" })],
-  ])("moves focus to %s a cleared route's first step folds into", async (_, query, target) => {
-    window.history.replaceState(null, "", `http://localhost:3000/x?${query}`);
-    renderTab(
-      graph(
-        [node("F"), node("q0"), ...Array.from({ length: 12 }, (_, i) => node(`d${i}`))],
-        [...Array.from({ length: 12 }, (_, i) => [`d${i}`, "F", 12 - i] as [string, string, number]), ["q0", "d11", 1]],
-      ),
-    );
-    const q0 = await box("q0");
-    q0.focus();
-    fireEvent.keyDown(q0, { key: "Escape" });
-    expect(param("pin")).toBeNull();
-    await waitFor(() => expect(target()).toHaveFocus());
+  it("shows a long name whole", () => {
+    const long = "OnboardingMigrateMembersBrowserViewWithAVeryLongNameIndeed";
+    renderTab(graph([node("F"), node(long)], [[long, "F"]]));
+    expect(rowsOf(/^Directly/)[0]?.textContent).toContain(long);
+    expect(document.body.textContent).not.toContain("…");
   });
 
-  it("keeps focus on a box that stays when Escape clears the route", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0");
-    renderTab();
-    const d1 = await box("d1");
-    d1.focus();
-    fireEvent.keyDown(d1, { key: "Escape" });
-    expect(param("pin")).toBeNull();
-    await new Promise((r) => setTimeout(r, 50));
-    expect(await box("d1")).toHaveFocus();
+  it("says so when nothing renders it and it renders nothing", () => {
+    renderTab(graph([node("F")], []));
+    expect(screen.getByText("Nothing in this repo renders F, and F renders no other components.")).toBeInTheDocument();
   });
 
-  it("opens +N more as a list, filters it, and selects the row picked", async () => {
-    renderTab();
-    fireEvent.click(await screen.findByRole("button", { name: "Show 2 more components that render F" }));
-    expect(param("list")).toBe("up:F");
-    const filter = await screen.findByRole("textbox", { name: "Filter the 2 components" });
-    await waitFor(() => expect(filter).toHaveFocus());
-    fireEvent.change(filter, { target: { value: "d11" } });
-    expect(screen.getByText("1 of 2")).toBeInTheDocument();
-    fireEvent.change(filter, { target: { value: "zzz" } });
-    expect(screen.getByText("zzz").closest("li")).toHaveTextContent(/^No matches for “zzz”\.$/);
-    fireEvent.change(filter, { target: { value: "d11" } });
-    fireEvent.click(screen.getByRole("button", { name: /^d11, src\/d11\.tsx, 1 use\./ }));
-    expect(param("bring")).toBe("up:d11");
-    expect(param("pin")).toBe("up:d11");
-    expect(await box("d11")).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("closes an open list on Escape and keeps the selection", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?list=up:F&pin=up:d0");
-    renderTab();
-    fireEvent.keyDown(await screen.findByRole("textbox", { name: "Filter the 2 components" }), { key: "Escape" });
-    expect(param("list")).toBeNull();
-    expect(param("pin")).toBe("up:d0");
-  });
-
-  it("scrolls Find's active option into view as the arrow keys move it", async () => {
-    const scroll = vi.fn();
-    const original = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = scroll;
-    try {
-      renderTab();
-      const find = await screen.findByRole("combobox");
-      fireEvent.focus(find);
-      for (let i = 0; i < 3; i++) fireEvent.keyDown(find, { key: "ArrowDown" });
-      const active = screen.getByRole("option", { selected: true });
-      expect(active).toHaveAttribute("id", "find-3");
-      expect(scroll.mock.contexts.at(-1)).toBe(active);
-    } finally {
-      Element.prototype.scrollIntoView = original;
-    }
-  });
-
-  it("selects the component picked in Find", async () => {
-    renderTab();
-    const find = await screen.findByRole("combobox");
-    fireEvent.change(find, { target: { value: "kid" } });
-    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: /kid/ }));
-    expect(param("pin")).toBe("down:kid");
-  });
-
-
-  it("draws a component on both sides when it renders and is rendered by the focus, and selects each side on its own", async () => {
-    renderTab(graph([node("F"), node("Z")], [["Z", "F", 1], ["F", "Z", 3]]));
-    fireEvent.click(await screen.findByRole("button", { name: /^Z, .*Renders F once\./ }));
-    expect(param("pin")).toBe("up:Z");
-    fireEvent.click(await screen.findByRole("button", { name: /^Z, .*F renders it 3 times\./ }));
-    expect(param("pin")).toBe("down:Z");
-  });
-
-  it("lights a hovered box's route without dimming the rest, and dims what's off a selected route but not what it opened or an open list", async () => {
-    const { container } = renderTab();
-    const shell = (id: string) => container.querySelector(`.react-flow__node[data-id="${id}"] > *`) as HTMLElement;
-    await box("d0");
-    fireEvent.mouseEnter(container.querySelector('.react-flow__node[data-id="up:d0"]') as Element);
-    await waitFor(() => expect(shell("up:d0")).toHaveClass("border-foreground/60"));
-    expect(shell("up:d1")).not.toHaveClass("text-muted-foreground");
-    expect(screen.getByText("+2 more")).toHaveClass("text-foreground");
-    fireEvent.click(await box("d0"));
-    await waitFor(() => expect(shell("up:d1")).toHaveClass("text-muted-foreground"));
-    expect(shell("up:d0")).not.toHaveClass("text-muted-foreground");
-    expect(shell("up:p0")).not.toHaveClass("text-muted-foreground");
-    expect(screen.getByText("+2 more")).not.toHaveClass("text-foreground");
-    fireEvent.click(screen.getByRole("button", { name: "Show 2 more components that render F" }));
-    expect(await screen.findByRole("group", { name: "2 more render F" })).not.toHaveClass("text-muted-foreground");
-  });
-
-  it("Reset closes everything opened and clears the selection", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?scan=s1&list=up:F&bring=up:d11&pin=up:p0");
-    renderTab();
-    fireEvent.click(await screen.findByRole("button", { name: "Reset" }));
-    expect(window.location.search).toBe("?scan=s1");
-  });
-
-  describe("on a phone", () => {
+  describe("below 1024px", () => {
     beforeEach(() => {
       const real = window.matchMedia;
-      vi.spyOn(window, "matchMedia").mockImplementation((q) => ({ ...real(q), matches: q === "(max-width: 639px)" }));
+      vi.spyOn(window, "matchMedia").mockImplementation((q) => ({ ...real(q), matches: q === "(max-width: 1023px)" }));
     });
     afterEach(() => vi.restoreAllMocks());
 
-    it("opens on the list, and picking from it shows the route on the diagram", async () => {
-      const { container } = renderTab();
-      expect(await screen.findByRole("listbox")).toBeInTheDocument();
-      expect(container.querySelector(".react-flow")).toBeNull();
-      fireEvent.click(screen.getByRole("option", { name: /^d0/ }));
-      expect(param("pin")).toBe("up:d0");
-      expect(await box("d0")).toHaveAttribute("aria-pressed", "true");
+    it("opens a top-level row's route under it, each step with its page", () => {
+      renderTab();
+      const page = row(/^Top level/, /^Page, a/);
+      expect(page).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(page);
+      expect(param("top")).toBe("P0");
+      expect(page).toHaveAttribute("aria-expanded", "true");
+      const route = screen.getByRole("list", { name: "Route from Page" });
+      expect(within(route).getByRole("link", { name: "Open Shell" })).toBeInTheDocument();
+      expect(within(route).getByText("Card")).toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Route" })).toBeNull();
+    });
+
+    it("shows one side at a time", () => {
+      renderTab();
+      expect(screen.queryByRole("list", { name: /^Renders/ })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Renders · 2" }));
+      expect(rowsOf(/^Directly · 1$/)).toHaveLength(1);
+      expect(screen.queryByRole("list", { name: /^Top level/ })).toBeNull();
     });
   });
 });

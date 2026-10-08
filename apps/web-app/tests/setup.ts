@@ -28,6 +28,11 @@ if (typeof globalThis.window !== "undefined" && typeof globalThis.DOMMatrixReadO
   } as unknown as typeof DOMMatrixReadOnly;
 }
 
+// jsdom lacks scrollIntoView, which lists call to bring a picked row into view.
+if (typeof globalThis.Element !== "undefined" && typeof Element.prototype.scrollIntoView === "undefined") {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // jsdom has no layout, so offset* are 0. @tanstack/virtual-core sizes its scroll
 // viewport and rows from offsetWidth/offsetHeight, so stub a non-zero box, or a
 // virtualized table renders zero rows.
