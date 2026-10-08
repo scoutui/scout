@@ -55,7 +55,7 @@ export function Checkout() {
 
 ## Step 1: Install dependencies and the CLI
 
-The scan finds a package's components by following each import into the installed package, so the repo's dependencies must be installed. In the root of our repo, we install them and add the CLI as a dev dependency:
+The scan needs the repo's dependencies installed. In the root of our repo, we install them and add the CLI as a dev dependency:
 
 ```bash
 npm install
@@ -67,7 +67,7 @@ With Yarn, we'd run `yarn install` and `yarn add -D @scoutui/cli`. Yarn 2 and la
 We check that it works with `npx scout --version`, which prints the installed version, for example `0.1.0`.
 
 :::warning
-If the repo's dependencies aren't installed, the scan can't find any component from `@acme/ui` or `@acme/ui-legacy`. The scan we run in step 3 still finishes, but its summary says it couldn't match those uses, with a yellow line saying why:
+If the repo's dependencies aren't installed, the scan can't find any component from `@acme/ui` or `@acme/ui-legacy`. The scan we run in step 3 still finishes, but its summary says it couldn't match those uses, and why:
 
 ```
 Scanned 3 files in 0.1s: 3 components, 1 use.
@@ -221,8 +221,7 @@ The scan wrote `scout-scan.json` next to the config. It has four top-level keys.
     { "kind": "import", "specifier": "@acme/ui", "name": "Button" }
   ],
   "props": { "variant": { "tier": "written", "value": "primary" } },
-  "ownerComponentId": "98464c541cecabae",
-  "depth": 1
+  "ownerComponentId": "98464c541cecabae"
 }
 ```
 
