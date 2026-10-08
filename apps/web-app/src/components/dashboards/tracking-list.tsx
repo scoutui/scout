@@ -120,7 +120,7 @@ export function TrackingList({ entries }: { entries: GovernanceTracking[] }) {
         <div className="divide-y">
           {groups.map((group) =>
             group.whole ? (
-              <EntryRow key={group.packageName} entry={group.whole} side={side} />
+              <EntryRow key={group.packageName} entry={group.whole} side={side} whole />
             ) : (
               <PackageGroup
                 key={group.packageName}
@@ -226,11 +226,11 @@ function PackageGroup({
   );
 }
 
-function EntryRow({ entry, side }: { entry: GovernanceTracking; side: Side }) {
+function EntryRow({ entry, side, whole = false }: { entry: GovernanceTracking; side: Side; whole?: boolean }) {
   const href = `/charts/${encodeURIComponent(entry.id)}`;
   const names = (
-    <div className="min-w-0 ps-6">
-      <div className="font-mono text-sm wrap-anywhere">{rowName(entry)}</div>
+    <div className={cn("min-w-0", whole ? "ps-5" : "ps-6")}>
+      <div className={cn("font-mono text-sm wrap-anywhere", whole && "font-medium")}>{rowName(entry)}</div>
       <div className="mt-0.5 text-xs text-muted-foreground wrap-anywhere">
         {entry.toLabel ? (
           <>
@@ -258,7 +258,7 @@ function EntryRow({ entry, side }: { entry: GovernanceTracking; side: Side }) {
     <Link href={href} className={cn(ROW, GRID)}>
       <div className="min-w-0">
         {names}
-        <div className="mt-1 flex flex-wrap gap-x-3 ps-6 text-xs tabular-nums text-muted-foreground sm:hidden">
+        <div className={cn("mt-1 flex flex-wrap gap-x-3 text-xs tabular-nums text-muted-foreground sm:hidden", whole ? "ps-5" : "ps-6")}>
           {migrated ? (
             <span>
               <span className={cn("font-medium text-foreground", tone)}>{migrated}</span> migrated
