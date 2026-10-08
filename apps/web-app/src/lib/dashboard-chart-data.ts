@@ -45,6 +45,25 @@ export function rangeStart(series: CohortSeries[], range: ChartRange): number | 
   return Math.min(...times) < start.getTime() ? start.getTime() : null;
 }
 
+/** The day a chart over time starts at `range`, in epoch ms: where the range starts, or the chart's first point when the range takes in every point. Null for a chart with no points. */
+export function chartStart(series: CohortSeries[], range: ChartRange): number | null {
+  const times = series.flatMap((s) => s.points.map((p) => Date.parse(p.t)));
+  return times.length === 0 ? null : (rangeStart(series, range) ?? Math.min(...times));
+}
+
+/** Each series' change by `cohortKey`, at each range a chart offers. */
+export type ChangeByRange = Partial<Record<ChartRange, Readonly<Record<string, number | null>>>>;
+
+/** The change `since` measures from the day the chart starts at each range. */
+export function changeByRange(series: CohortSeries[], since: (start: number) => Readonly<Record<string, number | null>>): ChangeByRange {
+  return Object.fromEntries(
+    ChartRangeSchema.options.flatMap((range) => {
+      const start = chartStart(series, range);
+      return start === null ? [] : [[range, since(start)]];
+    }),
+  );
+}
+
 /** Each series from `from` on. A series with points before `from` starts at `from`, with its value then. */
 export function seriesFrom(series: CohortSeries[], from: number): CohortSeries[] {
   return series.map((s) => {

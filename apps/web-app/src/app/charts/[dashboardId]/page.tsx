@@ -20,7 +20,7 @@ import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
-import { chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
+import { type ChangeByRange, changeByRange, chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
 import { buttonVariants } from "@/components/ui/button";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
@@ -89,7 +89,7 @@ export default async function DashboardViewPage({
   let view: DashboardView;
   let derivedEntry: GovernanceTracking | null = null;
   let missingRepo: { repoId: string; missing: "scans" | "repo" } | null = null;
-  let change: Record<string, number | null> | undefined;
+  let change: ChangeByRange | undefined;
   let paths: Record<string, string> = {};
   if (page.value.kind === "tracking") {
     const { tracking, registry, governance } = page.value;
@@ -130,7 +130,7 @@ export default async function DashboardViewPage({
     view = renderDashboard(dashboard.config, digests, tags, asOf, governance, names);
     paths = componentDisambiguators(dashboard.config.cohorts, [...digests, ...names]);
     if (dashboard.config.chartType === "trend" && view.kind === "series") {
-      change = cohortChange(dashboard.config, view.series, digests, tags, governance, asOf);
+      change = changeByRange(view.series, cohortChange(dashboard.config, view.series, digests, tags, governance));
     }
   }
   const notice = derivedEntry ? await chartResultsNotice(getPool(), true) : null;

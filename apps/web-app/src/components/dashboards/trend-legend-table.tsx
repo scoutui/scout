@@ -6,9 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { searchedSeries } from "@/lib/dashboard-chart-data";
-import { formatDelta, formatMetric } from "@/lib/dashboard-format";
+import { formatDayTick, formatDelta, formatMetric } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
-import { shortenPath } from "@/components/repos/components-table";
 import { CohortLabelText, SlashBreaks } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
@@ -18,12 +17,15 @@ const NUMERIC: ReadonlySet<SortKey> = new Set(["value", "delta"]);
 // Past this many series the table shows its first rows, with Show all and a search.
 const FIRST_ROWS = 10;
 
+/** Each series' change by `cohortKey`, since `since` in epoch ms. */
+export type SeriesChange = { since: number; byKey: Readonly<Record<string, number | null>> };
+
 /**
  * A trend chart's legend as a table: each series with its latest value, sortable by
  * either column, most first to start. Hovering a row highlights its line; clicking
  * its name shows only that line, and clicking it again shows every line. With `change`, a Change column shows each
- * series' change over the last 30 days, as the Table chart does. With `paths`, a row whose name another row shares
- * shows the shortest ending of its component's path that tells the rows apart. Past FIRST_ROWS series the table
+ * series' change since the day it names. With `paths`, a row whose name another row shares shows the part of its
+ * component's path that tells the rows apart. Past FIRST_ROWS series the table
  * lists the first FIRST_ROWS rows in its sort, with a Show all button and a search, `query`, by component or package
  * name that lists every match. The row of a line shown on its own stays in the table whatever the search or Show all.
  */
@@ -32,7 +34,7 @@ export function TrendLegendTable({
   colors,
   deprecatedOnly,
   metric,
-  change = {},
+  change,
   paths = {},
   query,
   onQueryChange,
@@ -44,7 +46,7 @@ export function TrendLegendTable({
   colors: ReadonlyMap<string, string>;
   deprecatedOnly: ReadonlySet<string>;
   metric: "count" | "share";
-  change?: Readonly<Record<string, number | null>> | undefined;
+  change?: SeriesChange | undefined;
   paths?: Readonly<Record<string, string>> | undefined;
   query: string;
   onQueryChange: (query: string) => void;
@@ -54,9 +56,12 @@ export function TrendLegendTable({
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("value", "desc", NUMERIC);
   const [expanded, setExpanded] = useState(false);
-  const latest = series.map((s) => ({ ...s, value: s.points[s.points.length - 1]?.value ?? null, delta: change[s.cohortKey] ?? null }));
+  const latest = series.map((s) => ({ ...s, value: s.points[s.points.length - 1]?.value ?? null, delta: change?.byKey[s.cohortKey] ?? null }));
   const sorted = sortRows(latest, sortKey, sortDir, (s, k) => (k === "label" ? s.label : k === "delta" ? s.delta : s.value));
   const hasDelta = latest.some((s) => s.delta !== null);
+  const changeHeading = change ? `Change since ${formatDayTick(change.since)}` : "";
+  // A no-break space keeps the day and its month on one line when the heading wraps.
+  const changeLabel = changeHeading.replace(/ (\S+)$/, "\u00a0$1");
   const shownPaths = distinctPaths(series, paths);
   const capped = series.length > FIRST_ROWS;
   const searching = query.trim() !== "";
@@ -107,10 +112,10 @@ export function TrendLegendTable({
               />
             </TableHead>
             {hasDelta ? (
-              <TableHead className="text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
+              <TableHead className="text-right @max-md:h-auto @max-md:py-1.5 @max-md:whitespace-normal @max-md:[&_span]:whitespace-normal" aria-sort={ariaSort("delta", sortKey, sortDir)}>
                 <SortButton
-                  label="Change"
-                  title="Change over the last 30 days"
+                  label={changeLabel}
+                  title={changeHeading}
                   sortKey="delta"
                   current={sortKey}
                   dir={sortDir}
@@ -187,8 +192,9 @@ export function TrendLegendTable({
 }
 
 /**
- * For each series whose name another series shares, the shortest ending of its path (two segments at least) that no
- * other series of that name ends with, shortened to that length for the whole group so the rows read alike.
+ * For each series whose name another series shares, the part of its path that tells the group apart: comparing the
+ * paths from the end, the first folders that differ, as many as it takes to tell every row apart. When the file names
+ * differ, the file name, with its folder when some file in the group is an index file.
  */
 function distinctPaths(series: CohortSeries[], paths: Readonly<Record<string, string>>): Map<string, string> {
   const groups = new Map<string, Array<{ key: string; path: string }>>();
@@ -196,14 +202,20 @@ function distinctPaths(series: CohortSeries[], paths: Readonly<Record<string, st
     const path = paths[s.cohortKey];
     if (path !== undefined) groups.set(s.label, [...(groups.get(s.label) ?? []), { key: s.cohortKey, path }]);
   }
-  const ending = (path: string, k: number) => path.split("/").slice(-k).join("/");
   const out = new Map<string, string>();
   for (const group of groups.values()) {
     if (group.length < 2) continue;
-    const longest = Math.max(...group.map(({ path }) => path.split("/").length));
-    let k = 2;
-    while (k < longest && new Set(group.map(({ path }) => ending(path, k))).size < group.length) k++;
-    for (const { key, path } of group) out.set(key, shortenPath(path, k));
+    const fromEnd = group.map(({ path }) => path.split("/").reverse());
+    const longest = Math.max(...fromEnd.map((segments) => segments.length));
+    const part = (from: number, to: number) => fromEnd.map((segments) => segments.slice(from, to + 1).reverse().join("/"));
+    let from = 0;
+    while (from < longest && new Set(part(from, from)).size === 1) from++;
+    if (from === longest) continue;
+    let to = from;
+    while (to < longest - 1 && new Set(part(from, to)).size < group.length) to++;
+    if (from === 0 && fromEnd.some(([file]) => file?.startsWith("index."))) to = Math.max(to, 1);
+    const shown = part(from, to);
+    for (const [i, { key }] of group.entries()) out.set(key, shown[i] ?? "");
   }
   return out;
 }

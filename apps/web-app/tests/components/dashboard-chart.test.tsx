@@ -217,55 +217,59 @@ describe("DashboardChart legend", () => {
 
   it("lists two lines in a table with each one's change when the chart has it", () => {
     const [config, view] = trendOf([oldUi, newUi]);
-    render(<DashboardChart config={config} view={view} change={{ "package:old-ui": 72, "package:new-ui": 0 }} />);
+    render(<DashboardChart config={config} view={view} change={{ all: { "package:old-ui": 72, "package:new-ui": 0 } }} />);
     const rows = within(screen.getByRole("table")).getAllByRole("row");
-    expect(within(rows[0] as HTMLElement).getByRole("button", { name: "Change over the last 30 days" })).toHaveTextContent("Change");
     expect(rows.slice(1).map((r) => [...r.querySelectorAll("td")].map((td) => td.textContent))).toEqual([
       ["old-ui", "40", "+72"],
       ["new-ui", "16", "0"],
     ]);
   });
 
+  const twoDays = (name: string): CohortSeries => ({ cohortKey: `package:${name}`, label: name, color: "", points: series[0]?.points ?? [] });
+  const shortSpan: DashboardView = { kind: "series", series: [twoDays("old-ui"), twoDays("new-ui")], coverage };
+  it.each([
+    ["3 months", trendOf([oldUi, newUi])[1], "3m", "Change since 1 Jun", "+3"],
+    ["6 months", trendOf([oldUi, newUi])[1], "6m", "Change since 1 Mar", "+6"],
+    ["1 year, which reaches back past the first scan", trendOf([oldUi, newUi])[1], "1y", "Change since 1 Oct", "+9"],
+    ["All", trendOf([oldUi, newUi])[1], "all", "Change since 1 Oct", "+11"],
+    ["a saved 3 months over scans that span less, which offers no range", shortSpan, "3m", "Change since 1 Sep", "+3"],
+  ] as const)("at %s, heads Change with the day the chart starts and shows the change since then", (_, view, range, heading, delta) => {
+    const [config] = trendOf([oldUi, newUi]);
+    const change = { "3m": { "package:new-ui": 3 }, "6m": { "package:new-ui": 6 }, "1y": { "package:new-ui": 9 }, all: { "package:new-ui": 11 } };
+    render(<DashboardChart config={config} view={view} range={range} onRangeChange={() => {}} change={change} />);
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("button", { name: heading })).toHaveTextContent(heading);
+    expect(within(table).getByRole("button", { name: heading })).toHaveAttribute("title", heading);
+    const row = within(table).getAllByRole("row").find((r) => r.textContent?.startsWith("new-ui"));
+    expect(row?.querySelectorAll("td")[2]).toHaveTextContent(delta);
+  });
+
   it("lists lines with nothing to compare last, whichever way Change is sorted", () => {
     const [config, view] = trendOf([oldUi, newUi, monthly("mid-ui", () => 20)]);
-    render(<DashboardChart config={config} view={view} change={{ "package:old-ui": 72, "package:new-ui": -5, "package:mid-ui": null }} />);
+    render(<DashboardChart config={config} view={view} change={{ all: { "package:old-ui": 72, "package:new-ui": -5, "package:mid-ui": null } }} />);
     const table = screen.getByRole("table");
-    const change = within(table).getByRole("button", { name: "Change over the last 30 days" });
+    const change = within(table).getByRole("button", { name: "Change since 1 Oct" });
     fireEvent.click(change);
     expect(rowNames(table)).toEqual(["old-ui", "new-ui", "mid-ui"]);
     fireEvent.click(change);
     expect(rowNames(table)).toEqual(["new-ui", "old-ui", "mid-ui"]);
   });
 
-  it("shows the shortest path ending that tells same-named components apart under their table rows, and nothing under a name no other row has", () => {
+  it.each([
+    ["the first folder from the end that differs", ["ui/elements/Button.tsx", "ui/fields/Button.tsx"], ["elements", "fields"]],
+    ["the first folder that differs above a shared one", ["src/fixed/Toolbar/index.tsx", "src/inline/Toolbar/index.tsx"], ["fixed", "inline"]],
+    ["the file names when they differ", ["src/badges/Badge.tsx", "src/badges/StatusBadge.tsx"], ["Badge.tsx", "StatusBadge.tsx"]],
+    ["the file names with their folders when one is an index file", ["fields/component/index.tsx", "fields/components/RelationshipComponent.tsx"], ["component/index.tsx", "components/RelationshipComponent.tsx"]],
+    ["as many folders as it takes when one alone repeats", ["a/x/Card.tsx", "b/x/Card.tsx", "a/y/Card.tsx"], ["a/x", "b/x", "a/y"]],
+  ] as const)("tells same-named components apart under their table rows by %s, and shows nothing under a name no other row has", (_, paths, shown) => {
     const named = (id: string, label: string) => ({ ...monthly(id, () => 1), cohortKey: `component:${id}`, label });
-    const [config, view] = trendOf([
-      named("a", "Button · @acme/ui"),
-      named("b", "Button · @acme/ui"),
-      named("x", "GroupItem · @acme/ui"),
-      named("y", "GroupItem · @acme/ui"),
-      named("popup", "Popup · @acme/ui"),
-    ]);
-    render(
-      <DashboardChart
-        config={config}
-        view={view}
-        change={{}}
-        paths={{
-          "component:a": "@acme/ui/elements/Button",
-          "component:b": "@acme/ui/fields/Button",
-          "component:x": "@acme/ui/src/rich/Toolbar/index.tsx",
-          "component:y": "@acme/ui/src/plain/Toolbar/index.tsx",
-          "component:popup": "@acme/ui/elements/Popup",
-        }}
-      />,
-    );
+    const same = paths.map((_, i) => named(`same-${i}`, "Card · @acme/ui"));
+    const [config, view] = trendOf([...same, named("popup", "Popup · @acme/ui")]);
+    const pathOf = Object.fromEntries([...paths.map((path, i) => [`component:same-${i}`, path]), ["component:popup", "ui/overlays/Popup.tsx"]]);
+    render(<DashboardChart config={config} view={view} change={{ all: {} }} paths={pathOf} />);
     const table = screen.getByRole("table");
-    expect(within(table).getByText("…/elements/Button")).toHaveAttribute("title", "@acme/ui/elements/Button");
-    expect(within(table).getByText("…/fields/Button")).toBeInTheDocument();
-    expect(within(table).getByText("…/rich/Toolbar/index.tsx")).toBeInTheDocument();
-    expect(within(table).getByText("…/plain/Toolbar/index.tsx")).toBeInTheDocument();
-    expect(within(table).queryByText("…/elements/Popup")).toBeNull();
+    expect(paths.map((path) => within(table).getByTitle(path).textContent)).toEqual(shown);
+    expect(within(table).queryByTitle("ui/overlays/Popup.tsx")).toBeNull();
   });
 
   const twelve = ["bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet", "kilo", "alpha"].map((name, n) =>

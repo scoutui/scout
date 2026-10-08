@@ -131,7 +131,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     });
   });
 
-  it("hands a trend chart each series' change over the last 30 days and where each component comes from, and a stacked chart no change", async () => {
+  it("hands a trend chart where each component comes from, and a stacked chart no change", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const panel = componentKey(repoDeclaration("repo-a", "src/panel.tsx", "Panel"));
@@ -143,11 +143,33 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       ];
       const trend = await renderSaved({ scope: { kind: "all" }, cohorts, chartType: "trend", metric: "count" });
       expect(propsOf(trend, "LinkedDashboardChart")).toMatchObject({
-        change: { "package:@sample/core": 0, [`component:${panel}`]: 0 },
         paths: { [`component:${panel}`]: "src/panel.tsx", [`component:${otherPanel}`]: "src/other/panel.tsx" },
       });
       const stacked = await renderSaved({ scope: { kind: "all" }, cohorts, chartType: "stacked-share", metric: "count" });
       expect(propsOf(stacked, "LinkedDashboardChart")).toHaveProperty("change", undefined);
+    });
+  });
+
+  it("hands a trend chart each series' change since the day it starts at each range, each repo against its own scans", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const card = component(packageExport("@sample/long", "Card"));
+      const scanOf = (repoId: string, scannedAt: string, uses: number) => {
+        const scan = artifact({ repoId, scanId: `${repoId}:${scannedAt}`, scannedAt, components: [card], occurrences: Array.from({ length: uses }, (_, i) => resolvedAt(card, "src/app.tsx", i + 1)) });
+        return { ...scan, meta: { ...scan.meta, repo: { ...scan.meta.repo, commit: scannedAt } } };
+      };
+      // repo-x from 1 January; repo-y joins on 1 August. 3 months back from 1 September is 1 June; a year back is before the first scan.
+      for (const scan of [
+        scanOf("repo-x", "2026-01-01T00:00:00Z", 10),
+        scanOf("repo-x", "2026-05-20T00:00:00Z", 30),
+        scanOf("repo-y", "2026-08-01T00:00:00Z", 50),
+        scanOf("repo-x", "2026-09-01T00:00:00Z", 35),
+        scanOf("repo-y", "2026-09-01T00:00:00Z", 55),
+      ]) await publishScan(pool, scan, { uploadedByUserId: null });
+      const trend = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "package", packageName: "@sample/long" }], chartType: "trend", metric: "count" });
+      expect(propsOf(trend, "LinkedDashboardChart")).toMatchObject({
+        change: { "3m": { "package:@sample/long": 10 }, "6m": { "package:@sample/long": 30 }, "1y": { "package:@sample/long": 30 }, all: { "package:@sample/long": 30 } },
+      });
     });
   });
 

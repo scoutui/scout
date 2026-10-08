@@ -196,7 +196,7 @@ function deriveOne(
   const fromLabel = from.label;
   const shortFrom = fromLabel.split(" · ")[0] ?? fromLabel;
   const deprecated: SeriesCohort = { key: `deprecated:${record.id}`, label: fromLabel, color: "", role: "deprecated", occurrences: from.occurrences };
-  const change = changeIn(scans, from.occurrences, asOf);
+  const change = changeIn(scans, from.occurrences, thirtyDaysBefore(asOf));
 
   if (record.disposition.kind === "retired") {
     const config: DashboardConfig = { scope, cohorts: from.cohorts, chartType: "trend", metric: "count" };
@@ -279,19 +279,23 @@ function reposWithUses(scans: DigestScan[], countOf: (scan: DigestScan) => numbe
   return used;
 }
 
+/** Where the 30 days up to `asOf` start, in epoch ms. */
+export function thirtyDaysBefore(asOf: string): number {
+  return Date.parse(asOf) - CHANGE_WINDOW_MS;
+}
+
 /**
- * The change in a count per scan over the 30 days up to `asOf`: each repo's latest scan compared with its latest scan
- * on or before the window's start (its first scan when it joined inside the window), added up across repos.
- * `reposAdded` counts the repos that joined inside the window and still have the count, when some repo was scanned
- * before it. Null until some repo with the count has two scans.
+ * The change in a count per scan since `start`, in epoch ms: each repo's latest scan compared with its latest scan on
+ * or before `start` (its first scan when it joined after it), added up across repos. `reposAdded` counts the repos
+ * that joined after `start` and still have the count, when some repo was scanned before it. Null until some repo with
+ * the count has two scans.
  */
-export function changeIn(scans: DigestScan[], countOf: (scan: DigestScan) => number, asOf: string): Change {
+export function changeIn(scans: DigestScan[], countOf: (scan: DigestScan) => number, start: number): Change {
   const counts = new Map(scans.map((scan) => [scan.meta.scanId, countOf(scan)]));
   const occurrences = (scan: DigestScan) => counts.get(scan.meta.scanId) ?? 0;
   const used = reposWithUses(scans, occurrences);
-  const start = Date.parse(asOf) - CHANGE_WINDOW_MS;
   const before = (scan: DigestScan) => Date.parse(scanOrderTime(scan.meta)) <= start;
-  const firstMonth = !scans.some(before);
+  const noneBefore = !scans.some(before);
   let delta = 0;
   let reposAdded = 0;
   let reading = false;
@@ -302,7 +306,7 @@ export function changeIn(scans: DigestScan[], countOf: (scan: DigestScan) => num
     const baseline = repoScans.find(before) ?? first;
     reading ||= repoScans.length >= 2;
     delta += occurrences(latest) - occurrences(baseline);
-    if (!firstMonth && !before(first) && occurrences(latest) > 0) reposAdded++;
+    if (!noneBefore && !before(first) && occurrences(latest) > 0) reposAdded++;
   }
   return { delta: reading ? delta : null, reposAdded };
 }

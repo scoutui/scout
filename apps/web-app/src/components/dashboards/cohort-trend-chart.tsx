@@ -8,7 +8,7 @@ import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, form
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
-import { TrendLegendTable } from "@/components/dashboards/trend-legend-table";
+import { type SeriesChange, TrendLegendTable } from "@/components/dashboards/trend-legend-table";
 
 // From this many series the legend is a sortable table, unless the chart has each series' change.
 const TABLE_LEGEND_FROM = 6;
@@ -21,7 +21,7 @@ const TABLE_LEGEND_FROM = 6;
  * line's tail, and a crosshair tooltip listing every series at that scan. A small
  * ring marks each scan where a repo joins a line, and the tooltip names it. From
  * TABLE_LEGEND_FROM series the legend is a table of each series' latest value; with `change`, it is that table
- * from two series, with each series' change over the last 30 days. `paths` tells same-named components apart there.
+ * from two series, with each series' change since `change.since`. `paths` tells same-named components apart there.
  * A search in the table draws only the series it matches, each in its own colour; with `onQueryChange`, the search is
  * `query`. With `from`, the x-axis starts there and points before it fall outside the plot.
  */
@@ -45,7 +45,7 @@ export function CohortTrendChart({
   metric: "count" | "share";
   showLegend?: boolean;
   from?: number | null;
-  change?: Readonly<Record<string, number | null>> | undefined;
+  change?: SeriesChange | undefined;
   paths?: Readonly<Record<string, string>> | undefined;
   query?: string | undefined;
   onQueryChange?: ((query: string) => void) | undefined;
