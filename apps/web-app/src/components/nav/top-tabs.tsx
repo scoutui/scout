@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLinkItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -15,7 +15,17 @@ const TABS = [
 
 type Tab = (typeof TABS)[number];
 
-const isActive = (pathname: string, tab: Tab) => pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+type Place = { tab?: Tab; label?: string };
+
+const within = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+function placeOf(pathname: string): Place {
+  const path = within(pathname, "/components") ? "/packages" : pathname;
+  const tab = TABS.find((t) => within(path, t.href));
+  if (tab) return { tab, label: tab.label };
+  if (within(pathname, "/settings")) return { label: "settings" };
+  return {};
+}
 
 export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean; rightSlot?: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,6 +33,7 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
   // back to /login.
   if (pathname === "/login") return null;
   const tabs = TABS.filter((t) => showGovernance || t.href !== "/governance");
+  const place = placeOf(pathname);
   return (
     <nav className="sticky top-0 z-30 h-(--top-bar-height) border-b border-border/70 bg-background">
       <div className="mx-auto flex h-full max-w-[1600px] items-stretch px-4 sm:px-8 lg:px-10">
@@ -33,13 +44,13 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
           <BrandMark />
           <span className="max-sm:sr-only">Scout</span>
         </Link>
-        <PageMenu tabs={tabs} pathname={pathname} />
+        <PageMenu tabs={tabs} place={place} />
         {/* Tab rail. The active tab's underline overlaps the nav's border
             (-mb-px). The rail scrolls if the tabs ever outgrow it, so the
             right cluster never clips. */}
         <div className="hidden min-w-0 items-stretch overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex">
           {tabs.map((t) => {
-            const active = isActive(pathname, t);
+            const active = t === place.tab;
             return (
               <Link
                 key={t.href}
@@ -64,18 +75,29 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
   );
 }
 
-function PageMenu({ tabs, pathname }: { tabs: readonly Tab[]; pathname: string }) {
-  const current = tabs.find((t) => isActive(pathname, t));
+function PageMenu({ tabs, place }: { tabs: readonly Tab[]; place: Place }) {
   return (
     <div className="-ml-2 flex items-center sm:hidden">
       <DropdownMenu>
-        <DropdownMenuTrigger className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-foreground transition-colors hover:bg-muted active:bg-accent aria-expanded:bg-muted">
-          {current?.label ?? "menu"}
-          <ChevronDown aria-hidden className="size-4 text-muted-foreground" />
+        <DropdownMenuTrigger
+          aria-label={place.label ? undefined : "Pages"}
+          className={cn(
+            "inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-foreground transition-colors hover:bg-muted active:bg-accent aria-expanded:bg-muted",
+            !place.label && "w-9 justify-center px-0",
+          )}
+        >
+          {place.label ? (
+            <>
+              {place.label}
+              <ChevronDown aria-hidden className="size-4 text-muted-foreground" />
+            </>
+          ) : (
+            <Menu aria-hidden className="size-4" />
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
           {tabs.map((t) => {
-            const active = t === current;
+            const active = t === place.tab;
             return (
               <DropdownMenuLinkItem
                 key={t.href}

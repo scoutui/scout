@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { readdirSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import type { Person } from "@/lib/access";
 
 const nav = vi.hoisted(() => ({ pathname: "/repos" }));
@@ -50,6 +52,25 @@ describe("AccountMenu", () => {
   });
 });
 
+const APP_DIR = join(__dirname, "../../src/app");
+
+const PLACES = [
+  { route: "/charts", label: "charts", underlined: true },
+  { route: "/charts/[dashboardId]", label: "charts", underlined: true },
+  { route: "/charts/[dashboardId]/edit", label: "charts", underlined: true },
+  { route: "/charts/new", label: "charts", underlined: true },
+  { route: "/components/[componentId]", label: "packages", underlined: true },
+  { route: "/governance", label: "governance", underlined: true },
+  { route: "/login/device", label: "Pages", shown: "", underlined: false },
+  { route: "/packages", label: "packages", underlined: true },
+  { route: "/packages/[packageName]", label: "packages", underlined: true },
+  { route: "/repos", label: "repos", underlined: true },
+  { route: "/repos/[repoId]", label: "repos", underlined: true },
+  { route: "/repos/[repoId]/components/[componentId]", label: "repos", underlined: true },
+  { route: "/repos/[repoId]/scans", label: "repos", underlined: true },
+  { route: "/settings", label: "settings", underlined: false },
+];
+
 describe("TopTabs", () => {
   beforeEach(() => {
     nav.pathname = "/repos";
@@ -63,26 +84,39 @@ describe("TopTabs", () => {
     expect(screen.getByRole("link", { name: "governance" })).toHaveAttribute("href", "/governance");
   });
 
-  it.each([
-    { pathname: "/packages", label: "packages" },
-    { pathname: "/charts/trend", label: "charts" },
-    { pathname: "/components/a0c37f735b019024", label: "menu" },
-  ])("names the page menu $label on $pathname", ({ pathname, label }) => {
-    nav.pathname = pathname;
-    render(<TopTabs showGovernance />);
-    expect(screen.getByRole("button", { name: label })).toHaveAttribute("aria-haspopup", "menu");
+  it("has a place for every page that shows the header", () => {
+    const routes = readdirSync(APP_DIR, { recursive: true, encoding: "utf8" })
+      .filter(file => basename(file) === "page.tsx")
+      .map(file => `/${dirname(file)}`)
+      .filter(route => route !== "/login");
+    expect(PLACES.map(place => place.route).sort()).toEqual(routes.sort());
   });
 
+  it.each([...PLACES, { route: "/no-such-page", label: "Pages", shown: "", underlined: false }])(
+    "names the page menu $label on $route",
+    ({ route, label, shown, underlined }) => {
+      nav.pathname = route.replace(/\[\w+\]/g, "example");
+      render(<TopTabs showGovernance />);
+      const button = screen.getByRole("button", { name: label });
+      expect(button).toHaveAttribute("aria-haspopup", "menu");
+      expect(button.textContent).toBe(shown ?? label);
+      const current = screen.getAllByRole("link").filter(link => link.getAttribute("aria-current") === "page");
+      expect(current.map(link => link.textContent)).toEqual(underlined ? [label] : []);
+    },
+  );
+
   it.each([
-    { role: "a Viewer", showGovernance: false, pages: ["repos", "packages", "charts"] },
-    { role: "an Admin", showGovernance: true, pages: ["repos", "packages", "charts", "governance"] },
-  ])("lists every page $role can see in the page menu, marking the current one", async ({ showGovernance, pages }) => {
-    nav.pathname = "/packages";
+    { role: "a Viewer", showGovernance: false, pathname: "/packages", button: "packages", current: "packages", pages: ["repos", "packages", "charts"] },
+    { role: "an Admin", showGovernance: true, pathname: "/packages", button: "packages", current: "packages", pages: ["repos", "packages", "charts", "governance"] },
+    { role: "an Admin", showGovernance: true, pathname: "/settings", button: "settings", current: "none", pages: ["repos", "packages", "charts", "governance"] },
+    { role: "an Admin", showGovernance: true, pathname: "/no-such-page", button: "Pages", current: "none", pages: ["repos", "packages", "charts", "governance"] },
+  ])("lists every page $role can see in the page menu on $pathname, ticking $current", async ({ showGovernance, pathname, button, current, pages }) => {
+    nav.pathname = pathname;
     render(<TopTabs showGovernance={showGovernance} />);
-    fireEvent.click(screen.getByRole("button", { name: "packages" }));
+    fireEvent.click(screen.getByRole("button", { name: button }));
     const items = await screen.findAllByRole("menuitem");
     expect(items.map(item => [item.textContent, item.getAttribute("href"), item.getAttribute("aria-current")])).toEqual(
-      pages.map(page => [page, `/${page}`, page === "packages" ? "page" : null]),
+      pages.map(page => [page, `/${page}`, page === current ? "page" : null]),
     );
   });
 
