@@ -279,8 +279,8 @@ function JoinMarker({ cx, cy, color, dimmed }: { cx: number; cy: number; color: 
 }
 
 /**
- * A chart over time's tooltip at the hovered scan, headed by `scanTooltipLabel`, with a row for every series. Past about
- * ten rows the list scrolls and fades at an edge with rows beyond it, and the row under the pointer is bold and kept in
+ * A chart over time's tooltip at the hovered scan, headed by `scanTooltipLabel`, with a row for every series. Past
+ * eleven rows the list scrolls and fades at an edge with rows beyond it, and the row under the pointer is bold and kept in
  * view. `pinned`, the list stays where it is scrolled once it shows that row, and the tooltip's edge darkens. With `stack`, the series are
  * bands stacked in that order. `format` sets each value.
  */
@@ -343,7 +343,7 @@ export function ScanTooltip({
       payload={rows}
       label={label}
       className={cn(
-        "[&>div:last-child]:max-h-[11.75rem] [&>div:last-child]:overflow-y-auto [&>div:last-child]:overscroll-contain [&>div:last-child[data-scrollbar-room]]:pe-4",
+        "[&>div:last-child]:max-h-[12rem] [&>div:last-child]:overflow-y-auto [&>div:last-child]:overscroll-contain [&>div:last-child[data-scrollbar-room]]:pe-4",
         pinned && "border-foreground/30",
       )}
       labelFormatter={(_, rows) => scanTooltipLabel(rows, coverage, series)}
@@ -352,7 +352,7 @@ export function ScanTooltip({
           <span className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item?.color }} />
           <div ref={item === (under ?? rows[0]) ? anchor : undefined} className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
             <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} marked={item === under} />
-            <span className={cn("tabular-nums text-foreground", item === under ? "font-semibold" : "font-medium")}>{format(Number(value))}</span>
+            <span className={cn("overflow-clip tabular-nums text-foreground", item === under ? "font-semibold" : "font-medium")}>{format(Number(value))}</span>
           </div>
         </>
       )}
