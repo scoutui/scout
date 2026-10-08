@@ -63,7 +63,7 @@ On the **governance** page, select a record's count to open its chart: uses over
 
 To see where a record's component or package is still used, select the record's name.
 
-The same charts are on the **charts** page. Each migration has a row under **Migrations** reading **N% migrated** and **N left**, and each retirement a row under **Retirements** reading **N left**, the uses still in the code. Each row also shows how the uses left changed over the last 30 days. Records that name the same replacement, such as one for each part of a compound component, share one row and one chart. See [Charts](/docs/guides/dashboard/charts).
+The same charts are on the **charts** page, under **Migrations and retirements**, grouped by the package each record moves away from. Select `@acme/ui-legacy` to see its rows: a migration reads how much is **Migrated** and its **Uses left**, and a retirement its **Uses left**, the uses still in the code. Each row also shows how the uses left changed over the last 30 days. Records that name the same replacement, such as one for each part of a compound component, share one row and one chart. See [Charts](/docs/guides/dashboard/charts).
 
 To follow one repo, open it from **repos** and go to its **Adoption** tab. **Migrations in this repo** and **Retirements in this repo** count that repo alone, so their numbers can differ from the charts page. A repo that never used `LegacyButton` has no row for it. See [Follow adoption in a repo](/docs/guides/dashboard/repos#follow-adoption-in-a-repo).
 
@@ -76,7 +76,7 @@ No button marks a record complete. It reads **None left** once no repo's latest 
 1. Remove the last uses of `LegacyButton` from each repo. To find them, open `LegacyButton` from its package page and see [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
 2. Scan each of those repos and upload the scan. Every repo counts with its latest scan, however old, so a repo not scanned since it last used `LegacyButton` still counts its old uses. [Run in CI](/docs/guides/run-in-ci) keeps scans coming.
 
-Once every record in a package reads **None left**, the **governance** page moves them behind **Show N complete**. The **charts** page does the same for each complete record. If a later scan uses `LegacyButton` again, the record counts it again. Keep the record once it is complete: it still marks any new use as deprecated.
+Once every record in a package reads **None left**, the **governance** page moves them behind **Show N complete**. On the **charts** page, each complete record moves to **Complete**. If a later scan uses `LegacyButton` again, the record counts it again. Keep the record once it is complete: it still marks any new use as deprecated.
 
 ## Not in any scan
 
