@@ -497,6 +497,14 @@ describe("chartFigure", () => {
     },
   );
 
+  it("moves a bar chart grown for its bars down by a title's second line, and makes the image as much taller", () => {
+    const one = drawn(config("bars"), manyBars(60));
+    const two = drawn(config("bars"), manyBars(60), savedName);
+    expect(one.height).toBeGreaterThan(720);
+    expect(bodyYs(two)).toEqual(bodyYs(one).map((y) => y + 38));
+    expect(two.height).toBe(one.height + 38);
+  });
+
   it("sets a long repo and package name in the subtitle in full, and moves the plot down by each line it adds", () => {
     const repoId = "a-monorepo-with-a-very-long-name-for-its-storefront-and-checkout-apps-and-shared-packages";
     const pkg = "@example/a-component-library-package-with-a-long-name";
