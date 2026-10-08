@@ -109,7 +109,7 @@ export function ChartMenu({
 
   const sharing = visibility === "private" || visibility === "everyone";
   if (!chart && !sharing && !canDuplicate) return null;
-  const image = chart !== null && hasFigure(chart.config, chart.drawn);
+  const image = chart !== null && hasFigure(chart.config, searchedView(chart.drawn, chart.query));
   const canCopyImage = image && typeof ClipboardItem !== "undefined" && typeof navigator.clipboard?.write === "function";
   const canCopyTable = chart !== null && typeof navigator.clipboard?.writeText === "function";
   const exportItems = chart ? (

@@ -293,6 +293,29 @@ describe("ChartMenu export", () => {
     expect(input.whole).toEqual(whole);
   });
 
+  it("offers no image of a search whose lines have only one scan between them, and still offers the table", async () => {
+    const kits: CohortSeries[] = Array.from({ length: 9 }, (_, i) => ({
+      cohortKey: `package:@example/kit-${i}`,
+      label: `@example/kit-${i}`,
+      color: "",
+      points: i === 0 ? [{ t: LATEST, value: 1 }] : [{ t: "2026-08-01T00:00:00Z", value: i }, { t: LATEST, value: i + 1 }],
+    }));
+    const config: DashboardConfig = {
+      scope: { kind: "all" },
+      cohorts: [...cohorts, ...kits.map((s) => ({ kind: "package" as const, packageName: s.label }))],
+      chartType: "trend",
+      metric: "count",
+    };
+    render(
+      <ChartExportProvider title={TITLE}>
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <LinkedDashboardChart config={config} view={{ kind: "series", series: [...series, ...kits], coverage }} range="all" />
+      </ChartExportProvider>,
+    );
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "kit-0" } });
+    expect(await menuItems()).toEqual(["Download CSV", "Copy table"]);
+  });
+
   it("copies the chart's image as it's clicked, and says so", async () => {
     clipboard.write.mockResolvedValue(undefined);
     renderChart("bars");
