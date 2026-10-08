@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 import { type SeriesChange, TrendLegendTable } from "@/components/dashboards/trend-legend-table";
+import { usePinnedTooltip } from "@/components/dashboards/use-pinned-tooltip";
 
 // From this many series the legend is a sortable table, unless the chart has each series' change.
 const TABLE_LEGEND_FROM = 6;
@@ -61,6 +62,7 @@ export function CohortTrendChart({
   const query = shownQuery ?? ownQuery;
   const setQuery = onQueryChange ?? setOwnQuery;
   const gradientId = useId();
+  const pin = usePinnedTooltip();
 
   const rows = useMemo(() => seriesToRows(allSeries), [allSeries]);
   const ticks = useMemo(() => dayTicks(rows).filter((t) => from === null || t >= from), [rows, from]);
@@ -115,8 +117,8 @@ export function CohortTrendChart({
 
   return (
     <div>
-      <ChartContainer config={config} className="h-[280px] w-full">
-        <AreaChart data={rows} margin={{ left: 8, right: rightMargin, top: 12, bottom: 4 }}>
+      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className="h-[280px] w-full">
+        <AreaChart data={rows} margin={{ left: 8, right: rightMargin, top: 12, bottom: 4 }} onClick={pin.onClick}>
           <defs>
             {series.map((s, i) => (
               <linearGradient key={s.cohortKey} id={`${gradientId}-${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -147,7 +149,8 @@ export function CohortTrendChart({
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             isAnimationActive={false}
-            wrapperStyle={{ zIndex: 10 }}
+            trigger={pin.pinned ? "click" : "hover"}
+            wrapperStyle={{ zIndex: 10, pointerEvents: pin.pinned ? "auto" : "none" }}
             content={(props) => (
               <ScanTooltip
                 {...props}
@@ -157,6 +160,7 @@ export function CohortTrendChart({
                 config={config}
                 shared={shared}
                 deprecatedOnly={deprecatedOnly}
+                pinned={pin.pinned}
                 format={(value) => formatMetric(value, metric)}
               />
             )}
@@ -277,7 +281,8 @@ function JoinMarker({ cx, cy, color, dimmed }: { cx: number; cy: number; color: 
 /**
  * A chart over time's tooltip at the hovered scan, headed by `scanTooltipLabel`, with a row for every series. Past about
  * ten rows the list scrolls and fades at an edge with rows beyond it, and the row under the pointer is bold and kept in
- * view. With `stack`, the series are bands stacked in that order. `format` sets each value.
+ * view. `pinned`, the list stays where it is scrolled once it shows that row, and the tooltip's edge darkens. With `stack`, the series are
+ * bands stacked in that order. `format` sets each value.
  */
 export function ScanTooltip({
   active,
@@ -292,6 +297,7 @@ export function ScanTooltip({
   deprecatedOnly,
   format,
   stack,
+  pinned = false,
 }: Pick<TooltipContentProps, "active" | "payload" | "label" | "coordinate"> & {
   from: number | null;
   coverage: RepoCoverage;
@@ -301,31 +307,40 @@ export function ScanTooltip({
   deprecatedOnly: ReadonlySet<string>;
   format: (value: number) => string;
   stack?: readonly string[];
+  pinned?: boolean;
 }) {
   const toValue = useYAxisInverseScale();
   const at = coordinate === undefined || toValue === undefined ? undefined : Number(toValue(coordinate.y));
   const { rows, under } = tooltipRows(payload, at, stack);
   const anchor = useRef<HTMLDivElement>(null);
+  const placedPinned = useRef(false);
   useEffect(() => {
     const row = anchor.current?.parentElement;
     const list = row?.parentElement;
     if (!row || !list) return;
-    const { scrollTop, above, below } = tooltipListScroll({
-      scrollTop: list.scrollTop,
-      height: list.clientHeight,
-      content: list.scrollHeight,
-      pitch: row.offsetHeight + Number.parseFloat(getComputedStyle(list).rowGap),
-      rowTop: under === undefined ? undefined : row.offsetTop - list.offsetTop,
-    });
-    list.scrollTop = scrollTop;
-    list.style.maskImage = `linear-gradient(to bottom, transparent, #000 ${above ? "1rem" : "0px"}, #000 calc(100% - ${below ? "1rem" : "0px"}), transparent)`;
+    const place = (rowTop?: number) => {
+      const { scrollTop, above, below } = tooltipListScroll({
+        scrollTop: list.scrollTop,
+        height: list.clientHeight,
+        content: list.scrollHeight,
+        pitch: row.offsetHeight + Number.parseFloat(getComputedStyle(list).rowGap),
+        rowTop,
+      });
+      if (list.scrollTop !== scrollTop) list.scrollTop = scrollTop;
+      list.style.maskImage = `linear-gradient(to bottom, transparent, #000 ${above ? "1rem" : "0px"}, #000 calc(100% - ${below ? "1rem" : "0px"}), transparent)`;
+    };
+    place(under === undefined || (pinned && placedPinned.current) ? undefined : row.offsetTop - list.offsetTop);
+    placedPinned.current = pinned;
+    const onScroll = () => place();
+    list.addEventListener("scroll", onScroll);
+    return () => list.removeEventListener("scroll", onScroll);
   });
   return (
     <ChartTooltipContent
       active={active && tooltipRowTimestamp(payload) !== from}
       payload={rows}
       label={label}
-      className="[&>div:last-child]:max-h-[11.75rem] [&>div:last-child]:overflow-y-auto"
+      className={cn("[&>div:last-child]:max-h-[11.75rem] [&>div:last-child]:overflow-y-auto [&>div:last-child]:overscroll-contain", pinned && "border-foreground/30")}
       labelFormatter={(_, rows) => scanTooltipLabel(rows, coverage, series)}
       formatter={(value, name, item) => (
         <>

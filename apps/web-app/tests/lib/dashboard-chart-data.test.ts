@@ -267,7 +267,7 @@ describe("tooltipListScroll", () => {
     ["scrolls down to show the row and the one below, landing on a row", 0, 500, 360],
     ["scrolls up to show the row and the one above", 360, 90, 72],
     ["stops at the end of the list", 0, 1058, 888],
-    ["stays put without a row under the pointer", 360, undefined, 360],
+    ["stays where it was scrolled without a row under the pointer", 365, undefined, 365],
   ])("%s", (_, scrollTop, rowTop, top) => {
     expect(tooltipListScroll({ ...list, scrollTop, rowTop }).scrollTop).toBe(top);
   });

@@ -7,6 +7,7 @@ import { NO_KEYS, cohortChartConfig, dayTicks, expandRowShares, seriesToRows } f
 import { formatDayTick, formatPct, sharedPackage } from "@/lib/dashboard-format";
 import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
 import { ScanTooltip } from "./cohort-trend-chart";
+import { usePinnedTooltip } from "./use-pinned-tooltip";
 
 /**
  * Share over time: a 100%-stacked area over scans, where each band is a cohort's
@@ -36,6 +37,7 @@ export function CohortShareOverTime({
     setAnimate(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   const [hovered, setHovered] = useState<string | null>(null);
+  const pin = usePinnedTooltip();
 
   const rows = useMemo(() => seriesToRows(series), [series]);
   const shareRows = useMemo(
@@ -62,8 +64,8 @@ export function CohortShareOverTime({
     <div className="space-y-4">
       <CohortShareBar points={latest} colors={colors} hovered={hovered} {...(showLegend ? { onHover: setHovered } : {})} />
 
-      <ChartContainer config={config} className="h-[240px] w-full">
-        <AreaChart data={shareRows} margin={{ left: 8, right: 8, top: 6, bottom: 4 }}>
+      <ChartContainer ref={pin.ref} onKeyDown={pin.onKeyDown} config={config} className="h-[240px] w-full">
+        <AreaChart data={shareRows} margin={{ left: 8, right: 8, top: 6, bottom: 4 }} onClick={pin.onClick}>
           <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.6} />
           <XAxis
             dataKey="ts"
@@ -88,7 +90,8 @@ export function CohortShareOverTime({
           <ChartTooltip
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             isAnimationActive={false}
-            wrapperStyle={{ zIndex: 10 }}
+            trigger={pin.pinned ? "click" : "hover"}
+            wrapperStyle={{ zIndex: 10, pointerEvents: pin.pinned ? "auto" : "none" }}
             content={(props) => (
               <ScanTooltip
                 {...props}
@@ -98,6 +101,7 @@ export function CohortShareOverTime({
                 config={config}
                 shared={shared}
                 deprecatedOnly={deprecatedOnly}
+                pinned={pin.pinned}
                 format={formatPct}
                 stack={series.map((s) => s.cohortKey)}
               />

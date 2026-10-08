@@ -119,7 +119,7 @@ export function tooltipRows<T extends { value?: unknown; dataKey?: unknown }>(pa
  */
 export function tooltipListScroll({ scrollTop, height, content, pitch, rowTop }: { scrollTop: number; height: number; content: number; pitch: number; rowTop?: number | undefined }): { scrollTop: number; above: boolean; below: boolean } {
   const fit = rowTop === undefined ? scrollTop : Math.min(Math.max(scrollTop, rowTop + 2 * pitch - height), rowTop - pitch);
-  const top = Math.min(Math.max(0, Math.ceil(fit / pitch) * pitch), Math.max(0, content - height));
+  const top = rowTop === undefined ? scrollTop : Math.min(Math.max(0, Math.ceil(fit / pitch) * pitch), Math.max(0, content - height));
   return { scrollTop: top, above: top > 0, below: top + height < content };
 }
 
