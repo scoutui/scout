@@ -9,7 +9,7 @@ Scout has two parts. The **CLI** scans one repository and uploads the result as 
 
 ## The CLI collects, the dashboard keeps
 
-Each run of the CLI makes one scan: a snapshot of how that repo uses its components at that commit.
+Each run of the CLI makes one scan: a snapshot of how the repo uses its components at the commit you have checked out.
 
 The dashboard keeps the scans it receives from every repo in one place for the whole team, with at most one scan per commit of each repo. Uploading a scan of a commit the dashboard already has changes nothing, unless you scan with `--rescan`, which replaces that commit's scan. The CLI calls a running dashboard its *host*: the address it uploads to, given with `--host` or the config file's `host` field.
 
@@ -63,7 +63,7 @@ All of this needs the worker running. Without it, **Preparing scan data** never 
 
 ### Scan data couldn't be prepared {#scan-preparation-failed}
 
-**Scan data couldn't be prepared** means the dashboard tried and gave up, so waiting won't help. The page names the repo and commit of each scan that failed. Ask your dashboard administrator to retry it: [Retry scans that failed to rebuild](/docs/guides/deploy-the-dashboard#retry-scans-that-failed-to-rebuild) shows how.
+**Scan data couldn't be prepared** means the dashboard tried and gave up, so waiting won't help. The page names the repo and commit of each scan that failed. Ask your dashboard administrator to retry it ([Retry scans that failed to rebuild](/docs/guides/deploy-the-dashboard#retry-scans-that-failed-to-rebuild) shows how), or check out that commit and run `scout scan`: the new scan replaces it.
 
 ### Scan data can't be read {#scan-cant-be-read}
 

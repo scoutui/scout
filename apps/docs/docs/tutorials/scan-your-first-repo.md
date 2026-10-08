@@ -10,7 +10,7 @@ In this tutorial we'll install the Scout CLI in a repo that uses a design system
 ## Before we start
 
 - **Node.js 24 or later.**
-- **A git repository with at least one commit** that uses components from a design-system package, in React or Vue. Web components such as `<acme-button>` count in either. The scan reads the commit and branch from git.
+- **A git repository with at least one commit** that uses components from a design-system package, in React or Vue. Web components such as `<acme-button>` count in either.
 
 We'll follow along with a small React repo called `storefront`; on our own repo the steps are the same, only the names and numbers change. It uses `Button` and `Card` from a design-system package, `@acme/ui`, and an older `LegacyButton` from `@acme/ui-legacy`. Its `package.json` lists both packages under `dependencies`, and besides that and a `tsconfig.json`, it has three source files. The app renders a product card and a button:
 

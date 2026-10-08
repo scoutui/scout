@@ -1,15 +1,15 @@
 ---
-description: "What a Scout scan counts as a component: the two kinds and how each is matched across repos, and why packages must be installed for their components to be found."
+description: "What a Scout scan counts as a component: the two kinds and how each is matched across repos, and what happens when your dependencies aren't installed."
 sidebar_label: "How components are found"
 ---
 
 # How components are found
 
-A scan reads your repo's React and Vue files and records every component it sees in use. [Framework support](/docs/reference/framework-support) lists what counts as a component in each framework. This page explains the two kinds of component and how each is matched across repos, and why the scan needs your dependencies installed.
+A scan reads your repo's React and Vue files and records every component it sees in use. [Framework support](/docs/reference/framework-support) lists what counts as a component in each framework. This page explains the two kinds of component and how each is matched across repos, and what happens when your dependencies aren't installed.
 
 ## What gets an entry
 
-A component your repo defines also gets an entry when nothing uses it, as long as its own code uses another component, such as a page component that only your framework's router loads.
+A component your repo defines gets an entry even when nothing uses it, as long as its own code uses another component, such as a page component that only your framework's router loads.
 
 The scan doesn't know which packages make up your design system. It records every package the same way, and you pick out the ones that matter with [tags](/docs/reference/glossary#tag) in the dashboard.
 
@@ -20,17 +20,17 @@ Every component is one of two kinds:
 - **[External](/docs/reference/glossary#external):** it comes from an installed package, such as `import { Button } from "@acme/ui"`.
 - **[Local](/docs/reference/glossary#local):** your repo defines it, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is local too: it is still your repo's code.
 
-A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is one of these two. Nothing imports a tag, so Scout tells which repo or package it belongs to from where it's registered or declared: it's local when your repo registers it, and external when it comes from a package, or when nothing defines it. To link your package's tags to it, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
+A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is one of these two: local when your repo defines it, and external when it comes from a package or nothing defines it. If you publish web components, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 
 If your repo uses path aliases, the scan needs them to follow imports: see [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo).
 
 ### Matching across repos
 
-Each kind is matched across repos in its own way:
+External and local components are matched across repos in different ways:
 
 - **External: matched by package and name.** `Button` from `@acme/ui` is the same component in `storefront` and `checkout`, so the dashboard can add their usage together and show every repo that uses it. The package entry point counts too: `Button` imported from `@acme/ui/button` is a separate component from `Button` imported from `@acme/ui`.
 - **Local: matched by repo and file.** A `Card` in `storefront` and a `Card` in `checkout` are two components, even when the files look alike.
-- **Web components: matched by tag name.** `<acme-button>` is the same component in every repo that uses it.
+- **Web components, external or local: matched by tag name.** `<acme-button>` is the same component in every repo that uses it.
 
 ## Install dependencies before you scan
 
