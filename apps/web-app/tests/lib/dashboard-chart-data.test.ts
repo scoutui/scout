@@ -310,7 +310,7 @@ describe("repos joining a line", () => {
       .toBe("checkout and storefront added");
   });
 
-  const coverage = { total: 3, points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }, { t: t3, repos: 3 }] };
+  const coverage = { total: 3, repoIds: ["account", "checkout", "storefront"], points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }, { t: t3, repos: 3 }] };
   const bands = [
     line("a", [{ t: t1, value: 0.6, added: ["storefront"] }, { t: t2, value: 0.5, added: ["checkout"] }, { t: t3, value: 0.5 }]),
     line("b", [{ t: t1, value: 0.4, added: ["storefront"] }, { t: t2, value: 0.5 }, { t: t3, value: 0.5 }]),
