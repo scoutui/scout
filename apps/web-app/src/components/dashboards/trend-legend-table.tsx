@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { searchedSeries } from "@/lib/dashboard-chart-data";
-import { distinctPaths, formatDayTick, formatDelta, formatMetric } from "@/lib/dashboard-format";
+import { distinctPaths, formatDayTick, formatDelta, formatMetric, seriesChangeDirection } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, SlashBreaks } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
@@ -24,7 +24,8 @@ export type SeriesChange = { since: number; byKey: Readonly<Record<string, numbe
  * A trend chart's legend as a table: each series with its latest value, sortable by
  * either column, most first to start. Hovering a row highlights its line; clicking
  * its name shows only that line, and clicking it again shows every line. With `change`, a Change column shows each
- * series' change since the day it names. With `paths`, a row whose name another row shares shows the part of its
+ * series' change since the day it names, green where an old component went down or its replacement went up and red the
+ * other way. With `paths`, a row whose name another row shares shows the part of its
  * component's path that tells the rows apart. Past FIRST_ROWS series the table
  * lists the first FIRST_ROWS rows in its sort, with a Show all button and a search, `query`, by component or package
  * name that lists every match. The row of a line shown on its own stays in the table whatever the search or Show all.
@@ -130,6 +131,7 @@ export function TrendLegendTable({
         <TableBody>
           {rows.map((s) => {
             const path = shownPaths.get(s.cohortKey);
+            const direction = seriesChangeDirection(s.delta, s.role, metric);
             return (
               <TableRow
                 key={s.cohortKey}
@@ -163,7 +165,14 @@ export function TrendLegendTable({
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{s.value === null ? "—" : formatMetric(s.value, metric)}</TableCell>
                 {hasDelta ? (
-                  <TableCell className="text-right tabular-nums text-muted-foreground">{formatDelta(s.delta, metric)}</TableCell>
+                  <TableCell
+                    className={cn(
+                      "text-right tabular-nums",
+                      direction === "backward" ? "font-medium text-status-err" : direction === "forward" ? "font-medium text-status-ok" : "text-muted-foreground",
+                    )}
+                  >
+                    {formatDelta(s.delta, metric)}
+                  </TableCell>
                 ) : null}
               </TableRow>
             );

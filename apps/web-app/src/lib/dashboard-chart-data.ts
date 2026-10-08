@@ -188,12 +188,10 @@ export function drawnChartCohorts(view: DashboardView): Array<ChartCohort & { la
  * A chart's saved cohorts in saved order, each with the colour and role of its
  * drawn cohort. A saved cohort the view doesn't draw keeps its place with no colour.
  * Drawn cohorts that no selector names, such as a governance chart's deprecated
- * and successor series, follow in drawn order. When the view draws none of the
- * saved cohorts, the drawn cohorts alone.
+ * and successor series, follow in drawn order.
  */
 export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohort[]): ChartCohort[] {
   const byKey = new Map(drawn.map((c) => [c.cohortKey, c]));
-  if (!selectors.some((selector) => byKey.has(cohortKey(selector)))) return drawn;
   const saved = selectors.map((selector) => {
     const key = cohortKey(selector);
     return byKey.get(key) ?? { cohortKey: key, color: "" };
@@ -203,23 +201,18 @@ export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohor
 }
 
 /**
- * Each cohort's line colour, by cohortKey. Fixed meanings come first: a lone
- * deprecated cohort is orange, successor teal and Local grey. Then each tag, in order, keeps its
+ * Each cohort's line colour, by cohortKey. Fixed meanings come first: deprecated
+ * is orange, successor teal and Local grey. Then each tag, in order, keeps its
  * colour unless a colour already placed looks like it. Every other cohort takes
  * the first chart colour that looks like none already placed or, when none is
- * left, the first that looks like neither neighbour nor a fixed colour.
+ * left, the first that looks like neither neighbour.
  */
 export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
   const colors = new Map<string, string>();
   const isFree = (color: string) => ![...colors.values()].some((placed) => looksAlike(placed, color));
-  const loneDeprecated = cohorts.filter((c) => c.role === "deprecated").length === 1;
-  const fixedColors: string[] = [];
   for (const c of cohorts) {
-    const fixed = fixedColor(c, loneDeprecated);
-    if (fixed) {
-      colors.set(c.cohortKey, fixed);
-      fixedColors.push(fixed);
-    }
+    const fixed = fixedColor(c);
+    if (fixed) colors.set(c.cohortKey, fixed);
   }
   for (const c of cohorts) {
     if (colors.has(c.cohortKey)) continue;
@@ -237,14 +230,14 @@ export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
       const color = n ? colors.get(n.cohortKey) : undefined;
       return color ? [color] : [];
     });
-    const pick = CHART_ORDER.find((o) => ![...neighbours, ...fixedColors].some((n) => looksAlike(n, o))) ?? CHART_ORDER[0];
+    const pick = CHART_ORDER.find((o) => !neighbours.some((n) => looksAlike(n, o))) ?? CHART_ORDER[0];
     if (pick) colors.set(c.cohortKey, pick);
   });
   return colors;
 }
 
-function fixedColor(c: ChartCohort, loneDeprecated: boolean): string | undefined {
-  if (c.role === "deprecated" && loneDeprecated) return "var(--viz-deprecated)";
+function fixedColor(c: ChartCohort): string | undefined {
+  if (c.role === "deprecated") return "var(--viz-deprecated)";
   if (c.role === "successor") return "var(--viz-primary)";
   if (c.cohortKey === "local") return "var(--viz-local)";
   return undefined;

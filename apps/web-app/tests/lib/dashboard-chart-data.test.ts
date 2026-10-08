@@ -83,9 +83,9 @@ describe("chartColors", () => {
       { "tag:a": "var(--viz-deprecated)", local: "var(--viz-local)" },
     ],
     [
-      "several deprecated lines each take a chart colour, beside the successor's teal",
+      "several deprecated lines all draw the deprecated orange, beside the successor's teal",
       [pkg("a", "deprecated"), pkg("b", "deprecated"), pkg("c", "successor")],
-      { "package:a": "var(--viz-cat-2)", "package:b": "var(--viz-cat-3)", "package:c": "var(--viz-primary)" },
+      { "package:a": "var(--viz-deprecated)", "package:b": "var(--viz-deprecated)", "package:c": "var(--viz-primary)" },
     ],
   ];
 
@@ -99,13 +99,6 @@ describe("chartColors", () => {
     const drawn = cohorts.map((c) => colors.get(c.cohortKey) ?? "none");
     expect(drawn).not.toContain("none");
     expect(drawn.slice(1).map((color, i) => looksAlike(drawn[i] ?? "", color))).not.toContain(true);
-  });
-
-  it("never repeats the successor's teal on another line, however many lines run out of chart colours", () => {
-    const cohorts = [...["a", "b", "c", "d", "e", "f", "g"].map((name) => pkg(name, "deprecated")), pkg("s", "successor")];
-    const colors = chartColors(cohorts);
-    expect(colors.get("package:s")).toBe("var(--viz-primary)");
-    expect(cohorts.slice(0, -1).map((c) => colors.get(c.cohortKey))).not.toContain("var(--viz-primary)");
   });
 
   it("keeps the turn of a saved cohort the view doesn't draw, and the colour and role of each one it does", () => {
@@ -135,19 +128,6 @@ describe("chartColors", () => {
     ];
     const colors = chartColors(savedChartCohorts(saved, drawn));
     expect([colors.get("deprecated:r"), colors.get("successor:r")]).toEqual(["var(--viz-deprecated)", "var(--viz-primary)"]);
-  });
-
-  it("takes the drawn cohorts alone when the view draws none of the saved ones", () => {
-    const saved: CohortSelector[] = [
-      { kind: "component", componentId: "a" },
-      { kind: "component", componentId: "b" },
-    ];
-    const drawn: ChartCohort[] = [
-      { cohortKey: "record:a", color: "", role: "deprecated" },
-      { cohortKey: "record:b", color: "", role: "deprecated" },
-    ];
-    expect(savedChartCohorts(saved, drawn)).toEqual(drawn);
-    expect(savedChartCohorts(saved, [comp("a")])).toEqual([comp("a"), { cohortKey: "component:b", color: "" }]);
   });
 });
 

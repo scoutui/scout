@@ -225,6 +225,23 @@ describe("DashboardChart legend", () => {
     ]);
   });
 
+  it.each([
+    ["an old component going down green", "deprecated", "count", -8, "−8", "text-status-ok"],
+    ["an old component going up red", "deprecated", "count", 3, "+3", "text-status-err"],
+    ["a replacement going up green", "successor", "count", 9, "+9", "text-status-ok"],
+    ["a replacement going down red", "successor", "count", -2, "−2", "text-status-err"],
+    ["no change muted", "deprecated", "count", 0, "0", "text-muted-foreground"],
+    ["a share change too small to show muted", "deprecated", "share", -0.0002, "0", "text-muted-foreground"],
+    ["a line with no role muted, whichever way it moves", undefined, "count", 5, "+5", "text-muted-foreground"],
+  ] as const)("shows %s in the Change column", (_, role, metric, delta, text, tone) => {
+    const line = { ...monthly("line", () => 10), ...(role ? { role } : {}) };
+    const [config, view] = trendOf([line, monthly("other", () => 1)]);
+    render(<DashboardChart config={{ ...config, metric }} view={view} change={{ all: { "package:line": delta } }} />);
+    const cell = within(screen.getByRole("table")).getByRole("button", { name: /line/ }).closest("tr")?.querySelectorAll("td")[2];
+    expect(cell).toHaveTextContent(text);
+    expect(["text-status-ok", "text-status-err", "text-muted-foreground"].filter((c) => cell?.classList.contains(c))).toEqual([tone]);
+  });
+
   const twoDays = (name: string): CohortSeries => ({ cohortKey: `package:${name}`, label: name, color: "", points: series[0]?.points ?? [] });
   const shortSpan: DashboardView = { kind: "series", series: [twoDays("old-ui"), twoDays("new-ui")], coverage };
   it.each([

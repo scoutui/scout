@@ -1,4 +1,5 @@
 /** Display formatting for cohort metric values, shared across the chart components. */
+import type { CohortRole } from "@scoutui/web-shared";
 
 /** User-facing words for the chart kinds. */
 export const CHART_KIND_LABEL = { trend: "Trend", bars: "Bars", "stacked-share": "Stacked", table: "Table" } as const;
@@ -158,4 +159,12 @@ export function formatReposAdded(count: number): string | null {
 export function deltaDirection(delta: number | null): "forward" | "backward" | "none" {
   if (delta === null || delta === 0) return "none";
   return delta < 0 ? "forward" : "backward";
+}
+
+/** Which way a series' change moved it for its role: an old component's uses going down, or its replacement's going
+ *  up, is forward. None for a change that reads "0", and for a series with no role, since nothing says whether up is
+ *  good. */
+export function seriesChangeDirection(delta: number | null, role: CohortRole | undefined, metric: "count" | "share"): "forward" | "backward" | "none" {
+  if (delta === null || role === undefined || isNoChange(delta, metric)) return "none";
+  return deltaDirection(role === "successor" ? -delta : delta);
 }
