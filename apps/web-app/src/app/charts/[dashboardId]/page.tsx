@@ -147,8 +147,9 @@ export default async function DashboardViewPage({
   const canEdit = can(identity, "edit");
   const canChange = !derived && can(identity, "edit", { chart: dashboard });
   const showMetricToggle = !governancePage && config.chartType !== "stacked-share";
+  const counted = derivedEntry?.fromCount;
   const title = derivedEntry
-    ? `${derivedEntry.kind === "migration" ? "Migration" : "Retirement"}: ${derivedEntry.fromLabel}${derivedEntry.toLabel ? ` → ${derivedEntry.toLabel}` : ""}`
+    ? `${derivedEntry.kind === "migration" ? "Migration" : "Retirement"}: ${counted ? `${counted.components} components${counted.packageName ? ` · ${counted.packageName}` : ""}` : derivedEntry.fromLabel}${derivedEntry.toLabel ? ` → ${derivedEntry.toLabel}` : ""}`
     : dashboard.name;
 
   return (
@@ -168,7 +169,19 @@ export default async function DashboardViewPage({
               {derivedEntry ? (
                 <>
                   {derivedEntry.kind === "migration" ? "Migration: " : "Retirement: "}
-                  <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.fromLabel} /></span>
+                  {counted ? (
+                    <>
+                      {counted.components} components
+                      {counted.packageName ? (
+                        <>
+                          {" · "}
+                          <span className="font-mono tracking-normal"><ChartTitleLabel text={counted.packageName} /></span>
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    <span className="font-mono tracking-normal"><ChartTitleLabel text={derivedEntry.fromLabel} /></span>
+                  )}
                   {derivedEntry.toLabel ? (
                     <>
                       <span className="sr-only"> replaced by </span>

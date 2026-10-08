@@ -13,6 +13,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     name: "Migration: OldButton → new-ds",
     from: [{ grain: "component", targetPackage: "old-ds", targetExport: "OldButton" }],
     fromLabel: "OldButton · old-ds",
+    fromCount: null,
     toLabel: "new-ds/Button",
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],

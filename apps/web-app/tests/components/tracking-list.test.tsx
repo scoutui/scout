@@ -32,6 +32,7 @@ function entry(id: string, from: GovernanceRule[], over: Partial<GovernanceTrack
     name: `Migration: ${id}`,
     from,
     fromLabel: from.map((rule) => `${rule.targetExport ?? rule.targetPackage} · ${rule.targetPackage}`).join(", "),
+    fromCount: null,
     toLabel: "@example/ui",
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],

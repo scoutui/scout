@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { enqueueChartResults, PostgresDriver, PROJECTION_VERSION, type Dashboard, type GovernanceRecord, type StorageDriver } from "@scoutui/web-shared";
-import { artifact, component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
+import { artifact, component, packageExport, resolvedAt } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { processChartResultsJob } from "../../src/lib/chart-results-job.ts";
 import { claimScanJob, enqueueScanJob, failScanJob, SCAN_JOB_PRIORITY } from "../../src/lib/scan-jobs.ts";
@@ -26,7 +26,7 @@ vi.mock("next/navigation", async () => ({
   useRouter: () => ({ refresh: () => {} }),
 }));
 
-type Props = { children?: ReactNode; entries?: { id: string; kind: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[]; description?: string; action?: ReactNode };
+type Props = { children?: ReactNode; text?: string; entries?: { id: string; kind: string }[]; tracking?: { id: string }[] | null; notice?: unknown; packageNames?: string[]; description?: string; action?: ReactNode };
 
 /** The text the page renders itself, joined; child components are not rendered. */
 function textOf(node: ReactNode): string {
@@ -351,6 +351,25 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const tree = await page(trackingParams(`migration:${record.id}`));
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Migration: Button · @sample/core → Field · @sample/mixed", children: expect.anything() }]);
       expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
+    });
+  });
+
+  it("heads a migration of more than two components with how many, and exports it under that heading", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const names = ["Badge", "Card", "Tooltip"];
+      const legacy = names.map(name => component(packageExport("@sample/legacy", name)));
+      await publishScan(pool, artifact({ repoId: "repo-c", scanId: "scan-legacy", scannedAt: "2026-06-02T00:00:00Z", components: legacy, occurrences: legacy.map((c, i) => resolvedAt(c, "src/app.tsx", i + 1)) }), { uploadedByUserId: null });
+      const by = { packageName: "@sample/core", exportName: "Button" };
+      const first = await driver.createGovernance({ grain: "component", targetPackage: "@sample/legacy", targetExport: "Badge", disposition: { kind: "superseded", by } });
+      for (const name of names.slice(1)) await driver.createGovernance({ grain: "component", targetPackage: "@sample/legacy", targetExport: name, disposition: { kind: "superseded", by } });
+      await enqueueChartResults(pool);
+      await storeResults(pool);
+      const { default: page } = await import("@/app/charts/[dashboardId]/page");
+      const tree = await page(trackingParams(`migration:${first.id}`));
+      expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Migration: 3 components · @sample/legacy → Button · @sample/core", children: expect.anything() }]);
+      expect(textOf(tree)).toContain("Migration: 3 components · ");
+      expect(allPropsFor(tree, "ChartTitleLabel").map(props => props.text)).toEqual(["@sample/legacy", "Button · @sample/core"]);
     });
   });
 
