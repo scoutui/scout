@@ -17,15 +17,15 @@ const NUMERIC: ReadonlySet<SortKey> = new Set(["value", "delta"]);
 // Past this many series the table shows its first rows, with Show all and a search.
 const FIRST_ROWS = 10;
 
-/** Each series' change by `cohortKey`, since `since` in epoch ms. */
-export type SeriesChange = { since: number; byKey: Readonly<Record<string, number | null>> };
+/** Each series' change by `cohortKey`, since `since` in epoch ms. With `byRole`, each is coloured by the way its series' role should move. */
+export type SeriesChange = { since: number; byKey: Readonly<Record<string, number | null>>; byRole?: boolean | undefined };
 
 /**
  * A trend chart's legend as a table: each series with its latest value, sortable by
  * either column, most first to start. Hovering a row highlights its line; clicking
  * its name shows only that line, and clicking it again shows every line. With `change`, a Change column shows each
- * series' change since the day it names, green where an old component went down or its replacement went up and red the
- * other way. With `paths`, a row whose name another row shares shows the part of its
+ * series' change since the day it names; with `change.byRole`, green where an old component went down or its replacement
+ * went up and red the other way. With `paths`, a row whose name another row shares shows the part of its
  * component's path that tells the rows apart. Past FIRST_ROWS series the table
  * lists the first FIRST_ROWS rows in its sort, with a Show all button and a search, `query`, by component or package
  * name that lists every match. The row of a line shown on its own stays in the table whatever the search or Show all.
@@ -131,7 +131,7 @@ export function TrendLegendTable({
         <TableBody>
           {rows.map((s) => {
             const path = shownPaths.get(s.cohortKey);
-            const direction = seriesChangeDirection(s.delta, s.role, metric);
+            const direction = change?.byRole ? seriesChangeDirection(s.delta, s.role, metric) : "none";
             return (
               <TableRow
                 key={s.cohortKey}

@@ -260,7 +260,7 @@ export default async function DashboardViewPage({
         ) : (
           /* A table runs flush to the panel edge; plotted charts sit inset. */
           <div className={config.chartType === "table" ? "panel overflow-hidden" : "panel p-4"}>
-            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} change={change} paths={paths} />
+            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} change={change} migration={derivedEntry?.kind === "migration"} paths={paths} />
           </div>
         )}
       </ChartExportProvider>
