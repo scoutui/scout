@@ -77,6 +77,8 @@ export type ChartFigureInput = {
   title: string;
   config: DashboardConfig;
   view: DashboardView;
+  /** The whole chart, when `view` draws only some of its series: each line keeps the colour it has there. */
+  whole?: DashboardView;
   host: string;
   exportedAt: Date;
   /** A CSS colour for each chart colour token the chart uses and for each `FigureColorRole`. */
@@ -96,14 +98,14 @@ export function hasFigure(config: DashboardConfig, view: DashboardView): boolean
  * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a chart `hasFigure`
  * gives no image.
  */
-export function chartFigure({ title, config, view, host, exportedAt, colors, nameWidth }: ChartFigureInput): ChartFigure | null {
+export function chartFigure({ title, config, view, whole = view, host, exportedAt, colors, nameWidth }: ChartFigureInput): ChartFigure | null {
   if (!hasFigure(config, view)) return null;
   const resolve = (key: string): string => {
     const value = colors[key];
     if (value === undefined) throw new Error(`chartFigure needs a colour for ${key}`);
     return value;
   };
-  const tokens = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
+  const tokens = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(whole)));
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   const shared = sharedPackage(drawnChartCohorts(view).map((c) => c.label));
   const style = {

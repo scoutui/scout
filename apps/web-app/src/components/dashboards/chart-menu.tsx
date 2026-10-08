@@ -9,7 +9,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { chartExportTable, exportFileName, toCsv, toTsv } from "@/lib/chart-export";
 import { hasFigure } from "@/lib/chart-figure";
 import { chartPng } from "@/lib/chart-png";
-import { visibleView } from "@/lib/dashboard-chart-data";
+import { searchedView, visibleView } from "@/lib/dashboard-chart-data";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -99,17 +99,17 @@ export function ChartMenu({
     );
   const downloadCsv = (shown: ExportedChart) => {
     setError(null);
-    save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
+    save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range, shown.query))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
   };
   const copyTable = (shown: ExportedChart) =>
-    navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range))).then(
+    navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range, shown.query))).then(
       () => showCopied("Table copied"),
       () => showError("Couldn't copy the table. Try again."),
     );
 
   const sharing = visibility === "private" || visibility === "everyone";
   if (!chart && !sharing && !canDuplicate) return null;
-  const image = chart !== null && hasFigure(chart.config, chart.drawn);
+  const image = chart !== null && hasFigure(chart.config, searchedView(chart.drawn, chart.query));
   const canCopyImage = image && typeof ClipboardItem !== "undefined" && typeof navigator.clipboard?.write === "function";
   const canCopyTable = chart !== null && typeof navigator.clipboard?.writeText === "function";
   const exportItems = chart ? (
@@ -156,7 +156,14 @@ export function ChartMenu({
 }
 
 function imageOf(shown: ExportedChart): Promise<Blob> {
-  return chartPng({ title: shown.title, config: shown.config, view: shown.drawn, host: window.location.host, exportedAt: new Date() });
+  return chartPng({
+    title: shown.title,
+    config: shown.config,
+    view: searchedView(shown.drawn, shown.query),
+    whole: shown.drawn,
+    host: window.location.host,
+    exportedAt: new Date(),
+  });
 }
 
 function save(blob: Blob, fileName: string): void {

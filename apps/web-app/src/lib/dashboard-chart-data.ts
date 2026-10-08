@@ -45,6 +45,25 @@ export function rangeStart(series: CohortSeries[], range: ChartRange): number | 
   return Math.min(...times) < start.getTime() ? start.getTime() : null;
 }
 
+/** The day a chart over time starts at `range`, in epoch ms: where the range starts, or the chart's first point when the range takes in every point. Null for a chart with no points. */
+export function chartStart(series: CohortSeries[], range: ChartRange): number | null {
+  const times = series.flatMap((s) => s.points.map((p) => Date.parse(p.t)));
+  return times.length === 0 ? null : (rangeStart(series, range) ?? Math.min(...times));
+}
+
+/** Each series' change by `cohortKey`, at each range a chart offers. */
+export type ChangeByRange = Partial<Record<ChartRange, Readonly<Record<string, number | null>>>>;
+
+/** The change `since` measures from the day the chart starts at each range. */
+export function changeByRange(series: CohortSeries[], since: (start: number) => Readonly<Record<string, number | null>>): ChangeByRange {
+  return Object.fromEntries(
+    ChartRangeSchema.options.flatMap((range) => {
+      const start = chartStart(series, range);
+      return start === null ? [] : [[range, since(start)]];
+    }),
+  );
+}
+
 /** Each series from `from` on. A series with points before `from` starts at `from`, with its value then. */
 export function seriesFrom(series: CohortSeries[], from: number): CohortSeries[] {
   return series.map((s) => {
@@ -64,6 +83,24 @@ export function visibleView<V extends DashboardView>(config: DashboardConfig, vi
   if ((config.chartType !== "trend" && config.chartType !== "stacked-share") || view.kind !== "series") return { view, from: null };
   const from = rangeStart(view.series, range);
   return { view: from === null ? view : { ...view, series: seriesFrom(view.series, from) }, from };
+}
+
+/**
+ * The series whose label holds `query`, ignoring case: a component's name or package, a package or a tag. Null for a
+ * blank query or one nothing matches, so a chart searched for nothing still draws every series.
+ */
+export function searchedSeries<T extends { label: string }>(series: readonly T[], query: string): T[] | null {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return null;
+  const matched = series.filter((s) => s.label.toLowerCase().includes(needle));
+  return matched.length === 0 ? null : matched;
+}
+
+/** A chart over time drawing only the series `query` matches; any other view, or a query nothing matches, as it is. */
+export function searchedView<V extends DashboardView>(view: V, query: string): V {
+  if (view.kind !== "series") return view;
+  const matched = searchedSeries(view.series, query);
+  return matched === null ? view : { ...view, series: matched };
 }
 
 /** One x tick per distinct day (the day's first scan), in epoch ms for the numeric time axis. */

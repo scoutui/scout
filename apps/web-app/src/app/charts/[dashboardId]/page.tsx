@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Clock, SearchX } from "lucide-react";
-import { renderDashboard, type Dashboard, type DashboardMetric, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
+import { cohortChange, componentDisambiguators, renderDashboard, type Dashboard, type DashboardMetric, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
 import { chartResultsNotice, chartResultsUnavailable } from "@/lib/read-model-progress";
@@ -20,7 +20,7 @@ import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
-import { chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
+import { type ChangeByRange, changeByRange, chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
 import { buttonVariants } from "@/components/ui/button";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
@@ -89,6 +89,8 @@ export default async function DashboardViewPage({
   let view: DashboardView;
   let derivedEntry: GovernanceTracking | null = null;
   let missingRepo: { repoId: string; missing: "scans" | "repo" } | null = null;
+  let change: ChangeByRange | undefined;
+  let paths: Record<string, string> = {};
   if (page.value.kind === "tracking") {
     const { tracking, registry, governance } = page.value;
     const entry = tracking?.find((t) => t.id === id);
@@ -124,7 +126,12 @@ export default async function DashboardViewPage({
     const metricOverride: DashboardMetric =
       metricParam === "share" || metricParam === "count" ? metricParam : dashboard.config.metric;
     dashboard = { ...dashboard, config: { ...dashboard.config, metric: metricOverride } };
-    view = renderDashboard(dashboard.config, digests, tags, new Date().toISOString(), governance, names);
+    const asOf = new Date().toISOString();
+    view = renderDashboard(dashboard.config, digests, tags, asOf, governance, names);
+    paths = componentDisambiguators(dashboard.config.cohorts, [...digests, ...names]);
+    if (dashboard.config.chartType === "trend" && view.kind === "series") {
+      change = changeByRange(view.series, cohortChange(dashboard.config, view.series, digests, tags, governance));
+    }
   }
   const notice = derivedEntry ? await chartResultsNotice(getPool(), true) : null;
   const config = dashboard.config;
@@ -252,7 +259,7 @@ export default async function DashboardViewPage({
         ) : (
           /* A table runs flush to the panel edge; plotted charts sit inset. */
           <div className={config.chartType === "table" ? "panel overflow-hidden" : "panel p-4"}>
-            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} />
+            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} change={change} paths={paths} />
           </div>
         )}
       </ChartExportProvider>

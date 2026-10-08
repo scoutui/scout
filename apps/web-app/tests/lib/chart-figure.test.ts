@@ -170,6 +170,25 @@ describe("chartFigure", () => {
     });
   });
 
+  it("gives a line drawn from part of the chart the colour it has in the whole chart", () => {
+    const wholeView: DashboardView = { kind: "series", series: countSeries.map((s, i) => (i === 0 ? { ...s, role: "deprecated" as const } : s)), coverage };
+    const whole = drawn(config("trend"), wholeView);
+    if (whole.marks.kind !== "lines") throw new Error("expected lines");
+    const part = chartFigure({
+      title: "Button adoption",
+      config: config("trend"),
+      view: { kind: "series", series: countSeries.slice(1), coverage },
+      whole: wholeView,
+      host: "scout.example.com",
+      exportedAt: new Date(2026, 9, 4, 12),
+      colors,
+      nameWidth: (name) => name.length * 9,
+    });
+    if (part?.marks.kind !== "lines") throw new Error("expected lines");
+    expect(whole.marks.lines[1]?.color).not.toBe(whole.marks.lines[0]?.color);
+    expect(part.marks.lines.map((l) => l.color)).toEqual([whole.marks.lines[1]?.color]);
+  });
+
   it("draws one line per trend series from its own first point, even with six series", () => {
     const six: CohortSeries[] = ["a", "b", "c", "d", "e", "f"].map((name, i) => ({
       cohortKey: `package:@example/${name}`,

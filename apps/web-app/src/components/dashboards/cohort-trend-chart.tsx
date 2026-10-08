@@ -3,14 +3,14 @@ import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
+import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, searchedSeries, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, moreSeries, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
-import { TrendLegendTable } from "@/components/dashboards/trend-legend-table";
+import { type SeriesChange, TrendLegendTable } from "@/components/dashboards/trend-legend-table";
 
-// From this many series the legend is a sortable table.
+// From this many series the legend is a sortable table, unless the chart has each series' change.
 const TABLE_LEGEND_FROM = 6;
 
 /**
@@ -20,8 +20,10 @@ const TABLE_LEGEND_FROM = 6;
  * series on hover and shows only that series on click, an end dot and label at each
  * line's tail, and a crosshair tooltip listing every series at that scan. A small
  * ring marks each scan where a repo joins a line, and the tooltip names it. From
- * TABLE_LEGEND_FROM series the legend is a table of each series' latest value.
- * With `from`, the x-axis starts there and points before it fall outside the plot.
+ * TABLE_LEGEND_FROM series the legend is a table of each series' latest value; with `change`, it is that table
+ * from two series, with each series' change since `change.since`. `paths` tells same-named components apart there.
+ * A search in the table draws only the series it matches, each in its own colour; with `onQueryChange`, the search is
+ * `query`. With `from`, the x-axis starts there and points before it fall outside the plot.
  */
 export function CohortTrendChart({
   series: allSeries,
@@ -31,6 +33,10 @@ export function CohortTrendChart({
   metric,
   showLegend = true,
   from = null,
+  change,
+  paths,
+  query: shownQuery,
+  onQueryChange,
 }: {
   series: CohortSeries[];
   coverage: RepoCoverage;
@@ -39,6 +45,10 @@ export function CohortTrendChart({
   metric: "count" | "share";
   showLegend?: boolean;
   from?: number | null;
+  change?: SeriesChange | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
+  query?: string | undefined;
+  onQueryChange?: ((query: string) => void) | undefined;
 }) {
   // Gate the draw-in animation on the user's motion preference.
   const [animate, setAnimate] = useState(false);
@@ -47,6 +57,9 @@ export function CohortTrendChart({
   }, []);
   const [hovered, setHovered] = useState<string | null>(null);
   const [shown, setShown] = useState<string | null>(null);
+  const [ownQuery, setOwnQuery] = useState("");
+  const query = shownQuery ?? ownQuery;
+  const setQuery = onQueryChange ?? setOwnQuery;
   const gradientId = useId();
 
   const rows = useMemo(() => seriesToRows(allSeries), [allSeries]);
@@ -59,7 +72,7 @@ export function CohortTrendChart({
       </p>
     );
   }
-  const series = shown === null ? allSeries : allSeries.filter((s) => s.cohortKey === shown);
+  const series = shown === null ? (searchedSeries(allSeries, query) ?? allSeries) : allSeries.filter((s) => s.cohortKey === shown);
   const toggleShown = (key: string) => setShown((current) => (current === key ? null : key));
   const highlighted = shown === null ? hovered : null;
   const config = cohortChartConfig(allSeries);
@@ -222,12 +235,16 @@ export function CohortTrendChart({
 
       {/* Hovering a legend entry highlights its series and dims the rest; clicking
           it shows only that series. A single series needs no legend: the title names it. */}
-      {showLegend && allSeries.length >= TABLE_LEGEND_FROM ? (
+      {showLegend && allSeries.length >= (change ? 2 : TABLE_LEGEND_FROM) ? (
         <TrendLegendTable
           series={allSeries}
           colors={colors}
           deprecatedOnly={deprecatedOnly}
           metric={metric}
+          change={change}
+          paths={paths}
+          query={query}
+          onQueryChange={setQuery}
           shown={shown}
           onToggle={toggleShown}
           onHover={setHovered}

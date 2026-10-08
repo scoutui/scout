@@ -3,7 +3,7 @@ import type { ComponentDigest, DigestScan } from "./digest.js";
 import { displayNameOf } from "@scoutui/scan-format";
 import { resolveTags } from "./tags.js";
 import { componentDeprecated } from "./governance.js";
-import { presentIdentity } from "./present-identity.js";
+import { disambiguatorOf, presentIdentity } from "./present-identity.js";
 import { representativeUsage } from "./representative.js";
 import { latestScanPerRepo, newestScanFirst, scanOrderTime } from "./scan-order.js";
 import { isUsed, usedComponentKey } from "./usage.js";
@@ -84,6 +84,16 @@ function representativeMember(componentId: string, artifacts: DigestScan[]): Com
     return component ? [{ meta: a.meta, component }] : [];
   });
   return representativeUsage(usages)?.component ?? null;
+}
+
+/** What tells each component cohort apart from a same-named one (see `disambiguatorOf`), by `cohortKey`; a component with nothing to tell it apart is left out. */
+export function componentDisambiguators(cohorts: CohortSelector[], artifacts: DigestScan[]): Record<string, string> {
+  return Object.fromEntries(cohorts.flatMap((selector) => {
+    if (selector.kind !== "component") return [];
+    const c = representativeMember(selector.componentId, artifacts);
+    const path = c === null ? null : disambiguatorOf(presentIdentity(c));
+    return path === null ? [] : [[cohortKey(selector), path]];
+  }));
 }
 
 /**

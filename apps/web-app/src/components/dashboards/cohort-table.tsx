@@ -2,28 +2,13 @@
 import type { CohortPoint } from "@scoutui/web-shared";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
-import { formatMetric } from "@/lib/dashboard-format";
+import { formatDelta, formatMetric } from "@/lib/dashboard-format";
 import { NO_KEYS } from "@/lib/dashboard-chart-data";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
 type Key = "label" | "value" | "delta" | "componentCount";
 const NUMERIC: ReadonlySet<Key> = new Set(["value", "delta", "componentCount"]);
-
-/** True when a change reads as "0": none at all, or a share under 0.05 points. */
-function isNoChange(delta: number, metric: "count" | "share"): boolean {
-  return delta === 0 || (metric === "share" && Math.abs(delta) * 100 < 0.05);
-}
-
-/** A change formatted per metric: counts as a signed number, shares as signed percentage points,
- *  "0" under 0.05 points, and "—" when there is nothing to compare. */
-function formatDelta(delta: number | null, metric: "count" | "share"): string {
-  if (delta === null) return "—";
-  const abs = Math.abs(delta);
-  if (isNoChange(delta, metric)) return "0";
-  const sign = delta > 0 ? "+" : "−";
-  return metric === "share" ? `${sign}${(abs * 100).toFixed(1)} pts` : `${sign}${abs.toLocaleString()}`;
-}
 
 /**
  * Sortable cohort table: the name with its series colour, an inline bar

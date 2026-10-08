@@ -215,6 +215,168 @@ describe("DashboardChart legend", () => {
     expect(rowNames(table)).toEqual(names);
   });
 
+  it("lists two lines in a table with each one's change when the chart has it", () => {
+    const [config, view] = trendOf([oldUi, newUi]);
+    render(<DashboardChart config={config} view={view} change={{ all: { "package:old-ui": 72, "package:new-ui": 0 } }} />);
+    const rows = within(screen.getByRole("table")).getAllByRole("row");
+    expect(rows.slice(1).map((r) => [...r.querySelectorAll("td")].map((td) => td.textContent))).toEqual([
+      ["old-ui", "40", "+72"],
+      ["new-ui", "16", "0"],
+    ]);
+  });
+
+  const twoDays = (name: string): CohortSeries => ({ cohortKey: `package:${name}`, label: name, color: "", points: series[0]?.points ?? [] });
+  const shortSpan: DashboardView = { kind: "series", series: [twoDays("old-ui"), twoDays("new-ui")], coverage };
+  it.each([
+    ["3 months", trendOf([oldUi, newUi])[1], "3m", "Change since 1 Jun", "+3"],
+    ["6 months", trendOf([oldUi, newUi])[1], "6m", "Change since 1 Mar", "+6"],
+    ["1 year, which reaches back past the first scan", trendOf([oldUi, newUi])[1], "1y", "Change since 1 Oct", "+9"],
+    ["All", trendOf([oldUi, newUi])[1], "all", "Change since 1 Oct", "+11"],
+    ["a saved 3 months over scans that span less, which offers no range", shortSpan, "3m", "Change since 1 Sep", "+3"],
+  ] as const)("at %s, heads Change with the day the chart starts and shows the change since then", (_, view, range, heading, delta) => {
+    const [config] = trendOf([oldUi, newUi]);
+    const change = { "3m": { "package:new-ui": 3 }, "6m": { "package:new-ui": 6 }, "1y": { "package:new-ui": 9 }, all: { "package:new-ui": 11 } };
+    render(<DashboardChart config={config} view={view} range={range} onRangeChange={() => {}} change={change} />);
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("button", { name: heading })).toHaveTextContent(heading);
+    expect(within(table).getByRole("button", { name: heading })).toHaveAttribute("title", heading);
+    const row = within(table).getAllByRole("row").find((r) => r.textContent?.startsWith("new-ui"));
+    expect(row?.querySelectorAll("td")[2]).toHaveTextContent(delta);
+  });
+
+  it("lists lines with nothing to compare last, whichever way Change is sorted", () => {
+    const [config, view] = trendOf([oldUi, newUi, monthly("mid-ui", () => 20)]);
+    render(<DashboardChart config={config} view={view} change={{ all: { "package:old-ui": 72, "package:new-ui": -5, "package:mid-ui": null } }} />);
+    const table = screen.getByRole("table");
+    const change = within(table).getByRole("button", { name: "Change since 1 Oct" });
+    fireEvent.click(change);
+    expect(rowNames(table)).toEqual(["old-ui", "new-ui", "mid-ui"]);
+    fireEvent.click(change);
+    expect(rowNames(table)).toEqual(["new-ui", "old-ui", "mid-ui"]);
+  });
+
+  it.each([
+    ["the first folder from the end that differs", ["ui/elements/Button.tsx", "ui/fields/Button.tsx"], ["elements", "fields"]],
+    ["the first folder that differs above a shared one", ["src/fixed/Toolbar/index.tsx", "src/inline/Toolbar/index.tsx"], ["fixed", "inline"]],
+    ["the file names when they differ", ["src/badges/Badge.tsx", "src/badges/StatusBadge.tsx"], ["Badge.tsx", "StatusBadge.tsx"]],
+    ["the file names with their folders when one is an index file", ["fields/component/index.tsx", "fields/components/RelationshipComponent.tsx"], ["component/index.tsx", "components/RelationshipComponent.tsx"]],
+    ["as many folders as it takes when one alone repeats", ["a/x/Card.tsx", "b/x/Card.tsx", "a/y/Card.tsx"], ["a/x", "b/x", "a/y"]],
+  ] as const)("tells same-named components apart under their table rows by %s, and shows nothing under a name no other row has", (_, paths, shown) => {
+    const named = (id: string, label: string) => ({ ...monthly(id, () => 1), cohortKey: `component:${id}`, label });
+    const same = paths.map((_, i) => named(`same-${i}`, "Card · @acme/ui"));
+    const [config, view] = trendOf([...same, named("popup", "Popup · @acme/ui")]);
+    const pathOf = Object.fromEntries([...paths.map((path, i) => [`component:same-${i}`, path]), ["component:popup", "ui/overlays/Popup.tsx"]]);
+    render(<DashboardChart config={config} view={view} change={{ all: {} }} paths={pathOf} />);
+    const table = screen.getByRole("table");
+    expect(paths.map((path) => within(table).getByTitle(path).textContent)).toEqual(shown);
+    expect(within(table).queryByTitle("ui/overlays/Popup.tsx")).toBeNull();
+  });
+
+  const twelve = ["bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet", "kilo", "alpha"].map((name, n) =>
+    monthly(`@acme/${name}`, () => 120 - n * 10),
+  );
+  const toolbar = { ...monthly("toolbar", () => 5), cohortKey: "component:toolbar", label: "Toolbar · @other/kit" };
+  twelve.push(toolbar);
+
+  it("lists ten lines with no search box and no Show all", () => {
+    const [config, view] = trendOf(twelve.slice(0, 10));
+    render(<DashboardChart config={config} view={view} />);
+    expect(rowNames(screen.getByRole("table"))).toHaveLength(10);
+    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Show all/ })).toBeNull();
+  });
+
+  it("lists the first 10 of 12 lines in the table's sort, every line after Show all, and 10 again after Show fewer", () => {
+    const [config, view] = trendOf(twelve);
+    render(<DashboardChart config={config} view={view} />);
+    const table = screen.getByRole("table");
+    expect(rowNames(table)).toEqual(["bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet", "kilo"].map((n) => `@acme/${n}`));
+    fireEvent.click(screen.getByRole("button", { name: "Show all 12" }));
+    expect(rowNames(table)).toHaveLength(12);
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(rowNames(table)).toHaveLength(10);
+    fireEvent.click(within(table).getByRole("button", { name: "Name" }));
+    expect(rowNames(table)[0]).toBe("@acme/alpha");
+  });
+
+  it("finds every line whose component or package name matches the search, past the tenth too, and says when none does", () => {
+    const [config, view] = trendOf(twelve);
+    render(<DashboardChart config={config} view={view} />);
+    const table = screen.getByRole("table");
+    const search = screen.getByRole("searchbox", { name: "Search series by component or package name" });
+    fireEvent.change(search, { target: { value: "TOOLBAR" } });
+    expect(rowNames(table)).toEqual(["Toolbar@other/kit"]);
+    fireEvent.change(search, { target: { value: "other/kit" } });
+    expect(rowNames(table)).toEqual(["Toolbar@other/kit"]);
+    fireEvent.change(search, { target: { value: "@acme" } });
+    expect(rowNames(table)).toHaveLength(11);
+    expect(screen.queryByRole("button", { name: /Show all/ })).toBeNull();
+    fireEvent.change(search, { target: { value: "zzz" } });
+    expect(screen.getByText(/No series match/)).toHaveTextContent("No series match zzz.");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(rowNames(table)).toHaveLength(10);
+  });
+
+  const search = (value: string) => fireEvent.change(screen.getByRole("searchbox"), { target: { value } });
+  const strokes = (container: HTMLElement) => [...container.querySelectorAll(".recharts-area-curve")].map((c) => c.getAttribute("stroke"));
+
+  it("draws only the lines that match the search, with the y-axis fitted to them, and every line once it's cleared", () => {
+    const [config, view] = trendOf(twelve);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    expect(lines(container)).toBe(12);
+    expect(yTop(container)).toBeGreaterThanOrEqual(120);
+    search("toolbar");
+    expect(lines(container)).toBe(1);
+    expect(yTop(container)).toBeLessThanOrEqual(10);
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(lines(container)).toBe(12);
+  });
+
+  it("leaves the chart as it is when no line matches the search", () => {
+    const [config, view] = trendOf(twelve);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    search("zzz");
+    expect(lines(container)).toBe(12);
+    expect(yTop(container)).toBeGreaterThanOrEqual(120);
+  });
+
+  it("draws a line pressed inside a search on its own, and the matching lines again on a second press", () => {
+    const [config, view] = trendOf(twelve);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    search("@acme");
+    expect(lines(container)).toBe(11);
+    const row = within(screen.getByRole("table")).getByRole("button", { name: /delta$/ });
+    fireEvent.click(row);
+    expect(lines(container)).toBe(1);
+    fireEvent.click(row);
+    expect(lines(container)).toBe(11);
+  });
+
+  it("keeps a matching line's colour when the search narrows the chart", () => {
+    const [config, view] = trendOf(twelve.map((s, i) => (i === 0 ? { ...s, role: "deprecated" as const } : s)));
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    const [first, charlie] = strokes(container);
+    expect(charlie).not.toBe(first);
+    search("@acme/charlie");
+    expect(strokes(container)).toEqual([charlie]);
+  });
+
+  it("keeps the row of a line shown on its own past the tenth, through a search it doesn't match and once the search is cleared", () => {
+    const [config, view] = trendOf(twelve);
+    render(<DashboardChart config={config} view={view} />);
+    const table = screen.getByRole("table");
+    search("toolbar");
+    fireEvent.click(within(table).getByRole("button", { name: /^Toolbar/ }));
+    search("@acme/bravo");
+    expect(rowNames(table)).toEqual(["@acme/bravo", "Toolbar@other/kit"]);
+    search("zzz");
+    expect(within(table).getByRole("button", { name: /^Toolbar/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/No series match/)).toHaveTextContent("No series match zzz.");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(rowNames(table)).toHaveLength(11);
+    expect(within(table).getByRole("button", { name: /^Toolbar/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("shows only the line whose table row is clicked", () => {
     const [config, view] = trendOf(many);
     const { container } = render(<DashboardChart config={config} view={view} />);

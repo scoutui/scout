@@ -2,7 +2,7 @@
 import { useState } from "react";
 import type { ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, rangeStart, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
+import { type ChangeByRange, chartColors, chartStart, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, rangeStart, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
 import { useShowChart } from "./chart-export-context";
 import { CohortBarChart } from "./cohort-bar-chart";
 import { CohortShareOverTime } from "./cohort-share-over-time";
@@ -22,7 +22,9 @@ const RANGES: Array<{ value: ChartRange; label: string }> = [
  * each cohort's change; `bars` consumes the snapshot. Client-side so it
  * can be rendered both from server pages (view route) and the builder's preview.
  * A chart over time draws `range`; with `onRangeChange` it offers the range presets
- * once its scans span more than the shortest one.
+ * once its scans span more than the shortest one. A trend chart with `change` lists its series in a table with each
+ * one's change since the day the chart starts at `range`; `paths` tells same-named components apart there. With
+ * `onQueryChange`, the table's search is `query`, and a trend chart draws only the series it matches.
  */
 export function DashboardChart({
   config,
@@ -30,12 +32,20 @@ export function DashboardChart({
   showLegend = true,
   range = "all",
   onRangeChange,
+  change,
+  paths,
+  query,
+  onQueryChange,
 }: {
   config: DashboardConfig;
   view: DashboardView;
   showLegend?: boolean;
   range?: ChartRange;
   onRangeChange?: (range: ChartRange) => void;
+  change?: ChangeByRange | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
+  query?: string;
+  onQueryChange?: (query: string) => void;
 }) {
   if (isEmptyView(view)) {
     return <p className="py-6 text-center text-sm text-muted-foreground">Couldn't find the components in this chart.</p>;
@@ -46,6 +56,8 @@ export function DashboardChart({
     if (view.kind !== "series") return <ChartFallback />;
     const { view: visible, from } = visibleView(config, view, range);
     const presets = onRangeChange && rangeStart(view.series, "3m") !== null;
+    const since = chartStart(view.series, range);
+    const shownChange = change?.[range];
     return (
       <div>
         {presets ? (
@@ -70,7 +82,7 @@ export function DashboardChart({
           </div>
         ) : null}
         {config.chartType === "trend" ? (
-          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} />
+          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} change={shownChange && since !== null ? { since, byKey: shownChange } : undefined} paths={paths} query={query} onQueryChange={onQueryChange} />
         ) : (
           <CohortShareOverTime series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} from={from} />
         )}
@@ -86,18 +98,31 @@ export function DashboardChart({
 
 /**
  * A DashboardChart on a chart's own page: it opens at `range`, a picked range goes into the page's link, and the chart
- * at the range on screen is offered for export.
+ * at the range on screen, narrowed by its table's search, is offered for export.
  */
-export function LinkedDashboardChart({ config, view, range: initial }: { config: DashboardConfig; view: DashboardView; range: ChartRange }) {
+export function LinkedDashboardChart({
+  config,
+  view,
+  range: initial,
+  change,
+  paths,
+}: {
+  config: DashboardConfig;
+  view: DashboardView;
+  range: ChartRange;
+  change?: ChangeByRange | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
+}) {
   const [range, setRange] = useState(initial);
-  useShowChart({ config, view, range });
+  const [query, setQuery] = useState("");
+  useShowChart({ config, view, range, query });
   const pick = (next: ChartRange) => {
     setRange(next);
     const url = new URL(window.location.href);
     url.searchParams.set("range", next);
     window.history.replaceState(null, "", url);
   };
-  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} />;
+  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} change={change} paths={paths} query={query} onQueryChange={setQuery} />;
 }
 
 function ChartFallback() {

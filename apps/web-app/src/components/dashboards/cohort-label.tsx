@@ -1,5 +1,5 @@
 "use client";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { DEPRECATED_ONLY, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 
@@ -19,13 +19,31 @@ export function CohortLabelText({
   const { name, packageName } = splitCohortLabel(label);
   return (
     <span className={cn("inline-flex min-w-0 items-baseline gap-1.5 font-mono", className)} title={label}>
-      <span className="truncate">{name}</span>
+      <span className="truncate">
+        <SlashBreaks text={name} />
+      </span>
       {packageName !== undefined ? (
-        <span className="truncate text-xs text-muted-foreground">{packageName}</span>
+        <span className="truncate text-xs text-muted-foreground">
+          <SlashBreaks text={packageName} />
+        </span>
       ) : null}
       {deprecatedOnly ? <DeprecatedOnlyText /> : null}
     </span>
   );
+}
+
+/** Text that may break after each `/` where it wraps. */
+export function SlashBreaks({ text }: { text: string }) {
+  return text.split("/").map((segment, i, all) => (
+    <Fragment key={all.slice(0, i + 1).join("/")}>
+      {i > 0 ? (
+        <>
+          /<wbr />
+        </>
+      ) : null}
+      {segment}
+    </Fragment>
+  ));
 }
 
 function DeprecatedOnlyText() {
