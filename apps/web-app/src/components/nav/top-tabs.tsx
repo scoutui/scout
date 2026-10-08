@@ -18,18 +18,20 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
   if (pathname === "/login") return null;
   return (
     <nav className="sticky top-0 z-30 border-b border-border/70 bg-background">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-stretch px-4 sm:h-14 sm:flex-nowrap sm:px-8 lg:px-10">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-stretch px-4 sm:px-8 lg:px-10">
         <Link
           href="/repos"
-          className="mr-5 sm:mr-9 inline-flex h-14 shrink-0 items-center gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
+          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
         >
           <BrandMark />
           <span className="hidden sm:inline">Scout</span>
         </Link>
         {/* Tab rail. The active tab's underline overlaps the nav's border
-            (-mb-px). Below sm the rail is its own row under the logo. It
-            scrolls with the scrollbar hidden when the tabs don't fit. */}
-        <div className="scroll-fade-x flex min-w-0 items-stretch overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-sm:order-last max-sm:-mx-4 max-sm:h-10 max-sm:grow max-sm:basis-full max-sm:px-0.5">
+            (-mb-px). The rail scrolls on narrow screens so the right cluster
+            never clips; with the scrollbar hidden, a right-edge fade below sm
+            shows there are more tabs, and trailing padding lets the last tab
+            scroll clear of it. */}
+        <div className="flex min-w-0 items-stretch overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-sm:pr-8 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]">
           {TABS.filter((t) => showGovernance || t.href !== "/governance").map((t) => {
             const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
             return (
@@ -42,7 +44,7 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
                   "focus-visible:rounded-sm",
                   active
                     ? "border-foreground font-medium text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground active:border-muted-foreground active:text-foreground",
+                    : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
                 {t.label}
@@ -50,7 +52,7 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
             );
           })}
         </div>
-        {rightSlot ? <div className="ml-auto flex h-14 shrink-0 items-center pl-4">{rightSlot}</div> : null}
+        {rightSlot ? <div className="ml-auto flex shrink-0 items-center pl-4">{rightSlot}</div> : null}
       </div>
     </nav>
   );

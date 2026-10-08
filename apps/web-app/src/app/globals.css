@@ -232,29 +232,6 @@
   box-shadow: 0 1px 1px oklch(0 0 0 / 0.20);
 }
 
-/* A row that scrolls sideways fades at each edge only while there's more to
-   scroll that way. Browsers without scroll timelines show no fade. */
-@property --fade-start {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-@property --fade-end {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-@keyframes scroll-fade-x {
-  from { --fade-start: 0px; --fade-end: 2rem; }
-  10%, 90% { --fade-start: 2rem; --fade-end: 2rem; }
-  to { --fade-start: 2rem; --fade-end: 0px; }
-}
-@utility scroll-fade-x {
-  animation: scroll-fade-x linear;
-  animation-timeline: scroll(self inline);
-  mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
-}
-
 /* The theme swaps instantly: crossfading inverted light and dark palettes
    flashes every high-contrast element. For the one frame theme-provider sets
    this class, per-element transitions are off so the whole UI flips at once. */
