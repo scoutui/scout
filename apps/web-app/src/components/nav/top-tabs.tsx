@@ -1,10 +1,10 @@
 "use client";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown } from "lucide-react";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLinkItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const TABS = [
   { href: "/repos", label: "repos" },
@@ -15,7 +15,17 @@ const TABS = [
 
 type Tab = (typeof TABS)[number];
 
-const isActive = (pathname: string, tab: Tab) => pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+export const isUnder = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+/** The tab a page sits under. A component page sits under packages. */
+function tabOf(pathname: string): Tab | undefined {
+  const path = isUnder(pathname, "/components") ? "/packages" : pathname;
+  return TABS.find((t) => isUnder(path, t.href));
+}
+
+/** The current page in a list of pages: medium weight and a bar on the row's leading edge. */
+export const CURRENT_PAGE =
+  "font-medium before:absolute before:inset-y-2 before:start-0 before:w-0.5 before:rounded-full before:bg-foreground";
 
 export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean; rightSlot?: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,23 +33,27 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
   // back to /login.
   if (pathname === "/login") return null;
   const tabs = TABS.filter((t) => showGovernance || t.href !== "/governance");
+  const current = tabOf(pathname);
   return (
-    <nav className="sticky top-0 z-30 h-(--top-bar-height) border-b border-border/70 bg-background">
+    <header className="sticky top-0 z-30 h-(--top-bar-height) border-b border-border/70 bg-background">
       <div className="mx-auto flex h-full max-w-[1600px] items-stretch px-4 sm:px-8 lg:px-10">
+        <PageMenu tabs={tabs} current={current} />
         <Link
           href="/repos"
-          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
+          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2 sm:gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
         >
-          <BrandMark />
-          <span className="max-sm:sr-only">Scout</span>
+          <BrandMark className="max-sm:ring-0" />
+          Scout
         </Link>
-        <PageMenu tabs={tabs} pathname={pathname} />
-        {/* Tab rail. The active tab's underline overlaps the nav's border
+        {/* Tab rail. The active tab's underline overlaps the header's border
             (-mb-px). The rail scrolls if the tabs ever outgrow it, so the
             right cluster never clips. */}
-        <div className="hidden min-w-0 items-stretch overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex">
+        <nav
+          aria-label="Pages"
+          className="hidden min-w-0 items-stretch overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex"
+        >
           {tabs.map((t) => {
-            const active = isActive(pathname, t);
+            const active = t === current;
             return (
               <Link
                 key={t.href}
@@ -57,39 +71,78 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
               </Link>
             );
           })}
-        </div>
+        </nav>
         {rightSlot ? <div className="ml-auto flex shrink-0 items-center pl-4">{rightSlot}</div> : null}
       </div>
-    </nav>
+    </header>
   );
 }
 
-function PageMenu({ tabs, pathname }: { tabs: readonly Tab[]; pathname: string }) {
-  const current = tabs.find((t) => isActive(pathname, t));
+/**
+ * Below `sm`, the pages behind a Menu button: a panel under the header with a list of links. Escape, choosing a link,
+ * moving focus out of the panel or tapping outside it closes the panel.
+ */
+function PageMenu({ tabs, current }: { tabs: readonly Tab[]; current: Tab | undefined }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
   return (
-    <div className="-ml-2 flex items-center sm:hidden">
-      <DropdownMenu>
-        <DropdownMenuTrigger className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-foreground transition-colors hover:bg-muted active:bg-accent aria-expanded:bg-muted">
-          {current?.label ?? "menu"}
-          <ChevronDown aria-hidden className="size-4 text-muted-foreground" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52">
+    <div
+      ref={root}
+      className="-ml-2 mr-1 flex items-center sm:hidden"
+      onKeyDown={(event) => {
+        if (event.key !== "Escape" || !open) return;
+        setOpen(false);
+        button.current?.focus();
+      }}
+      onBlur={(event) => {
+        if (!root.current?.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
+      <button
+        ref={button}
+        type="button"
+        aria-label="Menu"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen(!open)}
+        className="inline-flex size-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted active:bg-accent aria-expanded:bg-muted [&_svg]:size-5"
+      >
+        <Menu aria-hidden />
+      </button>
+      <nav id={id} aria-label="Pages" hidden={!open} className="absolute inset-x-0 top-full mt-px border-b border-border/70 bg-background shadow-md">
+        <ul className="px-2 py-2">
           {tabs.map((t) => {
             const active = t === current;
             return (
-              <DropdownMenuLinkItem
-                key={t.href}
-                closeOnClick
-                render={<Link href={t.href} aria-current={active ? "page" : undefined} />}
-                className={cn("h-10 gap-2.5 px-2.5", active ? "font-medium text-foreground" : "text-muted-foreground")}
-              >
-                <Check aria-hidden className={cn("size-4", active ? "opacity-100" : "opacity-0")} />
-                {t.label}
-              </DropdownMenuLinkItem>
+              <li key={t.href}>
+                <Link
+                  href={t.href}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "relative flex h-11 items-center rounded-md px-2 text-sm text-foreground transition-colors hover:bg-muted",
+                    active && CURRENT_PAGE,
+                  )}
+                >
+                  {t.label}
+                </Link>
+              </li>
             );
           })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </ul>
+      </nav>
     </div>
   );
 }

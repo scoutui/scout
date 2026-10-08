@@ -1,7 +1,11 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { can, type Person, ROLE_NAMES } from "@/lib/access";
+import { cn } from "@/lib/utils";
+import { CURRENT_PAGE, isUnder } from "@/components/nav/top-tabs";
+import { type Theme, useTheme } from "@/components/theme/theme-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +13,17 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuLinkItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const THEMES: { value: Theme; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
 
 function initials({ name, email }: Person): string {
   const words = name?.trim().split(/\s+/).filter(Boolean) ?? [];
@@ -20,6 +32,8 @@ function initials({ name, email }: Person): string {
 }
 
 export function AccountMenu({ person }: { person: Person | null }) {
+  const { theme, setTheme } = useTheme();
+  const onSettings = isUnder(usePathname(), "/settings");
   if (!person) return null;
   return (
     <DropdownMenu>
@@ -29,24 +43,37 @@ export function AccountMenu({ person }: { person: Person | null }) {
       >
         {initials(person)}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 text-xs">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>
-            {person.name ? <p className="truncate font-medium">{person.name}</p> : null}
-            <p className="truncate text-muted-foreground">{person.email}</p>
+          <DropdownMenuLabel className="text-sm">
+            {person.name ? <p className="font-medium wrap-anywhere">{person.name}</p> : null}
+            <p className="text-muted-foreground wrap-anywhere">{person.email}</p>
+            <p className="text-muted-foreground">{ROLE_NAMES[person.role]}</p>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuLabel className="text-muted-foreground">{ROLE_NAMES[person.role]}</DropdownMenuLabel>
-            {can(person, "manage-people") ? (
-              <DropdownMenuLinkItem className="text-xs" closeOnClick render={<Link href="/settings" />}>
-                Settings
-              </DropdownMenuLinkItem>
-            ) : null}
-            <DropdownMenuItem className="text-xs" onClick={() => signOut({ callbackUrl: "/login" })}>
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-label text-muted-foreground">Theme</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={theme} onValueChange={(value: Theme) => setTheme(value)}>
+            {THEMES.map((t) => (
+              <DropdownMenuRadioItem key={t.value} value={t.value} closeOnClick={false}>
+                {t.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {can(person, "manage-people") ? (
+            <DropdownMenuLinkItem
+              closeOnClick
+              render={<Link href="/settings" aria-current={onSettings ? "page" : undefined} />}
+              className={cn(onSettings && CURRENT_PAGE)}
+            >
+              Settings
+            </DropdownMenuLinkItem>
+          ) : null}
+          <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>Sign out</DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

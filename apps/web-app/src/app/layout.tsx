@@ -9,7 +9,6 @@ import { Suspense } from "react";
 import { TopTabs } from "@/components/nav/top-tabs";
 import { AccountMenu } from "@/components/auth/account-menu";
 import { ThemeProvider } from "@/components/theme/theme-provider";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
 
@@ -46,12 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeProvider>
           <TopTabs
             showGovernance={can(person, "edit")}
-            rightSlot={
-              <div className="flex items-center gap-4">
-                <ThemeToggle />
-                <AccountMenu person={person} />
-              </div>
-            }
+            rightSlot={<AccountMenu person={person} />}
           />
           <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
             {/* Lets the page wait for its code inside a boundary while it hydrates, so React 19.2
