@@ -22,7 +22,8 @@ const RANGES: Array<{ value: ChartRange; label: string }> = [
  * each cohort's change; `bars` consumes the snapshot. Client-side so it
  * can be rendered both from server pages (view route) and the builder's preview.
  * A chart over time draws `range`; with `onRangeChange` it offers the range presets
- * once its scans span more than the shortest one.
+ * once its scans span more than the shortest one. A trend chart with `change` lists its series in a table with each
+ * one's change over the last 30 days; `paths` tells same-named components apart there.
  */
 export function DashboardChart({
   config,
@@ -30,12 +31,16 @@ export function DashboardChart({
   showLegend = true,
   range = "all",
   onRangeChange,
+  change,
+  paths,
 }: {
   config: DashboardConfig;
   view: DashboardView;
   showLegend?: boolean;
   range?: ChartRange;
   onRangeChange?: (range: ChartRange) => void;
+  change?: Readonly<Record<string, number | null>> | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
 }) {
   if (isEmptyView(view)) {
     return <p className="py-6 text-center text-sm text-muted-foreground">Couldn't find the components in this chart.</p>;
@@ -70,7 +75,7 @@ export function DashboardChart({
           </div>
         ) : null}
         {config.chartType === "trend" ? (
-          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} />
+          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} change={change} paths={paths} />
         ) : (
           <CohortShareOverTime series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} from={from} />
         )}
@@ -88,7 +93,19 @@ export function DashboardChart({
  * A DashboardChart on a chart's own page: it opens at `range`, a picked range goes into the page's link, and the chart
  * at the range on screen is offered for export.
  */
-export function LinkedDashboardChart({ config, view, range: initial }: { config: DashboardConfig; view: DashboardView; range: ChartRange }) {
+export function LinkedDashboardChart({
+  config,
+  view,
+  range: initial,
+  change,
+  paths,
+}: {
+  config: DashboardConfig;
+  view: DashboardView;
+  range: ChartRange;
+  change?: Readonly<Record<string, number | null>> | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
+}) {
   const [range, setRange] = useState(initial);
   useShowChart({ config, view, range });
   const pick = (next: ChartRange) => {
@@ -97,7 +114,7 @@ export function LinkedDashboardChart({ config, view, range: initial }: { config:
     url.searchParams.set("range", next);
     window.history.replaceState(null, "", url);
   };
-  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} />;
+  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} change={change} paths={paths} />;
 }
 
 function ChartFallback() {

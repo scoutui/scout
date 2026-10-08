@@ -44,19 +44,19 @@ export function renderDashboard(
       points,
       series: projectCohortSeries(scans, tags, config.cohorts, config.metric, governance, names),
       coverage: projectRepoCoverage(scans),
-      change: tableChange(config, points, scans, tags, governance, asOf),
+      change: cohortChange(config, points, scans, tags, governance, asOf),
     };
   }
   return { kind: "snapshot", points: projectCohortSnapshot(scans, tags, config.cohorts, config.metric, governance, names) };
 }
 
 /**
- * The change of each cohort in `points` by `cohortKey`, measured by `changeIn`. A share's change is the share of the
+ * The change of each cohort in `drawn` by `cohortKey`, measured by `changeIn`. A share's change is the share of the
  * summed counts at each repo's latest scan less the share of the summed counts at the scans those are compared with.
  */
-function tableChange(
+export function cohortChange(
   config: DashboardConfig,
-  points: CohortPoint[],
+  drawn: ReadonlyArray<{ cohortKey: string }>,
   scans: DigestScan[],
   tags: Tag[],
   governance: GovernanceRecord[],
@@ -77,10 +77,10 @@ function tableChange(
   const totalNow = atLatest(total);
   const totalBefore = totalNow - (changeOf(total) ?? 0);
   const share = (count: number, of: number) => (of === 0 ? 0 : count / of);
-  const drawn = new Set(points.map((p) => p.cohortKey));
+  const drawnKeys = new Set(drawn.map((c) => c.cohortKey));
   return Object.fromEntries(config.cohorts.flatMap((selector, i) => {
     const key = cohortKey(selector);
-    if (!drawn.has(key)) return [];
+    if (!drawnKeys.has(key)) return [];
     const count = (scan: DigestScan) => countsIn(scan)[i] ?? 0;
     const delta = changeOf(count);
     if (delta === null || config.metric === "count") return [[key, delta]];

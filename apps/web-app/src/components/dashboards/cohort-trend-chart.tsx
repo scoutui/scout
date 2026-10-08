@@ -10,7 +10,7 @@ import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/coho
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 import { TrendLegendTable } from "@/components/dashboards/trend-legend-table";
 
-// From this many series the legend is a sortable table.
+// From this many series the legend is a sortable table, unless the chart has each series' change.
 const TABLE_LEGEND_FROM = 6;
 
 /**
@@ -20,7 +20,8 @@ const TABLE_LEGEND_FROM = 6;
  * series on hover and shows only that series on click, an end dot and label at each
  * line's tail, and a crosshair tooltip listing every series at that scan. A small
  * ring marks each scan where a repo joins a line, and the tooltip names it. From
- * TABLE_LEGEND_FROM series the legend is a table of each series' latest value.
+ * TABLE_LEGEND_FROM series the legend is a table of each series' latest value; with `change`, it is that table
+ * from two series, with each series' change over the last 30 days. `paths` tells same-named components apart there.
  * With `from`, the x-axis starts there and points before it fall outside the plot.
  */
 export function CohortTrendChart({
@@ -31,6 +32,8 @@ export function CohortTrendChart({
   metric,
   showLegend = true,
   from = null,
+  change,
+  paths,
 }: {
   series: CohortSeries[];
   coverage: RepoCoverage;
@@ -39,6 +42,8 @@ export function CohortTrendChart({
   metric: "count" | "share";
   showLegend?: boolean;
   from?: number | null;
+  change?: Readonly<Record<string, number | null>> | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
 }) {
   // Gate the draw-in animation on the user's motion preference.
   const [animate, setAnimate] = useState(false);
@@ -222,12 +227,14 @@ export function CohortTrendChart({
 
       {/* Hovering a legend entry highlights its series and dims the rest; clicking
           it shows only that series. A single series needs no legend: the title names it. */}
-      {showLegend && allSeries.length >= TABLE_LEGEND_FROM ? (
+      {showLegend && allSeries.length >= (change ? 2 : TABLE_LEGEND_FROM) ? (
         <TrendLegendTable
           series={allSeries}
           colors={colors}
           deprecatedOnly={deprecatedOnly}
           metric={metric}
+          change={change}
+          paths={paths}
           shown={shown}
           onToggle={toggleShown}
           onHover={setHovered}

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
 import { componentKey } from "@scoutui/scan-format";
 import { PostgresDriver, type DashboardConfig, type DashboardInput, type StorageDriver } from "@scoutui/web-shared";
-import { artifact, component, packageExport, resolvedAt } from "../../../../packages/web-shared/tests/helpers/builders.ts";
+import { artifact, component, packageExport, repoDeclaration, resolvedAt } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
 import type { Person } from "../../src/lib/access.ts";
@@ -128,6 +128,26 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
         description: "There are no scans for repo-gone any more. It may have been renamed or deleted. Edit the chart to pick another repo, or delete it.",
       });
       expect(propsOf(tree, "DashboardScopeBadge")).toMatchObject({ missing: "repo" });
+    });
+  });
+
+  it("hands a trend chart each series' change over the last 30 days and where each component comes from, and a stacked chart no change", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const panel = componentKey(repoDeclaration("repo-a", "src/panel.tsx", "Panel"));
+      const otherPanel = componentKey(repoDeclaration("repo-a", "src/other/panel.tsx", "Panel"));
+      const cohorts: DashboardConfig["cohorts"] = [
+        { kind: "package", packageName: "@sample/core" },
+        { kind: "component", componentId: panel },
+        { kind: "component", componentId: otherPanel },
+      ];
+      const trend = await renderSaved({ scope: { kind: "all" }, cohorts, chartType: "trend", metric: "count" });
+      expect(propsOf(trend, "LinkedDashboardChart")).toMatchObject({
+        change: { "package:@sample/core": 0, [`component:${panel}`]: 0 },
+        paths: { [`component:${panel}`]: "src/panel.tsx", [`component:${otherPanel}`]: "src/other/panel.tsx" },
+      });
+      const stacked = await renderSaved({ scope: { kind: "all" }, cohorts, chartType: "stacked-share", metric: "count" });
+      expect(propsOf(stacked, "LinkedDashboardChart")).toHaveProperty("change", undefined);
     });
   });
 

@@ -20,6 +20,21 @@ export function formatMetric(value: number, metric: "count" | "share"): string {
   return metric === "share" ? formatPct(value) : value.toLocaleString();
 }
 
+/** True when a change reads as "0": none at all, or a share under 0.05 points. */
+function isNoChange(delta: number, metric: "count" | "share"): boolean {
+  return delta === 0 || (metric === "share" && Math.abs(delta) * 100 < 0.05);
+}
+
+/** A change formatted per metric: counts as a signed number, shares as signed percentage points,
+ *  "0" under 0.05 points, and "—" when there is nothing to compare. */
+export function formatDelta(delta: number | null, metric: "count" | "share"): string {
+  if (delta === null) return "—";
+  const abs = Math.abs(delta);
+  if (isNoChange(delta, metric)) return "0";
+  const sign = delta > 0 ? "+" : "−";
+  return metric === "share" ? `${sign}${(abs * 100).toFixed(1)} pts` : `${sign}${abs.toLocaleString()}`;
+}
+
 /**
  * Splits the label grammar `cohortLabel` derives, `name[ · package]`, so tight
  * chart space can drop the package segment first and keep the name.

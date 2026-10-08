@@ -1,25 +1,38 @@
 "use client";
+import { useState } from "react";
+import { ChevronDown, Search, X } from "lucide-react";
 import type { CohortSeries } from "@scoutui/web-shared";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
-import { formatMetric } from "@/lib/dashboard-format";
+import { formatDelta, formatMetric } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
-import { CohortLabelText } from "@/components/dashboards/cohort-label";
+import { shortenPath } from "@/components/repos/components-table";
+import { CohortLabelText, SlashBreaks } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
 
-type SortKey = "label" | "value";
-const NUMERIC: ReadonlySet<SortKey> = new Set(["value"]);
+type SortKey = "label" | "value" | "delta";
+const NUMERIC: ReadonlySet<SortKey> = new Set(["value", "delta"]);
+
+// Past this many series the table shows its first rows, with Show all and a search.
+const FIRST_ROWS = 10;
 
 /**
  * A trend chart's legend as a table: each series with its latest value, sortable by
  * either column, most first to start. Hovering a row highlights its line; clicking
- * its name shows only that line, and clicking it again shows every line.
+ * its name shows only that line, and clicking it again shows every line. With `change`, a Change column shows each
+ * series' change over the last 30 days, as the Table chart does. With `paths`, a row whose name another row shares
+ * shows the shortest ending of its component's path that tells the rows apart. Past FIRST_ROWS series the table
+ * lists the first FIRST_ROWS rows in its sort, plus the row of a line shown on its own, with a Show all button and a
+ * search by component or package name that lists every match.
  */
 export function TrendLegendTable({
   series,
   colors,
   deprecatedOnly,
   metric,
+  change = {},
+  paths = {},
   shown,
   onToggle,
   onHover,
@@ -28,58 +41,167 @@ export function TrendLegendTable({
   colors: ReadonlyMap<string, string>;
   deprecatedOnly: ReadonlySet<string>;
   metric: "count" | "share";
+  change?: Readonly<Record<string, number | null>> | undefined;
+  paths?: Readonly<Record<string, string>> | undefined;
   shown: string | null;
   onToggle: (cohortKey: string) => void;
   onHover: (cohortKey: string | null) => void;
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("value", "desc", NUMERIC);
-  const latest = series.map((s) => ({ ...s, value: s.points[s.points.length - 1]?.value ?? null }));
-  const rows = sortRows(latest, sortKey, sortDir, (s, k) => (k === "label" ? s.label : s.value));
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const latest = series.map((s) => ({ ...s, value: s.points[s.points.length - 1]?.value ?? null, delta: change[s.cohortKey] ?? null }));
+  const sorted = sortRows(latest, sortKey, sortDir, (s, k) => (k === "label" ? s.label : k === "delta" ? s.delta : s.value));
+  const hasDelta = latest.some((s) => s.delta !== null);
+  const shownPaths = distinctPaths(series, paths);
+  const capped = series.length > FIRST_ROWS;
+  const needle = query.trim().toLowerCase();
+  const rows =
+    needle !== ""
+      ? sorted.filter((s) => s.label.toLowerCase().includes(needle))
+      : capped && !expanded
+        ? sorted.filter((s, i) => i < FIRST_ROWS || s.cohortKey === shown)
+        : sorted;
 
   return (
-    <Table className="mt-3">
-      <TableHeader>
-        <TableRow>
-          <TableHead aria-sort={ariaSort("label", sortKey, sortDir)}>
-            <SortButton label="Name" sortKey="label" current={sortKey} dir={sortDir} onClick={toggleSort} />
-          </TableHead>
-          <TableHead className="text-right" aria-sort={ariaSort("value", sortKey, sortDir)}>
-            <SortButton
-              label={metric === "share" ? "% of uses" : "Uses"}
-              sortKey="value"
-              current={sortKey}
-              dir={sortDir}
-              onClick={toggleSort}
-              align="right"
-            />
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((s) => (
-          <TableRow
-            key={s.cohortKey}
-            onMouseEnter={() => onHover(s.cohortKey)}
-            onMouseLeave={() => onHover(null)}
-            className={cn("transition-opacity duration-200", shown !== null && shown !== s.cohortKey && "opacity-40")}
-          >
-            <TableCell className="max-w-0 w-full">
-              <button
-                type="button"
-                aria-pressed={shown === s.cohortKey}
-                onClick={() => onToggle(s.cohortKey)}
-                onFocus={() => onHover(s.cohortKey)}
-                onBlur={() => onHover(null)}
-                className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm text-left"
-              >
-                <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
-                <CohortLabelText label={s.label} deprecatedOnly={deprecatedOnly.has(s.cohortKey)} className="text-xs" />
-              </button>
-            </TableCell>
-            <TableCell className="text-right tabular-nums">{s.value === null ? "—" : formatMetric(s.value, metric)}</TableCell>
+    <div className="mt-3">
+      {capped ? (
+        <div className="relative mb-2 max-w-sm">
+          <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            aria-label="Search series by component or package name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${series.length.toLocaleString()} series…`}
+            className="h-8 pl-8 font-mono text-base placeholder:font-sans sm:text-xs [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query ? (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <Table containerClassName="@container">
+        <TableHeader>
+          <TableRow>
+            <TableHead aria-sort={ariaSort("label", sortKey, sortDir)}>
+              <SortButton label="Name" sortKey="label" current={sortKey} dir={sortDir} onClick={toggleSort} />
+            </TableHead>
+            <TableHead className="text-right" aria-sort={ariaSort("value", sortKey, sortDir)}>
+              <SortButton
+                label={metric === "share" ? "% of uses" : "Uses"}
+                sortKey="value"
+                current={sortKey}
+                dir={sortDir}
+                onClick={toggleSort}
+                align="right"
+              />
+            </TableHead>
+            {hasDelta ? (
+              <TableHead className="text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
+                <SortButton
+                  label="Change"
+                  title="Change over the last 30 days"
+                  sortKey="delta"
+                  current={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  align="right"
+                />
+              </TableHead>
+            ) : null}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map((s) => {
+            const path = shownPaths.get(s.cohortKey);
+            return (
+              <TableRow
+                key={s.cohortKey}
+                onMouseEnter={() => onHover(s.cohortKey)}
+                onMouseLeave={() => onHover(null)}
+                className={cn("transition-opacity duration-200", shown !== null && shown !== s.cohortKey && "opacity-40")}
+              >
+                <TableCell className="max-w-0 w-full">
+                  <button
+                    type="button"
+                    aria-pressed={shown === s.cohortKey}
+                    onClick={() => onToggle(s.cohortKey)}
+                    onFocus={() => onHover(s.cohortKey)}
+                    onBlur={() => onHover(null)}
+                    className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm text-left"
+                  >
+                    <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
+                    <span className="flex min-w-0 flex-col">
+                      <CohortLabelText
+                        label={s.label}
+                        deprecatedOnly={deprecatedOnly.has(s.cohortKey)}
+                        className="text-xs @max-md:flex-col @max-md:items-stretch @max-md:gap-0 @max-md:*:whitespace-normal @max-md:*:wrap-anywhere"
+                      />
+                      {path !== undefined ? (
+                        <span className="font-mono text-xs whitespace-normal text-muted-foreground wrap-anywhere" title={paths[s.cohortKey]}>
+                          <SlashBreaks text={path} />
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{s.value === null ? "—" : formatMetric(s.value, metric)}</TableCell>
+                {hasDelta ? (
+                  <TableCell className="text-right tabular-nums text-muted-foreground">{formatDelta(s.delta, metric)}</TableCell>
+                ) : null}
+              </TableRow>
+            );
+          })}
+          {rows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={hasDelta ? 3 : 2} className="py-6 text-center text-muted-foreground">
+                No series match <span className="font-mono">{query.trim()}</span>.
+              </TableCell>
+            </TableRow>
+          ) : null}
+        </TableBody>
+      </Table>
+      {capped && needle === "" ? (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+          className="mt-2 inline-flex h-7 cursor-pointer items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <ChevronDown aria-hidden className={cn("size-3.5 transition-transform motion-reduce:transition-none", expanded && "rotate-180")} />
+          {expanded ? "Show fewer" : `Show all ${series.length.toLocaleString()}`}
+        </button>
+      ) : null}
+    </div>
   );
+}
+
+/**
+ * For each series whose name another series shares, the shortest ending of its path (two segments at least) that no
+ * other series of that name ends with, shortened to that length for the whole group so the rows read alike.
+ */
+function distinctPaths(series: CohortSeries[], paths: Readonly<Record<string, string>>): Map<string, string> {
+  const groups = new Map<string, Array<{ key: string; path: string }>>();
+  for (const s of series) {
+    const path = paths[s.cohortKey];
+    if (path !== undefined) groups.set(s.label, [...(groups.get(s.label) ?? []), { key: s.cohortKey, path }]);
+  }
+  const ending = (path: string, k: number) => path.split("/").slice(-k).join("/");
+  const out = new Map<string, string>();
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const longest = Math.max(...group.map(({ path }) => path.split("/").length));
+    let k = 2;
+    while (k < longest && new Set(group.map(({ path }) => ending(path, k))).size < group.length) k++;
+    for (const { key, path } of group) out.set(key, shortenPath(path, k));
+  }
+  return out;
 }
