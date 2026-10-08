@@ -54,7 +54,7 @@ function drawn(chartConfig: DashboardConfig, view: DashboardView): ChartFigure {
   return figure;
 }
 
-type Call = { op: string; args: unknown[]; font: string };
+type Call = { op: string; args: unknown[]; font: string; strokeStyle: unknown };
 
 /** A 2D context that records what is drawn, measuring each character of text as `charWidth` wide. */
 function recorder(charWidth: number): { ctx: FigureContext; calls: Call[] } {
@@ -81,7 +81,7 @@ function recorder(charWidth: number): { ctx: FigureContext; calls: Call[] } {
     fill: (...args: unknown[]) => record("fill", args),
     stroke: (...args: unknown[]) => record("stroke", args),
   };
-  const record = (op: string, args: unknown[]) => calls.push({ op, args, font: ctx.font });
+  const record = (op: string, args: unknown[]) => calls.push({ op, args, font: ctx.font, strokeStyle: ctx.strokeStyle });
   return { ctx, calls };
 }
 
@@ -113,6 +113,20 @@ describe("paintFigure", () => {
     paintFigure(ctx, figure, FONTS);
     expect(calls.filter((c) => c.op === "scale").map((c) => c.args)).toEqual([[2, 2]]);
     expect(textsDrawn(calls).sort()).toEqual(figureTexts(figure).sort());
+  });
+
+  it("strokes a trend only in its grid's colour and its lines' colours, with no ring around an end dot and no grey leader", () => {
+    const close: CohortSeries[] = [
+      { ...web, points: [{ t: MORNING, value: 40 }, { t: LATER, value: 50 }] },
+      { ...button, points: [{ t: MORNING, value: 5 }, { t: LATER, value: 49 }] },
+    ];
+    const figure = drawn(config("trend"), { kind: "series", series: close, coverage });
+    if (figure.marks.kind !== "lines") throw new Error("expected lines");
+    expect(figure.marks.endLabels.some((l) => l.leader !== null)).toBe(true);
+    const { ctx, calls } = recorder(1);
+    paintFigure(ctx, figure, FONTS);
+    const strokes = new Set(calls.filter((c) => c.op === "stroke").map((c) => c.strokeStyle));
+    expect([...strokes].sort()).toEqual([figure.palette.grid, ...figure.marks.lines.map((l) => l.color)].sort());
   });
 
   it("shortens text that would run past its width, ending it with …", () => {

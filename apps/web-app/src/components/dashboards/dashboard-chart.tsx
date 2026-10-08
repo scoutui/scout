@@ -115,7 +115,7 @@ export function LinkedDashboardChart({
 }) {
   const [range, setRange] = useState(initial);
   const [query, setQuery] = useState("");
-  useShowChart({ config, view, range, query });
+  useShowChart({ config, view, range, query, paths });
   const pick = (next: ChartRange) => {
     setRange(next);
     const url = new URL(window.location.href);

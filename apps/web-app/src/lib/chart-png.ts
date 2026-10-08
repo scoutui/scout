@@ -20,7 +20,6 @@ const ROLE_PRIMITIVES: Record<FigureColorRole, string> = {
 
 const LINE_WIDTH = 2.5;
 const DOT_RADIUS = 4;
-const DOT_RING = 2;
 const LEADER_WIDTH = 1;
 const AREA_ALPHA = 0.3;
 const AREA_EDGE = 2;
@@ -162,18 +161,18 @@ export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: Figu
         ctx.arc(end.x, end.y, DOT_RADIUS, 0, 2 * Math.PI);
         ctx.fillStyle = line.color;
         ctx.fill();
-        ctx.strokeStyle = palette.background;
-        ctx.lineWidth = DOT_RING;
-        ctx.stroke();
       }
     }
-    ctx.strokeStyle = palette.muted;
     ctx.lineWidth = LEADER_WIDTH;
     for (const label of marks.endLabels) {
-      trace(ctx, label.leader);
-      ctx.stroke();
+      if (label.leader) {
+        ctx.strokeStyle = label.color;
+        trace(ctx, label.leader);
+        ctx.stroke();
+      }
       write(ctx, label.name, mono(BAR_TEXT_SIZE), palette.ink);
       write(ctx, label.value, mono(BAR_TEXT_SIZE), palette.muted);
+      for (const detail of label.details) write(ctx, detail, mono(BAR_TEXT_SIZE), palette.muted);
     }
   } else if (marks.kind === "areas") {
     for (const area of marks.areas) {

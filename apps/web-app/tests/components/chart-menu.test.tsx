@@ -260,6 +260,21 @@ describe("ChartMenu export", () => {
     });
   });
 
+  it("hands the image the paths that tell same-named components apart", async () => {
+    const config: DashboardConfig = { scope: { kind: "all" }, cohorts, chartType: "trend", metric: "count" };
+    const paths = { "component:btn": "src/forms/Button.tsx" };
+    render(
+      <ChartExportProvider title={TITLE}>
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <LinkedDashboardChart config={config} view={views.trend} range="all" paths={paths} />
+      </ChartExportProvider>,
+    );
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download PNG" }));
+    await waitFor(() => expect(image.chartPng).toHaveBeenCalledOnce());
+    expect(image.chartPng.mock.calls[0]?.[0]).toMatchObject({ paths });
+  });
+
   it("exports only the lines that match the table's search, colouring each as the whole chart does", async () => {
     const kits: CohortSeries[] = Array.from({ length: 9 }, (_, i) => ({
       cohortKey: `package:@example/kit-${i}`,

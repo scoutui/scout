@@ -11,7 +11,7 @@ import {
   savedChartCohorts,
   seriesToRows,
 } from "@/lib/dashboard-chart-data";
-import { formatAxisCount, formatDay, formatDayTick, formatMetric, formatPct, moreSeries, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
+import { DEPRECATED_ONLY, distinctPaths, formatAxisCount, formatDay, formatDayTick, formatMetric, formatPct, moreSeries, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 
 const FIGURE_WIDTH = 1280;
 const FIGURE_HEIGHT = 720;
@@ -49,8 +49,12 @@ export type FigureRect = { x: number; y: number; width: number; height: number }
 /** A line of text: `x` is its left edge, right edge or centre as `align` says, and `y` its vertical middle. */
 export type FigureText = { text: string; x: number; y: number; align: "left" | "right" | "center"; maxWidth: number };
 export type FigureLegendEntry = { label: string; value: string; color: string; x: number; y: number; width: number };
-/** A line's name and latest value beside the plot, joined to the line's end by `leader`. */
-export type FigureEndLabel = { name: FigureText; value: FigureText; leader: FigurePoint[] };
+/**
+ * A line's name and latest value beside the plot, with `details` on the lines beneath: its package when that won't fit
+ * beside the name, and the part of its path that tells it from a line of the same name. A label moved clear of
+ * another is joined to its line's end by `leader`, drawn in the line's `color`.
+ */
+export type FigureEndLabel = { name: FigureText; value: FigureText; details: FigureText[]; color: string; leader: FigurePoint[] | null };
 export type FigureMarks =
   | { kind: "lines"; lines: Array<{ color: string; points: FigurePoint[] }>; endLabels: FigureEndLabel[] }
   | { kind: "areas"; areas: Array<{ color: string; top: FigurePoint[]; bottom: FigurePoint[] }> }
@@ -85,6 +89,8 @@ export type ChartFigureInput = {
   colors: Record<string, string>;
   /** The width of a bar's name or a line's end label set in the mono face at `BAR_TEXT_SIZE`, in layout units. */
   nameWidth: (name: string) => number;
+  /** Each component's path by cohortKey, to tell lines of the same name apart. */
+  paths?: Readonly<Record<string, string>> | undefined;
 };
 
 /** True when a chart has an image to export: a bar chart with bars, or a trend or stacked chart scanned more than once. */
@@ -98,7 +104,7 @@ export function hasFigure(config: DashboardConfig, view: DashboardView): boolean
  * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a chart `hasFigure`
  * gives no image.
  */
-export function chartFigure({ title, config, view, whole = view, host, exportedAt, colors, nameWidth }: ChartFigureInput): ChartFigure | null {
+export function chartFigure({ title, config, view, whole = view, host, exportedAt, colors, nameWidth, paths = {} }: ChartFigureInput): ChartFigure | null {
   if (!hasFigure(config, view)) return null;
   const resolve = (key: string): string => {
     const value = colors[key];
@@ -108,10 +114,16 @@ export function chartFigure({ title, config, view, whole = view, host, exportedA
   const tokens = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(whole)));
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   const shared = sharedPackage(drawnChartCohorts(view).map((c) => c.label));
+  const shownPaths = distinctPaths(drawnChartCohorts(view), paths);
   const style = {
     seriesColor: (cohortKey: string) => resolve(tokens.get(cohortKey) ?? cohortKey),
     label: (cohort: { cohortKey: string; label: string }) =>
       exportLabel({ ...cohort, label: shared === null ? cohort.label : splitCohortLabel(cohort.label).name }, deprecatedOnly),
+    labelParts: (cohort: { cohortKey: string; label: string }) => {
+      const { name, packageName } = splitCohortLabel(cohort.label);
+      return [name, ...(shared === null && packageName !== undefined ? [packageName] : []), ...(deprecatedOnly.has(cohort.cohortKey) ? [DEPRECATED_ONLY] : [])];
+    },
+    path: (cohortKey: string) => shownPaths.get(cohortKey),
     nameWidth,
   };
   const inPackage = (subtitle: string) => (shared === null ? subtitle : `${subtitle} · ${shared}`);
@@ -137,6 +149,9 @@ export function chartFigure({ title, config, view, whole = view, host, exportedA
 type SeriesStyle = {
   seriesColor: (cohortKey: string) => string;
   label: (cohort: { cohortKey: string; label: string }) => string;
+  /** A label's name, then its package and `deprecated only` where the label shows them. */
+  labelParts: (cohort: { cohortKey: string; label: string }) => string[];
+  path: (cohortKey: string) => string | undefined;
   nameWidth: (name: string) => number;
 };
 type Layout = Pick<ChartFigure, "subtitle" | "plot" | "yTicks" | "xLabels" | "marks" | "legend" | "note">;
@@ -148,14 +163,26 @@ function byLatest(series: CohortSeries[]): Array<{ series: CohortSeries; latest:
   return series.map((s) => ({ series: s, latest: s.points.at(-1)?.value ?? 0 })).sort((a, b) => b.latest - a.latest);
 }
 
-/** A trend's lines, the ten with the highest latest value named at their ends, and how many go unnamed beneath. */
+/**
+ * A trend's lines, the ten with the highest latest value named at their ends, and how many go unnamed beneath. A name
+ * whose package won't fit beside it within NAME_COLUMN puts the package on the line beneath, and the label column is
+ * as wide as its widest line, so no name is cut.
+ */
 function trendLayout(series: CohortSeries[], metric: "count" | "share", style: SeriesStyle): SeriesLayout {
   const named = byLatest(series).slice(0, LABELLED_LINES).map(({ series: s, latest }) => {
-    const name = style.label(s);
+    const [first = "", ...rest] = style.labelParts(s);
     const value = formatMetric(latest, metric);
-    return { cohortKey: s.cohortKey, name, value, nameWidth: style.nameWidth(name), valueWidth: style.nameWidth(value) };
+    const valueWidth = style.nameWidth(value);
+    const whole = [first, ...rest].join(" · ");
+    const oneLine = rest.length === 0 || style.nameWidth(whole) + TEXT_GAP + valueWidth <= NAME_COLUMN;
+    const name = oneLine ? whole : first;
+    const path = style.path(s.cohortKey);
+    const details = [...(oneLine ? [] : [rest.join(" · ")]), ...(path === undefined ? [] : [path])];
+    const nameWidth = style.nameWidth(name);
+    const width = Math.max(nameWidth + TEXT_GAP + valueWidth, ...details.map(style.nameWidth));
+    return { cohortKey: s.cohortKey, name, value, details, nameWidth, valueWidth, width };
   });
-  const labelWidth = Math.min(NAME_COLUMN, Math.max(...named.map((n) => n.nameWidth + TEXT_GAP + n.valueWidth)));
+  const labelWidth = Math.max(...named.map((n) => n.width));
   const unnamed = series.length - named.length;
   const plotBottom = unnamed > 0 ? LEGEND_BOTTOM - LEGEND_ROW - LEGEND_GAP - X_LABELS : LEGEND_BOTTOM - X_LABELS;
   const right = FIGURE_WIDTH - PAD - LEADER - labelWidth;
@@ -168,20 +195,28 @@ function trendLayout(series: CohortSeries[], metric: "count" | "share", style: S
   const endX = axes.plot.x + axes.plot.width;
   const endY = new Map(series.map((s, i) => [s.cohortKey, lines[i]?.points.at(-1)?.y ?? axes.plot.y]));
   const labelX = endX + LEADER;
-  const placed = spread(named.map((n) => endY.get(n.cohortKey) ?? axes.plot.y), axes.plot.y + axes.plot.height);
+  const placed = spread(
+    named.map((n) => endY.get(n.cohortKey) ?? axes.plot.y),
+    axes.plot.y + axes.plot.height,
+    named.map((n) => (1 + n.details.length) * END_LABEL_LINE),
+  );
   const endLabels = named
     .map((n, i): FigureEndLabel => {
       const y = endY.get(n.cohortKey) ?? axes.plot.y;
       const labelY = placed[i] ?? y;
-      const nameMax = labelWidth - TEXT_GAP - n.valueWidth;
       return {
-        name: text(n.name, labelX, labelY, "left", nameMax),
-        value: text(n.value, labelX + Math.min(n.nameWidth, nameMax) + TEXT_GAP, labelY, "left", n.valueWidth),
-        leader: [
-          { x: endX + LEADER_START, y },
-          { x: endX + LEADER_BEND, y },
-          { x: labelX - LEADER_END, y: labelY },
-        ],
+        name: text(n.name, labelX, labelY, "left", n.nameWidth),
+        value: text(n.value, labelX + n.nameWidth + TEXT_GAP, labelY, "left", n.valueWidth),
+        details: n.details.map((detail, k) => text(detail, labelX, labelY + (k + 1) * END_LABEL_LINE, "left", style.nameWidth(detail))),
+        color: style.seriesColor(n.cohortKey),
+        leader:
+          Math.abs(labelY - y) < 0.5
+            ? null
+            : [
+                { x: endX + LEADER_START, y },
+                { x: endX + LEADER_BEND, y },
+                { x: labelX - LEADER_END, y: labelY },
+              ],
       };
     })
     .sort((a, b) => a.name.y - b.name.y);
@@ -226,13 +261,16 @@ function seriesAxes(series: CohortSeries[], ticks: number[], metric: "count" | "
   const xOf = (ts: number) => plot.x + ((ts - first) / spanMs) * plot.width;
   const yOf = (v: number) => plot.y + plot.height * (1 - v / yMax);
   const yTicks = ticks.map((v) => text(metric === "share" ? `${Math.round(v * 100)}%` : formatAxisCount(v), plot.x - 12, yOf(v), "right", Y_LABELS - 12));
-  const xLabels: FigureText[] = [];
-  for (const ts of dayTicks(rows)) {
-    const previous = xLabels.at(-1);
-    if (previous === undefined || xOf(ts) - previous.x >= X_LABEL_GAP) {
-      xLabels.push(text(formatDayTick(ts), xOf(ts), plot.y + plot.height + X_LABELS / 2, "center", X_LABEL_GAP));
-    }
+  const days = dayTicks(rows);
+  const firstDay = days[0];
+  const lastDay = days.at(-1);
+  const labelled: number[] = firstDay === undefined ? [] : [firstDay];
+  for (const ts of days.slice(1, -1)) {
+    const previous = labelled.at(-1) ?? ts;
+    if (xOf(ts) - xOf(previous) >= X_LABEL_GAP && xOf(lastDay ?? ts) - xOf(ts) >= X_LABEL_GAP) labelled.push(ts);
   }
+  if (firstDay !== undefined && lastDay !== undefined && xOf(lastDay) - xOf(firstDay) >= X_LABEL_GAP) labelled.push(lastDay);
+  const xLabels = labelled.map((ts) => text(formatDayTick(ts), xOf(ts), plot.y + plot.height + X_LABELS / 2, "center", X_LABEL_GAP));
   return { plot, yTicks, xLabels, times, xOf, yOf };
 }
 
@@ -244,23 +282,24 @@ function span(times: number[]): [string, string] {
 }
 
 /**
- * Where to set labels that want to sit at `wanted` heights: each at its height, moved down just clear of the one
- * above it, then up just clear of the one below where that would take it past `bottom`. In `wanted`'s order.
+ * Where to set labels that want to sit at `wanted` heights, each as tall as `heights` says: each at its height, moved
+ * down just clear of the one above it, then up just clear of the one below where that would take its last line past
+ * `bottom`. In `wanted`'s order.
  */
-function spread(wanted: number[], bottom: number): number[] {
-  const order = wanted.map((y, i) => ({ y, i })).sort((a, b) => a.y - b.y);
+function spread(wanted: number[], bottom: number, heights: number[]): number[] {
+  const order = wanted.map((y, i) => ({ y, i, height: heights[i] ?? END_LABEL_LINE })).sort((a, b) => a.y - b.y);
   for (let k = 1; k < order.length; k++) {
     const above = order[k - 1];
     const here = order[k];
-    if (above && here) here.y = Math.max(here.y, above.y + END_LABEL_LINE);
+    if (above && here) here.y = Math.max(here.y, above.y + above.height);
   }
   const lowest = order.at(-1);
-  if (lowest && lowest.y > bottom) {
-    lowest.y = bottom;
+  if (lowest && lowest.y + lowest.height - END_LABEL_LINE > bottom) {
+    lowest.y = bottom - (lowest.height - END_LABEL_LINE);
     for (let k = order.length - 2; k >= 0; k--) {
       const here = order[k];
       const below = order[k + 1];
-      if (here && below) here.y = Math.min(here.y, below.y - END_LABEL_LINE);
+      if (here && below) here.y = Math.min(here.y, below.y - here.height);
     }
   }
   const placed: number[] = [];
