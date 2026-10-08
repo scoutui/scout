@@ -313,12 +313,61 @@ describe("DashboardChart legend", () => {
     expect(rowNames(table)).toHaveLength(10);
   });
 
-  it("keeps the row of a line shown on its own past the tenth once the search is cleared", () => {
+  const search = (value: string) => fireEvent.change(screen.getByRole("searchbox"), { target: { value } });
+  const strokes = (container: HTMLElement) => [...container.querySelectorAll(".recharts-area-curve")].map((c) => c.getAttribute("stroke"));
+
+  it("draws only the lines that match the search, with the y-axis fitted to them, and every line once it's cleared", () => {
+    const [config, view] = trendOf(twelve);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    expect(lines(container)).toBe(12);
+    expect(yTop(container)).toBeGreaterThanOrEqual(120);
+    search("toolbar");
+    expect(lines(container)).toBe(1);
+    expect(yTop(container)).toBeLessThanOrEqual(10);
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(lines(container)).toBe(12);
+  });
+
+  it("leaves the chart as it is when no line matches the search", () => {
+    const [config, view] = trendOf(twelve);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    search("zzz");
+    expect(lines(container)).toBe(12);
+    expect(yTop(container)).toBeGreaterThanOrEqual(120);
+  });
+
+  it("draws a line pressed inside a search on its own, and the matching lines again on a second press", () => {
+    const [config, view] = trendOf(twelve);
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    search("@acme");
+    expect(lines(container)).toBe(11);
+    const row = within(screen.getByRole("table")).getByRole("button", { name: /delta$/ });
+    fireEvent.click(row);
+    expect(lines(container)).toBe(1);
+    fireEvent.click(row);
+    expect(lines(container)).toBe(11);
+  });
+
+  it("keeps a matching line's colour when the search narrows the chart", () => {
+    const [config, view] = trendOf(twelve.map((s, i) => (i === 0 ? { ...s, role: "deprecated" as const } : s)));
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    const [first, charlie] = strokes(container);
+    expect(charlie).not.toBe(first);
+    search("@acme/charlie");
+    expect(strokes(container)).toEqual([charlie]);
+  });
+
+  it("keeps the row of a line shown on its own past the tenth, through a search it doesn't match and once the search is cleared", () => {
     const [config, view] = trendOf(twelve);
     render(<DashboardChart config={config} view={view} />);
     const table = screen.getByRole("table");
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "toolbar" } });
+    search("toolbar");
     fireEvent.click(within(table).getByRole("button", { name: /^Toolbar/ }));
+    search("@acme/bravo");
+    expect(rowNames(table)).toEqual(["@acme/bravo", "Toolbar@other/kit"]);
+    search("zzz");
+    expect(within(table).getByRole("button", { name: /^Toolbar/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/No series match/)).toHaveTextContent("No series match zzz.");
     fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
     expect(rowNames(table)).toHaveLength(11);
     expect(within(table).getByRole("button", { name: /^Toolbar/ })).toHaveAttribute("aria-pressed", "true");

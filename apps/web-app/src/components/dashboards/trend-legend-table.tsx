@@ -5,6 +5,7 @@ import type { CohortSeries } from "@scoutui/web-shared";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
+import { searchedSeries } from "@/lib/dashboard-chart-data";
 import { formatDelta, formatMetric } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { shortenPath } from "@/components/repos/components-table";
@@ -23,8 +24,8 @@ const FIRST_ROWS = 10;
  * its name shows only that line, and clicking it again shows every line. With `change`, a Change column shows each
  * series' change over the last 30 days, as the Table chart does. With `paths`, a row whose name another row shares
  * shows the shortest ending of its component's path that tells the rows apart. Past FIRST_ROWS series the table
- * lists the first FIRST_ROWS rows in its sort, plus the row of a line shown on its own, with a Show all button and a
- * search by component or package name that lists every match.
+ * lists the first FIRST_ROWS rows in its sort, with a Show all button and a search, `query`, by component or package
+ * name that lists every match. The row of a line shown on its own stays in the table whatever the search or Show all.
  */
 export function TrendLegendTable({
   series,
@@ -33,6 +34,8 @@ export function TrendLegendTable({
   metric,
   change = {},
   paths = {},
+  query,
+  onQueryChange,
   shown,
   onToggle,
   onHover,
@@ -43,25 +46,24 @@ export function TrendLegendTable({
   metric: "count" | "share";
   change?: Readonly<Record<string, number | null>> | undefined;
   paths?: Readonly<Record<string, string>> | undefined;
+  query: string;
+  onQueryChange: (query: string) => void;
   shown: string | null;
   onToggle: (cohortKey: string) => void;
   onHover: (cohortKey: string | null) => void;
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("value", "desc", NUMERIC);
-  const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(false);
   const latest = series.map((s) => ({ ...s, value: s.points[s.points.length - 1]?.value ?? null, delta: change[s.cohortKey] ?? null }));
   const sorted = sortRows(latest, sortKey, sortDir, (s, k) => (k === "label" ? s.label : k === "delta" ? s.delta : s.value));
   const hasDelta = latest.some((s) => s.delta !== null);
   const shownPaths = distinctPaths(series, paths);
   const capped = series.length > FIRST_ROWS;
-  const needle = query.trim().toLowerCase();
-  const rows =
-    needle !== ""
-      ? sorted.filter((s) => s.label.toLowerCase().includes(needle))
-      : capped && !expanded
-        ? sorted.filter((s, i) => i < FIRST_ROWS || s.cohortKey === shown)
-        : sorted;
+  const searching = query.trim() !== "";
+  const matched = new Set(searchedSeries(series, query)?.map((s) => s.cohortKey));
+  const rows = sorted.filter((s, i) =>
+    s.cohortKey === shown || (searching ? matched.has(s.cohortKey) : !capped || expanded || i < FIRST_ROWS),
+  );
 
   return (
     <div className="mt-3">
@@ -72,7 +74,7 @@ export function TrendLegendTable({
             type="search"
             aria-label="Search series by component or package name"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => onQueryChange(e.target.value)}
             placeholder={`Search ${series.length.toLocaleString()} series…`}
             className="h-8 pl-8 font-mono text-base placeholder:font-sans sm:text-xs [&::-webkit-search-cancel-button]:hidden"
           />
@@ -80,7 +82,7 @@ export function TrendLegendTable({
             <button
               type="button"
               aria-label="Clear search"
-              onClick={() => setQuery("")}
+              onClick={() => onQueryChange("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="size-3.5" />
@@ -160,7 +162,7 @@ export function TrendLegendTable({
               </TableRow>
             );
           })}
-          {rows.length === 0 ? (
+          {searching && matched.size === 0 ? (
             <TableRow>
               <TableCell colSpan={hasDelta ? 3 : 2} className="py-6 text-center text-muted-foreground">
                 No series match <span className="font-mono">{query.trim()}</span>.
@@ -169,7 +171,7 @@ export function TrendLegendTable({
           ) : null}
         </TableBody>
       </Table>
-      {capped && needle === "" ? (
+      {capped && !searching ? (
         <button
           type="button"
           aria-expanded={expanded}

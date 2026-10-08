@@ -23,7 +23,8 @@ const RANGES: Array<{ value: ChartRange; label: string }> = [
  * can be rendered both from server pages (view route) and the builder's preview.
  * A chart over time draws `range`; with `onRangeChange` it offers the range presets
  * once its scans span more than the shortest one. A trend chart with `change` lists its series in a table with each
- * one's change over the last 30 days; `paths` tells same-named components apart there.
+ * one's change over the last 30 days; `paths` tells same-named components apart there. With `onQueryChange`, the
+ * table's search is `query`, and a trend chart draws only the series it matches.
  */
 export function DashboardChart({
   config,
@@ -33,6 +34,8 @@ export function DashboardChart({
   onRangeChange,
   change,
   paths,
+  query,
+  onQueryChange,
 }: {
   config: DashboardConfig;
   view: DashboardView;
@@ -41,6 +44,8 @@ export function DashboardChart({
   onRangeChange?: (range: ChartRange) => void;
   change?: Readonly<Record<string, number | null>> | undefined;
   paths?: Readonly<Record<string, string>> | undefined;
+  query?: string;
+  onQueryChange?: (query: string) => void;
 }) {
   if (isEmptyView(view)) {
     return <p className="py-6 text-center text-sm text-muted-foreground">Couldn't find the components in this chart.</p>;
@@ -75,7 +80,7 @@ export function DashboardChart({
           </div>
         ) : null}
         {config.chartType === "trend" ? (
-          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} change={change} paths={paths} />
+          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} change={change} paths={paths} query={query} onQueryChange={onQueryChange} />
         ) : (
           <CohortShareOverTime series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} from={from} />
         )}
@@ -91,7 +96,7 @@ export function DashboardChart({
 
 /**
  * A DashboardChart on a chart's own page: it opens at `range`, a picked range goes into the page's link, and the chart
- * at the range on screen is offered for export.
+ * at the range on screen, narrowed by its table's search, is offered for export.
  */
 export function LinkedDashboardChart({
   config,
@@ -107,14 +112,15 @@ export function LinkedDashboardChart({
   paths?: Readonly<Record<string, string>> | undefined;
 }) {
   const [range, setRange] = useState(initial);
-  useShowChart({ config, view, range });
+  const [query, setQuery] = useState("");
+  useShowChart({ config, view, range, query });
   const pick = (next: ChartRange) => {
     setRange(next);
     const url = new URL(window.location.href);
     url.searchParams.set("range", next);
     window.history.replaceState(null, "", url);
   };
-  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} change={change} paths={paths} />;
+  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} change={change} paths={paths} query={query} onQueryChange={setQuery} />;
 }
 
 function ChartFallback() {

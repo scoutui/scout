@@ -254,9 +254,43 @@ describe("ChartMenu export", () => {
       title: TITLE,
       config,
       view: visibleView(config, views.trend, "3m").view,
+      whole: visibleView(config, views.trend, "3m").view,
       host: window.location.host,
       exportedAt: expect.any(Date),
     });
+  });
+
+  it("exports only the lines that match the table's search, colouring each as the whole chart does", async () => {
+    const kits: CohortSeries[] = Array.from({ length: 9 }, (_, i) => ({
+      cohortKey: `package:@example/kit-${i}`,
+      label: `@example/kit-${i}`,
+      color: "",
+      points: [{ t: "2026-08-01T00:00:00Z", value: i + 1 }, { t: LATEST, value: i + 2 }],
+    }));
+    const config: DashboardConfig = {
+      scope: { kind: "all" },
+      cohorts: [...cohorts, ...kits.map((s) => ({ kind: "package" as const, packageName: s.label }))],
+      chartType: "trend",
+      metric: "count",
+    };
+    const whole: DashboardView = { kind: "series", series: [...series, ...kits], coverage };
+    render(
+      <ChartExportProvider title={TITLE}>
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <LinkedDashboardChart config={config} view={whole} range="all" />
+      </ChartExportProvider>,
+    );
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "button" } });
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download CSV" }));
+    const csv = await readBlob(vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob);
+    expect(csv.replace(/^﻿/, "").split("\r\n")[0]).toBe("Committed (UTC),Button · @example/ui");
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download PNG" }));
+    await waitFor(() => expect(image.chartPng).toHaveBeenCalledOnce());
+    const input = image.chartPng.mock.calls[0]?.[0] as { view: DashboardView; whole: DashboardView };
+    expect(input.view.kind === "series" ? input.view.series.map((s) => s.cohortKey) : []).toEqual(["component:btn"]);
+    expect(input.whole).toEqual(whole);
   });
 
   it("copies the chart's image as it's clicked, and says so", async () => {
