@@ -90,7 +90,7 @@ export default async function RepoDetailPage({
           </div>
         }
         adoption={
-          <RepoAdoptionPanel tracking={tracking} canEdit={canEdit}
+          <RepoAdoptionPanel repoId={repoId} tracking={tracking} canEdit={canEdit}
             notice={governance.length > 0 ? (await chartResultsNotice(getPool(), tracking !== null))?.unavailable ?? null : null} />
         }
       />

@@ -90,7 +90,7 @@ export default async function DashboardsPage() {
           }
         />
       ) : (
-        tracking ? <TrackingList entries={tracking} /> : null
+        tracking ? <TrackingList entries={tracking} scope={{ kind: "all" }} /> : null
       )}
 
       {rows.length === 0 ? (
