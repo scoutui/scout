@@ -102,6 +102,7 @@
   --viz-deprecated: var(--status-warn); /* the deprecated series role is warn, not error */
 
   --radius: 0.625rem;
+  --top-bar-height: calc(3.5rem + 1px);
 }
 
 @layer base {
@@ -145,6 +146,15 @@
 @utility selected {
   background-color: var(--selected);
   border-color: var(--selected-edge);
+}
+
+/* Sticks under the top bar while the page scrolls, and lower by --pin-below. Scrolled
+   into view, it lands where it sticks. Inside a container that scrolls or hides overflow,
+   it sticks to that container instead. */
+@utility pin-under-top-bar {
+  position: sticky;
+  inset-block-start: calc(var(--top-bar-height) + var(--pin-below, 0px));
+  scroll-margin-block-start: calc(var(--top-bar-height) + var(--pin-below, 0px));
 }
 
 /* Keyboard focus inside a container that clips: list rows and menu items. */

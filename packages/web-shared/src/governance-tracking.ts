@@ -46,6 +46,7 @@ export type GovernanceTracking = {
   record: GovernanceRecord;
   recordIds: string[];
   name: string;
+  from: GovernanceRule[];
   fromLabel: string;
   toLabel: string | null;
   config: DashboardConfig;
@@ -166,19 +167,22 @@ function sideOf<R extends GovernanceRule>(rules: R[], records: GovernanceRecord[
   };
 }
 
-const LABEL_PARTS = 4;
-
-/** "Button · @acme/ui" for one rule; "Card, CardHeader · @acme/ui" for several in one package, then "+N more" past four. */
+/** "Button · @acme/ui" for one rule; "Card, CardHeader · @acme/ui" for several in one package. */
 function labelOf(rules: GovernanceRule[]): string {
   const own = (rule: GovernanceRule) => (rule.targetExport === null ? rule.targetPackage : `${rule.targetExport} · ${rule.targetPackage}`);
-  const capped = (parts: string[]) =>
-    `${parts.slice(0, LABEL_PARTS).join(", ")}${parts.length > LABEL_PARTS ? ` +${parts.length - LABEL_PARTS} more` : ""}`;
   const [first] = rules;
   if (rules.length === 1 && first) return own(first);
   const packages = new Set(rules.map((rule) => rule.targetPackage));
-  if (packages.size > 1 || !first) return capped(rules.map(own).sort());
+  if (packages.size > 1 || !first) return rules.map(own).sort().join(", ");
   if (rules.some((rule) => rule.targetExport === null)) return first.targetPackage;
-  return `${capped(rules.map((rule) => rule.targetExport ?? "").sort())} · ${first.targetPackage}`;
+  return `${rules.map((rule) => rule.targetExport ?? "").sort().join(", ")} · ${first.targetPackage}`;
+}
+
+/** The rules as plain rules, by package and then component. */
+function rulesOf(rules: GovernanceRule[]): GovernanceRule[] {
+  return rules
+    .map(({ grain, targetPackage, targetExport }) => ({ grain, targetPackage, targetExport }))
+    .sort((a, b) => a.targetPackage.localeCompare(b.targetPackage) || (a.targetExport ?? "").localeCompare(b.targetExport ?? ""));
 }
 
 function deriveOne(
@@ -208,6 +212,7 @@ function deriveOne(
       record,
       recordIds: from.rules.map((r) => r.id),
       name: `Retirement: ${shortFrom}`,
+      from: rulesOf(from.rules),
       fromLabel,
       toLabel: null,
       config,
@@ -246,6 +251,7 @@ function deriveOne(
     record,
     recordIds: from.rules.map((r) => r.id),
     name: `Migration: ${shortFrom} → ${toLabel.split(" · ")[0] ?? toLabel}`,
+    from: rulesOf(from.rules),
     fromLabel,
     toLabel,
     config,

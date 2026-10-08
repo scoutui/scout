@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline";
 import { DashboardScopeBadge, UnknownComponentsBadge } from "@/components/dashboards/dashboard-scope-badge";
-import { TrackingSection } from "@/components/dashboards/tracking-rows";
+import { TrackingList } from "@/components/dashboards/tracking-list";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
@@ -33,10 +33,6 @@ export default async function DashboardsPage() {
   const listed = all.filter((dashboard) => can(identity, "view", { chart: dashboard }));
   const notice =
     governance.length > 0 || listed.length > 0 ? await chartResultsNotice(getPool(), tracking !== null) : null;
-
-  // Completed records move to a collapsed ledger in each section.
-  const migrations = (tracking ?? []).filter((t) => t.kind === "migration");
-  const retirements = (tracking ?? []).filter((t) => t.kind === "retirement");
 
   const rows = listed.map((dashboard) => {
     const scope = dashboard.config.scope;
@@ -94,24 +90,7 @@ export default async function DashboardsPage() {
           }
         />
       ) : (
-        <>
-          {tracking ? (
-            <>
-              <TrackingSection
-                kind="migration"
-                entries={migrations.filter((t) => t.active)}
-                complete={migrations.filter((t) => !t.active)}
-                surface="estate"
-              />
-              <TrackingSection
-                kind="retirement"
-                entries={retirements.filter((t) => t.active)}
-                complete={retirements.filter((t) => !t.active)}
-                surface="estate"
-              />
-            </>
-          ) : null}
-        </>
+        tracking ? <TrackingList entries={tracking} /> : null
       )}
 
       {rows.length === 0 ? (

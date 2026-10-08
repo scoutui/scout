@@ -13,17 +13,16 @@ For example, with the tags `acme-ui` and `acme-ui-legacy` in place, one saved ch
 
 Select **charts** in the top navigation. The page has these parts:
 
-- **Migrations**: one row per migration, such as `LegacyButton · @acme/ui-legacy` to `Button · @acme/ui`, reading **N% migrated** and **N left**, the [uses](/docs/reference/glossary#use) of the deprecated side still in the code. Records that name the same replacement share one row.
-- **Retirements**: one row per retirement, reading **N left**, the uses still in the code.
+- **Migrations and retirements**: a row for each package your migrations and retirements move away from, such as `@acme/ui-legacy`, with its **Uses left**, the [uses](/docs/reference/glossary#use) of its deprecated components still in the code. Select a package to list every migration and retirement in it. A migration, such as `LegacyButton` to `Button · @acme/ui`, also reads how much is **Migrated**. Records that name the same replacement share one row, and a record that covers a whole package is that package's row.
 - **Shared charts**: one row per chart [shared with everyone](#share-a-chart), with its name, chart type, scope and a small preview. A row marked **Some components can't be found** needs [fixing](#fix-a-chart-with-missing-components).
 - **Private**: your own charts that aren't shared.
 - **Other people's charts**: for Admins only, everyone else's private charts and who created them.
 
-Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Complete migrations and retirements sit behind **Show N complete**.
+Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. A package's change includes migrations and retirements that finished in that time. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. **In progress** and **Complete** switch between migrations and retirements with uses left and those with none. With more than 10, search above the list for a component or package.
 
-![The charts list with three migrations and three retirements in progress, and four shared charts with their previews](/img/dashboard/charts-list.png)
+![The charts list with six migrations and retirements in progress, one complete, and four shared charts with their previews](/img/dashboard/charts-list.png)
 
-Select any row to open its chart.
+Select a migration, retirement or chart to open it.
 
 ## Chart types
 
@@ -124,7 +123,7 @@ These charts have no **Edit** or **Delete**, but you can [export](#export-a-char
 ## Good to know
 
 - With **% of uses** or **Stacked**, series can share components, for example a tag and a package under that tag, or **Local components** with a package. A component in two series counts in both. See [Why shares can overlap](/docs/explanation/dashboard/reading-the-numbers#why-shares-can-overlap).
-- The **Migrations** and **Retirements** rows and the saved-chart previews on the charts list catch up a moment after a scan is uploaded or a record, tag or chart is saved. A chart you've just saved shows a flat preview until then.
+- The **Migrations and retirements** rows and the saved-chart previews on the charts list catch up a moment after a scan is uploaded or a record, tag or chart is saved. A chart you've just saved shows a flat preview until then.
 - A chart over time leaves out scans that aren't ready and lists them above the chart, for example **1 scan is left out**. A chart of the latest scans uses each repo's newest ready scan and says which repos it shows at an older scan.
 - If the new chart builder or a chart's page shows **Preparing scan data** instead of its content, the dashboard is still getting scan data ready, and the chart loads by itself when it's done. **Scan data can't be read** means the dashboard can't read a stored scan the chart needs. See [When a page shows Preparing scan data](/docs/explanation/cli-and-dashboard#scan-preparing).
 

@@ -17,8 +17,8 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
   // back to /login.
   if (pathname === "/login") return null;
   return (
-    <nav className="sticky top-0 z-30 border-b border-border/70 bg-background">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-stretch px-4 sm:px-8 lg:px-10">
+    <nav className="sticky top-0 z-30 h-(--top-bar-height) border-b border-border/70 bg-background">
+      <div className="mx-auto flex h-full max-w-[1600px] items-stretch px-4 sm:px-8 lg:px-10">
         <Link
           href="/repos"
           className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
