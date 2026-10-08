@@ -122,9 +122,9 @@ describe("projectCohortSeries", () => {
     expect(web.points).toEqual([{ t: t1, value: 4 }, { t: t2, value: 13, added: ["r2"] }]);
   });
 
-  it("counts each repo from its first scan, at the series' timestamps", () => {
+  it("counts each repo from its first scan, at the series' timestamps, and names every repo it counts", () => {
     // t1: only r1 has a scan. t2: r2's first scan joins it.
-    expect(projectRepoCoverage([r1a, r1b, r2a])).toEqual({ total: 2, points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }] });
+    expect(projectRepoCoverage([r2a, r1a, r1b])).toEqual({ total: 2, repoIds: ["r1", "r2"], points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }] });
   });
 
   it("share divides by the cohort total at each time-point", () => {

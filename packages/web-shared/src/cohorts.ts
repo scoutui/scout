@@ -211,8 +211,8 @@ export function projectCohortSeries(
   );
 }
 
-/** How many repos have a scan at each of a series' timestamps, out of the `total` repos in scope. */
-export type RepoCoverage = { total: number; points: Array<{ t: string; repos: number }> };
+/** How many repos have a scan at each of a series' timestamps, out of the `total` repos in scope, and those repos' ids. */
+export type RepoCoverage = { total: number; repoIds: string[]; points: Array<{ t: string; repos: number }> };
 
 /** The timestamps a series projection draws a point at: each scan's `scanOrderTime`, oldest first. */
 function seriesTimestamps(artifacts: DigestScan[]): string[] {
@@ -230,6 +230,7 @@ export function projectRepoCoverage(artifacts: DigestScan[]): RepoCoverage {
   const firsts = [...firstByRepo.values()];
   return {
     total: firsts.length,
+    repoIds: [...firstByRepo.keys()].sort(),
     points: seriesTimestamps(artifacts).map((t) => ({ t, repos: firsts.filter((first) => first.localeCompare(t) <= 0).length })),
   };
 }

@@ -13,7 +13,7 @@ const cohorts: CohortSelector[] = [
   { kind: "component", componentId: "btn" },
 ];
 
-const coverage = { total: 2, points: [MORNING, AFTERNOON, LATER].map((t) => ({ t, repos: 2 })) };
+const coverage = { total: 2, repoIds: ["checkout", "storefront"], points: [MORNING, AFTERNOON, LATER].map((t) => ({ t, repos: 2 })) };
 
 const countSeries: CohortSeries[] = [
   { ...web, points: [{ t: MORNING, value: 40 }, { t: AFTERNOON, value: 45 }, { t: LATER, value: 50 }] },

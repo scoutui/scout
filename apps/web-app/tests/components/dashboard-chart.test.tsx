@@ -15,7 +15,7 @@ const series: CohortSeries[] = [
   { ...newButton, points: [{ t: "2026-09-01T00:00:00Z", value: 60 }, { t: "2026-09-02T00:00:00Z", value: 70 }] },
 ];
 
-const coverage = { total: 1, points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, { t: "2026-09-02T00:00:00Z", repos: 1 }] };
+const coverage = { total: 1, repoIds: ["checkout"], points: [{ t: "2026-09-01T00:00:00Z", repos: 1 }, { t: "2026-09-02T00:00:00Z", repos: 1 }] };
 
 const charts: Array<[DashboardConfig["chartType"], DashboardView]> = [
   ["trend", { kind: "series", series, coverage }],
@@ -111,7 +111,7 @@ const monthly = (name: string, value: (i: number) => number): CohortSeries => ({
   color: "",
   points: months.map((t, i) => ({ t, value: value(i) })),
 });
-const yearCoverage = { total: 1, points: months.map((t) => ({ t, repos: 1 })) };
+const yearCoverage = { total: 1, repoIds: ["checkout"], points: months.map((t) => ({ t, repos: 1 })) };
 const trendOf = (series: CohortSeries[], range?: DashboardConfig["range"]): [DashboardConfig, DashboardView] => [
   {
     scope: { kind: "all" },

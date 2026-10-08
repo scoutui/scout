@@ -100,7 +100,7 @@ describe("deriveGovernanceTracking: migrations", () => {
     // Without the clip the first point reads a fictitious "100% migrated".
     expect(m?.series[0]?.points).toHaveLength(1);
     expect(m?.series[0]?.points[0]?.t).toBe("2026-01-02T00:00:00Z");
-    expect(m?.coverage).toEqual({ total: 1, points: [{ t: "2026-01-02T00:00:00Z", repos: 1 }] });
+    expect(m?.coverage).toEqual({ total: 1, repoIds: ["r2"], points: [{ t: "2026-01-02T00:00:00Z", repos: 1 }] });
   });
 
   it("repo scope: filters digests and skips records not present in that repo", () => {

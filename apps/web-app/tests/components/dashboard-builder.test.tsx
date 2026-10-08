@@ -164,7 +164,7 @@ describe("editing a saved chart", () => {
   it("opens at the chart's saved range and saves the range picked in the preview", async () => {
     const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(2025, 9 + i, 1)).toISOString());
     const series = [{ cohortKey: "local", label: "Local components", color: "", points: months.map((t, i) => ({ t, value: i })) }];
-    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series, coverage: { total: 1, points: months.map((t) => ({ t, repos: 1 })) } } });
+    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series, coverage: { total: 1, repoIds: ["checkout"], points: months.map((t) => ({ t, repos: 1 })) } } });
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const, range: "6m" as const };
     render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Local", description: null, config, visibility: "private" }} />);
     expect(await screen.findByRole("button", { name: "6 months" })).toHaveAttribute("aria-pressed", "true");

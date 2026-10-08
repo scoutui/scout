@@ -224,8 +224,8 @@ describe("tooltipRowTimestamp", () => {
 });
 
 describe("repoCoverageAt", () => {
-  const estate = { total: 4, points: [{ t: "2026-06-01T00:00:00Z", repos: 3 }, { t: "2026-09-01T00:00:00Z", repos: 4 }] };
-  const oneRepo = { total: 1, points: [{ t: "2026-06-01T00:00:00Z", repos: 1 }] };
+  const estate = { total: 4, repoIds: ["checkout", "storefront", "account", "admin"], points: [{ t: "2026-06-01T00:00:00Z", repos: 3 }, { t: "2026-09-01T00:00:00Z", repos: 4 }] };
+  const oneRepo = { total: 1, repoIds: ["checkout"], points: [{ t: "2026-06-01T00:00:00Z", repos: 1 }] };
   it.each([
     ["a point some of the repos have reached", estate, "2026-06-01T00:00:00Z", "3 of 4 repos"],
     ["a point every repo has reached", estate, "2026-09-01T00:00:00Z", "4 of 4 repos"],
@@ -306,7 +306,7 @@ describe("date range", () => {
     expect(seriesFrom(series, from)[0]?.points.map((p) => p.t)).toEqual(["2026-07-01T00:00:00Z", "2026-09-30T12:00:00Z"]);
   });
 
-  const coverage = { total: 1, points: [] };
+  const coverage = { total: 1, repoIds: ["checkout"], points: [] };
   const shown = (chartType: DashboardConfig["chartType"], view: DashboardView, range: ChartRange) =>
     visibleView({ scope: { kind: "all" }, cohorts: [], chartType, metric: "count" }, view, range);
 

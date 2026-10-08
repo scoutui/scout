@@ -70,7 +70,7 @@ const series: CohortSeries[] = [
   },
   { ...button, points: [{ t: "2026-08-01T00:00:00Z", value: 5 }, { t: LATEST, value: 8 }] },
 ];
-const coverage = { total: 2, points: [...new Set(series.flatMap((s) => s.points.map((p) => p.t)))].sort().map((t) => ({ t, repos: 2 })) };
+const coverage = { total: 2, repoIds: ["checkout", "storefront"], points: [...new Set(series.flatMap((s) => s.points.map((p) => p.t)))].sort().map((t) => ({ t, repos: 2 })) };
 const points: CohortPoint[] = [
   { ...web, value: 50, componentCount: 3 },
   { ...button, value: 8, componentCount: 1 },

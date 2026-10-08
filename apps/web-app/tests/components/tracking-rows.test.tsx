@@ -26,7 +26,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],
     lines: null,
-    coverage: { total: 1, points: [] },
+    coverage: { total: 1, repoIds: ["checkout"], points: [] },
     active: true,
     remaining: 5,
     progress: 0.5,
@@ -133,7 +133,7 @@ describe("RepoRow expanded chart", () => {
   });
 
   it("a migration row whose repo has no use of the old component says there's nothing to migrate instead of a chart", async () => {
-    const unused = entry({ id: "migration:unused", active: false, remaining: 0, progress: null, delta: null, coverage: { total: 0, points: [] } });
+    const unused = entry({ id: "migration:unused", active: false, remaining: 0, progress: null, delta: null, coverage: { total: 0, repoIds: [], points: [] } });
     const done = entry({ id: "migration:done", active: false, remaining: 0, progress: 1, delta: null });
     render(<TrackingSection kind="migration" entries={[]} complete={[unused, done]} />);
     expect(screen.getByText("No scan of this repo has found a use of OldButton · old-ds, so there's nothing to migrate.")).toBeInTheDocument();

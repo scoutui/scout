@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CohortPoint, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { chartFigure, type ChartFigure } from "@/lib/chart-figure";
+import { chartFigure, type ChartFigure, type FigureText } from "@/lib/chart-figure";
 import { figureTexts } from "../helpers/figure-texts";
 
 const MORNING = "2026-09-01T09:05:00Z";
@@ -13,7 +13,7 @@ const cohorts: CohortSelector[] = [
   { kind: "package", packageName: "@example/web" },
   { kind: "component", componentId: "btn" },
 ];
-const coverage = { total: 2, points: [MORNING, AFTERNOON, LATER].map((t) => ({ t, repos: 2 })) };
+const coverage = { total: 2, repoIds: ["checkout", "storefront"], points: [MORNING, AFTERNOON, LATER].map((t) => ({ t, repos: 2 })) };
 
 const countSeries: CohortSeries[] = [
   { ...web, points: [{ t: MORNING, value: 40 }, { t: AFTERNOON, value: 45 }, { t: LATER, value: 50 }] },
@@ -53,11 +53,19 @@ const config = (chartType: DashboardConfig["chartType"], scope: DashboardConfig[
   metric: "count",
 });
 
-const figure = (chartConfig: DashboardConfig, view: DashboardView): ChartFigure | null =>
-  chartFigure({ title: "Button adoption", config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4, 12), colors, nameWidth: (name) => name.length * 9 });
+/** Fake widths: 9 units a character for names, 16 for a title and 10 for a subtitle. */
+const widths = {
+  nameWidth: (name: string) => name.length * 9,
+  headingWidth: (text: string, kind: "title" | "subtitle") => text.length * (kind === "title" ? 16 : 10),
+};
 
-const drawn = (chartConfig: DashboardConfig, view: DashboardView): ChartFigure => {
-  const result = figure(chartConfig, view);
+const figure = (chartConfig: DashboardConfig, view: DashboardView, title = "Button adoption"): ChartFigure | null =>
+  chartFigure({ title, config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4, 12), colors, ...widths });
+
+const lines = (texts: FigureText[]) => texts.map((t) => t.text);
+
+const drawn = (chartConfig: DashboardConfig, view: DashboardView, title?: string): ChartFigure => {
+  const result = figure(chartConfig, view, title);
   if (result === null) throw new Error("expected a figure");
   return result;
 };
@@ -80,8 +88,8 @@ describe("chartFigure", () => {
 
   it.each(cases)("titles, credits and keys %s", (_, chartConfig, view, subtitle, legend) => {
     const result = drawn(chartConfig, view);
-    expect(result.title.text).toBe("Button adoption");
-    expect(result.subtitle.text).toBe(subtitle);
+    expect(lines(result.title)).toEqual(["Button adoption"]);
+    expect(lines(result.subtitle)).toEqual([subtitle]);
     expect(result.footer.text).toBe("Scout · scout.example.com · exported 4 Oct 2026");
     expect(result.legend.map(({ label, value, color }) => ({ label, value, color }))).toEqual(legend);
   });
@@ -90,10 +98,10 @@ describe("chartFigure", () => {
     ["names the repo a repo-scoped trend covers", config("trend", { kind: "repo", repoId: "checkout" }), trendView, "1 Sep – 3 Sep 2026 · checkout"],
     ["names the repo repo-scoped bars cover", config("bars", { kind: "repo", repoId: "checkout" }), barsView, "checkout · latest scan"],
     [
-      "counts a single repo in the singular",
+      "names the one repo an all-repos trend covers",
       config("trend"),
-      { kind: "series", series: countSeries, coverage: { ...coverage, total: 1 } },
-      "1 Sep – 3 Sep 2026 · 1 repo",
+      { kind: "series", series: countSeries, coverage: { ...coverage, total: 1, repoIds: ["checkout"] } },
+      "1 Sep – 3 Sep 2026 · checkout",
     ],
     [
       "gives both ends their year when the range spans years",
@@ -118,7 +126,7 @@ describe("chartFigure", () => {
   ];
 
   it.each(subtitles)("%s", (_, chartConfig, view, subtitle) => {
-    expect(drawn(chartConfig, view).subtitle.text).toBe(subtitle);
+    expect(lines(drawn(chartConfig, view).subtitle)).toEqual([subtitle]);
   });
 
   const frameTexts = ["Button adoption", "Scout · scout.example.com · exported 4 Oct 2026"];
@@ -183,7 +191,7 @@ describe("chartFigure", () => {
       host: "scout.example.com",
       exportedAt: new Date(2026, 9, 4, 12),
       colors,
-      nameWidth: (name) => name.length * 9,
+      ...widths,
     });
     if (part?.marks.kind !== "lines") throw new Error("expected lines");
     expect(whole.marks.lines[1]?.color).not.toBe(whole.marks.lines[0]?.color);
@@ -324,7 +332,7 @@ describe("chartFigure", () => {
         host: "scout.example.com",
         exportedAt: new Date(2026, 9, 4, 12),
         colors,
-        nameWidth: (name) => name.length * 9,
+        ...widths,
       });
       if (result === null) throw new Error("expected a figure");
       return endLabelTexts(result);
@@ -385,7 +393,7 @@ describe("chartFigure", () => {
       host: "scout.example.com",
       exportedAt: new Date(2026, 9, 4, 12),
       colors,
-      nameWidth: (name) => name.length * 9,
+      ...widths,
     });
     if (result?.marks.kind !== "lines") throw new Error("expected lines");
     expect(endLabelTexts(result)).toEqual(Array.from({ length: 10 }, (_, i) => ["SkeletonItem", `${20 - i}`, `${packageOf(i)} · folder-${i}`]));
@@ -420,9 +428,75 @@ describe("chartFigure", () => {
             coverage,
           };
     const result = drawn(shared, view);
-    expect(result.subtitle.text).toMatch(/ · @example\/ui$/);
+    expect(lines(result.subtitle).join(" ")).toMatch(/ · @example\/ui$/);
     const names = result.marks.kind === "lines" ? result.marks.endLabels.map((l) => l.name.text) : result.marks.kind === "bars" ? result.marks.bars.map((b) => b.name.text) : [];
     expect(names).toEqual(["Button", "Card"]);
+  });
+
+  const migration = "Migration: Alert, Badge, Button, Card, Dialog, Input, Select, Tooltip → NewButton";
+  const savedName = "Adoption of the shared form controls across the checkout, storefront and account app since the design system was renamed";
+  const titles: Array<[string, string, string[]]> = [
+    ["one word", "Adoption", ["Adoption"]],
+    ["a migration of eight components", migration, ["Migration: Alert, Badge, Button, Card, Dialog, Input, Select, Tooltip →", "NewButton"]],
+    [
+      "a 120-character saved name",
+      savedName,
+      ["Adoption of the shared form controls across the checkout, storefront and", "account app since the design system was renamed"],
+    ],
+    ["a 200-character name with no spaces", "x".repeat(200), ["x".repeat(74), "x".repeat(74), "x".repeat(52)]],
+  ];
+
+  it.each(titles)("sets a title of %s in full, on as many lines as it needs", (_, title, expected) => {
+    const result = drawn(config("trend"), trendView, title);
+    expect(lines(result.title)).toEqual(expected);
+    for (const line of result.title) {
+      expect(line.text.length * 16, line.text).toBeLessThanOrEqual(line.maxWidth);
+      expect(line.maxWidth).toBeLessThanOrEqual(1280 - 2 * 48);
+    }
+  });
+
+  /** Every `y` in the part of a figure below its subtitle. */
+  const bodyYs = (result: ChartFigure): number[] => {
+    const ys = (value: unknown): number[] => {
+      if (Array.isArray(value)) return value.flatMap(ys);
+      if (value === null || typeof value !== "object") return [];
+      return Object.entries(value).flatMap(([key, v]) => (key === "y" && typeof v === "number" ? [v] : ys(v)));
+    };
+    return ys([result.plot, result.yTicks, result.xLabels, result.marks, result.legend, result.note, result.footer]);
+  };
+
+  it.each([["trend", trendView] as const, ["stacked-share", stackedView] as const, ["bars", barsView] as const])(
+    "moves everything in a %s chart's image down by a title's second line, and makes the image as much taller",
+    (chartType, view) => {
+      const one = drawn(config(chartType), view);
+      expect([one.height, one.title[0]?.y, one.subtitle[0]?.y, one.plot.y, one.footer.y]).toEqual([720, 60, 94, 136, 688]);
+      const two = drawn(config(chartType), view, savedName);
+      expect(two.title.map((t) => t.y)).toEqual([60, 98]);
+      expect(two.subtitle[0]?.y).toBe(94 + 38);
+      expect(two.plot.height).toBe(one.plot.height);
+      expect(bodyYs(two)).toEqual(bodyYs(one).map((y) => y + 38));
+      expect(two.height).toBe(720 + 38);
+    },
+  );
+
+  it("sets a long repo and package name in the subtitle in full, and moves the plot down by each line it adds", () => {
+    const repoId = "a-monorepo-with-a-very-long-name-for-its-storefront-and-checkout-apps-and-shared-packages";
+    const pkg = "@example/a-component-library-package-with-a-long-name";
+    const series: CohortSeries[] = [
+      { cohortKey: "component:btn", label: `Button · ${pkg}`, color: "", points: [{ t: MORNING, value: 5 }, { t: LATER, value: 125 }] },
+      { cohortKey: "component:card", label: `Card · ${pkg}`, color: "", points: [{ t: MORNING, value: 30 }, { t: LATER, value: 40 }] },
+    ];
+    const chartConfig: DashboardConfig = {
+      ...config("trend", { kind: "repo", repoId }),
+      cohorts: [{ kind: "component", componentId: "btn" }, { kind: "component", componentId: "card" }],
+    };
+    const result = drawn(chartConfig, { kind: "series", series, coverage });
+    expect(lines(result.subtitle).join(" ")).toBe(`1 Sep – 3 Sep 2026 · ${repoId} · ${pkg}`);
+    expect(result.subtitle).toHaveLength(2);
+    for (const line of result.subtitle) expect(line.text.length * 10, line.text).toBeLessThanOrEqual(line.maxWidth);
+    expect(result.subtitle.map((t) => t.y)).toEqual([94, 118]);
+    expect(result.plot.y).toBe(136 + 24);
+    expect(result.height).toBe(720 + 24);
   });
 
   const scannedOnce: CohortSeries[] = countSeries.map((s) => ({ ...s, points: s.points.slice(-1) }));
