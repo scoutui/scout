@@ -19,9 +19,14 @@ jobs:
       queue: max
     outputs:
       published: ${{ steps.changesets.outputs.published }}
+      # The CLI's version and the SHA-256 digests of the files attached to its
+      # GitHub Release, each set only when this run published the CLI.
+      cli-version: ${{ steps.cli-release.outputs.version }}
+      cli-subjects: ${{ steps.cli-release.outputs.subjects }}
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     steps:
       # changesets/action pushes the version branch and tags with the token
       # it writes to ~/.netrc, so the checkout doesn't keep its own.
@@ -42,6 +47,8 @@ jobs:
 
       # The action writes NPM_TOKEN to ~/.npmrc only when it publishes, so the
       # install, lint, test and build steps above never see it.
+      # NPM_CONFIG_PROVENANCE makes npm publish the CLI with provenance that
+      # names this workflow run.
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
@@ -53,10 +60,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
 
-      # The CLI's build writes dist/sbom.cdx.json, which ships in the npm
-      # package. This attaches the same file to the CLI's GitHub Release.
-      - name: Attach the CLI's SBOM to its GitHub Release
+      # Packs the CLI as npm published it, and stops unless the package
+      # matches the one npm serves for that version. The CLI's build writes
+      # dist/sbom.cdx.json, which ships in the package. This attaches both
+      # files to the CLI's GitHub Release.
+      - name: Attach the CLI's package and SBOM to its GitHub Release
+        id: cli-release
         if: steps.changesets.outputs.published == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,10 +75,44 @@ jobs:
         run: |
           version=$(jq -r '.[] | select(.name == "@scoutui/cli") | .version' <<<"$PUBLISHED")
           if [ -z "$version" ]; then
-            echo "The CLI wasn't published, so there's no SBOM to attach."
+            echo "The CLI wasn't published, so there's nothing to attach."
             exit 0
           fi
-          gh release upload "@scoutui/cli@$version" packages/cli/dist/sbom.cdx.json --clobber
+          files="$RUNNER_TEMP/cli-release"
+          mkdir -p "$files"
+          packed=$(npm pack ./packages/cli --json --pack-destination "$files")
+          package=$(jq -r '.[0].filename' <<<"$packed")
+          # npm can take a few minutes to serve a version it has just published.
+          for _ in $(seq 20); do
+            on_npm=$(npm view "@scoutui/cli@$version" dist.integrity --prefer-online) && [ -n "$on_npm" ] && break
+            sleep 15
+          done
+          if [ "$(jq -r '.[0].integrity' <<<"$packed")" != "$on_npm" ]; then
+            echo "::error::The packed CLI doesn't match @scoutui/cli@$version on npm (${on_npm:-not found}), so it isn't attached to the release."
+            exit 1
+          fi
+          cp packages/cli/dist/sbom.cdx.json "$files/"
+          gh release upload "@scoutui/cli@$version" "$files/$package" "$files/sbom.cdx.json" --clobber
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "subjects=$(cd "$files" && sha256sum "$package" sbom.cdx.json | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+  # Signs SLSA build provenance for the files attached to the CLI's GitHub
+  # Release, and attaches it to the release as scoutui-cli-X.Y.Z.intoto.jsonl.
+  provenance:
+    name: CLI build provenance
+    needs: release
+    if: needs.release.outputs.cli-version != ''
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    # The generator runs only when referenced by a vX.Y.Z tag, not a commit SHA.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.release.outputs.cli-subjects }}
+      upload-assets: true
+      upload-tag-name: "@scoutui/cli@${{ needs.release.outputs.cli-version }}"
+      provenance-name: scoutui-cli-${{ needs.release.outputs.cli-version }}.intoto.jsonl
 
   versions:
     name: Check versions
