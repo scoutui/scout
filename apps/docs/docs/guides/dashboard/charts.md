@@ -18,7 +18,7 @@ Select **charts** in the top navigation. The page has these parts:
 - **Private**: your own charts that aren't shared.
 - **Other people's charts**: for Admins only, everyone else's private charts and who created them.
 
-Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. A package's change includes migrations and retirements that finished in that time. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. **In progress** and **Complete** switch between migrations and retirements with uses left and those with none. Search above the list for a component or package.
+Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. A package's change includes migrations and retirements that finished in that time. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. **In progress** and **Complete** switch between migrations and retirements with uses left and those with none. With more than 10, search above the list for a component or package.
 
 ![The charts list with six migrations and retirements in progress, one complete, and four shared charts with their previews](/img/dashboard/charts-list.png)
 
