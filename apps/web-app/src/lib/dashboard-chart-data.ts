@@ -52,13 +52,14 @@ export function visibleView<V extends DashboardView>(config: DashboardConfig, vi
 }
 
 /**
- * The series whose label holds `query`, ignoring case: a component's name or package, a package or a tag. Null for a
- * blank query or one nothing matches, so a chart searched for nothing still draws every series.
+ * The series whose label, or the package its label leaves out, holds `query`, ignoring case: a component's name or
+ * package, a package or a tag. Null for a blank query or one nothing matches, so a chart searched for nothing still
+ * draws every series.
  */
-export function searchedSeries<T extends { label: string }>(series: readonly T[], query: string): T[] | null {
+export function searchedSeries<T extends { label: string; packageName?: string | undefined }>(series: readonly T[], query: string): T[] | null {
   const needle = query.trim().toLowerCase();
   if (needle === "") return null;
-  const matched = series.filter((s) => s.label.toLowerCase().includes(needle));
+  const matched = series.filter((s) => s.label.toLowerCase().includes(needle) || (s.packageName?.toLowerCase().includes(needle) ?? false));
   return matched.length === 0 ? null : matched;
 }
 
@@ -206,15 +207,19 @@ export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohor
  * deprecated cohort is orange, successor teal and Local grey. Then each tag, in order, keeps its
  * colour unless a colour already placed looks like it. Every other cohort takes
  * the first chart colour that looks like none already placed or, when none is
- * left, the first that looks like neither neighbour.
+ * left, the first that looks like neither neighbour nor a fixed colour.
  */
 export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
   const colors = new Map<string, string>();
   const isFree = (color: string) => ![...colors.values()].some((placed) => looksAlike(placed, color));
   const loneDeprecated = cohorts.filter((c) => c.role === "deprecated").length === 1;
+  const fixedColors: string[] = [];
   for (const c of cohorts) {
     const fixed = fixedColor(c, loneDeprecated);
-    if (fixed) colors.set(c.cohortKey, fixed);
+    if (fixed) {
+      colors.set(c.cohortKey, fixed);
+      fixedColors.push(fixed);
+    }
   }
   for (const c of cohorts) {
     if (colors.has(c.cohortKey)) continue;
@@ -232,7 +237,7 @@ export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
       const color = n ? colors.get(n.cohortKey) : undefined;
       return color ? [color] : [];
     });
-    const pick = CHART_ORDER.find((o) => !neighbours.some((n) => looksAlike(n, o))) ?? CHART_ORDER[0];
+    const pick = CHART_ORDER.find((o) => ![...neighbours, ...fixedColors].some((n) => looksAlike(n, o))) ?? CHART_ORDER[0];
     if (pick) colors.set(c.cohortKey, pick);
   });
   return colors;

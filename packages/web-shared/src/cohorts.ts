@@ -235,7 +235,7 @@ export function projectRepoCoverage(artifacts: DigestScan[]): RepoCoverage {
 }
 
 /** A series cohort: its display fields, and how many occurrences it has in one scan. */
-export type SeriesCohort = { key: string; label: string; color: string; role?: CohortRole; occurrences: (scan: DigestScan) => number };
+export type SeriesCohort = { key: string; label: string; color: string; role?: CohortRole; packageName?: string; occurrences: (scan: DigestScan) => number };
 
 /**
  * The step-union series projection behind `projectCohortSeries`, over cohorts that count their own occurrences per scan.
@@ -297,6 +297,7 @@ export function projectSeries(
       label: cohort.label,
       color: cohort.color,
       ...(cohort.role ? { role: cohort.role } : {}),
+      ...(cohort.packageName ? { packageName: cohort.packageName } : {}),
       points: timestamps.flatMap((t, ti) => {
         if (start !== undefined && t.localeCompare(start) < 0) return [];
         const row = perTime[ti]!;

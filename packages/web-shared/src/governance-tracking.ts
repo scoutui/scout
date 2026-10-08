@@ -44,7 +44,8 @@ const trackingMemo = new WeakMap<object, Map<string, GovernanceTracking[]>>();
  * `lines` is what the chart of a migration of several old components draws: each
  * old component's own count, most uses left first, then the replacement's, over
  * the same scans as `series`. Each is named by its component, with its package
- * when the old components come from different packages. `change` holds each
+ * when the old components come from different packages, else with the package
+ * in `packageName`. `change` holds each
  * line's change from the day the chart starts at each range. Null for a
  * migration of one old component or package, and for a retirement.
  */
@@ -259,6 +260,7 @@ function deriveOne(
       label: shared ? (rule.targetExport ?? rule.targetPackage) : labelOf([rule]),
       color: "",
       role: "deprecated",
+      ...(shared ? { packageName: rule.targetPackage } : {}),
       occurrences,
     }))
     : [];

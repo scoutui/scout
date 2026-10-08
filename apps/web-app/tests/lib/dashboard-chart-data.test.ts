@@ -101,6 +101,13 @@ describe("chartColors", () => {
     expect(drawn.slice(1).map((color, i) => looksAlike(drawn[i] ?? "", color))).not.toContain(true);
   });
 
+  it("never repeats the successor's teal on another line, however many lines run out of chart colours", () => {
+    const cohorts = [...["a", "b", "c", "d", "e", "f", "g"].map((name) => pkg(name, "deprecated")), pkg("s", "successor")];
+    const colors = chartColors(cohorts);
+    expect(colors.get("package:s")).toBe("var(--viz-primary)");
+    expect(cohorts.slice(0, -1).map((c) => colors.get(c.cohortKey))).not.toContain("var(--viz-primary)");
+  });
+
   it("keeps the turn of a saved cohort the view doesn't draw, and the colour and role of each one it does", () => {
     const saved: CohortSelector[] = [
       { kind: "package", packageName: "x" },

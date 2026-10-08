@@ -317,6 +317,14 @@ describe("DashboardChart legend", () => {
     expect(rowNames(table)).toHaveLength(10);
   });
 
+  it("finds a line by the package its name leaves out", () => {
+    const menu = { ...monthly("menu", () => 3), cohortKey: "record:menu", label: "Menu", packageName: "@other/kit" };
+    const [config, view] = trendOf([...twelve, menu]);
+    render(<DashboardChart config={config} view={view} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "@other/kit" } });
+    expect(rowNames(screen.getByRole("table"))).toEqual(["Toolbar@other/kit", "Menu"]);
+  });
+
   const search = (value: string) => fireEvent.change(screen.getByRole("searchbox"), { target: { value } });
   const strokes = (container: HTMLElement) => [...container.querySelectorAll(".recharts-area-curve")].map((c) => c.getAttribute("stroke"));
 

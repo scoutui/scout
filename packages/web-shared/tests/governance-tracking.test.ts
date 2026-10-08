@@ -336,10 +336,10 @@ describe("deriveGovernanceTracking: records that share a replacement", () => {
     ];
     const [m] = deriveGovernanceTracking([newer, older], months, { kind: "all" }, asOf);
     expect(m?.series.map((s) => s.points.map((p) => p.value))).toEqual([[12, 16, 9], [1, 3, 9]]);
-    expect(m?.lines?.series.map((s) => ({ key: s.cohortKey, label: s.label, role: s.role, values: s.points.map((p) => p.value) }))).toEqual([
-      { key: "record:older", label: "CardHeader", role: "deprecated", values: [0, 6, 5] },
-      { key: "record:newer", label: "Card", role: "deprecated", values: [12, 10, 4] },
-      { key: "successor:older", label: "Card · @x/new-ds", role: "successor", values: [1, 3, 9] },
+    expect(m?.lines?.series.map((s) => ({ key: s.cohortKey, label: s.label, packageName: s.packageName, role: s.role, values: s.points.map((p) => p.value) }))).toEqual([
+      { key: "record:older", label: "CardHeader", packageName: "legacy-ds", role: "deprecated", values: [0, 6, 5] },
+      { key: "record:newer", label: "Card", packageName: "legacy-ds", role: "deprecated", values: [12, 10, 4] },
+      { key: "successor:older", label: "Card · @x/new-ds", packageName: undefined, role: "successor", values: [1, 3, 9] },
     ]);
     const whole = { "record:older": 5, "record:newer": -8, "successor:older": 8 };
     expect(m?.lines?.change).toEqual({ "3m": { "record:older": -1, "record:newer": -6, "successor:older": 6 }, "6m": whole, "1y": whole, all: whole });
