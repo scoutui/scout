@@ -3,7 +3,7 @@ import type { CohortSelector } from "@scoutui/web-shared";
 import { deprecatedShare, deprecatedShareText, offersDeprecatedOnly, type LibraryTag, type PickableComponent } from "@/lib/chart-builder-series";
 
 const comp = (componentId: string, packageName: string | null, deprecated = false): PickableComponent =>
-  ({ componentId, displayName: componentId, packageName, disambiguator: null, deprecated, occurrences: 1, local: false });
+  ({ componentId, displayName: componentId, packageName, disambiguator: null, deprecated, occurrences: 1, local: false, lastSeenAt: null });
 const vueKits: LibraryTag = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: ["ant-design-vue*"], exact: ["naive-ui"] } };
 const reactKits: LibraryTag = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const components = [

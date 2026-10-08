@@ -174,9 +174,9 @@ describe("GroupedIdentityPicker", () => {
 });
 
 const charted: PickableComponent[] = [
-  { componentId: "c1", displayName: "Button", packageName: "@example/old-ui", disambiguator: null, deprecated: false, occurrences: 60, local: false },
-  { componentId: "c2", displayName: "Button", packageName: "@example/new-ui", disambiguator: "src/button/index.ts", deprecated: false, occurrences: 8, local: false },
-  { componentId: "c3", displayName: "Button", packageName: "@example/new-ui", disambiguator: "src/legacy/button.ts", deprecated: false, occurrences: 3, local: false },
+  { componentId: "c1", displayName: "Button", packageName: "@example/old-ui", disambiguator: null, deprecated: false, occurrences: 60, local: false, lastSeenAt: null },
+  { componentId: "c2", displayName: "Button", packageName: "@example/new-ui", disambiguator: "src/button/index.ts", deprecated: false, occurrences: 8, local: false, lastSeenAt: null },
+  { componentId: "c3", displayName: "Button", packageName: "@example/new-ui", disambiguator: "src/legacy/button.ts", deprecated: false, occurrences: 3, local: false, lastSeenAt: null },
 ];
 
 function SeriesField({ onSelect }: { onSelect: (sel: CohortSelector) => void }) {

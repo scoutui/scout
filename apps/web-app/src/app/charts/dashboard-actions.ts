@@ -9,7 +9,7 @@ import { readModelPage } from "@/lib/read-model-page";
 import type { ReadModelResult } from "@/lib/read-model-state";
 import { isDerivedId } from "@/lib/derived-dashboards";
 import { loadDashboardView, type DashboardView } from "@/lib/dashboard-load";
-import type { PickableComponent } from "@/lib/chart-builder-series";
+import { type PickableSeries, pickableSeries } from "@/lib/chart-builder-options";
 
 const ChartFormSchema = DashboardInputSchema.omit({ createdByUserId: true });
 
@@ -86,32 +86,11 @@ export async function previewDashboard(config: DashboardConfig): Promise<ReadMod
 }
 
 /**
- * Repo-scoped picker sources: the components and packages in the repo's latest
- * scan, since most of the estate would project a flat-zero series there. Same
+ * Repo-scoped picker sources: the components and packages the repo's scans hold,
+ * since most of the estate would project a flat-zero series there. Same
  * read-only stance as previewDashboard.
  */
-export async function pickableForRepo(repoId: string): Promise<ReadModelResult<{
-  components: PickableComponent[];
-  packages: string[];
-}>> {
+export async function pickableForRepo(repoId: string): Promise<ReadModelResult<PickableSeries>> {
   if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
-  const result = await readModelPage(getStorage(), async snapshot => ({
-    rows: await snapshot.listComponentsForRepo(repoId, ""),
-    packageList: await snapshot.listPackages(repoId),
-  }));
-  if (result.state !== "ready") return result;
-  const { rows, packageList } = result.value;
-  const components = rows.map((r) => ({
-    componentId: r.componentId,
-    displayName: r.displayName,
-    packageName: r.packageName,
-    disambiguator: r.disambiguator,
-    deprecated: r.deprecated,
-    occurrences: r.occurrenceCount,
-    local: r.scope === "local",
-  }));
-  const packages = packageList
-    .map((p) => p.packageName)
-    .sort((a, b) => a.localeCompare(b));
-  return { ...result, value: { components, packages } };
+  return readModelPage(getStorage(), snapshot => pickableSeries(snapshot, repoId));
 }

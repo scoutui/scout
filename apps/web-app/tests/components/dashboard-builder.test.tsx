@@ -270,9 +270,9 @@ describe("chart details and saving", () => {
 const vueKits = { id: "t-vue", label: "vue-ui-kits", color: "#888", rule: { glob: [], exact: ["ant-design-vue", "naive-ui"] } };
 const reactKits = { id: "t-react", label: "react-ui-kits", color: "#888", rule: { glob: [], exact: ["@mui/material"] } };
 const kitComponents = [
-  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", disambiguator: null, deprecated: true, occurrences: 1, local: false },
-  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", disambiguator: null, deprecated: false, occurrences: 1, local: false },
-  { componentId: "c", displayName: "NButton", packageName: "naive-ui", disambiguator: null, deprecated: false, occurrences: 1, local: false },
+  { componentId: "a", displayName: "AButton", packageName: "ant-design-vue", disambiguator: null, deprecated: true, occurrences: 1, local: false, lastSeenAt: null },
+  { componentId: "b", displayName: "ACard", packageName: "ant-design-vue", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null },
+  { componentId: "c", displayName: "NButton", packageName: "naive-ui", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null },
 ];
 const savedWith = (cohorts: CohortSelector[]) => ({
   id: "chart-1", name: "Old kits", description: null,
@@ -284,8 +284,8 @@ const spokenDeprecated = () => screen.getAllByText("deprecated").filter((el) => 
 describe("series search", () => {
   it("shows the entry point beside components that share a name", () => {
     render(<DashboardBuilder libraryTags={[]} repos={[]} components={[
-      { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false, occurrences: 2, local: false },
-      { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false, occurrences: 1, local: false },
+      { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false, occurrences: 2, local: false, lastSeenAt: null },
+      { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false, occurrences: 1, local: false, lastSeenAt: null },
     ]} packages={[]} />);
     fireEvent.change(seriesBox(), { target: { value: "button" } });
     expect(screen.getByRole("option", { name: /^Button\s*@example\s*\/ui$/ })).toBeInTheDocument();
@@ -309,7 +309,7 @@ describe("series options", () => {
   });
 
   it("offers no menu for a library with nothing deprecated", () => {
-    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false, occurrences: 1, local: false }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
     expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
   });
 

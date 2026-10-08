@@ -11,6 +11,8 @@ export type PickableComponent = {
   occurrences: number;
   /** Defined in a scanned repo rather than imported from a package. */
   local: boolean;
+  /** Null while a latest scan holds it, otherwise when the newest scan holding it was made. */
+  lastSeenAt: string | null;
 };
 
 export type LibraryTag = { id: string; label: string; color: string; rule: TagRule };

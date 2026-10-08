@@ -39,6 +39,11 @@ export function scanModelReady(scan: ScanModelHeader, details = false): boolean 
 
 type RankedScan = ScanSelection & { rank: number };
 
+/** A `jsonb_build_object` argument list of `fields` from a component fact row aliased `fact`. */
+function factProjection(fields: readonly string[]): string {
+  return fields.map(field => `'${field}', fact.payload->'fact'->'${field}'`).join(", ");
+}
+
 /** Only a successful build writes a scan's model header, so a header on a scan that isn't ready is from an earlier version. */
 function skippedScan(scan: ScanSelection): SkippedScan {
   return { scanId: scan.scan_id, rebuilding: scan.state !== null };
@@ -180,7 +185,7 @@ export class ReadModelReader {
   async facts<K extends keyof ComponentFact>(scans: ScanSelection[], fields: readonly K[], selector?: { componentId: string } | { packageName: string }): Promise<FactScan<Pick<ComponentFact, K>>[]> {
     const repos = await this.repos(scans);
     if (!scans.length) return [];
-    const projection = fields.map(field => `'${field}', fact.payload->'fact'->'${field}'`).join(", ");
+    const projection = factProjection(fields);
     const clause = selector && "componentId" in selector ? "AND fact.component_id = $2"
       : selector ? "AND EXISTS (SELECT 1 FROM scan_package_contributions p WHERE p.scan_id = fact.scan_id AND p.component_id = fact.component_id AND p.package_name = $2)" : "";
     const values: unknown[] = [scans.map(scan => scan.scan_id)];
@@ -200,6 +205,22 @@ export class ReadModelReader {
       if (!selector && components.length !== scans[index]?.expected_counts?.component) this.unavailable([repo.scanId]);
       return { meta: repo.meta, components };
     });
+  }
+
+  /** The facts of the components `scans` hold and no `latest` scan does, each from the newest scan holding it, grouped by that scan. */
+  async lastHeldFacts<K extends keyof ComponentFact>(scans: ScanSelection[], latest: ScanSelection[], fields: readonly K[]): Promise<FactScan<Pick<ComponentFact, K>>[]> {
+    if (!scans.length) return [];
+    const { rows } = await this.client.query<{ scan_id: string; fact: Pick<ComponentFact, K> }>(`
+      SELECT DISTINCT ON (fact.component_id) fact.scan_id, jsonb_build_object(${factProjection(fields)}) AS fact
+      FROM scan_component_facts fact JOIN scans ON scans.scan_id = fact.scan_id
+      WHERE fact.scan_id = ANY($1::text[]) AND NOT EXISTS (
+        SELECT 1 FROM scan_component_facts held WHERE held.scan_id = ANY($2::text[]) AND held.component_id = fact.component_id)
+      ORDER BY fact.component_id, ${newestScanFirstSql("scans")}`,
+    [scans.map(scan => scan.scan_id), latest.map(scan => scan.scan_id)]);
+    const grouped = new Map<string, Pick<ComponentFact, K>[]>();
+    for (const row of rows) grouped.set(row.scan_id, [...(grouped.get(row.scan_id) ?? []), row.fact]);
+    const repos = await this.repos(scans.filter(scan => grouped.has(scan.scan_id)));
+    return repos.map(repo => ({ meta: repo.meta, components: grouped.get(repo.scanId) ?? [] }));
   }
 
   async digests(scans: ScanSelection[], componentIds?: string[]): Promise<DigestScan[]> {
