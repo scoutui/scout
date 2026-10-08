@@ -21,7 +21,7 @@ export async function chartBuilderOptions(snapshot: StorageDriver): Promise<Char
   };
 }
 
-/** The components and packages that one repo's scans, or every repo's, hold, with a package only older scans hold. */
+/** The components and packages one repo's scans, or every repo's, hold, including the packages only older scans hold. */
 export async function pickableSeries(snapshot: StorageDriver, repoId?: string): Promise<PickableSeries> {
   const componentList = await snapshot.listScannedComponents(repoId);
   const packageList = await snapshot.listPackages(repoId);
