@@ -6,6 +6,7 @@ import type {
   GovernanceRecord,
 } from "./dto.js";
 import type { DigestScan } from "./digest.js";
+import { changeByRange, type ChangeByRange } from "./chart-range.js";
 import { cohortKey, projectRepoCoverage, projectSeries, type RepoCoverage, type SeriesCohort } from "./cohorts.js";
 import { governanceHash, governedComponentIds, type GovernanceRule } from "./governance.js";
 import { newestScanFirst, scanOrderTime } from "./scan-order.js";
@@ -39,6 +40,14 @@ const trackingMemo = new WeakMap<object, Map<string, GovernanceTracking[]>>();
  * joined inside the window). Null until some repo with old uses has two scans.
  * `reposAdded` counts the repos that joined inside the window and still have
  * old uses, when some repo was scanned before it.
+ *
+ * `lines` is what the chart of a migration of several old components draws: each
+ * old component's own count, most uses left first, then the replacement's, over
+ * the same scans as `series`. Each is named by its component, with its package
+ * when the old components come from different packages, else with the package
+ * in `packageName`. `change` holds each
+ * line's change from the day the chart starts at each range. Null for a
+ * migration of one old component or package, and for a retirement.
  */
 export type GovernanceTracking = {
   id: string;
@@ -51,6 +60,7 @@ export type GovernanceTracking = {
   toLabel: string | null;
   config: DashboardConfig;
   series: CohortSeries[];
+  lines: { series: CohortSeries[]; change: ChangeByRange } | null;
   coverage: RepoCoverage;
   active: boolean;
   remaining: number;
@@ -131,13 +141,14 @@ function byReplacement(records: GovernanceRecord[]): GovernanceRecord[][] {
     group.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)));
 }
 
-/** One side of a tracked entry: the rules that govern something in scope, and the components they govern in each scan. */
+/** One side of a tracked entry: the rules that govern something in scope, and the components they govern in each scan, together and by rule. */
 type Side<R extends GovernanceRule> = {
   rules: R[];
   label: string;
   ids: Set<string>;
   cohorts: CohortSelector[];
   occurrences: (scan: DigestScan) => number;
+  parts: Array<{ rule: R; occurrences: (scan: DigestScan) => number }>;
 };
 
 function sideOf<R extends GovernanceRule>(rules: R[], records: GovernanceRecord[], scans: DigestScan[], role?: "successor"): Side<R> {
@@ -154,16 +165,17 @@ function sideOf<R extends GovernanceRule>(rules: R[], records: GovernanceRecord[
       : [...ids].sort().map((componentId) => ({ kind: "component", componentId, ...tagged }));
     for (const selector of selectors) cohorts.set(cohortKey(selector), selector);
   }
-  const memberSets = (scanId: string) => governing.map(({ governed }) => governed.get(scanId));
+  const countOf = (sets: Array<Map<string, Set<string>>>) => (scan: DigestScan) => {
+    const members = sets.map((governed) => governed.get(scan.meta.scanId));
+    return scan.components.reduce((n, c) => (members.some((m) => m?.has(c.id)) ? n + c.stats.occurrenceCount : n), 0);
+  };
   return {
     rules: governing.map(({ rule }) => rule),
     label: labelOf(governing.map(({ rule }) => rule)),
     ids: new Set(governing.flatMap(({ ids }) => [...ids])),
     cohorts: [...cohorts.values()],
-    occurrences: (scan) => {
-      const members = memberSets(scan.meta.scanId);
-      return scan.components.reduce((n, c) => (members.some((m) => m?.has(c.id)) ? n + c.stats.occurrenceCount : n), 0);
-    },
+    occurrences: countOf(governing.map(({ governed }) => governed)),
+    parts: governing.map(({ rule, governed }) => ({ rule, occurrences: countOf([governed]) })),
   };
 }
 
@@ -217,6 +229,7 @@ function deriveOne(
       toLabel: null,
       config,
       series: counts,
+      lines: null,
       coverage,
       active: remaining > 0,
       remaining,
@@ -240,9 +253,26 @@ function deriveOne(
   // A migration charts two counts over time, like a retirement; its share is a
   // snapshot carried by the row readout.
   const config: DashboardConfig = { scope, cohorts: [...from.cohorts, ...to.cohorts], chartType: "trend", metric: "count" };
+  const shared = new Set(from.rules.map((rule) => rule.targetPackage)).size === 1;
+  const parts: SeriesCohort[] = from.parts.length > 1
+    ? from.parts.map(({ rule, occurrences }) => ({
+      key: `record:${rule.id}`,
+      label: shared ? (rule.targetExport ?? rule.targetPackage) : labelOf([rule]),
+      color: "",
+      role: "deprecated",
+      ...(shared ? { packageName: rule.targetPackage } : {}),
+      occurrences,
+    }))
+    : [];
   // Counts are both the display series and the maths (progress = successor ÷ pair).
-  const { series: counts, coverage } = clipToObservation(projectSeries(counting, [deprecated, successor], "count"), projectRepoCoverage(counting));
+  const { series: projected, coverage } = clipToObservation(projectSeries(counting, [deprecated, successor, ...parts], "count"), projectRepoCoverage(counting));
+  const counts = projected.slice(0, 2);
   const [dep, succ] = counts;
+  const lineSeries = [...projected.slice(2).sort((a, b) => at(b, 1) - at(a, 1) || a.label.localeCompare(b.label)), ...counts.slice(1)];
+  const lines = parts.length === 0 ? null : {
+    series: lineSeries,
+    change: changeByRange(lineSeries, (start) => Object.fromEntries([...parts, successor].map((c) => [c.key, changeIn(counting, c.occurrences, start).delta]))),
+  };
   const remaining = at(dep, 1);
   const progress = pairShare(at(dep, 1), at(succ, 1));
   return {
@@ -256,6 +286,7 @@ function deriveOne(
     toLabel,
     config,
     series: counts,
+    lines,
     coverage,
     active: remaining > 0,
     remaining,

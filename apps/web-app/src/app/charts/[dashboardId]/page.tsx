@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Clock, SearchX } from "lucide-react";
-import { cohortChange, componentDisambiguators, renderDashboard, type Dashboard, type DashboardMetric, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
+import { changeByRange, cohortChange, componentDisambiguators, renderDashboard, type ChangeByRange, type Dashboard, type DashboardMetric, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
 import { chartResultsNotice, chartResultsUnavailable } from "@/lib/read-model-progress";
@@ -20,7 +20,7 @@ import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
-import { type ChangeByRange, changeByRange, chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
+import { chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
 import { buttonVariants } from "@/components/ui/button";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
@@ -118,7 +118,8 @@ export default async function DashboardViewPage({
       createdAt: "1970-01-01T00:00:00.000Z",
       updatedAt: "1970-01-01T00:00:00.000Z",
     };
-    view = { kind: "series", series: entry.series, coverage: entry.coverage };
+    view = { kind: "series", series: entry.lines?.series ?? entry.series, coverage: entry.coverage };
+    change = entry.lines?.change;
   } else {
     const { digests, names, tags, governance } = page.value;
     missingRepo = page.value.missingRepo;
@@ -259,7 +260,7 @@ export default async function DashboardViewPage({
         ) : (
           /* A table runs flush to the panel edge; plotted charts sit inset. */
           <div className={config.chartType === "table" ? "panel overflow-hidden" : "panel p-4"}>
-            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} change={change} paths={paths} />
+            <LinkedDashboardChart config={config} view={view} range={rangeParam ?? config.range ?? "all"} change={change} migration={derivedEntry?.kind === "migration"} paths={paths} />
           </div>
         )}
       </ChartExportProvider>

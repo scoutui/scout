@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, rangeStart, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesFrom, seriesWashes, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesFrom, seriesWashes, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -81,6 +81,11 @@ describe("chartColors", () => {
       "deprecated is orange and Local is the Local grey",
       [{ ...tag("a", "teal"), role: "deprecated" }, local],
       { "tag:a": "var(--viz-deprecated)", local: "var(--viz-local)" },
+    ],
+    [
+      "several deprecated lines all draw the deprecated orange, beside the successor's teal",
+      [pkg("a", "deprecated"), pkg("b", "deprecated"), pkg("c", "successor")],
+      { "package:a": "var(--viz-deprecated)", "package:b": "var(--viz-deprecated)", "package:c": "var(--viz-primary)" },
     ],
   ];
 
@@ -287,23 +292,6 @@ describe("date range", () => {
     line("a", ["2025-01-15T00:00:00Z", "2026-03-10T00:00:00Z", "2026-07-01T00:00:00Z", "2026-09-30T12:00:00Z"]),
     line("b", ["2026-08-20T00:00:00Z", "2026-09-30T12:00:00Z"]),
   ];
-
-  it.each([
-    ["3m", "2026-06-30T12:00:00Z"],
-    ["6m", "2026-03-30T12:00:00Z"],
-    ["1y", "2025-09-30T12:00:00Z"],
-  ] as const)("starts %s back from the chart's latest scan", (range, start) => {
-    expect(rangeStart(series, range)).toBe(Date.parse(start));
-  });
-
-  it("starts nowhere for All", () => {
-    expect(rangeStart(series, "all")).toBeNull();
-  });
-
-  it("starts nowhere when every scan is already inside the range", () => {
-    expect(rangeStart([line("a", ["2026-07-15T00:00:00Z", "2026-09-30T00:00:00Z"])], "3m")).toBeNull();
-    expect(rangeStart([line("a", ["2026-06-15T00:00:00Z", "2026-09-30T00:00:00Z"])], "3m")).not.toBeNull();
-  });
 
   it("starts each line at the start with its value then, and a line that starts later where it starts", () => {
     const from = Date.parse("2026-06-30T12:00:00Z");

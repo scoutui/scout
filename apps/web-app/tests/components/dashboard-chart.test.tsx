@@ -225,6 +225,25 @@ describe("DashboardChart legend", () => {
     ]);
   });
 
+  it.each([
+    ["a migration's old component going down green", true, "deprecated", "count", -8, "−8", "text-status-ok"],
+    ["a migration's old component going up red", true, "deprecated", "count", 3, "+3", "text-status-err"],
+    ["a migration's replacement going up green", true, "successor", "count", 9, "+9", "text-status-ok"],
+    ["a migration's replacement going down red", true, "successor", "count", -2, "−2", "text-status-err"],
+    ["no change muted", true, "deprecated", "count", 0, "0", "text-muted-foreground"],
+    ["a share change too small to show muted", true, "deprecated", "share", -0.0002, "0", "text-muted-foreground"],
+    ["a migration's line with no role muted", true, undefined, "count", 5, "+5", "text-muted-foreground"],
+    ["a saved chart's deprecated line going down muted", false, "deprecated", "count", -8, "−8", "text-muted-foreground"],
+    ["a saved chart's deprecated line going up muted", false, "deprecated", "count", 3, "+3", "text-muted-foreground"],
+  ] as const)("shows %s in the Change column", (_, migration, role, metric, delta, text, tone) => {
+    const line = { ...monthly("line", () => 10), ...(role ? { role } : {}) };
+    const [config, view] = trendOf([line, monthly("other", () => 1)]);
+    render(<DashboardChart config={{ ...config, metric }} view={view} change={{ all: { "package:line": delta } }} migration={migration} />);
+    const cell = within(screen.getByRole("table")).getByRole("button", { name: /line/ }).closest("tr")?.querySelectorAll("td")[2];
+    expect(cell).toHaveTextContent(text);
+    expect(["text-status-ok", "text-status-err", "text-muted-foreground"].filter((c) => cell?.classList.contains(c))).toEqual([tone]);
+  });
+
   const twoDays = (name: string): CohortSeries => ({ cohortKey: `package:${name}`, label: name, color: "", points: series[0]?.points ?? [] });
   const shortSpan: DashboardView = { kind: "series", series: [twoDays("old-ui"), twoDays("new-ui")], coverage };
   it.each([
@@ -315,6 +334,14 @@ describe("DashboardChart legend", () => {
     expect(screen.getByText(/No series match/)).toHaveTextContent("No series match zzz.");
     fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
     expect(rowNames(table)).toHaveLength(10);
+  });
+
+  it("finds a line by the package its name leaves out", () => {
+    const menu = { ...monthly("menu", () => 3), cohortKey: "record:menu", label: "Menu", packageName: "@other/kit" };
+    const [config, view] = trendOf([...twelve, menu]);
+    render(<DashboardChart config={config} view={view} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "@other/kit" } });
+    expect(rowNames(screen.getByRole("table"))).toEqual(["Toolbar@other/kit", "Menu"]);
   });
 
   const search = (value: string) => fireEvent.change(screen.getByRole("searchbox"), { target: { value } });

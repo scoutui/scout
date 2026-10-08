@@ -34,6 +34,7 @@ function entry(id: string, from: GovernanceRule[], over: Partial<GovernanceTrack
     toLabel: "@example/ui",
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],
+    lines: null,
     coverage: { total: 1, points: [] },
     active: true,
     remaining: 5,

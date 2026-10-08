@@ -327,6 +327,42 @@ describe("deriveGovernanceTracking: records that share a replacement", () => {
     expect(m?.fromLabel).toBe("legacy-ds");
   });
 
+  it("draws each part as its own line beside the replacement's, with each line's change from where the chart starts at each range", () => {
+    const months = [
+      digest("r1", "2025-12-01T00:00:00Z", [[newCard, 1]]),
+      digest("r1", "2026-01-01T00:00:00Z", [[card, 12], [newCard, 1]]),
+      digest("r1", "2026-06-01T00:00:00Z", [[card, 10], [cardHeader, 6], [newCard, 3]]),
+      digest("r1", "2026-09-01T00:00:00Z", [[card, 4], [cardHeader, 5], [newCard, 9]]),
+    ];
+    const [m] = deriveGovernanceTracking([newer, older], months, { kind: "all" }, asOf);
+    expect(m?.series.map((s) => s.points.map((p) => p.value))).toEqual([[12, 16, 9], [1, 3, 9]]);
+    expect(m?.lines?.series.map((s) => ({ key: s.cohortKey, label: s.label, packageName: s.packageName, role: s.role, values: s.points.map((p) => p.value) }))).toEqual([
+      { key: "record:older", label: "CardHeader", packageName: "legacy-ds", role: "deprecated", values: [0, 6, 5] },
+      { key: "record:newer", label: "Card", packageName: "legacy-ds", role: "deprecated", values: [12, 10, 4] },
+      { key: "successor:older", label: "Card · @x/new-ds", packageName: undefined, role: "successor", values: [1, 3, 9] },
+    ]);
+    const whole = { "record:older": 5, "record:newer": -8, "successor:older": 8 };
+    expect(m?.lines?.change).toEqual({ "3m": { "record:older": -1, "record:newer": -6, "successor:older": 6 }, "6m": whole, "1y": whole, all: whole });
+  });
+
+  it("names each line's package when the parts come from different packages", () => {
+    const field = component(packageExport("old-forms", "Field"));
+    const fromForms = record("forms", { targetPackage: "old-forms", targetExport: "Field", disposition: toCard });
+    const scan = digest("r1", "2026-01-02T00:00:00Z", [[card, 1], [field, 2], [newCard, 1]]);
+    expect(deriveGovernanceTracking([newer, fromForms], [scan], { kind: "all" }, asOf)[0]?.lines?.series.map((s) => s.label))
+      .toEqual(["Field · old-forms", "Card · legacy-ds", "Card · @x/new-ds"]);
+  });
+
+  it.each([
+    ["one component", [newer], cards],
+    ["a whole package", [record("whole", { grain: "package", targetExport: null, disposition: toCard })], cards],
+    ["records with one part in scope", [newer, older], [digest("r1", "2026-01-01T00:00:00Z", [[card, 12], [newCard, 1]]), digest("r1", "2026-01-02T00:00:00Z", [[card, 10], [newCard, 3]])]],
+  ])("draws a migration of %s as its row does", (_title, records, scans) => {
+    const [m] = deriveGovernanceTracking(records, scans, { kind: "all" }, asOf);
+    expect(m?.kind).toBe("migration");
+    expect(m?.lines).toBeNull();
+  });
+
   it("names every part in full", () => {
     const parts = ["A", "B", "C", "D", "E", "F"].map((name) => component(packageExport("legacy-ds", name)));
     const records = parts.map((_, i) => record(`p${i}`, { targetExport: ["A", "B", "C", "D", "E", "F"][i] as string, disposition: toCard }));

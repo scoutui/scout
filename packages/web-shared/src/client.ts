@@ -6,6 +6,7 @@
 export * from "./dto.js";
 export * from "./cohorts.js";
 export * from "./dashboard-render.js";
+export * from "./chart-range.js";
 export * from "./query.js";
 export * from "./tags.js";
 export * from "./governance.js";

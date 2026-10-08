@@ -274,6 +274,7 @@ export const CohortSeriesSchema = z.object({
     added: z.array(z.string()).optional(),  // after a series' first point: repos whose first scan this is, when they have the cohort in it
   })),
   role: CohortRoleSchema.optional(),
+  packageName: z.string().optional(),      // the package of a component whose label leaves it out
 });
 export type CohortSeries = z.infer<typeof CohortSeriesSchema>;
 
