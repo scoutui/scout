@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
-import type { ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
+import type { ChangeByRange, ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
+import { chartStart, rangeStart } from "@scoutui/web-shared/client";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { type ChangeByRange, chartColors, chartStart, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, rangeStart, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
+import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
 import { useShowChart } from "./chart-export-context";
 import { CohortBarChart } from "./cohort-bar-chart";
 import { CohortShareOverTime } from "./cohort-share-over-time";

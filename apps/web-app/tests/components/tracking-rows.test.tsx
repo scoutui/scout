@@ -25,6 +25,7 @@ function entry(over: Partial<GovernanceTracking>): GovernanceTracking {
     toLabel: "new-ds/Button",
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],
+    lines: null,
     coverage: { total: 1, points: [] },
     active: true,
     remaining: 5,

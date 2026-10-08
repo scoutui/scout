@@ -1,5 +1,5 @@
 import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView, RepoCoverage } from "@scoutui/web-shared";
-import { ChartRangeSchema, cohortKey } from "@scoutui/web-shared/client";
+import { ChartRangeSchema, cohortKey, rangeStart } from "@scoutui/web-shared/client";
 import { CHART_ORDER, looksAlike, paletteToken } from "@/lib/chart-palette";
 import { formatReposAdded } from "@/lib/dashboard-format";
 import type { ChartConfig } from "@/components/ui/chart";
@@ -24,44 +24,10 @@ export function seriesToRows(series: CohortSeries[]): Array<Record<string, strin
   return [...byT.entries()].sort(([ka], [kb]) => ka.localeCompare(kb)).map(([, row]) => row);
 }
 
-const RANGE_MONTHS: Record<Exclude<ChartRange, "all">, number> = { "3m": 3, "6m": 6, "1y": 12 };
-
 /** A range named in a link's `range` parameter, or null when it names none. */
 export function chartRange(raw: string | readonly string[] | undefined): ChartRange | null {
   const parsed = ChartRangeSchema.safeParse(Array.isArray(raw) ? raw[0] : raw);
   return parsed.success ? parsed.data : null;
-}
-
-/**
- * Where `range` starts, in epoch ms, counting back from the latest point of any series.
- * Null for All, and when every point already falls inside the range.
- */
-export function rangeStart(series: CohortSeries[], range: ChartRange): number | null {
-  if (range === "all") return null;
-  const times = series.flatMap((s) => s.points.map((p) => Date.parse(p.t)));
-  if (times.length === 0) return null;
-  const start = new Date(Math.max(...times));
-  start.setUTCMonth(start.getUTCMonth() - RANGE_MONTHS[range]);
-  return Math.min(...times) < start.getTime() ? start.getTime() : null;
-}
-
-/** The day a chart over time starts at `range`, in epoch ms: where the range starts, or the chart's first point when the range takes in every point. Null for a chart with no points. */
-export function chartStart(series: CohortSeries[], range: ChartRange): number | null {
-  const times = series.flatMap((s) => s.points.map((p) => Date.parse(p.t)));
-  return times.length === 0 ? null : (rangeStart(series, range) ?? Math.min(...times));
-}
-
-/** Each series' change by `cohortKey`, at each range a chart offers. */
-export type ChangeByRange = Partial<Record<ChartRange, Readonly<Record<string, number | null>>>>;
-
-/** The change `since` measures from the day the chart starts at each range. */
-export function changeByRange(series: CohortSeries[], since: (start: number) => Readonly<Record<string, number | null>>): ChangeByRange {
-  return Object.fromEntries(
-    ChartRangeSchema.options.flatMap((range) => {
-      const start = chartStart(series, range);
-      return start === null ? [] : [[range, since(start)]];
-    }),
-  );
 }
 
 /** Each series from `from` on. A series with points before `from` starts at `from`, with its value then. */
@@ -221,10 +187,12 @@ export function drawnChartCohorts(view: DashboardView): Array<ChartCohort & { la
  * A chart's saved cohorts in saved order, each with the colour and role of its
  * drawn cohort. A saved cohort the view doesn't draw keeps its place with no colour.
  * Drawn cohorts that no selector names, such as a governance chart's deprecated
- * and successor series, follow in drawn order.
+ * and successor series, follow in drawn order. When the view draws none of the
+ * saved cohorts, the drawn cohorts alone.
  */
 export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohort[]): ChartCohort[] {
   const byKey = new Map(drawn.map((c) => [c.cohortKey, c]));
+  if (!selectors.some((selector) => byKey.has(cohortKey(selector)))) return drawn;
   const saved = selectors.map((selector) => {
     const key = cohortKey(selector);
     return byKey.get(key) ?? { cohortKey: key, color: "" };
@@ -234,8 +202,8 @@ export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohor
 }
 
 /**
- * Each cohort's line colour, by cohortKey. Fixed meanings come first: deprecated
- * is orange, successor teal and Local grey. Then each tag, in order, keeps its
+ * Each cohort's line colour, by cohortKey. Fixed meanings come first: a lone
+ * deprecated cohort is orange, successor teal and Local grey. Then each tag, in order, keeps its
  * colour unless a colour already placed looks like it. Every other cohort takes
  * the first chart colour that looks like none already placed or, when none is
  * left, the first that looks like neither neighbour.
@@ -243,8 +211,9 @@ export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohor
 export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
   const colors = new Map<string, string>();
   const isFree = (color: string) => ![...colors.values()].some((placed) => looksAlike(placed, color));
+  const loneDeprecated = cohorts.filter((c) => c.role === "deprecated").length === 1;
   for (const c of cohorts) {
-    const fixed = fixedColor(c);
+    const fixed = fixedColor(c, loneDeprecated);
     if (fixed) colors.set(c.cohortKey, fixed);
   }
   for (const c of cohorts) {
@@ -269,8 +238,8 @@ export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
   return colors;
 }
 
-function fixedColor(c: ChartCohort): string | undefined {
-  if (c.role === "deprecated") return "var(--viz-deprecated)";
+function fixedColor(c: ChartCohort, loneDeprecated: boolean): string | undefined {
+  if (c.role === "deprecated" && loneDeprecated) return "var(--viz-deprecated)";
   if (c.role === "successor") return "var(--viz-primary)";
   if (c.cohortKey === "local") return "var(--viz-local)";
   return undefined;
