@@ -28,6 +28,7 @@ export type SeriesChange = { since: number; byKey: Readonly<Record<string, numbe
  * component's path that tells the rows apart. Past FIRST_ROWS series the table
  * lists the first FIRST_ROWS rows in its sort, with a Show all button and a search, `query`, by component or package
  * name that lists every match. The row of a line shown on its own stays in the table whatever the search or Show all.
+ * While the page scrolls, the column headings stay under the top bar.
  */
 export function TrendLegendTable({
   series,
@@ -95,8 +96,8 @@ export function TrendLegendTable({
           ) : null}
         </div>
       ) : null}
-      <Table containerClassName="@container">
-        <TableHeader>
+      <Table containerClassName="@container overflow-x-clip">
+        <TableHeader className="pin-under-top-bar z-20">
           <TableRow>
             <TableHead aria-sort={ariaSort("label", sortKey, sortDir)}>
               <SortButton label="Name" sortKey="label" current={sortKey} dir={sortDir} onClick={toggleSort} />
