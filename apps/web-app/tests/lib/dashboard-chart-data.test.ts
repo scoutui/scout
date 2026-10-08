@@ -260,7 +260,7 @@ describe("repoCoverageAt", () => {
 });
 
 describe("tooltipListScroll", () => {
-  const list = { height: 188, content: 1076, pitch: 18 };
+  const list = { height: 188, content: 1076, pitch: 18, scrollbar: 0 };
 
   it.each([
     ["stays put while the row and its neighbours are in view", 0, 36, 0],
@@ -282,6 +282,14 @@ describe("tooltipListScroll", () => {
 
   it("says a list that fits has no rows beyond either edge", () => {
     expect(tooltipListScroll({ ...list, content: 120, scrollTop: 0 })).toMatchObject({ above: false, below: false });
+  });
+
+  it.each([
+    ["a list that scrolls under a scrollbar drawn over its rows", true, 1076, 0],
+    ["a list that scrolls beside a scrollbar that takes its own width", false, 1076, 15],
+    ["a list that fits", false, 120, 0],
+  ])("says whether %s needs room at its end for the scrollbar: %s", (_, room, content, scrollbar) => {
+    expect(tooltipListScroll({ ...list, content, scrollbar, scrollTop: 0 }).scrollbarRoom).toBe(room);
   });
 });
 
