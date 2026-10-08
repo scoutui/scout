@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
 import type { PackageComponentRow } from "@scoutui/web-shared";
-import { plural } from "@scoutui/web-shared/client";
+import { isUsed, plural } from "@scoutui/web-shared/client";
 import { shortenPath } from "@/components/repos/components-table";
 import {
   Table,
@@ -37,13 +37,13 @@ export function PackageComponentsTable({
   // Default: most-used first (matches the projection's own ordering).
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("totalOccurrences", "desc", DESC_KEYS);
 
-  const deprecatedCount = useMemo(() => components.filter(c => c.deprecated).length, [components]);
+  const deprecatedCount = useMemo(() => components.filter(c => c.deprecated && isUsed(c)).length, [components]);
 
   const visible = useMemo(() => {
     const text = filters.text.trim().toLowerCase();
     const filtered = components.filter(c => {
       if (text && !c.displayName.toLowerCase().includes(text)) return false;
-      if (filters.deprecated && !c.deprecated) return false;
+      if (filters.deprecated && !(c.deprecated && isUsed(c))) return false;
       return true;
     });
     return sortRows(filtered, sortKey, sortDir, (r, k) => r[k]);

@@ -46,7 +46,7 @@ Select a row to open that repo's **Components** tab filtered to this package. Se
 
 ### See which components are used
 
-**Components** lists the package's components with how many repos use each (**Repos**) and their total **Uses**, most-used first. Search by name, or press the **deprecated** chip to show only deprecated components.
+**Components** lists the package's components with how many repos use each (**Repos**) and their total **Uses**, most-used first. Search by name, or press the **deprecated** chip to show only deprecated components in use.
 
 The table also lists components with no uses, so it can have more rows than the header's component count.
 

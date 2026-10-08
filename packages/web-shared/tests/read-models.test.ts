@@ -53,19 +53,25 @@ describe("immutable read models", () => {
     if (projection === "facts") expect(deriveFactScan(scan).components).toHaveLength(9);
   });
 
-  it("counts the same deprecated components in a repo's summary as in its component rows", () => {
+  it.each([
+    { retired: "Button", inUse: 1 },
+    { retired: "Tree", inUse: 0 },
+  ])("counts deprecated $retired as in use on the repo and package pages only when it has uses, and marks its row deprecated", ({ retired, inUse }) => {
     const button = component(packageExport("@example/ui", "Button"));
-    const card = component(packageExport("@example/ui", "Card"));
-    const scan = artifact({ components: [button, card], occurrences: [resolvedAt(button, "src/App.tsx"), resolvedAt(card, "src/App.tsx", 2)] });
-    const fact = { ...deriveFactScan(scan), meta: received(scan).meta };
+    const tree = component(packageExport("@example/ui", "Tree"));
+    const scan = artifact({ components: [button, tree], occurrences: [resolvedAt(button, "src/App.tsx")] });
+    const facts = [{ ...deriveFactScan(scan), meta: received(scan).meta }];
     const t = "2026-01-01T00:00:00Z";
     const governance: GovernanceRecord[] = [{
-      id: "retire-button", grain: "component", targetPackage: "@example/ui", targetExport: "Button",
+      id: "retire", grain: "component", targetPackage: "@example/ui", targetExport: retired,
       disposition: { kind: "retired", reason: "replaced" }, createdAt: t, updatedAt: t,
     }];
-    const rows = reduceComponentRows(fact, "", governance).filter(row => row.deprecated);
-    expect(rows.map(row => row.componentId)).toEqual([button.id]);
-    expect(reduceRepoSummary(fact, { scanCount: 1, delta: null }, governance).deprecatedCount).toBe(rows.length);
+    const [fact] = facts;
+    if (!fact) throw new Error("Missing fact");
+    expect(reduceComponentRows(fact, "", governance).filter(row => row.deprecated).map(row => row.displayName)).toEqual([retired]);
+    expect(reduceRepoSummary(fact, { scanCount: 1, delta: null }, governance).deprecatedCount).toBe(inUse);
+    expect(reducePackagesAcrossScans(facts, governance).find(row => row.packageName === "@example/ui")?.deprecatedCount).toBe(inUse);
+    expect(reducePackageDetail(facts, "@example/ui", governance)?.deprecatedCount).toBe(inUse);
   });
 
   it("counts a deprecated component used in several repos once in a package's totals, as its component rows do", () => {

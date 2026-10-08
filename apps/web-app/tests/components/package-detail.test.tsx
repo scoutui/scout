@@ -219,11 +219,14 @@ describe("PackageComponentsTable", () => {
     expect(screen.getByRole("link", { name: "Address" })).toHaveAttribute("title", "Address");
   });
 
-  it("filters to deprecated rows via the toggle, seeded from ?deprecated=true", () => {
+  it("filters to deprecated rows with uses via the toggle, seeded from ?deprecated=true", () => {
     window.history.replaceState(null, "", "http://localhost:3000/packages/x?deprecated=true");
-    render(<PackageComponentsTable components={baseDetail.components} />);
+    const unused: PackageDetail["components"][number] = { componentId: "c9", displayName: "Tree", kind: "react-component", disambiguator: null, totalOccurrences: 0, consumerCount: 0, deprecated: true, usage: "none" };
+    render(<PackageComponentsTable components={[...baseDetail.components, unused]} />);
     expect(screen.queryByRole("link", { name: "Address" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Tree/ })).toBeNull();
     expect(screen.getByRole("link", { name: /Button deprecated/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated1");
   });
 
   it("filters by the name search input", () => {
