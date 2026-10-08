@@ -132,7 +132,7 @@ function chartSection(heading: string, rows: ChartRow[], showCreator: boolean) {
           <Link
             key={dashboard.id}
             href={`/charts/${encodeURIComponent(dashboard.id)}`}
-            className="flex items-center gap-4 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent"
+            className="focus-inset flex items-center gap-4 px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent"
           >
             <div className="min-w-0 flex-1">
               <span className="block truncate font-medium">{dashboard.name}</span>
