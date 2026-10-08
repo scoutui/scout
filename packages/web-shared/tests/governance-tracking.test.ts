@@ -292,6 +292,10 @@ describe("deriveGovernanceTracking: records that share a replacement", () => {
     expect(m?.id).toBe("migration:older");
     expect(m?.recordIds).toEqual(["older", "newer"]);
     expect(m?.fromLabel).toBe("Card, CardHeader · legacy-ds");
+    expect(m?.from).toEqual([
+      { grain: "component", targetPackage: "legacy-ds", targetExport: "Card" },
+      { grain: "component", targetPackage: "legacy-ds", targetExport: "CardHeader" },
+    ]);
     expect(m?.toLabel).toBe("Card · @x/new-ds");
     expect(m?.name).toBe("Migration: Card, CardHeader → Card");
     expect(m?.remaining).toBe(15);
@@ -323,11 +327,11 @@ describe("deriveGovernanceTracking: records that share a replacement", () => {
     expect(m?.fromLabel).toBe("legacy-ds");
   });
 
-  it("names four parts, then how many more", () => {
+  it("names every part in full", () => {
     const parts = ["A", "B", "C", "D", "E", "F"].map((name) => component(packageExport("legacy-ds", name)));
     const records = parts.map((_, i) => record(`p${i}`, { targetExport: ["A", "B", "C", "D", "E", "F"][i] as string, disposition: toCard }));
     const scan = digest("r1", "2026-01-02T00:00:00Z", [...parts.map((c) => [c, 1] as [Component, number]), [newCard, 1]]);
-    expect(deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf)[0]?.fromLabel).toBe("A, B, C, D +2 more · legacy-ds");
+    expect(deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf)[0]?.fromLabel).toBe("A, B, C, D, E, F · legacy-ds");
   });
 });
 
