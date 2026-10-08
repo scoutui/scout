@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Component } from "@scoutui/scan-format";
 import type { GovernanceRecord } from "../src/dto.js";
-import { deriveGovernanceTracking } from "../src/governance-tracking.js";
+import { deriveGovernanceTracking, type GovernanceTracking } from "../src/governance-tracking.js";
 import { artifact, component, packageExport, received, resolvedAt } from "./helpers/builders.js";
 
 /** One scan's digest in which each component has the given number of occurrences. */
@@ -368,6 +368,23 @@ describe("deriveGovernanceTracking: records that share a replacement", () => {
     const records = parts.map((_, i) => record(`p${i}`, { targetExport: ["A", "B", "C", "D", "E", "F"][i] as string, disposition: toCard }));
     const scan = digest("r1", "2026-01-02T00:00:00Z", [...parts.map((c) => [c, 1] as [Component, number]), [newCard, 1]]);
     expect(deriveGovernanceTracking(records, [scan], { kind: "all" }, asOf)[0]?.fromLabel).toBe("A, B, C, D, E, F · legacy-ds");
+  });
+
+  const eight = ["A", "B", "C", "D", "E", "F", "G", "H"].map((name): [string, string | null] => ["legacy-ds", name]);
+  it.each([
+    ["one old component", eight.slice(0, 1), null, "Migration: A → Card"],
+    ["two old components", eight.slice(0, 2), null, "Migration: A, B → Card"],
+    ["three old components", eight.slice(0, 3), { components: 3, packageName: "legacy-ds" }, "Migration: 3 components → Card"],
+    ["eight old components", eight, { components: 8, packageName: "legacy-ds" }, "Migration: 8 components → Card"],
+    ["two old components from different packages", [["legacy-ds", "A"], ["old-forms", "B"]], null, "Migration: A, B → Card"],
+    ["three old components from different packages", [["legacy-ds", "A"], ["legacy-ds", "B"], ["old-forms", "C"]], { components: 3, packageName: null }, "Migration: 3 components → Card"],
+    ["a whole package and two old components", [["legacy-ds", null], ["old-forms", "B"], ["old-forms", "C"]], null, "Migration: B, C, legacy-ds → Card"],
+  ] as Array<[string, Array<[string, string | null]>, GovernanceTracking["fromCount"], string]>)("names %s in the heading, or counts them past two", (_title, parts, fromCount, name) => {
+    const records = parts.map(([targetPackage, targetExport], i) => record(`p${i}`, { grain: targetExport === null ? "package" : "component", targetPackage, targetExport, disposition: toCard }));
+    const used = parts.map(([packageName, exportName]): [Component, number] => [component(packageExport(packageName, exportName ?? "A")), 1]);
+    const [m] = deriveGovernanceTracking(records, [digest("r1", "2026-01-02T00:00:00Z", [...used, [newCard, 1]])], { kind: "all" }, asOf);
+    expect(m?.fromCount).toEqual(fromCount);
+    expect(m?.name).toBe(name);
   });
 });
 

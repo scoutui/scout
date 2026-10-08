@@ -48,6 +48,11 @@ const trackingMemo = new WeakMap<object, Map<string, GovernanceTracking[]>>();
  * in `packageName`. `change` holds each
  * line's change from the day the chart starts at each range. Null for a
  * migration of one old component or package, and for a retirement.
+ *
+ * `fromCount` is what the chart's heading shows instead of the old components'
+ * names when there are more than two: how many, and the package they share
+ * (null when they come from different packages). Null for two or fewer, and
+ * when a whole package is among them.
  */
 export type GovernanceTracking = {
   id: string;
@@ -57,6 +62,7 @@ export type GovernanceTracking = {
   name: string;
   from: GovernanceRule[];
   fromLabel: string;
+  fromCount: { components: number; packageName: string | null } | null;
   toLabel: string | null;
   config: DashboardConfig;
   series: CohortSeries[];
@@ -190,6 +196,13 @@ function labelOf(rules: GovernanceRule[]): string {
   return `${rules.map((rule) => rule.targetExport ?? "").sort().join(", ")} · ${first.targetPackage}`;
 }
 
+/** How many components the rules name, and the package they share, when there are more than two and none is a whole package. */
+function countOf(rules: GovernanceRule[]): GovernanceTracking["fromCount"] {
+  if (rules.length <= 2 || rules.some((rule) => rule.targetExport === null)) return null;
+  const [first, ...rest] = rules;
+  return { components: rules.length, packageName: first && rest.every((rule) => rule.targetPackage === first.targetPackage) ? first.targetPackage : null };
+}
+
 /** The rules as plain rules, by package and then component. */
 function rulesOf(rules: GovernanceRule[]): GovernanceRule[] {
   return rules
@@ -210,7 +223,8 @@ function deriveOne(
   const [record] = from.rules;
   if (!record) return null;
   const fromLabel = from.label;
-  const shortFrom = fromLabel.split(" · ")[0] ?? fromLabel;
+  const fromCount = countOf(from.rules);
+  const shortFrom = fromCount ? `${fromCount.components} components` : fromLabel.split(", ").map((part) => part.split(" · ")[0]).join(", ");
   const deprecated: SeriesCohort = { key: `deprecated:${record.id}`, label: fromLabel, color: "", role: "deprecated", occurrences: from.occurrences };
   const change = changeIn(scans, from.occurrences, thirtyDaysBefore(asOf));
 
@@ -226,6 +240,7 @@ function deriveOne(
       name: `Retirement: ${shortFrom}`,
       from: rulesOf(from.rules),
       fromLabel,
+      fromCount,
       toLabel: null,
       config,
       series: counts,
@@ -283,6 +298,7 @@ function deriveOne(
     name: `Migration: ${shortFrom} → ${toLabel.split(" · ")[0] ?? toLabel}`,
     from: rulesOf(from.rules),
     fromLabel,
+    fromCount,
     toLabel,
     config,
     series: counts,
