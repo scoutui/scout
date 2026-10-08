@@ -7,6 +7,7 @@ import type {
   PackageSummary,
   PackageDetail,
   ComponentSummary,
+  ScannedComponent,
   ComponentRow,
   ComponentDetailHead,
   OccurrenceRow,
@@ -116,6 +117,9 @@ export interface StorageDriver {
 
   /** Cross-repo aggregated component list (one row per components[] entry per repo). */
   listComponents(): Promise<ComponentSummary[]>;
+
+  /** Every component one repo's scans, or every repo's, hold, presented as `listComponents` presents them. */
+  listScannedComponents(repoId?: string): Promise<ScannedComponent[]>;
 
   // ---- Tags (org-scoped, web-authored config) ----
 

@@ -6,7 +6,7 @@ export {
   reduceComponentDetailHead,
   reduceOccurrences, reduceCompositionGraph, reduceRepoSummary, reduceRepoDetail,
   reduceComponentRows, reducePackagesAcrossScans, reducePackageDetail,
-  reduceComponentsAcrossScans, reduceCrossRepoComponent,
+  reduceComponentsAcrossScans, reduceScannedComponents, reduceCrossRepoComponent,
 } from "./read-model-reducers.js";
 export * from "./composition-graph.js";
 export * from "./tags.js";

@@ -292,6 +292,15 @@ function defaultIndex<T>(rows: SearchRow<T>[]): number | null {
   return !rows.some(takesOne) && rows[0]?.kind === "package" ? 0 : null;
 }
 
+type SeriesRanked = Ranked<CohortSelector> & { lastSeenAt: string | null };
+
+/** Components in use first, as `byRank` ranks them, then those only older scans hold: by match, then the most recently held first. */
+const bySeriesRank = (a: SeriesRanked, b: SeriesRanked) =>
+  Number(a.lastSeenAt !== null) - Number(b.lastSeenAt !== null)
+  || a.tier - b.tier
+  || (b.lastSeenAt ?? "").localeCompare(a.lastSeenAt ?? "")
+  || byRank(a, b);
+
 export type SeriesSearchInput = {
   tags: Array<{ id: string; label: string; rule: TagRule }>;
   components: PickableComponent[];
@@ -309,7 +318,8 @@ export type SeriesSearchInput = {
  * then the packages by use. A search lists the tags and the Local components row it
  * matches, then up to `MAX_PACKAGE_ROWS` packages and `MAX_COMPONENT_ROWS` components;
  * `total` counts the components when the list stops there. Narrowed to a package, it
- * lists the whole package, then every component in it.
+ * lists the whole package, then every component in it. Components and packages only older
+ * scans hold follow every one in use, the most recently held first.
  */
 export function searchSeries(input: SeriesSearchInput): SearchResult<CohortSelector> {
   const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -319,18 +329,27 @@ export function searchSeries(input: SeriesSearchInput): SearchResult<CohortSelec
 
   const components = new Map<string, number>();
   const uses = new Map<string, number>();
+  // When the newest scan holding a package's components was made; "" once a latest scan holds one.
+  const lastSeen = new Map<string, string>();
   for (const c of input.components) {
     if (c.packageName === null) continue;
     components.set(c.packageName, (components.get(c.packageName) ?? 0) + 1);
     uses.set(c.packageName, (uses.get(c.packageName) ?? 0) + c.occurrences);
+    const seen = lastSeen.get(c.packageName);
+    lastSeen.set(c.packageName, seen === "" || c.lastSeenAt === null ? "" : seen === undefined || c.lastSeenAt > seen ? c.lastSeenAt : seen);
   }
-  const byUse = (a: string, b: string) => (uses.get(b) ?? 0) - (uses.get(a) ?? 0) || a.localeCompare(b);
+  const goneSince = (packageName: string) => lastSeen.get(packageName) ?? "";
+  const byUse = (a: string, b: string) =>
+    Number(goneSince(a) !== "") - Number(goneSince(b) !== "")
+    || (uses.get(b) ?? 0) - (uses.get(a) ?? 0)
+    || goneSince(b).localeCompare(goneSince(a))
+    || a.localeCompare(b);
   const packageRow = (packageName: string): SearchRow<CohortSelector> => ({
     kind: "package", packageName, components: components.get(packageName) ?? 0, matches: null, narrowedQuery: "",
   });
 
-  const rank = (scope: string | null): Ranked<CohortSelector>[] =>
-    input.components.flatMap((c): Ranked<CohortSelector>[] => {
+  const rank = (scope: string | null): SeriesRanked[] =>
+    input.components.flatMap((c): SeriesRanked[] => {
       if (scope !== null && c.packageName !== scope) return [];
       const m = match(c.displayName, scope === null ? c.packageName : null);
       if (!m) return [];
@@ -339,8 +358,8 @@ export function searchSeries(input: SeriesSearchInput): SearchResult<CohortSelec
         kind: "component" as const, packageName: c.packageName, exportName: c.displayName, componentId: c.componentId,
         disambiguator: c.disambiguator, refusal: null, matched: m.matched, pick, added: isAdded(pick),
       };
-      return [{ row, tier: m.tier, occurrences: c.occurrences }];
-    }).sort(byRank);
+      return [{ row, tier: m.tier, occurrences: c.occurrences, lastSeenAt: c.lastSeenAt }];
+    }).sort(bySeriesRank);
 
   const rows: SearchRow<CohortSelector>[] = [];
   let total: number | null = null;

@@ -15,7 +15,7 @@ import type { RecordAuthors } from "../governance.js";
 import {
   reduceRepoSummary, reduceRepoDetail, reduceComponentRows, reduceComponentDetailHead,
   reduceOccurrences, reducePackagesAcrossScans, reducePackageDetail,
-  reduceComponentsAcrossScans, reduceCrossRepoComponent, reduceCompositionGraph,
+  reduceComponentsAcrossScans, reduceScannedComponents, reduceCrossRepoComponent, reduceCompositionGraph,
 } from "../read-model-reducers.js";
 import { repoDeltas } from "../scan-diff.js";
 import { newestScanFirst, newestScanFirstSql } from "../scan-order.js";
@@ -235,6 +235,14 @@ export class PostgresDriver implements StorageDriver {
     return this.read(async (reader, snapshot) => {
       const facts = await reader.facts(await reader.select(undefined, { latestOnly: true }), summaryFields);
       return reduceComponentsAcrossScans(facts, await snapshot.listGovernance());
+    });
+  }
+
+  async listScannedComponents(repoId?: string) {
+    return this.read(async (reader, snapshot) => {
+      const latest = await reader.select(repoId, { latestOnly: true });
+      const older = await reader.lastHeldFacts(await reader.select(repoId, { record: false }), latest, summaryFields);
+      return reduceScannedComponents(await reader.facts(latest, summaryFields), older, await snapshot.listGovernance());
     });
   }
 

@@ -232,7 +232,9 @@ describe("searchTargets: refusals", () => {
 
 describe("searchSeries", () => {
   const comp = (componentId: string, displayName: string, packageName: string | null, occurrences: number, disambiguator: string | null = null): PickableComponent =>
-    ({ componentId, displayName, packageName, disambiguator, deprecated: false, occurrences, local: packageName === null });
+    ({ componentId, displayName, packageName, disambiguator, deprecated: false, occurrences, local: packageName === null, lastSeenAt: null });
+  const gone = (componentId: string, displayName: string, packageName: string, lastSeenAt: string): PickableComponent =>
+    ({ ...comp(componentId, displayName, packageName, 0), lastSeenAt });
   const charted = [
     comp("c1", "Button", "@example/old-ui", 60), comp("c2", "ButtonGroup", "@example/old-ui", 6), comp("c3", "Card", "@example/old-ui", 10),
     comp("c4", "Button", "@example/new-ui", 8, "src/button/index.ts"), comp("c5", "Button", "@example/new-ui", 3, "src/legacy/button.ts"),
@@ -273,6 +275,28 @@ describe("searchSeries", () => {
       { kind: "whole", components: 2, pick: { kind: "package", packageName: "@example/new-ui" } },
       { kind: "component", exportName: "Button", disambiguator: "src/button/index.ts", pick: { kind: "component", componentId: "c4" } },
       { kind: "component", exportName: "Button", disambiguator: "src/legacy/button.ts", pick: { kind: "component", componentId: "c5" } },
+    ]);
+  });
+
+  it("lists components and packages only older scans hold after every one in use, the most recently held first", () => {
+    const components = [
+      ...charted,
+      gone("g1", "Button", "@example/legacy-kit", "2026-08-01T00:00:00.000Z"),
+      gone("g2", "Alert", "@example/old-ui", "2026-06-01T00:00:00.000Z"),
+      gone("g3", "Badge", "@example/old-ui", "2026-09-04T00:00:00.000Z"),
+      gone("g4", "Card", "@example/older-kit", "2026-09-10T00:00:00.000Z"),
+    ];
+    const packages = ["@example/empty", "@example/legacy-kit", "@example/new-ui", "@example/old-ui", "@example/older-kit"];
+    const ordered = (over: Partial<SeriesSearchInput>) => seriesLabels({ components, packages, ...over });
+
+    expect(ordered({ query: "button" })).toEqual([
+      "Button @example/old-ui", "Button @example/new-ui", "Button @example/new-ui", "ButtonGroup @example/old-ui", "Button @example/legacy-kit",
+    ]);
+    expect(ordered({ scope: "@example/old-ui" })).toEqual([
+      "all @example/old-ui", "Button @example/old-ui", "Card @example/old-ui", "ButtonGroup @example/old-ui", "Badge @example/old-ui", "Alert @example/old-ui",
+    ]);
+    expect(ordered({}).filter((l) => l.startsWith("package"))).toEqual([
+      "package @example/old-ui", "package @example/new-ui", "package @example/empty", "package @example/older-kit", "package @example/legacy-kit",
     ]);
   });
 

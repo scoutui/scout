@@ -55,13 +55,13 @@ If the preview reads **Trends appear once these repos have been scanned more tha
 
 ### Add other kinds of series
 
-**Add a series** charts more than tags. With nothing typed, it lists your tags, then **Local components**, then packages, most used first. Type to search: matching tags and packages come first, then components, best match first.
+**Add a series** charts more than tags. With nothing typed, it lists your tags, then **Local components**, then packages, most used first. Type to search: matching tags and packages come first, then components, best match first. Components and packages your repos no longer use come after the rest, most recently used first, so you can still chart them.
 
 - **Local components** counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
 - A package narrows the search to itself. Its first row, **All of** and the package's name, adds the whole package, such as `@acme/icons`, as one series. Press **×** beside the package in the box to search everything again.
 - A component adds just that component, such as `Button` from `@acme/ui`. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
 
-With one repo picked under **Repos**, the list holds only what that repo's latest scan contains. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list, or pick it in **Add a series** again.
+With one repo picked under **Repos**, the list holds only what that repo uses or has used. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list, or pick it in **Add a series** again.
 
 ### Count only deprecated components
 

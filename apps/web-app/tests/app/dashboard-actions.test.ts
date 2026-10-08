@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ComponentRow, StorageDriver } from "@scoutui/web-shared";
+import type { ScannedComponent, StorageDriver } from "@scoutui/web-shared";
 import { pickableForRepo, previewDashboard } from "@/app/charts/dashboard-actions";
 import type { identify, requireEditor } from "@/lib/identity";
 
@@ -11,14 +11,14 @@ vi.mock("@/lib/identity", () => identity);
 vi.mock("@/lib/storage", () => ({ getStorage: () => storage }));
 vi.stubEnv("DATABASE_URL", "");
 
-const row: ComponentRow = {
+const row: ScannedComponent = {
   componentId: "77b809260ecd27fe", kind: "react-component", scope: "external", packageName: "@x/lib", displayName: "Address",
-  disambiguator: null, version: "1.2.3", occurrenceCount: 3, fileCount: 2, deprecated: true, tags: [],
+  disambiguator: null, totalOccurrences: 3, repoCount: 1, repoId: "known", deprecated: true, usage: "direct", lastSeenAt: null,
 };
 const storage = {
   async withReadSnapshot<T>(read: (snapshot: StorageDriver) => Promise<T>) { return read(this as unknown as StorageDriver); },
   skippedScans: () => ({ fallbacks: [], gaps: [] }),
-  listComponentsForRepo: async (repoId: string) => repoId === "known" ? [row] : [],
+  listScannedComponents: async (repoId?: string) => repoId === "known" ? [row] : [],
   listPackages: async (repoId?: string) => repoId === "known"
     ? ["@x/lib", "@x/aggregate"].map((packageName) => ({
         packageName,
@@ -38,7 +38,7 @@ describe("pickableForRepo", () => {
     expect(result.state).toBe("ready");
     if (result.state !== "ready") throw new Error("Expected ready picker");
     expect(result.value.packages).toEqual(["@x/aggregate", "@x/lib"]);
-    expect(result.value.components).toEqual([{ componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", disambiguator: null, deprecated: true, occurrences: 3, local: false }]);
+    expect(result.value.components).toEqual([{ componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", disambiguator: null, deprecated: true, occurrences: 3, local: false, lastSeenAt: null }]);
   });
 
   it("returns no options when the repo has no scan", async () => {

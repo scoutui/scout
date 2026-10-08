@@ -8,6 +8,7 @@ import type {
   PackageRepoVersionCell,
   PackageComponentRow,
   ComponentSummary,
+  ScannedComponent,
   ComponentDetailHead,
   OccurrenceRow,
   ComponentKind,
@@ -26,6 +27,7 @@ import { disambiguatorOf, governanceKey, presentIdentity, tagClaimants, type Gov
 import { displayNameCollisionKey } from "./projection-context.js";
 import { representativeUsage } from "./representative.js";
 import { diffForScan, repoDelta } from "./scan-diff.js";
+import { scanOrderTime } from "./scan-order.js";
 import type { ComponentFact, FactScan, DetailRow, OccurrenceModelRow, GraphRow } from "./read-models.js";
 import type { CompositionGraph } from "./composition-graph.js";
 
@@ -337,6 +339,22 @@ export function reduceComponentsAcrossScans(
     }),
     row => row.packageName,
   ).sort((a, b) => b.totalOccurrences - a.totalOccurrences);
+}
+
+/**
+ * Every component `latest` and `older` hold, presented as `reduceComponentsAcrossScans` presents them. A component only
+ * `older` holds has no uses, and `lastSeenAt` is when the scan `older` holds it under was made.
+ */
+export function reduceScannedComponents(
+  latest: FactScan<SummaryFact>[],
+  older: FactScan<SummaryFact>[],
+  governance: GovernanceRecord[] = [],
+): ScannedComponent[] {
+  const lastSeen = new Map(older.flatMap(scan => scan.components.map(c => [c.id, scanOrderTime(scan.meta)] as const)));
+  return reduceComponentsAcrossScans([...latest, ...older], governance).map(row => {
+    const lastSeenAt = lastSeen.get(row.componentId);
+    return lastSeenAt === undefined ? { ...row, lastSeenAt: null } : { ...row, totalOccurrences: 0, lastSeenAt };
+  });
 }
 
 function addToBucket<C extends Pick<ComponentFact, "id" | "stats" | "usage">>(

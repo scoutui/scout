@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Children, isValidElement, type ReactNode } from "react";
 import { componentKey } from "@scoutui/scan-format";
 import { PostgresDriver, type DashboardConfig, type DashboardInput, type StorageDriver } from "@scoutui/web-shared";
+import type { Component } from "@scoutui/scan-format";
+import type { PickableComponent } from "@/lib/chart-builder-series";
 import { artifact, component, packageExport, repoDeclaration, resolvedAt } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
@@ -103,6 +105,46 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
         points: [{ cohortKey: `component:${retired.id}`, label: "RetiredBadge · @sample/core", color: "", value: 0, componentCount: 0 }],
       } });
       expect(digests.mock.calls).toEqual([[undefined, { latestOnly: true }], [undefined, { componentIds: [retired.id] }]]);
+    });
+  });
+
+  it("offers in the builder every component and package the scans in scope have held, with when the latest scans stopped holding each", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const retired = component(packageExport("@sample/core", "RetiredBadge"));
+      const oldCard = component(packageExport("@sample/legacy", "OldCard"));
+      const elsewhere = component(packageExport("@sample/elsewhere", "GoneElsewhere"));
+      const older = (repoId: string, scanId: string, scannedAt: string, components: Component[]) => {
+        const scan = artifact({ repoId, scanId, scannedAt, components, occurrences: components.map((c, i) => resolvedAt(c, "src/app.tsx", i + 1)) });
+        scan.meta.repo.commit = scanId;
+        return publishScan(pool, scan, { uploadedByUserId: null });
+      };
+      await older("repo-a", "scan-oldest", "2026-05-01T00:00:00Z", [retired, oldCard]);
+      await older("repo-a", "scan-middle", "2026-05-20T00:00:00Z", [retired]);
+      await older("repo-b", "scan-b-older", "2026-05-10T00:00:00Z", [elsewhere]);
+      const { default: newPage } = await import("@/app/charts/new/page");
+      const { pickableForRepo } = await import("@/app/charts/dashboard-actions");
+      const seen = (list: PickableComponent[], ...names: string[]) => Object.fromEntries(names.map(name => [name,
+        list.filter(c => c.displayName === name).map(({ packageName, occurrences, lastSeenAt }) => ({ packageName, occurrences, lastSeenAt }))]));
+
+      const estate = propsOf(await newPage({ searchParams: Promise.resolve({}) }), "DashboardBuilder") as { components: PickableComponent[]; packages: string[] };
+      expect(seen(estate.components, "ActionButton", "RetiredBadge", "OldCard", "GoneElsewhere")).toEqual({
+        ActionButton: [{ packageName: "@sample/core", occurrences: 1, lastSeenAt: null }],
+        RetiredBadge: [{ packageName: "@sample/core", occurrences: 0, lastSeenAt: "2026-05-20T00:00:00.000Z" }],
+        OldCard: [{ packageName: "@sample/legacy", occurrences: 0, lastSeenAt: "2026-05-01T00:00:00.000Z" }],
+        GoneElsewhere: [{ packageName: "@sample/elsewhere", occurrences: 0, lastSeenAt: "2026-05-10T00:00:00.000Z" }],
+      });
+      expect(estate.packages).toEqual(["@example/app-kit", "@sample/core", "@sample/elsewhere", "@sample/legacy", "@sample/mixed"]);
+
+      const repo = await pickableForRepo("repo-a");
+      if (repo.state !== "ready") throw new Error("Expected the repo's picker lists");
+      expect(seen(repo.value.components, "ActionButton", "RetiredBadge", "OldCard", "GoneElsewhere")).toEqual({
+        ActionButton: [],
+        RetiredBadge: [{ packageName: "@sample/core", occurrences: 0, lastSeenAt: "2026-05-20T00:00:00.000Z" }],
+        OldCard: [{ packageName: "@sample/legacy", occurrences: 0, lastSeenAt: "2026-05-01T00:00:00.000Z" }],
+        GoneElsewhere: [],
+      });
+      expect(repo.value.packages).toEqual(["@sample/core", "@sample/legacy", "@sample/mixed"]);
     });
   });
 

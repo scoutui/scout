@@ -359,6 +359,8 @@ export const ComponentSummarySchema = z.object({
   usage: UsageKind,
 });
 export type ComponentSummary = z.infer<typeof ComponentSummarySchema>;
+/** A component any scan in scope holds. `lastSeenAt` is null while a latest scan holds it, otherwise when the newest scan holding it was made. */
+export type ScannedComponent = ComponentSummary & { lastSeenAt: string | null };
 
 // ---- Governance (web-authored deprecation / supersession) ----
 export const DispositionSchema = z.discriminatedUnion("kind", [
