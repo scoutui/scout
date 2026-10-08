@@ -1,10 +1,10 @@
 "use client";
 import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, type TooltipContentProps, XAxis, YAxis, useYAxisInverseScale } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, searchedSeries, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
-import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, moreSeries, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
+import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
@@ -148,33 +148,18 @@ export function CohortTrendChart({
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             isAnimationActive={false}
             wrapperStyle={{ zIndex: 10 }}
-            content={(props) => {
-              const { rows, more } = tooltipRows(props.payload);
-              return (
-                <ChartTooltipContent
-                  active={props.active && tooltipRowTimestamp(props.payload) !== from}
-                  payload={rows}
-                  label={props.label}
-                  className={more > 0 ? "w-64" : undefined}
-                  footer={more > 0 ? moreSeries(more) : null}
-                  labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage, series)}
-                  formatter={(value, name, item) => (
-                    <>
-                      <span
-                        className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: item?.color }}
-                      />
-                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
-                        <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} />
-                        <span className="font-medium tabular-nums text-foreground">
-                          {formatMetric(Number(value), metric)}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                />
-              );
-            }}
+            content={(props) => (
+              <ScanTooltip
+                {...props}
+                from={from}
+                coverage={coverage}
+                series={series}
+                config={config}
+                shared={shared}
+                deprecatedOnly={deprecatedOnly}
+                format={(value) => formatMetric(value, metric)}
+              />
+            )}
           />
           {series.map((s, i) => {
             const color = colors.get(s.cohortKey) ?? "";
@@ -280,7 +265,7 @@ export function CohortTrendChart({
 }
 
 /** A tooltip row's series name, without the package when every series on the chart shares it. */
-export function seriesName(label: ReactNode, shared: string | null): ReactNode {
+function seriesName(label: ReactNode, shared: string | null): ReactNode {
   return shared !== null && typeof label === "string" ? splitCohortLabel(label).name : label;
 }
 
@@ -290,10 +275,58 @@ function JoinMarker({ cx, cy, color, dimmed }: { cx: number; cy: number; color: 
 }
 
 /**
+ * A chart over time's tooltip at the hovered scan, headed by `scanTooltipLabel`, with the rows `tooltipRows` picks for
+ * the pointer. With `stack`, the series are bands stacked in that order. `format` sets each value.
+ */
+export function ScanTooltip({
+  active,
+  payload,
+  label,
+  coordinate,
+  from,
+  coverage,
+  series,
+  config,
+  shared,
+  deprecatedOnly,
+  format,
+  stack,
+}: Pick<TooltipContentProps, "active" | "payload" | "label" | "coordinate"> & {
+  from: number | null;
+  coverage: RepoCoverage;
+  series: CohortSeries[];
+  config: ChartConfig;
+  shared: string | null;
+  deprecatedOnly: ReadonlySet<string>;
+  format: (value: number) => string;
+  stack?: readonly string[];
+}) {
+  const toValue = useYAxisInverseScale();
+  const at = coordinate === undefined || toValue === undefined ? undefined : Number(toValue(coordinate.y));
+  return (
+    <ChartTooltipContent
+      active={active && tooltipRowTimestamp(payload) !== from}
+      payload={tooltipRows(payload, at, stack)}
+      label={label}
+      labelFormatter={(_, rows) => scanTooltipLabel(rows, coverage, series)}
+      formatter={(value, name, item) => (
+        <>
+          <span className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item?.color }} />
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
+            <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} />
+            <span className="font-medium tabular-nums text-foreground">{format(Number(value))}</span>
+          </div>
+        </>
+      )}
+    />
+  );
+}
+
+/**
  * A tooltip's heading: the scan time, and beneath it how many repos the point covers when the chart covers more than
  * one, and which repos join `series` there.
  */
-export function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage, series: CohortSeries[] = []): ReactNode {
+function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage, series: CohortSeries[]): ReactNode {
   const ts = tooltipRowTimestamp(payload);
   if (ts === null) return "";
   const detail = [repoCoverageAt(coverage, ts), reposJoiningAt(series, ts)].filter(Boolean).join(" · ");

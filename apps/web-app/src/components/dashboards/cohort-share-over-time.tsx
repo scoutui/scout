@@ -2,12 +2,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, expandRowShares, seriesToRows, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
-import { formatDayTick, formatPct, moreSeries, sharedPackage } from "@/lib/dashboard-format";
-import { TooltipSeriesName } from "./cohort-label";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { NO_KEYS, cohortChartConfig, dayTicks, expandRowShares, seriesToRows } from "@/lib/dashboard-chart-data";
+import { formatDayTick, formatPct, sharedPackage } from "@/lib/dashboard-format";
 import { CohortShareBar, type ShareSegment } from "./cohort-share-bar";
-import { scanTooltipLabel, seriesName } from "./cohort-trend-chart";
+import { ScanTooltip } from "./cohort-trend-chart";
 
 /**
  * Share over time: a 100%-stacked area over scans, where each band is a cohort's
@@ -90,31 +89,19 @@ export function CohortShareOverTime({
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
             isAnimationActive={false}
             wrapperStyle={{ zIndex: 10 }}
-            content={(props) => {
-              const { rows, more } = tooltipRows(props.payload);
-              return (
-                <ChartTooltipContent
-                  active={props.active && tooltipRowTimestamp(props.payload) !== from}
-                  payload={rows}
-                  label={props.label}
-                  className={more > 0 ? "w-64" : undefined}
-                  footer={more > 0 ? moreSeries(more) : null}
-                  labelFormatter={(_, payload) => scanTooltipLabel(payload, coverage)}
-                  formatter={(value, name, item) => (
-                    <>
-                      <span
-                        className="mt-[5px] h-0.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: item?.color }}
-                      />
-                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none">
-                        <TooltipSeriesName name={seriesName(config[String(name)]?.label ?? name, shared)} deprecatedOnly={deprecatedOnly.has(String(name))} />
-                        <span className="font-medium tabular-nums text-foreground">{formatPct(Number(value))}</span>
-                      </div>
-                    </>
-                  )}
-                />
-              );
-            }}
+            content={(props) => (
+              <ScanTooltip
+                {...props}
+                from={from}
+                coverage={coverage}
+                series={series}
+                config={config}
+                shared={shared}
+                deprecatedOnly={deprecatedOnly}
+                format={formatPct}
+                stack={series.map((s) => s.cohortKey)}
+              />
+            )}
           />
           {series.map((s) => {
             const color = colors.get(s.cohortKey) ?? "";
