@@ -18,7 +18,7 @@ const cohorts: CohortSelector[] = [
   { kind: "package", packageName: "@example/web" },
   { kind: "component", componentId: "btn" },
 ];
-const coverage = { total: 2, points: [MORNING, LATER].map((t) => ({ t, repos: 2 })) };
+const coverage = { total: 2, repoIds: ["checkout", "storefront"], points: [MORNING, LATER].map((t) => ({ t, repos: 2 })) };
 const countSeries: CohortSeries[] = [
   { ...web, points: [{ t: MORNING, value: 40 }, { t: LATER, value: 50 }] },
   { ...button, points: [{ t: MORNING, value: 5 }, { t: LATER, value: 125 }] },
@@ -49,7 +49,16 @@ const FONTS = { sans: '"Sans Test", sans-serif', mono: '"Mono Test", monospace' 
 const config = (chartType: DashboardConfig["chartType"]): DashboardConfig => ({ scope: { kind: "all" }, cohorts, chartType, metric: "count" });
 
 function drawn(chartConfig: DashboardConfig, view: DashboardView): ChartFigure {
-  const figure = chartFigure({ title: "Button adoption", config: chartConfig, view, host: "scout.example.com", exportedAt: new Date(2026, 9, 4), colors, nameWidth: (name) => name.length * 9 });
+  const figure = chartFigure({
+    title: "Button adoption",
+    config: chartConfig,
+    view,
+    host: "scout.example.com",
+    exportedAt: new Date(2026, 9, 4),
+    colors,
+    nameWidth: (name) => name.length * 9,
+    headingWidth: (text) => text.length * 9,
+  });
   if (figure === null) throw new Error("expected a figure");
   return figure;
 }
@@ -132,7 +141,9 @@ describe("paintFigure", () => {
   it("shortens text that would run past its width, ending it with …", () => {
     const figure = drawn(config("trend"), { kind: "series", series: countSeries, coverage });
     const { ctx, calls } = recorder(10);
-    paintFigure(ctx, { ...figure, title: { ...figure.title, text: "Button adoption across every repo", maxWidth: 100 } }, FONTS);
+    const [title] = figure.title;
+    if (!title) throw new Error("expected a title");
+    paintFigure(ctx, { ...figure, title: [{ ...title, text: "Button adoption across every repo", maxWidth: 100 }] }, FONTS);
     expect(textsDrawn(calls)).toContain("Button ad…");
   });
 });
@@ -167,6 +178,20 @@ describe("chartPng", () => {
     const fontOf = (text: string) => calls.find((c) => c.op === "fillText" && c.args[0] === text)?.font;
     expect(fontOf("Button adoption")).toBe(`600 30px ${fonts.sans}`);
     expect(fontOf("@example/web")).toBe(`400 15px ${fonts.mono}`);
+  });
+
+  it("wraps a long title as wide as the page's title face sets it, cutting none of it", async () => {
+    addStyle(paletteCss());
+    Object.defineProperty(document, "fonts", { value: { ready: Promise.resolve() }, configurable: true });
+    const { ctx, calls } = recorder(1);
+    ctx.measureText = (text) => ({ width: text.length * (ctx.font.startsWith("600 30px") ? 20 : 1) }) as TextMetrics;
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => ctx as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((done) => done(new Blob(["png"], { type: "image/png" })));
+    const title = "Adoption of the shared form controls across the checkout, storefront and account apps";
+    await chartPng({ title, config: config("trend"), view: { kind: "series", series: countSeries, coverage }, host: "scout.example.com", exportedAt: new Date(2026, 9, 4) });
+    const titleLines = calls.filter((c) => c.op === "fillText" && c.font.startsWith("600 30px")).map((c) => String(c.args[0]));
+    expect(titleLines).toHaveLength(2);
+    expect(titleLines.join(" ")).toBe(title);
   });
 
   it("draws each bar's whole name, however wide the page's mono face sets it", async () => {

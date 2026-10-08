@@ -56,8 +56,8 @@ export type FigureContext = Pick<
 /** CSS font families for the figure's sans and mono text. */
 export type FigureFonts = { sans: string; mono: string };
 
-/** What `chartFigure` takes, apart from the colours and name widths, which `chartPng` reads from the page. */
-export type ChartPngInput = Omit<ChartFigureInput, "colors" | "nameWidth">;
+/** What `chartFigure` takes, apart from the colours and text widths, which `chartPng` reads from the page. */
+export type ChartPngInput = Omit<ChartFigureInput, "colors" | "nameWidth" | "headingWidth">;
 
 /** The chart as a 2560 × 1440 PNG in the light theme's colours, whatever theme the page shows. */
 export async function chartPng(input: ChartPngInput): Promise<Blob> {
@@ -66,8 +66,16 @@ export async function chartPng(input: ChartPngInput): Promise<Blob> {
   const ctx = canvas.getContext("2d");
   if (ctx === null) throw new Error("This browser can't draw the chart's image.");
   const fonts = pageFonts();
-  ctx.font = monoFont(fonts, BAR_TEXT_SIZE);
-  const figure = chartFigure({ ...input, colors: lightChartColors(), nameWidth: (name) => ctx.measureText(name).width });
+  const widthIn = (font: string) => (value: string) => {
+    ctx.font = font;
+    return ctx.measureText(value).width;
+  };
+  const figure = chartFigure({
+    ...input,
+    colors: lightChartColors(),
+    nameWidth: widthIn(monoFont(fonts, BAR_TEXT_SIZE)),
+    headingWidth: (value, kind) => widthIn(kind === "title" ? titleFont(fonts) : subtitleFont(fonts))(value),
+  });
   if (figure === null) throw new Error("This chart has no image to export.");
   canvas.width = figure.width * SCALE;
   canvas.height = figure.height * SCALE;
@@ -118,6 +126,8 @@ function rootStyles(sheets: Iterable<CSSStyleSheet>): CSSStyleDeclaration[] {
 }
 
 const monoFont = (fonts: FigureFonts, size: number) => `400 ${size}px ${fonts.mono}`;
+const titleFont = (fonts: FigureFonts) => `600 30px ${fonts.sans}`;
+const subtitleFont = (fonts: FigureFonts) => `400 18px ${fonts.sans}`;
 
 function pageFonts(): FigureFonts {
   const style = getComputedStyle(document.documentElement);
@@ -209,8 +219,8 @@ export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: Figu
   }
 
   if (figure.note) write(ctx, figure.note, sans(400, 15), palette.muted);
-  write(ctx, figure.title, sans(600, 30), palette.ink);
-  write(ctx, figure.subtitle, sans(400, 18), palette.muted);
+  for (const line of figure.title) write(ctx, line, titleFont(fonts), palette.ink);
+  for (const line of figure.subtitle) write(ctx, line, subtitleFont(fonts), palette.muted);
   write(ctx, figure.footer, sans(400, 14), palette.muted);
 }
 

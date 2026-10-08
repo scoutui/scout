@@ -208,7 +208,7 @@ function PackageGroup({
               <DashboardSparkline
                 uid={`package-${group.packageName}`}
                 config={PACKAGE_TREND}
-                view={{ kind: "series", series: group.trend, coverage: { total: 0, points: [] } }}
+                view={{ kind: "series", series: group.trend, coverage: { total: 0, repoIds: [], points: [] } }}
               />
             </span>
           </>

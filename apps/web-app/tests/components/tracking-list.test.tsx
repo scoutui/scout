@@ -35,7 +35,7 @@ function entry(id: string, from: GovernanceRule[], over: Partial<GovernanceTrack
     config: { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" },
     series: [],
     lines: null,
-    coverage: { total: 1, points: [] },
+    coverage: { total: 1, repoIds: ["checkout"], points: [] },
     active: true,
     remaining: 5,
     progress: 0.5,

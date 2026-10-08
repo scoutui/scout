@@ -18,7 +18,9 @@ const FIGURE_HEIGHT = 720;
 
 const PAD = 48;
 const TITLE_Y = 60;
+const TITLE_LINE = 38;
 const SUBTITLE_Y = 94;
+const SUBTITLE_LINE = 24;
 const PLOT_TOP = 136;
 const FOOTER_Y = FIGURE_HEIGHT - 32;
 const LEGEND_BOTTOM = FOOTER_Y - 32;
@@ -65,8 +67,10 @@ export type ChartFigure = {
   width: number;
   height: number;
   palette: Record<FigureColorRole, string>;
-  title: FigureText;
-  subtitle: FigureText;
+  /** The title, one entry per line. */
+  title: FigureText[];
+  /** The subtitle, one entry per line. */
+  subtitle: FigureText[];
   footer: FigureText;
   plot: FigureRect;
   yTicks: FigureText[];
@@ -89,6 +93,8 @@ export type ChartFigureInput = {
   colors: Record<string, string>;
   /** The width of a bar's name or a line's end label set in the mono face at `BAR_TEXT_SIZE`, in layout units. */
   nameWidth: (name: string) => number;
+  /** The width of a line of the title or the subtitle set in its own face, in layout units. */
+  headingWidth: (text: string, kind: "title" | "subtitle") => number;
   /** Each component's path by cohortKey, to tell lines of the same name apart. */
   paths?: Readonly<Record<string, string>> | undefined;
 };
@@ -102,9 +108,9 @@ export function hasFigure(config: DashboardConfig, view: DashboardView): boolean
 
 /**
  * The layout of a chart's image in 1280 × 720 units, with every colour resolved, or null for a chart `hasFigure`
- * gives no image.
+ * gives no image. A title or subtitle too wide for one line wraps, and the image grows taller by the lines it adds.
  */
-export function chartFigure({ title, config, view, whole = view, host, exportedAt, colors, nameWidth, paths = {} }: ChartFigureInput): ChartFigure | null {
+export function chartFigure({ title, config, view, whole = view, host, exportedAt, colors, nameWidth, headingWidth, paths = {} }: ChartFigureInput): ChartFigure | null {
   if (!hasFigure(config, view)) return null;
   const resolve = (key: string): string => {
     const value = colors[key];
@@ -126,23 +132,34 @@ export function chartFigure({ title, config, view, whole = view, host, exportedA
     nameWidth,
   };
   const inPackage = (subtitle: string) => (shared === null ? subtitle : `${subtitle} · ${shared}`);
-  const frame = {
-    width: FIGURE_WIDTH,
-    height: FIGURE_HEIGHT,
-    palette: { background: resolve("background"), ink: resolve("ink"), muted: resolve("muted"), grid: resolve("grid") },
-    title: text(title, PAD, TITLE_Y),
-    footer: text(`Scout · ${host} · exported ${exportDate(exportedAt)}`, PAD, FOOTER_Y),
+  const heading = (subtitle: string) => {
+    const width = FIGURE_WIDTH - 2 * PAD;
+    const titleLines = wrap(title, width, (line) => headingWidth(line, "title"));
+    const subtitleY = SUBTITLE_Y + (titleLines.length - 1) * TITLE_LINE;
+    const subtitleLines = wrap(subtitle, width, (line) => headingWidth(line, "subtitle"));
+    const drop = subtitleY - SUBTITLE_Y + (subtitleLines.length - 1) * SUBTITLE_LINE;
+    return {
+      frame: {
+        width: FIGURE_WIDTH,
+        height: FIGURE_HEIGHT + drop,
+        palette: { background: resolve("background"), ink: resolve("ink"), muted: resolve("muted"), grid: resolve("grid") },
+        title: titleLines.map((line, i) => text(line, PAD, TITLE_Y + i * TITLE_LINE, "left", width)),
+        subtitle: subtitleLines.map((line, i) => text(line, PAD, subtitleY + i * SUBTITLE_LINE, "left", width)),
+        footer: text(`Scout · ${host} · exported ${exportDate(exportedAt)}`, PAD, FOOTER_Y + drop),
+      },
+      body: { top: PLOT_TOP + drop, bottom: LEGEND_BOTTOM + drop },
+    };
   };
   const repo = config.scope.kind === "repo" ? config.scope.repoId : null;
   if (config.chartType === "bars") {
     if (view.kind !== "snapshot") return null;
-    return { ...frame, ...barsLayout(view.points, config.metric, style, inPackage(repo ? `${repo} · latest scan` : "All repos · latest scans")) };
+    const { frame, body } = heading(inPackage(repo ? `${repo} · latest scan` : "All repos · latest scans"));
+    return { ...frame, ...barsLayout(view.points, config.metric, style, body) };
   }
   if (view.kind !== "series") return null;
+  const { frame, body } = heading(inPackage(`${dateRange(view.series)} · ${repo ?? reposCovered(view.coverage)}`));
   const stacked = config.chartType === "stacked-share";
-  const layout = stacked ? stackedLayout(view.series, style) : trendLayout(view.series, config.metric, style);
-  const range = dateRange(...layout.span);
-  return { ...frame, ...layout.figure, subtitle: text(inPackage(`${range} · ${repo ?? reposCovered(view.coverage)}`), PAD, SUBTITLE_Y) };
+  return { ...frame, ...(stacked ? stackedLayout(view.series, style, body) : trendLayout(view.series, config.metric, style, body)) };
 }
 
 type SeriesStyle = {
@@ -154,8 +171,9 @@ type SeriesStyle = {
   paths: (named: ReadonlyArray<{ cohortKey: string; label: string }>) => Map<string, string>;
   nameWidth: (name: string) => number;
 };
-type Layout = Pick<ChartFigure, "subtitle" | "plot" | "yTicks" | "xLabels" | "marks" | "legend" | "note">;
-type SeriesLayout = { figure: Omit<Layout, "subtitle">; span: [string, string] };
+type Layout = Pick<ChartFigure, "plot" | "yTicks" | "xLabels" | "marks" | "legend" | "note">;
+/** Where the plot starts, and where the legend below it ends. */
+type Body = { top: number; bottom: number };
 type Axes = { plot: FigureRect; yTicks: FigureText[]; xLabels: FigureText[]; times: number[]; xOf: (ts: number) => number; yOf: (v: number) => number };
 
 /** The series in order of their latest value, largest first, each with that value. */
@@ -169,7 +187,7 @@ function byLatest(series: CohortSeries[]): Array<{ series: CohortSeries; latest:
  * the part of its path that tells it from a line of the same name, and the label column is as wide as its widest line,
  * so no name is cut.
  */
-function trendLayout(series: CohortSeries[], metric: "count" | "share", style: SeriesStyle): SeriesLayout {
+function trendLayout(series: CohortSeries[], metric: "count" | "share", style: SeriesStyle, body: Body): Layout {
   const labelled = byLatest(series).slice(0, LABELLED_LINES);
   const paths = style.paths(labelled.map(({ series: s }) => s));
   const parts = labelled.map(({ series: s, latest }) => {
@@ -192,10 +210,10 @@ function trendLayout(series: CohortSeries[], metric: "count" | "share", style: S
   });
   const labelWidth = Math.max(...named.map((n) => n.width));
   const unnamed = series.length - named.length;
-  const plotBottom = unnamed > 0 ? LEGEND_BOTTOM - LEGEND_ROW - LEGEND_GAP - X_LABELS : LEGEND_BOTTOM - X_LABELS;
+  const plotBottom = unnamed > 0 ? body.bottom - LEGEND_ROW - LEGEND_GAP - X_LABELS : body.bottom - X_LABELS;
   const right = FIGURE_WIDTH - PAD - LEADER - labelWidth;
   const ticks = niceTicks(Math.max(...series.flatMap((s) => s.points.map((p) => p.value))), metric === "share" ? 0.01 : 1);
-  const axes = seriesAxes(series, ticks, metric, right, plotBottom);
+  const axes = seriesAxes(series, ticks, metric, right, body.top, plotBottom);
   const lines = series.map((s) => ({
     color: style.seriesColor(s.cohortKey),
     points: s.points.map((p) => ({ x: axes.xOf(Date.parse(p.t)), y: axes.yOf(p.value) })),
@@ -228,12 +246,12 @@ function trendLayout(series: CohortSeries[], metric: "count" | "share", style: S
       };
     })
     .sort((a, b) => a.name.y - b.name.y);
-  const note = unnamed > 0 ? text(moreSeries(unnamed), PAD, LEGEND_BOTTOM - LEGEND_ROW / 2) : null;
-  return { figure: { ...axesFigure(axes), marks: { kind: "lines", lines, endLabels }, legend: [], note }, span: span(axes.times) };
+  const note = unnamed > 0 ? text(moreSeries(unnamed), PAD, body.bottom - LEGEND_ROW / 2) : null;
+  return { ...axesFigure(axes), marks: { kind: "lines", lines, endLabels }, legend: [], note };
 }
 
 /** A stacked chart's bands, with a legend of at most three rows that counts the series it leaves out. */
-function stackedLayout(series: CohortSeries[], style: SeriesStyle): SeriesLayout {
+function stackedLayout(series: CohortSeries[], style: SeriesStyle, body: Body): Layout {
   const latestTotal = series.reduce((sum, s) => sum + (s.points.at(-1)?.value ?? 0), 0);
   const { legend, note, top: legendTop } = placeLegend(
     byLatest(series).map(({ series: s, latest }) => ({
@@ -241,8 +259,9 @@ function stackedLayout(series: CohortSeries[], style: SeriesStyle): SeriesLayout
       value: formatPct(latestTotal > 0 ? latest / latestTotal : 0),
       color: style.seriesColor(s.cohortKey),
     })),
+    body.bottom,
   );
-  const axes = seriesAxes(series, [0, 0.25, 0.5, 0.75, 1], "share", FIGURE_WIDTH - PAD, legendTop - LEGEND_GAP - X_LABELS);
+  const axes = seriesAxes(series, [0, 0.25, 0.5, 0.75, 1], "share", FIGURE_WIDTH - PAD, body.top, legendTop - LEGEND_GAP - X_LABELS);
   const rows = seriesToRows(series);
   const keys = series.map((s) => s.cohortKey);
   const stackedRows = expandRowShares(rows, keys).map((row) => {
@@ -254,14 +273,14 @@ function stackedLayout(series: CohortSeries[], style: SeriesStyle): SeriesLayout
   });
   const edge = (band: number) => axes.times.map((ts, r) => ({ x: axes.xOf(ts), y: axes.yOf(band < 0 ? 0 : (stackedRows[r]?.[band] ?? 0)) }));
   const areas = series.map((s, i) => ({ color: style.seriesColor(s.cohortKey), top: edge(i), bottom: edge(i - 1) }));
-  return { figure: { ...axesFigure(axes), marks: { kind: "areas", areas }, legend, note }, span: span(axes.times) };
+  return { ...axesFigure(axes), marks: { kind: "areas", areas }, legend, note };
 }
 
-/** The plot between the y-axis labels and `right`, from the top of the plot area down to `bottom`, with its axes. */
-function seriesAxes(series: CohortSeries[], ticks: number[], metric: "count" | "share", right: number, bottom: number): Axes {
+/** The plot between the y-axis labels and `right`, from `top` down to `bottom`, with its axes. */
+function seriesAxes(series: CohortSeries[], ticks: number[], metric: "count" | "share", right: number, top: number, bottom: number): Axes {
   const rows = seriesToRows(series);
   const left = PAD + Y_LABELS;
-  const plot: FigureRect = { x: left, y: PLOT_TOP, width: right - left, height: bottom - PLOT_TOP };
+  const plot: FigureRect = { x: left, y: top, width: right - left, height: bottom - top };
   const yMax = ticks.at(-1) ?? 1;
   const times = rows.map(({ ts }) => Number(ts));
   const first = times[0] ?? 0;
@@ -283,11 +302,6 @@ function seriesAxes(series: CohortSeries[], ticks: number[], metric: "count" | "
 }
 
 const axesFigure = ({ plot, yTicks, xLabels }: Axes) => ({ plot, yTicks, xLabels });
-
-function span(times: number[]): [string, string] {
-  const first = times[0] ?? 0;
-  return [new Date(first).toISOString(), new Date(times.at(-1) ?? first).toISOString()];
-}
 
 /**
  * Where to set labels that want to sit at `wanted` heights, each as tall as `heights` says: each at its height, moved
@@ -315,21 +329,20 @@ function spread(wanted: number[], bottom: number, heights: number[]): number[] {
   return placed;
 }
 
-function barsLayout(points: CohortPoint[], metric: "count" | "share", style: SeriesStyle, subtitle: string): Layout {
+function barsLayout(points: CohortPoint[], metric: "count" | "share", style: SeriesStyle, body: Body): Layout {
   const bars = barOrder(points);
   const names = bars.map((p) => style.label(p));
   const nameColumn = Math.min(NAME_COLUMN, Math.max(...names.map(style.nameWidth)) + 2 * TEXT_GAP);
   const plot: FigureRect = {
     x: PAD + nameColumn,
-    y: PLOT_TOP,
+    y: body.top,
     width: FIGURE_WIDTH - PAD - VALUE_COLUMN - (PAD + nameColumn),
-    height: LEGEND_BOTTOM - PLOT_TOP,
+    height: body.bottom - body.top,
   };
   const rowHeight = Math.min(BAR_ROW_MAX, plot.height / bars.length);
   const thickness = Math.min(BAR_MAX, rowHeight * 0.6);
   const max = Math.max(...bars.map((p) => p.value)) || 1;
   return {
-    subtitle: text(subtitle, PAD, SUBTITLE_Y),
     plot,
     yTicks: [],
     xLabels: [],
@@ -351,11 +364,11 @@ function barsLayout(points: CohortPoint[], metric: "count" | "share", style: Ser
   };
 }
 
-/** The legend in at most `LEGEND_ROWS` rows: past that many slots, the last one counts the entries left out. */
-function placeLegend(entries: Array<{ label: string; value: string; color: string }>): { legend: FigureLegendEntry[]; note: FigureText | null; top: number } {
+/** The legend in at most `LEGEND_ROWS` rows ending at `bottom`: past that many slots, the last one counts the entries left out. */
+function placeLegend(entries: Array<{ label: string; value: string; color: string }>, bottom: number): { legend: FigureLegendEntry[]; note: FigureText | null; top: number } {
   const slots = LEGEND_COLUMNS * LEGEND_ROWS;
   const listed = entries.length > slots ? entries.slice(0, slots - 1) : entries;
-  const top = LEGEND_BOTTOM - Math.ceil((listed.length + (listed.length < entries.length ? 1 : 0)) / LEGEND_COLUMNS) * LEGEND_ROW;
+  const top = bottom - Math.ceil((listed.length + (listed.length < entries.length ? 1 : 0)) / LEGEND_COLUMNS) * LEGEND_ROW;
   const column = (FIGURE_WIDTH - 2 * PAD) / LEGEND_COLUMNS;
   const at = (i: number) => ({ x: PAD + (i % LEGEND_COLUMNS) * column, y: top + Math.floor(i / LEGEND_COLUMNS) * LEGEND_ROW + LEGEND_ROW / 2 });
   const noteAt = at(listed.length);
@@ -373,7 +386,11 @@ function niceTicks(max: number, minStep: number): number[] {
   return Array.from({ length: Math.max(1, Math.ceil(max / step)) + 1 }, (_, i) => i * step);
 }
 
-function dateRange(first: string, last: string): string {
+/** The days a chart's series run from and to. */
+function dateRange(series: CohortSeries[]): string {
+  const times = seriesToRows(series).map(({ ts }) => Number(ts));
+  const first = new Date(times[0] ?? 0).toISOString();
+  const last = new Date(times.at(-1) ?? times[0] ?? 0).toISOString();
   const [fromYear, toYear] = [first.slice(0, 4), last.slice(0, 4)];
   if (fromYear !== toYear) return `${formatDay(first)} ${fromYear} – ${formatDay(last)} ${toYear}`;
   if (first.slice(0, 10) === last.slice(0, 10)) return `${formatDay(last)} ${toYear}`;
@@ -381,7 +398,30 @@ function dateRange(first: string, last: string): string {
 }
 
 function reposCovered(coverage: RepoCoverage): string {
-  return coverage.total === 1 ? "1 repo" : `${coverage.total} repos`;
+  const [only] = coverage.repoIds;
+  return coverage.total === 1 && only !== undefined ? only : `${coverage.total} repos`;
+}
+
+/** `value` in lines no wider than `width`, broken at spaces, and inside a word only where the word alone is wider. */
+function wrap(value: string, width: number, measure: (line: string) => number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of value.split(" ")) {
+    const joined = line === "" ? word : `${line} ${word}`;
+    if (measure(joined) <= width) {
+      line = joined;
+      continue;
+    }
+    if (line !== "") lines.push(line);
+    line = word;
+    while (line.length > 1 && measure(line) > width) {
+      let end = line.length - 1;
+      while (end > 1 && measure(line.slice(0, end)) > width) end--;
+      lines.push(line.slice(0, end));
+      line = line.slice(end);
+    }
+  }
+  return [...lines, line];
 }
 
 function exportDate(date: Date): string {
