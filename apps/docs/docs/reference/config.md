@@ -7,7 +7,7 @@ sidebar_label: "Config"
 
 [`scan`](/docs/reference/cli#scan) and [`backfill`](/docs/reference/cli#backfill) read `scout.config.json` from the current directory, or the file named by their `--config` flag. The file is plain JSON: comments and trailing commas are errors.
 
-The smallest valid config is an empty object. With it, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder:
+The smallest valid config is an empty object. With it, the scan reads every JavaScript, TypeScript and Vue file below the config folder:
 
 ```json title="scout.config.json"
 {}
@@ -32,7 +32,7 @@ The scan skips:
 - files ignored by `.gitignore`, unless [`gitignore`](#other-fields) is `false`;
 - a folder below the config folder that holds its own git repository, such as a submodule or another clone, even when an `include` pattern points into it.
 
-When an `exclude` entry has no glob characters (`*`, `?`, `[`, `]`, `{`, `}` or `!`) and nothing exists at that path, the scan warns and carries on: `Warning: "apps/playground" in exclude matches nothing. Update or remove it in ./scout.config.json.` With `--config`, it names that path instead.
+When an `exclude` entry has no glob characters and nothing exists at that path, the scan warns and carries on.
 
 ### Upload fields
 
@@ -110,19 +110,12 @@ The [repo id](/docs/reference/glossary#repo-id) comes from the first of these th
 
 ## Validation errors
 
-A config error stops `scan` or `backfill` with exit code `2` before it reads any source files. Each message starts with `Error:`. `<path>` is the config path you gave, `./scout.config.json` by default, and `<folder>` is the config folder.
+A config error stops `scan` or `backfill` before it scans. `<path>` is the config path you gave, `./scout.config.json` by default, and `<folder>` is the config folder.
 
 | Problem | Message |
 | --- | --- |
 | No file at the config path | `Couldn't find ./scout.config.json. Run scout init to create one, or pass --config <path>.` With `--config`, it names that path instead. |
 | The file isn't valid JSON | `<path> isn't valid JSON. Fix it and try again.` With `--debug`, the next line says where the parser stopped. |
-| A field that isn't in [Fields](#fields), such as a misspelled name | `<path> has a field Scout doesn't use: "<field>". Remove it and try again.` With several, it names every one: `<path> has fields Scout doesn't use: "<field>", "<field>". Remove them and try again.` No other problem is shown until they are gone. |
+| A field that isn't in [Fields](#fields), such as a misspelled name | `<path> has a field Scout doesn't use: "<field>". Remove it and try again.` With several, it names every one. |
 | Anything else the schema rejects | Each field it rejects and what's wrong, such as `"include" in <path> can't be an empty list. Fix it and try again.` |
 | On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), `scout-scan.json` in the config folder links to a file outside it | `scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
-
-`<problems>` lists every problem found, separated by `; `, each as `<location>: <message>`. The location is `<root>` for the whole file, or the field's path, such as `/include/0` for the first `include` entry. Messages you are likely to see:
-
-| Config | Problem shown |
-| --- | --- |
-| `"include": []` | `/include: must NOT have fewer than 1 items` |
-| `"include": "src/**/*.tsx"` | `/include: must be array` |

@@ -24,7 +24,7 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
 
-If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too, after the installed packages. Its components are listed once you search in it: type `legacy` and pick `@acme/ui-legacy`. Or type `button`: after the results, `@acme/ui-legacy` is listed with how many of its components match, and picking it keeps `button` as the search.
+If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too: pick the package to search its components.
 
 A component [defined in the repo](/docs/reference/glossary#local) outside every workspace package is offered under the repo's [root package](/docs/reference/artifact#root-package): the name in the root `package.json`, or the repo id when it has none. In a repo that isn't a monorepo, that's every component the repo defines. Scans uploaded by older CLI versions record no package for these components, so if one is missing, scan the repo with the latest CLI. If the dashboard already has a scan of the commit you're on, run `npx scout scan --rescan` to replace it.
 
@@ -46,7 +46,7 @@ Retire a component when it is being removed with no replacement, for example `Mo
 
 As soon as you save, every component the record covers shows as deprecated in every repo: warning icons, **deprecated** chips and the **Deprecated** columns. That includes scans already uploaded, so no rescan is needed. A record on `Card` covers it from every import path, such as `@acme/ui` and `@acme/ui/card`, and its parts, such as `Card.Header`.
 
-The **governance** page then shows how much of each record's package or component is still in use, and where. Records are listed by package, and each package starts folded to one line with its name, how many records it holds and its uses left in total. Press the arrow beside a package's name to see its records. A search shows every matching record, and a record you've just added, or followed a link to, opens its package.
+The **governance** page then shows how much of each record's package or component is still in use, and where. Records are listed by package. Press the arrow beside a package's name to see its records.
 
 Each record's **Uses left** reads one of these:
 

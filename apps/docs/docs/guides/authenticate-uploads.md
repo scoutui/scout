@@ -17,7 +17,7 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
    npx scout auth login --host https://scout.example.com
    ```
 
-   Without a scheme the CLI assumes `https://`, so write a local dashboard out in full as `http://localhost:3000`. The CLI accepts plain `http://` only for `localhost`, `127.0.0.1` and `[::1]`, because anywhere else it would send your session unencrypted.
+   Without a scheme the CLI assumes `https://`, so write a local dashboard out in full as `http://localhost:3000`. The CLI accepts plain `http://` only for `localhost`, `127.0.0.1` and `[::1]`.
 
 2. The CLI prints a code and opens your browser:
 
@@ -28,7 +28,7 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
    Opening your browser…
    ```
 
-   The CLI opens only a link on the host you're signing in to. If no browser opens, open the link yourself.
+   If no browser opens, open the link yourself.
 
 3. In the browser, sign in to the dashboard if it asks you to. Check that **Device code** matches the code in your terminal and that **Signed in as** shows the account you want to upload as, then press **Approve**.
    - If **Signed in as** shows the wrong account, press **Use another account**. The dashboard signs you out in the browser. Sign in as the right account and you come back to the same code.
@@ -39,8 +39,6 @@ You need the CLI installed ([Install the CLI](/docs/guides/install)) and a runni
    ```
    ✓ Signed in as dev@acme.test to https://scout.example.com as an Editor.
    ```
-
-   The line ends with your role on the dashboard.
 
 The CLI saves your session in the system keychain. When it can't use one, for example on Windows, it saves the session in a file instead and warns:
 
@@ -86,7 +84,7 @@ Error: Session for https://scout.example.com is no longer valid. Run scout auth 
 
 Run the `auth login` command it names. If `auth status` prints `Error: Couldn't reach <host>. Check your connection and try again.`, you are still signed in: check your network and try again.
 
-To sign out, run `npx scout auth logout --host <url>`. It ends the session on the dashboard, removes it from your computer and prints `Signed out of <url>.` If the dashboard can't be reached, your session stays saved so you can try again.
+To sign out, run `npx scout auth logout --host <url>`. It ends the session on the dashboard and removes it from your computer. If the dashboard can't be reached, your session stays saved so you can try again.
 
 To upload as a different account, sign out, then sign in again. If the approval page still shows the old account, press **Use another account**.
 
@@ -94,7 +92,7 @@ To upload as a different account, sign out, then sign in again. If the approval 
 
 Install the repo's dependencies first. Without them, `scan` refuses with `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed. Install your dependencies and try again.`
 
-`scan` also takes only a commit that's pushed to the remote's default branch, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
+`scan` also takes only a commit that's pushed to the branch the dashboard tracks, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
 
 Then scan and upload with the host named:
 
@@ -116,4 +114,4 @@ Error: You can view this dashboard but not upload to it. Ask an Admin to make yo
 
 Once an Admin has [changed your role](/docs/guides/manage-people-and-roles#change-someones-role), scan again. You don't need to sign in again.
 
-For every `auth` flag and exit code, see the [CLI reference](/docs/reference/cli#auth).
+For every `auth` flag, see the [CLI reference](/docs/reference/cli#auth).

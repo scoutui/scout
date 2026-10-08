@@ -12,7 +12,7 @@ For example, the dashboard can show that `storefront` and `checkout` both use `B
 
 The CLI reads React and Vue. Web components such as `<acme-button>` are counted in both. [Framework support](/docs/reference/framework-support) lists what it reads in each.
 
-Install the repo's dependencies before you scan: components from a package that isn't installed aren't found. [How components are found](/docs/explanation/mental-model) explains why.
+Install the repo's dependencies before you scan: components from a package that isn't installed aren't found. [How components are found](/docs/explanation/mental-model) explains what happens when they aren't.
 
 ## Start here
 

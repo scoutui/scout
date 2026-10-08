@@ -69,7 +69,7 @@ It prints the installed version, for example:
 
 ## Check what the CLI contains
 
-The package ships a [CycloneDX](https://cyclonedx.org/) software bill of materials at `node_modules/@scoutui/cli/dist/sbom.cdx.json`. It lists the third-party packages bundled into the CLI and the packages it installs, so your dependency scanner can check them. A few packages that `@vue/compiler-sfc` builds into its own files, such as `postcss-selector-parser`, are covered by its entry rather than listed on their own. Each CLI release on [GitHub Releases](https://github.com/scoutui/scout/releases) has the same file attached.
+The package ships a [CycloneDX](https://cyclonedx.org/) software bill of materials at `node_modules/@scoutui/cli/dist/sbom.cdx.json`. It lists the third-party packages bundled into the CLI and the packages it installs, so your dependency scanner can check them. Each CLI release on [GitHub Releases](https://github.com/scoutui/scout/releases) has the same file attached.
 
 ## Next
 

@@ -29,14 +29,14 @@ The **Used in** table has one row per repo whose latest scan includes the compon
 
 Select a row to open the component's page for that repo.
 
-A component [defined in the repo](/docs/reference/glossary#local) is listed under its workspace package, or under the repo's [root package](/docs/reference/artifact#root-package) when it is outside every workspace package. A scan from an older CLI version records no package for a component outside every workspace package, so it isn't listed under any package. Open it from the repo instead.
+A component [defined in the repo](/docs/reference/glossary#local) is listed under its workspace package, or under the repo's [root package](/docs/reference/artifact#root-package) when it is outside every workspace package. A scan from an older CLI version doesn't list such a component under any package: open it from the repo, or scan again with the latest CLI.
 
 ## Open a component in one repo
 
 1. Select **repos** in the top navigation and open the repo.
 2. On the **Components** tab, search for `Button` and select its row. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
 
-Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. The line below gives its package after **From**, as in **From** `@acme/ui`, or a dash when it has none, then the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version, and, for a component defined in the repo, the file and line where it is defined. When two packages or files define the same web component, **From** names each, as in **From** `@acme/ui` or `@other/ui`.
+Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. **From** names its package, followed by the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version and, for a component defined in the repo, the file and line after **defined at**.
 
 The page always shows the repo's latest scan, even when the repo page is showing an [older scan](/docs/guides/dashboard/repos#look-at-an-older-scan).
 
@@ -46,13 +46,13 @@ It has two tabs: **Usage** (the default) and **Composition**. The tab you pick, 
 
 ![The Usage tab for Button in payloadcms/payload, with secondary picked under buttonStyle, its pill above the file list, and one file open to its uses with Rendered by](/img/dashboard/component-usage-tab.png)
 
-The **Usage** tab has a column of filters beside the list of files that use the component. On a narrow window the filters fold away above the list: press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show them.
+The **Usage** tab lists the files that use the component, with filters beside them. On a narrow window, press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show the filters.
 
 ### Filter by package or folder
 
-**Where it’s used** lists the folders the uses are in, with how many uses each holds. When every use sits under one folder, the heading says so, as in **under** `src/`, and the list starts one level below it. When the uses sit in more than one of the repo's packages, as in a monorepo, **Where it’s used** reads **Used in** and lists those packages instead of folders, such as `@acme/web` and `@acme/admin`. When they all sit in one package, the heading names it, as in **Used in** `@acme/web`, and the list shows that package's folders.
+**Where it’s used** lists the folders the uses are in, with how many uses each holds. When the uses sit in more than one of the repo's packages, as in a monorepo, it reads **Used in** and lists those packages instead, such as `@acme/web` and `@acme/admin`.
 
-Press a folder or package to keep only its uses, and press it again to remove the filter. For a [deprecated](/docs/reference/glossary#deprecated) component the heading reads **Where it’s still used**, or **Still used in** for packages.
+Press a folder or package to keep only its uses, and press it again to remove the filter.
 
 ### Filter by prop value
 
@@ -64,25 +64,23 @@ Press a folder or package to keep only its uses, and press it again to remove th
 
 Press a value to keep only its uses, and press it again to remove the filter. Pick two values of one prop, such as `primary` and `secondary`, to keep the uses that set either. Filters on two props, or on a prop and a folder, keep only the uses that match both.
 
-A prop that no use in view sets is folded into a **Not set** group at the end of **Prop values**. **Undeclared** after a prop's name means the component's declaration doesn't list it. When the component has many props, type part of a name into **Find a prop** to narrow the list.
+**Undeclared** after a prop's name means the component's declaration doesn't list it. When the component has many props, type part of a name into **Find a prop** to narrow the list.
 
 Three more groups below **Prop values** filter the same way. Press a group's heading to open it:
 
 - **Styling**: `className`, `class`, `style`, `sx` and `css`.
 - **Events**: handlers such as `onClick` in React, and listeners such as `click` for a Vue `@click`.
-- **Attributes**: `data-` and `aria-` attributes, `key`, `ref`, test ids such as `testId`, and some HTML attributes. When the scan knows the component's props, HTML attributes such as `id`, `role` and `title` are listed here unless the component declares them. When it doesn't know them, only `id`, `role` and `tabIndex` (`tabindex` in Vue) are, and other HTML attributes such as `title` stay under **Prop values**.
+- **Attributes**: `data-` and `aria-` attributes, `key`, `ref`, test ids such as `testId`, and HTML attributes such as `id` and `role`.
 
 ### Search and remove filters
 
 Type into **Search files and props** to keep the uses whose file path or props hold the text, such as `checkout/` or `size=large`. A component with only a few uses has no search box.
 
-Each filter shows as a pill above the list, such as `variant = secondary`. Press a pill's × to remove it, or **Clear filters** to remove them all and keep the search. The count at the top of the list says how many uses are in view, as in `12 of 40 uses · 5 files`.
+Each filter shows as a pill above the list, such as `variant = secondary`. Press a pill's × to remove it, or **Clear filters** to remove them all and keep the search.
 
 ### Read the file list
 
-The list has one row per file, the file with most uses first. Each row shows the file's name. A parent folder shows before it, faint, only when two files share a name or the name says little on its own, such as `index.tsx`.
-
-A long list that spans several packages or folders is grouped under a heading for each, the one with most uses first. Sorting by another column, or filtering by a package or folder, shows one list again.
+The list has one row per file, the file with most uses first. A long list that spans several packages or folders is grouped under a heading for each.
 
 Press a file's row to open it. It lists one line per use, in line order, with the props written there, such as `:42 variant="secondary" size="sm"`. A line can also show:
 
@@ -92,7 +90,7 @@ Press a file's row to open it. It lists one line per use, in line order, with th
 
 Select a line number such as `:42` to open that line in the repo's git host, at the commit that was scanned. A file's name opens the file at its first use. When the scan recorded no git remote, or one the dashboard can't read, both are plain text.
 
-On a wider window, the props most uses set get a column each, showing each file's most used value, and a count such as `+2` when the file's uses differ. Press a column heading (**File**, **Uses** or a prop's name) to sort by it, and press it again to reverse the order.
+A count such as `+2` beside a prop's value means the file's uses set other values too. Press a column heading (**File**, **Uses** or a prop's name) to sort by it, and press it again to reverse the order.
 
 ### Copy the list
 
@@ -110,11 +108,11 @@ What renders the component is on its left, and what it renders on its right, wit
 
 Press a box to select it: its route to this component is drawn, and the components one step further out from it appear. Press it again to hide them. To select one that isn't on screen, type its name or file into **Find a component or a file…** and pick it.
 
-A bar above the diagram shows the selected component's file and its route as a sentence, such as `ProductCard renders Button 5 times.` **Open ProductCard** goes to its page. Press Escape or the bar's × to clear the selection.
+With a component selected, **Open** and its name, such as **Open ProductCard**, goes to its page. Press Escape or × to clear the selection.
 
 **Reset** closes everything you opened and clears the selection. Scroll or pinch to zoom, and drag to pan. On a phone, the tab opens on a list of the same components: press **Diagram** to see the diagram.
 
-The selection is kept in the page's link, so a copied link opens with the same route drawn. A **Rendered by** link on **Usage** opens **Composition** with that component selected. Your browser's Back button then returns to **Usage** with the same search, filters and sort, the same files and props open, and the list scrolled to where you left it.
+The selection is kept in the page's link, so a copied link opens with the same route drawn. A **Rendered by** link on **Usage** opens **Composition** with that component selected.
 
 ## Good to know
 

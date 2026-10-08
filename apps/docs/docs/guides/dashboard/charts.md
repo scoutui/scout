@@ -19,7 +19,7 @@ Select **charts** in the top navigation. The page has these parts:
 - **Private**: your own charts that aren't shared.
 - **Other people's charts**: for Admins only, everyone else's private charts and who created them.
 
-Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Rows in progress come first, with the most uses left at the top. Complete ones sit behind **Show N complete**.
+Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Complete migrations and retirements sit behind **Show N complete**.
 
 ![The charts list with three migrations and three retirements in progress, and four shared charts with their previews](/img/dashboard/charts-list.png)
 
@@ -45,7 +45,7 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
 5. Under **Metric**, keep **Uses** to chart uses, or pick **% of uses** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **% of uses** when you pick it.
-6. In the **Series** panel, press **Add a series** and pick `acme-ui`, then `acme-ui-legacy`; tags come first in the list. Each gets a check and appears in the list at the top of the panel with its colour. The preview on the right redraws as you go.
+6. In the **Series** panel, press **Add a series** and pick `acme-ui`, then `acme-ui-legacy`; tags come first in the list.
 7. Under **Visibility**, keep **Private** so only you and Admins can open the chart, or pick **Shared** so everyone signed in can.
 8. Press **Save chart**. The chart opens on its own page and appears under **Private** or **Shared charts** on the charts page.
 
@@ -55,19 +55,19 @@ If the preview reads **Trends appear once these repos have been scanned more tha
 
 ### Add other kinds of series
 
-**Add a series** charts more than tags. With nothing typed, it lists your tags, then **Local components**, then packages, most used first. Type to search: matching tags and packages come first, then components, best match first. Components and packages your repos no longer use come after the rest, most recently used first, so you can still chart them.
+**Add a series** charts more than tags. With nothing typed, it lists your tags, **Local components** and packages. Type to search components too, including ones your repos no longer use.
 
 - **Local components** counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
 - A package narrows the search to itself. Its first row, **All of** and the package's name, adds the whole package, such as `@acme/icons`, as one series. Press **×** beside the package in the box to search everything again.
 - A component adds just that component, such as `Button` from `@acme/ui`. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
 
-With one repo picked under **Repos**, the list holds only what that repo uses or has used. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list, or pick it in **Add a series** again.
+With one repo picked under **Repos**, the list holds only what that repo uses or has used. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list at the top of the **Series** panel, or pick it in **Add a series** again.
 
 ### Count only deprecated components
 
 To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, open the options of a tag or package series in the list at the top of the **Series** panel and choose **Only deprecated components**. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as replaced or retired. If no record covers any of them, the series drops to zero.
 
-A series has this option only when some, but not all, of its components are deprecated. With it on, the series reads **deprecated** after its name in the list, and **deprecated only** on the chart.
+A series has this option only when some, but not all, of its components are deprecated.
 
 ## Share a chart
 
@@ -75,28 +75,26 @@ A private chart opens only for you and Admins. A shared one opens for anyone sig
 
 To send someone a chart, send them its page's address. Someone who can't open a private chart sees **This chart is private.** and who to ask instead.
 
-A chart's page shows who created it and whether it's **Private** or **Shared** under its name.
-
 ## Duplicate a chart
 
 To start from a chart someone else made, open it, press **⋯**, then **Duplicate**. The chart builder opens with the chart's series and settings, named **Copy of** and the chart's name. Change what you need and press **Save chart** to save it as a new chart of your own. A copy starts as **Private**, even when the original is shared.
 
 ## Look at a shorter period or one line
 
-On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan, and the chart's scale fits the period. The link keeps your pick, so whoever you send it to sees the same period.
+On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan. The link keeps your pick, so whoever you send it to sees the same period.
 
-To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. On a saved chart's page, a chart with two or more lines lists them in a table under the chart, with each line's latest uses or share and how much it changed over the period you picked. The heading names the day the period starts, such as **Change since 2 Jul**; at **All**, that's the chart's first scan. When two components on the chart share a name, each row shows the folder or file that tells them apart. Press a column heading to sort it, and press a name to see that line on its own. With more than 10 lines, the table lists the first 10 in its sort. Press **Show all** to list every line, or search above the table for a component or package name to find one. While you search, the chart draws only the matching lines, scaled to fit them, and an export takes only those lines. A search that matches nothing leaves the chart as it is.
+To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. On a saved chart's page, a chart with two or more lines lists them in a table under the chart, with each line's latest uses or share and how much it changed over the period you picked. Search above the table for a component or package name to find a line. While you search, the chart draws only the matching lines, and an export takes only those lines.
 
 ## Export a chart
 
 On a saved chart's page, press **⋯**, then **Export**. On a migration or retirement chart, the same items are in the **⋯** menu itself.
 
-- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value. On a **Trend** or **Stacked** chart with many series, it names only the largest and says how many more there are. The image is always light, whichever theme you use.
+- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value.
 - **Download CSV** saves a file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
-- **Copy image** copies the same image as **Download PNG**, ready to paste. Browsers that can't copy images don't show it.
+- **Copy image** copies the same image as **Download PNG**, ready to paste.
 - **Copy table** copies the same table as **Download CSV**, ready to paste into a spreadsheet.
 
-The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**, which give its series over time. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
+The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
 
 ## Change or delete a chart
 
@@ -114,7 +112,7 @@ A chart leaves off any series the dashboard can no longer find, and its row on t
 
 1. Open the chart and press **Edit**.
 2. In the list at the top of the **Series** panel, find the greyed-out series. It reads **Unknown component**, or **Deleted tag** for a tag, when the dashboard has no name left for it.
-3. Press its **×** to remove it. To keep charting that component, add it again from the **Components** tab. A chart needs at least one series before you can save it.
+3. Press its **×** to remove it. To keep charting that component, add it again with **Add a series**. A chart needs at least one series before you can save it.
 4. Press **Save chart**.
 
 ## Migration and retirement charts

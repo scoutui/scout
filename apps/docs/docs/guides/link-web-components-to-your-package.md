@@ -42,7 +42,7 @@ Publish a new version of the package.
 
 ## 3. Check a scan
 
-In a repo that uses the tag, install the new version, then scan. The scan reads the manifest from the installed package, so install dependencies first.
+In a repo that uses the tag, install the new version, then scan.
 
 ```bash
 npx scout scan --dry-run

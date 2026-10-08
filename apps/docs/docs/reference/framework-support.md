@@ -20,7 +20,7 @@ HTML files and Lit templates are not read.
 | Events | Props named `on` plus a capital letter, such as `onClick`, unless their value is written, as in `onLabel="On"` | `@name`, `v-on:name`, and props bound with a name like `:onClick`, unless their value is written |
 | Renders and rendered by | Yes | Yes |
 
-Files with any other extension, such as `.html` or `.svelte`, are skipped even when `include` matches them, and the summary doesn't count them as scanned.
+Files with any other extension, such as `.html` or `.svelte`, are skipped even when `include` matches them.
 
 *Renders and rendered by* is what the dashboard's **Composition** tab shows and what `composition` holds in the [scan file](/docs/reference/artifact#composition): which components a component's own code renders, and which components render it. [Composition](/docs/explanation/composition-and-ownership) explains it.
 

@@ -18,7 +18,7 @@ yarn install
 yarn turbo run worker:build --filter=@scoutui/web-app
 ```
 
-The second command builds the packages the dashboard depends on, then the worker. Run it again after you pull new changes.
+Run the second command again after you pull new changes.
 
 ## 2. Start Postgres
 
@@ -85,7 +85,7 @@ Include `http://`; without a scheme the CLI assumes `https://`. The CLI opens yo
 
 ## Verify
 
-In the same repo, scan and upload. `scan` takes only a commit that's pushed to the remote's default branch, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
+In the same repo, scan and upload. `scan` takes only a commit that's pushed to the branch the dashboard tracks, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
 
 `--host` sends the upload to your local dashboard even if the CLI has a different default host:
 

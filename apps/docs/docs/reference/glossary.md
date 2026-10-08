@@ -9,7 +9,7 @@ The words Scout uses on screen and in a scan's JSON. The examples use invented n
 
 ## Component
 
-One distinct thing your code uses: a component [from a package](#external) such as `Button` from `@acme/ui`, a `Card` your repo [defines itself](#local), or a [web component](#web-component) such as `<acme-button>`.
+One distinct thing your code uses: a component [from a package](#external) such as `Button` from `@acme/ui`, or a `Card` your repo [defines itself](#local). A [web component](#web-component) such as `<acme-button>` is one or the other.
 
 You see components in the **Components** table on each repo page and package page, and in the `components` array of the JSON. See [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used).
 
@@ -27,7 +27,7 @@ The scan's summary counts them, as in `Scout couldn't match 4 more uses to a com
 
 ## Scan
 
-One run of `scout scan` over one repo at one commit. The dashboard keeps each uploaded scan in the repo's history, one scan per commit: a scan of a commit it already has is skipped, unless you scan with `--rescan` or the dashboard couldn't prepare the stored scan: then it replaces that commit's scan. Most pages show each repo's *latest scan*: the scan of its newest commit by commit date.
+One run of `scout scan` over one repo at one commit. The dashboard keeps each uploaded scan in the repo's history, one scan per commit: a scan of a commit it already has is skipped, unless you scan with `--rescan`, which replaces it. Most pages show each repo's *latest scan*: the scan of its newest commit by commit date.
 
 A repo page's **scan** button and its **Scan history** list the older scans. See [Look at an older scan](/docs/guides/dashboard/repos#look-at-an-older-scan).
 
@@ -47,7 +47,7 @@ It heads the repo page and is `meta.repo.id` in the JSON. [Repo identity](/docs/
 
 A component that isn't defined in the scanned repo, usually one your code imports from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package's [Custom Elements Manifest](#custom-elements-manifest) declares it or your code registers a class imported from it. [Undefined elements](#undefined-element) count as external too.
 
-The **Origin** filter on a repo page and a component's badge call it **External**. In the JSON its `identity.kind` is `"package-export"`. See the [scan file reference](/docs/reference/artifact).
+The **Origin** filter on a repo page and a component's badge call it **External**. In the JSON its `identity.kind` is `"package-export"`, or `"tag"` for a web component. See the [scan file reference](/docs/reference/artifact).
 
 ## Local
 
@@ -55,7 +55,7 @@ A component defined in the scanned repo, such as `Card` in `src/components/Card.
 
 A web component that your repo defines and registers, with `customElements.define()` or `@customElement()`, counts as local too.
 
-The **Origin** filter and a component's badge call it **Local**. In the JSON its `identity.kind` is `"repository-declaration"`.
+The **Origin** filter and a component's badge call it **Local**. In the JSON its `identity.kind` is `"repository-declaration"`, or `"tag"` for a web component.
 
 ## Web component
 

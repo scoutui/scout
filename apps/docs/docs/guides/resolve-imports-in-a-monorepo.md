@@ -45,7 +45,7 @@ Path aliases: tsconfig.json
 
 If it found none, it prints `Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.`
 
-If the tsconfig it picked only references other projects (`"files": []` with a `"references"` list, as Nuxt 4 and Vite's templates create), the scan reads the aliases from those projects. When two of them define the same alias, the first one listed wins. Aliases in that tsconfig itself, or in a file it extends, apply when none of those projects defines them. In a Nuxt 4 app the referenced projects are generated under `.nuxt/`, so run `nuxt prepare` before you scan.
+If the tsconfig it picked only references other projects, as the Nuxt 4 and Vite templates do, the scan reads the aliases from those projects. In a Nuxt 4 app they are generated under `.nuxt/`, so run `nuxt prepare` before you scan.
 
 If your tsconfig has another name, such as `tsconfig.app.json`, set `tsconfigPath` in your config, relative to the folder that holds it:
 
@@ -55,7 +55,7 @@ If your tsconfig has another name, such as `tsconfig.app.json`, set `tsconfigPat
 
 If that file doesn't exist, the scan runs without it. The `Path aliases` line still names the file, so look for a warning just above it: `Warning: <path> doesn't exist, so its path aliases aren't followed.` A missing file in a tsconfig's `extends` prints `Warning: <tsconfig> points to <path>, which doesn't exist, so its path aliases aren't followed.`
 
-Each workspace package's own `tsconfig.json` or `tsconfig.base.json` also applies to that package's files, so two apps can each map `@/*` to their own `src/`. When you scan the whole monorepo from a root that has no tsconfig of its own, the line counts the workspace packages that have one: `Path aliases: tsconfig files in 12 workspace packages`. If none of them has one, it prints `Path aliases: no tsconfig.json found.`
+Each workspace package's own `tsconfig.json` or `tsconfig.base.json` also applies to that package's files, so two apps can each map `@/*` to their own `src/`.
 
 ## If your aliases are only in a bundler config
 

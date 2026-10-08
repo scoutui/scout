@@ -1,5 +1,5 @@
 ---
-description: "Every command, flag, default, exit code and environment variable the Scout CLI accepts."
+description: "Every command, flag and environment variable the Scout CLI accepts, and its exit codes."
 sidebar_label: "CLI"
 ---
 
@@ -22,59 +22,24 @@ scout <command> [options]
 
 | Flag | Behavior |
 | --- | --- |
-| `--help`, `-h` | Prints help and exits `0`. After a command, prints that command's help. |
-| `--version`, `-v` | Prints the CLI version and exits `0`. |
-| `--debug` | Prints the detail behind an error or warning on the lines below it, such as the dashboard's reply or git's own message, and how many renders the scan couldn't follow. Works before or after the command. |
-
-Every error prints one line starting `Error:`, and every warning one line starting `Warning:`, both on stderr. When [styled](#terminal-output), `✗` comes before `Error:` and `!` before `Warning:`. An error that isn't one of the expected ones prints `Error: Scout stopped unexpectedly (<reason>).` and asks you to run the command again with `--debug` and report the output.
-
-An unknown flag, a value on an on/off flag (`--quiet=true`), or an extra word after `scan`, `backfill` or `init` is an error that exits `2`. For a misspelled flag, the message suggests the closest one.
+| `--help`, `-h` | Prints help. After a command, prints that command's help. |
+| `--version`, `-v` | Prints the CLI version. |
+| `--debug` | Prints the detail behind an error or warning, such as the dashboard's reply or git's own message, and counts the renders a scan couldn't follow. Works before or after the command. |
 
 ## Prompts
 
-`init` and `auth` can ask questions in the terminal. *Prompts are on* when all of these hold:
-
-- stdin and stdout are both terminals.
-- `CI` is unset, empty, `false` or `0`.
-- For `init`, `--yes` is not passed.
-
-With prompts off, a command never waits for input. It uses its flags and defaults, or exits with an error.
-
-## Terminal output
-
-In a terminal, the output is *styled* for the person watching it:
-
-- `scan`, `backfill` and `--help` start with the wordmark, `scout <version>`. `scan` adds the repo id and the commit, `scout 0.2.0 · acme/storefront at 1a2b3c4`, and `backfill` the repo id. `init` opens its questions with `scout <version> · init`.
-- Colour picks out numbers, links, and the commands and flags in help. Secondary text, such as where a component comes from, is dimmer.
-- A line saying something went well, such as the upload's result or `Wrote scout-scan.json (not uploaded).`, starts with `✓`. A warning starts with `!`, and an error with `✗`.
-- Progress turns a spinner, with a bar wherever the total is known.
-
-Output is styled when all of these hold:
-
-- stdin, stdout and stderr are all terminals.
-- `CI` is unset, empty, `false` or `0`.
-- `NO_COLOR` is unset or empty.
-
-Otherwise, such as in a CI job or when output goes to a file or another command, the lines read as in a log, with no wordmark, symbols or animation, except that `init`'s questions still open with `scout <version> · init` when [prompts](#prompts) are on, and `auth login` still ends with `✓ Signed in as <email> to <host> as <role>.` `--quiet` hides the wordmark and progress either way. Colour has its own switches: `NO_COLOR` turns it off, and `FORCE_COLOR` turns it on even in a log.
+`init` and `auth` ask questions only in a terminal, and only when `CI` is unset, empty, `false` or `0`. `init --yes` never asks. Otherwise they never wait for input: they use their flags and defaults, or stop with an error.
 
 ## New versions
 
-In a terminal, when a newer version of `@scoutui/cli` is available, the line under the wordmark names it and how to get it:
+When a newer version of `@scoutui/cli` is available, Scout says so, with the command that updates it for your repo's package manager:
 
 ```
 scout 0.2.0 · acme/storefront at 1a2b3c4
 Scout 0.3.0 is available. Update with npm i -D @scoutui/cli@latest.
 ```
 
-When a command shows no wordmark, such as `--version` or `auth`, or when output isn't [styled](#terminal-output), the line comes first. `init` prints it first too, above its questions.
-
-The command follows your repo:
-
-- It uses the package manager of the nearest lockfile: npm, Yarn, pnpm or Bun. Without a lockfile, it uses npm.
-- If a `package.json` from the current folder up to the lockfile lists `@scoutui/cli`, the line says `Update with …`. Otherwise it says `Install it with …`, which adds it as a dev dependency of the nearest `package.json`.
-- When that `package.json` is a workspace's root, pnpm's command adds `-w` and Yarn 1's adds `-W`.
-
-If the dashboard you last uploaded to can't read the new version's scans yet, the notice says to wait instead, on three lines:
+If the dashboard you last uploaded to can't read the new version's scans yet, it tells you to wait instead:
 
 ```
 Scout 0.3.0 is available, but your dashboard can't read its scans yet.
@@ -82,7 +47,7 @@ Keep this version until your dashboard is upgraded.
 See https://scoutui.dev/docs/guides/upgrade-scout#version-messages
 ```
 
-Scout asks the npm registry at most once a day, in the background while a command runs, and the dashboard answers each time `scan` or `backfill` uploads. What they say shows from the next command on. The check says nothing when it can't reach the npm registry. It's off in CI, when stdin, stdout or stderr isn't a terminal, with `--quiet`, and when `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
+The check runs only in a terminal, outside CI and without `--quiet`. `SCOUTUI_NO_UPDATE_CHECK` or `NO_UPDATE_NOTIFIER` turns it off (see [Environment variables](#environment-variables)).
 
 ## `scan`
 
@@ -95,18 +60,12 @@ Most runs need no flags: `scout scan` reads `scout.config.json` in the current d
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
-| `--dry-run` | none | off | Scans without uploading, and writes the scan file to `scout-scan.json` in the config file's folder, replacing any earlier one. Runs none of the [checks before the scan](#upload-flags) and never contacts the dashboard. Ends with `Wrote scout-scan.json (not uploaded).`, the path relative to the current directory. |
-| `--quiet` | none | off | Hides progress, the summary, most warnings and the `Waiting for the dashboard` line. Errors, a few important warnings, the dashboard's warnings and the line saying what happened to the scan still print: the upload's result, or `Wrote scout-scan.json (not uploaded).` on a dry run. |
+| `--dry-run` | none | off | Scans without uploading, and writes the scan file to `scout-scan.json` in the config file's folder, replacing any earlier one. Skips the [upload checks](#upload-flags) and never contacts the dashboard. |
+| `--quiet` | none | off | Hides progress, the summary and most warnings. Errors, and the line saying what happened to the scan, still print. |
 
-After the scan, a summary counts the files read, the components found and their uses. On a dry run in a terminal, it also lists up to five of the most used components, with the package or file each comes from. An upload, or output that isn't a terminal, such as a CI job's log, leaves the list out.
+The config file must be inside a git repository with at least one commit.
 
-While it scans, `scan` writes its progress to stderr: `Reading files: <count> of <total> (<percent>%), <seconds>s`, then `Matching uses to components…`. In a terminal, that's one line rewritten in place. When [styled](#terminal-output), the upload also shows `Uploading the scan…`, then `Waiting for the dashboard to process the scan…`, on that line. In a log, such as a CI job's, it's the first count, a count every 10 seconds after that, and the matching line once.
-
-The config file must be inside a git repository with at least one commit. Otherwise `scan` exits `1` with `Error: Couldn't scan: <folder> isn't inside a git repository. Run scout scan from a git checkout.`, or `Error: Couldn't scan: this repository has no commits yet. Commit your files and try again.` In a shallow clone, a dry run warns `Warning: This checkout doesn't have the full history. Run git fetch --unshallow and scan again.` and records no [`initialCommit`](/docs/reference/artifact#meta). An upload refuses a shallow clone instead (see [Upload flags](#upload-flags)).
-
-If no file matches `include`, `scan` stops before it scans or contacts the dashboard, on a dry run too, and exits `2` with `Error: No files match "include" in <config path> (<patterns>). Point it at your source files and scan again.` `<config path>` is the `--config` value, `./scout.config.json` by default. When the config has no `include` and the config folder has no file to scan, the message is `Error: No JavaScript, TypeScript or Vue files to scan in <folder>. Check "exclude" in <config path>, or scan from the folder that holds your source files.`, where `<folder>` is the config folder's full path.
-
-`scan` needs the repo's dependencies installed. Components from a declared package that isn't installed aren't found: each place that uses one is recorded as an [unmatched use](/docs/reference/glossary#unmatched-use). A package in `dependencies` or `devDependencies` that isn't installed stops `scan` before it scans; a dry run scans anyway. One listed only in `peerDependencies` or `optionalDependencies` doesn't stop it: the scan uploads with its uses unmatched.
+`scan` needs the repo's dependencies installed. A package in `dependencies` or `devDependencies` that isn't installed stops an upload; a dry run scans anyway, and records each use of that package's components as an [unmatched use](/docs/reference/glossary#unmatched-use). A package listed only in `peerDependencies` or `optionalDependencies` doesn't stop an upload: its uses are unmatched.
 
 ### Upload flags
 
@@ -114,35 +73,23 @@ These change where and how `scan` uploads. See [Authenticate the CLI for uploads
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
-| `--rescan` | none | off | Replaces the dashboard's scan of this commit if it has one. With `--dry-run`, exits `2` with `Error: --rescan and --dry-run can't be used together: --dry-run doesn't upload.` |
+| `--rescan` | none | off | Replaces the dashboard's scan of this commit if it has one. Can't be used with `--dry-run`. |
 | `--host <url>` | URL | see [Host resolution](#host-resolution) | Dashboard to upload to. Ignored with `--dry-run`. |
 
-Before it scans, `scan` checks these, in this order, and stops at the first that fails. It prints the message and exits `1` without scanning. A dry run skips them all:
+Before it scans, an upload checks that:
 
-| Problem | Message |
-| --- | --- |
-| The checkout has no remote | `Error: Couldn't upload the scan: this checkout has no remote, so Scout can't tell which repository it is. Add one with git remote add origin <url> and try again.` |
-| The checkout has several remotes, none of them `origin` or `upstream`, and none chosen with `git config scout.remote` | `Error: Couldn't upload the scan: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote <first remote>.` |
-| The checkout is a shallow clone | `Error: Couldn't upload the scan: this checkout doesn't have the full history. Run git fetch --unshallow and try again.` |
-| The config sets no `branch`, and the clone has no `<remote>/HEAD` recorded, or it names a branch the clone doesn't have | `Error: Couldn't upload the scan: couldn't tell which branch the dashboard tracks. Run git remote set-head <remote> --auto and try again.` |
-| The config's `branch` isn't on the remote | `Error: Couldn't upload the scan: there's no <branch> on <remote>. If the branch was renamed, update "branch" in scout.config.json.` |
-| You're on the tracked branch, and the commit isn't pushed | `Error: Couldn't upload the scan: this commit isn't on <remote>/<branch> yet. Push it and try again.` |
-| You're on another branch, and the commit isn't on the tracked branch | `Error: Couldn't upload the scan: you're on <checked-out branch>, and the dashboard tracks <branch>. Switch to <branch> and try again.` |
-| On a detached HEAD, the commit isn't on the tracked branch | `Error: Couldn't upload the scan: commit <commit> isn't on <branch>. Check out <branch> and try again.` |
-| A tracked file has uncommitted changes, or a file the scan reads isn't committed. A new `scout.config.json` or scan file doesn't count, staged or not. `--debug` lists the files. | `Error: Couldn't upload the scan: you have uncommitted changes. Commit or stash them and try again.` |
-| Only `package.json` or its lockfile has uncommitted changes, as after installing the CLI. `--debug` lists the files. | `Error: Couldn't upload the scan: package.json or its lockfile has uncommitted changes. If you installed the CLI, commit and push them, then try again.` |
-| No upload host is set, or you aren't signed in to it | `Error: Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.` or `Error: Not signed in to <host>.`, followed by what to run. See [Host resolution](#host-resolution). |
-| The dashboard refuses the scan: this CLI's version, the repository name, a `--rescan` from an older CLI, or your role is Viewer | The dashboard's own line, such as `Error: Couldn't upload the scan: <commit> was scanned with a newer CLI (<version>). Upgrade the CLI to <version> or newer, or run npx @scoutui/cli@<version> scan --rescan.` A Viewer gets `Error: You can view this dashboard but not upload to it. Ask an Admin to make you an Editor.` |
-| A package in `dependencies` or `devDependencies` isn't installed | `Error: Couldn't upload the scan: <package> is listed in <package.json> but isn't installed. Install your dependencies and try again.` `<package.json>` is the file that lists it, relative to the top of the git repository, as in the scan's own warning. |
-| The scanned folder is a Nuxt app that hasn't been prepared | `Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.` |
+- The checkout has a remote the dashboard can follow: the one `git config scout.remote` names, else `upstream`, else the only remote, else `origin`.
+- The checkout has its full history, not a shallow clone.
+- The commit is on the tracked branch: `branch` in the config, else the remote's default branch as your clone recorded it (`<remote>/HEAD`). It must be pushed, and on that branch's first-parent history: a commit that came into the branch through a merge doesn't count, but the merge commit does.
+- No tracked file has uncommitted changes, and every file the scan reads is committed. A new `scout.config.json` or scan file doesn't count. `--debug` lists the files.
+- A dashboard address is set, and you're signed in as an Editor or Admin, or `SCOUTUI_TOKEN` is set.
+- The dashboard accepts this CLI version and this repository.
+- Every package in `dependencies` and `devDependencies` is installed.
+- A Nuxt app has been prepared with `nuxt prepare`.
 
-`<remote>` is the remote the scan follows (see [`repo.gitRemote`](/docs/reference/artifact#meta)) and `<branch>` the branch the dashboard tracks: `branch` in the config, else the remote's default branch as your clone recorded it. A commit passes when it's on that branch's first-parent history, whatever is checked out.
+If one fails, `scan` says which and stops without scanning or uploading. [An upload is refused or fails](/docs/guides/troubleshoot-a-scan#an-upload-is-refused-or-fails) lists each message and its fix.
 
-When a check before the scan fails, nothing is uploaded and no file is written.
-
-After the scan, `scan` refuses a scan that found no uses: `Error: Couldn't upload the scan: no uses were found. Check "include" in <config path> and try again.` `<config path>` is the `--config` value, `./scout.config.json` by default. When the config has no `include`, the line names `"exclude"` instead.
-
-If the dashboard already has a scan of this commit, `scan` prints `Commit <commit> is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and exits `0` without scanning, unless the dashboard couldn't prepare that scan: then the upload replaces it. Some error lines end with `See <url>`: the page that explains that problem.
+If the dashboard already has a scan of this commit, `scan` says so and stops without scanning, unless you pass `--rescan`. After the scan, `scan` refuses to upload a scan that found no uses.
 
 ### Rarely needed flags
 
@@ -157,116 +104,33 @@ If the dashboard already has a scan of this commit, `scan` prints `Commit <commi
 scout backfill [options]
 ```
 
-Scans one commit a week of the tracked branch's history, newest first, and uploads each scan to the dashboard. It asks the dashboard which of those commits it already has, then for each of the others: checks the commit out in a temporary folder, installs its dependencies, scans it with the current config file and uploads the scan. It never changes your checkout and writes no file. See [Fill in a repo's history](/docs/guides/fill-in-a-repos-history).
+Scans one commit a week of the tracked branch's history, newest first, and uploads each scan to the dashboard. It skips commits the dashboard already has. Each commit is checked out in a temporary folder, so `backfill` never changes your checkout and writes no file. See [Fill in a repo's history](/docs/guides/fill-in-a-repos-history).
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
-| `--since <date>` | date, `YYYY-MM-DD` | six months before today | Earliest commit date to pick. Any other form, or a date that doesn't exist, exits `2` with `Error: --since must be a date in the form YYYY-MM-DD, for example 2026-04-02.` |
+| `--since <date>` | date, `YYYY-MM-DD` | six months before today | Earliest commit date to pick. |
 | `--rescan` | none | off | Also scans the commits the dashboard already has, replacing their scans. |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
 | `--host <url>` | URL | see [Host resolution](#host-resolution) | Dashboard to upload to. |
-| `--quiet` | none | off | Hides the [progress lines](#backfill-output): the `Found` line, the `Scanning` lines and the `slow down` line. Everything else still prints. |
+| `--quiet` | none | off | Hides progress. Skipped commits, errors and the closing line still print. |
 
-With [`--debug`](#global-flags), `backfill` also prints each install's and each scan's output, `Waiting for the dashboard to process the scan…` once for each upload, and the detail behind a skip, such as the files an install changed or `The install was stopped after 10 minutes.`
+With [`--debug`](#global-flags), `backfill` also prints each install's and each scan's output, and the detail behind each skipped commit.
 
-Before it scans any commit, `backfill` stops with the same messages as `scan` when:
-
-- the config file is missing or invalid (exit `2`).
-- the config's folder isn't in a git repository with a commit, or one of the remote, full-history or tracked-branch checks in [Upload flags](#upload-flags) fails (exit `1`).
-- no host is set, you aren't signed in, or the dashboard refuses or fails the request (exit `1`).
-
-It doesn't check which branch is checked out, or for uncommitted changes.
+Before it scans any commit, `backfill` stops on the same config, git, sign-in and dashboard problems as `scan`. It doesn't check which branch is checked out, or for uncommitted changes.
 
 ### Which commits it picks
 
 - The latest commit on `<remote>/<branch>`, whatever its date. `backfill` reads the branch as the clone last fetched it, and doesn't fetch. `<remote>` and `<branch>` are the ones `scan` uploads to.
-- Then, for each earlier week from Monday to Sunday, the newest commit of that week on the branch's first-parent history whose commit date is on or after `--since`. A commit that came into the branch through a merge is never picked; the merge commit can be.
-- Commits the dashboard already has are counted as already on the dashboard and not scanned, unless `--rescan` is passed.
+- Then, for each earlier week from Monday to Sunday, the newest commit of that week on the branch's first-parent history whose commit date is on or after `--since`.
 
 Every commit is scanned with the current config file, so commits from before the config existed are scanned too. The config's folder must exist at the latest commit.
 
 ### How it installs each commit
 
 - With [`install`](/docs/reference/config#backfill-fields) set, it runs that command through the shell from the top of the repository, and nothing else.
-- Otherwise, it installs from the nearest `pnpm-lock.yaml`, `yarn.lock` or `package-lock.json` in the config's folder or a folder above it, without running install scripts. npm projects install with `npm ci`, using your own `npm`. Yarn and pnpm projects install through Corepack, with the version that the `package.json` beside the lockfile names in `packageManager`, else the first exact version (for Yarn, one whose major fits the lockfile: 1 for a Yarn 1 lockfile, 2 or later otherwise) from its `devEngines.packageManager`, then its `volta`, then mise or asdf's `.tool-versions` in the lockfile's folder or a folder above it, else its `devEngines.packageManager` range, else a version that writes that lockfile. `backfill` downloads Corepack once per run, using your npm settings, the first time a commit needs it. Then, for a Nuxt app, it runs `nuxt prepare`.
+- Otherwise, it installs from the nearest `pnpm-lock.yaml`, `yarn.lock` or `package-lock.json` in the config's folder or a folder above it, without running install scripts. Yarn and pnpm projects install with the version the commit pins, for example in `packageManager`. Then, for a Nuxt app, it runs `nuxt prepare`.
 
-Installs run without `SCOUTUI_TOKEN` in their environment.
-
-### Skips {#backfill-skips}
-
-A commit that can't be scanned prints `Warning: Skipped <commit> (<date>): <reason>`, and the run goes on to the next commit.
-
-| Reason | When | Exit `1` |
-| --- | --- | --- |
-| `npm ci failed.`, `yarn install failed.` or `pnpm install failed.` | The install from the lockfile failed, or ran out of time. | yes |
-| `the install command in scout.config.json failed.` | The `install` command failed, or ran out of time. | yes |
-| `the install changed tracked files. Set "install" in scout.config.json to the command this repo installs with.` | The install changed a file git tracks. | yes |
-| `some dependencies are missing after the install.` | A package in `dependencies` or `devDependencies` isn't installed. | yes |
-| `nuxt prepare failed.` | `nuxt prepare` failed, or the Nuxt app still isn't prepared after the install. | yes |
-| `there's no lockfile to install from.` | No `install` is set, and neither the config's folder nor a folder above it has a `pnpm-lock.yaml`, `yarn.lock` or `package-lock.json`. | yes |
-| `it installs with Yarn Plug'n'Play, which Scout can't read.` | The install used Yarn Plug'n'Play. | no |
-| `the scan found no components.` | The scan found no components in the files it read. | no |
-| The dashboard's reason | The dashboard refused the commit's scan, before the scan or on upload. | no |
-
-The first seven are *install skips*. Three in a row stop the run (see [Stop lines](#backfill-stop-lines)); an upload starts the count again. A scan with no components and a dashboard refusal neither count nor start it again. A skip marked *Exit `1`* makes the run exit `1`, unless it is one of the three that stopped the run at the history line.
-
-### Stop lines {#backfill-stop-lines}
-
-| Line | When | Exit code |
-| --- | --- | --- |
-| `3 commits in a row wouldn't install, so the charts start at <date>. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with at least one commit of the range on the dashboard. `<date>` is the oldest of those commits' dates. | `0`, or `1` after an earlier skip marked *Exit `1`* |
-| `<folder> doesn't exist before <date>, so the charts start there.` | The config's folder isn't in the commit. `<date>` is the date of the next newer picked commit that has the folder. | `0`, or `1` after a skip marked *Exit `1`* |
-| `Error: Couldn't install the 3 newest commits, so nothing was uploaded. Check the lines above, or set "install" in scout.config.json.` | Three install skips in a row, with no commit of the range on the dashboard. | `1` |
-| `Error: <folder> isn't on <remote>/<branch> yet, so there's nothing to backfill. Merge it, run git fetch, then run scout backfill again.` | The config's folder isn't in the latest commit. | `1` |
-| `Error: Couldn't download Corepack, which Scout needs to install Yarn and pnpm projects. Check your connection and npm registry settings, then run scout backfill again.` | Downloading Corepack failed. `--debug` prints npm's output. | `1` |
-| `Error: Couldn't scan <commit> (<date>): the scan stopped unexpectedly. Run scout backfill --debug to see how far it got.` | The scan of a commit stopped before it finished, for example because it ran out of memory. Any lines the scan printed come first. `--debug` prints the scan's progress up to where it stopped. | `1` |
-| `Error: Couldn't check out <commit> (<date>) in a temporary folder. Run scout backfill --debug to see git's output.` | Git couldn't check out the commit, for example because the disk is full. `--debug` prints git's output. | `1` |
-| An upload error, then `Run scout backfill again to continue: it skips what's already on the dashboard.` | An upload failed for a reason other than the dashboard refusing that commit, for example the dashboard can't be reached. | `1` |
-| `Stopped. Run scout backfill again to continue: it skips what's already on the dashboard.` | Ctrl-C, the terminal closed, or the process received SIGTERM. The temporary checkout is removed first. | `130` |
-
-`<folder>` is the config's folder, relative to the top of the repository. The first two lines are followed by the last line; the others aren't.
-
-### Output {#backfill-output}
-
-Progress lines print on stderr, and `--quiet` hides them:
-
-| Line | When |
-| --- | --- |
-| `Found 27 commits on origin/main, one a week since 3 Apr 2026. Scout will scan all 27.` | First, unless there's nothing to scan. When some are already on the dashboard, it ends `1 is already on the dashboard, so Scout will scan 26.`; with `--rescan`, `Scout will scan all 27, replacing the 1 already on the dashboard.` |
-| `Scanning <commit> (<date>), <n> of <total>…` | Before each commit, unless [styled](#terminal-output) without `--debug`. |
-| `The dashboard asked Scout to slow down. Continuing in 1 minute…` | The dashboard is receiving too many uploads. `backfill` waits as long as it asks, then uploads the scan again. |
-
-When [styled](#terminal-output), and without `--debug`, one line rewritten in place takes the place of the `Scanning` lines. It names the commit and the step, `installing dependencies…`, `scanning…` or `uploading the scan…`, beside a spinner, a bar of the commits done so far and the count:
-
-```text
-⠹ 9b07c3d (25 Sep 2026): installing dependencies…  ━━━━━━━━━━━━━━━━━━━━━╸────────  20 of 26
-```
-
-The last line prints on stdout, even with `--quiet`:
-
-```text
-Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped. See https://scout.example.com/repos/storefront
-```
-
-When styled, it starts with `✓`, or `!` when a commit was skipped, and the link moves to a line of its own:
-
-```text
-✓ Backfilled main since 3 Apr 2026: 26 uploaded, 1 already on the dashboard, 0 skipped.
-  See https://scout.example.com/repos/storefront
-```
-
-It names the tracked branch, the `--since` date and the repo's page on the dashboard. *Already on the dashboard* counts the commits the dashboard already had, whether it said so before the scan or on upload. With `--rescan`, the line also counts the scans it replaced, after the uploads: `26 uploaded, 1 replaced, 0 already on the dashboard, 0 skipped.` Those aren't counted as already on the dashboard.
-
-When a skip marked *Exit `1`* makes the run exit `1`, the last line is followed on stderr by `Run scout backfill --debug to retry the skipped commits and see why they failed.`, even with `--quiet`. It doesn't print when the run stops at the history line.
-
-### Exit codes {#backfill-exit-codes}
-
-| Code | Meaning |
-| --- | --- |
-| `0` | The run finished, or stopped at the history or folder line, with no skip marked *Exit `1`*. |
-| `1` | A skip marked *Exit `1`*, except the three that stopped the run at the history line. A stop line starting `Error:`. A problem before the first commit: the folder isn't in a git repository, a check on the remote, history or branch failed, no host, not signed in, or the dashboard refused or failed the request. Also any unexpected error. |
-| `2` | Usage or config error: an unknown flag, an extra argument, a `--since` that isn't a `YYYY-MM-DD` date, or a missing or invalid config file. |
-| `130` | You stopped it with Ctrl-C or closed the terminal, or it received SIGTERM. |
+When a commit can't be installed or scanned, `backfill` skips it, says why and carries on. [Fix a skipped commit](/docs/guides/fill-in-a-repos-history#fix-a-skipped-commit) lists each reason and what to do.
 
 ## `init`
 
@@ -274,39 +138,26 @@ When a skip marked *Exit `1`* makes the run exit `1`, the last line is followed 
 scout init [options]
 ```
 
-Writes a config file with `$schema`, `repoId` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. It writes no `include`, so the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder, apart from those it [always skips](/docs/reference/config#common-fields). `exclude` lists the folders you leave out, and is `[]` when you leave none out. `init` never overwrites: if a config already exists where it would write one, it exits `1`.
+Writes a config file with `$schema`, `repoId` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. It writes no `include`, so the scan reads every JavaScript, TypeScript and Vue file below the config's folder, apart from those it [always skips](/docs/reference/config#common-fields).
 
-In a folder inside the repository, without `--output`, `init` also writes nothing and exits `1` when a folder above it, up to the repository root, already has a config. It prints `Error: This repository already has a config: ../../scout.config.json. Run scout scan in ../.. to use it.`, with the paths from the current directory.
-
-When it's done, it prints `Wrote scout.config.json. Run scout scan --dry-run to try it, then scout scan to upload.` When the config is in another folder, the line gives its path from the current directory and says where to run the scan: `Wrote ../../scout.config.json. Run scout scan --dry-run in ../.. to try it, then scout scan to upload.`
-
-Outside a git repository, `init` still writes the config, but warns first: `Warning: this folder isn't in a git repository, and scout scan needs one. Run git init, or run scout init inside your repository.` It then ends with only `Wrote scout.config.json.`
+`init` never overwrites a config. Without `--output`, it also writes nothing when a folder above it, up to the repository root, already has a config, and tells you to run `scout scan` there.
 
 | Flag | Value | Default | Behavior |
 | --- | --- | --- | --- |
 | `--output <path>` | path | `./scout.config.json` | Where to write the config file. Relative to the current directory. |
 | `--repo-id <name>` | string | the owner and name from the git remote, such as `acme/checkout`, else the name of the config's folder | Value written to `repoId`. |
-| `--host <url>` | URL | none | Dashboard address written to `host`, with `https://` added when it has no scheme. It must use `https://`, apart from `http://` on `localhost`, `127.0.0.1` and `[::1]`; any other `http://` address exits `2`. |
+| `--host <url>` | URL | none | Dashboard address written to `host`, with `https://` added when it has no scheme. It must use `https://`, apart from `http://` on `localhost`, `127.0.0.1` and `[::1]`. |
 | `--branch <name>` | string | the remote's default branch | Branch the dashboard tracks. Written to `branch`. |
 | `--exclude <folder>` | path | none | Folder to leave out of the scan, written to `exclude` as given. Relative to the config's folder. Repeat the flag for more than one. |
 | `-y`, `--yes` | none | off | Runs without prompts. |
 
 ### With and without prompts
 
-See [Prompts](#prompts) for when prompts are on. With prompts on, the questions open with `scout <version> · init`.
+With [prompts](#prompts) on, `init` asks for the dashboard address, the repository name and the tracked branch, offering each default, and skips the question for any flag you pass. Without prompts, it takes each value from its flag, else its default.
 
-| | With prompts | Without prompts |
-| --- | --- | --- |
-| Where the config goes | In a workspace package's own folder, without `--output`, and when the monorepo root has no config yet: asks `Scan the whole repository instead of only this package?`, with Yes selected. Yes writes the config at the monorepo root, No in the current folder. If a config is already at `--output`, else in the current folder or a folder above it, asks nothing, writes nothing and exits `1`. | Writes the config at `--output`, else in the current folder. Under the same conditions, it then prints `To scan the whole repository, run scout init --output ../../scout.config.json.`, with the path to the root's config. Without `--output`, if a folder above the current one already has a config, it writes nothing and exits `1` instead. |
-| `host` | Asks `Dashboard address (optional)`. Leave it empty to write no `host`. | Taken from `--host`, else not written. |
-| `repoId` | Asks `Repository name on the dashboard`, filled in with the `--repo-id` default. | Taken from `--repo-id`, else its default. |
-| `branch` | Asks `Branch the dashboard tracks`, filled in with the remote's default branch, else the checked-out branch. | Taken from `--branch`, else the same default without asking. |
-| `exclude` | When the config's folder is a monorepo root, with workspace packages listed in `workspaces` in its `package.json` or in `pnpm-workspace.yaml`, asks `Leave any packages or folders out of the scan?`. The list holds each workspace package below the config's folder, by name, then each top-level folder that holds no package but holds files the scan reads. When there are no such folders, the question is `Leave any packages out of the scan?`. Each one you pick is written to `exclude` as its folder. Without workspace packages, asks nothing and writes `[]`. | Taken from `--exclude`, else `[]`. |
-
-A flag you pass skips its question. The remote `init` reads is the one `git config scout.remote` names, else `upstream` when there is one, else the only remote, else `origin`. With several remotes and none of them called `origin` or `upstream`:
-
-- With prompts on, `init` asks `Which remote does the dashboard follow?` and saves your answer in this checkout's git config as `scout.remote`. It isn't in `scout.config.json`, because remote names can differ from one clone to the next.
-- With prompts off, it warns `Warning: this checkout has several remotes and none is called origin, so Scout can't tell which one the dashboard follows. Choose one with git config scout.remote <name>, for example git config scout.remote github.` and names the repository after the config's folder.
+- **In a workspace package's folder**, when the monorepo root has no config yet, `init` asks whether to scan the whole repository instead. Yes writes the config at the monorepo root. Without prompts, it writes the config in the current folder and prints the command that writes it at the root instead.
+- **In a monorepo root**, with workspace packages listed in `workspaces` in its `package.json` or in `pnpm-workspace.yaml`, `init` asks which packages or folders to leave out of the scan, and writes them to `exclude`.
+- **With several remotes**, none of them called `origin` or `upstream`, `init` asks which one the dashboard follows and saves your answer in this checkout's git config as `scout.remote`. Without prompts, it warns and names the repository after the config's folder; choose a remote with `git config scout.remote <name>`.
 
 ## `auth`
 
@@ -314,17 +165,15 @@ A flag you pass skips its question. The remote `init` reads is the one `git conf
 scout auth <login|logout|status> [--host <url>]
 ```
 
-| Subcommand | Behavior | Exit code |
-| --- | --- | --- |
-| `login` | Signs in with a code you approve in the browser, saves the session, and prints `✓ Signed in as <email> to <host> as <role>.` It opens the browser only for a link on the host you're signing in to. If you are already signed in to that host and the session still works, it prints `Already signed in as <email> to <host> as <role>.` instead. When you have no default host, the host you sign in to becomes it, including one you were already signed in to. | `0` signed in. `1` sign-in failed, for example the host can't be reached or the code expired or was declined. `2` no host found and prompts are off, or the host isn't `https://`. |
-| `status` | Checks the session with the dashboard and prints `Signed in as <email> to <host> as <role> (session saved in the system keychain).` When the session is saved in `hosts.json`, the line ends with that file's path instead, for example `(session saved in ~/.config/scoutui/hosts.json).` | `0` signed in. `1` not signed in to that host, the session is no longer valid, or the dashboard can't check it. |
-| `logout` | Ends the session on the dashboard, then deletes it from this computer. If that host was your default, you have no default until you next sign in. | `0`, including when you weren't signed in. `1` the dashboard couldn't end the session, so it stays saved. |
+| Subcommand | Behavior |
+| --- | --- |
+| `login` | Signs in with a code you approve in the browser, and saves the session. If you're already signed in to that host and the session still works, it says so. When you have no default host, the host you sign in to becomes it. |
+| `status` | Checks the session with the dashboard, and prints who you are signed in as, your role and where the session is saved. |
+| `logout` | Ends the session on the dashboard, then deletes it from this computer. If that host was your default, you have no default until you next sign in. |
 
 | Flag | Value | Behavior |
 | --- | --- | --- |
 | `--host <url>` | URL | Host to act on. Without it, see [Host resolution](#host-resolution). |
-
-`<role>` is your role on that dashboard: `a Viewer`, `an Editor` or `an Admin`. With a dashboard that doesn't send a role, the line has no `as <role>`.
 
 For the full sign-in steps, see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads).
 
@@ -349,24 +198,19 @@ Your *default host* is the first host you signed in to with `auth login`. Signin
 
 When none is set:
 
-- `scan` and `backfill` fail with `Couldn't upload the scan: no dashboard address is set. Add "host" to scout.config.json or set SCOUTUI_HOST, or run scout scan --dry-run to scan without uploading.` and exit `1`. A dry run needs no host.
-- `auth login` asks for a `Dashboard address` when prompts are on. Otherwise it exits `2`.
-- `auth status` and `auth logout` ask `Which dashboard?` when prompts are on and you are signed in to more than one host. Otherwise they treat you as not signed in.
+- `scan` and `backfill` stop and ask you to set one. A dry run needs no host.
+- `auth login` asks for a `Dashboard address` when prompts are on.
+- `auth status` and `auth logout` ask `Which dashboard?` when prompts are on and you are signed in to more than one host.
 
-If `scout.config.json` in the current directory can't be read, the `auth` commands print the config's error and exit `2`.
-
-A host without a scheme gets `https://`. A host must use `https://`; plain `http://` works only for `localhost`, `127.0.0.1` and `[::1]`. Any other `http://` host fails with `<host> doesn't use https://, so your sign-in would be sent unencrypted.`: `scan` exits `1`, and the `auth` commands exit `2`.
+A host without a scheme gets `https://`. A host must use `https://`; plain `http://` works only for `localhost`, `127.0.0.1` and `[::1]`.
 
 ## Exit codes
 
 | Code | Meaning |
 | --- | --- |
-| `0` | Success, including `auth logout` when you weren't signed in. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
-| `1` | The command ran but failed: `scan` [refused the scan](#upload-flags), the upload failed or didn't finish in time, the config for `scan` isn't in a git repository with a commit or git can't read that repository, `init` found an existing config, `auth login` or `auth status` failed, or `auth logout` couldn't end the session on the dashboard. Also any unexpected error. |
-| `2` | Usage or config error: unknown command, flag or `auth` subcommand, a malformed flag, an extra argument, `--rescan` with `--dry-run`, a missing or invalid config file, a config field Scout doesn't use, no files to scan (an `include` that matches no files, or no source files in the config folder), a `--repo-root` that isn't a folder, Yarn Plug'n'Play detected, `auth login` with no host and prompts off, or an `auth` or `init --host` address that isn't `https://`. On a dry run, also a `scout-scan.json` that links to a file outside the config's folder: `Error: scout-scan.json in <folder> links to a file outside that folder, so the scan won't write it. Delete the link and try again.` |
-| `130` | You cancelled a prompt in `init` or `auth`, or stopped `backfill`. |
-
-[Run a scan and upload in CI](/docs/guides/run-in-ci#fix-a-failed-upload) lists the upload errors behind exit code `1`. `backfill` uses the same codes for its own outcomes: see [its exit codes](#backfill-exit-codes).
+| `0` | Success. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
+| `1` | The command ran but failed. For `scan`, the scan was refused, or the upload failed or didn't finish in time. For `backfill`, it stopped with an error, or skipped a commit for a reason you can fix ([with one exception](/docs/guides/fill-in-a-repos-history#where-the-charts-start)). |
+| `2` | A usage or config error, such as a misspelled flag or an invalid config file. |
 
 ## Environment variables
 
@@ -381,9 +225,9 @@ Rarely needed:
 
 | Variable | Behavior |
 | --- | --- |
-| `CI` | Any value other than empty, `false` or `0` turns [prompts](#prompts) off in `init` and `auth`, and turns off [styled output](#terminal-output). |
-| `NO_COLOR` | Any non-empty value turns off colored output and [styled output](#terminal-output), even when `FORCE_COLOR` is set. |
-| `FORCE_COLOR` | Any non-empty value other than `0` turns on colored output even when the output isn't a terminal or runs in CI. It doesn't add the rest of [styled output](#terminal-output). |
-| `NO_UPDATE_NOTIFIER` | When set, even empty, turns off the [check for a newer version](#new-versions), as it does for other command-line tools. |
+| `CI` | Any value other than empty, `false` or `0` turns off [prompts](#prompts), colour and the [check for a newer version](#new-versions). |
+| `NO_COLOR` | Any non-empty value turns off colour, even when `FORCE_COLOR` is set. |
+| `FORCE_COLOR` | Any non-empty value other than `0` turns on colour, even when the output isn't a terminal or `CI` is set. |
+| `NO_UPDATE_NOTIFIER` | When set, even empty, turns off the [check for a newer version](#new-versions). |
 | `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |
-| `XDG_CACHE_HOME` | Folder that holds `scoutui/update-check.json`, where the [check for a newer version](#new-versions) keeps what the registry and the dashboard last said. Default: `~/.cache`. |
+| `XDG_CACHE_HOME` | Folder where the [check for a newer version](#new-versions) keeps `scoutui/update-check.json`. Default: `~/.cache`. |

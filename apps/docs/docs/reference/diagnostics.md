@@ -1,15 +1,13 @@
 ---
-description: "Every diagnostic code a Scout scan reports: severity, fields, what it means, what to do, and how it prints in the terminal."
+description: "Every diagnostic code a Scout scan reports: severity, fields, what it means and what to do."
 sidebar_label: "Diagnostics"
 ---
 
 # Diagnostics reference
 
-A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints its warnings to the terminal at the end of the run ([the rest with `--debug`](#terminal-output)) and writes every diagnostic to the scan file's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array.
+A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints each `warning`, and counts the `info` ones only with [`--debug`](/docs/reference/cli#global-flags). The scan file's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array lists every diagnostic.
 
 A use whose import points at a missing file, whose package isn't installed, or whose name nothing imports isn't a diagnostic. The scan keeps it in `occurrences[]` as an [unmatched use](/docs/reference/artifact#unresolved-occurrences), with the reason.
-
-On a dry run ([`scout scan --dry-run`](/docs/reference/cli#scan)), a scan with diagnostics still writes the scan file and exits `0`.
 
 To work out why a component is missing from your results, start with [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan). This page lists every code.
 
@@ -60,7 +58,7 @@ This code has no `filePath`.
 Warning: @acme/ui is listed in package.json but isn't installed, so 3 uses of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
-**What to do:** install the repo's dependencies with your package manager, then scan again. Until every package in `dependencies` and `devDependencies` is installed, `scan` stops before it scans:
+**What to do:** install the repo's dependencies with your package manager, then scan again. Until every package in `dependencies` and `devDependencies` is installed, `scan` refuses to upload:
 
 ```text
 Error: Couldn't upload the scan: @acme/ui is listed in package.json but isn't installed. Install your dependencies and try again.
@@ -74,7 +72,7 @@ A package listed only in `peerDependencies` or `optionalDependencies` doesn't st
 
 **Severity:** `warning`
 
-The scan couldn't read a file it matched, or the file has a syntax error the parser can't recover from. The scan skips the file, so uses in it aren't counted, and the summary doesn't count it as scanned. A file with syntax errors the parser can recover from is still read and reports no diagnostic: the scan warns while it reads it instead (see [A file has syntax errors](/docs/guides/troubleshoot-a-scan#a-file-has-syntax-errors)).
+The scan couldn't read a file it matched, or the file has a syntax error the parser can't recover from. The scan skips the file, so uses in it aren't counted. A file the scan can partly read gets a different warning: see [A file has syntax errors](/docs/guides/troubleshoot-a-scan#a-file-has-syntax-errors).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -241,22 +239,3 @@ These tags aren't counted as uses and report no diagnostic:
 - A React context used as a provider or consumer, such as `<ThemeContext.Provider>`.
 - A Vue built-in tag, such as `<Transition>`.
 - A Vue template tag naming something the file's own script declares, such as `const LazyPanel = pickPanel();` with `<LazyPanel>` or `<lazy-panel>`.
-
-## Terminal output
-
-At the end of a scan, before the summary, the scan prints each `warning` to stderr on its own line, starting `Warning:`. `dependency-not-installed` lines come last. The terminal lines don't show the codes; the scan file does.
-
-```text
-Warning: src/App.tsx:24:6: couldn't tell which component import('./Panel') loads, so this use isn't counted.
-```
-
-[`--quiet`](/docs/reference/cli#scan) turns off these lines. The scan file still lists every diagnostic. `auto-import-manifest-missing` prints once, as the scan starts, so it shows even with `--quiet`.
-
-The `info` codes print only with [`--debug`](/docs/reference/cli#global-flags): one line per code, with a count. The individual entries are only in the scan file.
-
-```text
-1 use of a component passed in as a prop or argument wasn't counted.
-5 renders couldn't be followed to a component and weren't counted as uses.
-```
-
-The scan file records each diagnostic once. `cycle-detected` and `chain-too-deep` appear once per package file and export, however many of your files import the component.

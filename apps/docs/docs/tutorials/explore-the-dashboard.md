@@ -133,7 +133,7 @@ We select **governance** again. In the **New record** form:
 3. We click **Replaced by**, type `button`, and pick `Button` from `@acme/ui`.
 4. We press **Create**. The form says `LegacyButton replaced by Button` and stays open for another record, so we press **Close**.
 
-Under **Records**, `LegacyButton` now reads **Replaced by** `Button · @acme/ui`. Its count is worked out in the background, so we reload the page. The line under the **Governance** title now reads `1 in progress`. Records are listed by package, and each package starts folded to one line, so `LegacyButton` sits under `@acme/ui-legacy`. That line's **Uses left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
+Under **Records**, `LegacyButton` now reads **Replaced by** `Button · @acme/ui`. Its count takes a moment, so we reload the page. The line under the **Governance** title now reads `1 in progress`. Records are listed by package, and each package starts folded to one line, so `LegacyButton` sits under `@acme/ui-legacy`. That line's **Uses left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
 
 We select **repos** and open `acme/storefront`:
 

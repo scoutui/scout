@@ -15,16 +15,16 @@ Select **repos** in the top navigation. The dashboard opens here. Each row is on
 
 Type in the search box to match a repo's id, git remote or branch. Press the **since previous scan** chip to list only repos whose latest scan differs from the one before. Select a row to open the repo page.
 
-If the list reads **No repos scanned yet.**, no scan has been uploaded. The page shows the two commands that upload one, and [Run in CI](/docs/guides/run-in-ci) sets up uploads from CI.
+If the list reads **No repos scanned yet.**, no scan has been uploaded. [Run in CI](/docs/guides/run-in-ci) sets up uploads from CI.
 
 ## Read a repo page
 
-The header line gives the repo's git remote, the **commit** and **branch** the scan ran on, the date of that commit (after **committed**), and how many packages its components come from. When the remote is on GitHub or GitLab, the commit links to it there. When the repo uses more than one framework, a second line counts its components per framework.
+The header line gives the repo's git remote, the **commit** and **branch** the scan ran on, the date of that commit (after **committed**), and how many packages its components come from. When the remote is on GitHub or GitLab, the commit links to it there.
 
 Below it, a status line tells you what needs attention:
 
 - **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
-- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table. A repo with one scan reads **first scan · nothing to compare**.
+- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table.
 
 ### Fix what the scan couldn't see
 
@@ -45,13 +45,11 @@ To narrow the table:
 - Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
-**Type** offers **React**, **Vue**, **Web component** and **Undefined element**, and shows only when the repo has more than one. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
+**Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
 
-**Used in** shows when more than one of the repo's packages uses components, as in a monorepo. It lists those packages, each with its folder, or **repo root** for the package at the top of the repo. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
+In a monorepo, **Used in** lists the repo's packages. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
 
-Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. Selecting a row then opens the component's **Usage** tab with that package picked, when the component's uses sit in more than one package.
-
-You can pick one package at a time, and the **since previous scan** chip is hidden while you do. Scans uploaded by older CLI versions don't record which package each use sits in, so they don't offer **Used in**.
+Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. You can pick one package at a time, and **since previous scan** isn't available while a package is picked. Scans from older CLI versions don't offer **Used in**: scan again with the latest CLI.
 
 Each active filter shows as a pill you can remove, and **Clear all** removes them all.
 
@@ -73,7 +71,7 @@ The tab keeps its search and filters in the page URL, so you can copy the addres
 | `used-in` | `used-in=@acme/web`, which keeps the components used in that package |
 | `changed` | `changed=true` |
 
-Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. A `used-in` package the scan doesn't have, such as one renamed since the link was made, matches no components. Write a space as `+`. For example:
+Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. Write a space as `+`. For example:
 
 ```text
 /repos/acme-web?package=@acme/ui-legacy&deprecated=true&uses=gte:10
@@ -91,11 +89,11 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 ## Look at an older scan
 
-Press the **scan** button in the header (it shows the scan's id) to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, one row per scan, newest first. **Committed** is the date of the scanned commit and **Scanned** is when the scan reached the dashboard. **Scanned by** is the person who uploaded it, or **—** for a scan uploaded with a [CI upload token](/docs/guides/run-in-ci). **View scan** opens the repo page on that scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
+Press the **scan** button in the header to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-An older scan shows a banner: **Viewing an older scan: committed 3mo ago, scanned 2d ago.** The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link and reads **not in the latest scan**. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
+On an older scan, the header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link and reads **not in the latest scan**. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
 
-The page URL carries `?scan=` while an older scan is shown, so a shared link opens the same scan.
+A link copied while you look at an older scan opens the same scan.
 
 :::note
 If a repo's latest scan isn't ready, its pages show its newest scan that is, under a band such as **The latest scan couldn't be prepared · Showing 35e61ed, committed 23h ago.** The **repos** list does the same for each repo, and names any repo it leaves out because none of its scans is ready. See [When a page shows Preparing scan data](/docs/explanation/cli-and-dashboard#scan-preparing) for what to do.

@@ -1,45 +1,40 @@
 ---
-description: "What a Scout scan counts as a component: every component it sees gets an entry, there are three kinds matched across repos in different ways, and packages must be installed for their components to be found."
+description: "What a Scout scan counts as a component: the two kinds and how each is matched across repos, and what happens when your dependencies aren't installed."
 sidebar_label: "How components are found"
 ---
 
 # How components are found
 
-A scan reads your repo's React and Vue files and records every component it sees in use. This page explains what counts as one component, the three kinds of component and how each is matched across repos, and why the scan needs your dependencies installed.
+A scan reads your repo's React and Vue files and records every component it sees in use. [Framework support](/docs/reference/framework-support) lists what counts as a component in each framework. This page explains the two kinds of component and how each is matched across repos, and what happens when your dependencies aren't installed.
 
-## Every component the scan sees gets an entry
+## What gets an entry
 
-The scan doesn't start from a list of components it expects to find. It reads each file, and every component tag it meets gets an entry: `Button` from `@acme/ui`, an old `LegacyButton` nobody documents any more, a `Card` your team wrote last week. [Framework support](/docs/reference/framework-support) lists what counts as a component tag in each framework.
-
-A component your repo defines also gets an entry when nothing uses it, as long as its own code uses another component, such as a page component that only your framework's router loads. One that is neither used nor uses any other component is left out.
+A component your repo defines gets an entry even when nothing uses it, as long as its own code uses another component, such as a page component that only your framework's router loads.
 
 The scan doesn't know which packages make up your design system. It records every package the same way, and you pick out the ones that matter with [tags](/docs/reference/glossary#tag) in the dashboard.
 
-## Three kinds of component
+## Two kinds of component
 
-Every component is one of three kinds. For an imported component, the scan works out which from where the import points:
+Every component is one of two kinds:
 
-- **[External](/docs/reference/glossary#external):** the import leads to an installed package, such as `import { Button } from "@acme/ui"`.
-- **[Local](/docs/reference/glossary#local):** the import leads to a file in the repo, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is defined in the repo too: it is still your repo's code.
-- **[Web component](/docs/reference/glossary#web-component):** a tag with a hyphen, such as `<acme-button>`, which nothing imports. A registration in your code or a package's Custom Elements Manifest decides which repo or package it belongs to. [Framework support](/docs/reference/framework-support#web-components) gives the order.
+- **[External](/docs/reference/glossary#external):** it comes from an installed package, such as `import { Button } from "@acme/ui"`.
+- **[Local](/docs/reference/glossary#local):** your repo defines it, such as `import { Card } from "./Card"`. A component from another workspace package in the same monorepo is local too: it is still your repo's code.
 
-A [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) only tells the scan which package a tag belongs to. To ship one with your package, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
+A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is one of these two: local when your repo defines it, and external when it comes from a package or nothing defines it. If you publish web components, see [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 
-No config field labels a component one way or the other. If your repo uses path aliases, the scan needs them to follow imports: see [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo).
+If your repo uses path aliases, the scan needs them to follow imports: see [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo).
 
-### Why it matters across repos
+### Matching across repos
 
-Each kind is matched across repos in its own way:
+External and local components are matched across repos in different ways:
 
 - **External: matched by package and name.** `Button` from `@acme/ui` is the same component in `storefront` and `checkout`, so the dashboard can add their usage together and show every repo that uses it. The package entry point counts too: `Button` imported from `@acme/ui/button` is a separate component from `Button` imported from `@acme/ui`.
-- **Local: matched by repo and file.** A `Card` in `storefront` and a `Card` in `checkout` are two components, even when the files look alike. They are separate code and can change separately.
-- **Web component: matched by tag name.** `<acme-button>` is the same component in every repo that uses it. Which package or repo it belongs to is worked out again in each scan.
+- **Local: matched by repo and file.** A `Card` in `storefront` and a `Card` in `checkout` are two components, even when the files look alike.
+- **Web components, external or local: matched by tag name.** `<acme-button>` is the same component in every repo that uses it.
 
-## Why dependencies must be installed
+## Install dependencies before you scan
 
-To tell which component an import names, the scan follows the import into the installed package, and reads the package's version from there too. So install your dependencies before you scan.
-
-When a package your `package.json` declares isn't installed, the scan can't tie its uses to a component. They are recorded as [unmatched uses](/docs/reference/glossary#unmatched-use), and none of that package's components get an entry. The scan's summary says so:
+Install your dependencies before you scan. When a package your `package.json` declares isn't installed, the scan can't tie its uses to a component. They are recorded as [unmatched uses](/docs/reference/glossary#unmatched-use), and none of that package's components get an entry. The scan's summary says so:
 
 ```text
 Scout couldn't match 4 more uses to a component. See https://scoutui.dev/docs/guides/troubleshoot-a-scan#unresolved-occurrences
@@ -57,8 +52,8 @@ A scan records usage at two levels of detail:
 - **One entry per component**, with the totals: how many places use it, in how many files, and which values each prop was given.
 - **One entry per [use](/docs/reference/glossary#use)**, the place in the code where the component is used: the file, the line, and the props written there.
 
-The totals answer "how much is this used, and how?". The uses answer "where do I go to change it?". A component's page in the dashboard shows both: the totals, and each use, file by file and line by line. In the JSON they are the `components` and `occurrences` arrays; the [scan file reference](/docs/reference/artifact) lists their fields.
+The totals answer "how much is this used, and how?". The uses answer "where do I go to change it?". A component's page in the dashboard shows both. In the JSON they are the `components` and `occurrences` arrays; the [scan file reference](/docs/reference/artifact) lists their fields.
 
-A compound component such as `<Dialog.Popup>` gets its own entry, named `Dialog.Popup`, separate from `Dialog`. When `Dialog` is defined in your repo and `Popup` points at a component declared elsewhere in your code, such as `Popup: DialogPopup`, the entry is `DialogPopup` instead.
+A compound component such as `<Dialog.Popup>` gets its own entry, named `Dialog.Popup`, separate from `Dialog`.
 
 The [glossary](/docs/reference/glossary) defines the other terms used on this page.

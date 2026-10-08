@@ -26,14 +26,14 @@ npm install --save-dev @scoutui/cli@latest
 
 Commit the change and merge it into the [branch the dashboard tracks](/docs/reference/config).
 
-In a terminal, Scout says under its wordmark when a newer version is available, with the command for your repo's package manager. When your dashboard can't read the new version's scans yet, it says so instead: see [If the CLI is newer or older than the dashboard](#version-messages). [New versions](/docs/reference/cli#new-versions) has the details.
+In a terminal, Scout tells you when a newer version is available. When your dashboard can't read the new version's scans yet, it tells you to wait instead: see [If the CLI is newer or older than the dashboard](#version-messages).
 
 ## If the CLI is newer or older than the dashboard {#version-messages}
 
 | Message starts with | Fix |
 | --- | --- |
 | `Error: Couldn't upload the scan: this CLI is newer than the dashboard.` | Ask whoever runs your dashboard to upgrade it. Until then, run the version the message names, for example `npx @scoutui/cli@0.2.4 scan`, or install that version in the repo so every upload keeps working. |
-| `Scout <version> is available, but your dashboard can't read its scans yet.` | Keep the CLI you have: the new version's scans are in a format your dashboard can't read yet, so it would refuse them. Ask whoever runs your dashboard to [upgrade it](#upgrade-the-dashboard), then [upgrade the CLI](#upgrade-the-cli-in-a-repo). |
+| `Scout <version> is available, but your dashboard can't read its scans yet.` | Keep the CLI you have. Ask whoever runs your dashboard to [upgrade it](#upgrade-the-dashboard), then [upgrade the CLI](#upgrade-the-cli-in-a-repo). |
 | `Error: Couldn't upload the scan: this CLI is too old for the dashboard.` | [Upgrade the CLI](#upgrade-the-cli-in-a-repo). Until your upgrade is merged, run the version the message names, for example `npx @scoutui/cli@0.2.4 scan`. |
 
 `scout auth login` is refused the same way, with a message that starts `Error: Couldn't sign in:`. Use the same fixes with `auth login` in place of `scan`, for example `npx @scoutui/cli@0.2.4 auth login`.
