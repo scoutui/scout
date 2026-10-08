@@ -161,6 +161,7 @@ function imageOf(shown: ExportedChart): Promise<Blob> {
     config: shown.config,
     view: searchedView(shown.drawn, shown.query),
     whole: shown.drawn,
+    paths: shown.paths,
     host: window.location.host,
     exportedAt: new Date(),
   });

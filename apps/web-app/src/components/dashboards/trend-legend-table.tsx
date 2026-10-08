@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { searchedSeries } from "@/lib/dashboard-chart-data";
-import { formatDayTick, formatDelta, formatMetric } from "@/lib/dashboard-format";
+import { distinctPaths, formatDayTick, formatDelta, formatMetric } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, SlashBreaks } from "@/components/dashboards/cohort-label";
 import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
@@ -189,33 +189,4 @@ export function TrendLegendTable({
       ) : null}
     </div>
   );
-}
-
-/**
- * For each series whose name another series shares, the part of its path that tells the group apart: comparing the
- * paths from the end, the first folders that differ, as many as it takes to tell every row apart. When the file names
- * differ, the file name, with its folder when some file in the group is an index file.
- */
-function distinctPaths(series: CohortSeries[], paths: Readonly<Record<string, string>>): Map<string, string> {
-  const groups = new Map<string, Array<{ key: string; path: string }>>();
-  for (const s of series) {
-    const path = paths[s.cohortKey];
-    if (path !== undefined) groups.set(s.label, [...(groups.get(s.label) ?? []), { key: s.cohortKey, path }]);
-  }
-  const out = new Map<string, string>();
-  for (const group of groups.values()) {
-    if (group.length < 2) continue;
-    const fromEnd = group.map(({ path }) => path.split("/").reverse());
-    const longest = Math.max(...fromEnd.map((segments) => segments.length));
-    const part = (from: number, to: number) => fromEnd.map((segments) => segments.slice(from, to + 1).reverse().join("/"));
-    let from = 0;
-    while (from < longest && new Set(part(from, from)).size === 1) from++;
-    if (from === longest) continue;
-    let to = from;
-    while (to < longest - 1 && new Set(part(from, to)).size < group.length) to++;
-    if (from === 0 && fromEnd.some(([file]) => file?.startsWith("index."))) to = Math.max(to, 1);
-    const shown = part(from, to);
-    for (const [i, { key }] of group.entries()) out.set(key, shown[i] ?? "");
-  }
-  return out;
 }
