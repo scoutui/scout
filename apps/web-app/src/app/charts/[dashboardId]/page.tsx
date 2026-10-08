@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Clock, SearchX } from "lucide-react";
-import { changeByRange, cohortChange, componentDisambiguators, renderDashboard, type ChangeByRange, type Dashboard, type DashboardMetric, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
+import { changeByRange, cohortChange, componentDisambiguators, renderDashboard, type ChangeByRange, type Dashboard, type DashboardMetric, type DashboardScope, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
 import { chartResultsNotice, chartResultsUnavailable } from "@/lib/read-model-progress";
@@ -19,6 +19,7 @@ import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-
 import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
+import { derivedChartHref } from "@/lib/derived-dashboards";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
 import { chartRange, isEmptyView } from "@/lib/dashboard-chart-data";
 import { buttonVariants } from "@/components/ui/button";
@@ -55,6 +56,9 @@ export default async function DashboardViewPage({
   const metricParam = Array.isArray(rawMetric) ? rawMetric[0] : rawMetric;
   // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
   const rangeParam = chartRange(sp["range"]);
+  // biome-ignore lint/complexity/useLiteralKeys: index-signature access requires bracket notation (noPropertyAccessFromIndexSignature)
+  const repoParam = sp["repo"];
+  const trackingScope: DashboardScope = typeof repoParam === "string" && repoParam ? { kind: "repo", repoId: repoParam } : { kind: "all" };
 
   const governancePage = id.startsWith("migration:") || id.startsWith("retirement:");
   const identity = await identify({ browser: true });
@@ -62,7 +66,7 @@ export default async function DashboardViewPage({
     if (governancePage) {
       return {
         kind: "tracking" as const,
-        tracking: await snapshot.getStoredTracking({ kind: "all" }),
+        tracking: await snapshot.getStoredTracking(trackingScope),
         registry: await snapshot.getStoredRegistry(),
         governance: await snapshot.listGovernance(),
       };
@@ -98,7 +102,7 @@ export default async function DashboardViewPage({
       const recordId = id.slice(id.indexOf(":") + 1);
       const kind = id.startsWith("migration:") ? "superseded" : "retired";
       const charting = tracking?.find((t) => id.startsWith(`${t.kind}:`) && t.recordIds.includes(recordId));
-      if (charting) redirect(`/charts/${encodeURIComponent(charting.id)}`);
+      if (charting) redirect(derivedChartHref(charting.id, trackingScope));
       if (governance.some((r) => r.id === recordId && r.disposition.kind === kind) && !registry?.stats[recordId]) {
         return <ReadModelState {...await chartResultsUnavailable(getPool())} />;
       }
@@ -248,8 +252,12 @@ export default async function DashboardViewPage({
         ) : derivedEntry?.coverage.total === 0 ? (
           <EmptyState
             icon={<SearchX className="size-6" />}
-            title={`No scan has found a use of ${derivedEntry.fromLabel}, so there's nothing to migrate.`}
-            description="To count a repo that used it before its first scan, upload scans of that repo's older commits."
+            title={trackingScope.kind === "repo"
+              ? `No scan of ${trackingScope.repoId} has found a use of ${derivedEntry.fromLabel}, so there's nothing to migrate.`
+              : `No scan has found a use of ${derivedEntry.fromLabel}, so there's nothing to migrate.`}
+            description={trackingScope.kind === "repo"
+              ? "To count uses from before this repo's first scan, upload scans of its older commits."
+              : "To count a repo that used it before its first scan, upload scans of that repo's older commits."}
           />
         ) : isEmptyView(view) ? (
           <EmptyState

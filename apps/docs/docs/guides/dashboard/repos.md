@@ -79,11 +79,13 @@ Different parameters must all match. Repeating `kind`, `package` or `tag` matche
 
 ## Follow adoption in a repo
 
-The **Adoption** tab follows each [migration](/docs/reference/glossary#migration) and [retirement](/docs/reference/glossary#retirement) that touches this repo, counting this repo alone. **Migrations in this repo** shows each one's progress as a share **migrated**, and **Retirements in this repo** as a count of uses **left**. Complete ones are kept behind **Show N complete**.
+The **Adoption** tab follows each [migration](/docs/reference/glossary#migration) and [retirement](/docs/reference/glossary#retirement) that touches this repo, counting this repo alone. **Migrations and retirements in this repo** lists them as the **charts** page does: a row for each package they move away from, with its **Uses left** in this repo and how they changed over the last 30 days.
 
-Select a row to open its chart: uses over time in this repo, scan by scan.
+Select a package to list every migration and retirement in it. A migration also reads how much is **Migrated**. Records that name the same replacement share one row, and a record that covers a whole package is that package's row. **In progress** and **Complete** switch between migrations and retirements with uses left and those with none. With more than 10, search above the list for a component or package.
 
-![The Adoption tab of vue-vben-admin, with the ant-design-vue to antdv-next migration open on its chart and the naive-ui retirement below](/img/dashboard/repo-adoption-tab.png)
+Select a migration or retirement to open its chart for this repo alone: uses over time, scan by scan. The chart's page names the repo beside the chart type.
+
+![The Adoption tab of vue-vben-admin, with three migrations and retirements in progress and one complete](/img/dashboard/repo-adoption-tab.png)
 
 If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle record](/docs/reference/glossary#lifecycle-record) covers anything this repo has used. **Open Governance** takes you to the page where you add one; [Track a migration](/docs/guides/dashboard/track-a-migration) walks through it. [Reading the numbers](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted) explains how progress is counted.
 

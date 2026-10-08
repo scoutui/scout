@@ -40,7 +40,7 @@ export function TopTabs({ showGovernance, rightSlot }: { showGovernance: boolean
         <PageMenu tabs={tabs} current={current} />
         <Link
           href="/repos"
-          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2 sm:gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80"
+          className="mr-5 sm:mr-9 inline-flex shrink-0 items-center gap-2 sm:gap-2.5 font-wordmark text-sm font-semibold tracking-[0.02em] text-foreground transition-colors hover:text-foreground/80 focus-visible:rounded-sm focus-inset"
         >
           <BrandMark className="max-sm:ring-0" />
           Scout

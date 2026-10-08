@@ -91,8 +91,8 @@ async function storeResults(pool: Pool) {
   expect(await processChartResultsJob(pool, job, new AbortController().signal)).toBe("written");
 }
 
-function trackingParams(id: string) {
-  return { params: Promise.resolve({ dashboardId: encodeURIComponent(id) }), searchParams: Promise.resolve({}) };
+function trackingParams(id: string, repo?: string) {
+  return { params: Promise.resolve({ dashboardId: encodeURIComponent(id) }), searchParams: Promise.resolve(repo ? { repo } : {}) };
 }
 
 afterEach(() => {
@@ -319,6 +319,28 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     });
   });
 
+  it("opens a migration chart for one repo, and keeps the repo when a record's link leads to the shared chart", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      const by = { packageName: "@sample/new", exportName: "Button" };
+      const first = await driver.createGovernance({ grain: "component", targetPackage: "@sample/core", targetExport: "Button", disposition: { kind: "superseded", by } });
+      const second = await driver.createGovernance({ grain: "component", targetPackage: "@sample/mixed", targetExport: "Field", disposition: { kind: "superseded", by } });
+      await enqueueChartResults(pool);
+      await storeResults(pool);
+      const { default: page } = await import("@/app/charts/[dashboardId]/page");
+      const merged = `migration:${first.id}`;
+      const inRepo = (await driver.getStoredTracking({ kind: "repo", repoId: "repo-a" }))?.find(entry => entry.id === merged);
+      const everywhere = (await driver.getStoredTracking({ kind: "all" }))?.find(entry => entry.id === merged);
+      expect(inRepo?.series).not.toEqual(everywhere?.series);
+      const tree = await page(trackingParams(merged, "repo-a"));
+      expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: inRepo }]);
+      expect(allPropsFor(tree, "DashboardScopeBadge")).toEqual([expect.objectContaining({ scope: { kind: "repo", repoId: "repo-a" } })]);
+      await expect(page(trackingParams(`migration:${second.id}`, "repo-a"))).rejects.toMatchObject({
+        digest: expect.stringContaining(`;/charts/${encodeURIComponent(merged)}?repo=repo-a;`),
+      });
+    });
+  });
+
   it("exports a migration chart under its heading, with no Duplicate or sharing", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
@@ -347,6 +369,10 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
         description: "To count a repo that used it before its first scan, upload scans of that repo's older commits.",
       })]);
       expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([]);
+      expect(allPropsFor(await page(trackingParams(`migration:${record.id}`, "repo-c")), "EmptyState")).toEqual([expect.objectContaining({
+        title: "No scan of repo-c has found a use of Badge · @sample/legacy, so there's nothing to migrate.",
+        description: "To count uses from before this repo's first scan, upload scans of its older commits.",
+      })]);
     });
   });
 

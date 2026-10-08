@@ -65,7 +65,7 @@ To see where a record's component or package is still used, select the record's 
 
 The same charts are on the **charts** page, under **Migrations and retirements**, grouped by the package each record moves away from. Select `@acme/ui-legacy` to see its rows: a migration reads how much is **Migrated** and its **Uses left**, and a retirement its **Uses left**, the uses still in the code. Each row also shows how the uses left changed over the last 30 days. Records that name the same replacement, such as one for each part of a compound component, share one row and one chart. That chart draws each old component as its own line beside the replacement's, and the table under it lists each line's uses and how much they changed over the period you picked. See [Charts](/docs/guides/dashboard/charts).
 
-To follow one repo, open it from **repos** and go to its **Adoption** tab. **Migrations in this repo** and **Retirements in this repo** count that repo alone, so their numbers can differ from the charts page. A repo that never used `LegacyButton` has no row for it. See [Follow adoption in a repo](/docs/guides/dashboard/repos#follow-adoption-in-a-repo).
+To follow one repo, open it from **repos** and go to its **Adoption** tab. **Migrations and retirements in this repo** counts that repo alone, so its numbers can differ from the charts page, and a migration or retirement opens its chart for that repo. A repo that never used `LegacyButton` has no row for it. See [Follow adoption in a repo](/docs/guides/dashboard/repos#follow-adoption-in-a-repo).
 
 [How a migration's progress is counted](/docs/explanation/dashboard/reading-the-numbers#how-a-migrations-progress-is-counted) explains the percentage.
 

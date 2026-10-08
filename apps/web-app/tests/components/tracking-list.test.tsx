@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import type { CohortSeries, GovernanceRule, GovernanceTracking } from "@scoutui/web-shared";
+import type { CohortSeries, DashboardConfig, DashboardScope, GovernanceRule, GovernanceTracking } from "@scoutui/web-shared";
 import { TrackingList } from "@/components/dashboards/tracking-list";
 
-const sparklines = vi.hoisted(() => [] as Array<{ uid: string; view: { series: CohortSeries[] } }>);
+type SparklineProps = { uid: string; config: DashboardConfig; view: { series: CohortSeries[] } };
+const sparklines = vi.hoisted(() => [] as SparklineProps[]);
 vi.mock("@/components/dashboards/dashboard-sparkline", () => ({
-  DashboardSparkline: (props: { uid: string; view: { series: CohortSeries[] } }) => {
+  DashboardSparkline: (props: SparklineProps) => {
     sparklines.push(props);
     return null;
   },
@@ -46,6 +47,7 @@ function entry(id: string, from: GovernanceRule[], over: Partial<GovernanceTrack
 }
 
 const done = { active: false, remaining: 0, progress: 1 } as const;
+const all: DashboardScope = { kind: "all" };
 const fold = (packageName: string) => screen.getByRole("button", { name: packageName });
 const rowNames = () => screen.queryAllByRole("link").map((link) => link.querySelector(".font-mono")?.textContent);
 
@@ -53,6 +55,7 @@ describe("TrackingList", () => {
   it("groups entries under their old package, most uses left first, each folded", () => {
     render(
       <TrackingList
+        scope={all}
         entries={[
           entry("a", [component("@example/forms", "Input")], { remaining: 30 }),
           entry("b", [component("@example/legacy", "Button")], { remaining: 20 }),
@@ -67,7 +70,7 @@ describe("TrackingList", () => {
   });
 
   it("starts a lone package folded too", () => {
-    render(<TrackingList entries={[entry("a", [component("@example/legacy", "Button")])]} />);
+    render(<TrackingList scope={all} entries={[entry("a", [component("@example/legacy", "Button")])]} />);
     expect(fold("@example/legacy")).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryAllByRole("link")).toEqual([]);
   });
@@ -76,6 +79,7 @@ describe("TrackingList", () => {
     const parts = ["Modal", "ModalBody", "ModalCloseButton", "ModalFooter", "ModalHeader", "ModalTitle"];
     render(
       <TrackingList
+        scope={all}
         entries={[
           ...Array.from({ length: 11 }, (_, i) => entry(`e${i}`, [component("@example/legacy", `Part${i}`)], { remaining: i + 1 })),
           entry("modal", parts.map((name) => component("@example/legacy", name)), { remaining: 40, toLabel: "@example/ui-modal" }),
@@ -97,6 +101,7 @@ describe("TrackingList", () => {
     const whole: GovernanceRule = { grain: "package", targetPackage: "@example/icons-v1", targetExport: null };
     render(
       <TrackingList
+        scope={all}
         entries={[
           entry("icons", [whole], { toLabel: "@example/icons-v2" }),
           entry("b", [component("@example/legacy", "Button")]),
@@ -111,6 +116,7 @@ describe("TrackingList", () => {
   it("lists an entry covering two packages under its oldest record's package, naming each package", () => {
     render(
       <TrackingList
+        scope={all}
         entries={[entry("both", [component("@example/forms", "Button"), component("@example/legacy", "Button")], { record: { targetPackage: "@example/legacy" } as never })]}
       />,
     );
@@ -122,6 +128,7 @@ describe("TrackingList", () => {
   it("reads each row's change in uses left in colour, with the repos added", () => {
     render(
       <TrackingList
+        scope={all}
         entries={[
           entry("fewer", [component("@example/legacy", "A")], { delta: -3, reposAdded: 1 }),
           entry("more", [component("@example/legacy", "B")], { delta: 2 }),
@@ -141,6 +148,7 @@ describe("TrackingList", () => {
     const deprecated = (key: string, points: Array<{ t: string; value: number }>): CohortSeries => ({ cohortKey: key, label: key, color: "", role: "deprecated", points });
     render(
       <TrackingList
+        scope={all}
         entries={[
           entry("a", [component("@example/legacy", "A")], { delta: -3, remaining: 4, series: [deprecated("a", [at("2026-01-01", 7), at("2026-01-03", 4)])] }),
           entry("b", [component("@example/legacy", "B")], { ...done, delta: -2, series: [deprecated("b", [at("2026-01-02", 2), at("2026-01-03", 0)])] }),
@@ -159,18 +167,18 @@ describe("TrackingList", () => {
       entry("a", [component("@example/legacy", "Button")]),
       entry("b", [component("@example/legacy", "Card")], done),
     ];
-    render(<TrackingList entries={entries} />);
+    render(<TrackingList scope={all} entries={entries} />);
     expect(screen.getByRole("button", { name: "In progress 1" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Complete 1" }));
     fireEvent.click(fold("@example/legacy"));
     expect(rowNames()).toEqual(["Card"]);
     cleanup();
-    render(<TrackingList entries={[entries[0] as GovernanceTracking]} />);
+    render(<TrackingList scope={all} entries={[entries[0] as GovernanceTracking]} />);
     expect(screen.queryByRole("button", { name: /Complete/ })).toBeNull();
   });
 
   it("starts on the complete side when nothing is in progress", () => {
-    render(<TrackingList entries={[entry("b", [component("@example/legacy", "Card")], done)]} />);
+    render(<TrackingList scope={all} entries={[entry("b", [component("@example/legacy", "Card")], done)]} />);
     expect(screen.getByRole("button", { name: "Complete 1" })).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -180,10 +188,10 @@ describe("TrackingList", () => {
       entry("btn", [component("@example/legacy", "Button")]),
       entry("old-btn", [component("@example/forms", "IconButton")], done),
     ];
-    render(<TrackingList entries={entries.slice(0, 10)} />);
+    render(<TrackingList scope={all} entries={entries.slice(0, 10)} />);
     expect(screen.queryByRole("searchbox")).toBeNull();
     cleanup();
-    render(<TrackingList entries={entries} />);
+    render(<TrackingList scope={all} entries={entries} />);
     fireEvent.change(screen.getByRole("searchbox", { name: "Find a component or package" }), { target: { value: "button" } });
     expect(rowNames()).toEqual(["Button"]);
     expect(screen.getByRole("button", { name: "In progress 1" })).toBeInTheDocument();
@@ -192,10 +200,21 @@ describe("TrackingList", () => {
     expect(screen.getByText(/Nothing matches/)).toHaveTextContent("Nothing matches nothing-like-it.");
   });
 
+  it.each([
+    { scope: all, heading: "Migrations and retirements", query: "" },
+    { scope: { kind: "repo", repoId: "example/web" } as const, heading: "Migrations and retirements in this repo", query: "?repo=example/web" },
+  ])("names its heading, links each row and draws each package's trend for $scope.kind", ({ scope, heading, query }) => {
+    const whole: GovernanceRule = { grain: "package", targetPackage: "@example/icons-v1", targetExport: null };
+    render(<TrackingList scope={scope} entries={[entry("icons", [whole]), entry("b", [component("@example/legacy", "Button")])]} />);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(heading);
+    expect(screen.getByRole("link", { name: /@example\/icons-v1/ })).toHaveAttribute("href", `/charts/migration%3Aicons${query}`);
+    expect(sparklines.find((props) => props.uid === "package-@example/legacy")?.config.scope).toEqual(scope);
+  });
+
   it("brings the page back to a package's row when it's folded from below", () => {
     const scrolled = vi.fn();
     Element.prototype.scrollIntoView = scrolled;
-    render(<TrackingList entries={[entry("a", [component("@example/legacy", "A")])]} />);
+    render(<TrackingList scope={all} entries={[entry("a", [component("@example/legacy", "A")])]} />);
     fireEvent.click(fold("@example/legacy"));
     const row = fold("@example/legacy").closest("[data-slot=package-row]") as HTMLElement;
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
@@ -209,7 +228,7 @@ describe("TrackingList", () => {
   it("leaves the page where it is when a package is folded from its own row", () => {
     const scrolled = vi.fn();
     Element.prototype.scrollIntoView = scrolled;
-    render(<TrackingList entries={[entry("a", [component("@example/legacy", "A")])]} />);
+    render(<TrackingList scope={all} entries={[entry("a", [component("@example/legacy", "A")])]} />);
     fireEvent.click(fold("@example/legacy"));
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({ top: 120 }) as DOMRect);
     fireEvent.click(fold("@example/legacy"));

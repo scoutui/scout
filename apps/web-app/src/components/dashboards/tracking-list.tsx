@@ -2,18 +2,18 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Search, X } from "lucide-react";
-import type { CohortSeries, DashboardConfig, GovernanceTracking } from "@scoutui/web-shared";
+import type { CohortSeries, DashboardScope, GovernanceTracking } from "@scoutui/web-shared";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DashboardSparkline } from "@/components/dashboards/dashboard-sparkline";
 import { deltaDirection, formatChange, formatPct, formatReposAdded } from "@/lib/dashboard-format";
+import { derivedChartHref } from "@/lib/derived-dashboards";
 import { cn } from "@/lib/utils";
 
 const SEARCH_PAST = 10;
 const GRID =
   "sm:grid sm:grid-cols-[minmax(0,1fr)_5rem_5rem_7.5rem] sm:items-center sm:gap-x-4 xl:grid-cols-[minmax(0,1fr)_5rem_5rem_7.5rem_112px]";
 const ROW = "focus-inset block px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent";
-const PACKAGE_TREND: DashboardConfig = { scope: { kind: "all" }, cohorts: [], chartType: "trend", metric: "count" };
 
 type Side = "progress" | "complete";
 type Group = {
@@ -26,12 +26,12 @@ type Group = {
 };
 
 /**
- * Every migration and retirement, grouped by the package it moves away from. Each package starts folded, and opening
- * it lists every entry in it. In progress and Complete switch between unfinished and finished entries, past 10
+ * Every migration and retirement in `scope`, grouped by the package it moves away from, each row opening its chart
+ * in that scope. Each package starts folded, and opening it lists every entry in it. In progress and Complete switch between unfinished and finished entries, past 10
  * entries a search finds a component or package on the side showing, and while the page scrolls the column headings
  * and an open package's row stay under the top bar.
  */
-export function TrackingList({ entries }: { entries: GovernanceTracking[] }) {
+export function TrackingList({ entries, scope }: { entries: GovernanceTracking[]; scope: DashboardScope }) {
   const inProgress = entries.filter((entry) => entry.active);
   const complete = entries.filter((entry) => !entry.active);
   const [side, setSide] = useState<Side>(inProgress.length > 0 ? "progress" : "complete");
@@ -63,7 +63,7 @@ export function TrackingList({ entries }: { entries: GovernanceTracking[] }) {
 
   return (
     <section className="mb-6">
-      <h2 className="mb-2 text-sm text-muted-foreground">Migrations and retirements</h2>
+      <h2 className="mb-2 text-sm text-muted-foreground">Migrations and retirements{scope.kind === "repo" ? " in this repo" : null}</h2>
       <div className="panel overflow-clip">
         {complete.length > 0 || entries.length > SEARCH_PAST ? (
           <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
@@ -120,11 +120,12 @@ export function TrackingList({ entries }: { entries: GovernanceTracking[] }) {
         <div className="divide-y">
           {groups.map((group) =>
             group.whole ? (
-              <EntryRow key={group.packageName} entry={group.whole} side={side} whole />
+              <EntryRow key={group.packageName} entry={group.whole} scope={scope} side={side} whole />
             ) : (
               <PackageGroup
                 key={group.packageName}
                 group={group}
+                scope={scope}
                 side={side}
                 open={q !== "" || opened.has(`${side}:${group.packageName}`)}
                 onFold={q === "" ? fold : null}
@@ -144,11 +145,13 @@ export function TrackingList({ entries }: { entries: GovernanceTracking[] }) {
 
 function PackageGroup({
   group,
+  scope,
   side,
   open,
   onFold,
 }: {
   group: Group;
+  scope: DashboardScope;
   side: Side;
   open: boolean;
   onFold: ((packageName: string, row: HTMLElement | null, group: HTMLElement | null) => void) | null;
@@ -207,7 +210,7 @@ function PackageGroup({
             <span className="hidden xl:block">
               <DashboardSparkline
                 uid={`package-${group.packageName}`}
-                config={PACKAGE_TREND}
+                config={{ scope, cohorts: [], chartType: "trend", metric: "count" }}
                 view={{ kind: "series", series: group.trend, coverage: { total: 0, repoIds: [], points: [] } }}
               />
             </span>
@@ -217,7 +220,7 @@ function PackageGroup({
       {open ? (
         <div className="divide-y">
           {group.entries.map((entry) => (
-            <EntryRow key={entry.id} entry={entry} side={side} />
+            <EntryRow key={entry.id} entry={entry} scope={scope} side={side} />
           ))}
         </div>
       ) : null}
@@ -225,8 +228,8 @@ function PackageGroup({
   );
 }
 
-function EntryRow({ entry, side, whole = false }: { entry: GovernanceTracking; side: Side; whole?: boolean }) {
-  const href = `/charts/${encodeURIComponent(entry.id)}`;
+function EntryRow({ entry, scope, side, whole = false }: { entry: GovernanceTracking; scope: DashboardScope; side: Side; whole?: boolean }) {
+  const href = derivedChartHref(entry.id, scope);
   const names = (
     <div className={cn("min-w-0", whole ? "ps-5" : "ps-6")}>
       <div className={cn("font-mono text-sm wrap-anywhere", whole && "font-medium")}>{rowName(entry)}</div>

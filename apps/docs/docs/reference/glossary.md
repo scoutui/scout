@@ -101,10 +101,10 @@ Deprecated components carry a warning icon, and the **deprecated** chip and **De
 
 The move from a replaced package or component to its replacement, tracked by a lifecycle record. Its progress reads **N% migrated**: the replacement's uses as a share of both sides together. With 30 uses of `LegacyButton` and 90 of `Button`, it reads **75% migrated**. Records that name the same replacement count as one migration.
 
-You see migrations under **Migrations and retirements** on the **charts** page and under **Migrations in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
+You see migrations under **Migrations and retirements** on the **charts** page and under **Migrations and retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration).
 
 ## Retirement
 
 The removal of a package or component that has no replacement, tracked by a retired lifecycle record, for example retiring `Modal` from `@acme/ui-legacy`. With no replacement to compare against, its progress reads **N left**: the uses still in the code. Its record reads **None left** on the **governance** page once no repo's latest scan uses it.
 
-You see retirements under **Migrations and retirements** on the **charts** page and under **Retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration#record-a-retirement).
+You see retirements under **Migrations and retirements** on the **charts** page and under **Migrations and retirements in this repo** on a repo's **Adoption** tab. See [Migrations and retirements](/docs/guides/dashboard/track-a-migration#record-a-retirement).
