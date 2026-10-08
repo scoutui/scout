@@ -35,7 +35,7 @@ kubectl create secret generic scout-secret \
   --from-literal=POSTGRES_PASSWORD="$(openssl rand -hex 24)"
 ```
 
-`POSTGRES_PASSWORD` goes into a connection URL, so it must not contain `@`, `:`, `/`, `?`, `#` or `%`. That's why the command uses `openssl rand -hex`. On a GitOps cluster, create the same Secret with your own tooling instead.
+`POSTGRES_PASSWORD` must not contain `@`, `:`, `/`, `?`, `#` or `%`; `openssl rand -hex` makes one that doesn't. On a GitOps cluster, create the same Secret with your own tooling instead.
 
 ## 3. Write the values
 
@@ -158,13 +158,13 @@ helm upgrade scout oci://ghcr.io/scoutui/charts/scout \
   -f values.yaml
 ```
 
-Migrations run when the new pods start. When a new version prepares scans differently, the worker rebuilds existing scans by itself, latest scan per repo first, unless the version's CHANGELOG entry says otherwise. While that runs, some pages may show **Preparing scan data** ([what that means](/docs/explanation/cli-and-dashboard#scan-preparing)).
+Migrations run when the new pods start. Some versions rebuild existing scans, which the worker does by itself unless the version's CHANGELOG entry says otherwise. While it does, some pages may show **Preparing scan data** ([what that means](/docs/explanation/cli-and-dashboard#scan-preparing)).
 
 Admins named in `auth.admins` or `auth.adminGroup` become Admins at their next browser sign-in, so once the upgrade is done, have them sign out of the dashboard and sign in again.
 
 ### Retry scans that failed to rebuild
 
-The worker gives up on a rebuild after a few failed tries. Pages then show that repo's newest ready scan under a band saying its latest scan couldn't be prepared, charts over time leave the scan out and list it, and a page with nothing else to show reads **Scan data couldn't be prepared**. The same steps also retry chart numbers shown as **Numbers may be out of date**.
+When a rebuild fails, pages say a repo's latest scan couldn't be prepared, or show **Scan data couldn't be prepared**. The same steps also retry chart numbers shown as **Numbers may be out of date**.
 
 Fix the cause, then queue the failed rebuilds again. The rebuild command isn't in the container image, so run it from a clone of the Scout repository at the commit your image was built from, with Node.js 24. A different commit may find nothing to retry.
 
@@ -230,7 +230,7 @@ Managed services such as Amazon RDS (PostgreSQL 15 and later) require TLS by def
 | `no-verify` | Encrypts without checking the certificate, so an impostor server would go unnoticed. Use it only when your provider signs with its own authority, as Amazon RDS and Google Cloud SQL do, and you haven't added that authority. `verify-full` fails there with `unable to verify the first certificate`. |
 | `disable`, or unset | Connects without TLS. |
 
-Set `verify-full` or `no-verify`. `require`, `prefer` and `verify-ca` behave exactly like `verify-full`, and each pod logs a `SECURITY WARNING` saying so.
+Set `verify-full` or `no-verify`. `require`, `prefer` and `verify-ca` behave like `verify-full`.
 
 ### Trust your database's certificate authority
 
@@ -356,7 +356,7 @@ A count of `0` means you need to set up a signing key on the provider.
 
 ### Reset a repository's remote {#reset-a-repositorys-remote}
 
-When a repository is renamed or moved, the dashboard refuses its uploads with `Couldn't upload the scan: <repoId> on the dashboard comes from <address>.`, because it still has the old address. Clear the remote it has for that `repoId`:
+When a repository is renamed or moved, the dashboard refuses its uploads with `Couldn't upload the scan: <repoId> on the dashboard comes from <address>.` Clear the remote it has for that `repoId`:
 
 ```bash
 kubectl exec scout-postgresql-0 -- \

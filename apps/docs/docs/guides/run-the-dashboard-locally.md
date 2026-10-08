@@ -18,7 +18,7 @@ yarn install
 yarn turbo run worker:build --filter=@scoutui/web-app
 ```
 
-The second command builds the packages the dashboard depends on, then the worker. Run it again after you pull new changes.
+Run the second command again after you pull new changes.
 
 ## 2. Start Postgres
 

@@ -28,14 +28,14 @@ Run two Deployments from the same image, each with at least one replica. The *wo
 | Command | The image's default | `node apps/web-app/worker.cjs` |
 | Port | 3000, behind a Service and your ingress | 3001, for probes only. It needs no Service. |
 | Startup probe | `GET /api/health`, allowing a few minutes for migrations | `GET /live` |
-| Liveness probe | `GET /api/health` | `GET /live`. Allow about a minute of failures, as the Scout chart does (6 failures 10 seconds apart, each with a 5-second timeout): a very large scan can keep the worker from answering. |
+| Liveness probe | `GET /api/health` | `GET /live`. Allow about a minute of failures, such as 6 failures 10 seconds apart, each with a 5-second timeout, or a very large scan can get the worker restarted. |
 | Readiness probe | `GET /api/health` | `GET /ready`, which succeeds once the worker is processing scans |
 
 Without a worker, the dashboard accepts uploads but never shows them, and the CLI ends with `Error: The dashboard is still processing the scan after 5 minutes.`.
 
-When the worker is stopped, it hands the scan it's processing back to the queue, which takes up to 30 seconds. Give its pods a termination grace period longer than that: the Scout chart uses 60 seconds. If a worker is killed before it finishes, another worker picks the scan up within a minute.
+Give the worker's pods a termination grace period longer than 30 seconds, such as 60, so a stopping worker can hand back the scan it's processing.
 
-Both processes run as any non-root user with a read-only root filesystem, and in our tests neither wrote to disk. The Scout chart still mounts a small writable `/tmp` on each as a precaution, and you can do the same.
+Both processes run as any non-root user with a read-only root filesystem.
 
 ## 3. Set the environment
 
@@ -54,7 +54,7 @@ The web server needs:
 
 The worker needs only `DATABASE_URL`, with the same value, and `NODE_OPTIONS`. It doesn't read the sign-in settings, so leave the session key and the client secret off it.
 
-The password in `DATABASE_URL` must not contain `@`, `:`, `/`, `?`, `#` or `%`. `openssl rand -hex 24` makes one that doesn't. In Kubernetes, you can keep the password in a Secret and build the URL from it, as the Scout chart does:
+The password in `DATABASE_URL` must not contain `@`, `:`, `/`, `?`, `#` or `%`. `openssl rand -hex 24` makes one that doesn't. In Kubernetes, you can keep the password in a Secret and build the URL from it:
 
 ```yaml title="Web server and worker containers"
 env:
@@ -82,7 +82,7 @@ On the worker, `WORKER_DATABASE_POOL_MAX` sets its database connections per pod.
 
 ## 4. Let migrations run on start
 
-Both processes apply pending database migrations when they start, before they report ready, so you need no separate migration job. They take a lock in the database first, so replicas that start together apply the migrations one at a time, and only the first finds any to apply.
+Both processes apply pending database migrations when they start, before they report ready, so you need no separate migration job.
 
 Check the logs once the pods start:
 
@@ -93,7 +93,7 @@ To start without changing the schema, for example during a restore, set `MIGRATE
 
 ## 5. Size memory and the database
 
-- **Memory.** Give each process a memory limit (the Scout chart uses 1 GiB), and set `NODE_OPTIONS=--max-old-space-size=<megabytes>` on both to about 80% of it, which is `819` for 1 GiB. Without it, Node.js keeps its heap to about 55% of the limit. In our tests, a 1 GiB worker processed scans at the 64 MiB upload limit with a peak of about 580 MiB, and Postgres ran within 512 MiB.
+- **Memory.** Give each process a memory limit, such as 1 GiB, and set `NODE_OPTIONS=--max-old-space-size=<megabytes>` on both to about 80% of it, which is `819` for 1 GiB. A 1 GiB worker handles scans at the 64 MiB limit, and Postgres runs within 512 MiB.
 - **Database storage.** The database keeps every scan. A 5 MB `scout-scan.json` takes about 3.5 MiB, and a scan at the 64 MiB limit about 80 MiB. Each repo's latest scan takes a little more than twice as much. Size the database volume for the scan history you expect.
 - **Database connections.** Keep this total below your database's connection limit:
 
@@ -106,7 +106,7 @@ To start without changing the schema, for example during a restore, set `MIGRATE
 
 ## 6. Configure the ingress or proxy
 
-An upload can take up to 4 minutes: it waits up to a minute for the web server to start receiving it, then has 3 minutes to arrive. Whatever sits in front of the web server must:
+Whatever sits in front of the web server must:
 
 - accept request bodies of at least 42 MiB, the largest upload the web server accepts;
 - wait at least 240 seconds for the web server's response.
@@ -152,12 +152,12 @@ command: ["sh", "-c", "set -a && . /secrets/scout.env && exec node apps/web-app/
 ```
 
 - `set -a` exports every variable the file sets. Without it, Node.js sees only the variables that the file `export`s.
-- `exec` replaces the shell with Node.js, so Node.js receives the stop signal. A shell that stays in place doesn't pass the signal on: the worker can't hand back its scan, and the pod waits out its whole grace period before it's killed.
+- `exec` replaces the shell with Node.js, so Node.js receives the stop signal. Without it, the worker can't hand back its scan, and the pod waits out its whole grace period before it's killed.
 - The file is shell syntax, one `KEY=value` per line, so put single quotes around a value that contains spaces, `$` or quotes. If the database password is only in the file, put the whole `DATABASE_URL` there too. Kubernetes fills in `$(POSTGRES_PASSWORD)` before the file is read, so it can't use a password from the file.
 
 ### Change an upload limit
 
-Most deployments keep the defaults. To change a limit, set it on both processes: each checks every limit when it starts, and refuses to start if a value isn't a positive whole number.
+Most deployments keep the defaults. To change a limit, set it on both processes, as a positive whole number.
 
 | Variable | Default | Read by | What it limits |
 | --- | --- | --- | --- |
@@ -168,7 +168,5 @@ Most deployments keep the defaults. To change a limit, set it on both processes:
 | `SCOUTUI_UPLOAD_RECEIVE_SLOTS` | 1 | Web server | Uploads each web server pod receives at once. |
 | `SCOUTUI_UPLOAD_SLOT_WAIT_MS` | 60000 | Web server | How long an upload waits for a free slot. Then it gets `503`. |
 | `SCOUTUI_MAX_QUEUED_UPLOADS` | No limit | Web server | Uploads waiting or being processed, across all pods. More get `503`. |
-
-The CLI retries a `503` by itself.
 
 `SCOUTUI_UPLOAD_SLOT_WAIT_MS` plus `SCOUTUI_UPLOAD_RECEIVE_TIMEOUT_MS` can be at most 270000, or both processes refuse to start. If you raise either, raise the proxy timeout from [step 6](#6-configure-the-ingress-or-proxy) to their sum. If you raise `SCOUTUI_MAX_UPLOAD_BYTES`, raise the proxy's body size limit to match.
