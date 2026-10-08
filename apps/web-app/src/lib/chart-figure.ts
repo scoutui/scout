@@ -50,8 +50,8 @@ export type FigureRect = { x: number; y: number; width: number; height: number }
 export type FigureText = { text: string; x: number; y: number; align: "left" | "right" | "center"; maxWidth: number };
 export type FigureLegendEntry = { label: string; value: string; color: string; x: number; y: number; width: number };
 /**
- * A line's name and latest value beside the plot, with `details` on the lines beneath: its package when that won't fit
- * beside the name, and the part of its path that tells it from a line of the same name. A label moved clear of
+ * A line's name and latest value beside the plot, with `details` on the line beneath: its package when a package won't
+ * fit beside its name, and the part of its path that tells it from a line of the same name. A label moved clear of
  * another is joined to its line's end by `leader`, drawn in the line's `color`.
  */
 export type FigureEndLabel = { name: FigureText; value: FigureText; details: FigureText[]; color: string; leader: FigurePoint[] | null };
@@ -114,7 +114,6 @@ export function chartFigure({ title, config, view, whole = view, host, exportedA
   const tokens = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(whole)));
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   const shared = sharedPackage(drawnChartCohorts(view).map((c) => c.label));
-  const shownPaths = distinctPaths(drawnChartCohorts(view), paths);
   const style = {
     seriesColor: (cohortKey: string) => resolve(tokens.get(cohortKey) ?? cohortKey),
     label: (cohort: { cohortKey: string; label: string }) =>
@@ -123,7 +122,7 @@ export function chartFigure({ title, config, view, whole = view, host, exportedA
       const { name, packageName } = splitCohortLabel(cohort.label);
       return [name, ...(shared === null && packageName !== undefined ? [packageName] : []), ...(deprecatedOnly.has(cohort.cohortKey) ? [DEPRECATED_ONLY] : [])];
     },
-    path: (cohortKey: string) => shownPaths.get(cohortKey),
+    paths: (named: ReadonlyArray<{ cohortKey: string; label: string }>) => distinctPaths(named, paths),
     nameWidth,
   };
   const inPackage = (subtitle: string) => (shared === null ? subtitle : `${subtitle} · ${shared}`);
@@ -151,7 +150,8 @@ type SeriesStyle = {
   label: (cohort: { cohortKey: string; label: string }) => string;
   /** A label's name, then its package and `deprecated only` where the label shows them. */
   labelParts: (cohort: { cohortKey: string; label: string }) => string[];
-  path: (cohortKey: string) => string | undefined;
+  /** The part of each series' path that tells it from another of `named` with the same name. */
+  paths: (named: ReadonlyArray<{ cohortKey: string; label: string }>) => Map<string, string>;
   nameWidth: (name: string) => number;
 };
 type Layout = Pick<ChartFigure, "subtitle" | "plot" | "yTicks" | "xLabels" | "marks" | "legend" | "note">;
@@ -164,23 +164,31 @@ function byLatest(series: CohortSeries[]): Array<{ series: CohortSeries; latest:
 }
 
 /**
- * A trend's lines, the ten with the highest latest value named at their ends, and how many go unnamed beneath. A name
- * whose package won't fit beside it within NAME_COLUMN puts the package on the line beneath, and the label column is
- * as wide as its widest line, so no name is cut.
+ * A trend's lines, the ten with the highest latest value named at their ends, and how many go unnamed beneath. When
+ * any name's package won't fit beside it within NAME_COLUMN, every package goes on the line beneath its name, beside
+ * the part of its path that tells it from a line of the same name, and the label column is as wide as its widest line,
+ * so no name is cut.
  */
 function trendLayout(series: CohortSeries[], metric: "count" | "share", style: SeriesStyle): SeriesLayout {
-  const named = byLatest(series).slice(0, LABELLED_LINES).map(({ series: s, latest }) => {
+  const labelled = byLatest(series).slice(0, LABELLED_LINES);
+  const paths = style.paths(labelled.map(({ series: s }) => s));
+  const parts = labelled.map(({ series: s, latest }) => {
     const [first = "", ...rest] = style.labelParts(s);
     const value = formatMetric(latest, metric);
     const valueWidth = style.nameWidth(value);
-    const whole = [first, ...rest].join(" · ");
-    const oneLine = rest.length === 0 || style.nameWidth(whole) + TEXT_GAP + valueWidth <= NAME_COLUMN;
-    const name = oneLine ? whole : first;
-    const path = style.path(s.cohortKey);
-    const details = [...(oneLine ? [] : [rest.join(" · ")]), ...(path === undefined ? [] : [path])];
+    const fits = style.nameWidth([first, ...rest].join(" · ")) + TEXT_GAP + valueWidth <= NAME_COLUMN;
+    return { cohortKey: s.cohortKey, first, rest, value, valueWidth, fits };
+  });
+  const wrapped = parts.some((p) => p.rest.length > 0 && !p.fits);
+  const named = parts.map(({ cohortKey, first, rest, value, valueWidth }) => {
+    const oneLine = rest.length === 0 || !wrapped;
+    const name = oneLine ? [first, ...rest].join(" · ") : first;
+    const path = paths.get(cohortKey);
+    const detail = [...(oneLine ? [] : rest), ...(path === undefined ? [] : [path])].join(" · ");
+    const details = detail === "" ? [] : [detail];
     const nameWidth = style.nameWidth(name);
     const width = Math.max(nameWidth + TEXT_GAP + valueWidth, ...details.map(style.nameWidth));
-    return { cohortKey: s.cohortKey, name, value, details, nameWidth, valueWidth, width };
+    return { cohortKey, name, value, details, nameWidth, valueWidth, width };
   });
   const labelWidth = Math.max(...named.map((n) => n.width));
   const unnamed = series.length - named.length;

@@ -279,7 +279,7 @@ describe("chartFigure", () => {
     expect(lower?.value.y).toBe(lower?.name.y);
   });
 
-  it("names every line in full, putting a package too wide to share the name's line on a line of its own", () => {
+  it("names every line in full, putting every package on a line of its own when one is too wide to share its name's line", () => {
     const group = { cohortKey: "component:group", label: "ToolbarGroupComponent · @example/richtext-lexical-editor", color: "" };
     const long = { cohortKey: `package:@example/${"x".repeat(40)}`, label: `@example/${"x".repeat(40)}`, color: "" };
     const view: DashboardView = {
@@ -287,13 +287,18 @@ describe("chartFigure", () => {
       series: [
         { ...group, points: [{ t: MORNING, value: 3 }, { t: LATER, value: 50 }] },
         { ...long, points: [{ t: MORNING, value: 1 }, { t: LATER, value: 49 }] },
+        { ...button, points: [{ t: MORNING, value: 2 }, { t: LATER, value: 48 }] },
       ],
       coverage,
     };
-    const result = drawn({ ...config("trend"), cohorts: [{ kind: "component", componentId: "group" }, { kind: "package", packageName: long.label }] }, view);
+    const result = drawn(
+      { ...config("trend"), cohorts: [{ kind: "component", componentId: "group" }, { kind: "package", packageName: long.label }, { kind: "component", componentId: "btn" }] },
+      view,
+    );
     expect(endLabelTexts(result)).toEqual([
       ["ToolbarGroupComponent", "50", "@example/richtext-lexical-editor"],
       [long.label, "49"],
+      ["Button", "48", "@example/ui"],
     ]);
     if (result.marks.kind !== "lines") throw new Error("expected lines");
     for (const text of result.marks.endLabels.flatMap((l) => [l.name, l.value, ...l.details])) {
@@ -303,28 +308,35 @@ describe("chartFigure", () => {
     expect((second?.name.y ?? 0) - (first?.name.y ?? 0)).toBeGreaterThanOrEqual(2 * 18);
   });
 
-  it("tells lines of the same name apart by the part of their component's path that differs", () => {
-    const item = (folder: string, latest: number): CohortSeries => ({
-      cohortKey: `component:${folder}`,
-      label: "SkeletonItem · @example/web",
+  it("tells named lines of the same name apart by the part of their component's path that differs", () => {
+    const component = (key: string, name: string, latest: number): CohortSeries => ({
+      cohortKey: `component:${key}`,
+      label: `${name} · @example/web`,
       color: "",
       points: [{ t: MORNING, value: 1 }, { t: LATER, value: latest }],
     });
-    const result = chartFigure({
-      title: "Skeletons",
-      config: { ...config("trend"), cohorts: [{ kind: "component", componentId: "booking" }, { kind: "component", componentId: "event-types" }] },
-      view: { kind: "series", series: [item("booking", 50), item("event-types", 5)], coverage },
-      paths: { "component:booking": "src/booking/SkeletonItem.tsx", "component:event-types": "src/event-types/SkeletonItem.tsx" },
-      host: "scout.example.com",
-      exportedAt: new Date(2026, 9, 4, 12),
-      colors,
-      nameWidth: (name) => name.length * 9,
-    });
-    if (result === null) throw new Error("expected a figure");
-    expect(endLabelTexts(result)).toEqual([
+    const skeletons = (series: CohortSeries[]) => {
+      const result = chartFigure({
+        title: "Skeletons",
+        config: { ...config("trend"), cohorts: series.map((s) => ({ kind: "component", componentId: s.cohortKey.slice("component:".length) })) },
+        view: { kind: "series", series, coverage },
+        paths: { "component:booking": "src/booking/SkeletonItem.tsx", "component:event-types": "src/event-types/SkeletonItem.tsx" },
+        host: "scout.example.com",
+        exportedAt: new Date(2026, 9, 4, 12),
+        colors,
+        nameWidth: (name) => name.length * 9,
+      });
+      if (result === null) throw new Error("expected a figure");
+      return endLabelTexts(result);
+    };
+    const booking = component("booking", "SkeletonItem", 50);
+    const eventTypes = component("event-types", "SkeletonItem", 5);
+    expect(skeletons([booking, eventTypes])).toEqual([
       ["SkeletonItem", "50", "booking"],
       ["SkeletonItem", "5", "event-types"],
     ]);
+    const others = Array.from({ length: 9 }, (_, i) => component(`other-${i}`, `Skeleton${i}`, 10 + i));
+    expect(skeletons([booking, ...others, eventTypes])?.[0]).toEqual(["SkeletonItem", "50"]);
   });
 
   const many = (n: number): CohortSeries[] =>
@@ -355,6 +367,32 @@ describe("chartFigure", () => {
     }
     expect(result.note?.text).toBe("2 more series");
     expect(result.note?.y).toBeGreaterThan(result.plot.y + result.plot.height);
+  });
+
+  it("names ten same-named lines from long packages inside the plot, each with its package and path on one line beneath", () => {
+    const packageOf = (i: number) => (i % 2 === 0 ? "@example/a-package-too-long-to-share-a-line" : "@example/another-package-too-long-for-one");
+    const tall: CohortSeries[] = Array.from({ length: 10 }, (_, i) => ({
+      cohortKey: `component:c${i}`,
+      label: `SkeletonItem · ${packageOf(i)}`,
+      color: "",
+      points: [{ t: MORNING, value: 1 }, { t: LATER, value: 20 - i }],
+    }));
+    const result = chartFigure({
+      title: "Skeletons",
+      config: { ...config("trend"), cohorts: tall.map((s) => ({ kind: "component", componentId: s.cohortKey.slice("component:".length) })) },
+      view: { kind: "series", series: tall, coverage },
+      paths: Object.fromEntries(tall.map((s, i) => [s.cohortKey, `src/folder-${i}/SkeletonItem.tsx`])),
+      host: "scout.example.com",
+      exportedAt: new Date(2026, 9, 4, 12),
+      colors,
+      nameWidth: (name) => name.length * 9,
+    });
+    if (result?.marks.kind !== "lines") throw new Error("expected lines");
+    expect(endLabelTexts(result)).toEqual(Array.from({ length: 10 }, (_, i) => ["SkeletonItem", `${20 - i}`, `${packageOf(i)} · folder-${i}`]));
+    for (const text of result.marks.endLabels.flatMap((l) => [l.name, ...l.details])) {
+      expect(text.y).toBeGreaterThanOrEqual(result.plot.y);
+      expect(text.y).toBeLessThanOrEqual(result.plot.y + result.plot.height);
+    }
   });
 
   it("lists a stacked chart's eight largest series and counts the rest", () => {
