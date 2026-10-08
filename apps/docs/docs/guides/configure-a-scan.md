@@ -7,7 +7,7 @@ sidebar_label: "Configure a scan"
 
 Set up `scout.config.json` so the scan reads the right files in your repo.
 
-This guide assumes the CLI and the rest of the repo's dependencies are installed. The scan finds a package's components only when that package is installed. If they aren't, see [Install the CLI](/docs/guides/install). For a first run from start to finish, follow [Scan your first repo](/docs/tutorials/scan-your-first-repo).
+This guide assumes the CLI and the rest of the repo's dependencies are installed. If they aren't, see [Install the CLI](/docs/guides/install). For a first run from start to finish, follow [Scan your first repo](/docs/tutorials/scan-your-first-repo).
 
 ## Create the config with `init`
 
@@ -21,7 +21,7 @@ npx scout init -y
 
 `-y` skips the questions. Without it, in a terminal, `init` asks for your dashboard's address, the repository's name on the dashboard and the branch the dashboard tracks. In a monorepo, it also asks which packages or folders to leave out of the scan, and writes the ones you pick to `exclude`. With `-y`, pass `--exclude <folder>` for each folder to leave out.
 
-If you run `init` in one package's folder of a monorepo, such as `apps/web`, and the repository root has no config yet, it asks whether to scan the whole repository instead. If you say yes, it writes the config at the repository root. With `-y`, it writes the config in the current folder and prints the command that writes it at the root instead, `scout init --output ../../scout.config.json`. In any folder inside the repository, if the root already has a config, `init` writes nothing and tells you to run `scout scan` from the root.
+If you run `init` in one package's folder of a monorepo, such as `apps/web`, and the repository root has no config yet, it asks whether to scan the whole repository instead. If you say yes, it writes the config at the repository root. With `-y`, it writes the config in the current folder and prints the command that writes it at the root instead, `scout init --output ../../scout.config.json`.
 
 `init` sets `repoId`, the [repo id](/docs/reference/glossary#repo-id) the scan is recorded under, from the owner and name in your git remote, such as `acme/storefront`, or from the name of the config's folder if there is no remote. To use a different name, edit `repoId` in the file or pass `--repo-id <name>` to `init`.
 
@@ -38,7 +38,7 @@ A config from `init` has no `include`, so it already scans every app and package
 }
 ```
 
-The scan then reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file there. To leave some of them out, use `exclude`, as below.
+The scan then reads every JavaScript, TypeScript and Vue file there. To leave some of them out, use `exclude`, as below.
 
 ## Scan only some folders
 
@@ -122,7 +122,7 @@ The components from those packages are missing from the scan. Run your package m
 If your imports use path aliases such as `@/components`, or the design system lives in another package of the same repo, see [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo).
 
 :::warning
-In a Nuxt app, run `npx nuxt prepare` (or `dev` or `build`) before you scan. Without the files it generates under `.nuxt/`, the scan can't find auto-imported components, and `scan` refuses with:
+In a Nuxt app, run `npx nuxt prepare` (or `dev` or `build`) before you scan. Without the files it generates under `.nuxt/`, the scan warns that the app hasn't been prepared and can't find auto-imported components, and an upload refuses with:
 
 ```
 Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.

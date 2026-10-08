@@ -7,7 +7,7 @@ sidebar_label: "Config"
 
 [`scan`](/docs/reference/cli#scan) and [`backfill`](/docs/reference/cli#backfill) read `scout.config.json` from the current directory, or the file named by their `--config` flag. The file is plain JSON: comments and trailing commas are errors.
 
-The smallest valid config is an empty object. With it, the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder:
+The smallest valid config is an empty object. With it, the scan reads every JavaScript, TypeScript and Vue file below the config folder:
 
 ```json title="scout.config.json"
 {}

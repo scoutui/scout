@@ -113,7 +113,7 @@ Open `https://scout.example.com` and press **Sign in with SSO**. After signing i
 - **`Your account doesn't have access to this dashboard. Ask your dashboard administrator to add you.`** Your [sign-in restrictions](#restrict-who-can-sign-in) turned the account away. The web server logs `[auth] sign-in denied for` with the email and the reason.
 - **`Sign-in didn't complete. Try again.`** The web server's logs give the reason. A wrong `auth.oidc.issuerUrl` or client secret is the usual cause.
 
-Then upload a scan from a repo that has its dependencies installed and the CLI set up. `scan` takes only a commit that's pushed to the remote's default branch, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
+Then upload a scan from a repo that has its dependencies installed and the CLI set up. `scan` takes only a commit that's pushed to the branch the dashboard tracks, with no uncommitted changes apart from a new `scout.config.json` and scan file. If you added the CLI to `package.json`, commit and push that change, lockfile included, before you upload. [Upload flags](/docs/reference/cli#upload-flags) lists everything the upload checks.
 
 Sign the CLI in, then scan and upload:
 

@@ -63,7 +63,7 @@ Waiting for the dashboard to process the scan…
 Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
 
-If the dashboard already has a scan of this commit, for example because the job ran again, the job skips the scan, prints `Commit a1c9e04 is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and still passes. Any other ending fails the job: see [Fix a failed upload](#fix-a-failed-upload).
+If the dashboard already has a scan of this commit, for example because the job ran again, the job skips the scan, prints `Commit a1c9e04 is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and still passes. Any other ending fails the job: see [Fix a failed upload](#fix-a-failed-upload), or [Troubleshoot a scan](/docs/guides/troubleshoot-a-scan) for errors before the upload.
 
 ## Fix a failed upload
 

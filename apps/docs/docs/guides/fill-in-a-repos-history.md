@@ -89,9 +89,9 @@ When a commit can't be scanned, backfill skips it, says why, and carries on with
 | `the scan found no components.` | Usually nothing: at that commit, the files the scan reads held no components yet. |
 | Anything else | The dashboard refused that commit's scan. The line says why. |
 
-Backfill uses the Yarn or pnpm version each commit pins. If older commits pin none and fail with `yarn install failed.`, set [`install`](#set-the-install-command).
+Backfill uses the Yarn or pnpm version each commit pins, for example in `packageManager`. If older commits pin none and fail with `yarn install failed.`, set [`install`](#set-the-install-command).
 
-If a commit was skipped for a reason you can fix, backfill fails when it ends, so a CI job shows that history is missing. Once you've fixed it, run backfill again: it scans only the commits that aren't on the dashboard yet.
+If a commit was skipped for a reason you can fix, backfill fails when it ends, so a CI job shows that history is missing, unless the run stopped at a [`charts start at`](#where-the-charts-start) line. Once you've fixed it, run backfill again: it scans only the commits that aren't on the dashboard yet.
 
 ### Set the install command
 
@@ -138,6 +138,6 @@ Press Ctrl-C to stop. Backfill cleans up its temporary checkout and prints:
 Stopped. Run scout backfill again to continue: it skips what's already on the dashboard.
 ```
 
-Run it again whenever you like. It counts the commits it has uploaded as already on the dashboard and scans only the rest. Leave out `--rescan` if you used it, or it scans them all again.
+Run it again whenever you like. Leave out `--rescan` if you used it, or it scans them all again.
 
 For every flag, see the [CLI reference](/docs/reference/cli#backfill).

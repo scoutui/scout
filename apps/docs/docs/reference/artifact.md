@@ -345,7 +345,7 @@ A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a 
 | `repo.initialCommit` | `string \| null` | SHA of the first commit in the history. `null` in a shallow clone, so [fetch full history](/docs/guides/run-in-ci#fetch-full-history) in CI. |
 | `repo.branch` | `string \| null` | In an uploaded scan, the branch the dashboard tracks. On a dry run, the checked-out branch, `null` on a detached HEAD. |
 | `scope.folder` | `string` | The config folder. `""` when it is the repository root. |
-| `scope.include` | `string[]` \| absent | The config's [`include`](/docs/reference/config#common-fields). Absent when the config has none, so the scan read every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config folder. |
+| `scope.include` | `string[]` \| absent | The config's [`include`](/docs/reference/config#common-fields). Absent when the config has none, so the scan read every JavaScript, TypeScript and Vue file below the config folder. |
 | `scope.exclude` | `string[]` | The config's `exclude`, `[]` when it has none. |
 | `scope.packages` | array of `{ name, folder }` | Each package that holds a scanned file, sorted by `folder`: workspace packages, and the [root package](#root-package) when a scanned file is outside every workspace package. `folder` is `""` for a package at the repository root. |
 

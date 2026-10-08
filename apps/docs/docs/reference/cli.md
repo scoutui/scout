@@ -138,7 +138,7 @@ When a commit can't be installed or scanned, `backfill` skips it, says why and c
 scout init [options]
 ```
 
-Writes a config file with `$schema`, `repoId` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. It writes no `include`, so the scan reads every `.js`, `.jsx`, `.ts`, `.tsx` and `.vue` file below the config's folder, apart from those it [always skips](/docs/reference/config#common-fields).
+Writes a config file with `$schema`, `repoId` and `exclude`, plus `host` when you give a dashboard address and `branch` when it can tell which branch the dashboard tracks. It writes no `include`, so the scan reads every JavaScript, TypeScript and Vue file below the config's folder, apart from those it [always skips](/docs/reference/config#common-fields).
 
 `init` never overwrites a config. Without `--output`, it also writes nothing when a folder above it, up to the repository root, already has a config, and tells you to run `scout scan` there.
 
@@ -209,7 +209,7 @@ A host without a scheme gets `https://`. A host must use `https://`; plain `http
 | Code | Meaning |
 | --- | --- |
 | `0` | Success. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
-| `1` | The command ran but failed. For `scan`, the scan wasn't uploaded. For `backfill`, it skipped a commit for a reason you can fix, or stopped with an error. |
+| `1` | The command ran but failed. For `scan`, the scan wasn't uploaded. For `backfill`, it stopped with an error, or skipped a commit for a reason you can fix ([with one exception](/docs/guides/fill-in-a-repos-history#where-the-charts-start)). |
 | `2` | A usage or config error, such as a misspelled flag or an invalid config file. |
 
 ## Environment variables

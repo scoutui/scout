@@ -121,7 +121,7 @@ jq -r '.diagnostics[] | select(.code == "late-bound-render" or .code == "unresol
 | <Link id="repository-from-another-remote" />`Error: Couldn't upload the scan: <repoId> on the dashboard comes from <address>.` | Another repository already uploads under this `repoId`. Scan a clone of the repository the message names, or set a different `repoId` in `scout.config.json`. If the repository was renamed or moved, ask your dashboard administrator to [reset its remote](/docs/guides/deploy-the-dashboard#reset-a-repositorys-remote). |
 | `Error: Couldn't upload the scan: it comes from a CLI this dashboard no longer accepts.` | [Install `@scoutui/cli`](/docs/guides/install), then scan again. |
 | `Error: Couldn't upload the scan: <host> didn't answer like a Scout dashboard.` | The address isn't the dashboard's. Check `host` in `scout.config.json`, `--host` or `SCOUTUI_HOST`, whichever you set. |
-| Any other `Error:` line about the upload | In CI, see [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload). On your own machine, run `scout auth status --host <url>` to check you are signed in, and see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads). Add `--debug` to see the detail behind the line, such as the dashboard's reply. |
+| Any other `Error:` line about the upload | See [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload), which lists every upload error. On your own machine, run `scout auth status --host <url>` to check you are signed in, and see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads). Add `--debug` to see the detail behind the line, such as the dashboard's reply. |
 
 ## Check the fix
 

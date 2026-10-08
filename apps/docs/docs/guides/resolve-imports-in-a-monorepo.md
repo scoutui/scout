@@ -45,7 +45,7 @@ Path aliases: tsconfig.json
 
 If it found none, it prints `Path aliases: no tsconfig.json found. If yours has another name, set "tsconfigPath" in scout.config.json.`
 
-If the tsconfig it picked only references other projects, as Nuxt 4 and Vite's templates create, the scan reads the aliases from those projects. In a Nuxt 4 app they are generated under `.nuxt/`, so run `nuxt prepare` before you scan.
+If the tsconfig it picked only references other projects, as the Nuxt 4 and Vite templates do, the scan reads the aliases from those projects. In a Nuxt 4 app they are generated under `.nuxt/`, so run `nuxt prepare` before you scan.
 
 If your tsconfig has another name, such as `tsconfig.app.json`, set `tsconfigPath` in your config, relative to the folder that holds it:
 
