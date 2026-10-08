@@ -319,14 +319,16 @@ export function ScanTooltip({
     const list = row?.parentElement;
     if (!row || !list) return;
     const place = (rowTop?: number) => {
-      const { scrollTop, above, below } = tooltipListScroll({
+      const { scrollTop, above, below, scrollbarRoom } = tooltipListScroll({
         scrollTop: list.scrollTop,
         height: list.clientHeight,
         content: list.scrollHeight,
         pitch: row.offsetHeight + Number.parseFloat(getComputedStyle(list).rowGap),
+        scrollbar: list.offsetWidth - list.clientWidth,
         rowTop,
       });
       if (list.scrollTop !== scrollTop) list.scrollTop = scrollTop;
+      list.toggleAttribute("data-scrollbar-room", scrollbarRoom);
       list.style.maskImage = `linear-gradient(to bottom, transparent, #000 ${above ? "1rem" : "0px"}, #000 calc(100% - ${below ? "1rem" : "0px"}), transparent)`;
     };
     place(under === undefined || (pinned && placedPinned.current) ? undefined : row.offsetTop - list.offsetTop);
@@ -340,7 +342,10 @@ export function ScanTooltip({
       active={active && tooltipRowTimestamp(payload) !== from}
       payload={rows}
       label={label}
-      className={cn("[&>div:last-child]:max-h-[11.75rem] [&>div:last-child]:overflow-y-auto [&>div:last-child]:overscroll-contain", pinned && "border-foreground/30")}
+      className={cn(
+        "[&>div:last-child]:max-h-[11.75rem] [&>div:last-child]:overflow-y-auto [&>div:last-child]:overscroll-contain [&>div:last-child[data-scrollbar-room]]:pe-4",
+        pinned && "border-foreground/30",
+      )}
       labelFormatter={(_, rows) => scanTooltipLabel(rows, coverage, series)}
       formatter={(value, name, item) => (
         <>

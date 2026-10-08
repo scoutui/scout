@@ -115,12 +115,13 @@ export function tooltipRows<T extends { value?: unknown; dataKey?: unknown }>(pa
 /**
  * Where a tooltip's list of rows scrolls to, and whether rows lie beyond its top and bottom edges there. The list is
  * `height` tall, holds `content` of rows `pitch` apart and sits at `scrollTop`. With `rowTop`, it scrolls as little as
- * keeps that row and one row either side in view, landing on a row's top edge.
+ * keeps that row and one row either side in view, landing on a row's top edge. Its scrollbar takes `scrollbar` of width
+ * beside the rows; `scrollbarRoom` is true when the list scrolls and that is 0, so the scrollbar is drawn over the rows.
  */
-export function tooltipListScroll({ scrollTop, height, content, pitch, rowTop }: { scrollTop: number; height: number; content: number; pitch: number; rowTop?: number | undefined }): { scrollTop: number; above: boolean; below: boolean } {
+export function tooltipListScroll({ scrollTop, height, content, pitch, scrollbar, rowTop }: { scrollTop: number; height: number; content: number; pitch: number; scrollbar: number; rowTop?: number | undefined }): { scrollTop: number; above: boolean; below: boolean; scrollbarRoom: boolean } {
   const fit = rowTop === undefined ? scrollTop : Math.min(Math.max(scrollTop, rowTop + 2 * pitch - height), rowTop - pitch);
   const top = rowTop === undefined ? scrollTop : Math.min(Math.max(0, Math.ceil(fit / pitch) * pitch), Math.max(0, content - height));
-  return { scrollTop: top, above: top > 0, below: top + height < content };
+  return { scrollTop: top, above: top > 0, below: top + height < content, scrollbarRoom: content > height && scrollbar === 0 };
 }
 
 /**
