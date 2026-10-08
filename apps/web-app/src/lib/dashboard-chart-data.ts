@@ -149,6 +149,11 @@ export function reposJoiningAt(series: CohortSeries[], ts: number): string | nul
   return repos.length <= 2 ? `${repos.join(" and ")} added` : formatReposAdded(repos.length);
 }
 
+/** "3 of 4 repos · checkout added": how many repos the point at `ts` covers, and which repos join `series` there. Null for neither. */
+export function scanDetail(coverage: RepoCoverage, series: CohortSeries[], ts: number): string | null {
+  return [repoCoverageAt(coverage, ts), reposJoiningAt(series, ts)].filter(Boolean).join(" · ") || null;
+}
+
 /**
  * Rescales each row's cohort values to fractions of that row's own total, as
  * recharts' `stackOffset="expand"` would. Done by hand because recharts (3.8.0)

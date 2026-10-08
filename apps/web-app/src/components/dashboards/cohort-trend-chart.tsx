@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, type TooltipContentProps, XAxis, YAxis, useYAxisInverseScale } from "recharts";
 import type { CohortSeries, RepoCoverage } from "@scoutui/web-shared";
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, repoCoverageAt, reposJoiningAt, searchedSeries, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
+import { NO_KEYS, cohortChartConfig, dayTicks, lineJoins, scanDetail, searchedSeries, seriesToRows, seriesWashes, tooltipRowTimestamp, tooltipRows } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY, distinctiveLabel, formatAxisCount, formatDayTick, formatMetric, formatScanStamp, sharedPackage, splitCohortLabel } from "@/lib/dashboard-format";
 import { cn } from "@/lib/utils";
 import { CohortLabelText, TooltipSeriesName } from "@/components/dashboards/cohort-label";
@@ -329,7 +329,7 @@ export function ScanTooltip({
 function scanTooltipLabel(payload: ReadonlyArray<{ payload?: unknown }> | undefined, coverage: RepoCoverage, series: CohortSeries[]): ReactNode {
   const ts = tooltipRowTimestamp(payload);
   if (ts === null) return "";
-  const detail = [repoCoverageAt(coverage, ts), reposJoiningAt(series, ts)].filter(Boolean).join(" · ");
+  const detail = scanDetail(coverage, series, ts);
   return (
     <>
       {formatScanStamp(ts)}

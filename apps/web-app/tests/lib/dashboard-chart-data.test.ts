@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, seriesFrom, seriesWashes, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, scanDetail, seriesFrom, seriesWashes, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -272,6 +272,19 @@ describe("repos joining a line", () => {
   it("names two repos joining at once", () => {
     expect(reposJoiningAt([line("a", [{ t: t1, value: 1 }, { t: t2, value: 4, added: ["checkout", "storefront"] }])], Date.parse(t2)))
       .toBe("checkout and storefront added");
+  });
+
+  const coverage = { total: 3, points: [{ t: t1, repos: 1 }, { t: t2, repos: 2 }, { t: t3, repos: 3 }] };
+  const bands = [
+    line("a", [{ t: t1, value: 0.6, added: ["storefront"] }, { t: t2, value: 0.5, added: ["checkout"] }, { t: t3, value: 0.5 }]),
+    line("b", [{ t: t1, value: 0.4, added: ["storefront"] }, { t: t2, value: 0.5 }, { t: t3, value: 0.5 }]),
+  ];
+
+  it.each([
+    ["the repos it covers and those joining its bands there", t2, "2 of 3 repos · checkout added"],
+    ["only the repos it covers where none join", t3, "3 of 3 repos"],
+  ])("describes a stacked chart's scan by %s", (_, t, text) => {
+    expect(scanDetail(coverage, bands, Date.parse(t))).toBe(text);
   });
 });
 
