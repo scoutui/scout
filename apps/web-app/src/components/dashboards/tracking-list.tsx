@@ -170,10 +170,9 @@ function PackageGroup({
         ref={rowRef}
         data-slot="package-row"
         className={cn(
-          "px-4 py-2.5",
-          side === "progress" && GRID,
-          open && "pin-under-top-bar z-10 border-b bg-[color-mix(in_oklch,var(--muted)_40%,var(--card))]",
-          open && side === "progress" && "sm:[--pin-below:2.25rem]",
+          "pin-under-top-bar z-10 px-4 py-2.5",
+          side === "progress" && cn(GRID, "sm:[--pin-below:2.25rem]"),
+          open && "border-b bg-[color-mix(in_oklch,var(--muted)_40%,var(--card))]",
         )}
       >
         <div className="min-w-0">
