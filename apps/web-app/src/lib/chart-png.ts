@@ -59,7 +59,7 @@ export type FigureFonts = { sans: string; mono: string };
 /** What `chartFigure` takes, apart from the colours and text widths, which `chartPng` reads from the page. */
 export type ChartPngInput = Omit<ChartFigureInput, "colors" | "nameWidth" | "headingWidth">;
 
-/** The chart as a 2560 × 1440 PNG in the light theme's colours, whatever theme the page shows. */
+/** The chart as a 2560 × 1440 PNG, or taller for a long title or a bar chart with many bars, in the light theme's colours, whatever theme the page shows. */
 export async function chartPng(input: ChartPngInput): Promise<Blob> {
   await document.fonts.ready;
   const canvas = document.createElement("canvas");

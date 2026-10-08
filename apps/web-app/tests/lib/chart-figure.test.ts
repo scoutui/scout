@@ -238,6 +238,24 @@ describe("chartFigure", () => {
     expect(result.marks.bars[1]?.rect.width).toBeCloseTo((result.marks.bars[0]?.rect.width ?? 0) * 0.4);
   });
 
+  const manyBars = (n: number): DashboardView => ({
+    kind: "snapshot",
+    points: Array.from({ length: n }, (_, i) => ({ cohortKey: `component:c${i}`, label: `C${i}`, color: "", value: n - i, componentCount: 1 })),
+  });
+
+  it.each([[16], [60]])("gives each of %i bars a row as tall as two lines of its name, with the footer below the last", (n) => {
+    const result = drawn(config("bars"), manyBars(n));
+    if (result.marks.kind !== "bars") throw new Error("expected bars");
+    const middles = result.marks.bars.map((b) => b.name.y);
+    for (let i = 1; i < middles.length; i++) expect((middles[i] ?? 0) - (middles[i - 1] ?? 0)).toBeGreaterThanOrEqual(30);
+    expect(result.footer.y).toBeGreaterThan((middles.at(-1) ?? 0) + 30);
+    expect(result.height - result.footer.y).toBe(32);
+  });
+
+  it("keeps a bar chart that fits at 720 units tall", () => {
+    expect(drawn(config("bars"), manyBars(16)).height).toBe(720);
+  });
+
   const nameColumns: Array<[string, string, number]> = [
     ["just past the longest name", "Button · @example/ui", 20 * 9 + 16],
     ["at most 300 units in, however long the name", "x".repeat(60), 300],
