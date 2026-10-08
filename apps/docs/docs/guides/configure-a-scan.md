@@ -110,8 +110,6 @@ When the config has no `include`, and the config's folder holds no source files 
 Error: No JavaScript, TypeScript or Vue files to scan in /home/dev/storefront. Check "exclude" in ./scout.config.json, or scan from the folder that holds your source files.
 ```
 
-Code inside a submodule or another clone below the config's folder isn't scanned, so an `include` pattern that points into one matches no files.
-
 If the summary has lines like these, some of the repo's dependencies aren't installed:
 
 ```
@@ -124,7 +122,7 @@ The components from those packages are missing from the scan. Run your package m
 If your imports use path aliases such as `@/components`, or the design system lives in another package of the same repo, see [Resolve imports in a monorepo](/docs/guides/resolve-imports-in-a-monorepo).
 
 :::warning
-In a Nuxt app, run `npx nuxt prepare` (or `dev` or `build`) before you scan. Without the files it generates under `.nuxt/`, the scan warns with `auto-import-manifest-missing` and can't find auto-imported components, and `scan` refuses with:
+In a Nuxt app, run `npx nuxt prepare` (or `dev` or `build`) before you scan. Without the files it generates under `.nuxt/`, the scan can't find auto-imported components, and `scan` refuses with:
 
 ```
 Error: Couldn't upload the scan: this Nuxt app hasn't been prepared. Run npx nuxt prepare and try again.

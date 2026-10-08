@@ -50,7 +50,7 @@ A line such as `Warning: Skipped src/Broken.tsx: couldn't parse it (Unexpected t
 
 ## Components are missing: Scout couldn't match some uses {#unresolved-occurrences}
 
-When the scan sees a component used but can't tell which one it is, it records an [unmatched use](/docs/reference/glossary#unmatched-use). The component gets no entry for that use, and the dashboard leaves it out. The summary counts them in a line such as `Scout couldn't match 3 more uses to a component.`, which links to this section.
+When the scan sees a component used but can't tell which one it is, it records an [unmatched use](/docs/reference/glossary#unmatched-use). The component gets no entry for that use, and the dashboard leaves it out. The summary counts them in a line such as `Scout couldn't match 3 more uses to a component.`
 
 List them with the reason, the file and line, and the import or name that failed. The command reads `scout-scan.json`, so run `npx scout scan --dry-run` first to write it:
 
@@ -79,7 +79,7 @@ Fix each reason as follows. The [scan file reference](/docs/reference/artifact#u
 Warning: @acme/ui is listed in package.json but isn't installed, so 3 uses of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
-The summary also reads `3 of them are from a package that isn't installed.` The scan finds a package's components only in the installed package, so every use of `@acme/ui` is unresolved and none of its components are listed. Run your package manager's install in the scanned checkout, then scan again. In CI, install before the scan step.
+Every use of `@acme/ui` is then unmatched, and none of its components are listed. Run your package manager's install in the scanned checkout, then scan again. In CI, install before the scan step.
 
 ## A web component has no package
 
@@ -105,7 +105,7 @@ jq -r '.diagnostics[] | select(.code == "late-bound-render" or .code == "unresol
 | --- | --- |
 | `Error: Couldn't upload the scan: this checkout has no remote` | Add the remote the dashboard follows, for example `git remote add origin <url>`, then scan again. |
 | `Error: Couldn't upload the scan: this checkout has several remotes` | Choose the remote the dashboard follows with `git config scout.remote <name>`. The choice is saved in this clone. |
-| `Error: Couldn't upload the scan: couldn't tell which branch the dashboard tracks.` | Run the `git remote set-head <remote> --auto` command the line names. It asks the remote for its default branch and records it in your clone. Or set `branch` in `scout.config.json`. |
+| `Error: Couldn't upload the scan: couldn't tell which branch the dashboard tracks.` | Run the `git remote set-head <remote> --auto` command the line names, or set `branch` in `scout.config.json`. |
 | `Error: Couldn't upload the scan: there's no <branch> on <remote>.` | Fetch the branch with `git fetch <remote>`. If it was renamed, change `branch` in `scout.config.json`. |
 | `Error: Couldn't upload the scan: this commit isn't on <remote>/<branch> yet.` | Push the commit to the tracked branch, or merge it there, then scan again. |
 | `Error: Couldn't upload the scan: you're on <branch>, and the dashboard tracks <branch>.` | Switch to the tracked branch, pull, and scan again. Scans of other branches never reach the dashboard. |
@@ -122,8 +122,6 @@ jq -r '.diagnostics[] | select(.code == "late-bound-render" or .code == "unresol
 | `Error: Couldn't upload the scan: it comes from a CLI this dashboard no longer accepts.` | [Install `@scoutui/cli`](/docs/guides/install), then scan again. |
 | `Error: Couldn't upload the scan: <host> didn't answer like a Scout dashboard.` | The address isn't the dashboard's. Check `host` in `scout.config.json`, `--host` or `SCOUTUI_HOST`, whichever you set. |
 | Any other `Error:` line about the upload | In CI, see [Fix a failed upload](/docs/guides/run-in-ci#fix-a-failed-upload). On your own machine, run `scout auth status --host <url>` to check you are signed in, and see [Authenticate the CLI for uploads](/docs/guides/authenticate-uploads). Add `--debug` to see the detail behind the line, such as the dashboard's reply. |
-
-Some lines end with `See <url>`: the page that explains that problem.
 
 ## Check the fix
 

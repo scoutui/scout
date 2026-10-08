@@ -52,28 +52,22 @@ Replace `npm ci` with your package manager's install command, and the host with 
 - **`SCOUTUI_HOST`**: the dashboard to upload to, as an `https://` address. Only a `--host` flag wins over it; it wins over a `host` field in the repo's config. Always set it in a job that scans repos you don't control: otherwise a repo's config could name another host, and the job would send it the token.
 - **`branches: [main]`**: runs the job only on the branch the dashboard tracks. `scan` refuses a commit that isn't on that branch, so a run on any other branch would fail at the scan step. See [Which scan a page shows](/docs/explanation/cli-and-dashboard#which-scan-a-page-shows).
 - **`fetch-depth: 0`**: fetches full git history, which `scan` needs. See [Fetch full history](#fetch-full-history).
-- **`git remote set-head origin --auto`**: asks the remote for its default branch and records it in the clone. `scan` reads it there to find the branch the dashboard tracks. The command uses the credentials the checkout step saved, so don't set `persist-credentials: false` on the checkout step. Leave this step out if the config sets `branch`.
+- **`git remote set-head origin --auto`**: records the remote's default branch in the clone, which `scan` needs to find the branch the dashboard tracks. It uses the credentials the checkout step saved, so don't set `persist-credentials: false` on the checkout step. Leave this step out if the config sets `branch`.
 
 ## 3. Check the run
 
-Push to `main` and open the job's log. After the scan summary, the CLI says once that it's waiting while the dashboard processes the upload, then prints the scan and your repo's page:
+Push to `main` and open the job's log. It ends with the uploaded scan and your repo's page:
 
 ```text
 Waiting for the dashboard to process the scan…
 Uploaded the scan of a1c9e04: https://scout.example.com/repos/storefront
 ```
 
-If the dashboard already has a scan of this commit, for example because the job ran again, the job skips the scan, prints `Commit a1c9e04 is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and still passes. [What happens after you upload](/docs/explanation/cli-and-dashboard#after-upload) describes the states an upload passes through.
-
-The scan step's exit code decides whether the job passes:
-
-- `0`: the dashboard published the scan, or already had it.
-- `1`: the CLI refused to upload the scan, or the upload failed or didn't finish in time. See [Fix a failed upload](#fix-a-failed-upload).
-- `2`: the scan didn't run, for example because the config is missing or invalid, or a flag is misspelled.
+If the dashboard already has a scan of this commit, for example because the job ran again, the job skips the scan, prints `Commit a1c9e04 is already on the dashboard: <url>. Run scout scan --rescan to scan it again.` and still passes. Any other ending fails the job: see [Fix a failed upload](#fix-a-failed-upload).
 
 ## Fix a failed upload
 
-Each of these prints one `Error:` line and exits `1`. Match the error in the job log. To see the detail behind it, such as the dashboard's reply, add `--debug` to the scan command and run the job again.
+Match the error in the job log. To see the detail behind it, such as the dashboard's reply, add `--debug` to the scan command and run the job again.
 
 | Error starts with | Cause | Fix |
 | --- | --- | --- |
@@ -98,7 +92,7 @@ Each of these prints one `Error:` line and exits `1`. Match the error in the job
 | `Error: Couldn't upload the scan: <repoId> on the dashboard comes from <address>.` | Another repository already uploads under this `repoId`. | See [A repository from another remote](/docs/guides/troubleshoot-a-scan#repository-from-another-remote). |
 | Any other `Error: Couldn't upload the scan:` line | The CLI or the dashboard refused the scan. The line says why. | Fix what the line names, then run the job again. |
 
-For every exit code and environment variable, see the [CLI reference](/docs/reference/cli#exit-codes).
+For every environment variable and exit code, see the [CLI reference](/docs/reference/cli#environment-variables).
 
 ## Fetch full history {#fetch-full-history}
 
