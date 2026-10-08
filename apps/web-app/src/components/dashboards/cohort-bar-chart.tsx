@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Bar, BarChart, type BarShapeProps, Cell, LabelList, Rectangle, XAxis, YAxis } from "recharts";
 import type { CohortPoint, CohortRole } from "@scoutui/web-shared";
@@ -101,7 +101,6 @@ export function CohortBarChart({
   useEffect(() => {
     setAnimate(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
-  const gradientId = useId();
 
   const rows: BarRow[] = barOrder(
     points.map((p) => ({ cohortKey: p.cohortKey, label: p.label, value: p.value, seriesColor: colors.get(p.cohortKey) ?? "", role: p.role, deprecatedOnly: deprecatedOnly.has(p.cohortKey) })),
@@ -123,14 +122,6 @@ export function CohortBarChart({
   return (
     <ChartContainer config={config} className="w-full" style={{ height }}>
       <BarChart data={rows} layout="vertical" margin={{ left: 0, right: valueWidth, top: 4, bottom: 4 }}>
-        <defs>
-          {rows.map((r) => (
-            <linearGradient key={r.cohortKey} id={`${gradientId}-${r.cohortKey}`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" style={{ stopColor: r.seriesColor, stopOpacity: 0.72 }} />
-              <stop offset="100%" style={{ stopColor: r.seriesColor, stopOpacity: 1 }} />
-            </linearGradient>
-          ))}
-        </defs>
         <XAxis type="number" hide domain={[0, "dataMax"]} />
         <YAxis
           type="category"
@@ -175,7 +166,7 @@ export function CohortBarChart({
           activeBar={{ fillOpacity: 0.85 }}
         >
           {rows.map((r) => (
-            <Cell key={r.cohortKey} fill={`url(#${gradientId}-${r.cohortKey})`} />
+            <Cell key={r.cohortKey} fill={r.seriesColor} />
           ))}
           <LabelList
             dataKey="value"
