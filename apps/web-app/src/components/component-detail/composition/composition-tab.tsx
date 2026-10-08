@@ -29,11 +29,8 @@ function CanvasSkeleton() {
 
 type Pin = { dir: Dir; ids: string[] };
 
-// `?pin=<dir>:<id>,<id>,…`: the opened route, read outward from the focus.
-// The direction is in the URL because in a cyclic graph the same id can be
-// reached both up and down from the focus. useQuerySyncedState needs `parse`
-// and `serialize` at module level (stable references). A malformed or empty
-// value parses to null, so a bad link shows nothing selected.
+// `?pin=<dir>:<id>,…`: the opened route, read outward from the focus. A
+// malformed or empty value parses to null.
 function parsePin(raw: string): Pin | null {
   const sep = raw.indexOf(":");
   if (sep === -1) return null;
