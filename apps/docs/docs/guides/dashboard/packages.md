@@ -24,8 +24,6 @@ To narrow the list:
 - Press the **deprecated** chip to show only packages with deprecated components in use. While other filters are on, it reads, for example, **deprecated 1 of 3**: 1 of the 3 packages with deprecated components in use matches the other filters.
 - Press **Filter** to choose by [**Tag**](/docs/reference/glossary#tag) or by **Versions**: **Multiple versions**, **Single version** or **Unversioned**. Picking two tags shows packages that carry either; filters in different facets must all match.
 
-**Versions** shows only when your other filters leave packages in more than one of those groups.
-
 The search and each **Filter** choice show as a pill you can remove, and **Clear all** removes every filter.
 
 The **Version** column shows the version itself, such as `4.2.0`, or a count such as `3 versions` when the scans recorded more than one. Sort by **Version** to bring the packages on the most versions to the top.

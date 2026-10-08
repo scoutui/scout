@@ -20,7 +20,7 @@ Tags apply to every scan already uploaded, including older ones, so you don't ne
 
 1. Select **governance** in the top navigation and scroll to the **Tags** section at the bottom of the page.
 2. Press **Add tag**.
-3. Type the tag's name, `acme-ui`, into **Name**. The name labels the tag's chips, its **Tag** filter value and its line in charts.
+3. Type the tag's name, `acme-ui`, into **Name**.
 4. Pick a colour, or keep the one offered.
 5. In **Packages**, enter `@acme/ui`. It takes one package name or [glob pattern](#match-packages-with-a-glob-pattern) per line, or entries separated by commas.
 6. Press **Create**. The tag appears in the list with the number of scanned packages it matches.
