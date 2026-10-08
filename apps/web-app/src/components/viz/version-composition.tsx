@@ -47,7 +47,7 @@ export function latestVersion(share: readonly VersionShare[]): string | null {
 export function VersionComposition({ share }: { share: VersionShare[] }) {
   if (share.length === 0) return null;
   const latest = share.find(v => v.latest);
-  const older = share.filter(v => !v.latest);
+  const others = share.filter(v => !v.latest);
   return (
     <div className="flex items-center gap-3">
       <div
@@ -67,12 +67,12 @@ export function VersionComposition({ share }: { share: VersionShare[] }) {
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs">
         {latest ? <LegendDot className="bg-viz-primary" label={latest.label} mono value={latest.occurrences} /> : null}
-        {older.length > 0 ? (
+        {others.length > 0 ? (
           <LegendDot
             className="bg-viz-legacy"
-            label="older"
+            label="other"
             mono={false}
-            value={older.reduce((n, v) => n + v.occurrences, 0)}
+            value={others.reduce((n, v) => n + v.occurrences, 0)}
           />
         ) : null}
       </div>
