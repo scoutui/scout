@@ -1,5 +1,5 @@
 ---
-description: "Every command, flag, exit code and environment variable the Scout CLI accepts."
+description: "Every command, flag and environment variable the Scout CLI accepts, and its exit codes."
 sidebar_label: "CLI"
 ---
 
@@ -28,7 +28,7 @@ scout <command> [options]
 
 ## Prompts
 
-`init` and `auth` ask questions only in a terminal, when `CI` is unset, empty, `false` or `0`, and, for `init`, without `--yes`. Otherwise they never wait for input: they use their flags and defaults, or stop with an error.
+`init` and `auth` ask questions only in a terminal, and only when `CI` is unset, empty, `false` or `0`. `init --yes` never asks. Otherwise they never wait for input: they use their flags and defaults, or stop with an error.
 
 ## New versions
 
@@ -89,7 +89,7 @@ Before it scans, an upload checks that:
 
 If one fails, `scan` says which and stops without scanning or uploading. [An upload is refused or fails](/docs/guides/troubleshoot-a-scan#an-upload-is-refused-or-fails) lists each message and its fix.
 
-After the scan, `scan` refuses to upload a scan that found no uses. If the dashboard already has a scan of this commit, `scan` says so and stops without scanning, unless you pass `--rescan`.
+If the dashboard already has a scan of this commit, `scan` says so and stops without scanning, unless you pass `--rescan`. After the scan, `scan` refuses to upload a scan that found no uses.
 
 ### Rarely needed flags
 
@@ -112,7 +112,7 @@ Scans one commit a week of the tracked branch's history, newest first, and uploa
 | `--rescan` | none | off | Also scans the commits the dashboard already has, replacing their scans. |
 | `--config <path>` | path | `./scout.config.json` | Config file to read. Relative to the current directory. |
 | `--host <url>` | URL | see [Host resolution](#host-resolution) | Dashboard to upload to. |
-| `--quiet` | none | off | Hides the progress lines. |
+| `--quiet` | none | off | Hides progress. Skipped commits, errors and the closing line still print. |
 
 With [`--debug`](#global-flags), `backfill` also prints each install's and each scan's output, and the detail behind each skipped commit.
 
@@ -209,7 +209,7 @@ A host without a scheme gets `https://`. A host must use `https://`; plain `http
 | Code | Meaning |
 | --- | --- |
 | `0` | Success. For `scan`, the dashboard published the scan or already had it, or a dry run wrote `scout-scan.json`. |
-| `1` | The command ran but failed. For `scan`, the scan wasn't uploaded. For `backfill`, it stopped with an error, or skipped a commit for a reason you can fix ([with one exception](/docs/guides/fill-in-a-repos-history#where-the-charts-start)). |
+| `1` | The command ran but failed. For `scan`, the scan was refused, or the upload failed or didn't finish in time. For `backfill`, it stopped with an error, or skipped a commit for a reason you can fix ([with one exception](/docs/guides/fill-in-a-repos-history#where-the-charts-start)). |
 | `2` | A usage or config error, such as a misspelled flag or an invalid config file. |
 
 ## Environment variables
@@ -225,9 +225,9 @@ Rarely needed:
 
 | Variable | Behavior |
 | --- | --- |
-| `CI` | Any value other than empty, `false` or `0` turns off [prompts](#prompts) and the [check for a newer version](#new-versions). |
+| `CI` | Any value other than empty, `false` or `0` turns off [prompts](#prompts), colour and the [check for a newer version](#new-versions). |
 | `NO_COLOR` | Any non-empty value turns off colour, even when `FORCE_COLOR` is set. |
-| `FORCE_COLOR` | Any non-empty value other than `0` turns on colour, even when the output isn't a terminal. |
+| `FORCE_COLOR` | Any non-empty value other than `0` turns on colour, even when the output isn't a terminal or `CI` is set. |
 | `NO_UPDATE_NOTIFIER` | When set, even empty, turns off the [check for a newer version](#new-versions). |
 | `XDG_CONFIG_HOME` | Folder that holds `scoutui/hosts.json`. Default: `~/.config`. |
-| `XDG_CACHE_HOME` | Folder that holds `scoutui/update-check.json`, the [check for a newer version](#new-versions)'s cache. Default: `~/.cache`. |
+| `XDG_CACHE_HOME` | Folder where the [check for a newer version](#new-versions) keeps `scoutui/update-check.json`. Default: `~/.cache`. |

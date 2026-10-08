@@ -9,7 +9,7 @@ Every scan is one JSON file, the [scan file](/docs/reference/glossary#scan-file)
 
 ## Top-level shape {#top-level-shape}
 
-The file is one JSON object with four keys, written in this order:
+The file is one JSON object with four keys:
 
 | Key | Type | Contents |
 | --- | --- | --- |
@@ -162,7 +162,7 @@ Every component has exactly one value. The first row that applies wins.
 | Value | When |
 | --- | --- |
 | `direct` | The component has at least one use. |
-| `root` | A component defined in the repo, with no uses, that is the default export of a route file, such as `app/page.tsx` or a file under `pages/` other than `pages/api/`. |
+| `root` | A component defined in the repo, with no uses, that is the default export of a Next.js route file: a `.tsx` or `.jsx` `page`, `layout`, `template`, `error`, `loading` or `not-found` file under an `app/` folder, or a `.tsx` or `.jsx` file under `pages/` other than `pages/api/`. |
 | `none` | Anything else, such as a component defined in the repo that renders others but that nothing renders. |
 
 ### Prop value counts {#component-props}

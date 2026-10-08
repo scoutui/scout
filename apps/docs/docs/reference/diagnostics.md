@@ -5,7 +5,7 @@ sidebar_label: "Diagnostics"
 
 # Diagnostics reference
 
-A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints each `warning` when it ends, and counts the `info` ones only with [`--debug`](/docs/reference/cli#global-flags). The scan file's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array lists every diagnostic.
+A *diagnostic* is a note the scan records when it sees something it can't fully follow, such as a component that arrives as a prop. The scan prints each `warning`, and counts the `info` ones only with [`--debug`](/docs/reference/cli#global-flags). The scan file's [`diagnostics[]`](/docs/reference/artifact#diagnostics) array lists every diagnostic.
 
 A use whose import points at a missing file, whose package isn't installed, or whose name nothing imports isn't a diagnostic. The scan keeps it in `occurrences[]` as an [unmatched use](/docs/reference/artifact#unresolved-occurrences), with the reason.
 
@@ -58,7 +58,7 @@ This code has no `filePath`.
 Warning: @acme/ui is listed in package.json but isn't installed, so 3 uses of it aren't matched to a component. Install your dependencies and scan again.
 ```
 
-**What to do:** install the repo's dependencies with your package manager, then scan again. Until every package in `dependencies` and `devDependencies` is installed, `scan` stops before it scans:
+**What to do:** install the repo's dependencies with your package manager, then scan again. Until every package in `dependencies` and `devDependencies` is installed, `scan` refuses to upload:
 
 ```text
 Error: Couldn't upload the scan: @acme/ui is listed in package.json but isn't installed. Install your dependencies and try again.
