@@ -88,31 +88,28 @@ export function dayTicks(rows: Array<Record<string, string | number>>): number[]
   return ticks;
 }
 
-const TOOLTIP_ROWS = 10;
-
 /**
- * A tooltip's rows: every series at that scan, largest value first, when there are ten or fewer. Past ten, only the
- * series under the pointer at `at`, a value on the y-axis: the line nearest it, or with `stack`, the band that holds it,
- * with the bands stacked from the bottom in `stack`'s order.
+ * A tooltip's rows: every series at that scan, largest value first, and `under`, the series under the pointer at `at`,
+ * a value on the y-axis. That is the line nearest it, the one drawn last where lines share a value, or with `stack`, the
+ * band that holds it, with the bands stacked from the bottom in `stack`'s order. No series is under the pointer when
+ * there is only one.
  */
-export function tooltipRows<T extends { value?: unknown; dataKey?: unknown }>(payload: readonly T[] | undefined, at: number | undefined, stack?: readonly string[]): T[] {
+export function tooltipRows<T extends { value?: unknown; dataKey?: unknown }>(payload: readonly T[] | undefined, at: number | undefined, stack?: readonly string[]): { rows: T[]; under: T | undefined } {
   const size = (item: T) => (item.value === undefined ? Number.NEGATIVE_INFINITY : Number(item.value));
-  const sorted = [...(payload ?? [])].sort((a, b) => size(b) - size(a));
-  if (sorted.length <= TOOLTIP_ROWS) return sorted;
-  if (at === undefined) return [];
+  const items = payload ?? [];
+  const rows = [...items].sort((a, b) => size(b) - size(a));
+  if (rows.length < 2 || at === undefined) return { rows, under: undefined };
   if (stack) {
-    const bands = stack.flatMap((key) => sorted.filter((item) => item.dataKey === key));
+    const bands = stack.flatMap((key) => items.filter((item) => item.dataKey === key));
     let top = 0;
     const under = bands.find((band) => {
       top += Number(band.value ?? 0);
       return at <= top;
     });
-    const last = bands[bands.length - 1];
-    return under ? [under] : last ? [last] : [];
+    return { rows, under: under ?? bands[bands.length - 1] };
   }
   const distance = (item: T) => (item.value === undefined ? Number.POSITIVE_INFINITY : Math.abs(Number(item.value) - at));
-  const nearest = sorted.reduce((best, item) => (distance(item) < distance(best) ? item : best));
-  return [nearest];
+  return { rows, under: items.reduce((best, item) => (distance(item) <= distance(best) ? item : best)) };
 }
 
 /**

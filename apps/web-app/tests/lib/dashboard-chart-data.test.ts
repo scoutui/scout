@@ -189,34 +189,44 @@ describe("time axis", () => {
 
 describe("tooltipRows", () => {
   const row = (name: string, value: number | undefined) => ({ name, value });
+  const names = (rows: { name: string }[]) => rows.map((r) => r.name);
 
-  const eleven = Array.from({ length: 11 }, (_, i) => row(`s${i}`, i * 10));
-
-  it("lists every series, largest value first, when there are ten or fewer", () => {
-    expect(tooltipRows([row("a", 3), row("b", 9), row("c", 5)], 0)).toEqual([row("b", 9), row("c", 5), row("a", 3)]);
+  it("lists every series, largest value first, however many there are", () => {
+    const eleven = Array.from({ length: 11 }, (_, i) => row(`s${i}`, i * 10));
+    expect(names(tooltipRows(eleven, 0).rows)).toEqual(["s10", "s9", "s8", "s7", "s6", "s5", "s4", "s3", "s2", "s1", "s0"]);
   });
 
   it("puts a series with no value at that scan after those with one", () => {
-    expect(tooltipRows([row("a", undefined), row("b", 0)], 0).map((r) => r.name)).toEqual(["b", "a"]);
+    expect(names(tooltipRows([row("a", undefined), row("b", 0)], 0).rows)).toEqual(["b", "a"]);
+  });
+
+  const lines = [row("a", 0), row("b", 0), row("c", 40), row("d", 50)];
+
+  it.each([
+    ["on a line", 40, "c"],
+    ["between two lines, nearer the lower", 43, "c"],
+    ["between two lines, nearer the upper", 47, "d"],
+    ["above every line", 500, "d"],
+    ["on lines that share a value, the one drawn last", 0, "b"],
+  ])("marks the line under the pointer: %s", (_, at, name) => {
+    expect(tooltipRows(lines, at).under?.name).toBe(name);
   });
 
   it.each([
-    ["on a line", 40, "s4"],
-    ["between two lines, nearer the lower", 43, "s4"],
-    ["between two lines, nearer the upper", 47, "s5"],
-    ["above every line", 500, "s10"],
-  ])("past ten series, shows only the line under the pointer: %s", (_, at, name) => {
-    expect(tooltipRows(eleven, at).map((r) => r.name)).toEqual([name]);
+    ["without a pointer", lines, undefined],
+    ["with a single line", [row("a", 40)], 40],
+  ])("marks no line %s", (_, payload, at) => {
+    expect(tooltipRows(payload, at).under).toBeUndefined();
   });
 
   it.each([
     ["in the bottom band", 0.05, "s1"],
     ["in a band stacked above it", 0.15, "s0"],
     ["above the stack", 1.2, "s10"],
-  ])("past ten bands, shows only the band under the pointer, stacked in series order: %s", (_, at, name) => {
+  ])("marks the band under the pointer, stacked in series order: %s", (_, at, name) => {
     const bands = Array.from({ length: 11 }, (_, i) => ({ name: `s${i}`, dataKey: `s${i}`, value: i === 1 ? 0.1 : 0.09 }));
     const order = ["s1", "s0", ...bands.slice(2).map((b) => b.dataKey)];
-    expect(tooltipRows(bands, at, order).map((r) => r.name)).toEqual([name]);
+    expect(tooltipRows(bands, at, order).under?.name).toBe(name);
   });
 });
 
