@@ -66,7 +66,7 @@ Deprecation is recorded once, on the **governance** page, not reported by each s
 - A record applies to every repo at once, and to every scan already uploaded. No rescan is needed, and a migration chart can show the full history from the first scan that used the deprecated component.
 - Nothing in your code or your packages marks a component deprecated, not even a `@deprecated` comment.
 
-Deprecated counts differ by page. A repo page counts each deprecated component once. The packages list and a package page add up across repos, so a deprecated component used in three repos counts three times, and the number falls as each repo moves off it. A component's page across repos says how many repos it is deprecated in.
+On every page, a deprecated count counts each component once, however many repos use it. A component's page across repos says how many repos it is deprecated in.
 
 ## How a migration's progress is counted
 

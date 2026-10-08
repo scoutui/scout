@@ -28,7 +28,7 @@ Run two Deployments from the same image, each with at least one replica. The *wo
 | Command | The image's default | `node apps/web-app/worker.cjs` |
 | Port | 3000, behind a Service and your ingress | 3001, for probes only. It needs no Service. |
 | Startup probe | `GET /api/health`, allowing a few minutes for migrations | `GET /live` |
-| Liveness probe | `GET /api/health` | `GET /live`. Allow about a minute of failures, such as 6 failures 10 seconds apart, each with a 5-second timeout, or a very large scan can get the worker restarted. |
+| Liveness probe | `GET /api/health` | `GET /live`. Allow about a minute of failures (for example 6 failures 10 seconds apart, each with a 5-second timeout), or a very large scan can get the worker restarted. |
 | Readiness probe | `GET /api/health` | `GET /ready`, which succeeds once the worker is processing scans |
 
 Without a worker, the dashboard accepts uploads but never shows them, and the CLI ends with `Error: The dashboard is still processing the scan after 5 minutes.`.
@@ -82,7 +82,7 @@ On the worker, `WORKER_DATABASE_POOL_MAX` sets its database connections per pod.
 
 ## 4. Let migrations run on start
 
-Both processes apply pending database migrations when they start, before they report ready, so you need no separate migration job.
+Both processes apply pending database migrations when they start, before they report ready, so you need no separate migration job, even when several replicas start at once.
 
 Check the logs once the pods start:
 
@@ -93,7 +93,7 @@ To start without changing the schema, for example during a restore, set `MIGRATE
 
 ## 5. Size memory and the database
 
-- **Memory.** Give each process a memory limit, such as 1 GiB, and set `NODE_OPTIONS=--max-old-space-size=<megabytes>` on both to about 80% of it, which is `819` for 1 GiB. A 1 GiB worker handles scans at the 64 MiB limit, and Postgres runs within 512 MiB.
+- **Memory.** Give each process a memory limit, such as 1 GiB, and set `NODE_OPTIONS=--max-old-space-size=<megabytes>` on both to about 80% of it, which is `819` for 1 GiB. A 1 GiB worker handles scans at the 64 MiB limit.
 - **Database storage.** The database keeps every scan. A 5 MB `scout-scan.json` takes about 3.5 MiB, and a scan at the 64 MiB limit about 80 MiB. Each repo's latest scan takes a little more than twice as much. Size the database volume for the scan history you expect.
 - **Database connections.** Keep this total below your database's connection limit:
 
@@ -157,7 +157,7 @@ command: ["sh", "-c", "set -a && . /secrets/scout.env && exec node apps/web-app/
 
 ### Change an upload limit
 
-Most deployments keep the defaults. To change a limit, set it on both processes, as a positive whole number.
+Most deployments keep the defaults. To change a limit, set it on both processes. Each checks every limit when it starts, and won't start if a value isn't a positive whole number.
 
 | Variable | Default | Read by | What it limits |
 | --- | --- | --- | --- |
@@ -168,5 +168,7 @@ Most deployments keep the defaults. To change a limit, set it on both processes,
 | `SCOUTUI_UPLOAD_RECEIVE_SLOTS` | 1 | Web server | Uploads each web server pod receives at once. |
 | `SCOUTUI_UPLOAD_SLOT_WAIT_MS` | 60000 | Web server | How long an upload waits for a free slot. Then it gets `503`. |
 | `SCOUTUI_MAX_QUEUED_UPLOADS` | No limit | Web server | Uploads waiting or being processed, across all pods. More get `503`. |
+
+The CLI retries a `503` by itself.
 
 `SCOUTUI_UPLOAD_SLOT_WAIT_MS` plus `SCOUTUI_UPLOAD_RECEIVE_TIMEOUT_MS` can be at most 270000, or both processes refuse to start. If you raise either, raise the proxy timeout from [step 6](#6-configure-the-ingress-or-proxy) to their sum. If you raise `SCOUTUI_MAX_UPLOAD_BYTES`, raise the proxy's body size limit to match.

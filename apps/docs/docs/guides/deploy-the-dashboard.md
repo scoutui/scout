@@ -26,7 +26,7 @@ Create a client for the dashboard in your identity provider:
 
 ## 2. Create the Secret
 
-Create a Kubernetes Secret with these three keys. The dashboard reads them by name, so keep the names exactly as shown:
+Create a Kubernetes Secret with these three keys. Keep the names exactly as shown:
 
 ```bash
 kubectl create secret generic scout-secret \
@@ -164,7 +164,7 @@ Admins named in `auth.admins` or `auth.adminGroup` become Admins at their next b
 
 ### Retry scans that failed to rebuild
 
-When a rebuild fails, pages say a repo's latest scan couldn't be prepared, or show **Scan data couldn't be prepared**. The same steps also retry chart numbers shown as **Numbers may be out of date**.
+When the worker gives up on a rebuild, pages say a repo's latest scan couldn't be prepared, or show **Scan data couldn't be prepared**. The same steps also retry chart numbers shown as **Numbers may be out of date**.
 
 Fix the cause, then queue the failed rebuilds again. The rebuild command isn't in the container image, so run it from a clone of the Scout repository at the commit your image was built from, with Node.js 24. A different commit may find nothing to retry.
 

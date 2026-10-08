@@ -15,7 +15,7 @@ Select **repos** in the top navigation. The dashboard opens here. Each row is on
 
 Type in the search box to match a repo's id, git remote or branch. Press the **since previous scan** chip to list only repos whose latest scan differs from the one before. Select a row to open the repo page.
 
-If the list reads **No repos scanned yet.**, no scan has been uploaded. The page shows the two commands that upload one, and [Run in CI](/docs/guides/run-in-ci) sets up uploads from CI.
+If the list reads **No repos scanned yet.**, no scan has been uploaded. [Run in CI](/docs/guides/run-in-ci) sets up uploads from CI.
 
 ## Read a repo page
 
@@ -24,7 +24,7 @@ The header line gives the repo's git remote, the **commit** and **branch** the s
 Below it, a status line tells you what needs attention:
 
 - **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
-- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table. A repo with one scan reads **first scan · nothing to compare**.
+- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table.
 
 ### Fix what the scan couldn't see
 
@@ -49,7 +49,7 @@ To narrow the table:
 
 In a monorepo, **Used in** lists the repo's packages. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
 
-Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. You can pick one package at a time.
+Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. You can pick one package at a time, and **since previous scan** isn't available while a package is picked. Scans from older CLI versions don't offer **Used in**: scan again with the latest CLI.
 
 Each active filter shows as a pill you can remove, and **Clear all** removes them all.
 

@@ -19,7 +19,7 @@ Select **charts** in the top navigation. The page has these parts:
 - **Private**: your own charts that aren't shared.
 - **Other people's charts**: for Admins only, everyone else's private charts and who created them.
 
-Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Complete ones sit behind **Show N complete**.
+Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. Complete migrations and retirements sit behind **Show N complete**.
 
 ![The charts list with three migrations and three retirements in progress, and four shared charts with their previews](/img/dashboard/charts-list.png)
 
@@ -55,13 +55,13 @@ If the preview reads **Trends appear once these repos have been scanned more tha
 
 ### Add other kinds of series
 
-**Add a series** charts more than tags. Type to search tags, packages and components, including ones your repos no longer use.
+**Add a series** charts more than tags. With nothing typed, it lists your tags, **Local components** and packages. Type to search components too, including ones your repos no longer use.
 
 - **Local components** counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
 - A package narrows the search to itself. Its first row, **All of** and the package's name, adds the whole package, such as `@acme/icons`, as one series. Press **×** beside the package in the box to search everything again.
 - A component adds just that component, such as `Button` from `@acme/ui`. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
 
-With one repo picked under **Repos**, the list holds only what that repo uses or has used. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list, or pick it in **Add a series** again.
+With one repo picked under **Repos**, the list holds only what that repo uses or has used. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list at the top of the **Series** panel, or pick it in **Add a series** again.
 
 ### Count only deprecated components
 
@@ -81,7 +81,7 @@ To start from a chart someone else made, open it, press **⋯**, then **Duplicat
 
 ## Look at a shorter period or one line
 
-On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan, and the chart's scale fits the period. The link keeps your pick, so whoever you send it to sees the same period.
+On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan. The link keeps your pick, so whoever you send it to sees the same period.
 
 To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. On a saved chart's page, a chart with two or more lines lists them in a table under the chart, with each line's latest uses or share and how much it changed over the period you picked. Search above the table for a component or package name to find a line. While you search, the chart draws only the matching lines, and an export takes only those lines.
 
@@ -94,7 +94,7 @@ On a saved chart's page, press **⋯**, then **Export**. On a migration or retir
 - **Copy image** copies the same image as **Download PNG**, ready to paste.
 - **Copy table** copies the same table as **Download CSV**, ready to paste into a spreadsheet.
 
-The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**.
+The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
 
 ## Change or delete a chart
 
@@ -112,7 +112,7 @@ A chart leaves off any series the dashboard can no longer find, and its row on t
 
 1. Open the chart and press **Edit**.
 2. In the list at the top of the **Series** panel, find the greyed-out series. It reads **Unknown component**, or **Deleted tag** for a tag, when the dashboard has no name left for it.
-3. Press its **×** to remove it. To keep charting that component, add it again from the **Components** tab. A chart needs at least one series before you can save it.
+3. Press its **×** to remove it. To keep charting that component, add it again with **Add a series**. A chart needs at least one series before you can save it.
 4. Press **Save chart**.
 
 ## Migration and retirement charts

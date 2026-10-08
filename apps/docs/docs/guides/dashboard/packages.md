@@ -13,7 +13,7 @@ Select **packages** in the top navigation. Each row is one package, with how man
 
 ![The packages list with 4 on multiple versions, the deprecated chip, tag chips on the rows and the Filter menu open on Tag](/img/dashboard/packages-list.png)
 
-Two lines under the title answer the common questions. Each shows only when its count is above zero:
+Two counts answer the common questions:
 
 - **N on multiple versions** counts the packages that repos use at more than one version.
 - **N packages with deprecated components in use** counts the packages that still have deprecated components in use.
@@ -32,7 +32,7 @@ If the list reads **No packages tracked yet.**, no scan has been uploaded. [Run 
 
 ## Read a package page
 
-Select a row to open the package's page. The header shows the package's tags and frameworks, how many repos use it, how many of its components are used, and its total uses.
+Select a row to open the package's page.
 
 Below that, a version bar splits the package's uses by version. The highest version found in the scans is coloured and every older one is grey, so the grey share is the code still on an older version. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains what counts as highest.
 
@@ -56,9 +56,9 @@ Select a component to open its page across repos. See [Find where a component is
 
 ## Tag a package from its page
 
-Press the tag button beside the package name to open **Tag this package**, then tick a tag to add the package to it or untick to remove it. The tag chips beside the name update straight away.
+Press the tag button beside the package name to open **Tag this package**, then tick a tag to add the package to it or untick to remove it.
 
-A tag shown ticked, greyed out and marked **via rule** applies through one of its glob patterns, and you change it on the **governance** page. The tag button appears once at least one tag exists. To create tags and cover a whole library at once, see [Tags](/docs/guides/dashboard/tag-your-libraries).
+A tag marked **via rule** applies through one of its glob patterns, and you change it on the **governance** page. The tag button appears once at least one tag exists. To create tags and cover a whole library at once, see [Tags](/docs/guides/dashboard/tag-your-libraries).
 
 ## Share a filtered list
 
@@ -84,7 +84,6 @@ A package page's **Components** table keeps its search and **deprecated** chip i
 - A package that only re-exports components from another package isn't listed. If your code imports `Button` through `@acme/all`, which re-exports it from `@acme/ui`, `Button` counts under `@acme/ui`, at the version of `@acme/ui` that is installed.
 - A dash (`—`) in **Version** means no version was recorded: a package of components [defined in the repo](/docs/reference/glossary#local) (a workspace package, or the repo's [root package](/docs/reference/artifact#root-package)), or an installed package whose version the scan could not read.
 - A [web component](/docs/reference/glossary#web-component) is listed under a package only when the scan links the tag to it. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
-- Deprecated counts add up across repos. On the packages list and a package page, a deprecated component used in three repos counts three times. See [Where "deprecated" comes from](/docs/explanation/dashboard/reading-the-numbers#where-deprecated-comes-from).
 
 ## Next step
 

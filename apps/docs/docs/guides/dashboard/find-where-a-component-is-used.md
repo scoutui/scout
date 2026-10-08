@@ -29,14 +29,14 @@ The **Used in** table has one row per repo whose latest scan includes the compon
 
 Select a row to open the component's page for that repo.
 
-A component [defined in the repo](/docs/reference/glossary#local) is listed under its workspace package, or under the repo's [root package](/docs/reference/artifact#root-package) when it is outside every workspace package.
+A component [defined in the repo](/docs/reference/glossary#local) is listed under its workspace package, or under the repo's [root package](/docs/reference/artifact#root-package) when it is outside every workspace package. A scan from an older CLI version doesn't list such a component under any package: open it from the repo, or scan again with the latest CLI.
 
 ## Open a component in one repo
 
 1. Select **repos** in the top navigation and open the repo.
 2. On the **Components** tab, search for `Button` and select its row. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
 
-Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. **From** gives its package, the entry point when it was imported from a subpath (`button` for `@acme/ui/button`) and the installed version, and, for a component defined in the repo, the file and line where it is defined.
+Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. **From** names its package, followed by the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version and, for a component defined in the repo, the file and line after **defined at**.
 
 The page always shows the repo's latest scan, even when the repo page is showing an [older scan](/docs/guides/dashboard/repos#look-at-an-older-scan).
 
@@ -46,7 +46,7 @@ It has two tabs: **Usage** (the default) and **Composition**. The tab you pick, 
 
 ![The Usage tab for Button in payloadcms/payload, with secondary picked under buttonStyle, its pill above the file list, and one file open to its uses with Rendered by](/img/dashboard/component-usage-tab.png)
 
-The **Usage** tab has a column of filters beside the list of files that use the component. On a narrow window the filters fold away above the list: press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show them.
+The **Usage** tab lists the files that use the component, with filters beside them. On a narrow window, press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show the filters.
 
 ### Filter by package or folder
 
@@ -76,7 +76,7 @@ Three more groups below **Prop values** filter the same way. Press a group's hea
 
 Type into **Search files and props** to keep the uses whose file path or props hold the text, such as `checkout/` or `size=large`. A component with only a few uses has no search box.
 
-Each filter shows as a pill above the list, such as `variant = secondary`. Press a pill's × to remove it, or **Clear filters** to remove them all and keep the search. The count at the top of the list says how many uses are in view, as in `12 of 40 uses · 5 files`.
+Each filter shows as a pill above the list, such as `variant = secondary`. Press a pill's × to remove it, or **Clear filters** to remove them all and keep the search.
 
 ### Read the file list
 
@@ -90,7 +90,7 @@ Press a file's row to open it. It lists one line per use, in line order, with th
 
 Select a line number such as `:42` to open that line in the repo's git host, at the commit that was scanned. A file's name opens the file at its first use. When the scan recorded no git remote, or one the dashboard can't read, both are plain text.
 
-On a wider window, the props most uses set get a column each, showing each file's most used value, and a count such as `+2` when the file's uses differ. Press a column heading (**File**, **Uses** or a prop's name) to sort by it, and press it again to reverse the order.
+A count such as `+2` beside a prop's value means the file's uses set other values too. Press a column heading (**File**, **Uses** or a prop's name) to sort by it, and press it again to reverse the order.
 
 ### Copy the list
 
@@ -108,7 +108,7 @@ What renders the component is on its left, and what it renders on its right, wit
 
 Press a box to select it: its route to this component is drawn, and the components one step further out from it appear. Press it again to hide them. To select one that isn't on screen, type its name or file into **Find a component or a file…** and pick it.
 
-A bar above the diagram shows the selected component's file and its route as a sentence, such as `ProductCard renders Button 5 times.` **Open ProductCard** goes to its page. Press Escape or the bar's × to clear the selection.
+With a component selected, **Open** and its name, such as **Open ProductCard**, goes to its page. Press Escape or × to clear the selection.
 
 **Reset** closes everything you opened and clears the selection. Scroll or pinch to zoom, and drag to pan. On a phone, the tab opens on a list of the same components: press **Diagram** to see the diagram.
 
