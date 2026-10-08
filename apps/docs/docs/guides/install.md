@@ -71,16 +71,6 @@ It prints the installed version, for example:
 
 The package ships a [CycloneDX](https://cyclonedx.org/) software bill of materials at `node_modules/@scoutui/cli/dist/sbom.cdx.json`. It lists the third-party packages bundled into the CLI and the packages it installs, so your dependency scanner can check them. Each CLI release on [GitHub Releases](https://github.com/scoutui/scout/releases) has the same file attached.
 
-The release also carries the package as npm serves it, `scoutui-cli-<version>.tgz`, and its build provenance, `scoutui-cli-<version>.intoto.jsonl`, which records the commit and workflow that built it. To check that a package came from this repository, download both files and run [slsa-verifier](https://github.com/slsa-framework/slsa-verifier):
-
-```bash
-slsa-verifier verify-artifact scoutui-cli-<version>.tgz \
-  --provenance-path scoutui-cli-<version>.intoto.jsonl \
-  --source-uri github.com/scoutui/scout
-```
-
-It prints `PASSED: SLSA verification passed`. The npm package carries provenance too, which its page on npmjs.com shows.
-
 ## Next
 
 - To run a first scan end to end, follow [Scan your first repo](/docs/tutorials/scan-your-first-repo).
