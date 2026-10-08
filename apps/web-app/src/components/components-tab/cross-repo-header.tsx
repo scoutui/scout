@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 import type { CrossRepoComponentDetail } from "@scoutui/web-shared";
+import { plural } from "@scoutui/web-shared/client";
 import { frameworkLabel } from "@/lib/framework-label";
 import { ORIGIN_LABEL } from "@/lib/component-facets";
 import { MigrationLine } from "@/components/governance/migration-line";
@@ -32,7 +33,7 @@ export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponen
           <Sep />
           <span className="tabular-nums">{detail.repoCount.toLocaleString()} {repoNoun}</span>
           <Sep />
-          <span className="tabular-nums">{detail.totalOccurrences.toLocaleString()} uses</span>
+          <span className="tabular-nums">{plural(detail.totalOccurrences, "use")}</span>
         </div>
       </div>
 

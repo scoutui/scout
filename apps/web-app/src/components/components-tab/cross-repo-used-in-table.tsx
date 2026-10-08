@@ -1,6 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import type { CrossRepoUsage } from "@scoutui/web-shared";
+import { plural } from "@scoutui/web-shared/client";
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CellLink } from "@/components/ui/cell-link";
+import { SlashBreaks } from "@/components/dashboards/cohort-label";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { computeVersionShare, latestVersion } from "@/components/viz/version-composition";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
@@ -40,7 +42,7 @@ export function CrossRepoUsedInTable({
   return (
     <div className="panel overflow-hidden">
       <Table containerClassName="max-h-[70vh] overflow-y-auto">
-        <TableHeader className="sticky top-0 z-10">
+        <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
           <TableRow>
             <TableHead className="w-full">
               <SortButton label="Repo" sortKey="repoId" current={sortKey} dir={sortDir} onClick={toggleSort} />
@@ -62,26 +64,36 @@ export function CrossRepoUsedInTable({
         <TableBody>
           {sorted.map(u => {
             const href = `/repos/${encodeURIComponent(u.repoId)}/components/${encodeURIComponent(componentId)}`;
+            const dot = latest !== null ? (
+              <span
+                aria-hidden
+                className={`size-1.5 shrink-0 rounded-full ${u.version === latest ? "bg-viz-primary" : "bg-viz-legacy"}`}
+              />
+            ) : null;
             return (
               <TableRow key={u.repoId} className="cursor-pointer hover:bg-muted/50">
-                <CellLink href={href} cellClassName="w-full max-w-0" className="truncate text-code" title={u.repoId}>
-                  {u.repoId}
+                <CellLink href={href} cellClassName="w-full max-w-0" title={u.repoId}>
+                  <span className="block text-code max-sm:whitespace-normal max-sm:wrap-anywhere sm:truncate"><SlashBreaks text={u.repoId} /></span>
+                  <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs tabular-nums text-muted-foreground sm:hidden">
+                    <span className="inline-flex items-center gap-1.5 font-mono">{dot}{u.version ?? "unversioned"}</span>
+                    <Dot />
+                    <span>{plural(u.occurrenceCount, "use")}</span>
+                    {u.deprecated ? (<><Dot /><span className="font-medium text-status-warn-text">deprecated</span></>) : null}
+                    <Dot />
+                    <span>{relativeTime(u.committedAt)}</span>
+                  </span>
                 </CellLink>
-                <CellLink href={href} tabIndex={-1} className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted-foreground">
-                  {latest !== null ? (
-                    <span
-                      aria-hidden
-                      className={`size-1.5 shrink-0 rounded-full ${u.version === latest ? "bg-viz-primary" : "bg-viz-legacy"}`}
-                    />
-                  ) : null}
+                <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted-foreground">
+                  {dot}
                   {u.version ?? "—"}
                 </CellLink>
-                <CellLink href={href} tabIndex={-1} className="text-right tabular-nums">
+                <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">
                   {u.occurrenceCount.toLocaleString()}
                 </CellLink>
                 <CellLink
                   href={href}
                   tabIndex={-1}
+                  cellClassName="hidden sm:table-cell"
                   className={`text-right text-xs ${u.deprecated ? "font-medium text-status-warn-text" : "text-muted-foreground"}`}
                 >
                   {u.deprecated ? "deprecated" : "—"}
@@ -89,7 +101,7 @@ export function CrossRepoUsedInTable({
                 <CellLink
                   href={href}
                   tabIndex={-1}
-                  cellClassName="pr-1"
+                  cellClassName="hidden pr-1 sm:table-cell"
                   className="text-right text-xs text-muted-foreground"
                   title={formatAbsoluteUtc(u.committedAt)}
                 >
@@ -102,4 +114,8 @@ export function CrossRepoUsedInTable({
       </Table>
     </div>
   );
+}
+
+function Dot() {
+  return <span aria-hidden className="text-border">·</span>;
 }

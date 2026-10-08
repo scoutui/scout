@@ -63,6 +63,11 @@ describe("PackageDetailHeader", () => {
     expect(screen.getByText(/11 uses/)).toBeInTheDocument();
   });
 
+  it("counts a single use as `1 use`", () => {
+    render(<PackageDetailHeader detail={{ ...baseDetail, totalOccurrences: 1 }} canEdit />);
+    expect(screen.getByText("1 use")).toBeInTheDocument();
+  });
+
   it("renders the version composition bar, latest first, unversioned last", () => {
     render(<PackageDetailHeader detail={baseDetail} canEdit />);
     const bar = screen.getByRole("img");
@@ -129,7 +134,7 @@ describe("PackageConsumersTable", () => {
     );
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getAllByRole("row")).toHaveLength(2); // header + 1 cell
-    expect(screen.getByText("1.0.0")).toBeInTheDocument();
+    expect(screen.getAllByText("1.0.0")).toHaveLength(2); // the phone line and the Version column
   });
 
   it("sorts by occurrences desc by default", () => {
@@ -147,9 +152,10 @@ describe("PackageConsumersTable", () => {
 
   it("marks only the latest version's rows with the primary dot", () => {
     render(<PackageConsumersTable packageName="@x/lib" cells={baseDetail.cells} />);
-    // Latest is 2.0.0 (one cell) → one primary dot; 1.2.3 + unversioned → legacy.
-    expect(document.querySelectorAll(".bg-viz-primary")).toHaveLength(1);
-    expect(document.querySelectorAll(".bg-viz-legacy")).toHaveLength(2);
+    // Latest is 2.0.0 (one cell) → primary; 1.2.3 + unversioned → legacy. Each row shows its dot twice: in the
+    // phone line and in the Version column.
+    expect(document.querySelectorAll(".bg-viz-primary")).toHaveLength(2);
+    expect(document.querySelectorAll(".bg-viz-legacy")).toHaveLength(4);
   });
 
   it("renders no dots and an em-dash version for fully unversioned packages", () => {

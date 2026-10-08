@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 import type { PackageDetail, Tag } from "@scoutui/web-shared";
+import { plural } from "@scoutui/web-shared/client";
 import { frameworkLabel } from "@/lib/framework-label";
 import { TagChips } from "@/components/tags/tag-chip";
 import { QuickTag } from "@/components/tags/quick-tag";
@@ -46,7 +47,7 @@ export function PackageDetailHeader({
           <Sep />
           <span className="tabular-nums">{detail.componentCount.toLocaleString()} components</span>
           <Sep />
-          <span className="tabular-nums">{detail.totalOccurrences.toLocaleString()} uses</span>
+          <span className="tabular-nums">{plural(detail.totalOccurrences, "use")}</span>
         </div>
       </div>
 

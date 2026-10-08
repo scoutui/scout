@@ -101,7 +101,7 @@ export function SortButton<K extends string>({
       title={title}
       aria-label={title}
       onClick={() => onClick(sortKey)}
-      className={`flex w-full items-center gap-1 ${
+      className={`flex min-h-6 w-full items-center gap-1 ${
         align === "right" ? "justify-end" : "justify-start"
       } ${active ? "text-foreground" : ""}`}
     >

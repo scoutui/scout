@@ -47,14 +47,16 @@ export function ScanRowActions({ repoId, scanId, scanCount, children }: {
 
   if (confirming) {
     return (
-      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+      <div className="flex items-center justify-end gap-2 whitespace-nowrap max-sm:flex-wrap">
         {error
           ? <span id={promptId} role="alert" className="text-xs whitespace-normal text-destructive">{error}</span>
           : <span id={promptId} className="text-xs">Remove this scan?</span>}
-        <Button ref={removeRef} variant="destructive" size="sm" disabled={pending} aria-describedby={promptId} onClick={remove}>
-          Remove
-        </Button>
-        <Button variant="ghost" size="sm" disabled={pending} onClick={cancel}>Cancel</Button>
+        <div className="flex items-center gap-2">
+          <Button ref={removeRef} variant="destructive" size="sm" disabled={pending} aria-describedby={promptId} onClick={remove}>
+            Remove
+          </Button>
+          <Button variant="ghost" size="sm" disabled={pending} onClick={cancel}>Cancel</Button>
+        </div>
       </div>
     );
   }

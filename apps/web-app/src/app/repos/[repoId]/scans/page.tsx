@@ -77,7 +77,7 @@ export default async function RepoScansPage({
       ) : (
         <div className="overflow-hidden rounded-lg border bg-card shadow-xs">
           <Table>
-            <TableHeader>
+            <TableHeader className="hidden sm:table-header-group">
               <TableRow>
                 <TableHead>Committed</TableHead>
                 <TableHead>Branch</TableHead>
@@ -102,7 +102,7 @@ export default async function RepoScansPage({
                 );
                 return (
                   <TableRow key={s.scanId}>
-                    <TableCell>
+                    <TableCell className="max-sm:w-full">
                       <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2">
                         <div className="flex items-baseline gap-2">
                           <span className="text-foreground" title={formatAbsoluteUtc(s.committedAt)}>
@@ -121,12 +121,19 @@ export default async function RepoScansPage({
                           </span>
                         ) : null}
                       </div>
+                      <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground sm:hidden">
+                        <span className="flex flex-wrap items-center gap-x-1.5 font-mono">
+                          {s.branch ? (<><span>{s.branch}</span><Dot /></>) : null}
+                          <span>{s.commit.slice(0, 7)}</span>
+                        </span>
+                        <span>scanned {relativeTime(s.arrivedAt)}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
+                    <TableCell className="hidden font-mono text-xs sm:table-cell">
                       {s.branch ?? <span className="text-muted-foreground">—</span>}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{s.commit.slice(0, 7)}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden font-mono text-xs sm:table-cell">{s.commit.slice(0, 7)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <span title={formatAbsoluteUtc(s.arrivedAt)}>{relativeTime(s.arrivedAt)}</span>
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground sm:table-cell">
@@ -153,4 +160,8 @@ export default async function RepoScansPage({
       )}
     </div>
   );
+}
+
+function Dot() {
+  return <span aria-hidden className="text-border">·</span>;
 }
