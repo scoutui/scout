@@ -9,7 +9,6 @@ export type VersionShare = {
   occurrences: number;
   percent: number;
   latest: boolean;
-  versioned: boolean; // real version string (mono) vs the "unversioned" word
 };
 
 
@@ -36,7 +35,6 @@ export function computeVersionShare(
     occurrences,
     percent: (occurrences / total) * 100,
     latest: i === 0 && version !== null,
-    versioned: version !== null,
   }));
 }
 
@@ -48,6 +46,8 @@ export function latestVersion(share: readonly VersionShare[]): string | null {
 
 export function VersionComposition({ share }: { share: VersionShare[] }) {
   if (share.length === 0) return null;
+  const latest = share.find(v => v.latest);
+  const older = share.filter(v => !v.latest);
   return (
     <div className="flex items-center gap-3">
       <div
@@ -66,17 +66,14 @@ export function VersionComposition({ share }: { share: VersionShare[] }) {
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs">
-        {share.slice(0, 4).map(v => (
+        {latest ? <LegendDot className="bg-viz-primary" label={latest.label} mono value={latest.occurrences} /> : null}
+        {older.length > 0 ? (
           <LegendDot
-            key={v.label}
-            className={v.latest ? "bg-viz-primary" : "bg-viz-legacy"}
-            label={v.label}
-            mono={v.versioned}
-            value={v.occurrences}
+            className="bg-viz-legacy"
+            label="older"
+            mono={false}
+            value={older.reduce((n, v) => n + v.occurrences, 0)}
           />
-        ))}
-        {share.length > 4 ? (
-          <span className="text-muted-foreground">+{share.length - 4} more</span>
         ) : null}
       </div>
     </div>

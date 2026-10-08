@@ -77,6 +77,16 @@ describe("PackageDetailHeader", () => {
     );
   });
 
+  it.each([
+    ["the latest version, then every older one together", ["1.0.0", "1.1.0", "1.2.0", "2.0.0", "2.1.0", "3.0.0"], [["3.0.0", "6"], ["older", "15"]]],
+    ["only the latest version when there is one", ["3.0.0"], [["3.0.0", "1"]]],
+  ])("keys the version bar with %s", (_, versions, entries) => {
+    const cells = versions.map((version, i) => ({ repoId: `r${i}`, version, occurrenceCount: i + 1, committedAt: "2026-05-15T10:00:00Z" }));
+    render(<PackageDetailHeader detail={{ ...baseDetail, distinctVersionCount: versions.length, cells }} canEdit />);
+    const legend = screen.getByRole("img").nextElementSibling;
+    expect([...(legend?.children ?? [])].map((entry) => [...entry.children].slice(1).map((part) => part.textContent))).toEqual(entries);
+  });
+
   it("omits the version bar for unversioned (workspace-local) packages", () => {
     render(
       <PackageDetailHeader
