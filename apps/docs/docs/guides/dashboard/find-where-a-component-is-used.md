@@ -102,11 +102,15 @@ A count such as `+2` beside a prop's value means the file's uses set other value
 
 ### Read the diagram
 
-What renders the component is on its left, and what it renders on its right, with a column for each number of steps away: **Directly · 200**, **2 steps away · 107** and so on. Each column lists the components with the most uses first. Press a box such as **+190 more** to open the rest as a list you can filter, and pick a row to select it.
+What renders the component is on its left, and what it renders on its right, with a column for each number of steps away. Each column lists the components with the most uses first. When a column holds more than fits, the rest fold into a box such as **+190 more**, and the column's heading counts them all, as in **Directly · 200**. Press **+190 more** to open the rest as a list you can filter, and pick a row to select it.
 
 ### Follow a route
 
-Press a box to select it: its route to this component is drawn, and the components one step further out from it appear. Press it again to hide them. To select one that isn't on screen, type its name or file into **Find a component or a file…** and pick it.
+Press a box to select it. Its route to this component is drawn, and everything that renders it, or that it renders on the right, appears in the next column. Press one of those to go a step further, and keep going to follow the route as far as it goes. Press the selected box again to close it.
+
+A component can reach this one by more than one route. A box with a band along its bottom edge, **Repeat** in the legend, is also shown nearer. A line on the route marked **×3** means one component renders the next three times. A greyed box behind the selected one is already on the route, which loops back to it, so it can't be opened.
+
+To select one that isn't on screen, type its name or file into **Find a component or a file…** and pick it.
 
 With a component selected, **Open** and its name, such as **Open ProductCard**, goes to its page. Press Escape or × to clear the selection.
 

@@ -57,6 +57,7 @@ describe("CompositionTab", () => {
 
   it.each([
     ["a box on the diagram", "up:d0", "true"],
+    ["a route that breaks off after a step", "up:d0,gone", "true"],
     ["a malformed value", "d0", "false"],
     ["a component this graph doesn't have", "up:gone", "false"],
   ])("restores ?pin= on load: %s", async (_, pin, pressed) => {
@@ -65,17 +66,29 @@ describe("CompositionTab", () => {
     expect(await box("d0")).toHaveAttribute("aria-pressed", pressed);
   });
 
-  it("writes the selected route out, links to the component, and clears from the bar", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:p0");
+  it("names the selected box's steps and file in the bar, links to the component, and clears from the bar", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0,p0");
     renderTab();
     expect(await screen.findByText("Showing the route to p0")).toBeInTheDocument();
-    expect(screen.getByText("2 steps away")).toBeInTheDocument();
-    expect(screen.getByText("· src/p0.tsx")).toBeInTheDocument();
-    expect(screen.getByText("p0 renders d0 once, and d0 renders F 12 times. Nothing in this repo renders p0.")).toBeInTheDocument();
+    expect(screen.getByText("· src/p0.tsx").parentElement).toHaveTextContent(/^2 steps away · src\/p0\.tsx$/);
     expect(screen.getByRole("link", { name: "Open p0" })).toHaveAttribute("href", "/repos/r%2Fx/components/p0?tab=composition");
     fireEvent.click(screen.getByRole("button", { name: "Clear the route (Escape)" }));
     expect(param("pin")).toBeNull();
     expect(await screen.findByText("Route cleared")).toBeInTheDocument();
+  });
+
+  it("opens a route a box at a time, through a component drawn nearer, and a second click closes the last step", async () => {
+    renderTab();
+    await box("d0");
+    expect(screen.queryByText("Repeat")).not.toBeInTheDocument();
+    fireEvent.click(await box("d0"));
+    const again = () => screen.findByRole("button", { name: /^d1, local, src\/d1\.tsx\. 2 steps from F\. Also shown nearer F\.$/ });
+    expect(await screen.findByText("Repeat")).toBeInTheDocument();
+    fireEvent.click(await again());
+    expect(param("pin")).toBe("up:d0,d1");
+    expect(await again()).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(await again());
+    expect(param("pin")).toBe("up:d0");
   });
 
   it("clears the selection on Escape, but Escape in Find only closes Find", async () => {
@@ -106,7 +119,7 @@ describe("CompositionTab", () => {
   });
 
   it("moves focus to the route's first step when the bar clears the route", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:p0");
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0,p0");
     renderTab();
     const clear = await screen.findByRole("button", { name: "Clear the route (Escape)" });
     clear.focus();
@@ -115,8 +128,8 @@ describe("CompositionTab", () => {
   });
 
   it.each([
-    ["the +N more", "pin=up:q0", () => screen.getByRole("button", { name: "Show 2 more components that render F" })],
-    ["the open list's filter", "list=up:F&pin=up:q0", () => screen.getByRole("textbox", { name: "Filter the 2 components" })],
+    ["the +N more", "pin=up:d11,q0", () => screen.getByRole("button", { name: "Show 2 more components that render F" })],
+    ["the open list's filter", "list=up:F&pin=up:d11,q0", () => screen.getByRole("textbox", { name: "Filter the 2 components" })],
   ])("moves focus to %s a cleared route's first step folds into", async (_, query, target) => {
     window.history.replaceState(null, "", `http://localhost:3000/x?${query}`);
     renderTab(
@@ -132,15 +145,30 @@ describe("CompositionTab", () => {
     await waitFor(() => expect(target()).toHaveFocus());
   });
 
+  it("moves focus to the +N more a box folds into when a second click closes it", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0,x6");
+    renderTab(
+      graph(
+        [node("F"), node("d0"), ...Array.from({ length: 7 }, (_, i) => node(`x${i}`))],
+        [["d0", "F", 1], ...Array.from({ length: 7 }, (_, i) => [`x${i}`, "d0", 7 - i] as [string, string, number])],
+      ),
+    );
+    const x6 = await box("x6");
+    x6.focus();
+    fireEvent.click(x6);
+    expect(param("pin")).toBe("up:d0");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Show 2 more components that render d0" })).toHaveFocus());
+  });
+
   it("keeps focus on a box that stays when Escape clears the route", async () => {
     window.history.replaceState(null, "", "http://localhost:3000/x?pin=up:d0");
     renderTab();
-    const d1 = await box("d1");
-    d1.focus();
-    fireEvent.keyDown(d1, { key: "Escape" });
+    const d1 = () => screen.findByRole("button", { name: /^d1, .*Renders F/ });
+    (await d1()).focus();
+    fireEvent.keyDown(await d1(), { key: "Escape" });
     expect(param("pin")).toBeNull();
     await new Promise((r) => setTimeout(r, 50));
-    expect(await box("d1")).toHaveFocus();
+    expect(await d1()).toHaveFocus();
   });
 
   it("opens +N more as a list, filters it, and selects the row picked", async () => {
@@ -213,14 +241,14 @@ describe("CompositionTab", () => {
     fireEvent.click(await box("d0"));
     await waitFor(() => expect(shell("up:d1")).toHaveClass("text-muted-foreground"));
     expect(shell("up:d0")).not.toHaveClass("text-muted-foreground");
-    expect(shell("up:p0")).not.toHaveClass("text-muted-foreground");
+    expect(shell("up:d0,p0")).not.toHaveClass("text-muted-foreground");
     expect(screen.getByText("+2 more")).not.toHaveClass("text-foreground");
     fireEvent.click(screen.getByRole("button", { name: "Show 2 more components that render F" }));
     expect(await screen.findByRole("group", { name: "2 more render F" })).not.toHaveClass("text-muted-foreground");
   });
 
   it("Reset closes everything opened and clears the selection", async () => {
-    window.history.replaceState(null, "", "http://localhost:3000/x?scan=s1&list=up:F&bring=up:d11&pin=up:p0");
+    window.history.replaceState(null, "", "http://localhost:3000/x?scan=s1&list=up:F&bring=up:d11&pin=up:d0,p0");
     renderTab();
     fireEvent.click(await screen.findByRole("button", { name: "Reset" }));
     expect(window.location.search).toBe("?scan=s1");

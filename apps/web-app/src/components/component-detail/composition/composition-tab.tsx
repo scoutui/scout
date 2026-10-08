@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import type { ComponentDetail, CompositionGraph } from "@scoutui/web-shared";
 import { useQuerySyncedState } from "@/lib/use-query-synced-state";
 import type { FlowActions } from "./flow-canvas";
-import { dirId, type SceneState } from "./flow-scene";
-import { bothRoutes, buildGraphModel, type Dir, type Routes } from "./graph-model";
+import { dirId, routeId, type SceneState } from "./flow-scene";
+import { bothRoutes, buildGraphModel, realRoute, type Dir, type Routes } from "./graph-model";
 import { renderTreeCaption, type SideCounts } from "./render-tree-caption";
 
 const FlowCanvas = dynamic(() => import("./flow-canvas").then((m) => m.FlowCanvas), {
@@ -27,23 +27,23 @@ function CanvasSkeleton() {
   );
 }
 
-type Pin = { dir: Dir; id: string };
+type Pin = { dir: Dir; ids: string[] };
 
-// `?pin=<dir>:<id>`. The direction is in the URL because in a cyclic graph the
-// same id can be reached both up and down from the focus. useQuerySyncedState
-// needs `parse` and `serialize` at module level (stable references). A
-// malformed or empty value parses to null, so a bad link shows nothing
-// selected.
+// `?pin=<dir>:<id>,<id>,…`: the opened route, read outward from the focus.
+// The direction is in the URL because in a cyclic graph the same id can be
+// reached both up and down from the focus. useQuerySyncedState needs `parse`
+// and `serialize` at module level (stable references). A malformed or empty
+// value parses to null, so a bad link shows nothing selected.
 function parsePin(raw: string): Pin | null {
   const sep = raw.indexOf(":");
   if (sep === -1) return null;
   const dir = raw.slice(0, sep);
-  const id = raw.slice(sep + 1);
-  if ((dir !== "up" && dir !== "down") || !id) return null;
-  return { id, dir };
+  const ids = raw.slice(sep + 1).split(",").filter(Boolean);
+  if ((dir !== "up" && dir !== "down") || ids.length === 0) return null;
+  return { dir, ids };
 }
 function serializePin(pin: Pin | null): string {
-  return pin ? dirId(pin.dir, pin.id) : "";
+  return pin ? routeId(pin.dir, pin.ids) : "";
 }
 
 const parseSet = (q: string): Set<string> => new Set(q.split(",").filter(Boolean));
@@ -76,7 +76,11 @@ export function CompositionTab({
   const [pin, setPin] = useQuerySyncedState<Pin | null>(parsePin, serializePin, "pin");
   const [lists, setLists] = useQuerySyncedState(parseSet, serializeSet, "list");
   const [brought, setBrought] = useQuerySyncedState(parseSet, serializeSet, "bring");
-  const state = useMemo<SceneState>(() => ({ lists, brought, pin }), [lists, brought, pin]);
+  const route = useMemo(() => {
+    const ids = pin && focusId ? realRoute(model, focusId, pin.dir, pin.ids) : [];
+    return pin && ids.length > 0 ? { dir: pin.dir, ids } : null;
+  }, [model, focusId, pin]);
+  const state = useMemo<SceneState>(() => ({ lists, brought, pin: route }), [lists, brought, route]);
   const actions = useMemo<FlowActions>(
     () => ({
       setPin,

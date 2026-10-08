@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { bothRoutes, findRows, routeIds, type GraphModel } from "@/components/component-detail/composition/graph-model";
+import { bothRoutes, findRows, type Dir, type GraphModel } from "@/components/component-detail/composition/graph-model";
 import {
   buildScene,
   FOCUS_CAP,
-  nothingFurtherOut,
-  routeSentence,
+  OPEN_CAP,
   type ChipItem,
   type GroupItem,
   type Scene,
@@ -18,6 +17,7 @@ const empty: SceneState = { lists: new Set(), brought: new Set(), pin: null };
 
 const scene = (m: GraphModel, state: Partial<SceneState> = {}) =>
   buildScene(m, "F", bothRoutes(m, "F"), { ...empty, ...state });
+const up = (...ids: string[]) => ({ pin: { dir: "up" as Dir, ids } });
 
 const chips = (s: ReturnType<typeof scene>) => s.items.filter((i): i is ChipItem => i.kind === "chip");
 const groups = (s: ReturnType<typeof scene>) =>
@@ -32,15 +32,53 @@ const directlyGraph = (n: number) =>
 const directly = (n: number) => model(directlyGraph(n));
 
 describe("buildScene", () => {
-  it("puts each component once, in the column of its shortest route", () => {
+  it("opens everything that renders the selected box, components drawn nearer included", () => {
     // r0..r2 render F directly and through P; the rest only through P.
     const m = model(dualRouteFixture().graph);
-    const s = scene(m, { pin: { dir: "up", id: "P" } });
+    const s = scene(m, up("P"));
     expect(chips(s).map((c) => [c.node.id, c.steps])).toEqual([
-      ["r3", 2], ["r4", 2], ["r5", 2], ["r6", 2],
+      ["r0", 2], ["r1", 2], ["r2", 2], ["r3", 2], ["r4", 2],
       ["P", 1], ["r0", 1], ["r1", 1], ["r2", 1],
       ["F", 0],
     ]);
+    expect(groups(s).map((g) => [g.steps, g.members.map((mb) => mb.node.id)])).toEqual([[2, ["r5", "r6"]]]);
+  });
+
+  it.each([
+    ["a box nearer the focus", model(dualRouteFixture().graph), ["P"], ["r0", "r1", "r2"]],
+    ["a +N more nearer the focus", model(graph([...directlyGraph(FOCUS_CAP + 3).nodes], [...directlyGraph(FOCUS_CAP + 3).edges.map((e) => [e.source, e.target, e.count] as [string, string, number]), [`d${FOCUS_CAP + 2}`, "d0", 1]])), ["d0"], [`d${FOCUS_CAP + 2}`]],
+  ] as const)("marks a box as a repeat when its component also appears in %s", (_, m, ids, repeats) => {
+    const s = scene(m, up(...ids));
+    expect(chips(s).filter((c) => c.repeat).map((c) => [c.node.id, c.steps])).toEqual(repeats.map((id) => [id, 2]));
+  });
+
+  it("follows a route through a repeat, a column for each step", () => {
+    // A, B and C each render F; B renders A, C renders B, and D renders C.
+    const m = model(graph(["F", "A", "B", "C", "D"].map((id) => node(id)), [["A", "F"], ["B", "F"], ["C", "F"], ["B", "A"], ["C", "B"], ["D", "C"]]));
+    const s = scene(m, up("A", "B", "C"));
+    expect(chips(s).map((c) => [c.node.id, c.steps, c.repeat])).toEqual([
+      ["D", 4, false], ["C", 3, true], ["B", 2, true], ["A", 1, false], ["F", 0, false],
+    ]);
+    expect([...s.pathIds].sort()).toEqual(["focus", "up:A", "up:A,B", "up:A,B,C"]);
+  });
+
+  it("closes a loop: a component already on the route, or the focus, shows behind the selected box as a box that can't open", () => {
+    // X renders F, Y renders X; X and F each render Y.
+    const m = model(graph(["F", "X", "Y"].map((id) => node(id)), [["X", "F"], ["Y", "X"], ["X", "Y"], ["F", "Y"]]));
+    const s = scene(m, up("X", "Y"));
+    expect(chips(s).map((c) => [c.node.id, c.steps, c.loop])).toEqual([
+      ["F", 3, true], ["X", 3, true], ["Y", 2, false], ["X", 1, false], ["F", 0, false],
+    ]);
+    expect(s.edges.map((e) => e.id)).toContain("up:X,Y,X>up:X,Y");
+    expect(chips(scene(m, up("X"))).some((c) => c.loop)).toBe(false);
+  });
+
+  it("labels a line on the selected route with its uses when a component renders the next more than once", () => {
+    // A renders F 3 times; B renders A once.
+    const m = model(graph(["F", "A", "B"].map((id) => node(id)), [["A", "F", 3], ["B", "A", 1]]));
+    const weights = (s: Scene) => Object.fromEntries(s.edges.map((e) => [e.id, e.weight]));
+    expect(weights(scene(m, up("A", "B")))).toEqual({ "up:A,B>up:A": null, "up:A>focus": "×3" });
+    expect(weights(scene(m))).toEqual({ "up:A>focus": null });
   });
 
   it.each([
@@ -63,24 +101,24 @@ describe("buildScene", () => {
   it("opens the next column for the selected box, and only for it", () => {
     const m = model(dualRouteFixture().graph);
     expect(chips(scene(m)).some((c) => c.steps === 2)).toBe(false);
-    expect(chips(scene(m, { pin: { dir: "up", id: "P" } })).filter((c) => c.steps === 2)).toHaveLength(4);
-    expect(chips(scene(m, { pin: { dir: "up", id: "r0" } })).some((c) => c.steps === 2)).toBe(false);
+    expect(chips(scene(m, up("P"))).filter((c) => c.steps === 2)).toHaveLength(OPEN_CAP);
+    expect(chips(scene(m, up("r0"))).some((c) => c.steps === 2)).toBe(false);
   });
 
   it("folds the focus's column to the route and collapses the other side once a route is two steps or more", () => {
     // F renders kid; r3 reaches F only through P.
     const g = dualRouteFixture().graph;
     const m = model(graph([...g.nodes, node("kid")], [...g.edges.map((e) => [e.source, e.target, e.count] as [string, string, number]), ["F", "kid", 1]]));
-    const s = scene(m, { pin: { dir: "up", id: "r3" } });
+    const s = scene(m, up("P", "r3"));
     expect(chips(s).map((c) => c.node.id)).toEqual(["r3", "P", "F"]);
     expect(s.items.find((i) => i.kind === "summary")).toMatchObject({ dir: "down", direct: 1, total: 1 });
-    expect([...s.pathIds].sort()).toEqual(["focus", "up:P", "up:r3"]);
+    expect([...s.pathIds].sort()).toEqual(["focus", "up:P", "up:P,r3"]);
   });
 
   it("keeps the other side when the route is one step", () => {
     const g = tinyFixture().graph;
     const m = model(graph([...g.nodes, node("kid")], [["r0", "F", 1], ["r1", "F", 2], ["r2", "F", 1], ["F", "kid", 1]]));
-    const s = scene(m, { pin: { dir: "up", id: "r0" } });
+    const s = scene(m, up("r0"));
     expect(s.items.some((i) => i.kind === "summary")).toBe(false);
     expect(chips(s).map((c) => c.node.id)).toEqual(["r1", "r0", "r2", "F", "kid"]);
   });
@@ -101,9 +139,13 @@ describe("buildScene", () => {
     expect(scene(down).edges.map((e) => e.label)).toEqual(["F renders kid once"]);
   });
 
-  it("heads each column with its steps and how many components are that far", () => {
-    const m = model(dualRouteFixture().graph);
-    expect(scene(m, { pin: { dir: "up", id: "P" } }).headings.map((h) => h.text)).toEqual(["Directly · 4", "2 steps away · 4"]);
+  it.each([
+    ["every box drawn", model(tinyFixture().graph), {}, ["Directly"]],
+    ["some folded into +N more", directly(FOCUS_CAP + 3), {}, [`Directly · ${FOCUS_CAP + 3}`]],
+    ["the selected box's column", model(dualRouteFixture().graph), up("P"), ["Directly", "2 steps away · 7"]],
+    ["columns folded to the route", model(dualRouteFixture().graph), up("P", "r3"), ["Directly", "2 steps away"]],
+  ] as const)("heads a column with its steps, and with its count only when +N more hides some of it: %s", (_, m, state, texts) => {
+    expect(scene(m, state).headings.map((h) => h.text)).toEqual(texts);
   });
 
   // F and d0 are both called PaymentCard; d0 renders F.
@@ -131,7 +173,7 @@ describe("buildScene", () => {
   it.each(["up", "down"] as const)("%s: overlaps nothing with lists open in neighbouring columns", (dir) => {
     const pairs: [string, string][] = [["d0", "F"], ["d1", "F"], ["p0", "d0"], ["p1", "d0"]];
     const m = model(graph(["F", "d0", "d1", "p0", "p1"].map((id) => node(id)), pairs.map(([a, b]) => (dir === "up" ? [a, b] : [b, a]))));
-    const s = scene(m, { pin: { dir, id: "p0" }, lists: new Set([`${dir}:F`, `${dir}:d0`]) });
+    const s = scene(m, { pin: { dir, ids: ["d0", "p0"] }, lists: new Set([`${dir}:F`, `${dir}:d0`]) });
     expect(groups(s).map((g) => g.kind)).toEqual(["list", "list"]);
     s.items.forEach((a, i) => {
       for (const b of s.items.slice(i + 1)) {
@@ -150,8 +192,8 @@ describe("a selected route", () => {
     const routes = bothRoutes(m, fx.focusId);
     for (const dir of ["up", "down"] as const) {
       for (const row of findRows(m, fx.focusId, routes[dir], dir)) {
-        const s = buildScene(m, fx.focusId, routes, { ...empty, pin: { dir, id: row.node.id } });
-        const route = routeIds(routes[dir], fx.focusId, row.node.id).map((id) => (id === fx.focusId ? "focus" : `${dir}:${id}`));
+        const s = buildScene(m, fx.focusId, routes, { ...empty, pin: { dir, ids: row.route } });
+        const route = ["focus", ...row.route.map((_, i) => `${dir}:${row.route.slice(0, i + 1).join(",")}`)];
         expect([...s.pathIds].sort(), row.node.id).toEqual([...route].sort());
         for (let i = 0; i < route.length - 1; i++) {
           const [outer, inner] = [route[i], route[i + 1]];
@@ -160,38 +202,5 @@ describe("a selected route", () => {
         }
       }
     }
-  });
-});
-
-describe("nothingFurtherOut", () => {
-  // W, E and Y render F directly; X renders W from further out; Y also renders
-  // E. F renders K and L directly; K also renders L.
-  const m = model(
-    graph(
-      [node("F"), node("W"), node("E"), node("Y"), node("X"), node("K"), node("L")],
-      [["W", "F", 1], ["E", "F", 1], ["Y", "F", 1], ["Y", "E", 1], ["X", "W", 1], ["F", "K", 1], ["F", "L", 1], ["K", "L", 1]],
-    ),
-  );
-  const routes = bothRoutes(m, "F");
-  it.each([
-    ["something renders it from further out", "up", "W", null],
-    ["everything that renders it is as near", "up", "E", "Nothing further out renders E."],
-    ["nothing renders it", "up", "Y", "Nothing in this repo renders Y."],
-    ["everything it renders is as near", "down", "K", "K renders nothing further out."],
-    ["it renders nothing", "down", "L", "L renders no other components."],
-  ] as const)("%s", (_, dir, id, sentence) => {
-    expect(nothingFurtherOut(m, routes[dir], dir, id)).toBe(sentence);
-  });
-});
-
-describe("routeSentence", () => {
-  it.each([
-    ["one step, once", ["A", "F"], [1], "A renders F once."],
-    ["one step, twice", ["A", "F"], [2], "A renders F twice."],
-    ["one step, many times", ["A", "F"], [1234], "A renders F 1,234 times."],
-    ["two steps", ["A", "B", "F"], [1, 5], "A renders B once, and B renders F 5 times."],
-    ["three steps", ["A", "B", "C", "F"], [3, 1, 2], "A renders B 3 times, B renders C once, and C renders F twice."],
-  ])("%s", (_, chain, uses, sentence) => {
-    expect(routeSentence(chain, uses)).toBe(sentence);
   });
 });

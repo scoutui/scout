@@ -4,12 +4,10 @@ import {
   chipFaceFragments,
   edgeCounts,
   pathValueOf,
-  routeIds,
   usesBetween,
   type BothRoutes,
   type Dir,
   type GraphModel,
-  type Routes,
 } from "./graph-model";
 
 export type SceneState = {
@@ -17,8 +15,10 @@ export type SceneState = {
   lists: ReadonlySet<string>;
   /** `dir:id` of components pulled out of a "+N more" into their column. */
   brought: ReadonlySet<string>;
-  /** The selected component, if any. It shows what's one step further out. */
-  pin: { dir: Dir; id: string } | null;
+  /** The opened route, if any: component ids read outward from the focus,
+   *  the selected box last. Each step is real (see `realRoute`). The selected
+   *  box shows everything one step further out. */
+  pin: { dir: Dir; ids: string[] } | null;
 };
 
 /** `dir:id`: a key in `SceneState`'s sets and the flow id of a box. */
@@ -41,6 +41,12 @@ export type ChipItem = Box & {
   steps: number;
   /** The box one step nearer the focus that this one hangs off. */
   innerId: string | null;
+  /** Component ids from the focus's neighbour out to this box: the route that selecting it opens. */
+  route: string[];
+  /** The component also appears nearer the focus, as a box or in a "+N more". */
+  repeat: boolean;
+  /** The component is already on the route, or is the focus: it closes a loop and can't be opened. */
+  loop: boolean;
   /** Uses between this component and the one at `innerId`. */
   usesToInner: number;
   /** What tells this box apart from another box of the same name, shown after its name; never on the focus. */
@@ -54,6 +60,8 @@ export type GroupItem = Box & {
   parentId: string;
   /** Component id of that box. */
   parentRealId: string;
+  /** The route of that box; empty for the focus. */
+  parentRoute: string[];
   steps: number;
   members: Member[];
   uses: number;
@@ -72,6 +80,8 @@ export type SceneEdge = {
   group: boolean;
   /** The line in words, for screen readers. */
   label: string;
+  /** "×3" on a line along the selected route whose component renders the next more than once. */
+  weight: string | null;
 };
 
 export type ColumnHeading = { text: string; x: number; y: number };
@@ -116,136 +126,145 @@ type Placed = SceneItem & { parentFlowId: string | null };
 
 type SideResult = {
   columns: Placed[][];
-  /** Component id -> flow id and column, for components drawn on this side,
-   *  as a box of their own or inside a group. */
-  drawn: Map<string, { flowId: string; col: number; group?: boolean }>;
   edges: SceneEdge[];
-  /** Components at each step, for headings. */
-  totals: Map<number, number>;
+  /** Components a column holds, for columns that fold some into "+N more"
+   *  and aren't folded down to the route. */
+  held: Map<number, number>;
 };
+
+/** The flow id of the box at the end of `route`. */
+export const routeId = (dir: Dir, route: readonly string[]) => dirId(dir, route.join(","));
 
 function buildSide(
   model: GraphModel,
   focusId: string,
   dir: Dir,
-  routes: Routes,
+  route: readonly string[],
   counts: Map<string, number>,
   state: SceneState,
-  pathSet: ReadonlySet<string>,
 ): SideResult {
   const next = dir === "up" ? model.parentsOf : model.childrenOf;
   const columns: Placed[][] = [[]];
-  const drawn: SideResult["drawn"] = new Map([[focusId, { flowId: FOCUS, col: 0 }]]);
   const edges: SceneEdge[] = [];
-  const totals = new Map<number, number>();
-  for (const s of routes.steps.values()) if (s > 0) totals.set(s, (totals.get(s) ?? 0) + 1);
+  const held = new Map<number, number>();
+  const nearest = new Map<string, number>();
 
-  // Boxes to open, column by column: the focus first, then the selected box
-  // and the boxes its route passes through.
-  let frontier: { id: string; flowId: string; col: number }[] = [{ id: focusId, flowId: FOCUS, col: 0 }];
-  while (frontier.length > 0) {
-    const nextFrontier: typeof frontier = [];
-    for (const v of frontier) {
-      // A route two or more steps long folds even the focus's own column
-      // down to the step on the route.
-      const fully = v.id === focusId ? !(pathSet.size > 2) : state.pin?.dir === dir && state.pin.id === v.id;
-      const onRoute = pathSet.has(v.id);
-      if (!fully && !onRoute) continue;
-      const col = v.col + 1;
-      const candidates: CompositionGraphNode[] = [];
-      const seen = new Set<string>();
-      for (const { id } of next.get(v.id) ?? []) {
-        if (seen.has(id) || drawn.has(id) || id === focusId) continue;
-        if (routes.steps.get(id) !== col) continue;
+  // The focus opens first, then each box on the route in turn. Every box but
+  // the last folds its column down to the next step; the last, and the focus
+  // when the route is at most one step, show what they open in full.
+  let parent = { id: focusId, flowId: FOCUS, route: [] as string[] };
+  for (let col = 1; col <= route.length + 1; col++) {
+    const step = route[col - 1];
+    const fully = step === undefined || (col === 1 && route.length === 1);
+    const passed = new Set([focusId, ...parent.route]);
+    const candidates: CompositionGraphNode[] = [];
+    for (const { id } of next.get(parent.id) ?? []) {
+      const node = model.byId.get(id);
+      if (!node || passed.has(id) || candidates.includes(node)) continue;
+      candidates.push(node);
+    }
+    const loops: CompositionGraphNode[] = [];
+    if (step === undefined && col > 1) {
+      for (const { id } of next.get(parent.id) ?? []) {
         const node = model.byId.get(id);
-        if (!node) continue;
-        seen.add(id);
-        candidates.push(node);
-      }
-      if (candidates.length === 0) continue;
-      candidates.sort(byCallSites((n) => usesBetween(counts, dir, v.id, n.id)));
-      const cap = v.id === focusId ? FOCUS_CAP : OPEN_CAP;
-      let shown: CompositionGraphNode[];
-      let hidden: CompositionGraphNode[];
-      if (fully) {
-        const fold = candidates.length > cap + 1;
-        shown = fold ? candidates.slice(0, cap) : candidates;
-        hidden = fold ? candidates.slice(cap) : [];
-      } else {
-        shown = candidates.filter((n) => pathSet.has(n.id));
-        hidden = candidates.filter((n) => !pathSet.has(n.id));
-      }
-      const rescued = hidden.filter((n) => pathSet.has(n.id) || state.brought.has(dirId(dir, n.id)));
-      hidden = hidden.filter((n) => !rescued.includes(n));
-      shown = [...shown, ...rescued];
-
-      if (!columns[col]) columns[col] = [];
-      const column = columns[col] as Placed[];
-      for (const node of shown) {
-        const id = dirId(dir, node.id);
-        drawn.set(node.id, { flowId: id, col });
-        column.push({
-          kind: "chip",
-          id,
-          dir,
-          node,
-          steps: col,
-          innerId: v.flowId,
-          usesToInner: usesBetween(counts, dir, v.id, node.id),
-          fragment: null,
-          x: 0,
-          y: 0,
-          w: chipWidth(node.displayName, null),
-          h: CHIP_H,
-          parentFlowId: v.flowId,
-        });
-        nextFrontier.push({ id: node.id, flowId: id, col });
-      }
-      if (hidden.length > 0) {
-        const members = hidden.map((node) => ({ node, uses: usesBetween(counts, dir, v.id, node.id) }));
-        const uses = members.reduce((s, m) => s + m.uses, 0);
-        const isList = state.lists.has(dirId(dir, v.id));
-        const id = groupId(isList ? "list" : "more", dir, v.id);
-        column.push({
-          kind: isList ? "list" : "more",
-          id,
-          dir,
-          parentId: v.flowId,
-          parentRealId: v.id,
-          steps: col,
-          members,
-          uses,
-          x: 0,
-          y: 0,
-          w: isList ? LIST_W : MIN_W,
-          h: isList ? Math.min(LIST_H, LIST_CHROME_H + members.length * LIST_ROW_H) : CHIP_H,
-          parentFlowId: v.flowId,
-        });
-        for (const m of hidden) drawn.set(m.id, { flowId: id, col, group: true });
-        edges.push(
-          dir === "up"
-            ? { id: `${id}>${v.flowId}`, source: id, target: v.flowId, count: uses, dir, group: true, label: "" }
-            : { id: `${v.flowId}>${id}`, source: v.flowId, target: id, count: uses, dir, group: true, label: "" },
-        );
+        if (node && id !== parent.id && passed.has(id) && !loops.includes(node)) loops.push(node);
       }
     }
-    frontier = nextFrontier;
+    if (candidates.length + loops.length === 0) break;
+    const order = byCallSites((n) => usesBetween(counts, dir, parent.id, n.id));
+    candidates.sort(order);
+    loops.sort(order);
+    for (const n of candidates) if (!nearest.has(n.id)) nearest.set(n.id, col);
+
+    const cap = col === 1 ? FOCUS_CAP : OPEN_CAP;
+    let shown: CompositionGraphNode[];
+    let hidden: CompositionGraphNode[];
+    if (fully) {
+      const fold = candidates.length > cap + 1;
+      shown = fold ? candidates.slice(0, cap) : candidates;
+      hidden = fold ? candidates.slice(cap) : [];
+    } else {
+      shown = candidates.filter((n) => n.id === step);
+      hidden = candidates.filter((n) => n.id !== step);
+    }
+    const rescued = hidden.filter((n) => n.id === step || state.brought.has(dirId(dir, n.id)));
+    hidden = hidden.filter((n) => !rescued.includes(n));
+    shown = [...shown, ...rescued];
+    if (fully && hidden.length > 0) held.set(col, candidates.length + loops.length);
+
+    const column: Placed[] = [];
+    columns[col] = column;
+    for (const node of [...shown, ...loops]) {
+      const nodeRoute = [...parent.route, node.id];
+      column.push({
+        kind: "chip",
+        id: routeId(dir, nodeRoute),
+        dir,
+        node,
+        steps: col,
+        innerId: parent.flowId,
+        route: nodeRoute,
+        repeat: false,
+        loop: loops.includes(node),
+        usesToInner: usesBetween(counts, dir, parent.id, node.id),
+        fragment: null,
+        x: 0,
+        y: 0,
+        w: chipWidth(node.displayName, null),
+        h: CHIP_H,
+        parentFlowId: parent.flowId,
+      });
+    }
+    if (hidden.length > 0) {
+      const members = hidden.map((node) => ({ node, uses: usesBetween(counts, dir, parent.id, node.id) }));
+      const uses = members.reduce((sum, m) => sum + m.uses, 0);
+      const isList = state.lists.has(dirId(dir, parent.id));
+      const id = groupId(isList ? "list" : "more", dir, parent.id);
+      column.push({
+        kind: isList ? "list" : "more",
+        id,
+        dir,
+        parentId: parent.flowId,
+        parentRealId: parent.id,
+        parentRoute: parent.route,
+        steps: col,
+        members,
+        uses,
+        x: 0,
+        y: 0,
+        w: isList ? LIST_W : MIN_W,
+        h: isList ? Math.min(LIST_H, LIST_CHROME_H + members.length * LIST_ROW_H) : CHIP_H,
+        parentFlowId: parent.flowId,
+      });
+      edges.push(
+        dir === "up"
+          ? { id: `${id}>${parent.flowId}`, source: id, target: parent.flowId, count: uses, dir, group: true, label: "", weight: null }
+          : { id: `${parent.flowId}>${id}`, source: parent.flowId, target: id, count: uses, dir, group: true, label: "", weight: null },
+      );
+    }
+    if (step === undefined) break;
+    parent = { id: step, flowId: routeId(dir, [...parent.route, step]), route: [...parent.route, step] };
   }
 
   // Real render edges between boxes in adjacent columns on this side.
-  for (const e of model.edges) {
-    const outer = dir === "up" ? e.source : e.target;
-    const inner = dir === "up" ? e.target : e.source;
-    const o = drawn.get(outer);
-    const i = drawn.get(inner);
-    if (!o || !i || o.col !== i.col + 1) continue;
-    if (o.group || i.group) continue;
-    const [source, target] = dir === "up" ? [o.flowId, i.flowId] : [i.flowId, o.flowId];
-    const id = `${source}>${target}`;
-    if (edges.some((x) => x.id === id)) continue;
-    edges.push({ id, source, target, count: e.count, dir, group: false, label: "" });
+  const chipsIn = (col: number) =>
+    col === 0
+      ? [{ id: FOCUS, nodeId: focusId }]
+      : (columns[col] ?? []).flatMap((c) => (c.kind === "chip" ? [{ id: c.id, nodeId: c.node.id }] : []));
+  for (let col = 1; col < columns.length; col++) {
+    for (const o of chipsIn(col)) {
+      for (const i of chipsIn(col - 1)) {
+        const count = dir === "up" ? counts.get(`${o.nodeId}>${i.nodeId}`) : counts.get(`${i.nodeId}>${o.nodeId}`);
+        if (count === undefined) continue;
+        const [source, target] = dir === "up" ? [o.id, i.id] : [i.id, o.id];
+        edges.push({ id: `${source}>${target}`, source, target, count, dir, group: false, label: "", weight: null });
+      }
+    }
   }
-  return { columns, drawn, edges, totals };
+  for (const column of columns) {
+    for (const item of column ?? []) if (item.kind === "chip") item.repeat = (nearest.get(item.node.id) ?? item.steps) < item.steps;
+  }
+  return { columns, edges, held };
 }
 
 /** Left-to-right column of an item: negative for what renders the focus. */
@@ -258,15 +277,15 @@ function columnOf(item: SceneItem): number {
 /**
  * Columns by steps on each side of the focus: what renders it to the left,
  * what it renders to the right. The focus's direct neighbours are always
- * shown; a selected box shows what's one step further out, and its route
- * opens just the boxes along it. When the route runs two or more steps out, the
- * other side shrinks to one summary box.
+ * shown; the selected box shows everything one step further out, components
+ * already drawn nearer included, and the route to it opens just the boxes
+ * along it. When the route runs two or more steps out, the other side shrinks
+ * to one summary box.
  */
 export function buildScene(model: GraphModel, focusId: string, routes: BothRoutes, state: SceneState): Scene {
   const counts = edgeCounts(model);
-  const pinRoute = state.pin ? routeIds(routes[state.pin.dir], focusId, state.pin.id) : [];
-  const pathSetFor = (dir: Dir) => new Set(state.pin?.dir === dir ? pinRoute : []);
-  const collapseOther = state.pin !== null && pinRoute.length > 2;
+  const pin = state.pin;
+  const collapseOther = pin !== null && pin.ids.length > 1;
 
   const focusNode = model.byId.get(focusId) as CompositionGraphNode;
   const focusItem: Placed = {
@@ -276,6 +295,9 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
     node: focusNode,
     steps: 0,
     innerId: null,
+    route: [],
+    repeat: false,
+    loop: false,
     usesToInner: 0,
     fragment: null,
     x: 0,
@@ -292,7 +314,7 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
 
   const sides = new Map<Dir, SideResult>();
   for (const dir of ["up", "down"] as const) {
-    if (!collapseOther || state.pin?.dir === dir) sides.set(dir, buildSide(model, focusId, dir, routes[dir], counts, state, pathSetFor(dir)));
+    if (!collapseOther || pin?.dir === dir) sides.set(dir, buildSide(model, focusId, dir, pin?.dir === dir ? pin.ids : [], counts, state));
   }
   // Labels are worked out over every box drawn, the focus included, but the focus never shows one.
   const chips = [focusItem, ...[...sides.values()].flatMap((side) => side.columns.flat())].filter((i): i is Placed & ChipItem => i.kind === "chip");
@@ -324,12 +346,7 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
       continue;
     }
     edges.push(...side.edges);
-    if (state.pin?.dir === dir) {
-      for (const id of pinRoute) {
-        const at = side.drawn.get(id);
-        if (at) pathIds.add(at.flowId);
-      }
-    }
+    if (pin?.dir === dir) pin.ids.forEach((_, i) => pathIds.add(routeId(dir, pin.ids.slice(0, i + 1))));
 
     // x: each column as wide as its widest item, laid out away from the focus.
     let edgeX = dir === "up" ? -GAP_X : focusItem.w + GAP_X;
@@ -371,9 +388,10 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
       items.push(...column);
 
       const where = col === 1 ? "Directly" : `${col} steps away`;
+      const held = side.held.get(col);
       const top = Math.min(...column.map((c) => c.y));
       headings.push({
-        text: `${where} · ${(side.totals.get(col) ?? 0).toLocaleString()}`,
+        text: held === undefined ? where : `${where} · ${held.toLocaleString()}`,
         x: dir === "up" ? left + w : left,
         y: top - HEADING_H,
       });
@@ -390,6 +408,7 @@ export function buildScene(model: GraphModel, focusId: string, routes: BothRoute
         ? `${item.members.length.toLocaleString()} more ${item.members.length === 1 ? "component" : "components"}`
         : "";
   for (const e of edges) {
+    if (!e.group && e.count > 1 && pathIds.has(e.source) && pathIds.has(e.target)) e.weight = `×${e.count.toLocaleString()}`;
     const source = byId.get(e.source);
     const target = nameOf(byId.get(e.target));
     e.label =
@@ -409,25 +428,3 @@ export function timesWord(n: number): string {
 
 const rendersSentence = (renderer: string, rendered: string, uses: number) =>
   `${renderer} renders ${rendered} ${timesWord(uses)}`;
-
-/** The bar's last sentence when selecting a box opens nothing: nothing renders
- *  it (or it renders nothing), or everything that does is as near the focus
- *  as it is. Null when something is further out. */
-export function nothingFurtherOut(model: GraphModel, routes: Routes, dir: Dir, id: string): string | null {
-  const next = dir === "up" ? model.parentsOf : model.childrenOf;
-  const ids = (next.get(id) ?? []).map((a) => a.id).filter((x) => x !== id);
-  const steps = routes.steps.get(id) ?? 0;
-  if (ids.some((x) => routes.steps.get(x) === steps + 1)) return null;
-  const name = model.byId.get(id)?.displayName ?? id;
-  if (ids.length === 0) return dir === "up" ? `Nothing in this repo renders ${name}.` : `${name} renders no other components.`;
-  return dir === "up" ? `Nothing further out renders ${name}.` : `${name} renders nothing further out.`;
-}
-
-/** A route in words, a clause a step, in render order: "A renders B once,
- *  and B renders C 5 times." `uses[i]` is the uses from `chain[i]` to
- *  `chain[i + 1]`. */
-export function routeSentence(chain: readonly string[], uses: readonly number[]): string {
-  const clauses = uses.map((n, i) => rendersSentence(chain[i] ?? "", chain[i + 1] ?? "", n));
-  if (clauses.length <= 1) return `${clauses.join("")}.`;
-  return `${clauses.slice(0, -1).join(", ")}, and ${clauses[clauses.length - 1]}.`;
-}

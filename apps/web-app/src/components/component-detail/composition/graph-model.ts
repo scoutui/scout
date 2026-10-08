@@ -123,31 +123,53 @@ export type FindRow = {
   node: CompositionGraphNode;
   dir: Dir;
   steps: number;
-  /** Names along the shortest route in render order: the outermost first. */
+  /** Names along the route in render order: the outermost first. */
   chain: string[];
-  /** Uses at each step of `chain`: `uses[i]` from `chain[i]` to `chain[i + 1]`. */
-  uses: number[];
+  /** Component ids along the route, from the focus's neighbour out to `node`. */
+  route: string[];
 };
 
+/** The steps of `ids`, read outward from the focus, up to the first that
+ *  isn't real: one that doesn't render the step before it (going up) or isn't
+ *  rendered by it (going down), the focus, or a component already on the
+ *  route. */
+export function realRoute(model: GraphModel, focusId: string, dir: Dir, ids: readonly string[]): string[] {
+  const next = dir === "up" ? model.parentsOf : model.childrenOf;
+  const kept: string[] = [];
+  let at = focusId;
+  for (const id of ids) {
+    if (id === focusId || kept.includes(id) || !(next.get(at) ?? []).some((a) => a.id === id)) break;
+    kept.push(id);
+    at = id;
+  }
+  return kept;
+}
+
+/** The route `ids` (read outward from the focus) as a row, in render order. */
+export function routeRow(model: GraphModel, focusId: string, dir: Dir, ids: readonly string[]): FindRow | null {
+  const node = model.byId.get(ids[ids.length - 1] ?? "");
+  if (!node) return null;
+  const order = dir === "up" ? [...ids].reverse().concat(focusId) : [focusId, ...ids];
+  return {
+    node,
+    dir,
+    steps: ids.length,
+    chain: order.map((r) => model.byId.get(r)?.displayName ?? r),
+    route: [...ids],
+  };
+}
+
 /** Every component above or below the focus, nearest first, then in
- *  `byCallSites` order. The focus is never listed, even with a self-render
- *  edge. */
+ *  `byCallSites` order, each with its shortest route. The focus is never
+ *  listed, even with a self-render edge. */
 export function findRows(model: GraphModel, focusId: string, routes: Routes, dir: Dir): FindRow[] {
   const counts = edgeCounts(model);
   const order = byCallSites((n) => usesBetween(counts, dir, focusId, n.id));
   const rows: FindRow[] = [];
-  for (const [id, steps] of routes.steps) {
-    const node = model.byId.get(id);
-    if (id === focusId || !node) continue;
-    const ids = routeIds(routes, focusId, id);
-    if (dir === "down") ids.reverse();
-    rows.push({
-      node,
-      dir,
-      steps,
-      chain: ids.map((r) => model.byId.get(r)?.displayName ?? r),
-      uses: ids.slice(1).map((r, i) => counts.get(`${ids[i]}>${r}`) ?? 0),
-    });
+  for (const id of routes.steps.keys()) {
+    if (id === focusId) continue;
+    const row = routeRow(model, focusId, dir, routeIds(routes, focusId, id).slice(0, -1).reverse());
+    if (row) rows.push(row);
   }
   return rows.sort((a, b) => a.steps - b.steps || order(a.node, b.node));
 }

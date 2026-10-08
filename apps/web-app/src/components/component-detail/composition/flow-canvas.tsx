@@ -37,6 +37,7 @@ import {
   distinctTails,
   findRows,
   pathValueOf,
+  routeRow,
   type BothRoutes,
   type Dir,
   type FindRow,
@@ -46,22 +47,22 @@ import { ScopeGlyph } from "./scope-glyph";
 import { HighlightStore, useHighlightSet, useNodeHighlight } from "./use-highlight";
 import {
   buildScene,
-  dirId,
   FOCUS,
   groupId,
   HEADING_H,
-  nothingFurtherOut,
-  routeSentence,
+  routeId,
   timesWord,
   type ChipItem,
   type GroupItem,
+  type Scene,
   type SceneEdge,
+  type SceneItem,
   type SceneState,
   type SummaryItem,
 } from "./flow-scene";
 
 export type FlowActions = {
-  setPin: (pin: { dir: Dir; id: string } | null) => void;
+  setPin: (pin: { dir: Dir; ids: string[] } | null) => void;
   toggleList: (dir: Dir, parentId: string) => void;
   bring: (dir: Dir, id: string) => void;
   reset: () => void;
@@ -77,6 +78,8 @@ type Ctx = FlowActions & {
   focusNext: (key: string) => void;
   /** Clears the selection, moving focus to the route's first step if the focused box goes. */
   clearPin: () => void;
+  /** Closes the selected box, moving focus to where it folds into if it goes. */
+  stepBack: (box: ChipItem) => void;
 };
 const FlowCtx = createContext<Ctx | null>(null);
 function useFlow(): Ctx {
@@ -113,12 +116,13 @@ function chipLabel(item: ChipItem, focusName: string): string {
         : `${focusName} renders it ${timesWord(item.usesToInner)}`
       : `${item.steps} steps from ${focusName}`;
   const what = `${node.displayName}, ${node.scope}${node.deprecated ? ", deprecated" : ""}, ${pathValueOf(node)}`;
-  return `${what}. ${relation}.`;
+  const shown = item.loop ? " Already on this route." : item.repeat ? ` Also shown nearer ${focusName}.` : "";
+  return `${what}. ${relation}.${shown}`;
 }
 
 const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
   const { item, pinned, dim } = data as unknown as ChipData;
-  const { setPin, clearPin, hover, reveal, store, focusName } = useFlow();
+  const { setPin, clearPin, stepBack, hover, reveal, store, focusName } = useFlow();
   const lit = useNodeHighlight(store, id) === "chain";
   const isFocus = item.id === FOCUS;
   const node = item.node;
@@ -128,7 +132,8 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         "relative flex items-center rounded-md border bg-card shadow-xs transition-[color,border-color] duration-150 motion-reduce:transition-none",
         (isFocus || pinned) && "border-foreground ring-1 ring-foreground",
         lit && !pinned && !isFocus && "border-foreground/60",
-        dim && "text-muted-foreground",
+        (dim || item.loop) && "text-muted-foreground",
+        item.loop && "bg-muted",
       )}
       style={{ width: item.w, height: item.h }}
     >
@@ -136,7 +141,7 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
       <button
         type="button"
         data-focus-key={`chip:${id}`}
-        disabled={isFocus}
+        disabled={isFocus || item.loop}
         aria-pressed={isFocus ? undefined : pinned}
         aria-label={
           isFocus
@@ -145,8 +150,9 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         }
         onClick={() => {
           if (!item.dir) return;
-          if (pinned) clearPin();
-          else setPin({ dir: item.dir, id: node.id });
+          if (!pinned) setPin({ dir: item.dir, ids: item.route });
+          else if (item.route.length === 1) clearPin();
+          else stepBack(item);
         }}
         onFocus={(e) => {
           hover(id);
@@ -155,7 +161,7 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
         onBlur={() => hover(null)}
         className={cn(
           "flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-[5px] px-2 text-left",
-          isFocus ? "cursor-default" : "cursor-pointer",
+          isFocus || item.loop ? "cursor-default" : "cursor-pointer",
         )}
       >
         <ScopeGlyph scope={node.scope} />
@@ -167,10 +173,16 @@ const ChipNode = memo(function ChipNode({ id, data }: NodeProps) {
           <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground">{`· ${item.fragment}`}</span>
         ) : null}
       </button>
+      {item.repeat ? <RepeatBand /> : null}
       <Handle type="source" position={Position.Right} className="!pointer-events-none !opacity-0" />
     </div>
   );
 });
+
+/** Marks a box whose component is also drawn nearer the focus. */
+function RepeatBand() {
+  return <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-1 rounded-b-[5px] bg-faint" />;
+}
 
 const MoreNode = memo(function MoreNode({ id, data }: NodeProps) {
   const { item, parentName, dim } = data as unknown as GroupData;
@@ -271,9 +283,10 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
             <button
               type="button"
               onClick={() => {
-                focusNext(`chip:${dirId(item.dir, m.node.id)}`);
+                const route = [...item.parentRoute, m.node.id];
+                focusNext(`chip:${routeId(item.dir, route)}`);
                 bring(item.dir, m.node.id);
-                setPin({ dir: item.dir, id: m.node.id });
+                setPin({ dir: item.dir, ids: route });
               }}
               onFocus={revealOnKeyboard}
               aria-label={`${m.node.displayName}, ${pathValueOf(m.node)}, ${usesWord(m.uses)}. Show it in the diagram.`}
@@ -338,25 +351,25 @@ type CanvasInnerProps = {
   focusId: string;
   routes: BothRoutes;
   state: SceneState;
+  scene: Scene;
   actions: FlowActions;
   phone: boolean;
   overlayRef: RefObject<HTMLDivElement | null>;
   controlsRef: RefObject<CanvasControls | null>;
 };
 
-function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef, controlsRef }: CanvasInnerProps) {
+function CanvasInner({ model, focusId, routes, state, scene, actions, phone, overlayRef, controlsRef }: CanvasInnerProps) {
   const { fitView, getViewport, setCenter } = useReactFlow();
   const resolvedTheme = useResolvedTheme();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const focusName = model.byId.get(focusId)?.displayName ?? "";
 
-  const scene = useMemo(() => buildScene(model, focusId, routes, state), [model, focusId, routes, state]);
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
   const selected = scene.pathIds.size > 0;
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
-  const pinFlowId = state.pin ? dirId(state.pin.dir, state.pin.id) : null;
+  const pinFlowId = state.pin ? routeId(state.pin.dir, state.pin.ids) : null;
 
   // The box each item hangs off, toward the focus.
   const innerOf = useMemo(() => {
@@ -441,6 +454,15 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
         focusable: false,
         selectable: false,
         ariaLabel: e.label,
+        ...(e.weight
+          ? {
+              label: e.weight,
+              labelStyle: { fill: "var(--foreground)", fontSize: 11, fontVariantNumeric: "tabular-nums" },
+              labelBgStyle: { fill: "var(--background)" },
+              labelBgPadding: [4, 2] as [number, number],
+              labelBgBorderRadius: 3,
+            }
+          : {}),
         markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color },
         style: {
           stroke: color,
@@ -483,15 +505,18 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
       return;
     }
     const el = shellRef.current;
-    const xs = scene.items.flatMap((i) => [i.x, i.x + i.w]);
-    const ys = scene.items.flatMap((i) => [i.y, i.y + i.h]);
-    const fits =
-      !el ||
-      Math.min(
-        (el.clientWidth - 56) / (Math.max(...xs) - Math.min(...xs)),
-        (el.clientHeight - topClearance() - 28) / (Math.max(...ys) - Math.min(...ys)),
-      ) >= READABLE_ZOOM;
-    if (fits) {
+    const fitsReadably = (items: SceneItem[]) => {
+      const xs = items.flatMap((i) => [i.x, i.x + i.w]);
+      const ys = items.flatMap((i) => [i.y, i.y + i.h]);
+      return (
+        !el ||
+        Math.min(
+          (el.clientWidth - 56) / (Math.max(...xs) - Math.min(...xs)),
+          (el.clientHeight - topClearance() - 28) / (Math.max(...ys) - Math.min(...ys)),
+        ) >= READABLE_ZOOM
+      );
+    };
+    if (fitsReadably(scene.items)) {
       frame(null, duration, READABLE_ZOOM);
       return;
     }
@@ -499,9 +524,19 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
     justOpened.current = null;
     if (selected) {
       const around = scene.items.filter(
-        (i) => i.kind === "summary" || (pinFlowId !== null && innerOf.get(i.id) === pinFlowId) || opened?.includes(i.id),
+        (i) => (pinFlowId !== null && innerOf.get(i.id) === pinFlowId) || opened?.includes(i.id),
       );
-      frame([...scene.pathIds, ...around.map((i) => i.id)], duration, READABLE_ZOOM);
+      const route = scene.items.filter((i) => scene.pathIds.has(i.id));
+      const whole = [...route, ...around, ...scene.items.filter((i) => i.kind === "summary")];
+      // A route too long to read whole frames its selected end.
+      const shown = fitsReadably(whole)
+        ? whole
+        : [...route.filter((i) => i.id === pinFlowId || i.id === innerOf.get(pinFlowId ?? "")), ...around];
+      frame(
+        shown.map((i) => i.id),
+        duration,
+        READABLE_ZOOM,
+      );
       return;
     }
     const target = opened ?? scene.items.filter((i) => i.kind === "list").map((i) => i.id);
@@ -525,22 +560,38 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
   const focusNext = useCallback((key: string) => {
     pendingFocus.current = { key, ifLost: false };
   }, []);
-  // The route's first step, or the "+N more" or open list it folds into once nothing is selected.
+  // Selects `pin`, then focuses `box`, or the "+N more" or open list it folds
+  // into, if the focused box goes.
+  const selectKeepingFocus = useCallback(
+    (pin: SceneState["pin"], box: ChipItem | undefined) => {
+      if (box) {
+        const next = buildScene(model, focusId, routes, { ...state, pin });
+        const group = next.items.find(
+          (i): i is GroupItem =>
+            (i.kind === "more" || i.kind === "list") && i.parentId === box.innerId && i.members.some((m) => m.node.id === box.node.id),
+        );
+        const key = next.items.some((i) => i.id === box.id)
+          ? `chip:${box.id}`
+          : group && (group.kind === "list" ? `filter:${group.id}` : group.id);
+        if (key) pendingFocus.current = { key, ifLost: true };
+      }
+      actions.setPin(pin);
+    },
+    [model, focusId, routes, state, actions],
+  );
   const clearPin = useCallback(() => {
     const now = sceneRef.current;
-    const first = now.items.find((i): i is ChipItem => i.kind === "chip" && i.steps === 1 && now.pathIds.has(i.id));
-    if (first) {
-      const next = buildScene(model, focusId, routes, { ...state, pin: null });
-      const group = next.items.find(
-        (i): i is GroupItem => i.kind !== "chip" && i.kind !== "summary" && i.members.some((m) => m.node.id === first.node.id),
-      );
-      const key = next.items.some((i) => i.id === first.id)
-        ? `chip:${first.id}`
-        : group && (group.kind === "list" ? `filter:${group.id}` : group.id);
-      if (key) pendingFocus.current = { key, ifLost: true };
-    }
-    actions.setPin(null);
-  }, [model, focusId, routes, state, actions]);
+    selectKeepingFocus(
+      null,
+      now.items.find((i): i is ChipItem => i.kind === "chip" && i.steps === 1 && now.pathIds.has(i.id)),
+    );
+  }, [selectKeepingFocus]);
+  const stepBack = useCallback(
+    (box: ChipItem) => {
+      if (box.dir) selectKeepingFocus({ dir: box.dir, ids: box.route.slice(0, -1) }, box);
+    },
+    [selectKeepingFocus],
+  );
 
   controlsRef.current = {
     fit: () => frame(null, prefersReducedMotion() ? 0 : 150, MIN_ZOOM),
@@ -605,8 +656,9 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
       reveal,
       focusNext,
       clearPin,
+      stepBack,
     }),
-    [actions, focusName, store, hover, reveal, focusNext, clearPin],
+    [actions, focusName, store, hover, reveal, focusNext, clearPin, stepBack],
   );
 
   useEffect(() => {
@@ -663,12 +715,7 @@ function CanvasInner({ model, focusId, routes, state, actions, phone, overlayRef
   );
 }
 
-function RouteBar({
-  row,
-  note,
-  repoId,
-  onClear,
-}: { row: FindRow; note: string | null; repoId: string; onClear: () => void }) {
+function RouteBar({ row, repoId, onClear }: { row: FindRow; repoId: string; onClear: () => void }) {
   return (
     <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border bg-card px-2.5 py-1.5 text-xs shadow-sm">
       <div className="min-w-0 flex-1 basis-64">
@@ -676,7 +723,6 @@ function RouteBar({
           {row.steps === 1 ? "Directly" : `${row.steps} steps away`}
           <span className="text-code">{` · ${pathValueOf(row.node)}`}</span>
         </div>
-        <p className="text-pretty">{[routeSentence(row.chain, row.uses), note].filter(Boolean).join(" ")}</p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
         <Link
@@ -924,10 +970,8 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
   const up = useMemo(() => findRows(model, focusId, routes.up, "up"), [model, focusId, routes]);
   const down = useMemo(() => findRows(model, focusId, routes.down, "down"), [model, focusId, routes]);
   const pin = state.pin;
-  const pinRow = useMemo(
-    () => (pin ? (pin.dir === "up" ? up : down).find((r) => r.node.id === pin.id) : undefined),
-    [pin, up, down],
-  );
+  const pinRow = useMemo(() => (pin ? routeRow(model, focusId, pin.dir, pin.ids) : null), [model, focusId, pin]);
+  const scene = useMemo(() => buildScene(model, focusId, routes, state), [model, focusId, routes, state]);
 
   const [announcement, setAnnouncement] = useState("");
   const announced = useRef<string | null>(null);
@@ -939,7 +983,7 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
   }, [pinRow]);
 
   const pick = (r: FindRow) => {
-    actions.setPin({ dir: r.dir, id: r.node.id });
+    actions.setPin({ dir: r.dir, ids: r.route });
     setView("diagram");
   };
   const clearPin = () => (controlsRef.current ? controlsRef.current.clearPin() : actions.setPin(null));
@@ -1001,7 +1045,6 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
                 {pinRow ? (
                   <RouteBar
                     row={pinRow}
-                    note={nothingFurtherOut(model, routes[pinRow.dir], pinRow.dir, pinRow.node.id)}
                     repoId={repoId}
                     onClear={clearPin}
                   />
@@ -1013,6 +1056,7 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
                   focusId={focusId}
                   routes={routes}
                   state={state}
+                  scene={scene}
                   actions={actions}
                   phone={phone}
                   overlayRef={overlayRef}
@@ -1039,6 +1083,14 @@ export function FlowCanvas({ model, focusId, repoId, routes, state, actions, cap
               </svg>
               renders
             </span>
+            {scene.items.some((i) => i.kind === "chip" && i.repeat) ? (
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <span aria-hidden className="relative h-2.5 w-4 shrink-0 overflow-hidden rounded-[3px] border bg-card">
+                  <span className="absolute inset-x-0 bottom-0 h-[3px] bg-faint" />
+                </span>
+                Repeat
+              </span>
+            ) : null}
           </footer>
         ) : null}
         <output className="sr-only">{announcement}</output>

@@ -27,7 +27,7 @@ function tabView(graph: CompositionGraph, focusId: string) {
     children: model.childrenOf.get(focusId),
     rows,
     scene: buildScene(model, focusId, routes, none),
-    selected: rows.map((row) => buildScene(model, focusId, routes, { ...none, pin: { dir: row.dir, id: row.node.id } })),
+    selected: rows.map((row) => buildScene(model, focusId, routes, { ...none, pin: { dir: row.dir, ids: row.route } })),
   };
 }
 

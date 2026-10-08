@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CompositionGraph, CompositionGraphNode } from "@scoutui/web-shared";
 import {
-  buildGraphModel, chipFaceFragments, distinctTails, findRows, pathValueOf, routeIds, routesFrom, type GraphModel,
+  buildGraphModel, chipFaceFragments, distinctTails, findRows, pathValueOf, realRoute, routeIds, routesFrom, type GraphModel,
 } from "@/components/component-detail/composition/graph-model";
 
 const node = (id: string, o?: Partial<CompositionGraphNode>): CompositionGraphNode => ({
@@ -108,13 +108,37 @@ describe("findRows", () => {
     expect(rows(m2, "down")).toEqual([]);
   });
 
-  it("writes each route in render order, the outermost component first, with the uses at each step", () => {
+  it("writes each route in render order, the outermost component first", () => {
     const m2 = buildGraphModel(graph(
       [node("F"), node("mid"), node("root"), node("kid")],
       [["root", "mid", 3], ["mid", "F", 5], ["F", "kid", 2]],
     ));
-    expect(rows(m2, "up").map((r) => [r.chain, r.uses])).toEqual([[["mid", "F"], [5]], [["root", "mid", "F"], [3, 5]]]);
-    expect(rows(m2, "down").map((r) => [r.chain, r.uses])).toEqual([[["F", "kid"], [2]]]);
+    expect(rows(m2, "up").map((r) => [r.chain, r.route])).toEqual([
+      [["mid", "F"], ["mid"]],
+      [["root", "mid", "F"], ["mid", "root"]],
+    ]);
+    expect(rows(m2, "down").map((r) => [r.chain, r.route])).toEqual([[["F", "kid"], ["kid"]]]);
+  });
+});
+
+describe("realRoute", () => {
+  // d0 and d1 render F; d1 also renders d0, and p0 renders d0. X renders F,
+  // Y renders X, and X renders Y. F renders kid, and kid renders d0.
+  const m = buildGraphModel(graph(
+    ["F", "d0", "d1", "p0", "X", "Y", "kid"].map((id) => node(id)),
+    [["d0", "F"], ["d1", "F"], ["d1", "d0"], ["p0", "d0"], ["X", "F"], ["Y", "X"], ["X", "Y"], ["F", "kid"], ["kid", "d0"]],
+  ));
+  it.each([
+    ["a route whose every step renders the one before", "up", ["d0", "p0"], ["d0", "p0"]],
+    ["a route through a component that also renders F directly", "up", ["d0", "d1"], ["d0", "d1"]],
+    ["a first step that doesn't render F", "up", ["p0"], []],
+    ["a step that doesn't render the one before", "up", ["d0", "Y"], ["d0"]],
+    ["a component the graph doesn't have", "up", ["d0", "gone"], ["d0"]],
+    ["a component already on the route", "up", ["X", "Y", "X"], ["X", "Y"]],
+    ["the focus", "down", ["kid", "d0", "F"], ["kid", "d0"]],
+    ["a route of what F renders", "down", ["kid", "d0"], ["kid", "d0"]],
+  ] as const)("keeps the steps that are real, up to the first that isn't: %s", (_, dir, ids, kept) => {
+    expect(realRoute(m, "F", dir, ids)).toEqual(kept);
   });
 });
 
