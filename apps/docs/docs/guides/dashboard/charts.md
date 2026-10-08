@@ -20,7 +20,7 @@ Select **charts** in the top navigation. The page has these parts:
 
 Beside each row is the change in uses left over the last 30 days, such as **6 fewer** in green or **2 more** in red. A package's change includes migrations and retirements that finished in that time. [How the change is counted](/docs/explanation/dashboard/reading-the-numbers#how-the-change-is-counted) explains what it compares. **In progress** and **Complete** switch between migrations and retirements with uses left and those with none. Search above the list for a component or package.
 
-![The charts list with three migrations and three retirements in progress, and four shared charts with their previews](/img/dashboard/charts-list.png)
+![The charts list with six migrations and retirements in progress, one complete, and four shared charts with their previews](/img/dashboard/charts-list.png)
 
 Select a migration, retirement or chart to open it.
 
