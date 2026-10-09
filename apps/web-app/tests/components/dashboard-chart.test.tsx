@@ -351,17 +351,14 @@ describe("DashboardChart legend", () => {
     ["1 year, which reaches back past the first scan", trendOf([oldUi, newUi])[1], "1y", "Change since 1 Oct", "+9"],
     ["All", trendOf([oldUi, newUi])[1], "all", "Change since 1 Oct", "+11"],
     ["a saved 3 months over scans that span less, which offers no range", shortSpan, "3m", "Change since 1 Sep", "+3"],
-  ] as const)("at %s, heads Change with the day the chart starts and shows the change since then", (_, view, range, heading, delta) => {
+  ] as const)("at %s, heads Change with the day the chart starts, just Change under Uses for a narrow table, and shows the change since then", (_, view, range, heading, delta) => {
     const [config] = trendOf([oldUi, newUi]);
     const change = { "3m": { "package:new-ui": 3 }, "6m": { "package:new-ui": 6 }, "1y": { "package:new-ui": 9 }, all: { "package:new-ui": 11 } };
     render(<DashboardChart config={config} view={view} range={range} onRangeChange={() => {}} change={change} />);
     const table = screen.getByRole("table");
     const headings = within(table).getAllByRole("button", { name: heading });
-    expect(headings).toHaveLength(2);
-    for (const button of headings) {
-      expect(button).toHaveTextContent(heading);
-      expect(button).toHaveAttribute("title", heading);
-    }
+    expect(headings.map((button) => button.textContent?.replace(/\s/g, " "))).toEqual([heading, "Change"]);
+    for (const button of headings) expect(button).toHaveAttribute("title", heading);
     const row = within(table).getAllByRole("row").find((r) => r.textContent?.startsWith("new-ui"));
     expect(row?.querySelectorAll("td")[2]).toHaveTextContent(delta);
   });

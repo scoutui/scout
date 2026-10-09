@@ -18,9 +18,8 @@ const NUMERIC: ReadonlySet<SortKey> = new Set(["value", "delta"]);
 const FIRST_ROWS = 10;
 // How far the pointer moves between press and release, in px, before a click on a row counts as the end of a drag.
 const DRAG = 4;
-// The Change heading wraps in a table narrower than 42rem, and a heading stacked over another below 28rem is 44px tall on touch.
+// The Change heading wraps in a table narrower than 42rem.
 const CHANGE_HEAD = "text-right @max-2xl:h-auto @max-2xl:py-1.5 @max-2xl:whitespace-normal @max-2xl:[&_span]:whitespace-normal";
-const STACKED_HEAD = "@max-md:pointer-coarse:h-11 @max-md:pointer-coarse:[&_button]:min-h-11";
 
 /** Each series' change by `cohortKey`, since `since` in epoch ms. With `byRole`, each is coloured by the way its series' role should move. */
 export type SeriesChange = { since: number; byKey: Readonly<Record<string, number | null>>; byRole?: boolean | undefined };
@@ -72,7 +71,9 @@ export function TrendLegendTable({
   const changeHeading = change ? `Change since ${formatDayTick(change.since)}` : "";
   // A no-break space keeps the day and its month on one line when the heading wraps.
   const changeLabel = changeHeading.replace(/ (\S+)$/, "\u00a0$1");
-  const changeSort = <SortButton label={changeLabel} title={changeHeading} sortKey="delta" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />;
+  const changeSort = (label: string) => (
+    <SortButton label={label} title={changeHeading} sortKey="delta" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+  );
   const shownPaths = distinctPaths(series, paths);
   const capped = series.length > FIRST_ROWS;
   const searching = query.trim() !== "";
@@ -112,7 +113,7 @@ export function TrendLegendTable({
             <TableHead rowSpan={hasDelta ? 2 : undefined} aria-sort={ariaSort("label", sortKey, sortDir)}>
               <SortButton label="Name" sortKey="label" current={sortKey} dir={sortDir} onClick={toggleSort} />
             </TableHead>
-            <TableHead className={cn("text-right", hasDelta && STACKED_HEAD)} aria-sort={ariaSort("value", sortKey, sortDir)}>
+            <TableHead className={cn("text-right", hasDelta && "@max-md:h-auto @max-md:pb-0!")} aria-sort={ariaSort("value", sortKey, sortDir)}>
               <SortButton
                 label={metric === "share" ? "% of uses" : "Uses"}
                 sortKey="value"
@@ -124,14 +125,14 @@ export function TrendLegendTable({
             </TableHead>
             {hasDelta ? (
               <TableHead className={cn(CHANGE_HEAD, "@max-md:hidden")} aria-sort={ariaSort("delta", sortKey, sortDir)}>
-                {changeSort}
+                {changeSort(changeLabel)}
               </TableHead>
             ) : null}
           </TableRow>
           {hasDelta ? (
             <TableRow className="hidden @max-md:table-row">
-              <TableHead className={cn(CHANGE_HEAD, STACKED_HEAD)} aria-sort={ariaSort("delta", sortKey, sortDir)}>
-                {changeSort}
+              <TableHead className="h-auto text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
+                {changeSort("Change")}
               </TableHead>
             </TableRow>
           ) : null}
