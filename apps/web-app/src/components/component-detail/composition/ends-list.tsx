@@ -139,7 +139,7 @@ export function EndsList({
           />
         </div>
       ) : null}
-      <div ref={scrollerRef} data-scroller={id} className={cn("min-h-0 py-1", layout === "box" && "flex-1 overflow-y-auto")}>
+      <div ref={scrollerRef} data-scroller={id} className={cn("min-h-0 py-1", layout === "box" && "relative flex-1 overflow-y-auto")}>
         <ul aria-labelledby={headingId} onKeyDown={grid.onKeyDown} onFocus={grid.onFocus}>
           {shown.map((r) => {
             const rowId = r.node.id;
