@@ -127,6 +127,7 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
         <EndsList
           id="top"
           title="Top level"
+          label={`Top level, renders ${view.focus.displayName}`}
           rows={view.top}
           total={view.topTotal}
           measure="steps"
@@ -147,6 +148,7 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
         <EndsList
           id="direct"
           title="Directly"
+          label={`Renders ${view.focus.displayName} directly`}
           rows={view.direct}
           measure="uses"
           pressed={pressedDirect}
@@ -182,6 +184,7 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
         <EndsList
           id="renders"
           title="Renders"
+          label={`${view.focus.displayName} renders directly`}
           rows={view.renders}
           measure="uses"
           pressed={null}

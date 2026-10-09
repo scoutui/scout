@@ -85,7 +85,7 @@ export function OpenLink({
       title={label}
       tabIndex={tabIndex}
       data-cell={cell}
-      className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "text-muted-foreground hover:text-foreground")}
+      className={buttonVariants({ variant: "outline", size: "icon-xs" })}
     >
       <ArrowUpRight aria-hidden />
     </Link>

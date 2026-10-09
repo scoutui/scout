@@ -22,6 +22,8 @@ export type EndsListProps = {
   /** Names the list's rows for the connectors: `data-anchor` is `<id>:<component id>`. */
   id: string;
   title: string;
+  /** The title as screen readers hear it, saying which way the list relates to the component. */
+  label: string;
   rows: EndRow[];
   /** How many there are with nothing picked, when `rows` is narrowed. */
   total?: number;
@@ -48,6 +50,7 @@ export type EndsListProps = {
 export function EndsList({
   id,
   title,
+  label,
   rows,
   total,
   measure,
@@ -110,8 +113,11 @@ export function EndsList({
         )}
       >
         <h2 id={headingId} className={cn(layout === "box" && "font-medium")}>
-          {title}
-          <span className={cn("tabular-nums", layout === "box" && "font-normal text-muted-foreground")}>{` · ${count}`}</span>
+          <span className="sr-only">{`${label}, ${count}`}</span>
+          <span aria-hidden="true">
+            {title}
+            <span className={cn("tabular-nums", layout === "box" && "font-normal text-muted-foreground")}>{` · ${count}`}</span>
+          </span>
         </h2>
         {action}
       </div>
@@ -128,7 +134,7 @@ export function EndsList({
               }
             }}
             placeholder="Filter by name or file"
-            aria-label={`Filter ${title.toLowerCase()} by name or file`}
+            aria-label={`${label}: filter by name or file`}
             className="h-7 w-full rounded-md border border-control bg-transparent px-2 font-mono text-base placeholder:font-sans placeholder:text-muted-foreground sm:text-xs"
           />
         </div>

@@ -61,9 +61,9 @@ beforeEach(() => {
 describe("CompositionTab", () => {
   it("lists every top-level component and every direct renderer in full, and what it renders", () => {
     renderTab();
-    expect(rowsOf(/^Top level · 15$/)).toHaveLength(15);
-    expect(rowsOf(/^Directly · 14$/)).toHaveLength(14);
-    expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
+    expect(rowsOf(/^Top level, renders F, 15$/)).toHaveLength(15);
+    expect(rowsOf(/^Renders F directly, 14$/)).toHaveLength(14);
+    expect(rowsOf(/^F renders directly, 1$/)).toHaveLength(1);
     expect(screen.queryByText(/more$/)).toBeNull();
     expect(screen.getByText("17 render F · F renders 2")).toBeInTheDocument();
   });
@@ -89,14 +89,14 @@ describe("CompositionTab", () => {
   it("folds what it renders into a count while a route with steps is drawn, and opens it on request", () => {
     window.history.replaceState(null, "", "http://localhost:3000/x?top=P1");
     renderTab();
-    expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
+    expect(rowsOf(/^F renders directly, 1$/)).toHaveLength(1);
     fireEvent.click(row(/^Top level/, /^Page, a/));
-    expect(screen.queryByRole("list", { name: /^Renders/ })).toBeNull();
+    expect(screen.queryByRole("list", { name: /^F renders directly/ })).toBeNull();
     const fold = screen.getByRole("button", { name: "Renders · 1" });
     expect(fold).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(fold);
-    expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
-    expect(within(list(/^Renders/)).getByRole("link", { name: "Open Kid" })).toHaveFocus();
+    expect(rowsOf(/^F renders directly, 1$/)).toHaveLength(1);
+    expect(within(list(/^F renders directly/)).getByRole("link", { name: "Open Kid" })).toHaveFocus();
   });
 
   it.each([
@@ -113,13 +113,13 @@ describe("CompositionTab", () => {
 
   it("picks a direct renderer into ?pin=up: and narrows the top level to the routes through it, until Show all", () => {
     renderTab();
-    fireEvent.click(row(/^Directly/, /^Card,/));
+    fireEvent.click(row(/^Renders F directly/, /^Card,/));
     expect(param("pin")).toBe("up:Card");
-    expect(row(/^Directly/, /^Card,/)).toHaveAttribute("aria-pressed", "true");
-    expect(rowsOf(/^Top level · 2 of 15$/)).toHaveLength(2);
+    expect(row(/^Renders F directly/, /^Card,/)).toHaveAttribute("aria-pressed", "true");
+    expect(rowsOf(/^Top level, renders F, 2 of 15$/)).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "Show all 15 top-level components" }));
     expect(param("pin")).toBeNull();
-    expect(rowsOf(/^Top level · 15$/)).toHaveLength(15);
+    expect(rowsOf(/^Top level, renders F, 15$/)).toHaveLength(15);
   });
 
   it("runs the route through a component picked in Find", () => {
@@ -129,7 +129,7 @@ describe("CompositionTab", () => {
     fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: /^Shell/ }));
     expect(param("pin")).toBe("up:Shell");
     expect(within(screen.getByRole("list", { name: "Route" })).getByText("Shell")).toBeInTheDocument();
-    expect(rowsOf(/^Top level · 1 of 15$/)).toHaveLength(1);
+    expect(rowsOf(/^Top level, renders F, 1 of 15$/)).toHaveLength(1);
   });
 
   it("draws a route on the renders side for a component picked in Find", () => {
@@ -141,7 +141,7 @@ describe("CompositionTab", () => {
   });
 
   it.each([
-    ["a direct renderer", "pin=up:Card", /^Directly/, /^Card,/],
+    ["a direct renderer", "pin=up:Card", /^Renders F directly/, /^Card,/],
     ["a top-level component", "pin=up:Solo", /^Top level/, /^Solo,/],
     ["a top-level end", "top=P1", /^Top level/, /^Page, b/],
   ])("restores %s from the link", (_, query, listName, name) => {
@@ -170,15 +170,15 @@ describe("CompositionTab", () => {
     fireEvent.keyDown(find, { key: "Escape" });
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(param("pin")).toBe("up:Card");
-    fireEvent.keyDown(row(/^Directly/, /^Card,/), { key: "Escape" });
+    fireEvent.keyDown(row(/^Renders F directly/, /^Card,/), { key: "Escape" });
     expect(param("pin")).toBeNull();
     expect(param("top")).toBeNull();
   });
 
   it("tells screen readers each row's origin, and that it's deprecated", () => {
     renderTab();
-    expect(row(/^Directly/, /^d1, deprecated, External, 11 uses$/)).toBeInTheDocument();
-    expect(row(/^Directly/, /^d0, Local, 12 uses$/)).toBeInTheDocument();
+    expect(row(/^Renders F directly/, /^d1, deprecated, External, 11 uses$/)).toBeInTheDocument();
+    expect(row(/^Renders F directly/, /^d0, Local, 12 uses$/)).toBeInTheDocument();
     expect(row(/^Top level/, /^Page, a, Local, 3 steps$/)).toBeInTheDocument();
   });
 
@@ -200,7 +200,7 @@ describe("CompositionTab", () => {
   it("shows a long name whole", () => {
     const long = "OnboardingMigrateMembersBrowserViewWithAVeryLongNameIndeed";
     renderTab(graph([node("F"), node(long)], [[long, "F"]]));
-    expect(rowsOf(/^Directly/)[0]?.textContent).toContain(long);
+    expect(rowsOf(/^Renders F directly/)[0]?.textContent).toContain(long);
     expect(document.body.textContent).not.toContain("…");
   });
 
@@ -241,9 +241,9 @@ describe("CompositionTab", () => {
 
     it("shows one side at a time", () => {
       renderTab();
-      expect(screen.queryByRole("list", { name: /^Renders/ })).toBeNull();
+      expect(screen.queryByRole("list", { name: /^F renders directly/ })).toBeNull();
       fireEvent.click(screen.getByRole("button", { name: "Renders · 2" }));
-      expect(rowsOf(/^Directly · 1$/)).toHaveLength(1);
+      expect(rowsOf(/^F renders directly, 1$/)).toHaveLength(1);
       expect(screen.queryByRole("list", { name: /^Top level/ })).toBeNull();
     });
   });
