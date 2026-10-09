@@ -98,21 +98,23 @@ A count such as `+2` beside a prop's value means the file's uses set other value
 
 ## Composition
 
-**Composition** shows what renders this component and what it renders, anywhere in the repo, as a diagram. [Composition and ownership](/docs/explanation/composition-and-ownership) explains how this is worked out.
+**Composition** shows which pages and views in the repo end up rendering a component, and the components in between. [Composition and ownership](/docs/explanation/composition-and-ownership) explains how this is worked out.
 
-### Read the diagram
+### See what renders it
 
-What renders the component is on its left, and what it renders on its right, with a column for each number of steps away: **Directly · 200**, **2 steps away · 107** and so on. Each column lists the components with the most uses first. Press a box such as **+190 more** to open the rest as a list you can filter, and pick a row to select it.
+**Top level** lists the components that nothing in the repo renders, mostly pages and views, each with how many steps it is from this component. **Directly** lists the components that render it themselves, most uses first. What the component renders is under **Renders**.
 
-### Follow a route
+### Follow a route from a page
 
-Press a box to select it: its route to this component is drawn, and the components one step further out from it appear. Press it again to hide them. To select one that isn't on screen, type its name or file into **Find a component or a file…** and pick it.
+Pick a page under **Top level**, such as `CheckoutPage`, to draw the shortest route from it down to this component, with a box for each component in between.
 
-With a component selected, **Open** and its name, such as **Open ProductCard**, goes to its page. Press Escape or × to clear the selection.
+To see only the routes through one component, pick it under **Directly**, or type its name or file into **Find a component or a file…** and pick it there. **Top level** then lists just the components those routes start from, as in **Top level · 3 of 44**, and you pick one to draw its route. **Show all** lists them all again. Pick something the component renders, at any depth, in **Find** to draw the route down to it instead.
 
-**Reset** closes everything you opened and clears the selection. Scroll or pinch to zoom, and drag to pan. On a phone, the tab opens on a list of the same components: press **Diagram** to see the diagram.
+The ↗ beside each name opens that component's own page. Press Escape to clear what you picked.
 
-The selection is kept in the page's link, so a copied link opens with the same route drawn. A **Rendered by** link on **Usage** opens **Composition** with that component selected.
+On a narrow screen the tab is a list. **Rendered by** and **Renders** show one side at a time, and a row under **Top level** opens its route beneath it.
+
+What you picked is kept in the page's link, so a copied link opens on the same route. On **Usage**, the component named after **Rendered by** links to **Composition** with the routes through it.
 
 ## Good to know
 
