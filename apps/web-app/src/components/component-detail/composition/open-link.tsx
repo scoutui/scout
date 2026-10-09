@@ -40,7 +40,7 @@ export function ComponentName({
   return (
     <span className="flex min-w-0 items-start gap-1.5">
       <ScopeGlyph scope={node.scope} className="mt-[5px]" />
-      <span className="min-w-0 font-mono text-xs [overflow-wrap:anywhere]">
+      <span className="min-w-0 font-mono text-xs [overflow-wrap:break-word]">
         <span className={cn(strong && "font-semibold")}>
           <Wrapping text={node.displayName} />
         </span>

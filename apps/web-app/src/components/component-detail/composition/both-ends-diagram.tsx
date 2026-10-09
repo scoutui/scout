@@ -1,8 +1,10 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BothEnds, EndRow } from "./both-ends";
+import { Connectors, type Lines, type Segment } from "./connectors";
 import { EndsList } from "./ends-list";
 import { ComponentName, OpenLink } from "./open-link";
 import { useRovingGrid } from "./use-roving-grid";
@@ -52,7 +54,7 @@ function RouteColumn({ id, steps, picked, repoId }: { id: string; steps: EndRow[
       aria-label="Route"
       onKeyDown={grid.onKeyDown}
       onFocus={grid.onFocus}
-      className="flex min-w-[10rem] max-w-[15rem] shrink flex-col gap-5"
+      className="flex max-w-[15rem] shrink flex-col gap-5"
     >
       {steps.map((s) => (
         <li
@@ -60,8 +62,8 @@ function RouteColumn({ id, steps, picked, repoId }: { id: string; steps: EndRow[
           data-key={s.node.id}
           data-anchor={`${id}:${s.node.id}`}
           className={cn(
-            "flex items-start gap-1 rounded-md border bg-card py-0.5 pl-2 pr-0.5 shadow-xs",
-            s.node.id === picked && "selected",
+            "flex min-w-[10rem] items-start gap-1 rounded-md border py-0.5 pl-2 pr-0.5 shadow-xs",
+            s.node.id === picked ? "selected" : "bg-card",
           )}
         >
           <span className="min-w-0 flex-1 py-1">
@@ -74,19 +76,46 @@ function RouteColumn({ id, steps, picked, repoId }: { id: string; steps: EndRow[
   );
 }
 
+const RENDERS_FOLD = "renders-fold";
+
+/** The diagram's lines: every direct renderer into this component, this
+ *  component out to what it renders, and the route, lit with its rows. */
+function linesFor(view: BothEnds, foldRenders: boolean): Lines {
+  const steps = view.between.map((s) => `step:${s.node.id}`);
+  const { top, direct, renders } = view.picked;
+  const chain =
+    view.route.dir === "up"
+      ? [...(top !== null && top !== direct ? [`top:${top}`] : []), ...steps, ...(direct !== null ? [`direct:${direct}`] : [])]
+      : [...(renders !== null ? [`renders:${renders}`] : []), ...steps];
+  const route: Segment[] = chain.slice(1).map((to, i) => {
+    const from = chain[i] as string;
+    return { from, to, dir: from.startsWith("step:") && to.startsWith("step:") ? "down" : "right" };
+  });
+  return {
+    fanIn: { anchors: view.direct.map((r) => `direct:${r.node.id}`), lit: direct === null ? null : `direct:${direct}` },
+    fanOut: foldRenders
+      ? { anchors: [RENDERS_FOLD], lit: null }
+      : { anchors: view.renders.map((r) => `renders:${r.node.id}`), lit: renders === null ? null : `renders:${renders}` },
+    route: view.route.ids.length > 0 ? route : [],
+  };
+}
+
 /**
  * The diagram from 1024px: the top-level components, the route's steps when
  * a route is drawn, what renders this component directly, the component, and
  * what it renders.
  */
 export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPickDirect, onClearThrough }: BothEndsViewProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const up = view.route.dir === "up";
   const boxes = view.between.length > 0;
   const showTop = (view.top.length > 0 || view.through !== null) && !(boxes && !up);
-  const list = "min-w-[11rem] max-w-[18rem] max-h-[min(72vh,40rem)] shrink";
+  const routeKey = view.route.ids.join(">");
+  const [rendersOpenFor, setRendersOpenFor] = useState<string | null>(null);
+  const foldRenders = view.renders.length > 0 && boxes && up && rendersOpenFor !== routeKey;
+  const lines = useMemo(() => linesFor(view, foldRenders), [view, foldRenders]);
+  const list = "max-w-[18rem] max-h-[min(72vh,40rem)] shrink";
   return (
-    <div ref={containerRef} className="relative flex items-center justify-center gap-8 px-4 py-6">
+    <div className="relative flex items-center justify-center gap-8 px-4 py-6">
       {showTop ? (
         <EndsList
           id="top"
@@ -127,7 +156,19 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
       >
         <ComponentName node={view.focus} fragment={null} strong />
       </div>
-      {view.renders.length > 0 ? (
+      {foldRenders ? (
+        <button
+          type="button"
+          data-anchor={RENDERS_FOLD}
+          aria-expanded={false}
+          onClick={() => setRendersOpenFor(routeKey)}
+          className="flex min-h-9 shrink-0 cursor-pointer items-center gap-1 rounded-lg border bg-muted px-2.5 text-xs font-medium shadow-xs hover:bg-accent"
+        >
+          Renders
+          <span className="font-normal tabular-nums text-muted-foreground">{` · ${view.renders.length.toLocaleString()}`}</span>
+          <ChevronRight aria-hidden className="size-3.5 text-muted-foreground" />
+        </button>
+      ) : view.renders.length > 0 ? (
         <EndsList
           id="renders"
           title="Renders"
@@ -143,6 +184,7 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
       {boxes && !up ? (
         <RouteColumn id="step" steps={view.between} picked={view.route.ids.at(-1) ?? null} repoId={repoId} />
       ) : null}
+      <Connectors lines={lines} />
     </div>
   );
 }

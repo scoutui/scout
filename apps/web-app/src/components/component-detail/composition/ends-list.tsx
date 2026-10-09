@@ -92,17 +92,18 @@ export function EndsList({
 
   return (
     <section
+      data-panel={id}
       aria-labelledby={headingId}
       className={cn(
-        "flex min-w-0 flex-col",
-        layout === "box" && "overflow-hidden rounded-lg border bg-card shadow-xs",
+        "flex flex-col",
+        layout === "box" ? "overflow-clip rounded-lg border bg-card shadow-xs" : "min-w-0",
         className,
       )}
     >
       <div
         className={cn(
           "flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-2.5",
-          layout === "box" ? "min-h-9 bg-muted py-1 text-xs" : "sticky top-[var(--top-bar-height,0px)] z-10 min-h-9 bg-card py-1.5 text-label text-muted-foreground",
+          layout === "box" ? "min-h-9 min-w-[11rem] bg-muted py-1 text-xs" : "sticky top-[var(--top-bar-height,0px)] z-10 min-h-9 bg-card py-1.5 text-label text-muted-foreground",
         )}
       >
         <h3 id={headingId} className={cn(layout === "box" && "font-medium")}>

@@ -164,11 +164,11 @@ export function FindBox({
                         )}
                       >
                         <ComponentName node={r.node} fragment={null} />
-                        <span className="pl-3.5 text-code text-muted-foreground [overflow-wrap:anywhere]">
+                        <span className="pl-3.5 text-code text-muted-foreground [overflow-wrap:break-word]">
                           {pathValueOf(r.node)}
                         </span>
                         {r.steps > 1 ? (
-                          <span className="pl-3.5 text-code text-muted-foreground [overflow-wrap:anywhere]">
+                          <span className="pl-3.5 text-code text-muted-foreground [overflow-wrap:break-word]">
                             {r.chain.join(" → ")}
                           </span>
                         ) : null}

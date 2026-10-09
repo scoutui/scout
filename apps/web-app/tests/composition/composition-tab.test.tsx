@@ -86,6 +86,30 @@ describe("CompositionTab", () => {
     expect(screen.queryByRole("list", { name: "Route" })).toBeNull();
   });
 
+  it("folds what it renders into a count while a route with steps is drawn, and opens it on request", () => {
+    window.history.replaceState(null, "", "http://localhost:3000/x?top=P1");
+    renderTab();
+    expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
+    fireEvent.click(row(/^Top level/, /^Page, a/));
+    expect(screen.queryByRole("list", { name: /^Renders/ })).toBeNull();
+    const fold = screen.getByRole("button", { name: "Renders · 1" });
+    expect(fold).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(fold);
+    expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
+  });
+
+  it.each([
+    ["a route with steps between", "top=P0", 4],
+    ["a top-level component that renders it directly", "top=Solo", 2],
+  ])("lights the lines of %s, drawn after the faint ones", (_, query, lit) => {
+    window.history.replaceState(null, "", `http://localhost:3000/x?${query}`);
+    renderTab();
+    const paths = [...document.querySelectorAll("svg[data-connectors] path")];
+    const strokes = paths.map((p) => p.getAttribute("stroke"));
+    expect(strokes.filter((s) => s === "var(--foreground)")).toHaveLength(lit);
+    expect(strokes.slice(-lit).every((s) => s === "var(--foreground)")).toBe(true);
+  });
+
   it("picks a direct renderer into ?pin=up: and narrows the top level to the routes through it, until Show all", () => {
     renderTab();
     fireEvent.click(row(/^Directly/, /^Card,/));
@@ -202,6 +226,7 @@ describe("CompositionTab", () => {
       expect(within(route).getByRole("link", { name: "Open Shell" })).toBeInTheDocument();
       expect(within(route).getByText("Card")).toBeInTheDocument();
       expect(screen.queryByRole("list", { name: "Route" })).toBeNull();
+      expect(document.querySelector("svg[data-connectors]")).toBeNull();
     });
 
     it("shows one side at a time", () => {
