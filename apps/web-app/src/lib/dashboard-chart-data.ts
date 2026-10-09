@@ -63,11 +63,15 @@ export function searchedSeries<T extends { label: string; packageName?: string |
   return matched.length === 0 ? null : matched;
 }
 
-/** A chart over time drawing only the series `query` matches; any other view, or a query nothing matches, as it is. */
-export function searchedView<V extends DashboardView>(view: V, query: string): V {
-  if (view.kind !== "series") return view;
-  const matched = searchedSeries(view.series, query);
-  return matched === null ? view : { ...view, series: matched };
+/** The series a chart over time draws: the one shown on its own, `shown`, or else those `query` matches, or else every series. */
+export function shownSeries<T extends { cohortKey: string; label: string }>(series: readonly T[], query: string, shown: string | null): T[] {
+  if (shown !== null) return series.filter((s) => s.cohortKey === shown);
+  return searchedSeries(series, query) ?? [...series];
+}
+
+/** A chart over time drawing only the series `shownSeries` gives; any other view as it is. */
+export function shownView<V extends DashboardView>(view: V, query: string, shown: string | null): V {
+  return view.kind === "series" ? { ...view, series: shownSeries(view.series, query, shown) } : view;
 }
 
 /** One x tick per distinct day (the day's first scan), in epoch ms for the numeric time axis. */
@@ -90,7 +94,7 @@ export function dayTicks(rows: Array<Record<string, string | number>>): number[]
 
 /**
  * A tooltip's rows: every series at that scan, largest value first, and `under`, the series under the pointer at `at`,
- * a value on the y-axis. That is the line nearest it, the one drawn last where lines share a value, or with `stack`, the
+ * a value on the y-axis. That is the line nearest it, the one later in `payload` where lines share a value, or with `stack`, the
  * band that holds it, with the bands stacked from the bottom in `stack`'s order. No series is under the pointer when
  * there is only one.
  */
@@ -233,24 +237,14 @@ export function savedChartCohorts(selectors: CohortSelector[], drawn: ChartCohor
 }
 
 /**
- * Each cohort's line colour, by cohortKey. Fixed meanings come first: deprecated
- * is orange, successor teal and Local grey. Then each tag, in order, keeps its
- * colour unless a colour already placed looks like it. Every other cohort takes
- * the first chart colour that looks like none already placed or, when none is
- * left, the first that looks like neither neighbour.
+ * Each cohort's line colour, by cohortKey. Fixed meanings and tags come first, as
+ * `ownColors` gives them. Every other cohort takes the first chart colour that
+ * looks like none already placed or, when none is left, the first that looks like
+ * neither neighbour.
  */
 export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
-  const colors = new Map<string, string>();
+  const colors = ownColors(cohorts);
   const isFree = (color: string) => ![...colors.values()].some((placed) => looksAlike(placed, color));
-  for (const c of cohorts) {
-    const fixed = fixedColor(c);
-    if (fixed) colors.set(c.cohortKey, fixed);
-  }
-  for (const c of cohorts) {
-    if (colors.has(c.cohortKey)) continue;
-    const own = paletteToken(c.color);
-    if (own && isFree(own)) colors.set(c.cohortKey, own);
-  }
   for (const c of cohorts) {
     if (colors.has(c.cohortKey)) continue;
     const free = CHART_ORDER.find(isFree);
@@ -265,6 +259,43 @@ export function chartColors(cohorts: ChartCohort[]): Map<string, string> {
     const pick = CHART_ORDER.find((o) => !neighbours.some((n) => looksAlike(n, o))) ?? CHART_ORDER[0];
     if (pick) colors.set(c.cohortKey, pick);
   });
+  return colors;
+}
+
+/**
+ * Each line's colour in a chart over time, by cohortKey, from `cohorts` in saved order. Fixed meanings and tags come
+ * first, as `ownColors` gives them. Every other line takes the chart colours none of those wears, in turn, starting
+ * again past the last; when tags wear every chart colour, it takes those no fixed meaning looks like.
+ */
+export function lineColors(cohorts: ChartCohort[]): Map<string, string> {
+  const colors = ownColors(cohorts);
+  const free = CHART_ORDER.filter((color) => ![...colors.values()].some((placed) => looksAlike(placed, color)));
+  const fixed = cohorts.flatMap((c) => fixedColor(c) ?? []);
+  const turn = free.length > 0 ? free : CHART_ORDER.filter((color) => !fixed.some((role) => looksAlike(role, color)));
+  cohorts
+    .filter((c) => !colors.has(c.cohortKey))
+    .forEach((c, n) => {
+      const color = turn[n % turn.length];
+      if (color) colors.set(c.cohortKey, color);
+    });
+  return colors;
+}
+
+/**
+ * The colours cohorts own, by cohortKey. Fixed meanings come first: deprecated is orange, successor teal and Local
+ * grey. Then each tag, in order, keeps its colour unless a colour already placed looks like it.
+ */
+function ownColors(cohorts: ChartCohort[]): Map<string, string> {
+  const colors = new Map<string, string>();
+  for (const c of cohorts) {
+    const fixed = fixedColor(c);
+    if (fixed) colors.set(c.cohortKey, fixed);
+  }
+  for (const c of cohorts) {
+    if (colors.has(c.cohortKey)) continue;
+    const own = paletteToken(c.color);
+    if (own && ![...colors.values()].some((placed) => looksAlike(placed, own))) colors.set(c.cohortKey, own);
+  }
   return colors;
 }
 

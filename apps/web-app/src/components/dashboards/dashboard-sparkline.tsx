@@ -1,5 +1,5 @@
 import type { CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { chartColors, drawnChartCohorts, expandRowShares, savedChartCohorts, seriesToRows, seriesWashes, visibleView } from "@/lib/dashboard-chart-data";
+import { chartColors, drawnChartCohorts, expandRowShares, lineColors, savedChartCohorts, seriesToRows, seriesWashes, visibleView } from "@/lib/dashboard-chart-data";
 
 const W = 112;
 const H = 32;
@@ -25,7 +25,8 @@ export function DashboardSparkline({
 }) {
   if (!view) return <EmptySpark />;
   const gid = `spark-${uid.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-  const colors = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
+  const cohorts = savedChartCohorts(config.cohorts, drawnChartCohorts(view));
+  const colors = view.kind === "series" ? lineColors(cohorts) : chartColors(cohorts);
   const { view: shown } = visibleView(config, view, config.range ?? "all");
   if (config.chartType === "trend") {
     return shown.kind === "series" ? <TrendSpark gid={gid} series={shown.series} colors={colors} /> : <EmptySpark />;

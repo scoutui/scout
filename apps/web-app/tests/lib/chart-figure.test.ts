@@ -334,7 +334,7 @@ describe("chartFigure", () => {
     expect((second?.name.y ?? 0) - (first?.name.y ?? 0)).toBeGreaterThanOrEqual(2 * 18);
   });
 
-  it("tells named lines of the same name apart by the part of their component's path that differs", () => {
+  it("tells named lines of the same name apart by the part of their component's path that differs, and shows no path under one whose path ends the other's", () => {
     const component = (key: string, name: string, latest: number): CohortSeries => ({
       cohortKey: `component:${key}`,
       label: `${name} · @example/web`,
@@ -346,7 +346,7 @@ describe("chartFigure", () => {
         title: "Skeletons",
         config: { ...config("trend"), cohorts: series.map((s) => ({ kind: "component", componentId: s.cohortKey.slice("component:".length) })) },
         view: { kind: "series", series, coverage },
-        paths: { "component:booking": "src/booking/SkeletonItem.tsx", "component:event-types": "src/event-types/SkeletonItem.tsx" },
+        paths: { "component:booking": "src/booking/SkeletonItem.tsx", "component:event-types": "src/event-types/SkeletonItem.tsx", "component:nested": "booking/SkeletonItem.tsx" },
         host: "scout.example.com",
         exportedAt: new Date(2026, 9, 4, 12),
         colors,
@@ -363,6 +363,10 @@ describe("chartFigure", () => {
     ]);
     const others = Array.from({ length: 9 }, (_, i) => component(`other-${i}`, `Skeleton${i}`, 10 + i));
     expect(skeletons([booking, ...others, eventTypes])?.[0]).toEqual(["SkeletonItem", "50"]);
+    expect(skeletons([booking, component("nested", "SkeletonItem", 5)])).toEqual([
+      ["SkeletonItem", "50", "src"],
+      ["SkeletonItem", "5"],
+    ]);
   });
 
   const many = (n: number): CohortSeries[] =>
@@ -379,11 +383,12 @@ describe("chartFigure", () => {
   const manyFigure = (chartType: DashboardConfig["chartType"], n: number) =>
     drawn(manyConfig(chartType, many(n)), { kind: "series", series: many(n), coverage });
 
-  it("names the ten lines with the highest latest value, apart and inside the plot, and counts the rest under it", () => {
+  it("names the ten lines with the highest latest value, apart and inside the plot, and colours every line in turn", () => {
     const result = manyFigure("trend", 12);
     if (result.marks.kind !== "lines") throw new Error("expected lines");
-    expect(result.marks.lines).toHaveLength(12);
     expect(result.marks.endLabels.map((l) => l.name.text)).toEqual(Array.from({ length: 10 }, (_, i) => `@example/p${11 - i}`));
+    const turn = ["var(--viz-primary)", "var(--viz-cat-2)", "var(--viz-cat-3)", "var(--viz-cat-4)", "var(--viz-cat-5)"].map((token) => colors[token]);
+    expect(result.marks.lines.map((l) => l.color)).toEqual(many(12).map((_, i) => turn[i % turn.length]));
     result.marks.endLabels.slice(1).forEach((label, i) => {
       expect(label.name.y - (result.marks.kind === "lines" ? (result.marks.endLabels[i]?.name.y ?? 0) : 0)).toBeGreaterThanOrEqual(18);
     });
@@ -391,8 +396,6 @@ describe("chartFigure", () => {
       expect(label.name.y).toBeGreaterThanOrEqual(result.plot.y);
       expect(label.name.y).toBeLessThanOrEqual(result.plot.y + result.plot.height);
     }
-    expect(result.note?.text).toBe("2 more series");
-    expect(result.note?.y).toBeGreaterThan(result.plot.y + result.plot.height);
   });
 
   it("names ten same-named lines from long packages inside the plot, each with its package and path on one line beneath", () => {
@@ -421,10 +424,26 @@ describe("chartFigure", () => {
     }
   });
 
-  it("lists a stacked chart's eight largest series and counts the rest", () => {
+  it("keeps the colour the whole chart gives a line drawn on its own, and names it", () => {
+    const series = many(12);
+    const result = chartFigure({
+      title: "Button adoption",
+      config: manyConfig("trend", series),
+      view: { kind: "series", series: series.slice(8, 9), coverage },
+      whole: { kind: "series", series, coverage },
+      host: "scout.example.com",
+      exportedAt: new Date(2026, 9, 4, 12),
+      colors,
+      ...widths,
+    });
+    if (result?.marks.kind !== "lines") throw new Error("expected lines");
+    expect(result.marks.lines.map((l) => l.color)).toEqual([colors["var(--viz-cat-4)"]]);
+    expect(endLabelTexts(result)).toEqual([["@example/p8", "8"]]);
+  });
+
+  it("lists a stacked chart's ten largest series", () => {
     const result = manyFigure("stacked-share", 12);
-    expect(result.legend.map((e) => e.label)).toEqual(Array.from({ length: 8 }, (_, i) => `@example/p${11 - i}`));
-    expect(result.note?.text).toBe("4 more series");
+    expect(result.legend.map((e) => e.label)).toEqual(Array.from({ length: 10 }, (_, i) => `@example/p${11 - i}`));
   });
 
   it.each([["trend", 12] as const, ["stacked-share", 10] as const])("keeps a %s chart's plot as tall with 50 series as with %i", (chartType, fewer) => {
@@ -480,7 +499,7 @@ describe("chartFigure", () => {
       if (value === null || typeof value !== "object") return [];
       return Object.entries(value).flatMap(([key, v]) => (key === "y" && typeof v === "number" ? [v] : ys(v)));
     };
-    return ys([result.plot, result.yTicks, result.xLabels, result.marks, result.legend, result.note, result.footer]);
+    return ys([result.plot, result.yTicks, result.xLabels, result.marks, result.legend, result.footer]);
   };
 
   it.each([["trend", trendView] as const, ["stacked-share", stackedView] as const, ["bars", barsView] as const])(

@@ -9,7 +9,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { chartExportTable, exportFileName, toCsv, toTsv } from "@/lib/chart-export";
 import { hasFigure } from "@/lib/chart-figure";
 import { chartPng } from "@/lib/chart-png";
-import { searchedView, visibleView } from "@/lib/dashboard-chart-data";
+import { shownView, visibleView } from "@/lib/dashboard-chart-data";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -99,17 +99,17 @@ export function ChartMenu({
     );
   const downloadCsv = (shown: ExportedChart) => {
     setError(null);
-    save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range, shown.query))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
+    save(new Blob([UTF8_BOM, toCsv(chartExportTable(shown.config, shown.view, shown.range, shown.query, shown.shown))], { type: "text/csv;charset=utf-8" }), exportFileName(shown.title, "csv"));
   };
   const copyTable = (shown: ExportedChart) =>
-    navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range, shown.query))).then(
+    navigator.clipboard.writeText(toTsv(chartExportTable(shown.config, shown.view, shown.range, shown.query, shown.shown))).then(
       () => showCopied("Table copied"),
       () => showError("Couldn't copy the table. Try again."),
     );
 
   const sharing = visibility === "private" || visibility === "everyone";
   if (!chart && !sharing && !canDuplicate) return null;
-  const image = chart !== null && hasFigure(chart.config, searchedView(chart.drawn, chart.query));
+  const image = chart !== null && hasFigure(chart.config, shownView(chart.drawn, chart.query, chart.shown));
   const canCopyImage = image && typeof ClipboardItem !== "undefined" && typeof navigator.clipboard?.write === "function";
   const canCopyTable = chart !== null && typeof navigator.clipboard?.writeText === "function";
   const exportItems = chart ? (
@@ -159,7 +159,7 @@ function imageOf(shown: ExportedChart): Promise<Blob> {
   return chartPng({
     title: shown.title,
     config: shown.config,
-    view: searchedView(shown.drawn, shown.query),
+    view: shownView(shown.drawn, shown.query, shown.shown),
     whole: shown.drawn,
     paths: shown.paths,
     host: window.location.host,

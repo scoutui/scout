@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ChangeByRange, ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 import { chartStart, rangeStart } from "@scoutui/web-shared/client";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
+import { chartColors, deprecatedOnlyKeys, drawnChartCohorts, isEmptyView, lineColors, savedChartCohorts, visibleView } from "@/lib/dashboard-chart-data";
 import { useShowChart } from "./chart-export-context";
 import { CohortBarChart } from "./cohort-bar-chart";
 import { CohortShareOverTime } from "./cohort-share-over-time";
@@ -26,7 +26,9 @@ const RANGES: Array<{ value: ChartRange; label: string }> = [
  * once its scans span more than the shortest one. A trend chart with `change` lists its series in a table with each
  * one's change since the day the chart starts at `range`; `paths` tells same-named components apart there. On a
  * `migration` chart, each change is coloured by the way its line's role should move. With `onQueryChange`, the
- * table's search is `query`, and a trend chart draws only the series it matches.
+ * table's search is `query`, and a trend chart draws only the series it matches. With `onShownChange`, the line a
+ * trend chart shows on its own is `shown`. A chart over time colours its lines with `lineColors`, any other chart with
+ * `chartColors`.
  */
 export function DashboardChart({
   config,
@@ -39,6 +41,8 @@ export function DashboardChart({
   paths,
   query,
   onQueryChange,
+  shown,
+  onShownChange,
 }: {
   config: DashboardConfig;
   view: DashboardView;
@@ -50,14 +54,17 @@ export function DashboardChart({
   paths?: Readonly<Record<string, string>> | undefined;
   query?: string;
   onQueryChange?: (query: string) => void;
+  shown?: string | null | undefined;
+  onShownChange?: ((cohortKey: string | null) => void) | undefined;
 }) {
   if (isEmptyView(view)) {
     return <p className="py-6 text-center text-sm text-muted-foreground">Couldn't find the components in this chart.</p>;
   }
-  const colors = chartColors(savedChartCohorts(config.cohorts, drawnChartCohorts(view)));
+  const cohorts = savedChartCohorts(config.cohorts, drawnChartCohorts(view));
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   if (config.chartType === "trend" || config.chartType === "stacked-share") {
     if (view.kind !== "series") return <ChartFallback />;
+    const colors = lineColors(cohorts);
     const { view: visible, from } = visibleView(config, view, range);
     const presets = onRangeChange && rangeStart(view.series, "3m") !== null;
     const since = chartStart(view.series, range);
@@ -86,13 +93,14 @@ export function DashboardChart({
           </div>
         ) : null}
         {config.chartType === "trend" ? (
-          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} change={shownChange && since !== null ? { since, byKey: shownChange, byRole: migration } : undefined} paths={paths} query={query} onQueryChange={onQueryChange} />
+          <CohortTrendChart series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} showLegend={showLegend} from={from} change={shownChange && since !== null ? { since, byKey: shownChange, byRole: migration } : undefined} paths={paths} query={query} onQueryChange={onQueryChange} shown={shown} onShownChange={onShownChange} />
         ) : (
           <CohortShareOverTime series={visible.series} coverage={view.coverage} colors={colors} deprecatedOnly={deprecatedOnly} showLegend={showLegend} from={from} />
         )}
       </div>
     );
   }
+  const colors = chartColors(cohorts);
   if (config.chartType === "table") {
     return view.kind === "table" ? <CohortTable points={view.points} change={view.change} colors={colors} deprecatedOnly={deprecatedOnly} metric={config.metric} /> : <ChartFallback />;
   }
@@ -102,7 +110,7 @@ export function DashboardChart({
 
 /**
  * A DashboardChart on a chart's own page: it opens at `range`, a picked range goes into the page's link, and the chart
- * at the range on screen, narrowed by its table's search, is offered for export.
+ * at the range on screen, narrowed by its table's search or to a line shown on its own, is offered for export.
  */
 export function LinkedDashboardChart({
   config,
@@ -121,14 +129,15 @@ export function LinkedDashboardChart({
 }) {
   const [range, setRange] = useState(initial);
   const [query, setQuery] = useState("");
-  useShowChart({ config, view, range, query, paths });
+  const [shown, setShown] = useState<string | null>(null);
+  useShowChart({ config, view, range, query, shown, paths });
   const pick = (next: ChartRange) => {
     setRange(next);
     const url = new URL(window.location.href);
     url.searchParams.set("range", next);
     window.history.replaceState(null, "", url);
   };
-  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} change={change} migration={migration} paths={paths} query={query} onQueryChange={setQuery} />;
+  return <DashboardChart config={config} view={view} range={range} onRangeChange={pick} change={change} migration={migration} paths={paths} query={query} onQueryChange={setQuery} shown={shown} onShownChange={setShown} />;
 }
 
 function ChartFallback() {

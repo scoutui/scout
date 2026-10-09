@@ -207,6 +207,22 @@ describe("editing a saved chart", () => {
     expect((await screen.findByText("deprecated")).closest("li")).toHaveTextContent("OldButton");
     expect(screen.getAllByText("deprecated")).toHaveLength(1);
   });
+
+  it("keys the series list as the chart colours it: in turn in saved order, starting again at the sixth", async () => {
+    const ids = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const config = { scope: { kind: "all" as const }, cohorts: ids.map((componentId) => ({ kind: "component" as const, componentId })), chartType: "trend" as const, metric: "count" as const };
+    actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series: ids.map((id, n) => ({
+      cohortKey: `component:${id}`,
+      label: `Kit${id.toUpperCase()}`,
+      color: "",
+      points: [{ t: "2026-09-01T00:00:00Z", value: 1 }, { t: "2026-09-02T00:00:00Z", value: 10 + n }],
+    })) } });
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "private" }} />);
+    const swatch = async (label: string) => (await screen.findAllByText(label)).find((el) => el.closest("li"))?.closest("li")?.querySelector("span[aria-hidden]")?.getAttribute("style");
+    expect(await swatch("KitA")).toContain("var(--viz-primary)");
+    expect(await swatch("KitF")).toContain("var(--viz-primary)");
+    expect(await swatch("KitH")).toContain("var(--viz-cat-3)");
+  });
 });
 
 describe("chart details and saving", () => {

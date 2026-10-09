@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { ChartRange, CohortRole, CohortSelector, CohortSeries, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, scanDetail, seriesFrom, seriesWashes, tooltipListScroll, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
+import { seriesToRows, cohortChartConfig, dayTicks, expandRowShares, chartColors, chartRange, lineColors, lineJoins, repoCoverageAt, reposJoiningAt, savedChartCohorts, scanDetail, seriesFrom, seriesWashes, tooltipListScroll, tooltipRowTimestamp, tooltipRows, visibleView, type ChartCohort } from "@/lib/dashboard-chart-data";
 import { looksAlike, paletteToken } from "@/lib/chart-palette";
 
 const series: CohortSeries[] = [
@@ -128,6 +128,45 @@ describe("chartColors", () => {
     ];
     const colors = chartColors(savedChartCohorts(saved, drawn));
     expect([colors.get("deprecated:r"), colors.get("successor:r")]).toEqual(["var(--viz-deprecated)", "var(--viz-primary)"]);
+  });
+});
+
+describe("lineColors", () => {
+  const pkg = (name: string, role?: CohortRole): ChartCohort => ({ cohortKey: `package:${name}`, color: "", role });
+  const tag = (id: string, tagColour: string): ChartCohort => ({ cohortKey: `tag:${id}`, color: tagColour });
+  const local: ChartCohort = { cohortKey: "local", color: "" };
+  const [a, b, c, d, e, f, g, h] = ["a", "b", "c", "d", "e", "f", "g", "h"].map((name) => pkg(name)) as [ChartCohort, ChartCohort, ChartCohort, ChartCohort, ChartCohort, ChartCohort, ChartCohort, ChartCohort];
+  const TEAL = "var(--viz-primary)";
+  const VIOLET = "var(--viz-cat-2)";
+  const BLUE = "var(--viz-cat-3)";
+  const BERRY = "var(--viz-cat-4)";
+  const ORCHID = "var(--viz-cat-5)";
+  const LOCAL = "var(--viz-local)";
+  const ORANGE = "var(--viz-deprecated)";
+
+  const cases: Array<[string, ChartCohort[], string[]]> = [
+    ["gives the chart colours out in saved order", [a, b, c, d, e], [TEAL, VIOLET, BLUE, BERRY, ORCHID]],
+    ["starts the chart colours again from the sixth line", [a, b, c, d, e, f, g, h], [TEAL, VIOLET, BLUE, BERRY, ORCHID, TEAL, VIOLET, BLUE]],
+    ["keeps a deprecated line orange, outside the turn", [pkg("a", "deprecated"), b, c], [ORANGE, TEAL, VIOLET]],
+    ["keeps a successor line teal, and gives every other line the colours but teal", [pkg("s", "successor"), b, c, d, e, f, g], [TEAL, VIOLET, BLUE, BERRY, ORCHID, VIOLET, BLUE]],
+    [
+      "keeps every deprecated line orange beside a successor, however many there are",
+      [...["o1", "o2", "o3", "o4", "o5", "o6"].map((name) => pkg(name, "deprecated")), pkg("s", "successor")],
+      [ORANGE, ORANGE, ORANGE, ORANGE, ORANGE, ORANGE, TEAL],
+    ],
+    ["keeps a tag's colour, and gives every other line the colours but that one", [tag("x", "orchid"), b, c, d, e, f], [ORCHID, TEAL, VIOLET, BLUE, BERRY, TEAL]],
+    ["gives a tag whose colour a role line wears a colour in turn", [pkg("s", "successor"), tag("x", "teal")], [TEAL, VIOLET]],
+    ["keeps Local in its grey", [local, b, c], [LOCAL, TEAL, VIOLET]],
+  ];
+
+  it.each(cases)("%s", (_title, cohorts, expected) => {
+    const colors = lineColors(cohorts);
+    expect(cohorts.map((cohort) => colors.get(cohort.cohortKey))).toEqual(expected);
+  });
+
+  it("gives each line the colour chartColors gives it while the chart colours last", () => {
+    const cohorts = [pkg("a", "deprecated"), tag("x", "orchid"), tag("y", "orchid"), b, c, local];
+    expect(lineColors(cohorts)).toEqual(chartColors(cohorts));
   });
 });
 
