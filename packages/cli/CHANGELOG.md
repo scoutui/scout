@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.3.4
+
+### Patch Changes
+
+- [#148](https://github.com/scoutui/scout/pull/148) [`d4a161f`](https://github.com/scoutui/scout/commit/d4a161f9b7c46587107540ae06911214cd02fdda) Thanks [@siggerzz](https://github.com/siggerzz)! - A copy of a package in a folder your `.gitignore` ignores, such as a build's output in `.output/` or `storybook-static/`, no longer counts when a scan works out which package a web component belongs to. Before, such a copy could give a tag the wrong version, or make it read as claimed by two packages. Setting `gitignore` to `false` in the config reads those folders again.
+
 ## 0.3.3
 
 ### Patch Changes
