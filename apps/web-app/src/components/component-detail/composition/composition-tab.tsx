@@ -145,7 +145,7 @@ export function CompositionTab({
           {totalsLine(view.focus.displayName, view.totals.up, view.totals.down)}
         </p>
       </header>
-      <div className="bg-background">
+      <div className={narrow ? undefined : "bg-background"}>
         {narrow === null ? null : narrow ? <BothEndsList {...props} /> : <BothEndsDiagram {...props} />}
       </div>
       <footer className="flex min-h-7 flex-wrap items-center gap-x-4 gap-y-1 border-t bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">

@@ -52,7 +52,7 @@ export function BothEndsList({ view, repoId, pressedDirect, onPickTop, onPickDir
   const topRef = useRef<HTMLDivElement | null>(null);
   const pickDirect = (id: string) => {
     onPickDirect(id);
-    requestAnimationFrame(() => topRef.current?.scrollIntoView({ block: "start" }));
+    requestAnimationFrame(() => topRef.current?.querySelector<HTMLElement>('[tabindex="0"]')?.focus());
   };
 
   const node = (id: string): CompositionGraphNode => byId.get(id)?.node ?? view.focus;
@@ -68,7 +68,7 @@ export function BothEndsList({ view, repoId, pressedDirect, onPickTop, onPickDir
             variant="outline"
             size="sm"
             multiple={false}
-            aria-label="Side"
+            aria-label="Show"
           >
             <ToggleGroupItem value="up">{`Rendered by · ${view.totals.up.toLocaleString()}`}</ToggleGroupItem>
             <ToggleGroupItem value="down">{`Renders · ${view.totals.down.toLocaleString()}`}</ToggleGroupItem>

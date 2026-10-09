@@ -96,6 +96,7 @@ describe("CompositionTab", () => {
     expect(fold).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(fold);
     expect(rowsOf(/^Renders · 1$/)).toHaveLength(1);
+    expect(within(list(/^Renders/)).getByRole("link", { name: "Open Kid" })).toHaveFocus();
   });
 
   it.each([
@@ -227,6 +228,15 @@ describe("CompositionTab", () => {
       expect(within(route).getByText("Card")).toBeInTheDocument();
       expect(screen.queryByRole("list", { name: "Route" })).toBeNull();
       expect(document.querySelector("svg[data-connectors]")).toBeNull();
+    });
+
+    it("moves past an open route with the arrow keys", () => {
+      renderTab();
+      fireEvent.click(row(/^Top level/, /^Page, b/));
+      const card = within(screen.getByRole("list", { name: "Route from Page" })).getByRole("link", { name: "Open Card" });
+      card.focus();
+      fireEvent.keyDown(card, { key: "ArrowDown" });
+      expect(row(/^Top level/, /^Page, a/)).toHaveFocus();
     });
 
     it("shows one side at a time", () => {

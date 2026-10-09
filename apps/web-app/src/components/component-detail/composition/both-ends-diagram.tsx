@@ -111,11 +111,18 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
   const showTop = (view.top.length > 0 || view.through !== null) && !(boxes && !up);
   const routeKey = view.route.ids.join(">");
   const [rendersOpenFor, setRendersOpenFor] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const focusRenders = useRef(false);
   const foldRenders = view.renders.length > 0 && boxes && up && rendersOpenFor !== routeKey;
   const lines = useMemo(() => linesFor(view, foldRenders), [view, foldRenders]);
+  useEffect(() => {
+    if (foldRenders || !focusRenders.current) return;
+    focusRenders.current = false;
+    rootRef.current?.querySelector<HTMLElement>('[data-panel="renders"] [tabindex="0"]')?.focus();
+  });
   const list = "max-w-[18rem] max-h-[min(72vh,40rem)] shrink";
   return (
-    <div className="relative flex items-center justify-center gap-8 px-4 py-6">
+    <div ref={rootRef} className="relative flex items-center justify-center-safe gap-8 px-4 py-6">
       {showTop ? (
         <EndsList
           id="top"
@@ -161,7 +168,10 @@ export function BothEndsDiagram({ view, repoId, pressedDirect, onPickTop, onPick
           type="button"
           data-anchor={RENDERS_FOLD}
           aria-expanded={false}
-          onClick={() => setRendersOpenFor(routeKey)}
+          onClick={() => {
+            focusRenders.current = true;
+            setRendersOpenFor(routeKey);
+          }}
           className="flex min-h-9 shrink-0 cursor-pointer items-center gap-1 rounded-lg border bg-muted px-2.5 text-xs font-medium shadow-xs hover:bg-accent"
         >
           Renders

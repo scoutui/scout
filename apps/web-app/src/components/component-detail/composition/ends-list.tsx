@@ -72,7 +72,10 @@ export function EndsList({
     [rows, q],
   );
   const steps = (rowId: string) => chain?.(rowId) ?? null;
-  const keys = shown.flatMap((r) => [r.node.id, ...(steps(r.node.id) ?? []).map((s) => `${r.node.id}>${s.node.id}`)]);
+  const keys = shown.flatMap((r) => [
+    r.node.id,
+    ...(steps(r.node.id) ?? []).slice(0, -1).map((s) => `${r.node.id}>${s.node.id}`),
+  ]);
   const grid = useRovingGrid(keys, selected ?? pressed);
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -106,10 +109,10 @@ export function EndsList({
           layout === "box" ? "min-h-9 min-w-[11rem] bg-muted py-1 text-xs" : "sticky top-[var(--top-bar-height,0px)] z-10 min-h-9 bg-card py-1.5 text-label text-muted-foreground",
         )}
       >
-        <h3 id={headingId} className={cn(layout === "box" && "font-medium")}>
+        <h2 id={headingId} className={cn(layout === "box" && "font-medium")}>
           {title}
           <span className={cn("tabular-nums", layout === "box" && "font-normal text-muted-foreground")}>{` · ${count}`}</span>
-        </h3>
+        </h2>
         {action}
       </div>
       {rows.length >= FILTER_FROM ? (
