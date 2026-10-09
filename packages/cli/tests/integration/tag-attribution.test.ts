@@ -106,12 +106,12 @@ describe("integration: CEM discovery is bounded by the repository root", () => {
   // `apps/web` installs @example/kit 2.0.0. In folders the repository's
   // .gitignore lists, `.output/` holds a 1.0.0 copy of it and
   // `storybook-static/` another package that also declares <kit-card>.
-  const buildCopies = (dir: string, config: Record<string, unknown> = {}): void => {
+  const ignoredInstalls = (dir: string, config: Record<string, unknown> = {}): void => {
     writeFiles(dir, {
       ".gitignore": "node_modules\n.output\nstorybook-static/\n",
-      "package.json": JSON.stringify({ name: "build-copies", private: true, workspaces: ["apps/*"] }),
-      "scout.config.json": JSON.stringify({ repoId: "build-copies", include: ["apps/web/**/*.vue"], ...config }),
-      "apps/web/package.json": JSON.stringify({ name: "build-copies-web", private: true, version: "0.0.0" }),
+      "package.json": JSON.stringify({ name: "ignored-installs", private: true, workspaces: ["apps/*"] }),
+      "scout.config.json": JSON.stringify({ repoId: "ignored-installs", include: ["apps/web/**/*.vue"], ...config }),
+      "apps/web/package.json": JSON.stringify({ name: "ignored-installs-web", private: true, version: "0.0.0" }),
       "apps/web/src/App.vue": "<template>\n  <kit-button></kit-button>\n  <kit-card></kit-card>\n</template>\n",
       ...cemPackage("apps/web/node_modules/@example/kit", "@example/kit", ["kit-button", "kit-card"], "2.0.0"),
       ...cemPackage(".output/server/node_modules/@example/kit", "@example/kit", ["kit-button", "kit-card"], "1.0.0"),
@@ -121,8 +121,8 @@ describe("integration: CEM discovery is bounded by the repository root", () => {
   };
 
   it("ignores an install in a folder the repository's .gitignore lists", () => {
-    const repo = join(stage, "build-copies");
-    buildCopies(repo);
+    const repo = join(stage, "ignored-installs");
+    ignoredInstalls(repo);
     const { artifact } = scan(repo);
     const kit = { kind: "package", packageName: "@example/kit" };
     for (const tag of ["kit-button", "kit-card"]) {
@@ -147,8 +147,8 @@ describe("integration: CEM discovery is bounded by the repository root", () => {
   });
 
   it("reads an install in a folder the repository's .gitignore lists when the config sets gitignore to false", () => {
-    const repo = join(stage, "build-copies-read");
-    buildCopies(repo, { gitignore: false });
+    const repo = join(stage, "ignored-installs-read");
+    ignoredInstalls(repo, { gitignore: false });
     const { artifact } = scan(repo);
     expect(tagNamed(artifact, "kit-card")?.attribution).toMatchObject({
       status: "conflict",
