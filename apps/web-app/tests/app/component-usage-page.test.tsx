@@ -136,7 +136,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     const before = window.history.length;
     fireEvent.click(screen.getAllByRole("link", { name: "Show PayDialog in Composition" })[0] as HTMLElement);
     expect([query().get("tab"), query().get("pin"), window.history.length]).toEqual(["composition", `up:${payDialog.id}`, before + 1]);
-    expect(await screen.findAllByRole("button", { name: /^PayDialog\b/, pressed: true })).not.toHaveLength(0);
+    expect(await screen.findAllByRole("button", { name: /^Pay ?Dialog\b/, pressed: true })).not.toHaveLength(0);
   });
 
   it("reopens the rows, props and filter panel the reader left open on Back from Composition, and keeps rows opened later through an empty list", async () => {
@@ -145,7 +145,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     fireEvent.click(screen.getByRole("button", { name: /^size, set on/ }));
     fireEvent.click(screen.getByRole("button", { name: "Uses in src/checkout/Pay.tsx" }));
     fireEvent.click(screen.getAllByRole("link", { name: "Show PayDialog in Composition" })[0] as HTMLElement);
-    await screen.findAllByRole("button", { name: /^PayDialog\b/, pressed: true });
+    await screen.findAllByRole("button", { name: /^Pay ?Dialog\b/, pressed: true });
     await act(() => new Promise(resolve => {
       window.addEventListener("popstate", resolve, { once: true });
       window.history.back();
