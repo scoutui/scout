@@ -8,6 +8,7 @@
 import { lstat, readdir, readFile, readlink, realpath } from "node:fs/promises";
 import { existsSync, type Dirent } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
+import { isGitIgnored } from "globby";
 import { canonicalTagName } from "@scoutui/reference-graph";
 import { isNestedRepository } from "../walker/files.js";
 
@@ -61,12 +62,13 @@ type Install = { path: string; isLink: boolean };
  * `node_modules/.pnpm/<id>/node_modules/<name>`. The symlinks beside a store
  * entry are its dependencies, each a store entry itself, so they are skipped.
  *
- * Outside `node_modules` the whole tree is walked, except `.git` and any
- * nested repository (see `isNestedRepository`). Inside it, only
- * a package directory's own nested `node_modules` is walked. A symlink is
- * listed but never descended into.
+ * Outside `node_modules` the whole tree is walked, except `.git`, any
+ * nested repository (see `isNestedRepository`) and any directory `ignored`
+ * matches that neither is nor holds `configDir`. Inside it, only a package
+ * directory's own nested `node_modules` is walked. A symlink is listed but
+ * never descended into.
  */
-async function installsUnder(root: string, configDir: string): Promise<Install[]> {
+async function installsUnder(root: string, configDir: string, ignored: (dir: string) => boolean): Promise<Install[]> {
   const installs: Install[] = [];
   const walkTree = async (dir: string): Promise<void> => {
     const entries = await entriesOf(dir);
@@ -75,7 +77,9 @@ async function installsUnder(root: string, configDir: string): Promise<Install[]
       entries.map((entry) => {
         if (!entry.isDirectory() || entry.name === ".git") return undefined;
         const path = join(dir, entry.name);
-        return entry.name === "node_modules" ? walkNodeModules(path) : walkTree(path);
+        if (entry.name === "node_modules") return walkNodeModules(path);
+        if (ignored(path) && configDir !== path && !configDir.startsWith(path + sep)) return undefined;
+        return walkTree(path);
       }),
     );
   };
@@ -191,9 +195,11 @@ async function readPackageCems(dirs: readonly string[]): Promise<(PackageCem | U
 
 /**
  * Build a global CEM index from every package installed in the repository at
- * `root` (see `installsUnder`), never above it. Yarn workspace and pnpm
- * packages are symlinked into `node_modules`, so they are indexed alongside
- * published dependencies. A symlinked package is read through its link, even
+ * `root` (see `installsUnder`), never above it. With `gitignore`, an install
+ * in a directory the repository's `.gitignore` files ignore, such as a build's
+ * output, is left out unless that directory holds `configDir`. Yarn workspace
+ * and pnpm packages are symlinked into `node_modules`, so they are indexed
+ * alongside published dependencies. A symlinked package is read through its link, even
  * when the link points outside `root`.
  *
  * Only a package that declares its CEM through `package.json#customElements`
@@ -207,11 +213,17 @@ async function readPackageCems(dirs: readonly string[]): Promise<(PackageCem | U
  * by it, the packages whose declared manifest is missing or isn't valid JSON
  * in every install.
  */
-export async function buildCemIndex(input: { root: string; configDir: string }): Promise<CemIndex & { unreadable: UnreadableCem[] }> {
+export async function buildCemIndex(input: {
+  root: string;
+  configDir: string;
+  gitignore: boolean;
+}): Promise<CemIndex & { unreadable: UnreadableCem[] }> {
   const root = await realpath(input.root);
   const configDir = await realpath(input.configDir);
 
-  const installs = await installsUnder(root, configDir);
+  const gitIgnored = input.gitignore ? await isGitIgnored({ cwd: root, suppressErrors: true }) : () => false;
+  // A trailing separator matches the directory-only patterns, such as `dist/`.
+  const installs = await installsUnder(root, configDir, (dir) => gitIgnored(dir + sep));
   const walked = new Set(installs.flatMap(({ path, isLink }) => (isLink ? [] : [path])));
   const realpaths = await Promise.all(
     installs.map(({ path, isLink }) => (isLink ? linkedRealpath(path, walked) : path)),

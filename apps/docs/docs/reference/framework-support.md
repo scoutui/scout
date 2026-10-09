@@ -62,7 +62,7 @@ Files with any other extension, such as `.html` or `.svelte`, are skipped even w
 **Linked to a package or your repo:** each tag belongs to one of these, in this order:
 
 1. Your repo, when one of its files registers the tag with `customElements.define("…", …)` or `@customElement("…")`. When the registered class is imported from a package, the tag belongs to that package instead.
-2. The package whose [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) declares the tag. The package must be installed, and its `package.json` must point at the manifest with a `customElements` field. See [Link web components to your package](/docs/guides/link-web-components-to-your-package).
+2. The package whose [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) declares the tag. The package must be installed, and its `package.json` must point at the manifest with a `customElements` field. A copy in a folder your `.gitignore` ignores, such as a build's output, doesn't count, unless the config sets [`gitignore`](/docs/reference/config#other-fields) to `false`. See [Link web components to your package](/docs/guides/link-web-components-to-your-package).
 3. No package, when neither applies. The tag is still counted, and the dashboard's **Type** filter shows it as **Undefined element**.
 
 **Renders and rendered by:** a web component counts for the React or Vue component whose code contains it. On its **Composition** tab it renders nothing, because what a web component draws inside itself isn't read.

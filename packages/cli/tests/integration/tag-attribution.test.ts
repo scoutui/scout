@@ -34,9 +34,9 @@ const tagNamed = (artifact: ScanArtifact, tagName: string) =>
   artifact.components.find((c) => c.identity.kind === "tag" && c.identity.tagName === tagName);
 
 /** The files of a package installed at `dir` whose CEM declares `tags`. */
-function cemPackage(dir: string, name: string, tags: string[]): Record<string, string> {
+function cemPackage(dir: string, name: string, tags: string[], version = "1.0.0"): Record<string, string> {
   return {
-    [`${dir}/package.json`]: JSON.stringify({ name, version: "1.0.0", main: "index.js", customElements: "custom-elements.json" }),
+    [`${dir}/package.json`]: JSON.stringify({ name, version, main: "index.js", customElements: "custom-elements.json" }),
     [`${dir}/index.js`]: "export {};\n",
     [`${dir}/custom-elements.json`]: JSON.stringify({
       schemaVersion: "1.0.0",
@@ -103,9 +103,68 @@ describe("integration: CEM discovery is bounded by the repository root", () => {
     expect(tagNamed(artifact, "wt-tag")?.attribution).toEqual({ status: "unknown", reason: "absent", evidence: [] });
   });
 
-  it("reads a nested repository that holds the scanned config when the repository root is set above it", () => {
+  // `apps/web` installs @example/kit 2.0.0. In folders the repository's
+  // .gitignore lists, `.output/` holds a 1.0.0 copy of it and
+  // `storybook-static/` another package that also declares <kit-card>.
+  const ignoredInstalls = (dir: string, config: Record<string, unknown> = {}): void => {
+    writeFiles(dir, {
+      ".gitignore": "node_modules\n.output\nstorybook-static/\n",
+      "package.json": JSON.stringify({ name: "ignored-installs", private: true, workspaces: ["apps/*"] }),
+      "scout.config.json": JSON.stringify({ repoId: "ignored-installs", include: ["apps/web/**/*.vue"], ...config }),
+      "apps/web/package.json": JSON.stringify({ name: "ignored-installs-web", private: true, version: "0.0.0" }),
+      "apps/web/src/App.vue": "<template>\n  <kit-button></kit-button>\n  <kit-card></kit-card>\n</template>\n",
+      ...cemPackage("apps/web/node_modules/@example/kit", "@example/kit", ["kit-button", "kit-card"], "2.0.0"),
+      ...cemPackage(".output/server/node_modules/@example/kit", "@example/kit", ["kit-button", "kit-card"], "1.0.0"),
+      ...cemPackage("storybook-static/node_modules/@example/old-kit", "@example/old-kit", ["kit-card"], "0.1.0"),
+    });
+    commit(dir);
+  };
+
+  it("ignores an install in a folder the repository's .gitignore lists", () => {
+    const repo = join(stage, "ignored-installs");
+    ignoredInstalls(repo);
+    const { artifact } = scan(repo);
+    const kit = { kind: "package", packageName: "@example/kit" };
+    for (const tag of ["kit-button", "kit-card"]) {
+      expect(tagNamed(artifact, tag)).toMatchObject({
+        version: "2.0.0",
+        attribution: {
+          status: "resolved",
+          target: kit,
+          confidence: "declared",
+          evidence: [
+            {
+              source: "cem",
+              strength: "declared",
+              locator: { packageName: "@example/kit", version: "2.0.0" },
+              target: kit,
+              disposition: "supports",
+            },
+          ],
+        },
+      });
+    }
+  });
+
+  it("reads an install in a folder the repository's .gitignore lists when the config sets gitignore to false", () => {
+    const repo = join(stage, "ignored-installs-read");
+    ignoredInstalls(repo, { gitignore: false });
+    const { artifact } = scan(repo);
+    expect(tagNamed(artifact, "kit-card")?.attribution).toMatchObject({
+      status: "conflict",
+      candidates: [
+        { kind: "package", packageName: "@example/kit" },
+        { kind: "package", packageName: "@example/old-kit" },
+      ],
+    });
+  });
+
+  it("reads a nested repository that holds the scanned config when the repository root is set above it and its .gitignore lists it", () => {
     const outer = join(stage, "outer");
-    writeFiles(outer, { "package.json": JSON.stringify({ name: "outer", private: true, version: "0.0.0" }) });
+    writeFiles(outer, {
+      ".gitignore": "app/\n",
+      "package.json": JSON.stringify({ name: "outer", private: true, version: "0.0.0" }),
+    });
     commit(outer);
     const app = join(outer, "app");
     consumer(app, "app-tag");
