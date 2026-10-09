@@ -31,7 +31,7 @@ const claimsOf = (index: CemIndex, tag: string) =>
 test("buildCemIndex maps tag names to the claiming package", async () => {
   const root = path.join(scratch, "claim");
   install(root, "@example/web-button", { version: "1.0.0", customElements: "custom-elements.json" }, ["web-button"]);
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   const [entry] = index.byTag.get("web-button") ?? [];
   expect(entry?.packageName).toBe("@example/web-button");
 });
@@ -40,7 +40,7 @@ test("buildCemIndex returns empty index when node_modules has no CEMs", async ()
   const root = path.join(scratch, "no-cem");
   mkdirSync(path.join(root, "node_modules", "@example", "react-ds"), { recursive: true });
   writeFileSync(path.join(root, "node_modules", "@example", "react-ds", "package.json"), JSON.stringify({ name: "@example/react-ds", version: "1.0.0" }));
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   expect(index.byTag.size).toBe(0);
 });
 
@@ -51,7 +51,7 @@ test("buildCemIndex indexes workspace-package CEMs via node_modules symlinks", a
   writePackage(path.join(root, "packages", "shoelace"), "@example/shoelace", pkg, ["fake-button"]);
   mkdirSync(path.join(root, "node_modules", "@example"), { recursive: true });
   symlinkSync(path.join("..", "..", "packages", "shoelace"), path.join(root, "node_modules", "@example", "shoelace"));
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   const [entry] = index.byTag.get("fake-button") ?? [];
   expect(entry?.packageName).toBe("@example/shoelace");
 });
@@ -60,7 +60,7 @@ test("buildCemIndex reads a CEM only through package.json#customElements", async
   const root = path.join(scratch, "pointer");
   install(root, "@example/declared", { version: "1.0.0", customElements: "custom-elements.json" }, ["x-declared"]);
   install(root, "@example/undeclared", { version: "1.0.0" }, ["x-undeclared"]);
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   expect(index.byTag.get("x-declared")?.map((c) => c.packageName)).toEqual(["@example/declared"]);
   expect(index.byTag.has("x-undeclared")).toBe(false);
 });
@@ -72,13 +72,13 @@ test("buildCemIndex takes a package's version from the install nearest the confi
   install(root, "@example/kit", { version: "1.0.0", ...pointer }, ["x-button", "x-old"]);
   install(app, "@example/kit", { version: "2.0.0", ...pointer }, ["X-Button"]);
   install(root, "@example/other", { version: "3.0.0", ...pointer }, ["x-button"]);
-  const fromApp = await buildCemIndex({ root, configDir: app });
+  const fromApp = await buildCemIndex({ root, configDir: app, gitignore: true });
   expect(claimsOf(fromApp, "x-button")).toEqual([
     { packageName: "@example/kit", version: "2.0.0" },
     { packageName: "@example/other", version: "3.0.0" },
   ]);
   expect(claimsOf(fromApp, "x-old")).toEqual([{ packageName: "@example/kit", version: "1.0.0" }]);
-  const fromRoot = await buildCemIndex({ root, configDir: root });
+  const fromRoot = await buildCemIndex({ root, configDir: root, gitignore: true });
   expect(claimsOf(fromRoot, "x-button")?.[0]).toEqual({ packageName: "@example/kit", version: "1.0.0" });
 });
 
@@ -88,7 +88,7 @@ test("buildCemIndex takes the shallowest install's version, then path order, off
   install(path.join(root, "apps", "b"), "@example/kit", { version: "2.0.0", ...pointer }, ["x-kit"]);
   install(path.join(root, "apps", "a"), "@example/kit", { version: "1.0.0", ...pointer }, ["x-kit"]);
   install(path.join(root, "apps", "a", "deep"), "@example/kit", { version: "0.1.0", ...pointer }, ["x-kit"]);
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   expect(claimsOf(index, "x-kit")).toEqual([{ packageName: "@example/kit", version: "1.0.0" }]);
 });
 
@@ -97,7 +97,7 @@ test("buildCemIndex keeps a sibling app's claim when another app installs the sa
   const appA = path.join(root, "apps", "a");
   install(appA, "@example/kit", { version: "1.0.0" }, ["x-b"]);
   install(path.join(root, "apps", "b"), "@example/kit", { version: "2.0.0", customElements: "custom-elements.json" }, ["x-b"]);
-  const index = await buildCemIndex({ root, configDir: appA });
+  const index = await buildCemIndex({ root, configDir: appA, gitignore: true });
   expect(claimsOf(index, "x-b")).toEqual([{ packageName: "@example/kit", version: "2.0.0" }]);
 });
 
@@ -110,7 +110,7 @@ test("buildCemIndex reads a symlinked package through its link without walking i
   mkdirSync(path.join(root, "node_modules", "@example"), { recursive: true });
   symlinkSync(path.join(outside, "node_modules", "@example", "linked"), path.join(root, "node_modules", "@example", "linked"));
   symlinkSync(root, path.join(root, "node_modules", "@example", "loop"));
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   expect([...index.byTag.keys()]).toEqual(["x-linked"]);
 });
 
@@ -122,6 +122,6 @@ test("buildCemIndex does not walk a symlinked pnpm store entry or store node_mod
   mkdirSync(path.join(store, "@example+inner@1.0.0"), { recursive: true });
   symlinkSync(outside, path.join(store, "@example+esc@1.0.0"));
   symlinkSync(path.join(outside, "node_modules"), path.join(store, "@example+inner@1.0.0", "node_modules"));
-  const index = await buildCemIndex({ root, configDir: root });
+  const index = await buildCemIndex({ root, configDir: root, gitignore: true });
   expect(index.byTag.size).toBe(0);
 });
