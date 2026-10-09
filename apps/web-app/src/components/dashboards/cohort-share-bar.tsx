@@ -59,7 +59,7 @@ export function CohortShareBar({
             />
           ))}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs">
+      <div className="-mx-2.5 mt-2 -mb-1 flex flex-wrap text-xs">
         {segs.map((s) =>
           onHover ? (
             <button
@@ -70,7 +70,7 @@ export function CohortShareBar({
               onFocus={() => onHover(s.key)}
               onBlur={() => onHover(null)}
               className={cn(
-                "inline-flex cursor-default items-center gap-1.5 whitespace-nowrap transition-opacity duration-200",
+                "inline-flex min-h-6 cursor-default items-center gap-1.5 whitespace-nowrap px-2.5 transition-opacity duration-200 pointer-coarse:min-h-11",
                 "rounded-sm",
                 hovered !== null && hovered !== s.key && "opacity-40",
               )}
@@ -80,7 +80,7 @@ export function CohortShareBar({
               <span className="font-medium tabular-nums text-foreground">{formatPct(s.share)}</span>
             </button>
           ) : (
-            <span key={s.key} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <span key={s.key} className="inline-flex min-h-6 items-center gap-1.5 whitespace-nowrap px-2.5">
               <CohortSwatch cohortKey={s.key} color={s.color} role={s.role} className="inline-block" />
               <CohortLabelText label={s.label} deprecatedOnly={s.deprecatedOnly} />
               <span className="font-medium tabular-nums text-foreground">{formatPct(s.share)}</span>

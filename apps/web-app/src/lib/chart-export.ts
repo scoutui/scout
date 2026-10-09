@@ -1,5 +1,5 @@
 import type { ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
-import { barOrder, deprecatedOnlyKeys, expandRowShares, searchedSeries, seriesToRows, visibleView } from "@/lib/dashboard-chart-data";
+import { barOrder, deprecatedOnlyKeys, expandRowShares, seriesToRows, shownSeries, visibleView } from "@/lib/dashboard-chart-data";
 import { DEPRECATED_ONLY } from "@/lib/dashboard-format";
 
 export type ExportTable = { columns: string[]; rows: string[][] };
@@ -12,9 +12,9 @@ export function exportLabel(cohort: { cohortKey: string; label: string }, deprec
 /**
  * The data a chart draws as a table: for a chart over time, one row per scan time inside `range` and one column per
  * series; for bars, one row per bar in the order the chart draws them. A chart over time has a column only for each
- * series `query` matches, and for every series when it matches none.
+ * series it draws, as `shownSeries` gives them from `query` and `shown`.
  */
-export function chartExportTable(config: DashboardConfig, view: DashboardView, range: ChartRange, query = ""): ExportTable {
+export function chartExportTable(config: DashboardConfig, view: DashboardView, range: ChartRange, query = "", shown: string | null = null): ExportTable {
   const deprecatedOnly = deprecatedOnlyKeys(config.cohorts);
   const share = config.metric === "share" || config.chartType === "stacked-share";
   const cell = (value: number) => (share ? `${(value * 100).toFixed(1)}%` : String(value));
@@ -25,7 +25,7 @@ export function chartExportTable(config: DashboardConfig, view: DashboardView, r
     };
   }
   const { from } = visibleView(config, view, range);
-  const series = searchedSeries(view.series, query) ?? view.series;
+  const series = shownSeries(view.series, query, shown);
   const keys = series.map((s) => s.cohortKey);
   const rows = seriesToRows(series).filter(({ ts }) => from === null || Number(ts) >= from);
   const values = config.chartType === "stacked-share" ? expandRowShares(rows, keys) : rows;

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import type { CohortSeries } from "@scoutui/web-shared";
 import { Input } from "@/components/ui/input";
@@ -16,15 +16,21 @@ const NUMERIC: ReadonlySet<SortKey> = new Set(["value", "delta"]);
 
 // Past this many series the table shows its first rows, with Show all and a search.
 const FIRST_ROWS = 10;
+// How far the pointer moves between press and release, in px, before a click on a row counts as the end of a drag.
+const DRAG = 4;
+// The Change heading wraps in a table narrower than 42rem.
+const CHANGE_HEAD = "text-right @max-2xl:h-auto @max-2xl:py-1.5 @max-2xl:whitespace-normal @max-2xl:[&_span]:whitespace-normal";
 
 /** Each series' change by `cohortKey`, since `since` in epoch ms. With `byRole`, each is coloured by the way its series' role should move. */
 export type SeriesChange = { since: number; byKey: Readonly<Record<string, number | null>>; byRole?: boolean | undefined };
 
 /**
  * A trend chart's legend as a table: each series with its latest value, sortable by
- * either column, most first to start. Hovering a row highlights its line; clicking
- * its name shows only that line, and clicking it again shows every line. With `change`, a Change column shows each
- * series' change since the day it names; with `change.byRole`, green where an old component went down or its replacement
+ * either column, most first to start. Hovering a row, or focusing anything in it, highlights its line; clicking
+ * anywhere in its row shows only that line, and clicking it again shows every line; a click that ends a drag of more
+ * than DRAG px that selected text does neither. With `change`, a Change column shows each
+ * series' change since the day it names, and in a narrow table each change sits under its series' latest value, with
+ * its heading under that column's; with `change.byRole`, green where an old component went down or its replacement
  * went up and red the other way. With `paths`, a row whose name another row shares shows the part of its
  * component's path that tells the rows apart. Past FIRST_ROWS series the table
  * lists the first FIRST_ROWS rows in its sort, with a Show all button and a search, `query`, by component or package
@@ -58,12 +64,16 @@ export function TrendLegendTable({
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("value", "desc", NUMERIC);
   const [expanded, setExpanded] = useState(false);
+  const pressedAt = useRef({ x: 0, y: 0 });
   const latest = series.map((s) => ({ ...s, value: s.points[s.points.length - 1]?.value ?? null, delta: change?.byKey[s.cohortKey] ?? null }));
   const sorted = sortRows(latest, sortKey, sortDir, (s, k) => (k === "label" ? s.label : k === "delta" ? s.delta : s.value));
   const hasDelta = latest.some((s) => s.delta !== null);
   const changeHeading = change ? `Change since ${formatDayTick(change.since)}` : "";
   // A no-break space keeps the day and its month on one line when the heading wraps.
   const changeLabel = changeHeading.replace(/ (\S+)$/, "\u00a0$1");
+  const changeSort = (label: string) => (
+    <SortButton label={label} title={changeHeading} sortKey="delta" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+  );
   const shownPaths = distinctPaths(series, paths);
   const capped = series.length > FIRST_ROWS;
   const searching = query.trim() !== "";
@@ -97,13 +107,13 @@ export function TrendLegendTable({
           ) : null}
         </div>
       ) : null}
-      <Table containerClassName="@container overflow-x-clip">
+      <Table containerClassName="@container overflow-x-clip" className="@max-md:[&_td]:px-2 @max-md:[&_th]:px-2 @max-2xl:[&_th]:align-bottom @max-2xl:[&_th]:pb-1.5 @max-2xl:[&_th_button]:items-end">
         <TableHeader className="pin-under-top-bar z-20">
-          <TableRow>
-            <TableHead aria-sort={ariaSort("label", sortKey, sortDir)}>
+          <TableRow className={cn(hasDelta && "@max-md:border-b-0!")}>
+            <TableHead rowSpan={hasDelta ? 2 : undefined} aria-sort={ariaSort("label", sortKey, sortDir)}>
               <SortButton label="Name" sortKey="label" current={sortKey} dir={sortDir} onClick={toggleSort} />
             </TableHead>
-            <TableHead className="text-right" aria-sort={ariaSort("value", sortKey, sortDir)}>
+            <TableHead className={cn("text-right", hasDelta && "@max-md:h-auto @max-md:pb-0!")} aria-sort={ariaSort("value", sortKey, sortDir)}>
               <SortButton
                 label={metric === "share" ? "% of uses" : "Uses"}
                 sortKey="value"
@@ -114,38 +124,48 @@ export function TrendLegendTable({
               />
             </TableHead>
             {hasDelta ? (
-              <TableHead className="text-right @max-md:h-auto @max-md:py-1.5 @max-md:whitespace-normal @max-md:[&_span]:whitespace-normal" aria-sort={ariaSort("delta", sortKey, sortDir)}>
-                <SortButton
-                  label={changeLabel}
-                  title={changeHeading}
-                  sortKey="delta"
-                  current={sortKey}
-                  dir={sortDir}
-                  onClick={toggleSort}
-                  align="right"
-                />
+              <TableHead className={cn(CHANGE_HEAD, "@max-md:hidden")} aria-sort={ariaSort("delta", sortKey, sortDir)}>
+                {changeSort(changeLabel)}
               </TableHead>
             ) : null}
           </TableRow>
+          {hasDelta ? (
+            <TableRow className="hidden @max-md:table-row">
+              <TableHead className="h-auto text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
+                {changeSort("Change")}
+              </TableHead>
+            </TableRow>
+          ) : null}
         </TableHeader>
         <TableBody>
           {rows.map((s) => {
             const path = shownPaths.get(s.cohortKey);
             const direction = change?.byRole ? seriesChangeDirection(s.delta, s.role, metric) : "none";
+            const tone = direction === "backward" ? "font-medium text-status-err" : direction === "forward" ? "font-medium text-status-ok" : "text-muted-foreground";
             return (
               <TableRow
                 key={s.cohortKey}
+                onMouseDown={(event) => {
+                  pressedAt.current = { x: event.clientX, y: event.clientY };
+                }}
+                onClick={(event) => {
+                  const dragged = event.detail > 0 && Math.hypot(event.clientX - pressedAt.current.x, event.clientY - pressedAt.current.y) > DRAG;
+                  if (dragged && window.getSelection()?.isCollapsed === false) return;
+                  onToggle(s.cohortKey);
+                }}
                 onMouseEnter={() => onHover(s.cohortKey)}
                 onMouseLeave={() => onHover(null)}
-                className={cn("transition-opacity duration-200", shown !== null && shown !== s.cohortKey && "opacity-40")}
+                onFocus={() => onHover(s.cohortKey)}
+                onBlur={() => onHover(null)}
+                className={cn(
+                  "cursor-pointer transition-opacity duration-200 pointer-coarse:h-11",
+                  shown !== null && shown !== s.cohortKey && "opacity-40",
+                )}
               >
                 <TableCell className="max-w-0 w-full">
                   <button
                     type="button"
                     aria-pressed={shown === s.cohortKey}
-                    onClick={() => onToggle(s.cohortKey)}
-                    onFocus={() => onHover(s.cohortKey)}
-                    onBlur={() => onHover(null)}
                     className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm text-left"
                   >
                     <CohortSwatch cohortKey={s.cohortKey} color={colors.get(s.cohortKey) ?? ""} role={s.role} />
@@ -153,7 +173,7 @@ export function TrendLegendTable({
                       <CohortLabelText
                         label={s.label}
                         deprecatedOnly={deprecatedOnly.has(s.cohortKey)}
-                        className="text-xs @max-md:flex-col @max-md:items-stretch @max-md:gap-0 @max-md:*:whitespace-normal @max-md:*:wrap-anywhere"
+                        className="text-xs @max-2xl:flex-col @max-2xl:items-stretch @max-2xl:gap-0 @max-2xl:*:whitespace-normal @max-2xl:*:first:wrap-anywhere"
                       />
                       {path !== undefined ? (
                         <span className="font-mono text-xs whitespace-normal text-muted-foreground wrap-anywhere" title={paths[s.cohortKey]}>
@@ -163,17 +183,11 @@ export function TrendLegendTable({
                     </span>
                   </button>
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{s.value === null ? "—" : formatMetric(s.value, metric)}</TableCell>
-                {hasDelta ? (
-                  <TableCell
-                    className={cn(
-                      "text-right tabular-nums",
-                      direction === "backward" ? "font-medium text-status-err" : direction === "forward" ? "font-medium text-status-ok" : "text-muted-foreground",
-                    )}
-                  >
-                    {formatDelta(s.delta, metric)}
-                  </TableCell>
-                ) : null}
+                <TableCell className="text-right tabular-nums">
+                  {s.value === null ? "—" : formatMetric(s.value, metric)}
+                  {hasDelta ? <div className={cn("hidden text-xs @max-md:block", tone)}>{formatDelta(s.delta, metric)}</div> : null}
+                </TableCell>
+                {hasDelta ? <TableCell className={cn("text-right tabular-nums @max-md:hidden", tone)}>{formatDelta(s.delta, metric)}</TableCell> : null}
               </TableRow>
             );
           })}

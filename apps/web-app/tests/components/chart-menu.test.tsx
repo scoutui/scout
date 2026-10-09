@@ -308,6 +308,45 @@ describe("ChartMenu export", () => {
     expect(input.whole).toEqual(whole);
   });
 
+  it("exports only the line shown on its own, in the table, the copied table and the image", async () => {
+    clipboard.writeText.mockResolvedValue(undefined);
+    const kits: CohortSeries[] = Array.from({ length: 9 }, (_, i) => ({
+      cohortKey: `package:@example/kit-${i}`,
+      label: `@example/kit-${i}`,
+      color: "",
+      points: [{ t: "2026-08-01T00:00:00Z", value: i + 1 }, { t: LATEST, value: i + 2 }],
+    }));
+    const config: DashboardConfig = {
+      scope: { kind: "all" },
+      cohorts: [...cohorts, ...kits.map((s) => ({ kind: "package" as const, packageName: s.label }))],
+      chartType: "trend",
+      metric: "count",
+    };
+    const whole: DashboardView = { kind: "series", series: [...series, ...kits], coverage };
+    render(
+      <ChartExportProvider title={TITLE}>
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <LinkedDashboardChart config={config} view={whole} range="all" />
+      </ChartExportProvider>,
+    );
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "kit" } });
+    fireEvent.click(within(screen.getByRole("table")).getByRole("button", { name: /kit-3$/ }));
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download CSV" }));
+    const csv = await readBlob(vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob);
+    expect(csv.replace(/^﻿/, "").split("\r\n")[0]).toBe("Committed (UTC),@example/kit-3");
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Copy table" }));
+    await waitFor(() => expect(clipboard.writeText).toHaveBeenCalledOnce());
+    expect(String(clipboard.writeText.mock.calls[0]?.[0]).split("\n")[0]).toBe("Committed (UTC)\t@example/kit-3");
+    open();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Download PNG" }));
+    await waitFor(() => expect(image.chartPng).toHaveBeenCalledOnce());
+    const input = image.chartPng.mock.calls[0]?.[0] as { view: DashboardView; whole: DashboardView };
+    expect(input.view.kind === "series" ? input.view.series.map((s) => s.cohortKey) : []).toEqual(["package:@example/kit-3"]);
+    expect(input.whole).toEqual(whole);
+  });
+
   it("offers no image of a search whose lines have only one scan between them, and still offers the table", async () => {
     const kits: CohortSeries[] = Array.from({ length: 9 }, (_, i) => ({
       cohortKey: `package:@example/kit-${i}`,

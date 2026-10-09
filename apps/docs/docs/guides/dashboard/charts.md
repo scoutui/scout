@@ -82,18 +82,18 @@ To start from a chart someone else made, open it, press **⋯**, then **Duplicat
 
 On a **Trend** or **Stacked** chart whose scans span more than 3 months, pick **3 months**, **6 months**, **1 year** or **All** above the chart. The period ends at the chart's latest scan. The link keeps your pick, so whoever you send it to sees the same period.
 
-To see one line of a **Trend** chart on its own, press its name under the chart. Press it again to see every line. On a saved chart's page, a chart with two or more lines lists them in a table under the chart, with each line's latest uses or share and how much it changed over the period you picked. Search above the table for a component or package name to find a line. While you search, the chart draws only the matching lines, and an export takes only those lines.
+To see one line of a **Trend** chart on its own, press its name at the end of the line or under the chart. Press it again to see every line. On a saved chart's page, a chart with two or more lines lists them in a table under the chart, with each line's latest uses or share and how much it changed over the period you picked. Search above the table for a component or package name to find a line. While you search, the chart draws only the matching lines, and an export takes only those lines.
 
 ## Export a chart
 
 On a saved chart's page, press **⋯**, then **Export**. On a migration or retirement chart, the same items are in the **⋯** menu itself.
 
-- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and each series with its latest value.
+- **Download PNG** saves the chart as an image to put in a slide or a document. It shows the chart's name, the repos and period it covers, and the ten largest series with their latest values, or every bar of a **Bars** chart.
 - **Download CSV** saves a file with one row per scanned commit and one column per series, giving each series' uses or share at that commit. A **Bars** chart gives one row per bar.
 - **Copy image** copies the same image as **Download PNG**, ready to paste.
 - **Copy table** copies the same table as **Download CSV**, ready to paste into a spreadsheet.
 
-The export covers the period picked above the chart. A **Table** chart offers only **Download CSV** and **Copy table**. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
+The export covers the period picked above the chart and the lines drawn. A **Table** chart offers only **Download CSV** and **Copy table**. So does a **Trend** or **Stacked** chart until its repos have been scanned more than once.
 
 ## Change or delete a chart
 

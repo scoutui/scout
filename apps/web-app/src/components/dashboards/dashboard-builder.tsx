@@ -8,7 +8,7 @@ import { actionErrorMessage } from "@/lib/action-error";
 import { type LibraryTag, type PickableComponent, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
 import { searchSeries } from "@/lib/identity-search";
 import type { ReadModelUnavailable, SkippedNotices } from "@/lib/read-model-state";
-import { type ChartCohort, chartColors, deprecatedOnlyKeys, drawnChartCohorts } from "@/lib/dashboard-chart-data";
+import { type ChartCohort, chartColors, deprecatedOnlyKeys, drawnChartCohorts, lineColors } from "@/lib/dashboard-chart-data";
 import { cn } from "@/lib/utils";
 import { GroupedIdentityPicker } from "@/components/governance/grouped-identity-picker";
 import { SeriesLegend, type LegendSeries } from "@/components/dashboards/series-legend";
@@ -229,9 +229,9 @@ export function DashboardBuilder({
   const savedNarrowed = useMemo(() => deprecatedOnlyKeys(saved?.config.cohorts ?? []), [saved]);
 
   // A series in the last landed view takes its label, colour and role from there; any
-  // other tag series brings its tag's colour. `chartColors` colours them all in saved
-  // order, as the chart does. An unknown series reads by any name the lists or the
-  // saved chart hold, and shows no colour.
+  // other tag series brings its tag's colour. They take colours as the chart gives them:
+  // `lineColors` for a chart over time, `chartColors` for any other. An unknown series reads by
+  // any name the lists or the saved chart hold, and shows no colour.
   const legend = useMemo<LegendSeries[]>(() => {
     const seen = new Map<string, number>();
     const rows = cohorts.map((sel) => {
@@ -245,7 +245,11 @@ export function DashboardBuilder({
       };
       return { sel, key, drawn, cohort, unknown: landed?.unknown.has(key) ?? false };
     });
-    const colors = chartColors(rows.map((r) => r.cohort));
+    const view = landed?.view;
+    const colors =
+      (chartType === "trend" || chartType === "stacked-share") && view?.kind === "series"
+        ? lineColors(rows.map((r) => r.cohort))
+        : chartColors(rows.map((r) => r.cohort));
     return rows.map(({ sel, key, drawn, unknown }) => {
       const saved = unknown && sel.kind === "component" ? sel.label : undefined;
       const label = drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "";
@@ -265,7 +269,7 @@ export function DashboardBuilder({
         deprecatedOnly,
       };
     });
-  }, [cohorts, components, libraryTags, landed, pickable, savedNarrowed]);
+  }, [cohorts, components, libraryTags, landed, pickable, savedNarrowed, chartType]);
 
   useEffect(() => {
     const request = { config, retry: previewRetry };

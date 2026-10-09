@@ -218,7 +218,6 @@ export function paintFigure(ctx: FigureContext, figure: ChartFigure, fonts: Figu
     write(ctx, { text: entry.value, x: valueX, y: entry.y, align: "left", maxWidth: valueWidth }, mono(15), palette.muted);
   }
 
-  if (figure.note) write(ctx, figure.note, sans(400, 15), palette.muted);
   for (const line of figure.title) write(ctx, line, titleFont(fonts), palette.ink);
   for (const line of figure.subtitle) write(ctx, line, subtitleFont(fonts), palette.muted);
   write(ctx, figure.footer, sans(400, 14), palette.muted);

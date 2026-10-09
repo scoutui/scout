@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   barRowLabel,
   deltaDirection,
+  distinctPaths,
   formatChange,
   formatDayTick,
   formatPct,
@@ -83,6 +84,17 @@ describe("deltaDirection", () => {
     [null, "none"],
   ] as const)("reads a change of %s in what is left as %s", (delta, direction) => {
     expect(deltaDirection(delta)).toBe(direction);
+  });
+});
+
+describe("distinctPaths", () => {
+  it("gives no part to a component whose path ends another's, and the folder above it to the other", () => {
+    const series = [
+      { cohortKey: "component:short", label: "Button · @acme/ui" },
+      { cohortKey: "component:long", label: "Button · @acme/ui" },
+    ];
+    const paths = { "component:short": "ui/Button.tsx", "component:long": "src/ui/Button.tsx" };
+    expect([...distinctPaths(series, paths)]).toEqual([["component:long", "src"]]);
   });
 });
 

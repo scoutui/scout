@@ -3,10 +3,17 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo, useState
 import type { ChartRange, DashboardConfig, DashboardView } from "@scoutui/web-shared";
 
 /**
- * A chart as its page shows it: its config, its whole view, the range on screen, the search its table narrows it to
- * and its components' paths by cohortKey, which tell same-named components apart.
+ * A chart as its page shows it: its config, its whole view, the range on screen, the search its table narrows it to,
+ * the line shown on its own and its components' paths by cohortKey, which tell same-named components apart.
  */
-export type ShownChart = { config: DashboardConfig; view: DashboardView; range: ChartRange; query: string; paths?: Readonly<Record<string, string>> | undefined };
+export type ShownChart = {
+  config: DashboardConfig;
+  view: DashboardView;
+  range: ChartRange;
+  query: string;
+  shown: string | null;
+  paths?: Readonly<Record<string, string>> | undefined;
+};
 
 type ChartExport = { title: string; chart: ShownChart | null; show: (chart: ShownChart | null) => void };
 
@@ -20,13 +27,13 @@ export function ChartExportProvider({ title, children }: { title: string; childr
 }
 
 /** Offers a chart for export while it's on screen inside a `ChartExportProvider`. */
-export function useShowChart({ config, view, range, query, paths }: ShownChart): void {
+export function useShowChart({ config, view, range, query, shown, paths }: ShownChart): void {
   const show = useContext(ChartExportContext)?.show;
   useEffect(() => {
     if (!show) return;
-    show({ config, view, range, query, paths });
+    show({ config, view, range, query, shown, paths });
     return () => show(null);
-  }, [show, config, view, range, query, paths]);
+  }, [show, config, view, range, query, shown, paths]);
 }
 
 /** The chart on screen and the title to export it under, or null when no chart is shown. */

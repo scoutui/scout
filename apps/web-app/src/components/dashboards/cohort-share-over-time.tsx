@@ -78,6 +78,7 @@ export function CohortShareOverTime({
             tickFormatter={formatDayTick}
             tick={{ fontSize: 11, fontFamily: "var(--font-sans)", fill: "var(--faint)" }}
             minTickGap={32}
+            interval="preserveStartEnd"
           />
           <YAxis
             tickLine={false}

@@ -72,14 +72,54 @@ export function distinctPaths(series: ReadonlyArray<{ cohortKey: string; label: 
     while (to < longest - 1 && new Set(part(from, to)).size < group.length) to++;
     if (from === 0 && fromEnd.some(([file]) => file?.startsWith("index."))) to = Math.max(to, 1);
     const shown = part(from, to);
-    for (const [i, { key }] of group.entries()) out.set(key, shown[i] ?? "");
+    for (const [i, { key }] of group.entries()) {
+      const shownPart = shown[i];
+      if (shownPart) out.set(key, shownPart);
+    }
   }
   return out;
 }
 
-/** How many series a chart or tooltip leaves unnamed. */
-export function moreSeries(n: number): string {
-  return `${n} more series`;
+/** A line's end label as lines of parts: its first line, then the line beneath when it has one. */
+export type EndLabelLines = { cohortKey: string; lines: string[][] };
+
+/**
+ * The end label of each of `named`: its name, then its package unless every line on the chart shares it (`shared`),
+ * then `deprecated only` where `deprecatedOnly` holds it. When any label's parts won't fit `column`, less
+ * `beside(cohortKey)`, as `width` measures them, every label puts the parts after its name on the line beneath, beside
+ * the part of its path from `paths` that tells it from a named line of the same name.
+ */
+export function endLabelLines(
+  named: ReadonlyArray<{ cohortKey: string; label: string }>,
+  {
+    shared,
+    deprecatedOnly,
+    paths,
+    column,
+    width,
+    beside,
+  }: {
+    shared: string | null;
+    deprecatedOnly: ReadonlySet<string>;
+    paths: Readonly<Record<string, string>>;
+    column: number;
+    width: (parts: string[]) => number;
+    beside: (cohortKey: string) => number;
+  },
+): EndLabelLines[] {
+  const shownPaths = distinctPaths(named, paths);
+  const parts = named.map(({ cohortKey, label }) => {
+    const { name, packageName } = splitCohortLabel(label);
+    const rest = [...(shared === null && packageName !== undefined ? [packageName] : []), ...(deprecatedOnly.has(cohortKey) ? [DEPRECATED_ONLY] : [])];
+    return { cohortKey, name, rest, fits: width([name, ...rest]) + beside(cohortKey) <= column };
+  });
+  const wrapped = parts.some((p) => p.rest.length > 0 && !p.fits);
+  return parts.map(({ cohortKey, name, rest }) => {
+    const oneLine = rest.length === 0 || !wrapped;
+    const path = shownPaths.get(cohortKey);
+    const beneath = [...(oneLine ? [] : rest), ...(path !== undefined ? [path] : [])];
+    return { cohortKey, lines: [oneLine ? [name, ...rest] : [name], ...(beneath.length > 0 ? [beneath] : [])] };
+  });
 }
 
 /** The package two or more cohort labels all name, or null when there's one label, one names none or two differ. */
