@@ -20,14 +20,6 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   } as unknown as typeof ResizeObserver;
 }
 
-// jsdom lacks DOMMatrixReadOnly, which React Flow reads the zoom from when it
-// measures a node.
-if (typeof globalThis.window !== "undefined" && typeof globalThis.DOMMatrixReadOnly === "undefined") {
-  globalThis.DOMMatrixReadOnly = class {
-    m22 = 1;
-  } as unknown as typeof DOMMatrixReadOnly;
-}
-
 // jsdom lacks scrollIntoView, which lists call to bring a picked row into view.
 if (typeof globalThis.Element !== "undefined" && typeof Element.prototype.scrollIntoView === "undefined") {
   Element.prototype.scrollIntoView = () => {};
