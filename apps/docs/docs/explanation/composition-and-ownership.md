@@ -33,7 +33,7 @@ A [web component](/docs/reference/glossary#web-component) such as `<acme-button>
 
 ## On the Composition tab
 
-In the dashboard, a component's **Composition** tab shows what renders it and what it renders, within one repo. Its caption counts both sides, as in `Rendered directly by 200 components, and by 400 in total.` *Directly* counts the components one step away, and *in total* every component on that side, however many steps away. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#composition) shows how to use the tab.
+In the dashboard, a component's **Composition** tab shows what renders it and what it renders, within one repo. Its header counts both sides however many steps away, as in `264 render Button · Button renders 19`. The tab sets two kinds of renderer side by side: the *top-level* components, which nothing in the repo renders (mostly pages and views), and the components that render it directly. The first say where a component ends up on screen; the second say which code uses it. [Find where a component is used](/docs/guides/dashboard/find-where-a-component-is-used#composition) shows how to use the tab.
 
 :::note
 A component can have uses and still have nothing that renders it. That is expected when every use sits outside a component. For example, an `App` that `main.tsx` mounts with `createRoot(root).render(<App />)` is used, but no component renders it. Those uses count on the **Usage** tab.
