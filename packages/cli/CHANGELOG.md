@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.3.5
+
+### Patch Changes
+
+- [#156](https://github.com/scoutui/scout/pull/156) [`0d83505`](https://github.com/scoutui/scout/commit/0d8350500b211450a2d487d3da880103674994e7) Thanks [@siggerzz](https://github.com/siggerzz)! - When the dashboard rejects `SCOUTUI_TOKEN`, the error now says to get a new token from the repo's Settings page on the dashboard, where each repo's CI upload token is made.
+
 ## 0.3.4
 
 ### Patch Changes

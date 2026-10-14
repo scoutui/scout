@@ -1,5 +1,9 @@
 # scout chart
 
+## 0.8.0
+
+- Run web app 0.6.0 by default.
+
 ## 0.7.0
 
 - Run web app 0.5.0 by default.
