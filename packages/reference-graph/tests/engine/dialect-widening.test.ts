@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { createGraphBuilder, resolve, MODULE_SCOPE } from "../../src/index.js";
+import { createGraphBuilder, resolve, MODULE_SCOPE, isTemplateDialect } from "../../src/index.js";
+
+describe("isTemplateDialect", () => {
+  it.each([
+    { dialect: "react" as const, expected: false },
+    { dialect: "vue" as const, expected: true },
+    { dialect: "angular" as const, expected: true },
+  ])("$dialect → $expected", ({ dialect, expected }) => {
+    expect(isTemplateDialect(dialect)).toBe(expected);
+  });
+});
 
 describe("engine dialect-aware identity widening", () => {
   it("emits vue-component for unresolved external imports in a vue-dialect file", () => {
@@ -30,29 +40,35 @@ describe("engine dialect-aware identity widening", () => {
     expect(occurrences[0]?.rawComponentId?.kind).toBe("react-component");
   });
 
-  it("emits vue-component for a local-symbol JSX usage in a vue-dialect file", () => {
-    const gb = createGraphBuilder({ moduleResolver: () => null });
-    const fb = gb.beginFile("widgets/card.vue", "vue");
-    fb.addDeclaration({
-      symbol: "LocalCard",
-      value: { kind: "Function", returns: [{ kind: "JSX" }] },
-      loc: { line: 1, column: 1 },
-      isExported: false,
-    });
-    fb.addJsxUsage({
-      ref: { symbol: "LocalCard", scope: MODULE_SCOPE, memberChain: [], loc: { line: 3, column: 5 } },
-      loc: { line: 3, column: 5 },
-      props: [],
-    });
+  it.each([
+    { dialect: "vue" as const, filePath: "widgets/card.vue", kind: "vue-component" },
+    { dialect: "angular" as const, filePath: "widgets/card.component.ts", kind: "angular-component" },
+  ])(
+    "emits $kind for a local-symbol JSX usage in a $dialect-dialect file, unexported and otherwise unconsumed: the template dialect owns its usage unconditionally",
+    ({ dialect, filePath, kind }) => {
+      const gb = createGraphBuilder({ moduleResolver: () => null });
+      const fb = gb.beginFile(filePath, dialect);
+      fb.addDeclaration({
+        symbol: "LocalCard",
+        value: { kind: "Function", returns: [{ kind: "JSX" }] },
+        loc: { line: 1, column: 1 },
+        isExported: false,
+      });
+      fb.addJsxUsage({
+        ref: { symbol: "LocalCard", scope: MODULE_SCOPE, memberChain: [], loc: { line: 3, column: 5 } },
+        loc: { line: 3, column: 5 },
+        props: [],
+      });
 
-    const { occurrences } = resolve(gb.build());
-    expect(occurrences).toHaveLength(1);
-    expect(occurrences[0]?.rawComponentId).toMatchObject({
-      kind: "vue-component",
-      export: "LocalCard",
-      source: { type: "local", filePath: "widgets/card.vue" },
-    });
-  });
+      const { occurrences } = resolve(gb.build());
+      expect(occurrences).toHaveLength(1);
+      expect(occurrences[0]?.rawComponentId).toMatchObject({
+        kind,
+        export: "LocalCard",
+        source: { type: "local", filePath },
+      });
+    },
+  );
 
   it("owner identity uses the declaring file's dialect, not the consumer's (vue usage, react owner)", () => {
     const gb = createGraphBuilder({

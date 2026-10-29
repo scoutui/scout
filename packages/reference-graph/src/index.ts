@@ -20,6 +20,7 @@ export type {
   TagUsage,
   UsageKind,
 } from "./types/file-graph.js";
+export { isTemplateDialect } from "./types/file-graph.js";
 
 export { createGraphBuilder } from "./builder.js";
 export type { GraphBuilder, FileBuilder, CreateGraphBuilderOptions } from "./builder.js";

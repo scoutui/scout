@@ -70,7 +70,7 @@ export type RosterRegistry = {
     filePath: string;
     symbol: string;
     exportName: string;
-    kind: "react-component" | "vue-component";
+    kind: "react-component" | "vue-component" | "angular-component";
     loc: { line: number; column: number };
     isDefault: boolean;
   }[];
