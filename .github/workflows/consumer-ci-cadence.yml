@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [pie-aperture, cal.diy, elk, vue-vben-admin, payload]
+        target: [pie-aperture, cal.diy, elk, vue-vben-admin, payload, ng-matero]
     env:
       TARGET: ${{ matrix.target }}
     steps:
@@ -48,6 +48,7 @@ jobs:
           SCOUTUI_TOKEN_ELK_ZONE_ELK: ${{ matrix.target == 'elk' && secrets.SCOUTUI_TOKEN_ELK_ZONE_ELK || '' }}
           SCOUTUI_TOKEN_VUE_VBEN_ADMIN: ${{ matrix.target == 'vue-vben-admin' && secrets.SCOUTUI_TOKEN_VUE_VBEN_ADMIN || '' }}
           SCOUTUI_TOKEN_PAYLOADCMS_PAYLOAD: ${{ matrix.target == 'payload' && secrets.SCOUTUI_TOKEN_PAYLOADCMS_PAYLOAD || '' }}
+          SCOUTUI_TOKEN_NG_MATERO: ${{ matrix.target == 'ng-matero' && secrets.SCOUTUI_TOKEN_NG_MATERO || '' }}
           RESCAN: ${{ inputs.rescan }}
         run: |
           args=(--target "$TARGET" --step scan --work-dir "$RUNNER_TEMP/consumer-ci")
