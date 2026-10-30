@@ -47,6 +47,26 @@ export type Diagnostic =
       filePath: string;
       reason: string;
     }
+  // Angular: an element whose selector more than one component in scope
+  // declares. Angular itself rejects this, so the use isn't counted.
+  | {
+      code: "angular-selector-ambiguous";
+      severity: "warning";
+      filePath: string;
+      line: number;
+      column: number;
+      tagName: string;
+      /** The matching components, as `<file or package>#<export>`. */
+      candidates: string[];
+    }
+  // Angular: component files were found but `@angular/compiler` isn't
+  // installed where the repo would load it, so their templates weren't read.
+  | {
+      code: "angular-compiler-missing";
+      severity: "warning";
+      filePath: string;
+      detail: string;
+    }
   // Scan-level: a declared package with `package-not-installed` occurrences.
   | {
       code: "dependency-not-installed";
@@ -80,6 +100,10 @@ function diagnosticKey(d: Diagnostic): string {
       return `${d.code}::${d.filePath}::${d.exportName}`;
     case "dependency-not-installed":
       return `${d.code}::${d.packageName}`;
+    case "angular-selector-ambiguous":
+      return `${d.code}::${d.filePath}::${d.line}::${d.column}`;
+    case "angular-compiler-missing":
+      return `${d.code}::${d.filePath}`;
     default:
       return engineDiagnosticKey(d);
   }

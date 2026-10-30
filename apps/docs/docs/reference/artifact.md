@@ -163,6 +163,7 @@ Every component has exactly one value. The first row that applies wins.
 | --- | --- |
 | `direct` | The component has at least one use. |
 | `root` | A component defined in the repo, with no uses, that is the default export of a Next.js route file: a `.tsx` or `.jsx` `page`, `layout`, `template`, `error`, `loading` or `not-found` file under an `app/` folder, or a `.tsx` or `.jsx` file under `pages/` other than `pages/api/`. |
+| `root` | A component defined in the repo, with no uses, that the repo bootstraps directly: Angular's `bootstrapApplication(Component)`, or an `NgModule`'s `bootstrap: [Component]` reached from `bootstrapModule`. |
 | `none` | Anything else, such as a component defined in the repo that renders others but that nothing renders. |
 
 ### Prop value counts {#component-props}

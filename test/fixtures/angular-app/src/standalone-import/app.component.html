@@ -1,0 +1,4 @@
+@if (ready) {
+  <app-button label="Save" [disabled]="busy" (pressed)="save()">Save</app-button>
+}
+<div>Status: {{ busy ? "Saving…" : "Idle" }}</div>

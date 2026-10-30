@@ -55,3 +55,35 @@ describe("usage stamping", () => {
     expect(c!.usage).toBe("none");
   });
 });
+
+describe("bootstrapped root (Angular)", () => {
+  it("bootstrapped local zero-occ component, not a default export, not at a root path → root", () => {
+    const [c] = rollupOccurrencesToComponents(
+      [],
+      [
+        {
+          id: "a",
+          isBootstrapped: true,
+          isDefaultExport: false,
+          identity: declaration("src/app/app.component.ts", "AppComponent"),
+        },
+      ],
+    );
+    expect(c!.usage).toBe("root");
+  });
+
+  it("same component, not bootstrapped → none", () => {
+    const [c] = rollupOccurrencesToComponents(
+      [],
+      [
+        {
+          id: "a",
+          isBootstrapped: false,
+          isDefaultExport: false,
+          identity: declaration("src/app/app.component.ts", "AppComponent"),
+        },
+      ],
+    );
+    expect(c!.usage).toBe("none");
+  });
+});

@@ -33,6 +33,20 @@ try {
   assert.ok(listed.includes("js-yaml"), "the SBOM lists a package bundled into the CLI");
   assert.ok(listed.includes("oxc-parser"), "the SBOM lists a runtime dependency");
   assert.ok(!listed.some((name) => name.startsWith("@scoutui/")), "the SBOM leaves out the CLI's own workspace packages");
+  assert.ok(
+    !listed.some((name) => name.startsWith("@angular/")),
+    "the SBOM lists @angular/*: it must be resolved from the scanned repo at runtime, never bundled",
+  );
+  // esbuild stamps each bundled module with a `// <path>` origin comment when
+  // it isn't minified, so a bundled `@angular/compiler` module would leave a
+  // literal `@angular/compiler/<subpath>` in the packed dist/cli.js. The bare
+  // `require("@angular/compiler")` runtime-resolution call (no trailing
+  // slash before the closing quote) is expected and excluded.
+  const packedCliSource = readFileSync(join(install, "node_modules", "@scoutui", "cli", "dist", "cli.js"), "utf8");
+  assert.ok(
+    !/@angular\/compiler\//.test(packedCliSource),
+    "the packed dist/cli.js bundles @angular/compiler's own source",
+  );
   const bin = join(install, "node_modules", ".bin", "scout");
   assert.match(run(bin, ["--help"], install), /scan/);
 

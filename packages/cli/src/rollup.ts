@@ -25,6 +25,16 @@ export type ComponentRow = Pick<
 > & {
   /** True when the local definition is `export default` (root eligibility). */
   isDefaultExport?: boolean;
+  /**
+   * True when something in the repo bootstraps this component directly —
+   * Angular's `bootstrapApplication(Component)` or an NgModule's
+   * `bootstrap: [Component]` reached from `bootstrapModule`. Root
+   * eligibility this grants is independent of export shape or file path
+   * (Angular has no path convention for its root component), unlike
+   * `isDefaultExport`'s path-gated root rule below. Left `undefined` for
+   * every non-Angular row, so React/Vue usage stamping is unaffected.
+   */
+  isBootstrapped?: boolean;
 };
 
 /** A rolled-up component before `applyCompositionRollup` adds its composition. */
@@ -128,14 +138,12 @@ export function rollupOccurrencesToComponents(
       }
     }
 
-    const usage: Component["usage"] =
-      occs.length > 0
-        ? "direct"
-        : row.isDefaultExport === true &&
-            row.identity.kind === "repository-declaration" &&
-            isFrameworkRootPath(row.identity.filePath)
-          ? "root"
-          : "none";
+    const isLocalRoot =
+      row.identity.kind === "repository-declaration" &&
+      (row.isBootstrapped === true ||
+        (row.isDefaultExport === true && isFrameworkRootPath(row.identity.filePath)));
+
+    const usage: Component["usage"] = occs.length > 0 ? "direct" : isLocalRoot ? "root" : "none";
 
     return {
       id: row.id,
