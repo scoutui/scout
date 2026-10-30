@@ -24,6 +24,7 @@ import {
   type PendingAngularFile,
 } from "../emit-angular-file.js";
 import { detectAngularBootstrap, detectAngularComponents, detectAngularModules } from "../local-index/detect-angular.js";
+import { buildAngularLibraryIndex } from "../scan/angular-library-index.js";
 import { createProgress, startPhase } from "../util/progress.js";
 import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
@@ -646,15 +647,22 @@ export async function scanRepository(input: {
         }
       }
     }
+    // Installed libraries the Angular files import from describe their components in their typings.
+    // An import that resolves inside the repo (a relative path or an alias) is the repo's own.
+    const librarySpecifiers = new Set(
+      pendingAngular.flatMap((p) => p.imports.filter((i) => angularRefResolver(p.graphKey, i.specifier, i.imported) === null).map((i) => i.specifier)),
+    );
+    const library = compiler === null ? undefined : buildAngularLibraryIndex({ configDir: cfg.configDir, specifiers: librarySpecifiers });
+    for (const u of library?.unreadable ?? []) scanWarning(`Couldn't read the Angular components ${u.specifier} declares (${u.reason}), so its components aren't counted.`);
     const index =
       compiler === null
         ? undefined
-        : buildAngularSelectorIndex(compiler, pendingAngular, (filePath, className, selector, message) =>
+        : buildAngularSelectorIndex(compiler, pendingAngular, library, (filePath, className, selector, message) =>
             scanWarning(
               `Couldn't read the selector "${selector}" on ${className} in ${rebase(filePath)} (${oneLine(message)}), so uses of it aren't matched.`,
             ),
           );
-    const scopes = buildModuleScopes(pendingAngular, angularRefResolver);
+    const scopes = buildModuleScopes(pendingAngular, angularRefResolver, library);
     const templateBuilders = new Map<string, ReturnType<typeof graphBuilder.beginFile>>();
     for (const pending of pendingAngular) {
       try {

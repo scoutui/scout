@@ -48,7 +48,7 @@ export class BadComponent {}
 `,
     );
     const unreadable: { filePath: string; className: string; selector: string; message: string }[] = [];
-    const index = buildAngularSelectorIndex(compiler, [good, bad], (filePath, className, selector, message) => {
+    const index = buildAngularSelectorIndex(compiler, [good, bad], undefined, (filePath, className, selector, message) => {
       unreadable.push({ filePath, className, selector, message });
     });
 
@@ -71,7 +71,7 @@ export class GoodComponent {}
 `,
     );
     const unreadable: unknown[] = [];
-    buildAngularSelectorIndex(compiler, [good], (...args) => unreadable.push(args));
+    buildAngularSelectorIndex(compiler, [good], undefined, (...args) => unreadable.push(args));
     expect(unreadable).toEqual([]);
   });
 });

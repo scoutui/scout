@@ -14,30 +14,46 @@ export type SelectorEntry = {
 /** What one element matched. */
 export type ElementMatch = {
   entry: SelectorEntry;
+  /** The selector the component declares, as written. */
+  selector: string;
   /** Attribute names the matching selector itself requires, such as `app-icon-button` in `button[app-icon-button]`. */
   selectorAttributes: ReadonlySet<string>;
 };
 
+type ElementShape = { name: string; attributes: readonly string[]; classNames: readonly string[] };
+
 export type SelectorIndex = {
   /** Every distinct component whose selector matches the element. */
-  match(element: { name: string; attributes: readonly string[]; classNames: readonly string[] }): ElementMatch[];
+  match(element: ElementShape): ElementMatch[];
+  /** Whether a directive's selector matches the element: Angular owns it, so it is no custom element. */
+  matchesDirective(element: ElementShape): boolean;
 };
 
 /** Indexes components by their selectors, using Angular's own matcher so every selector form Angular accepts matches as it does in Angular. */
 export function createSelectorIndex(
   compiler: AngularCompiler,
   components: readonly { selector: string; entry: SelectorEntry }[],
+  directiveSelectors: readonly string[] = [],
 ): SelectorIndex {
   const matcher: SelectorMatcher<SelectorEntry> = new compiler.SelectorMatcher<SelectorEntry>();
+  const selectorOf = new Map<SelectorEntry, string>();
   for (const { selector, entry } of components) {
     matcher.addSelectables(compiler.CssSelector.parse(selector), entry);
+    selectorOf.set(entry, selector);
   }
+  const directives: SelectorMatcher<true> = new compiler.SelectorMatcher<true>();
+  for (const selector of directiveSelectors) directives.addSelectables(compiler.CssSelector.parse(selector), true);
+  const toCss = (element: ElementShape) => {
+    const css = new compiler.CssSelector();
+    css.setElement(element.name);
+    for (const name of element.attributes) css.addAttribute(name, "");
+    for (const name of element.classNames) css.addClassName(name);
+    return css;
+  };
   return {
+    matchesDirective: (element) => directives.match(toCss(element), null),
     match(element) {
-      const css = new compiler.CssSelector();
-      css.setElement(element.name);
-      for (const name of element.attributes) css.addAttribute(name, "");
-      for (const name of element.classNames) css.addClassName(name);
+      const css = toCss(element);
       const matches: ElementMatch[] = [];
       matcher.match(css, (selector: CssSelector, entry) => {
         if (matches.some((m) => m.entry === entry)) return;
@@ -47,7 +63,7 @@ export function createSelectorIndex(
           const name = selector.attrs[i];
           if (name !== undefined) names.add(name);
         }
-        matches.push({ entry, selectorAttributes: names });
+        matches.push({ entry, selector: selectorOf.get(entry) ?? "", selectorAttributes: names });
       });
       return matches;
     },

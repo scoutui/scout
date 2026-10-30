@@ -21,6 +21,12 @@ const VERSIONS = [19, 20, 21, 22] as const;
 
 const inShape = (shape: string, filePath: string) => filePath.startsWith(`src/${shape}/`);
 
+const pkg = (packageName: string, publicEntry: string, exportName: string) => ({
+  kind: "package-export",
+  packageName,
+  publicEntry,
+  exportName,
+});
 const local = (shape: string, file: string, exportName: string) => ({
   kind: "repository-declaration",
   repoId: "angular-app",
@@ -352,6 +358,35 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("library-components", () => {
+    const S = "library-components";
+    const appComponent = local(S, "app.component.ts", "AppComponent");
+    const exCard = pkg("@example/ng-ui", "card", "ExCard");
+    const exButton = pkg("@example/ng-ui", "", "ExButton");
+
+    it("resolves a component declared in an installed library's subpath entry, crediting the subpath it was imported from", () => {
+      expect(rendersIn(S)).toEqual([
+        row(
+          "app.component.html:1:1",
+          exCard,
+          appComponent,
+          [imported("@example/ng-ui/card", "ExCard")],
+          {
+            elevation: { tier: "written", value: "2" },
+            title: { tier: "reference", ref: "t" },
+          },
+          ["closed"],
+        ),
+        row("app.component.html:2:1", exButton, appComponent, [imported("@example/ng-ui", "ExButton")]),
+      ]);
+    });
+
+    it("declares the library component's inputs by their template-facing alias, the same as a repo component", () => {
+      expect(componentOf(exCard)?.declared).toBeUndefined(); // a package component has no repo-declared API; its props come from the library's own typings
+      expect(componentOf(exCard)?.framework).toBe("angular");
+    });
+  });
+
   describe("monorepo-modules", () => {
     const S = "monorepo-modules";
     const headerOne = local(S, "app-one/header.component.ts", "OneHeaderComponent");
@@ -406,6 +441,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/decorator-io/toggle.component.ts",
           "src/alias-import/alias-page.component.ts",
           "src/alias-import/shared/components/alias-badge.component.ts",
+          "src/library-components/app.component.ts",
           "src/imports-spread/card.component.ts",
           "src/imports-spread/imports-spread-page.component.ts",
           "src/imports-spread/spread-button.component.ts",

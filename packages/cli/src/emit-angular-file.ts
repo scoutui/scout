@@ -13,6 +13,7 @@ import {
 } from "@scoutui/parser-angular";
 import type { DeclaredPropApi } from "@scoutui/scan-format";
 import type { AngularComponentDecl, AngularModuleDecl } from "./local-index/detect-angular.js";
+import type { AngularLibraryIndex } from "./scan/angular-library-index.js";
 import type { LocalDefinition } from "./local-index/types.js";
 import { errorMessage } from "./util/errors.js";
 
@@ -144,7 +145,8 @@ export function bootstrappedComponents(
 }
 
 /**
- * Every exported component's selector across the repo. A selector
+ * Every exported component's selector across the repo, and those of the
+ * installed libraries its Angular files import. A selector
  * `compiler.CssSelector.parse` can't read (invalid CSS) is skipped — rather
  * than failing the whole index, which would stop every framework's scan —
  * and reported through `onSelectorUnreadable`, so one bad selector costs
@@ -153,9 +155,16 @@ export function bootstrappedComponents(
 export function buildAngularSelectorIndex(
   compiler: AngularCompiler,
   files: readonly PendingAngularFile[],
+  library?: AngularLibraryIndex,
   onSelectorUnreadable?: (filePath: string, className: string, selector: string, message: string) => void,
 ): SelectorIndex {
   const components: { selector: string; entry: SelectorEntry }[] = [];
+  for (const c of library?.components ?? []) {
+    components.push({
+      selector: c.selector,
+      entry: { source: { type: "package", specifier: c.specifier }, exportName: c.exportName, inputs: c.inputs, outputs: c.outputs },
+    });
+  }
   for (const file of files) {
     for (const c of file.components) {
       if (c.selector === undefined || !c.isExported) continue;
@@ -171,7 +180,7 @@ export function buildAngularSelectorIndex(
       });
     }
   }
-  return createSelectorIndex(compiler, components);
+  return createSelectorIndex(compiler, components, (library?.directives ?? []).map((d) => d.selector));
 }
 
 /**
@@ -194,13 +203,19 @@ export type AngularModuleScopes = {
   resolveRef(fromFile: PendingAngularFile, identifier: string): string | undefined;
 };
 
-export function buildModuleScopes(files: readonly PendingAngularFile[], resolver?: AngularRefResolver): AngularModuleScopes {
+export function buildModuleScopes(
+  files: readonly PendingAngularFile[],
+  resolver?: AngularRefResolver,
+  library?: AngularLibraryIndex,
+): AngularModuleScopes {
   const byKey = new Map(files.map((f) => [f.graphKey, f]));
   const resolve = resolver ?? relativeOnly(byKey);
+  // An installed library's NgModules, by the name they're exported under: what each makes available, by name.
+  const libraryModules = new Map((library?.modules ?? []).map((m) => [m.exportName, m.exports.map((e) => e.exportName)]));
 
   const resolveRef = (fromFile: PendingAngularFile, identifier: string): string | undefined => {
     const spec = fromFile.imports.find((i) => i.local === identifier);
-    // An installed package's components are matched by name: there's no library index on this branch.
+    // An installed package's components and modules are matched by name.
     if (spec !== undefined && resolve(fromFile.graphKey, spec.specifier, spec.imported) === null) return spec.imported;
     const target = resolveRepoRef(fromFile.graphKey, fromFile.imports, identifier, byKey, resolve);
     return target?.file === undefined ? undefined : `${target.file.graphKey}#${target.name}`;
@@ -226,6 +241,17 @@ export function buildModuleScopes(files: readonly PendingAngularFile[], resolver
     if (cached !== undefined) return cached;
     if (seen.has(moduleKey)) return new Set<string>(); // cycle guard: not cached, same as before this type was keyed
     seen.add(moduleKey);
+    const libraryExports = libraryModules.get(moduleKey);
+    if (libraryExports !== undefined) {
+      // A library module's exports are named by the library's own typings; one that's itself a module adds what it exports.
+      const out = new Set<string>();
+      for (const name of libraryExports) {
+        if (libraryModules.has(name)) for (const n of exportedBy(name, seen) ?? []) out.add(n);
+        else out.add(name);
+      }
+      exportedCache.set(moduleKey, out);
+      return out;
+    }
     const entry = modules.get(moduleKey);
     if (entry === undefined || !entry.module.exportsComplete) {
       exportedCache.set(moduleKey, null);
@@ -235,7 +261,7 @@ export function buildModuleScopes(files: readonly PendingAngularFile[], resolver
     for (const name of entry.module.exports) {
       const key = resolveRef(entry.file, name);
       if (key === undefined) continue;
-      if (modules.has(key)) {
+      if (modules.has(key) || libraryModules.has(key)) {
         const inner = exportedBy(key, seen);
         if (inner === null) {
           exportedCache.set(moduleKey, null);
@@ -253,7 +279,7 @@ export function buildModuleScopes(files: readonly PendingAngularFile[], resolver
   return {
     declaringModule: (key) => declaredIn.get(key),
     exportedBy,
-    isModule: (key) => modules.has(key),
+    isModule: (key) => modules.has(key) || libraryModules.has(key),
     resolveRef,
   };
 }
@@ -409,6 +435,12 @@ export function emitAngularFile(opts: {
       inScope: (entry) => scope === null || scope.has(entry.source.type === "file" ? `${entry.source.graphKey}#${entry.exportName}` : entry.exportName),
       resolveLocal,
       onTemplateError: (message) => opts.onTemplateError(template.graphKey, message),
+      // A class several entry points re-export: the entry this file imports from, else the first by name.
+      chooseEntry: (group) => {
+        const imported = new Set(file.imports.map((i) => i.specifier));
+        const sorted = [...group].sort((a, b) => entryLabel(a.entry).localeCompare(entryLabel(b.entry)));
+        return sorted.find((m) => m.entry.source.type === "package" && imported.has(m.entry.source.specifier)) ?? (sorted[0] as ElementMatch);
+      },
       onAmbiguous: (tagName, loc, matches: readonly ElementMatch[]) =>
         opts.onAmbiguous({ filePath: template.graphKey, line: loc.line, column: loc.column, tagName, candidates: matches.map((m) => entryLabel(m.entry)) }),
       onOutOfScope: (tagName, loc, matches: readonly ElementMatch[]) =>
