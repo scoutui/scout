@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { CompositionGraph, CompositionGraphNode } from "@scoutui/web-shared";
 import {
-  buildGraphModel, chipFaceFragments, distinctTails, findRows, pathValueOf, routeIds, routesFrom, type GraphModel,
+  buildGraphModel, chipFaceFragments, distinctTails, findRows, pathValueOf, routeIds, routesFrom, routeThrough,
+  topLevelIds, topsThrough, type GraphModel,
 } from "@/components/component-detail/composition/graph-model";
 
 const node = (id: string, o?: Partial<CompositionGraphNode>): CompositionGraphNode => ({
@@ -190,5 +191,70 @@ describe("chipFaceFragments", () => {
         { name: "A", path: "src/a.tsx" },
       ]),
     ).toEqual([null, "src/a.tsx"]);
+  });
+});
+
+describe("the two ends", () => {
+  // T0 → M → D → F, T1 → D, T2 → F, and L0 ⇄ L1 → F: a loop nothing outside renders.
+  const m = buildGraphModel(
+    graph(
+      ["F", "D", "M", "T0", "T1", "T2", "L0", "L1"].map((id) => node(id)),
+      [["T0", "M"], ["M", "D"], ["D", "F"], ["T1", "D"], ["T2", "F"], ["L0", "L1"], ["L1", "L0"], ["L1", "F"]],
+    ),
+  );
+  const up = routesFrom(m, "F", "up");
+
+  it("lists the top-level components above the focus, and leaves out a loop nothing outside renders", () => {
+    expect(topLevelIds(m, "F", up).sort()).toEqual(["T0", "T1", "T2"]);
+  });
+
+  it("counts a component that renders only itself as top level", () => {
+    const self = buildGraphModel(graph([node("F"), node("P")], [["P", "P"], ["P", "F"]]));
+    expect(topLevelIds(self, "F", routesFrom(self, "F", "up"))).toEqual(["P"]);
+  });
+
+  it("keeps the tops a route through a component reaches, with their steps through it", () => {
+    expect(topsThrough(m, "F", up, "D")).toEqual(new Map([["T1", 2], ["T0", 3]]));
+    expect(topsThrough(m, "F", up, "M")).toEqual(new Map([["T0", 3]]));
+  });
+
+  it("keeps a top-level through-component as its own top", () => {
+    expect(topsThrough(m, "F", up, "T2")).toEqual(new Map([["T2", 1]]));
+  });
+
+  it("finds no tops through a loop nothing outside renders", () => {
+    expect(topsThrough(m, "F", up, "L1")).toEqual(new Map());
+  });
+
+  it.each([
+    ["a top alone", null, "T0", ["T0", "M", "D", "F"]],
+    ["a through-component alone", "M", null, ["M", "D", "F"]],
+    ["both", "D", "T0", ["T0", "M", "D", "F"]],
+    ["nothing", null, null, []],
+    ["a top the through-component doesn't reach", "M", "T1", []],
+  ])("draws the route for %s", (_, via, top, ids) => {
+    expect(routeThrough(m, "F", up, via, top)).toEqual(ids);
+  });
+
+  it("takes the shortest route through the component, not the shortest overall", () => {
+    // T → X → F is shorter, but the route must run through Y: T → Y → Z → F.
+    const g = buildGraphModel(
+      graph(["F", "T", "X", "Y", "Z"].map((id) => node(id)), [["T", "X"], ["X", "F"], ["T", "Y"], ["Y", "Z"], ["Z", "F"]]),
+    );
+    expect(routeThrough(g, "F", routesFrom(g, "F", "up"), "Y", "T")).toEqual(["T", "Y", "Z", "F"]);
+  });
+
+  it("keeps a route that only passes a loop", () => {
+    // A ⇄ V, V → F, T → A: through A the route is T → A → V → F.
+    const g = buildGraphModel(graph(["F", "V", "A", "T"].map((id) => node(id)), [["A", "V"], ["V", "A"], ["V", "F"], ["T", "A"]]));
+    expect(routeThrough(g, "F", routesFrom(g, "F", "up"), "A", "T")).toEqual(["T", "A", "V", "F"]);
+  });
+
+  it("leaves out a top whose only route through the component goes round a loop", () => {
+    // T → V, V ⇄ A, V → F: through A, T's route would be T → V → A → V → F.
+    const g = buildGraphModel(graph(["F", "V", "A", "T"].map((id) => node(id)), [["T", "V"], ["V", "A"], ["A", "V"], ["V", "F"]]));
+    const gUp = routesFrom(g, "F", "up");
+    expect(topsThrough(g, "F", gUp, "A")).toEqual(new Map());
+    expect(routeThrough(g, "F", gUp, "A", "T")).toEqual([]);
   });
 });
