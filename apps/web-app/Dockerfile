@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # The builder runs once, on the build machine's own architecture, and every
 # target image copies from it, so nothing is built under emulation.
-FROM --platform=$BUILDPLATFORM node:24.22.0-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS builder
+FROM --platform=$BUILDPLATFORM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
 WORKDIR /app
 RUN corepack enable
 # Copy the whole repo: copying only some workspace package.json files trips
@@ -23,7 +23,7 @@ RUN cd apps/web-app/.next/standalone \
         -exec sh -c 'mkdir -p "$1/$(dirname "$2")" && mv "$2" "$1/$2"' _ "/native/${pair#*:}" {} \; ; \
     done
 
-FROM node:24.22.0-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS runner
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS runner
 ARG TARGETARCH
 WORKDIR /app
 ENV NODE_ENV=production
