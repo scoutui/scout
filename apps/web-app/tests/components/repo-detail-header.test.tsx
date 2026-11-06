@@ -106,6 +106,26 @@ describe("RepoDetailHeader meta line and status row", () => {
     expect(screen.queryAllByText(/^react\b/).length).toBeGreaterThan(0);
     expect(screen.queryAllByText(/^web components\b/).length).toBeGreaterThan(0);
   });
+
+  it("labels an unknown framework by its own name, never as react", () => {
+    render(
+      <RepoDetailHeader
+        detail={makeDetail({
+          frameworkCounts: [
+            { kind: "react-component", count: 5 },
+            { kind: "svelte-component", count: 3 },
+          ],
+        })}
+        recentScans={[]}
+      />,
+    );
+    // Exact match: the stripped name, never the raw "svelte-component" kind.
+    expect(screen.getByText("svelte")).toBeInTheDocument();
+    expect(screen.queryByText("svelte-component")).toBeNull();
+    // The svelte row's own count, not folded into react's.
+    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+  });
 });
 
 describe("RepoDetailHeader without a composition bar", () => {

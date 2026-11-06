@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   emptyFacets,
   isFiltering,
-  KIND_LABEL,
+  kindLabel,
   ORIGIN_DESCRIPTION,
   ORIGIN_LABEL,
   type FacetOptions,
@@ -81,7 +81,7 @@ export function FilterBar({
     {
       key: "kind",
       label: "Type",
-      values: options.kinds.map((k) => ({ value: k.value, label: KIND_LABEL[k.value], count: k.count })),
+      values: options.kinds.map((k) => ({ value: k.value, label: kindLabel(k.value), count: k.count })),
       selected: facets.kinds,
       onSelect: (kinds) => onChange({ ...facets, kinds: kinds as KindValue[] }),
       dropsWithOneValue: true,
@@ -126,7 +126,7 @@ export function FilterBar({
     ...facets.kinds.map((k) => ({
       key: `kind:${k}`,
       field: "type",
-      value: KIND_LABEL[k],
+      value: kindLabel(k),
       onRemove: () => onChange({ ...facets, kinds: facets.kinds.filter((x) => x !== k) }),
     })),
     ...facets.packages.map((p) => ({

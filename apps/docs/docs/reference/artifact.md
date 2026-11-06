@@ -21,7 +21,7 @@ The file is one JSON object with four keys:
 Most questions are answered from `components` and `occurrences`. Each use the scan matched names its component by the component's `id`.
 
 :::note
-A newer CLI can add values to some lists: `credit.kind`, a `trace` step's `kind`, an unmatched use's `reason.kind` and `reason.code`, and the `confidence`, `strongestClass`, `reason`, `source`, `strength` and `disposition` values in a tag's `attribution`. If you read the file with your own scripts, skip values you don't recognise. The other lists of values in `components[]` and `occurrences[]` change only with a new `meta.schemaVersion`.
+A newer CLI can add values to some lists: a component's `framework`, `credit.kind`, a `trace` step's `kind`, an unmatched use's `reason.kind` and `reason.code`, and the `confidence`, `strongestClass`, `reason`, `source`, `strength` and `disposition` values in a tag's `attribution`. If you read the file with your own scripts, skip values you don't recognise. The other lists of values in `components[]` and `occurrences[]` change only with a new `meta.schemaVersion`.
 :::
 
 ## Paths {#paths}
@@ -36,7 +36,7 @@ One entry per [component](/docs/reference/glossary#component). A component appea
 | --- | --- | --- |
 | `id` | `string` | 16-character id computed from `identity`. The same identity gets the same `id` in every scan, so you can match a component across scans. `occurrences[]` entries and `composition` refer to components by this value. |
 | `identity` | object | What the component is and where it comes from. See [Component identity](#component-identity). |
-| `framework` | `"react" \| "vue"` \| absent | The framework the component is written in. Absent on web components. |
+| `framework` | `string` \| absent | The framework the component is written in: currently `"react"` or `"vue"`, with more to come as Scout supports them — see the note above. Absent on web components. |
 | `stats.occurrenceCount` | `number` | Number of uses of this component, including those where it is passed to a call (see [`credit`](#credit)). |
 | `stats.fileCount` | `number` | Number of distinct files those uses are in. |
 | `usage` | `"direct" \| "root" \| "none"` | Why the component is listed. See [`usage`](#usage). |

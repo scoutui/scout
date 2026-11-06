@@ -25,6 +25,11 @@ describe("presentIdentity", () => {
     expect(governanceKey(button)).toEqual({ packageName: "@example/ui", name: "Button" });
   });
 
+  it("presents an unknown framework as its own open kind, never defaulting to react", () => {
+    const widget = component(packageExport("@example/ui", "Widget"), { framework: "svelte" });
+    expect(presentIdentity(widget)).toMatchObject({ kind: "svelte-component" });
+  });
+
   it("presents a repository declaration outside any workspace package as local, by file path, and never governed", () => {
     const panel = component(repoDeclaration("repo-a", "src/panel.vue", "Panel"), { framework: "vue" });
     expect(presentIdentity(panel)).toEqual({
