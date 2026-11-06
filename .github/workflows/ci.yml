@@ -35,8 +35,6 @@ jobs:
     # own databases on this server.
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/scout
-      # The checkout has no local branch for the base, only origin/<base>, so
-      # turbo's own lookup of the bare branch name fails and --affected runs everything.
       TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
 
     steps:
