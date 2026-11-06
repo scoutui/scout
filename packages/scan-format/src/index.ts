@@ -11,7 +11,6 @@ export type {
   Identity,
   Known,
   KnownEvidenceRecord,
-  KnownFramework,
   KnownTagAttribution,
   Occurrence,
   PropDistribution,

@@ -75,8 +75,6 @@ export type Identity = z.infer<typeof identitySchema>;
 /** An open list: any non-empty string passes, including a framework this version doesn't know. */
 const frameworkSchema = openValue;
 export type Framework = z.infer<typeof frameworkSchema>;
-/** The frameworks this scanner's parsers write. The scanner builds `framework` as `KnownFramework`, so the compiler checks it against this list; the parsed/stored type (`Framework`) accepts any non-empty string. */
-export type KnownFramework = "react" | "vue";
 
 const creditSchema = openKinds(
   z.object({ kind: z.literal("render") }),
