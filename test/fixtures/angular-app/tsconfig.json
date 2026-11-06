@@ -5,7 +5,15 @@
     "target": "es2022",
     "experimentalDecorators": true,
     "strict": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@alias-shared": [
+        "src/alias-import/shared/index.ts"
+      ]
+    }
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

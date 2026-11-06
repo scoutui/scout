@@ -76,18 +76,37 @@ export type AngularBootstrapCall = { graphKey: string; identifier: string; via: 
  * target isn't one of this scan's pending Angular files, or a bare/package
  * specifier (a library import — this only resolves within the repo).
  */
+/**
+ * Where an import written in a repo file points: the graph key of the repo file
+ * that declares the imported name and the name it's declared under, or null
+ * when it leaves the repo (an installed package). The scan backs it with the
+ * same resolution React uses: tsconfig `paths` and other aliases, and
+ * re-exports followed to the declaring file.
+ */
+export type AngularRefResolver = (fromGraphKey: string, specifier: string, imported: string) => { graphKey: string; name: string } | null;
+
+/** Relative imports only, without following re-exports: what a caller without the scan's resolver gets. */
+const relativeOnly =
+  (byKey: ReadonlyMap<string, PendingAngularFile>): AngularRefResolver =>
+  (fromGraphKey, specifier, imported) => {
+    if (!specifier.startsWith(".")) return null;
+    const base = posix.normalize(posix.join(posix.dirname(fromGraphKey), specifier));
+    const graphKey = [base, `${base}.ts`, `${base}/index.ts`].find((k) => byKey.has(k));
+    return graphKey === undefined ? { graphKey: base, name: imported } : { graphKey, name: imported };
+  };
+
 function resolveRepoRef(
   fromGraphKey: string,
   fromImports: readonly AngularImport[],
   identifier: string,
   byKey: ReadonlyMap<string, PendingAngularFile>,
+  resolver: AngularRefResolver,
 ): { file: PendingAngularFile | undefined; name: string } | undefined {
   const spec = fromImports.find((i) => i.local === identifier);
   if (spec === undefined) return { file: byKey.get(fromGraphKey), name: identifier };
-  if (!spec.specifier.startsWith(".")) return undefined;
-  const base = posix.normalize(posix.join(posix.dirname(fromGraphKey), spec.specifier));
-  const file = [base, `${base}.ts`, `${base}/index.ts`].map((k) => byKey.get(k)).find((f) => f !== undefined);
-  return { file, name: spec.imported };
+  const target = resolver(fromGraphKey, spec.specifier, spec.imported);
+  if (target === null) return undefined;
+  return { file: byKey.get(target.graphKey), name: target.name };
 }
 
 /**
@@ -95,8 +114,13 @@ function resolveRepoRef(
  * declaring file's graph key: `bootstrapApplication(AppComponent)`, or the
  * `bootstrap` list of the module `bootstrapModule(AppModule)` starts.
  */
-export function bootstrappedComponents(calls: readonly AngularBootstrapCall[], files: readonly PendingAngularFile[]): Map<string, Set<string>> {
+export function bootstrappedComponents(
+  calls: readonly AngularBootstrapCall[],
+  files: readonly PendingAngularFile[],
+  resolver?: AngularRefResolver,
+): Map<string, Set<string>> {
   const byKey = new Map(files.map((f) => [f.graphKey, f]));
+  const resolve = resolver ?? relativeOnly(byKey);
   const out = new Map<string, Set<string>>();
   const mark = (graphKey: string, className: string) => {
     const set = out.get(graphKey) ?? new Set<string>();
@@ -104,7 +128,7 @@ export function bootstrappedComponents(calls: readonly AngularBootstrapCall[], f
     out.set(graphKey, set);
   };
   for (const call of calls) {
-    const target = resolveRepoRef(call.graphKey, call.imports, call.identifier, byKey);
+    const target = resolveRepoRef(call.graphKey, call.imports, call.identifier, byKey, resolve);
     if (target?.file === undefined) continue;
     if (call.via === "bootstrapApplication") {
       if (target.file.components.some((c) => c.className === target.name)) mark(target.file.graphKey, target.name);
@@ -112,7 +136,7 @@ export function bootstrappedComponents(calls: readonly AngularBootstrapCall[], f
     }
     const module = target.file.modules.find((m) => m.className === target.name);
     for (const name of module?.bootstrap ?? []) {
-      const declaring = resolveRepoRef(target.file.graphKey, target.file.imports, name, byKey);
+      const declaring = resolveRepoRef(target.file.graphKey, target.file.imports, name, byKey, resolve);
       if (declaring?.file?.components.some((c) => c.className === declaring.name)) mark(declaring.file.graphKey, declaring.name);
     }
   }
@@ -166,17 +190,19 @@ export type AngularModuleScopes = {
   /** Keys a module (keyed by its own `${graphKey}#${className}`) makes available to modules that import it, following exported modules. Null when that can't be fully determined — an incomplete `exports` list somewhere in the chain — and every selector should be treated as a candidate instead of trusting a partial list. */
   exportedBy(moduleKey: string): ReadonlySet<string> | null;
   isModule(key: string): boolean;
-  /** Resolves an identifier written in `fromFile` to a stable key, or undefined when it's a relative import whose target isn't one of this scan's pending Angular files. */
+  /** Resolves an identifier written in `fromFile` to a stable key: `${graphKey}#${name}` for a repo file (through relative paths, aliases and re-exports), the bare name for an installed package, or undefined when a repo target isn't one of this scan's Angular files. */
   resolveRef(fromFile: PendingAngularFile, identifier: string): string | undefined;
 };
 
-export function buildModuleScopes(files: readonly PendingAngularFile[]): AngularModuleScopes {
+export function buildModuleScopes(files: readonly PendingAngularFile[], resolver?: AngularRefResolver): AngularModuleScopes {
   const byKey = new Map(files.map((f) => [f.graphKey, f]));
+  const resolve = resolver ?? relativeOnly(byKey);
 
   const resolveRef = (fromFile: PendingAngularFile, identifier: string): string | undefined => {
     const spec = fromFile.imports.find((i) => i.local === identifier);
-    if (spec !== undefined && !spec.specifier.startsWith(".")) return spec.imported; // library import: pass through by name, no library index yet
-    const target = resolveRepoRef(fromFile.graphKey, fromFile.imports, identifier, byKey);
+    // An installed package's components are matched by name: there's no library index on this branch.
+    if (spec !== undefined && resolve(fromFile.graphKey, spec.specifier, spec.imported) === null) return spec.imported;
+    const target = resolveRepoRef(fromFile.graphKey, fromFile.imports, identifier, byKey, resolve);
     return target?.file === undefined ? undefined : `${target.file.graphKey}#${target.name}`;
   };
 

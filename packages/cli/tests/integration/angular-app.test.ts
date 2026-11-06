@@ -335,6 +335,23 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("alias-import", () => {
+    const S = "alias-import";
+    const badge = local(S, "shared/components/alias-badge.component.ts", "AliasBadgeComponent");
+    const page = local(S, "alias-page.component.ts", "AliasPageComponent");
+
+    // The page imports the badge through a tsconfig path alias that points at a
+    // barrel, as Angular apps commonly do (`@shared`). The alias must resolve
+    // to the badge's own file for the template use to be in scope.
+    it("resolves a component imported through a tsconfig path alias and a barrel", () => {
+      expect(rendersIn(S)).toEqual([
+        row("alias-page.component.ts:7:14", badge, page, [imported("@alias-shared", "AliasBadgeComponent")], {
+          text: { tier: "written", value: "New" },
+        }),
+      ]);
+    });
+  });
+
   describe("monorepo-modules", () => {
     const S = "monorepo-modules";
     const headerOne = local(S, "app-one/header.component.ts", "OneHeaderComponent");
@@ -387,6 +404,8 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/control-flow/item.component.ts",
           "src/decorator-io/decorator-io-page.component.ts",
           "src/decorator-io/toggle.component.ts",
+          "src/alias-import/alias-page.component.ts",
+          "src/alias-import/shared/components/alias-badge.component.ts",
           "src/imports-spread/card.component.ts",
           "src/imports-spread/imports-spread-page.component.ts",
           "src/imports-spread/spread-button.component.ts",

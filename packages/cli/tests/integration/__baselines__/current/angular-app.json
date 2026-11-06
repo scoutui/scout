@@ -32,6 +32,88 @@
   },
   "components": [
     {
+      "id": "9844053fc8e494cb",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/alias-import/alias-page.component.ts",
+        "exportName": "AliasPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 9,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "93f57aa71bb66c4a": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "93f57aa71bb66c4a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/alias-import/shared/components/alias-badge.component.ts",
+        "exportName": "AliasBadgeComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "text": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "New",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "text": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 7,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "9844053fc8e494cb": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "f9c0da3fdd55db3f",
       "identity": {
         "kind": "repository-declaration",
@@ -1185,6 +1267,33 @@
     }
   ],
   "occurrences": [
+    {
+      "occurrenceId": "367e39b146277155",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "93f57aa71bb66c4a"
+      },
+      "filePath": "src/alias-import/alias-page.component.ts",
+      "line": 7,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@alias-shared",
+          "name": "AliasBadgeComponent"
+        }
+      ],
+      "props": {
+        "text": {
+          "tier": "written",
+          "value": "New"
+        }
+      },
+      "ownerComponentId": "9844053fc8e494cb"
+    },
     {
       "occurrenceId": "16dc5cdfe9fe3d19",
       "resolution": {

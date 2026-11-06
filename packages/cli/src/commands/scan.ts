@@ -16,6 +16,7 @@ import {
   buildAngularSelectorIndex,
   buildModuleScopes,
   bootstrappedComponents,
+  type AngularRefResolver,
   emitAngularFile,
   type AngularBootstrapCall,
   importsOf,
@@ -587,8 +588,31 @@ export async function scanRepository(input: {
     parseProgress.tick();
   }
 
+  // Bounded re-export resolver pins an unparsed first-party file's identity to
+  // its definition file so ids are scope-invariant between whole-repo and
+  // single-app scans. Only invoked for first-party files outside the graph.
+  const firstParty = (p: string): boolean => isFirstPartyPath(workspaceGraph, p);
+  const boundedDefinitions = createBoundedDefinitionResolver({
+    moduleResolver: resolveImport,
+    firstParty,
+    onWarning: (msg) => scanWarning(msg),
+    onSyntaxErrors: reportSyntaxErrors,
+  });
+  // Angular scope and bootstrap names resolve the way React imports do: relative
+  // paths, tsconfig `paths` and other aliases, then re-exports to the declaring
+  // file. An import that leaves the repo is an installed package's.
+  const angularRefResolver: AngularRefResolver = (fromGraphKey, specifier, imported) => {
+    const target = resolveImport(resolve(cfg.configDir, fromGraphKey), specifier);
+    if (target === null || !firstParty(target)) return null;
+    const pinned = boundedDefinitions.resolveDefinition(target, imported, []);
+    const declared = pinned !== null && "absFile" in pinned ? pinned : undefined;
+    return {
+      graphKey: posixPath(relative(cfg.configDir, declared?.absFile ?? target)),
+      name: declared?.exportName ?? imported,
+    };
+  };
   if (pendingAngular.length > 0) {
-    const bootstrapped = bootstrappedComponents(angularBootstraps, pendingAngular);
+    const bootstrapped = bootstrappedComponents(angularBootstraps, pendingAngular, angularRefResolver);
     for (const pending of pendingAngular) {
       localDefs.push(...angularDefinitions(pending.components, pending.definitionPath, bootstrapped.get(pending.graphKey)));
     }
@@ -630,7 +654,7 @@ export async function scanRepository(input: {
               `Couldn't read the selector "${selector}" on ${className} in ${rebase(filePath)} (${oneLine(message)}), so uses of it aren't matched.`,
             ),
           );
-    const scopes = buildModuleScopes(pendingAngular);
+    const scopes = buildModuleScopes(pendingAngular, angularRefResolver);
     const templateBuilders = new Map<string, ReturnType<typeof graphBuilder.beginFile>>();
     for (const pending of pendingAngular) {
       try {
@@ -664,16 +688,6 @@ export async function scanRepository(input: {
   const declaringManifest = new Map<string, string>();
   const absoluteFromGraphKey = (fromFile: string): string =>
     isAbsolute(fromFile) ? fromFile : resolve(cfg.configDir, fromFile);
-  // Bounded re-export resolver pins an unparsed first-party file's identity to
-  // its definition file so ids are scope-invariant between whole-repo and
-  // single-app scans. Only invoked for first-party files outside the graph.
-  const firstParty = (p: string): boolean => isFirstPartyPath(workspaceGraph, p);
-  const boundedDefinitions = createBoundedDefinitionResolver({
-    moduleResolver: resolveImport,
-    firstParty,
-    onWarning: (msg) => scanWarning(msg),
-    onSyntaxErrors: reportSyntaxErrors,
-  });
   const resolveOpts: ResolveOpts = {
     // Follow external aggregator barrels to the leaf package that
     // defines the export, keyed by the entry the chain crossed into it by.
