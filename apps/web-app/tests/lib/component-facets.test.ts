@@ -11,6 +11,12 @@ import {
   writtenNameMatch,
   type FacetState,
 } from "@/lib/component-facets";
+
+const baseRow: ComponentRow = {
+  componentId: "", kind: "react-component", scope: "local", packageName: null,
+  displayName: "", disambiguator: null, version: null,
+  occurrenceCount: 1, fileCount: 1, deprecated: false, tags: [],
+};
 import { queryString } from "@/lib/query-string";
 
 describe("search text", () => {
@@ -110,6 +116,30 @@ describe("facetOptions: every count follows the other filters", () => {
   });
 });
 
+describe("Has unused props", () => {
+  const declared = { ...baseRow, componentId: "d", displayName: "Panel", apiUsage: { declaredCount: 2, neverUsedCount: 1 } };
+  const fullyUsed = { ...baseRow, componentId: "f", displayName: "Field", apiUsage: { declaredCount: 2, neverUsedCount: 0 } };
+  const undeclared = { ...baseRow, componentId: "u", displayName: "Tag" }; // no declared API: never has unused props
+
+  it("keeps only rows with at least one never-used declared prop", () => {
+    expect(filterRows([declared, fullyUsed, undeclared], { ...emptyFacets(), hasUnusedProps: true }).map(r => r.componentId)).toEqual(["d"]);
+  });
+
+  it("without the filter, keeps every row regardless of declared API", () => {
+    expect(filterRows([declared, fullyUsed, undeclared], emptyFacets()).map(r => r.componentId)).toEqual(["d", "f", "u"]);
+  });
+
+  it("hasUnusedProps:false, reachable only from a pasted URL, excludes rows with an unused prop", () => {
+    expect(filterRows([declared, fullyUsed, undeclared], { ...emptyFacets(), hasUnusedProps: false }).map(r => r.componentId)).toEqual(["f", "u"]);
+  });
+
+  it("counts under the other filters and ignores its own selection", () => {
+    const o = facetOptions([declared, fullyUsed, undeclared], null, { ...emptyFacets(), hasUnusedProps: true });
+    expect(o.hasUnusedPropsCount).toBe(1);
+    expect(o.hasUnusedPropsMax).toBe(1);
+  });
+});
+
 describe("Used in", () => {
   const base: ComponentRow = {
     componentId: "", kind: "react-component", scope: "local", packageName: null,
@@ -157,6 +187,8 @@ describe("URL params", () => {
     ["exactly N uses", { occurrences: { op: "=", value: 10 } }, "uses=10"],
     ["used in one package", { usedIn: "@example/web" }, "used-in=@example/web"],
     ["changed since the previous scan", { changed: true }, "changed=true"],
+    ["has unused props", { hasUnusedProps: true }, "unused-props=true"],
+    ["has no unused props", { hasUnusedProps: false }, "unused-props=false"],
   ])("writes and reads %s", (_case, facets, written) => {
     const f = { ...emptyFacets(), ...facets };
     expect(queryString(facetsToParams(f))).toBe(written);
@@ -174,6 +206,7 @@ describe("URL params", () => {
     ["uses it can't read", "uses=>=10"],
     ["deprecated other than true or false", "deprecated=yes"],
     ["changed other than true", "changed=yes"],
+    ["unused-props other than true or false", "unused-props=yes"],
   ])("ignores %s", (_case, written) => {
     expect(paramsToFacets(new URLSearchParams(written))).toEqual(emptyFacets());
   });

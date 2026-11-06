@@ -1,5 +1,5 @@
 import { displayNameOf, type Component, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
-import type { ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, ScanFinding, WrittenValue } from "./dto.js";
+import type { ComponentApiUsage, ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, ScanFinding, WrittenValue } from "./dto.js";
 import { type ComponentDigest, toComponentDigest } from "./digest.js";
 import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-graph.js";
 import { shownWrittenName } from "./display-name.js";
@@ -9,7 +9,10 @@ import { createComponentProjectionContext, displayNameCollisionKey, type Compone
 import { usedComponentKey, isUsed } from "./usage.js";
 
 // A stored-format change increments READ_MODEL_FORMAT_VERSION and PROJECTION_VERSION together.
-export const PROJECTION_VERSION: number = 9;
+// PROJECTION_VERSION alone, bumped for an additive change (a new optional field
+// a reader can treat as absent), reprojects every scan without making its
+// current rows unreadable in the meantime.
+export const PROJECTION_VERSION: number = 10;
 export const READ_MODEL_FORMAT_VERSION: number = 6;
 
 export type ImmutableDetailHead = Omit<ComponentDetailHead, "claimedBy" | "deprecated" | "migrationStatus" | "governedByRecordId">;
@@ -23,6 +26,8 @@ export type ComponentFact = Pick<Component, "id" | "identity" | "framework" | "a
   digest: ComponentDigest;
   /** Uses and files per package the uses sit in; absent when the scan records no package on the component's uses. */
   usedIn?: Record<string, PackageCounts>;
+  /** Declared-prop counts, from `deriveApiUsageCounts`; absent when the component has no declared API. */
+  apiUsage?: ComponentApiUsage;
 };
 /** A stored scan's meta as pages read it: the scan file's, with the commit date and arrival time of its `scans` row in place of the file's `scannedAt`. */
 export type StoredScanMeta = Omit<ScanArtifact["meta"], "scannedAt"> & { committedAt: string; arrivedAt: string };
@@ -50,10 +55,33 @@ export type GraphRow = RowKey & (
 );
 export type ReadModelRow = RepoViewRow | ComponentFactRow | PackageContributionRow | DetailRow | OccurrenceModelRow | GraphRow;
 
+/**
+ * Declared-prop counts from a component's declared API against its observed props: how many
+ * props the declaration names, and how many of those never appear in `component.props` at all
+ * (not merely unwritten — absent as a key). `hasRest`/an index signature doesn't change either
+ * count: a rest param only says the component can take undeclared props, not that its declared
+ * ones were used. Shared by `deriveComponentFact` and `deriveComponentDetailHead`'s
+ * `summary.apiUsage`, so a component's two read models can't drift on what counts as unused.
+ * Null when the component has no declared API (readable only for repository declarations).
+ */
+export function deriveApiUsageCounts(component: Component): ComponentApiUsage & { usedCount: number; undeclaredCount: number } | null {
+  const declared = component.declared;
+  if (declared === undefined) return null;
+  const declaredKeys = new Set(Object.keys(declared.props));
+  let usedCount = 0;
+  let undeclaredCount = 0;
+  for (const name of Object.keys(component.props)) {
+    if (declaredKeys.has(name)) usedCount++;
+    else undeclaredCount++;
+  }
+  return { declaredCount: declaredKeys.size, usedCount, neverUsedCount: declaredKeys.size - usedCount, undeclaredCount };
+}
+
 function deriveComponentFact(context: ComponentProjectionContext, component: Component, stats?: OccurrenceStatistics): ComponentFact {
   const presented = presentIdentity(component);
   const displayName = context.names.get(component.id) ?? displayNameOf(component);
   const collides = (context.collisions.get(displayNameCollisionKey(presented.packageName, displayName)) ?? 0) > 1;
+  const apiUsage = deriveApiUsageCounts(component);
   return {
     id: component.id,
     identity: component.identity,
@@ -72,6 +100,7 @@ function deriveComponentFact(context: ComponentProjectionContext, component: Com
     ...(stats?.byPackage.size
       ? { usedIn: Object.fromEntries([...stats.byPackage].map(([name, inPackage]) => [name, { occurrenceCount: inPackage.count, fileCount: inPackage.files.size }])) }
       : {}),
+    ...(apiUsage ? { apiUsage: { declaredCount: apiUsage.declaredCount, neverUsedCount: apiUsage.neverUsedCount } } : {}),
   };
 }
 
@@ -243,12 +272,7 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
       rendersCount: Object.keys(rendersByCount).length,
       renderedByCount: Object.keys(renderedByCount).length,
     },
-    apiUsage: {
-      declaredCount: declaredKeys.size,
-      usedCount: props.filter(p => p.status === "used").length,
-      neverUsedCount: props.filter(p => p.status === "unused").length,
-      undeclaredCount: props.filter(p => p.status === "undeclared").length,
-    },
+    apiUsage: deriveApiUsageCounts(component) ?? { declaredCount: 0, usedCount: 0, neverUsedCount: 0, undeclaredCount: 0 },
     provenance: props.reduce(
       (acc, p) => ({
         written: acc.written + p.written.reduce((s, w) => s + w.count, 0),

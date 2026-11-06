@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GitCompareArrows } from "lucide-react";
+import { GitCompareArrows, ListX } from "lucide-react";
 import { plural } from "@scoutui/web-shared/client";
 import { Input } from "@/components/ui/input";
 import { movementParts } from "@/lib/scan-diff-view";
@@ -147,6 +147,10 @@ export function FilterBar({
     ...(facets.deprecated === false
       ? [{ key: "deprecated", field: "deprecated", value: "no", onRemove: () => onChange({ ...facets, deprecated: null }) }]
       : []),
+    // Only `hasUnusedProps: false` gets a pill: see the comment on `deprecated` above.
+    ...(facets.hasUnusedProps === false
+      ? [{ key: "unused-props", field: "unused props", value: "no", onRemove: () => onChange({ ...facets, hasUnusedProps: null }) }]
+      : []),
     ...(facets.occurrences
       ? [
           {
@@ -176,6 +180,18 @@ export function FilterBar({
               total={othersOn ? deprecatedTotal : undefined}
               active={facets.deprecated === true}
               onToggle={() => onChange({ ...facets, deprecated: facets.deprecated === true ? null : true })}
+            />
+          ) : null}
+          {/* There is no "only without unused props" control either: see DeprecatedFilterChip. */}
+          {options.hasUnusedPropsMax > 0 || facets.hasUnusedProps === true ? (
+            <StatusFilterChip
+              icon={ListX}
+              tone="warn"
+              label="unused props"
+              count={options.hasUnusedPropsCount}
+              maxCount={options.hasUnusedPropsMax}
+              active={facets.hasUnusedProps === true}
+              onToggle={() => onChange({ ...facets, hasUnusedProps: facets.hasUnusedProps === true ? null : true })}
             />
           ) : null}
           {/* Labelled "since previous scan", not "changed": its count is every

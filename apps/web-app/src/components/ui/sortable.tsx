@@ -89,9 +89,10 @@ export function SortButton<K extends string>({
   dir: SortDir;
   onClick: (key: K) => void;
   align?: "right";
-  /** Full wording for a header whose short label doesn't say what it sorts.
-   *  Used as both the hover title and the accessible name, so a screen reader
-   *  doesn't announce it twice. */
+  /** Full wording for a header whose visible `label` is shortened — to fit the
+   *  column, or because the short label doesn't say what it sorts. Used as both
+   *  the hover title and the accessible name, so a screen reader doesn't
+   *  announce it twice. */
   title?: string | undefined;
 }) {
   const active = current === sortKey;

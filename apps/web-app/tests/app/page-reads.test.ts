@@ -494,6 +494,11 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(emptyScan.scanId).toBe("scan-current");
       const repoRows: ComponentRow[] = await served(() => rows.GET(request(), repoParams));
       expect(repoRows.map(row => row.componentId)).toEqual(expect.arrayContaining([button, panel, otherPanel]));
+      // `panel` declares one prop (`label`) and never passes it; `otherPanel` and
+      // `button` have no declared API (no local declaration / a package export).
+      expect(repoRows.find(row => row.componentId === panel)?.apiUsage).toEqual({ declaredCount: 1, neverUsedCount: 1 });
+      expect(repoRows.find(row => row.componentId === otherPanel)?.apiUsage).toBeUndefined();
+      expect(repoRows.find(row => row.componentId === button)?.apiUsage).toBeUndefined();
       const localRows: ComponentRow[] = await served(() => rows.GET(request("?q=scope%3Alocal"), repoParams));
       expect(localRows.map(row => row.componentId).sort()).toEqual([panel, otherPanel].sort());
       const scans: ScanSummary[] = await served(() => history.GET(request(), repoParams));

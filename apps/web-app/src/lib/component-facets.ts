@@ -22,10 +22,11 @@ export type FacetState = {
   changed: boolean; // true = only rows that moved since the last scan (needs the diff's marks; applied by the explorer)
   occurrences: { op: OccurrenceOp; value: number } | null;
   usedIn: string | null; // one package; every count becomes that package's
+  hasUnusedProps: boolean | null; // true = only components with a declared prop never passed, null = any (there is no "only without" control; see deprecated)
 };
 
 export function emptyFacets(): FacetState {
-  return { text: "", origin: null, kinds: [], packages: [], tags: [], deprecated: null, changed: false, occurrences: null, usedIn: null };
+  return { text: "", origin: null, kinds: [], packages: [], tags: [], deprecated: null, changed: false, occurrences: null, usedIn: null, hasUnusedProps: null };
 }
 
 export const KIND_LABEL: Record<KindValue, string> = {
@@ -58,6 +59,7 @@ export function isFiltering(f: FacetState): boolean {
     f.deprecated !== null ||
     f.occurrences !== null ||
     f.usedIn !== null ||
+    f.hasUnusedProps !== null ||
     f.changed
   );
 }
@@ -84,6 +86,11 @@ export function deprecatedInUse(r: ComponentRow): boolean {
   return r.deprecated && r.occurrenceCount > 0;
 }
 
+/** A row with a declared prop its scan never saw passed: what the "has unused props" chip counts and keeps. */
+export function hasUnusedProps(r: ComponentRow): boolean {
+  return (r.apiUsage?.neverUsedCount ?? 0) > 0;
+}
+
 /** Does a row match the facets? `changed` is the explorer's to apply; this never reads it. */
 function matchesRow(r: ComponentRow, f: FacetState): boolean {
   const text = f.text.trim().toLowerCase();
@@ -98,6 +105,8 @@ function matchesRow(r: ComponentRow, f: FacetState): boolean {
   if (f.deprecated === true && !deprecatedInUse(r)) return false;
   if (f.deprecated === false && r.deprecated) return false;
   if (f.occurrences && !occurrenceMatches(r.occurrenceCount, f.occurrences.op, f.occurrences.value)) return false;
+  if (f.hasUnusedProps === true && !hasUnusedProps(r)) return false;
+  if (f.hasUnusedProps === false && hasUnusedProps(r)) return false;
   return true;
 }
 
@@ -139,6 +148,10 @@ export type FacetOptions = {
    *  width and a count narrowing from 14 to 7 never slides the controls after it. */
   deprecatedMax: number;
   changedMax: number;
+  /** Rows with a declared prop never passed, under the other filters. */
+  hasUnusedPropsCount: number;
+  /** The most the chip above can read under any filters, ghosts included. */
+  hasUnusedPropsMax: number;
 };
 
 /**
@@ -173,12 +186,14 @@ export function facetOptions(
   const withoutPackages: FacetState = { ...f, packages: [] };
   const withoutTags: FacetState = { ...f, tags: [] };
   const withoutDeprecated: FacetState = { ...f, deprecated: null };
+  const withoutUnusedProps: FacetState = { ...f, hasUnusedProps: null };
 
   const origin = { external: 0, local: 0 };
   const kindCounts = new Map<KindValue, number>(f.kinds.map((k) => [k, 0]));
   const pkgCounts = new Map<string, number>(f.packages.map((p) => [p, 0]));
   const tagCounts = new Map<string, { color: string; count: number }>(f.tags.map((t) => [t, { color: "", count: 0 }]));
   let deprecatedCount = 0;
+  let hasUnusedPropsCount = 0;
 
   for (const r of known) {
     const counted = inBase.has(r.componentId);
@@ -193,6 +208,7 @@ export function facetOptions(
       tagCounts.set(value, { color, count: (tagCounts.get(value)?.count ?? 0) + inTags });
     }
     if (counted && deprecatedInUse(r) && matchesRow(r, withoutDeprecated)) deprecatedCount++;
+    if (counted && hasUnusedProps(r) && matchesRow(r, withoutUnusedProps)) hasUnusedPropsCount++;
   }
 
   const kinds = (Object.keys(KIND_LABEL) as KindValue[])
@@ -216,13 +232,15 @@ export function facetOptions(
     changedCount,
     deprecatedMax: known.filter(deprecatedInUse).length,
     changedMax: changed?.length ?? 0,
+    hasUnusedPropsCount,
+    hasUnusedPropsMax: known.filter(hasUnusedProps).length,
   };
 }
 
 // --- URL params ---------------------------------------------------------------
 
 /** The params the components table keeps its facets in. */
-export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "used-in", "changed"];
+export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "used-in", "changed", "unused-props"];
 
 const KINDS: readonly KindValue[] = ["react", "vue", "wc", "undefined-element"];
 const OCCURRENCE_WORDS: Record<OccurrenceOp, string> = { ">=": "gte:", ">": "gt:", "<=": "lte:", "<": "lt:", "=": "" };
@@ -245,6 +263,7 @@ export function facetsToParams(f: FacetState): QueryParams {
   if (f.occurrences) params.push(["uses", `${OCCURRENCE_WORDS[f.occurrences.op]}${f.occurrences.value}`]);
   if (f.usedIn) params.push(["used-in", f.usedIn]);
   if (f.changed) params.push(["changed", "true"]);
+  if (f.hasUnusedProps !== null) params.push(["unused-props", String(f.hasUnusedProps)]);
   return params;
 }
 
@@ -261,6 +280,8 @@ export function paramsToFacets(params: URLSearchParams): FacetState {
   if (deprecated === "true" || deprecated === "false") f.deprecated = deprecated === "true";
   f.usedIn = params.get("used-in") || null;
   f.changed = params.get("changed") === "true";
+  const unusedProps = params.get("unused-props");
+  if (unusedProps === "true" || unusedProps === "false") f.hasUnusedProps = unusedProps === "true";
   const om = OCCURRENCE_RE.exec(params.get("uses") ?? "");
   if (om) {
     const op = (Object.keys(OCCURRENCE_WORDS) as OccurrenceOp[]).find((k) => OCCURRENCE_WORDS[k] === (om[1] ?? ""));
