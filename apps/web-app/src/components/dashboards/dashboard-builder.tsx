@@ -476,7 +476,7 @@ export function DashboardBuilder({
         <aside aria-label="Series" className="flex min-w-0 flex-col gap-3 lg:border-r lg:pr-4">
           <span className="text-label text-muted-foreground">Series</span>
           {cohorts.length > 0 ? (
-            <div className="border-b pb-3">
+            <div className="relative max-h-[24rem] overflow-y-auto overscroll-contain border-b pb-3">
               <SeriesLegend
                 series={legend}
                 onRemove={removeSeries}
