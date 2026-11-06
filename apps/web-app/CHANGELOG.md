@@ -1,5 +1,15 @@
 # @scoutui/web-app
 
+## 0.8.0
+
+### Minor Changes
+
+- [#174](https://github.com/scoutui/scout/pull/174) [`4e1bc87`](https://github.com/scoutui/scout/commit/4e1bc87746918d7e05bcc119305a6cff082c0e38) Thanks [@nhunsaker](https://github.com/nhunsaker)! - The dashboard now accepts a scan with a framework it doesn't know by name (not just React and Vue), and shows those components under their own framework name instead of counting them as React.
+
+### Patch Changes
+
+- [#182](https://github.com/scoutui/scout/pull/182) [`60d946c`](https://github.com/scoutui/scout/commit/60d946cc47ff9ed8b3f4675daeb4d7901405ddc5) Thanks [@siggerzz](https://github.com/siggerzz)! - The chart builder's series list now scrolls on its own once it is taller than the chart, so a chart with many series no longer stretches the page, and the "Add a series" box stays in place while you pick.
+
 ## 0.7.0
 
 ### Minor Changes
