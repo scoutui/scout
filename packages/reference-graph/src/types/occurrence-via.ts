@@ -7,6 +7,7 @@ export type OccurrenceVia =
   | { kind: "react-wrapper"; specifier: string; import: string }
   | { kind: "direct-import"; specifier: string; import: string }
   | { kind: "vue-template"; specifier: string; import: string }
+  | { kind: "angular-template"; specifier: string; import: string }
   // Compound JSX rooted in a locally-declared `createContext()` / `React.createContext()`
   // binding (e.g. `<MyContext.Provider>`). The component identity uses the local
   // lane (`source.type === "local"`); this `via` kind is the filterable signal so

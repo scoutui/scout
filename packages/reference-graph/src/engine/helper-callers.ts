@@ -25,10 +25,17 @@ export type Classification = "component" | "helper" | "unknown";
  * engine admits its identity unconditionally; ownership follows the same
  * rule, so an SFC always owns its template. Any other declaration in a Vue
  * file (a `<script>` helper) is judged like a React one.
+ *
+ * An Angular file's declarations are all parser-emitted component classes
+ * (the parser declares nothing else), so every Function-returns-JSX
+ * declaration in one owns its template unconditionally, not only its
+ * default export: unlike a Vue SFC, an Angular file has no non-default
+ * declaration that is a plain helper.
  */
 export function classifyDeclaration(decl: BindingDecl, registry: ComponentRegistry, fileGraph: FileGraph): Classification {
   if (decl.value.kind !== "Function" && decl.value.kind !== "ReturnTypeOf") return "unknown";
   if (fileGraph.dialect === "vue" && isDefaultExport(fileGraph, decl.symbol)) return "component";
+  if (fileGraph.dialect === "angular") return "component";
   return registry.hasLocal(fileGraph.filePath, decl.symbol) ? "component" : "helper";
 }
 

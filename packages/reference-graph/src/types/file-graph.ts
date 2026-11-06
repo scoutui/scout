@@ -64,7 +64,18 @@ export type TagUsage = {
 /** Source-file dialect understood by the engine. Drives the default
  *  identity kind for occurrences whose resolution doesn't find a concrete
  *  manifest entry. */
-export type Dialect = "react" | "vue";
+export type Dialect = "react" | "vue" | "angular";
+
+/** Whether `dialect`'s components come from a template rather than from JSX
+ *  written in the file's own code: the parser declares each one itself (a
+ *  Vue SFC's default export, an Angular component class), so the registry's
+ *  React shape-and-consumption rules don't judge it and the engine admits
+ *  its identity unconditionally. One predicate so a new template framework
+ *  is a one-line addition to `Dialect` plus its parser, not a new branch at
+ *  every site that used to special-case `"vue"` for this meaning. */
+export function isTemplateDialect(dialect: Dialect): boolean {
+  return dialect !== "react";
+}
 
 /** Discriminator for shared `ownership[i]` entries: whether the entry
  *  references a `jsxUsages[i]` (symbol-resolved) or `tagUsages[i]`

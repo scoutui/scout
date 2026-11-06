@@ -1,5 +1,6 @@
 import type { Graph, FileGraph, JsxUsage, TagUsage, BindingDecl, ImportRecord, Reference, InferredType } from "../index.js";
 import type { Dialect, UsageKind } from "../types/file-graph.js";
+import { isTemplateDialect } from "../types/file-graph.js";
 import type { OccurrenceVia } from "../types/occurrence-via.js";
 import type { ChainBailedCode, Known, PropValueState, UnresolvedReason } from "@scoutui/scan-format";
 import { parseCompoundExport } from "@scoutui/scan-format";
@@ -311,7 +312,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
   // through `excludeFoldedHolders` at the return below.
   const folded = new Map<string, FoldedHolder>();
   for (const [filePath, fileGraph] of graph.files) {
-    if (fileGraph.dialect === "vue") continue;
+    if (isTemplateDialect(fileGraph.dialect)) continue;
     for (const decl of fileGraph.declarations.values()) {
       if (decl.scope !== MODULE_SCOPE || decl.value.kind !== "ReturnTypeOf") continue;
       if (!registry.hasLocal(filePath, decl.symbol)) continue;
@@ -359,7 +360,7 @@ export function resolve(graph: Graph, opts?: ResolveOpts): ResolvedGraph {
     return renderCredits.get(`${filePath}:${usageIdx}`);
   };
   for (const [filePath, fileGraph] of graph.files) {
-    if (fileGraph.dialect === "vue") continue;
+    if (isTemplateDialect(fileGraph.dialect)) continue;
     let productRenders: Map<string, number[]> | undefined;
     for (const bodyCall of fileGraph.bodyCalls) {
       if (!HOOK_NAME.test(bodyCall.callee.symbol) || bodyCall.args.length === 0) continue;
@@ -902,7 +903,7 @@ function evaluateJsxUsage(
     case "import-failed":
       return imp !== undefined ? unresolvedImport(imp, { kind: "module-not-found" }) : walked();
     case "no-export":
-      return fileGraph.dialect === "vue" && imp !== undefined
+      return isTemplateDialect(fileGraph.dialect) && imp !== undefined
         ? unboundWrittenName(usage, { kind: "direct-import", specifier: imp.specifier, import: imp.imported })
         : walked();
     case "unfollowed":
@@ -932,7 +933,7 @@ function evaluateJsxUsage(
             ...(terminal.identity === null ? { ...(definition !== undefined ? { definition } : {}), ...rendered } : {}),
           }),
         );
-      if (fileGraph.dialect === "vue" && credits.length === 0 && provablyLacksMember(graph, binding)) {
+      if (isTemplateDialect(fileGraph.dialect) && credits.length === 0 && provablyLacksMember(graph, binding)) {
         return unboundWrittenName(usage, outerVia);
       }
       return { kind: "evaluated", evaluation, value, credits };
@@ -1200,7 +1201,8 @@ function callFoldShape(jsx: readonly Terminal[]): "product" | "wrapper" | null {
  *  identity's kind. Any other identity is not the registry's to judge. */
 function registryHolds(registry: ComponentRegistry, graph: Graph, id: ComponentId, declaration?: BindingDecl): boolean {
   if (id.kind === "custom-element" || id.source.type !== "local") return true;
-  if (graph.files.get(id.source.filePath)?.dialect !== "react") return true;
+  const dialect = graph.files.get(id.source.filePath)?.dialect;
+  if (dialect === undefined || isTemplateDialect(dialect)) return true;
   return registry.isComponent(id.source.filePath, id.export, declaration);
 }
 
@@ -1210,7 +1212,8 @@ function registryHolds(registry: ComponentRegistry, graph: Graph, id: ComponentI
  *  other identity is not the registry's to judge. */
 function registryTagged(registry: ComponentRegistry, graph: Graph, id: ComponentId, declaration?: BindingDecl): boolean {
   if (id.kind !== "react-component" || id.source.type !== "local") return true;
-  if (graph.files.get(id.source.filePath)?.dialect !== "react") return true;
+  const dialect = graph.files.get(id.source.filePath)?.dialect;
+  if (dialect === undefined || isTemplateDialect(dialect)) return true;
   if (parseCompoundExport(id.export).isCompound) return true;
   return registry.isTagged(declaration);
 }
@@ -1353,19 +1356,26 @@ function pushTagOccurrence(
 
 /** JSX-emission ComponentId kinds. Excludes `"custom-element"`, which only
  *  TagUsage paths emit, whatever the dialect. */
-type JsxComponentKind = "react-component" | "vue-component";
+type JsxComponentKind = "react-component" | "vue-component" | "angular-component";
 
 /**
  * Decide the `kind` for a JSX-emitted ComponentId. A concrete
- * `manifestKindHint` is used verbatim; otherwise the file's dialect decides:
- * `"vue"` files emit `"vue-component"`, all others `"react-component"`. No
- * caller supplies a hint. Tag-usage paths (custom-element) don't call this
- * helper.
+ * `manifestKindHint` is used verbatim; otherwise the file's dialect decides,
+ * one kind per `Dialect` member (exhaustive, so a new dialect fails to
+ * build here until it's given a kind). No caller supplies a hint. Tag-usage
+ * paths (custom-element) don't call this helper.
  */
 function componentKindFor(
   fileDialect: Dialect,
   manifestKindHint?: JsxComponentKind,
 ): JsxComponentKind {
   if (manifestKindHint !== undefined) return manifestKindHint;
-  return fileDialect === "vue" ? "vue-component" : "react-component";
+  switch (fileDialect) {
+    case "vue":
+      return "vue-component";
+    case "angular":
+      return "angular-component";
+    case "react":
+      return "react-component";
+  }
 }
