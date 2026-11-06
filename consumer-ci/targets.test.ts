@@ -33,4 +33,12 @@ describe("TARGETS", () => {
       }
     }
   });
+
+  test("ng-matero scans Angular templates and components, scriptless", () => {
+    const target = TARGETS.find((t) => t.name === "ng-matero");
+    expect(target?.install).toMatch(/--ignore-scripts/);
+    expect(target?.scans).toMatchObject([
+      { repoId: "ng-matero", include: ["src/**/*.{ts,html}"], tokenSecret: "SCOUTUI_TOKEN_NG_MATERO" },
+    ]);
+  });
 });

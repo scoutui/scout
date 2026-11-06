@@ -71,4 +71,24 @@ describe("serialiseComponentId: two-axis key", () => {
       }),
     ).toBe("vue-component:local:src/ui/Card.vue::Card");
   });
+
+  it("angular-component / external", () => {
+    expect(
+      serialiseComponentId({
+        kind: "angular-component",
+        export: "MatButton",
+        source: { type: "external", package: "@angular/material" },
+      }),
+    ).toBe("angular-component:external:@angular/material::MatButton");
+  });
+
+  it("angular-component / local", () => {
+    expect(
+      serialiseComponentId({
+        kind: "angular-component",
+        export: "AppComponent",
+        source: { type: "local", filePath: "src/app/app.component.ts" },
+      }),
+    ).toBe("angular-component:local:src/app/app.component.ts::AppComponent");
+  });
 });

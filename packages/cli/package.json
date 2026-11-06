@@ -50,10 +50,15 @@
     "oxc-parser": "0.130.0"
   },
   "devDependencies": {
+    "@angular/compiler-19": "npm:@angular/compiler@19.2.25",
+    "@angular/compiler-20": "npm:@angular/compiler@20.3.34",
+    "@angular/compiler-21": "npm:@angular/compiler@21.2.25",
+    "@angular/compiler-22": "npm:@angular/compiler@22.2.4",
     "@babel/parser": "7.29.3",
     "@babel/types": "7.29.0",
     "@clack/prompts": "^1.5.1",
     "@oxc-project/types": "0.130.0",
+    "@scoutui/parser-angular": "0.1.0",
     "@scoutui/parser-react": "0.1.0",
     "@scoutui/parser-vue": "0.1.0",
     "@scoutui/reference-graph": "0.1.0",

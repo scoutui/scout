@@ -81,7 +81,11 @@ export async function emitArtifact(input: EmitInput): Promise<ScanArtifact<Diagn
 
   const resolved = resolvedOccurrences(occurrences);
   const components = await withInstalledVersions(
-    dropUnreachableLocalComponents(applyCompositionRollup(rollupOccurrencesToComponents(resolved, rows), resolved), occurrences),
+    dropUnreachableLocalComponents(
+      applyCompositionRollup(rollupOccurrencesToComponents(resolved, rows), resolved),
+      occurrences,
+      new Set(rows.flatMap((row) => (row.isBootstrapped === true ? [row.id] : []))),
+    ),
     occurrences,
     input.readVersion,
   );
@@ -165,15 +169,20 @@ function toRow(seed: ComponentSeed, tagEvidence: TagEvidenceSources): ComponentR
  * dependency graph, so dropping it loses nothing.
  *
  * A component is local when it is a repository declaration or a tag this
- * repository registers. Others are kept unconditionally.
+ * repository registers. Others are kept unconditionally, and so is a component
+ * the app bootstraps: starting the app renders it.
  */
-function dropUnreachableLocalComponents(components: Component[], occurrences: readonly Occurrence[]): Component[] {
+function dropUnreachableLocalComponents(
+  components: Component[],
+  occurrences: readonly Occurrence[],
+  bootstrapped: ReadonlySet<string>,
+): Component[] {
   const owners = new Set(occurrences.flatMap((o) => (o.ownerComponentId !== undefined ? [o.ownerComponentId] : [])));
   return components.filter((c) => {
     const local =
       c.identity.kind === "repository-declaration" ||
       (c.attribution?.evidence.some((e) => e.source === "registration") ?? false);
-    if (!local) return true;
+    if (!local || bootstrapped.has(c.id)) return true;
     if (c.stats.occurrenceCount > 0 || owners.has(c.id)) return true;
     const rendersN = Object.keys(c.composition.rendersByCount).length;
     const renderedByN = Object.keys(c.composition.renderedByCount).length;

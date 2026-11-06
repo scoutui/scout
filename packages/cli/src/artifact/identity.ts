@@ -29,5 +29,6 @@ export function scanIdOf(componentId: ComponentId, repoId: string): string {
 export function frameworkOf(kind: ComponentKind): Framework | undefined {
   if (kind === "react-component") return "react";
   if (kind === "vue-component") return "vue";
+  if (kind === "angular-component") return "angular";
   return undefined;
 }

@@ -108,6 +108,13 @@ describe("facetOptions: every count follows the other filters", () => {
     expect(o.packages).toContainEqual({ value: "@nope/pkg", count: 0 });
     expect(o.tags).toContainEqual({ value: "gone", color: "", count: 0 });
   });
+
+  it("lists a framework this dashboard doesn't know by name as its own kind, never folded into react", () => {
+    const svelteRow: ComponentRow = { ...row, componentId: "s", displayName: "S", kind: "svelte-component" };
+    const o = facetOptions([...rows, svelteRow], null, emptyFacets());
+    expect(o.kinds).toContainEqual({ value: "svelte", count: 1 });
+    expect(o.kinds).toContainEqual({ value: "react", count: 3 }); // a, c, d: unchanged, not inflated by the svelte row
+  });
 });
 
 describe("Used in", () => {
@@ -146,6 +153,7 @@ describe("URL params", () => {
     ["origin", { origin: "local" }, "origin=local"],
     ["one kind param per kind", { kinds: ["react", "vue"] }, "kind=react&kind=vue"],
     ["an undefined element", { kinds: ["undefined-element"] }, "kind=undefined-element"],
+    ["an open kind (a framework this dashboard doesn't know by name)", { kinds: ["svelte"] }, "kind=svelte"],
     ["one package param per package", { packages: ["@acme/ui", "@acme/icons"] }, "package=@acme/ui&package=@acme/icons"],
     ["one tag param per tag", { tags: ["icons", "acme-ui"] }, "tag=icons&tag=acme-ui"],
     ["deprecated", { deprecated: true }, "deprecated=true"],
@@ -170,7 +178,7 @@ describe("URL params", () => {
   it.each([
     ["a param it doesn't know", "usages=gte:10"],
     ["an origin it doesn't know", "origin=elsewhere"],
-    ["a kind it doesn't know", "kind=svelte"],
+    ["an empty kind", "kind="],
     ["uses it can't read", "uses=>=10"],
     ["deprecated other than true or false", "deprecated=yes"],
     ["changed other than true", "changed=yes"],

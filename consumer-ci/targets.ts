@@ -81,4 +81,24 @@ export const TARGETS: Target[] = [
       },
     ],
   },
+  {
+    // Angular 22 + Angular Material admin template (Yarn classic, no `packageManager`
+    // field; `engines.yarn` pins `>=1.22.0 <2`). No codegen: the Angular parser
+    // resolves `@angular/compiler` from the scanned repo itself, so a scriptless
+    // install is enough. `--ignore-scripts` also skips the `prepare: "is-ci || husky"`
+    // lifecycle script.
+    name: "ng-matero",
+    repo: "ng-matero/ng-matero",
+    install: "corepack yarn@1.22.22 install --frozen-lockfile --ignore-scripts",
+    scans: [
+      {
+        cwd: ".",
+        repoId: "ng-matero",
+        include: ["src/**/*.{ts,html}"],
+        // Resolves the `@core`/`@shared`/`@theme`/`@env` paths aliases the app imports through.
+        tsconfigPath: "tsconfig.json",
+        tokenSecret: "SCOUTUI_TOKEN_NG_MATERO",
+      },
+    ],
+  },
 ];

@@ -1,13 +1,15 @@
 import type { Component, EvidenceRecord } from "@scoutui/scan-format";
+import type { KnownComponentKind } from "./dto.js";
 
 /** The component fields identity presentation reads; a full `Component` and a stored `ComponentDigest` both satisfy it. */
 export type PresentableComponent = Pick<Component, "identity" | "framework" | "attribution" | "owningPackage">;
 
-/** A scan-file identity in the UI's vocabulary. */
+/** A scan-file identity in the UI's vocabulary. `kind` is open: a known kind, or the open
+ *  `${framework}-component` `frameworkKind` builds for a framework this dashboard doesn't know by name. */
 export type Presented = {
   /** Local: a repository declaration, or a tag this scan resolves to a repository or that only repository files claim. */
   scope: "local" | "external";
-  kind: "react-component" | "vue-component" | "custom-element" | "tag";
+  kind: KnownComponentKind | string;
   /** The package export's package, a repository declaration's package (its workspace package, or the root package), or the package this scan resolves a tag to. */
   packageName: string | null;
   exportName: string | null;
@@ -19,18 +21,31 @@ export type Presented = {
 /** Evidence sources that define a custom element: a CEM declaration, or a `customElements.define` registration. */
 const DEFINES_ELEMENT: ReadonlySet<EvidenceRecord["source"]> = new Set(["cem", "registration"]);
 
+/**
+ * The presented kind for a package export or repository declaration's framework: the known kind for
+ * "react" or "vue", otherwise the open `${framework}-component`, e.g. "svelte-component" for a
+ * framework this dashboard doesn't recognise by name. Never defaults an unknown framework to react.
+ * `framework` is always set here: the schema requires it on these two identity kinds (never on a tag,
+ * the only kind this function doesn't call it for).
+ */
+function frameworkKind(framework: Component["framework"]): KnownComponentKind | string {
+  if (framework === "vue") return "vue-component";
+  if (framework === "react") return "react-component";
+  return `${framework}-component`;
+}
+
 export function presentIdentity(component: PresentableComponent): Presented {
   const { identity } = component;
-  const frameworkKind = component.framework === "vue" ? "vue-component" : "react-component";
+  const kind = frameworkKind(component.framework);
   switch (identity.kind) {
     case "package-export":
       return {
-        scope: "external", kind: frameworkKind, packageName: identity.packageName,
+        scope: "external", kind, packageName: identity.packageName,
         exportName: identity.exportName, tagName: null, filePath: null, publicEntry: identity.publicEntry,
       };
     case "repository-declaration":
       return {
-        scope: "local", kind: frameworkKind, packageName: component.owningPackage ?? null,
+        scope: "local", kind, packageName: component.owningPackage ?? null,
         exportName: identity.exportName, tagName: null, filePath: identity.filePath, publicEntry: null,
       };
     case "tag": {

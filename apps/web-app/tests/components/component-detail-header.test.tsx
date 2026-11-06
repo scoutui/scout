@@ -76,6 +76,12 @@ describe("ComponentDetailHeader", () => {
     expect(screen.queryByText(/no package/)).toBeNull();
   });
 
+  it("badges an unknown framework by its own name, never as React", () => {
+    render(<ComponentDetailHeader detail={makeDetail({ kind: "svelte-component" })} canEdit />);
+    expect(screen.getByText("Svelte")).toBeInTheDocument();
+    expect(screen.queryByText("React")).toBeNull();
+  });
+
   it("names the origin in its badge, with what it means as the badge's title", () => {
     render(<ComponentDetailHeader detail={makeDetail({ scope: "local" })} canEdit />);
     expect(screen.getByText("Local")).toHaveAttribute("title", "Defined in this repo");
