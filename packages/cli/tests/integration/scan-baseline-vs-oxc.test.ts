@@ -27,6 +27,14 @@ const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../test/fixtur
 const { CAPTURE_BASELINES } = process.env;
 const CAPTURE = CAPTURE_BASELINES === "1";
 
+// runScan() below runs in-process (unlike scanFixture's CLI subprocess), so
+// an Angular fixture's `@angular/compiler` stand-in only resolves a real
+// compiler when this process's env already carries SCOUT_TEST_ANGULAR_COMPILER.
+// This suite captures one fixed snapshot per fixture (not a version matrix,
+// see angular-app.test.ts for that), so default it once here, same as every
+// other fixture's baseline being independent of which machine runs it.
+process.env.SCOUT_TEST_ANGULAR_COMPILER ??= require.resolve("@angular/compiler-21");
+
 const fixtures = readdirSync(FIXTURES_ROOT)
   .filter((name) => existsSync(path.join(FIXTURES_ROOT, name, "scout.config.json")))
   .sort();

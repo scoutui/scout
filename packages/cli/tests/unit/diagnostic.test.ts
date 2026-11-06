@@ -98,3 +98,69 @@ describe("lazy-import-unsupported", () => {
     expect(c.drain()).toHaveLength(2);
   });
 });
+
+describe("angular-compiler-unsupported", () => {
+  const sample: Diagnostic = {
+    code: "angular-compiler-unsupported",
+    severity: "warning",
+    filePath: "package.json",
+    version: "18",
+    detail: "The installed @angular/compiler is version 18, older than the Angular 19+ Scout supports.",
+  };
+
+  it("dedups two emits (there's only ever one installed compiler) even if the detail wording differs", () => {
+    const c = createDiagnosticCollector();
+    c.emit(sample);
+    c.emit({ ...sample, detail: "a different wording" });
+    expect(c.drain()).toEqual([sample]);
+  });
+});
+
+describe("angular-not-in-scope", () => {
+  const sample: Diagnostic = {
+    code: "angular-not-in-scope",
+    severity: "info",
+    filePath: "src/app.component.html",
+    line: 2,
+    column: 3,
+    tagName: "app-thing",
+    candidates: ["src/thing.component.ts#ThingComponent"],
+  };
+
+  it("dedups two emits at the same file/line/column", () => {
+    const c = createDiagnosticCollector();
+    c.emit(sample);
+    c.emit({ ...sample, candidates: ["src/thing.component.ts#ThingComponent", "src/other/thing.component.ts#OtherThing"] });
+    expect(c.drain()).toEqual([sample]);
+  });
+
+  it("does not dedup two emits at different lines", () => {
+    const c = createDiagnosticCollector();
+    c.emit(sample);
+    c.emit({ ...sample, line: 9 });
+    expect(c.drain()).toHaveLength(2);
+  });
+});
+
+describe("angular-template-missing", () => {
+  const sample: Diagnostic = {
+    code: "angular-template-missing",
+    severity: "warning",
+    filePath: "src/app.component.ts",
+    templateUrl: "./app.component.html",
+  };
+
+  it("dedups two emits for the same component and templateUrl", () => {
+    const c = createDiagnosticCollector();
+    c.emit(sample);
+    c.emit({ ...sample });
+    expect(c.drain()).toEqual([sample]);
+  });
+
+  it("does not dedup two emits with different templateUrls", () => {
+    const c = createDiagnosticCollector();
+    c.emit(sample);
+    c.emit({ ...sample, templateUrl: "./other.html" });
+    expect(c.drain()).toHaveLength(2);
+  });
+});

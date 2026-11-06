@@ -254,6 +254,42 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@angular/compiler-19@npm:@angular/compiler@19.2.25":
+  version: 19.2.25
+  resolution: "@angular/compiler@npm:19.2.25"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  checksum: 10c0/d4abdd66f8e3b6686acac2a551e17694336c667c3e788947a430bcd56439b7af41d92cc11b194039dcdf1d610f89d8701ae72da34260f4e321767297e10e5542
+  languageName: node
+  linkType: hard
+
+"@angular/compiler-20@npm:@angular/compiler@20.3.34":
+  version: 20.3.34
+  resolution: "@angular/compiler@npm:20.3.34"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  checksum: 10c0/04fac30835019e0b1e361d75e5e452f976e741008dc6869e044b270ccf69f8ca35b54e02ffe1304a401157b467420eb27f807980e8b6a98d4485438f70231b22
+  languageName: node
+  linkType: hard
+
+"@angular/compiler-21@npm:@angular/compiler@21.2.25":
+  version: 21.2.25
+  resolution: "@angular/compiler@npm:21.2.25"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  checksum: 10c0/be1b734984ea7907368313f0ee75caf78ef67574bec94341c584f309f527957545c22cfba958cce35aef0aeba212131dc2f9b1d5f8f246bf0c4d9790eff30c26
+  languageName: node
+  linkType: hard
+
+"@angular/compiler-22@npm:@angular/compiler@22.2.4":
+  version: 22.2.4
+  resolution: "@angular/compiler@npm:22.2.4"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  checksum: 10c0/b28829aef9e74814ea5b39599aae92f5ef04c2d9dd1bb1dde4f9bed9f13f58be5f5b80092a552eff1243d03064985d4c25ca94baa5dcd312a7c81d50fd124f5b
+  languageName: node
+  linkType: hard
+
 "@asamuzakjp/css-color@npm:^3.2.0":
   version: 3.2.0
   resolution: "@asamuzakjp/css-color@npm:3.2.0"
@@ -5723,10 +5759,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@scoutui/cli@workspace:packages/cli"
   dependencies:
+    "@angular/compiler-19": "npm:@angular/compiler@19.2.25"
+    "@angular/compiler-20": "npm:@angular/compiler@20.3.34"
+    "@angular/compiler-21": "npm:@angular/compiler@21.2.25"
+    "@angular/compiler-22": "npm:@angular/compiler@22.2.4"
     "@babel/parser": "npm:7.29.3"
     "@babel/types": "npm:7.29.0"
     "@clack/prompts": "npm:^1.5.1"
     "@oxc-project/types": "npm:0.130.0"
+    "@scoutui/parser-angular": "npm:0.1.0"
     "@scoutui/parser-react": "npm:0.1.0"
     "@scoutui/parser-vue": "npm:0.1.0"
     "@scoutui/reference-graph": "npm:0.1.0"
@@ -5780,6 +5821,22 @@ __metadata:
   resolution: "@scoutui/palette@workspace:packages/palette"
   dependencies:
     "@types/node": "npm:24.12.2"
+    typescript: "npm:5.9.3"
+    vitest: "npm:4.1.11"
+  languageName: unknown
+  linkType: soft
+
+"@scoutui/parser-angular@npm:0.1.0, @scoutui/parser-angular@workspace:packages/parser-angular":
+  version: 0.0.0-use.local
+  resolution: "@scoutui/parser-angular@workspace:packages/parser-angular"
+  dependencies:
+    "@angular/compiler-19": "npm:@angular/compiler@19.2.25"
+    "@angular/compiler-20": "npm:@angular/compiler@20.3.34"
+    "@angular/compiler-21": "npm:@angular/compiler@21.2.25"
+    "@angular/compiler-22": "npm:@angular/compiler@22.2.4"
+    "@scoutui/reference-graph": "npm:0.1.0"
+    "@types/node": "npm:24.12.2"
+    "@vitest/coverage-v8": "npm:4.1.11"
     typescript: "npm:5.9.3"
     vitest: "npm:4.1.11"
   languageName: unknown
@@ -19165,7 +19222,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.4.0, tslib@npm:^2.6.0, tslib@npm:^2.8.0, tslib@npm:^2.8.1":
+"tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.3.0, tslib@npm:^2.4.0, tslib@npm:^2.6.0, tslib@npm:^2.8.0, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62

@@ -6,7 +6,8 @@ export type DetectorId =
   | "vue-define-component"
   | "vue-functional"
   | "wc-decorator"
-  | "wc-customelements-define";
+  | "wc-customelements-define"
+  | "angular-component";
 
 export type LocalDefinition = {
   /** componentId.source is always { type: "local", filePath }. */
@@ -24,6 +25,8 @@ export type LocalDefinition = {
   loc?: Loc;
   /** Source-derived declared prop API, when readable. Populated by detectors. */
   declared?: DeclaredPropApi;
+  /** True when the app starts by rendering this component, such as Angular's `bootstrapApplication(AppComponent)`. */
+  isBootstrapped?: boolean;
 };
 
 export type LocalDefinitionIndex = {

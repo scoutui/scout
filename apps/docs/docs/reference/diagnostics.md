@@ -30,6 +30,11 @@ Every code except `dependency-not-installed` also has `filePath`, the file the d
 | --- | --- | --- |
 | [`dependency-not-installed`](#dependency-not-installed) | `warning` | A package your `package.json` declares isn't installed, and your code uses its components. |
 | [`file-not-parsed`](#file-not-parsed) | `warning` | The scan couldn't read or parse a file it matched, so it skipped it. |
+| [`angular-compiler-missing`](#angular-compiler-missing) | `warning` | The repo has Angular components, but `@angular/compiler` isn't installed, so their templates weren't read. |
+| [`angular-compiler-unsupported`](#angular-compiler-unsupported) | `warning` | The installed `@angular/compiler` is older than Scout's template parser supports. |
+| [`angular-selector-ambiguous`](#angular-selector-ambiguous) | `warning` | An element in an Angular template matches more than one component, so the use isn't counted. |
+| [`angular-not-in-scope`](#angular-not-in-scope) | `info` | An element in an Angular template matches a component, but none of its matches are in the template's scope. |
+| [`angular-template-missing`](#angular-template-missing) | `warning` | A component's `templateUrl` names a file the scan couldn't read. |
 | [`late-bound-render`](#late-bound-render) | `info` | A tag renders a component that arrives as a prop, a parameter or the result of a hook from a package. |
 | [`unresolved-reference`](#unresolved-reference) | `info` | A tag names something the scan can't follow to a component, for any other reason. |
 | [`lazy-import-unsupported`](#lazy-import-unsupported) | `warning` | A component loaded with `import()` is written in a shape the scan can't follow. |
@@ -84,6 +89,80 @@ Warning: Skipped src/Checkout.tsx: couldn't parse it (Unexpected token).
 ```
 
 **What to do:** fix the syntax error, or for a file the scan couldn't read, check its permissions, then scan again. If the file isn't code you want counted, add it to `exclude` in the config.
+
+## Angular codes
+
+### `angular-compiler-missing`
+
+**Severity:** `warning`
+
+The scan found Angular components, but `@angular/compiler` isn't installed where your repo loads it. Scout reads templates with your repo's own copy of the compiler, so without it the components are counted but the components their templates use aren't. Install your dependencies and scan again.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `filePath` | string | `package.json`. |
+| `detail` | string | The message the scan printed. |
+
+### `angular-compiler-unsupported`
+
+**Severity:** `warning`
+
+The repo's installed `@angular/compiler` is older than the Angular 19+ Scout's template parser supports. The scan keeps going with it, but a template read differently by an older major (or a feature it doesn't have yet) may be missed or misread.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `filePath` | string | `package.json`. |
+| `version` | string | The installed compiler's major version. |
+| `detail` | string | The message the scan printed. |
+
+```text
+Warning: The installed @angular/compiler is version 18, older than the Angular 19+ Scout supports, so its templates may be missed or misread. Upgrade @angular/compiler and scan again.
+```
+
+**What to do:** upgrade `@angular/compiler` (and the rest of your Angular dependencies) to 19 or later, then scan again.
+
+### `angular-selector-ambiguous`
+
+**Severity:** `warning`
+
+An element in a template matches the selector of more than one component the template can use, for example two components that both declare `selector: 'app-button'`. Angular rejects that when it compiles the template, so the scan counts the element for neither component.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `filePath` | string | The template: the component's `.ts` file for an inline template, or its `.html` file. |
+| `line`, `column` | number | Where the element starts. |
+| `tagName` | string | The element's name. |
+| `candidates` | string[] | The matching components, each as its file or package, `#`, and its class name. |
+
+**What to do:** rename one of the selectors, or remove one component from the template's `imports` or its module, so the element matches one component.
+
+### `angular-not-in-scope`
+
+**Severity:** `info`
+
+An element's selector matches one or more components, but none of them are in the template's scope — a standalone component's `imports`, or an NgModule's `declarations`/`exports`. Angular itself would reject this the same as an unknown element, so in a repo that builds, it's usually a sign the scan's own scope reading missed one. The element isn't counted as a use of any of them.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `filePath` | string | The template: the component's `.ts` file for an inline template, or its `.html` file. |
+| `line`, `column` | number | Where the element starts. |
+| `tagName` | string | The element's name. |
+| `candidates` | string[] | The out-of-scope matches, each as its file or package, `#`, and its class name. |
+
+**What to do:** check the owning component's `imports` (standalone) or its NgModule's `declarations`/`exports` for the component named in `candidates`, and add it if it's missing. If the scope is correct and Angular really would reject the element, there's nothing to fix: the scan already leaves it out of the results.
+
+### `angular-template-missing`
+
+**Severity:** `warning`
+
+A component's `templateUrl` names a file the scan couldn't read, so that component's template wasn't counted: none of the components or tags it uses.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `filePath` | string | The component's own `.ts` file. |
+| `templateUrl` | string | The `templateUrl` as written. |
+
+**What to do:** check the path is correct and the file exists at it, then scan again.
 
 ## Render codes
 
