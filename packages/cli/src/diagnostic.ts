@@ -67,6 +67,40 @@ export type Diagnostic =
       filePath: string;
       detail: string;
     }
+  // Angular: the installed `@angular/compiler` is older than Scout supports.
+  // Scanning continues, but a template its parser reads differently may be
+  // missed or misread.
+  | {
+      code: "angular-compiler-unsupported";
+      severity: "warning";
+      filePath: string;
+      version: string;
+      detail: string;
+    }
+  // Angular: a template element whose selector matches one or more
+  // components, none of them in scope. Angular would reject this too, so in a
+  // repo that builds, it's usually a sign the scan's own scope reading missed
+  // something (a standalone component's `imports`, or an NgModule's
+  // declarations/exports).
+  | {
+      code: "angular-not-in-scope";
+      severity: "info";
+      filePath: string;
+      line: number;
+      column: number;
+      tagName: string;
+      /** The out-of-scope matches, as `<file or package>#<export>`. */
+      candidates: string[];
+    }
+  // Angular: a component's `templateUrl` names a file the scan couldn't read,
+  // so that component's template wasn't counted.
+  | {
+      code: "angular-template-missing";
+      severity: "warning";
+      /** The component's own file, outputRoot-relative. */
+      filePath: string;
+      templateUrl: string;
+    }
   // Scan-level: a declared package with `package-not-installed` occurrences.
   | {
       code: "dependency-not-installed";
@@ -101,9 +135,13 @@ function diagnosticKey(d: Diagnostic): string {
     case "dependency-not-installed":
       return `${d.code}::${d.packageName}`;
     case "angular-selector-ambiguous":
+    case "angular-not-in-scope":
       return `${d.code}::${d.filePath}::${d.line}::${d.column}`;
     case "angular-compiler-missing":
+    case "angular-compiler-unsupported":
       return `${d.code}::${d.filePath}`;
+    case "angular-template-missing":
+      return `${d.code}::${d.filePath}::${d.templateUrl}`;
     default:
       return engineDiagnosticKey(d);
   }

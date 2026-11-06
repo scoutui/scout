@@ -25,6 +25,10 @@ export function formatWarning(d: Warning): string {
       return `${d.filePath}:${d.line}:${d.column}: <${d.tagName}> matches more than one component (${d.candidates.join(", ")}), so this use isn't counted.`;
     case "angular-compiler-missing":
       return d.detail;
+    case "angular-compiler-unsupported":
+      return d.detail;
+    case "angular-template-missing":
+      return `${d.filePath}: couldn't read its template at ${d.templateUrl}, so that component's template wasn't counted.`;
     case "dependency-not-installed":
       return d.occurrenceCount === 1
         ? `${d.packageName} is listed in ${d.declaredIn} but isn't installed, so 1 use of it isn't matched to a component. Install your dependencies and scan again.`
@@ -46,6 +50,10 @@ function countLine(code: Info["code"], n: number): string {
       return n === 1
         ? "1 use of a component passed in as a prop or argument wasn't counted."
         : `${n} uses of components passed in as a prop or argument weren't counted.`;
+    case "angular-not-in-scope":
+      return n === 1
+        ? "1 element matched an Angular component out of its template's scope and wasn't counted as a use."
+        : `${n} elements matched an Angular component out of their template's scope and weren't counted as uses.`;
     default:
       return assertUnreachable(code);
   }

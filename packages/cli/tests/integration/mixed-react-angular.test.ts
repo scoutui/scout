@@ -52,4 +52,23 @@ describe("integration: mixed-react-angular fixture", () => {
     expect(reactOcc?.resolution.status).toBe("resolved");
     expect(angularOcc?.resolution.status).toBe("resolved");
   });
+
+  describe("a Stencil @Component isn't mistaken for Angular's", () => {
+    // Positive/negative pair: Badge.tsx declares a class decorated with
+    // `@Component(...)`, the same decorator name detect-angular.ts looks
+    // for, but imported from "@stencil/core", not "@angular/core".
+
+    it("labels Badge framework: \"react\", not \"angular\"", () => {
+      const badge = out.components.find(
+        (c) => c.identity.kind === "repository-declaration" && c.identity.filePath === "src/react/Badge.tsx",
+      );
+      expect(badge).toBeDefined();
+      expect(badge?.framework).toBe("react");
+    });
+
+    it("still finds BadgeHost's JSX use of it, resolved", () => {
+      const occ = out.occurrences.find((o) => o.filePath === "src/react/BadgeHost.tsx");
+      expect(occ?.resolution.status).toBe("resolved");
+    });
+  });
 });

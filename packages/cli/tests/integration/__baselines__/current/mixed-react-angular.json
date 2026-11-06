@@ -144,6 +144,66 @@
       }
     },
     {
+      "id": "4dfb68a6fbbbf6f2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "mixed-react-angular",
+        "filePath": "src/react/Badge.tsx",
+        "exportName": "Badge"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 10,
+        "column": 8
+      },
+      "owningPackage": "mixed-react-angular",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "a184e1d449a7f1bc": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "a184e1d449a7f1bc",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "mixed-react-angular",
+        "filePath": "src/react/BadgeHost.tsx",
+        "exportName": "BadgeHost"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 3,
+        "column": 8
+      },
+      "owningPackage": "mixed-react-angular",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "4dfb68a6fbbbf6f2": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "ef07977353443b3e",
       "identity": {
         "kind": "repository-declaration",
@@ -219,6 +279,28 @@
         }
       },
       "ownerComponentId": "a306221255e90c82"
+    },
+    {
+      "occurrenceId": "584f853c44e1a247",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "4dfb68a6fbbbf6f2"
+      },
+      "filePath": "src/react/BadgeHost.tsx",
+      "line": 4,
+      "column": 10,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./Badge",
+          "name": "Badge"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "a184e1d449a7f1bc"
     },
     {
       "occurrenceId": "c6f7ec621579a1db",

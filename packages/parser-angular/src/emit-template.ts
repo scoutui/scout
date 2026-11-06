@@ -39,6 +39,15 @@ export type EmitAngularTemplateOpts = {
   resolveLocal: (entry: SelectorEntry, loc: { line: number; column: number }) => ResolvedLocal;
   onTemplateError: (message: string) => void;
   onAmbiguous: (tag: string, loc: { line: number; column: number }, matches: readonly ElementMatch[]) => void;
+  /**
+   * An element whose selector matches one or more components, none of them in
+   * the template's scope. Angular would reject this the same as an unknown
+   * element, but in a repo that builds, it usually means the scan's scope
+   * reading (a standalone component's `imports`, or an NgModule's
+   * declarations/imports) missed something. Optional: a caller that doesn't
+   * pass it keeps the element silent, as before.
+   */
+  onOutOfScope?: (tag: string, loc: { line: number; column: number }, matches: readonly ElementMatch[]) => void;
 };
 
 type TmplNode = { [key: string]: unknown };
@@ -112,9 +121,16 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
       opts.fileBuilder.setOwner(opts.owner, via);
       return;
     }
+    // Every selector match for this tag exists, but none is in scope. Angular
+    // would reject this the same as an unknown element, but in a repo that
+    // builds, it's a sign the scan's own scope reading missed something.
+    if (found.length > 0) {
+      opts.onOutOfScope?.(tag, loc, found);
+      return;
+    }
     // A component the template can't see isn't a custom element either: Angular
     // rejects it, so it is no use at all.
-    if (found.length === 0 && isValidCustomElementName(canonicalTagName(tag))) {
+    if (isValidCustomElementName(canonicalTagName(tag))) {
       const { props, events } = readBindings(el, undefined);
       opts.fileBuilder.addTagUsage({ tagName: tag, loc, props, events });
       opts.fileBuilder.setTagOwner(opts.owner);

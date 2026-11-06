@@ -57,7 +57,7 @@ Files with any other extension, such as `.html` or `.svelte`, are skipped even w
 
 ## Angular
 
-Requires `@angular/compiler` installed in the repo being scanned: Scout uses that repo's own copy, not a bundled one, so a scan sees exactly what your own build does. Without it installed, Angular files are skipped and the scan reports why. Supported from Angular 19 on.
+Requires `@angular/compiler` installed in the repo being scanned: Scout uses that repo's own copy, not a bundled one, so a scan sees exactly what your own build does. Without it installed, Angular components are still counted, but their templates aren't read, so the components they use aren't found; the scan reports why (see [`angular-compiler-missing`](/docs/reference/diagnostics#angular-compiler-missing)). Supported from Angular 19 on.
 
 **Recognised:** a class decorated with `@Component`, matched against a template element or attribute selector such as `<app-button>` or `button[app-icon-button]`. A component is in scope for a standalone component's template (the default from Angular 19 on) when it's listed in that component's `imports`; for a non-standalone component, through an `NgModule`'s `declarations` and `exports`. Both inline templates and a `templateUrl` file are read, whichever API a component's inputs and outputs use: `@Input()`/`@Output()` decorators, or the `input()`/`output()`/`model()` signal functions — `model()`'s matching `<name>Change` output included. An element that matches more than one component in scope isn't counted: the scan reports why.
 

@@ -313,6 +313,62 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("imports-spread", () => {
+    const S = "imports-spread";
+    const card = local(S, "card.component.ts", "SpreadCardComponent");
+    const spreadButton = local(S, "spread-button.component.ts", "SpreadButtonComponent");
+    const page = local(S, "imports-spread-page.component.ts", "ImportsSpreadPageComponent");
+
+    // `imports: [SpreadCardComponent, ...SHARED_UI]` can't be fully read (the
+    // spread's contents aren't known to the detector), so the component's
+    // template scope falls back to global - the same way an empty `imports`
+    // list does - instead of only seeing SpreadCardComponent and silently
+    // dropping SpreadButtonComponent, which SHARED_UI (in another file)
+    // holds. SpreadCardComponent proves the already-working case still
+    // works; SpreadButtonComponent proves the entry the spread hid is no
+    // longer dropped.
+    it("resolves both the plainly-imported component and the one only reachable through the spread", () => {
+      expect(rendersIn(S)).toEqual([
+        row("imports-spread-page.component.ts:14:5", card, page, [imported("./card.component", "SpreadCardComponent")]),
+        row("imports-spread-page.component.ts:15:5", spreadButton, page, [imported("./spread-button.component", "SpreadButtonComponent")]),
+      ]);
+    });
+  });
+
+  describe("monorepo-modules", () => {
+    const S = "monorepo-modules";
+    const headerOne = local(S, "app-one/header.component.ts", "OneHeaderComponent");
+    const rootOne = local(S, "app-one/app-root.component.ts", "AppRootComponent");
+    const headerTwo = local(S, "app-two/header.component.ts", "TwoHeaderComponent");
+    const rootTwo = local(S, "app-two/app-root.component.ts", "AppRootComponent");
+
+    // The bug this reproduces: two apps in a monorepo each name their root
+    // module "AppModule" (Angular CLI's own default) and each declare a
+    // class named "AppRootComponent" - same class names, different files.
+    // Keying module scope by class name alone lets one app's "AppModule" map
+    // entry overwrite the other's, so `declaringModule("AppRootComponent")`
+    // answers from the wrong file: app-one's <app-header> use ends up
+    // crediting app-two's header component, exactly the maintainer's "I got
+    // one app's elements credited to the other's components".
+    it("resolves each app's <app-header> use to that app's own header component (positive)", () => {
+      const rows = rendersIn(S);
+      const oneRow = rows.find((r) => r.at === "app-one/app-root.component.ts:6:14");
+      const twoRow = rows.find((r) => r.at === "app-two/app-root.component.ts:6:14");
+      expect(oneRow?.component).toEqual(headerOne);
+      expect(oneRow?.owner).toEqual(rootOne);
+      expect(twoRow?.component).toEqual(headerTwo);
+      expect(twoRow?.owner).toEqual(rootTwo);
+    });
+
+    it("never credits one app's <app-header> use to the other app's header component (negative)", () => {
+      const rows = rendersIn(S);
+      const oneRow = rows.find((r) => r.at === "app-one/app-root.component.ts:6:14");
+      const twoRow = rows.find((r) => r.at === "app-two/app-root.component.ts:6:14");
+      expect(oneRow?.component).not.toEqual(headerTwo);
+      expect(twoRow?.component).not.toEqual(headerOne);
+    });
+  });
+
   describe("every declared component gets a row, none it shouldn't", () => {
     it("lists every repository-declaration that renders or is rendered in this fixture", () => {
       // selector-conflict's three files are deliberately absent: an
@@ -331,8 +387,15 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/control-flow/item.component.ts",
           "src/decorator-io/decorator-io-page.component.ts",
           "src/decorator-io/toggle.component.ts",
+          "src/imports-spread/card.component.ts",
+          "src/imports-spread/imports-spread-page.component.ts",
+          "src/imports-spread/spread-button.component.ts",
           "src/inline-template/card.component.ts",
           "src/inline-template/tag.component.ts",
+          "src/monorepo-modules/app-one/app-root.component.ts",
+          "src/monorepo-modules/app-one/header.component.ts",
+          "src/monorepo-modules/app-two/app-root.component.ts",
+          "src/monorepo-modules/app-two/header.component.ts",
           "src/ng-content-projection/badge.component.ts",
           "src/ng-content-projection/frame.component.ts",
           "src/ng-content-projection/projection-page.component.ts",

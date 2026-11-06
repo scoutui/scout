@@ -14,6 +14,8 @@ export type AngularCompiler = {
     parse(selector: string): CssSelector[];
   };
   SelectorMatcher: new <T>() => SelectorMatcher<T>;
+  /** Not every version exports this; absent on a copy too old to carry it. */
+  VERSION?: { major: string };
 };
 
 export type CssSelector = {

@@ -38,6 +38,15 @@ export type AngularComponentDecl = {
   standalone: boolean;
   /** identifiers listed in @Component({imports: [A, B]}) (identifiers only; skips spreads/calls). */
   imports: string[];
+  /**
+   * False when `imports` wasn't a plain array of identifiers end to end: a
+   * spread (`...SHARED`), a call, a hole, or the whole property not being an
+   * array literal (`imports: SOME_CONST`). A template-scope lookup treats
+   * `false` the same way it treats an empty list — it can't trust `imports`
+   * to name everything the template can use, so it falls back to global scope
+   * rather than silently dropping whatever it couldn't read.
+   */
+  importsComplete: boolean;
   template: AngularTemplateRef | undefined;
   inputs: AngularInput[];
   outputs: AngularOutput[];
@@ -73,10 +82,16 @@ export type AngularModuleDecl = {
   className: string;
   /** Identifiers in `declarations: [...]` (identifiers only; skips spreads/calls). */
   declarations: string[];
+  /** False under the same conditions as `AngularComponentDecl.importsComplete`, for `declarations`. */
+  declarationsComplete: boolean;
   /** Identifiers in `imports: [...]`. */
   imports: string[];
+  /** False under the same conditions as `AngularComponentDecl.importsComplete`, for `imports`. */
+  importsComplete: boolean;
   /** Identifiers in `exports: [...]`. */
   exports: string[];
+  /** False under the same conditions as `AngularComponentDecl.importsComplete`, for `exports`. */
+  exportsComplete: boolean;
   /** Identifiers in `bootstrap: [...]`. */
   bootstrap: string[];
   /** 1-based class position. */
@@ -105,18 +120,65 @@ export function detectAngularModules(program: Program, source: string): AngularM
   return out;
 }
 
-type NgModuleOptions = { declarations: string[]; imports: string[]; exports: string[]; bootstrap: string[] };
+type NgModuleOptions = {
+  declarations: string[];
+  declarationsComplete: boolean;
+  imports: string[];
+  importsComplete: boolean;
+  exports: string[];
+  exportsComplete: boolean;
+  bootstrap: string[];
+};
+
+/**
+ * Reads an array-literal list of plain identifiers, same rule for every
+ * `@Component`/`@NgModule` option this file reads as an identifier list:
+ * `complete` is false when the value isn't an array literal at all, or any
+ * element is a spread, a call, a hole, or anything else that isn't a plain
+ * identifier — the list it returns only ever holds what it could read.
+ */
+function readIdentifierList(value: Expression): { names: string[]; complete: boolean } {
+  if (value.type !== "ArrayExpression") return { names: [], complete: false };
+  const names: string[] = [];
+  let complete = true;
+  for (const el of value.elements) {
+    if (el && el.type === "Identifier") names.push(el.name);
+    else complete = false;
+  }
+  return { names, complete };
+}
 
 function readNgModuleOptions(obj: ObjectExpression | undefined): NgModuleOptions {
-  const options: NgModuleOptions = { declarations: [], imports: [], exports: [], bootstrap: [] };
+  const options: NgModuleOptions = {
+    declarations: [],
+    declarationsComplete: true,
+    imports: [],
+    importsComplete: true,
+    exports: [],
+    exportsComplete: true,
+    bootstrap: [],
+  };
   if (!obj) return options;
   for (const p of obj.properties) {
     if (p.type !== "Property" || p.key.type !== "Identifier") continue;
     const name = p.key.name;
-    if (name !== "declarations" && name !== "imports" && name !== "exports" && name !== "bootstrap") continue;
-    if (p.value.type !== "ArrayExpression") continue;
-    for (const el of p.value.elements) {
-      if (el && el.type === "Identifier") options[name].push(el.name);
+    if (name === "bootstrap") {
+      if (p.value.type === "ArrayExpression") {
+        for (const el of p.value.elements) if (el && el.type === "Identifier") options.bootstrap.push(el.name);
+      }
+      continue;
+    }
+    if (name !== "declarations" && name !== "imports" && name !== "exports") continue;
+    const { names, complete } = readIdentifierList(p.value);
+    if (name === "declarations") {
+      options.declarations = names;
+      options.declarationsComplete = complete;
+    } else if (name === "imports") {
+      options.imports = names;
+      options.importsComplete = complete;
+    } else {
+      options.exports = names;
+      options.exportsComplete = complete;
     }
   }
   return options;
@@ -233,6 +295,7 @@ function toAngularComponentDecl(site: ClassSite, source: string): AngularCompone
     selector: options.selector,
     standalone: options.standalone,
     imports: options.imports,
+    importsComplete: options.importsComplete,
     template: options.template,
     inputs,
     outputs,
@@ -248,13 +311,15 @@ type ComponentOptions = {
   selector: string | undefined;
   standalone: boolean;
   imports: string[];
+  importsComplete: boolean;
   template: AngularTemplateRef | undefined;
 };
 
 function readComponentOptions(obj: ObjectExpression | undefined, source: string): ComponentOptions {
   let selector: string | undefined;
   let standalone = true; // DEFAULT true when absent (Angular 19+)
-  const imports: string[] = [];
+  let imports: string[] = [];
+  let importsComplete = true;
   let template: AngularTemplateRef | undefined;
 
   if (obj) {
@@ -267,10 +332,10 @@ function readComponentOptions(obj: ObjectExpression | undefined, source: string)
       } else if (name === "standalone") {
         const v = readLiteralValue(p.value);
         if (typeof v === "boolean") standalone = v;
-      } else if (name === "imports" && p.value.type === "ArrayExpression") {
-        for (const el of p.value.elements) {
-          if (el && el.type === "Identifier") imports.push(el.name);
-        }
+      } else if (name === "imports") {
+        const result = readIdentifierList(p.value);
+        imports = result.names;
+        importsComplete = result.complete;
       } else if (name === "template") {
         const inlineSource = inlineTemplateSource(p.value);
         if (inlineSource !== undefined) {
@@ -284,7 +349,7 @@ function readComponentOptions(obj: ObjectExpression | undefined, source: string)
     }
   }
 
-  return { selector, standalone, imports, template };
+  return { selector, standalone, imports, importsComplete, template };
 }
 
 /**

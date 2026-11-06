@@ -418,6 +418,109 @@
       }
     },
     {
+      "id": "209342e18a1d08fa",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/imports-spread/card.component.ts",
+        "exportName": "SpreadCardComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 7,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "42c98e5f356f1b53": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "42c98e5f356f1b53",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/imports-spread/imports-spread-page.component.ts",
+        "exportName": "ImportsSpreadPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 18,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "209342e18a1d08fa": 1,
+          "b40c0c54529104b5": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "b40c0c54529104b5",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/imports-spread/spread-button.component.ts",
+        "exportName": "SpreadButtonComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 7,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "42c98e5f356f1b53": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "f1519c5b2a8d5703",
       "identity": {
         "kind": "repository-declaration",
@@ -494,6 +597,142 @@
         "rendersByCount": {},
         "renderedByCount": {
           "f1519c5b2a8d5703": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "3aca91295feb9b15",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/monorepo-modules/app-one/app-root.component.ts",
+        "exportName": "AppRootComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 8,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "794e5dac7c090ca2": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "794e5dac7c090ca2",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/monorepo-modules/app-one/header.component.ts",
+        "exportName": "OneHeaderComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 8,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "3aca91295feb9b15": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "eb592341d1187cb9",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/monorepo-modules/app-two/app-root.component.ts",
+        "exportName": "AppRootComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 8,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "8eafcddf818a3385": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "8eafcddf818a3385",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/monorepo-modules/app-two/header.component.ts",
+        "exportName": "TwoHeaderComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 8,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "eb592341d1187cb9": 1
         },
         "isRootCount": 0,
         "isLeafCount": 1
@@ -1079,6 +1318,50 @@
       "ownerComponentId": "a16da6982113fdaf"
     },
     {
+      "occurrenceId": "7467a91a20ab5f67",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "209342e18a1d08fa"
+      },
+      "filePath": "src/imports-spread/imports-spread-page.component.ts",
+      "line": 14,
+      "column": 5,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./card.component",
+          "name": "SpreadCardComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "42c98e5f356f1b53"
+    },
+    {
+      "occurrenceId": "5ad305df64aabc90",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b40c0c54529104b5"
+      },
+      "filePath": "src/imports-spread/imports-spread-page.component.ts",
+      "line": 15,
+      "column": 5,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./spread-button.component",
+          "name": "SpreadButtonComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "42c98e5f356f1b53"
+    },
+    {
       "occurrenceId": "a2631f04181d3d34",
       "resolution": {
         "status": "resolved",
@@ -1104,6 +1387,50 @@
         }
       },
       "ownerComponentId": "f1519c5b2a8d5703"
+    },
+    {
+      "occurrenceId": "73824564c2fe5dc0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "794e5dac7c090ca2"
+      },
+      "filePath": "src/monorepo-modules/app-one/app-root.component.ts",
+      "line": 6,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./header.component",
+          "name": "OneHeaderComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "3aca91295feb9b15"
+    },
+    {
+      "occurrenceId": "382237e0b6a46489",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "8eafcddf818a3385"
+      },
+      "filePath": "src/monorepo-modules/app-two/app-root.component.ts",
+      "line": 6,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./header.component",
+          "name": "TwoHeaderComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "eb592341d1187cb9"
     },
     {
       "occurrenceId": "36c5a0cb12a106c7",

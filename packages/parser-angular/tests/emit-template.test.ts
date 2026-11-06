@@ -33,6 +33,7 @@ function emit(template: string, opts: { origin?: { line: number; column: number 
   const { uses, builder } = recorder();
   const ambiguous: string[] = [];
   const errors: string[] = [];
+  const outOfScope: { tag: string; candidates: string[] }[] = [];
   emitAngularTemplate({
     compiler,
     template,
@@ -52,8 +53,9 @@ function emit(template: string, opts: { origin?: { line: number; column: number 
     resolveLocal: (entry) => ({ local: entry.exportName }),
     onTemplateError: (m) => errors.push(m),
     onAmbiguous: (tag) => ambiguous.push(tag),
+    onOutOfScope: (tag, _loc, matches) => outOfScope.push({ tag, candidates: matches.map((m) => m.entry.exportName) }),
   });
-  return { uses, ambiguous, errors };
+  return { uses, ambiguous, errors, outOfScope };
 }
 
 describe.each(VERSIONS)("Angular %i", (version) => {
@@ -86,8 +88,22 @@ describe("emitAngularTemplate: matching elements to components", () => {
     ]);
   });
 
-  test("leaves out components that aren't in the template's scope", () => {
-    expect(emit("<app-button />", { inScope: (e) => e !== button }).uses).toEqual([]);
+  test("leaves out components that aren't in the template's scope, and reports it as out of scope", () => {
+    const { uses, outOfScope } = emit("<app-button />", { inScope: (e) => e !== button });
+    expect(uses).toEqual([]);
+    expect(outOfScope).toEqual([{ tag: "app-button", candidates: ["ButtonComponent"] }]);
+  });
+
+  // Positive/negative pair for onOutOfScope: a selector no component in the
+  // repo matches at all is a different case (recorded as a custom element or
+  // silently, never "out of scope") from one whose only matches are filtered
+  // by inScope.
+  test("does not report a selector nothing matches as out of scope", () => {
+    expect(emit("<x-widget></x-widget>").outOfScope).toEqual([]);
+  });
+
+  test("does not report a selector matched in scope as out of scope", () => {
+    expect(emit("<app-button />").outOfScope).toEqual([]);
   });
 
   test("reports an element two components in scope both match, and counts it for neither", () => {

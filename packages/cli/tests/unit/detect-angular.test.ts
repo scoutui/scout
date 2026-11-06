@@ -127,12 +127,43 @@ export class Foo {}
     expect(decls[0]?.standalone).toBe(false);
   });
 
-  it("imports: [A, B] collects identifiers", () => {
+  it("imports: [A, B] collects identifiers and marks the list complete", () => {
     const decls = detect(`import { Component } from "@angular/core";
 @Component({ selector: "x", imports: [A, B] })
 export class Foo {}
 `);
     expect(decls[0]?.imports).toEqual(["A", "B"]);
+    expect(decls[0]?.importsComplete).toBe(true);
+  });
+
+  it("no imports option: an empty list, same as an empty array, marked complete", () => {
+    const decls = detect(`import { Component } from "@angular/core";
+@Component({ selector: "x" })
+export class Foo {}
+`);
+    expect(decls[0]?.imports).toEqual([]);
+    expect(decls[0]?.importsComplete).toBe(true);
+  });
+
+  // Negative/positive pair: a spread (or any non-identifier element) can't be
+  // read, so it marks the list incomplete even though the readable entries
+  // still come through — unlike the complete, all-identifiers case above.
+  it("imports: [A, ...SHARED] keeps the readable identifier but marks the list incomplete", () => {
+    const decls = detect(`import { Component } from "@angular/core";
+@Component({ selector: "x", imports: [A, ...SHARED] })
+export class Foo {}
+`);
+    expect(decls[0]?.imports).toEqual(["A"]);
+    expect(decls[0]?.importsComplete).toBe(false);
+  });
+
+  it("imports: SOME_CONST (not an array literal) is incomplete, with no entries read", () => {
+    const decls = detect(`import { Component } from "@angular/core";
+@Component({ selector: "x", imports: SOME_CONST })
+export class Foo {}
+`);
+    expect(decls[0]?.imports).toEqual([]);
+    expect(decls[0]?.importsComplete).toBe(false);
   });
 
   it("inline template: records source + 1-based position of the first content character", () => {
@@ -218,18 +249,29 @@ export class AppModule {}
     expect(decls[0]).toMatchObject({
       className: "AppModule",
       declarations: ["FooComponent", "BarComponent"],
+      declarationsComplete: true,
       imports: ["CommonModule", "SharedModule"],
+      importsComplete: true,
       exports: ["FooComponent"],
+      exportsComplete: true,
       bootstrap: ["FooComponent"],
     });
   });
 
-  it("an @NgModule with no bootstrap array (a feature module) reports an empty bootstrap list", () => {
+  it("an @NgModule with no bootstrap array (a feature module) reports an empty bootstrap list, and absent imports as complete", () => {
     const decls = detectModules(`import { NgModule } from "@angular/core";
 @NgModule({ declarations: [WidgetComponent], exports: [WidgetComponent] })
 export class SharedModule {}
 `);
-    expect(decls[0]).toMatchObject({ declarations: ["WidgetComponent"], imports: [], exports: ["WidgetComponent"], bootstrap: [] });
+    expect(decls[0]).toMatchObject({
+      declarations: ["WidgetComponent"],
+      declarationsComplete: true,
+      imports: [],
+      importsComplete: true,
+      exports: ["WidgetComponent"],
+      exportsComplete: true,
+      bootstrap: [],
+    });
   });
 
   // Negative: a @Component class, decorated the other way, is not an NgModule.
@@ -241,13 +283,46 @@ export class Foo {}
     expect(decls).toEqual([]);
   });
 
-  it("skips spreads and call expressions in module arrays, keeping only identifiers", () => {
+  it("skips spreads and call expressions in module arrays, keeping only identifiers, and marks that list incomplete", () => {
     const decls = detectModules(`import { NgModule } from "@angular/core";
 const extra = [ExtraModule];
 @NgModule({ imports: [CommonModule, ...extra, someFactory()] })
 export class AppModule {}
 `);
     expect(decls[0]?.imports).toEqual(["CommonModule"]);
+    expect(decls[0]?.importsComplete).toBe(false);
+  });
+
+  // Negative/positive pair, each field independently: declarations and
+  // exports with unreadable entries are each marked incomplete on their own
+  // field, while a plain-identifier imports list on the same decorator call
+  // stays complete.
+  it("marks only the fields that actually hold an unreadable entry as incomplete", () => {
+    const decls = detectModules(`import { NgModule } from "@angular/core";
+const EXTRA = [ExtraComponent];
+@NgModule({
+  declarations: [FooComponent, ...EXTRA],
+  imports: [CommonModule],
+  exports: [FooComponent, someFactory()],
+})
+export class AppModule {}
+`);
+    expect(decls[0]).toMatchObject({
+      declarations: ["FooComponent"],
+      declarationsComplete: false,
+      imports: ["CommonModule"],
+      importsComplete: true,
+      exports: ["FooComponent"],
+      exportsComplete: false,
+    });
+  });
+
+  it("imports: SHARED_IMPORTS (not an array literal) is incomplete, with no entries read", () => {
+    const decls = detectModules(`import { NgModule } from "@angular/core";
+@NgModule({ imports: SHARED_IMPORTS })
+export class AppModule {}
+`);
+    expect(decls[0]).toMatchObject({ imports: [], importsComplete: false });
   });
 });
 
