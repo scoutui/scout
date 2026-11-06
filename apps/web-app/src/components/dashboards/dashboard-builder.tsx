@@ -476,8 +476,6 @@ export function DashboardBuilder({
         <aside aria-label="Series" className="flex min-w-0 flex-col gap-3 lg:border-r lg:pr-4">
           <span className="text-label text-muted-foreground">Series</span>
           {cohorts.length > 0 ? (
-            // The list scrolls past 24rem, so the rail stays near the chart's height and the search box
-            // stays put. `relative` keeps the rows' absolutely positioned sr-only text inside the scroll box.
             <div className="relative max-h-[24rem] overflow-y-auto overscroll-contain border-b pb-3">
               <SeriesLegend
                 series={legend}
