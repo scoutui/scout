@@ -21,6 +21,10 @@ describe("friendlyKind", () => {
     expect(friendlyKind("custom-element")).toBe("wc");
     expect(friendlyKind("vue-component")).toBe("vue");
   });
+
+  it("friendlyKind names an open kind by its own framework, never as react", () => {
+    expect(friendlyKind("svelte-component")).toBe("svelte");
+  });
 });
 
 describe("toQueryView", () => {
@@ -56,6 +60,11 @@ describe("toQueryView", () => {
       } as GovernanceRecord,
     ];
     expect(toQueryView(ext(), gov, []).deprecated).toBe(true);
+  });
+
+  it("projects an unknown framework by its own name, never as react", () => {
+    const svelte = component(packageExport("@scope/lib", "Widget"), { framework: "svelte" });
+    expect(toQueryView(svelte, [], []).kind).toBe("svelte");
   });
 
   it("projects a custom element from its tagName and its resolved package", () => {
@@ -130,5 +139,10 @@ describe("matchesQuery (end-to-end)", () => {
   });
   it("an unknown field matches nothing", () => {
     expect(run("color:blue")).toBe(false);
+  });
+  it("filters by an unknown framework's own kind, never matching react", () => {
+    const svelte = component(packageExport("@scope/lib", "Widget"), { framework: "svelte" });
+    expect(run("kind:svelte", svelte)).toBe(true);
+    expect(run("kind:react", svelte)).toBe(false);
   });
 });

@@ -4,7 +4,13 @@ import { z } from "zod";
 // ---- Identity enums (referenced across summary + detail shapes) ----
 export const ComponentScope = z.enum(["external", "local"]);
 export type ComponentScope = z.infer<typeof ComponentScope>;
-export const ComponentKind = z.enum(["custom-element", "react-component", "vue-component", "tag"]);
+// The kinds this dashboard recognises by name. An unknown framework (one `@scoutui/scan-format`'s
+// open `framework` list carries, that isn't "react" or "vue") presents as the open string
+// `${framework}-component` instead, e.g. "svelte-component" — never as one of these, and never
+// folded into "react-component". See `presentIdentity`.
+export const KNOWN_COMPONENT_KINDS = ["custom-element", "react-component", "vue-component", "tag"] as const;
+export type KnownComponentKind = (typeof KNOWN_COMPONENT_KINDS)[number];
+export const ComponentKind = z.string().min(1);
 export type ComponentKind = z.infer<typeof ComponentKind>;
 // Mirrors the scan file `Component`'s `usage` (`@scoutui/scan-format`): why a component
 // is in the inventory. Precedence: direct > root > none.

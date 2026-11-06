@@ -1,5 +1,5 @@
 import type { BindingDecl, FileGraph, Graph, InferredType, Reference } from "../index.js";
-import { MODULE_SCOPE } from "../index.js";
+import { isTemplateDialect, MODULE_SCOPE } from "../index.js";
 import { parseCompoundExport } from "@scoutui/scan-format";
 import { bindingDeclaration, isDefaultExport, resolveBinding } from "./binding.js";
 import { createCycleGuard } from "./cycle-detection.js";
@@ -27,9 +27,9 @@ import { memberOfObjectPath } from "./member-identity.js";
  *
  * Consumption is the gate that keeps `renderIcon()` helpers, render-less
  * classes and other component-shaped-but-inert declarations out of the
- * roster. Vue-dialect files contribute nothing: their
- * SFC declaration is not typed by this algebra and the engine admits their
- * identities unconditionally.
+ * roster. Template-dialect files (`isTemplateDialect`, e.g. Vue, Angular)
+ * contribute nothing: their declarations are not typed by this algebra and
+ * the engine admits their identities unconditionally.
  *
  * A folded holding declaration (`export default memo(Foo)`, `const Enhanced =
  * connect()(Foo)`) is component-shaped and exported, so `buildComponentRegistry`
@@ -42,7 +42,7 @@ export type RegistryEntry = {
   filePath: string;
   symbol: string;
   exportName: string;
-  kind: "react-component" | "vue-component";
+  kind: "react-component" | "vue-component" | "angular-component";
   loc: { line: number; column: number };
   isDefault: boolean;
 };
@@ -141,7 +141,7 @@ export function buildComponentRegistry(graph: Graph, tagged: Iterable<BindingDec
   const entries: RegistryEntry[] = [];
   const taggedEntries = new Set<string>();
   for (const [file, fg] of graph.files) {
-    if (fg.dialect === "vue") continue;
+    if (isTemplateDialect(fg.dialect)) continue;
     for (const decl of fg.declarations.values()) {
       const symbolKey = entryKey(file, decl.symbol);
       if (!renderedAsTag.has(decl) && !(consumed.has(symbolKey) && isAdmittedShape(decl.value, graph, fg))) continue;
@@ -183,7 +183,7 @@ export function buildComponentRegistry(graph: Graph, tagged: Iterable<BindingDec
   const judgedByName = new Map<string, boolean>();
   const isComponent = (filePath: string, name: string, declaration?: BindingDecl): boolean => {
     const fg = graph.files.get(filePath);
-    if (fg === undefined || fg.dialect === "vue") return false;
+    if (fg === undefined || isTemplateDialect(fg.dialect)) return false;
     if (declaration !== undefined) return judge(fg, name, declaration);
     const cacheKey = entryKey(filePath, name);
     const cached = judgedByName.get(cacheKey);
@@ -205,14 +205,15 @@ export function buildComponentRegistry(graph: Graph, tagged: Iterable<BindingDec
 
 /** `ComponentRegistry.declarationOf` over any graph's parsed files: where the
  *  identity named by (filePath, symbol-or-exportedAs) is declared, through
- *  `findDeclaration`. None for a Vue file or a compound export. */
+ *  `findDeclaration`. None for a template-dialect file (`isTemplateDialect`)
+ *  or a compound export. */
 export function declarationOf(
   graph: Graph,
   filePath: string,
   exportName: string,
 ): { symbol: string; loc: { line: number; column: number } } | undefined {
   const fg = graph.files.get(filePath);
-  if (fg === undefined || fg.dialect === "vue") return undefined;
+  if (fg === undefined || isTemplateDialect(fg.dialect)) return undefined;
   const { root, isCompound } = parseCompoundExport(exportName);
   if (isCompound) return undefined;
   const decl = findDeclaration(fg, root);

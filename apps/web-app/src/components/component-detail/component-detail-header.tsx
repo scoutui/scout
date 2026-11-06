@@ -5,7 +5,7 @@ import type { ComponentDetail } from "@scoutui/web-shared";
 import { friendlyKind } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
 import { MigrationLine } from "@/components/governance/migration-line";
-import { KIND_LABEL, NO_PACKAGE_TITLE, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
+import { kindLabel, NO_PACKAGE_TITLE, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
 import { cn } from "@/lib/utils";
 
 export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDetail; canEdit: boolean }) {
@@ -25,7 +25,7 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
         <Badge variant={detail.scope === "local" ? "outline" : "secondary"} title={ORIGIN_DESCRIPTION[detail.scope]}>
           {ORIGIN_LABEL[detail.scope]}
         </Badge>
-        <Badge variant="outline">{KIND_LABEL[friendlyKind(detail.kind)]}</Badge>
+        <Badge variant="outline">{kindLabel(friendlyKind(detail.kind))}</Badge>
         {detail.deprecated ? (
           <Badge variant="warning">
             <AlertTriangle aria-hidden />
