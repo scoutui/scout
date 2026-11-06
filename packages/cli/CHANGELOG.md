@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- [#176](https://github.com/scoutui/scout/pull/176) [`6a3e1bb`](https://github.com/scoutui/scout/commit/6a3e1bb07ccb6638e52c5793efeaf52c89bb54e8) Thanks [@nhunsaker](https://github.com/nhunsaker)! - The CLI now scans Angular repos, alongside React and Vue. It reads `@Component` classes and their templates (inline or `templateUrl`), matching elements and attribute selectors to standalone `imports` or `NgModule` declarations, and reads inputs and outputs from both the decorator and signal APIs. It uses the scanned repo's own `@angular/compiler`, so install your dependencies before scanning an Angular repo running Angular 19 or later. Upload Angular scans to a dashboard from the same release or later: earlier dashboards don't recognise Angular components.
+
 ## 0.3.5
 
 ### Patch Changes
