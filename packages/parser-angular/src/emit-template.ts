@@ -48,7 +48,49 @@ export type EmitAngularTemplateOpts = {
    * pass it keeps the element silent, as before.
    */
   onOutOfScope?: (tag: string, loc: { line: number; column: number }, matches: readonly ElementMatch[]) => void;
+  /**
+   * Picks the entry point for a library component several entry points of its
+   * package re-export. Defaults to the first by specifier.
+   */
+  chooseEntry?: (matches: readonly ElementMatch[]) => ElementMatch;
 };
+
+/** The package a bare specifier names: `@scope/name` or `name`. */
+function packageNameOf(specifier: string): string {
+  const parts = specifier.split("/");
+  return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? specifier);
+}
+
+/**
+ * Collapses matches that are one library class re-exported by several entry
+ * points of its package: same package, same export name, same selector. Two
+ * different components that share a selector stay separate.
+ */
+function collapseReexports(matches: readonly ElementMatch[], choose: (group: readonly ElementMatch[]) => ElementMatch): ElementMatch[] {
+  const groups = new Map<string, ElementMatch[]>();
+  const order: string[] = [];
+  for (const m of matches) {
+    const key =
+      m.entry.source.type === "package"
+        ? `${packageNameOf(m.entry.source.specifier)}#${m.entry.exportName}#${m.selector}`
+        : `file:${m.entry.source.graphKey}#${m.entry.exportName}`;
+    const group = groups.get(key);
+    if (group === undefined) {
+      groups.set(key, [m]);
+      order.push(key);
+    } else {
+      group.push(m);
+    }
+  }
+  return order.map((key) => {
+    const group = groups.get(key) as ElementMatch[];
+    return group.length === 1 ? (group[0] as ElementMatch) : choose(group);
+  });
+}
+
+const firstBySpecifier = (group: readonly ElementMatch[]): ElementMatch =>
+  [...group].sort((a, b) => specifierOf(a).localeCompare(specifierOf(b)))[0] as ElementMatch;
+const specifierOf = (m: ElementMatch) => (m.entry.source.type === "package" ? m.entry.source.specifier : m.entry.source.graphKey);
 
 type TmplNode = { [key: string]: unknown };
 type TmplElement = TmplNode & {
@@ -106,7 +148,10 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
     const classNames = el.attributes.find((a) => a.name === "class")?.value.split(/\s+/).filter(Boolean) ?? [];
     const attributeNames = [...el.attributes.map((a) => a.name), ...el.inputs.map((i) => i.name)];
     const found = opts.index.match({ name: tag, attributes: attributeNames, classNames });
-    const matches = found.filter((m) => opts.inScope(m.entry));
+    const matches = collapseReexports(
+      found.filter((m) => opts.inScope(m.entry)),
+      opts.chooseEntry ?? firstBySpecifier,
+    );
 
     if (matches.length > 1) {
       opts.onAmbiguous(tag, loc, matches);
@@ -128,9 +173,9 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
       opts.onOutOfScope?.(tag, loc, found);
       return;
     }
-    // A component the template can't see isn't a custom element either: Angular
-    // rejects it, so it is no use at all.
-    if (isValidCustomElementName(canonicalTagName(tag))) {
+    // An element a library directive claims is Angular's own, not a custom element.
+    const shape = { name: tag, attributes: attributeNames, classNames };
+    if (!opts.index.matchesDirective(shape) && isValidCustomElementName(canonicalTagName(tag))) {
       const { props, events } = readBindings(el, undefined);
       opts.fileBuilder.addTagUsage({ tagName: tag, loc, props, events });
       opts.fileBuilder.setTagOwner(opts.owner);

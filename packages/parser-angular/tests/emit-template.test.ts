@@ -29,7 +29,7 @@ const button: SelectorEntry = { source: { type: "file", graphKey: "src/button.ts
 const iconButton: SelectorEntry = { source: { type: "file", graphKey: "src/icon-button.ts" }, exportName: "IconButtonComponent", inputs: ["icon"], outputs: [] };
 const card: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui" }, exportName: "CardComponent" };
 
-function emit(template: string, opts: { origin?: { line: number; column: number }; inScope?: (e: SelectorEntry) => boolean; entries?: { selector: string; entry: SelectorEntry }[] } = {}) {
+function emit(template: string, opts: { origin?: { line: number; column: number }; inScope?: (e: SelectorEntry) => boolean; entries?: { selector: string; entry: SelectorEntry }[]; directives?: string[] } = {}) {
   const { uses, builder } = recorder();
   const ambiguous: string[] = [];
   const errors: string[] = [];
@@ -48,6 +48,7 @@ function emit(template: string, opts: { origin?: { line: number; column: number 
         { selector: "button[app-icon-button]", entry: iconButton },
         { selector: "ex-card, .ex-card", entry: card },
       ],
+      opts.directives ?? [],
     ),
     inScope: opts.inScope ?? (() => true),
     resolveLocal: (entry) => ({ local: entry.exportName }),
@@ -82,6 +83,10 @@ describe("emitAngularTemplate: matching elements to components", () => {
     expect(emit(template).uses).toEqual([]);
   });
 
+  test("records no custom element for an element a directive's selector matches", () => {
+    expect(emit("<ex-hint>Shown below</ex-hint><span exHint>x</span>", { directives: ["ex-hint, [exHint]"] }).uses).toEqual([]);
+  });
+
   test("records a hyphenated element no component matches as a custom element", () => {
     expect(emit(`<x-widget size="2"></x-widget>`).uses).toEqual([
       { kind: "tag", tagName: "x-widget", loc: { line: 1, column: 1 }, props: [{ name: "size", tier: "written", value: "2" }], events: [] },
@@ -104,6 +109,27 @@ describe("emitAngularTemplate: matching elements to components", () => {
 
   test("does not report a selector matched in scope as out of scope", () => {
     expect(emit("<app-button />").outOfScope).toEqual([]);
+  });
+
+  test("counts one library class several of its package's entry points re-export as one use, from the first entry by name", () => {
+    const fromField: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui/field" }, exportName: "ExField" };
+    const fromInput: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui/input" }, exportName: "ExField" };
+    const { uses, ambiguous } = emit("<ex-field></ex-field>", {
+      entries: [
+        { selector: "ex-field", entry: fromInput },
+        { selector: "ex-field", entry: fromField },
+      ],
+    });
+    expect(uses).toHaveLength(1);
+    expect(ambiguous).toEqual([]);
+  });
+
+  test("keeps two different library classes that share a selector ambiguous", () => {
+    const a: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui/field" }, exportName: "ExField" };
+    const b: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui/input" }, exportName: "ExInputField" };
+    const { uses, ambiguous } = emit("<ex-field></ex-field>", { entries: [{ selector: "ex-field", entry: a }, { selector: "ex-field", entry: b }] });
+    expect(uses).toEqual([]);
+    expect(ambiguous).toEqual(["ex-field"]);
   });
 
   test("reports an element two components in scope both match, and counts it for neither", () => {

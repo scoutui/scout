@@ -685,6 +685,41 @@
       }
     },
     {
+      "id": "4da1c363872c317d",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/library-components/app.component.ts",
+        "exportName": "AppComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 11,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "81b316339f047835": 1,
+          "1e2760229c78e2c6": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "3aca91295feb9b15",
       "identity": {
         "kind": "repository-declaration",
@@ -1239,6 +1274,107 @@
       }
     },
     {
+      "id": "81b316339f047835",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/ng-ui",
+        "publicEntry": "card",
+        "exportName": "ExCard"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "elevation": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "2",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "title": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "t",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "events": {
+        "closed": {
+          "boundCount": 1
+        }
+      },
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4da1c363872c317d": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "1e2760229c78e2c6",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/ng-ui",
+        "publicEntry": "",
+        "exportName": "ExButton"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "color": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "primary",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "disabled": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "busy",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "4da1c363872c317d": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "92b4898ffa0a169b",
       "identity": {
         "kind": "tag",
@@ -1496,6 +1632,71 @@
         }
       },
       "ownerComponentId": "f1519c5b2a8d5703"
+    },
+    {
+      "occurrenceId": "4a13511446bb6cf0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "81b316339f047835"
+      },
+      "filePath": "src/library-components/app.component.html",
+      "line": 1,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-ui/card",
+          "name": "ExCard"
+        }
+      ],
+      "props": {
+        "elevation": {
+          "tier": "written",
+          "value": "2"
+        },
+        "title": {
+          "tier": "reference",
+          "ref": "t"
+        }
+      },
+      "events": [
+        "closed"
+      ],
+      "ownerComponentId": "4da1c363872c317d"
+    },
+    {
+      "occurrenceId": "be18dabb5c449d67",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "1e2760229c78e2c6"
+      },
+      "filePath": "src/library-components/app.component.html",
+      "line": 2,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-ui",
+          "name": "ExButton"
+        }
+      ],
+      "props": {
+        "color": {
+          "tier": "written",
+          "value": "primary"
+        },
+        "disabled": {
+          "tier": "reference",
+          "ref": "busy"
+        }
+      },
+      "ownerComponentId": "4da1c363872c317d"
     },
     {
       "occurrenceId": "73824564c2fe5dc0",
