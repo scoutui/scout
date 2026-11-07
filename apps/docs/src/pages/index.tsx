@@ -7,12 +7,12 @@ import Stages from "../components/landing/Stages";
 import { PRODUCT_NAME } from "../components/landing/product";
 import shared from "../components/landing/shared.module.css";
 
-const TITLE = `${PRODUCT_NAME}: design-system usage analytics for React and Vue`;
+const TITLE = `${PRODUCT_NAME}: design-system usage analytics for React, Vue and Angular`;
 
 export default function Home(): React.ReactElement {
   return (
     <Layout
-      description={`${PRODUCT_NAME} scans React and Vue repos, web components included, for every component, every use and every prop value, and a dashboard you host tracks migrations across every repo.`}
+      description={`${PRODUCT_NAME} scans React, Vue and Angular repos, web components included, for every component, every use and every prop value, and a dashboard you host tracks migrations across every repo.`}
     >
       <Head>
         <title>{TITLE}</title>

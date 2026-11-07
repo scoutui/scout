@@ -229,7 +229,7 @@ export default function Hero(): React.ReactElement {
             <div className={styles.pitch}>
               <p className={styles.lede}>
                 <span className={styles.sentence}>
-                  Usage analytics for design-system teams, built for React and Vue.
+                  Usage analytics for design-system teams, built for React, Vue and Angular.
                 </span>{" "}
                 <span className={styles.sentence}>
                   Open source and <span className={shared.nowrap}>self-hosted</span>, so nothing leaves your
