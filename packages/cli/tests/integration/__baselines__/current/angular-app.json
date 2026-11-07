@@ -1340,7 +1340,30 @@
         "fileCount": 1
       },
       "usage": "direct",
-      "props": {},
+      "props": {
+        "color": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "primary",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "disabled": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "busy",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
       "version": "0.0.0-test",
       "composition": {
         "rendersByCount": {},
@@ -1663,7 +1686,16 @@
           "name": "ExButton"
         }
       ],
-      "props": {},
+      "props": {
+        "color": {
+          "tier": "written",
+          "value": "primary"
+        },
+        "disabled": {
+          "tier": "reference",
+          "ref": "busy"
+        }
+      },
       "ownerComponentId": "4da1c363872c317d"
     },
     {

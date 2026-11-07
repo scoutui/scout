@@ -25,7 +25,13 @@
  * class from another installed package (`typeof i2.BidiModule`, from
  * `import * as i2 from '@angular/cdk/bidi'`); this module resolves that
  * specifier too and indexes it into the same result, transitively and
- * bounded, so a module re-exporting another package's module resolves.
+ * bounded, so a module re-exporting another package's module resolves. A
+ * component or directive's `extends` clause is resolved the same way - same
+ * file, an imported name from a relative chunk, or a namespace import - and
+ * its base's declared inputs/outputs are merged in underneath its own,
+ * recursively up the chain, cycle-safe and bounded, so a component built on
+ * a shared base class (e.g. Angular Material's `MatButton extends
+ * MatButtonBase`) still reports the base's inputs.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -169,12 +175,13 @@ function indexSpecifier(ctx: Ctx, specifier: string, fromDir: string): void {
 
   for (const [exportName, { decl, file }] of entryExports) {
     if (decl.kind === "component" && decl.selector !== undefined) {
+      const merged = mergedInputsOutputs(ctx, decl, file, new Set());
       ctx.components.push({
         specifier,
         exportName,
         selector: decl.selector,
-        inputs: Object.values(decl.inputs),
-        outputs: Object.values(decl.outputs),
+        inputs: Object.values(merged.inputs),
+        outputs: Object.values(merged.outputs),
       });
     } else if (decl.kind === "module") {
       ctx.modules.push({
@@ -244,6 +251,75 @@ function resolveModuleExports(
     }
   }
   return out;
+}
+
+/** Bounds how many ancestor classes an `extends` chain is walked before giving up; a cycle (`A extends B extends A`) is caught sooner, by `mergedInputsOutputs`'s `visited` set. */
+const MAX_EXTENDS_DEPTH = 32;
+
+/**
+ * The base class a `ClassDecl`'s `extends` clause (`ref`, resolved into a
+ * `TypeofRef`) names, as a `{decl, file}` pair - the same shape
+ * `resolveExports` produces. `fromFile` is the file the extending class is
+ * declared in, which anchors the lookup: a bare name resolved in that file's
+ * own scope (declared there directly, or reached through an `import` from a
+ * relative chunk or another installed package, the same way a named
+ * re-export's source is followed - `resolveReexportTarget` indexes a bare
+ * specifier into `ctx` too), or a qualified name resolved through that
+ * file's namespace imports the same way `resolveModuleExports` resolves one.
+ * Undefined when the base can't be found or read; the caller still has to
+ * keep walking through a readable base with no declaration of its own.
+ */
+function resolveExtendsRef(ctx: Ctx, ref: TypeofRef, fromFile: string): { decl: ClassDecl; file: string } | undefined {
+  const fileInfo = getFileInfo(ctx, fromFile);
+  if (fileInfo === null) return undefined;
+
+  if (ref.kind === "qualified") {
+    const nsSpecifier = fileInfo.namespaceImports.get(ref.ns);
+    if (nsSpecifier === undefined) return undefined;
+    const childPath = resolveReexportTarget(ctx, fromFile, nsSpecifier);
+    return childPath === null ? undefined : resolveExports(ctx, childPath).get(ref.name);
+  }
+
+  const localDecl = fileInfo.classes.get(ref.name);
+  if (localDecl !== undefined) return { decl: localDecl, file: fromFile };
+
+  const imported = fileInfo.imports.get(ref.name);
+  if (imported === undefined) return undefined;
+  const childPath = resolveReexportTarget(ctx, fromFile, imported.specifier);
+  return childPath === null ? undefined : resolveExports(ctx, childPath).get(imported.imported);
+}
+
+/**
+ * `decl`'s own inputs/outputs with every ancestor class's declared inputs
+ * and outputs (template-facing names - each one's alias) merged in
+ * underneath them, recursively up the `extends` chain however many files it
+ * crosses. `decl`'s own entries win on a name clash with an ancestor's. An
+ * ancestor with no `ɵcmp`/`ɵdir` of its own - a plain TS base class -
+ * contributes nothing itself, but the walk still continues through it to
+ * whatever it extends, since a plain class can itself extend a declared
+ * one. `visited` guards both a cycle and a pathological depth
+ * (`MAX_EXTENDS_DEPTH`).
+ */
+function mergedInputsOutputs(
+  ctx: Ctx,
+  decl: ClassDecl,
+  file: string,
+  visited: Set<ClassDecl>,
+): { inputs: Record<string, string>; outputs: Record<string, string> } {
+  if (visited.has(decl) || visited.size >= MAX_EXTENDS_DEPTH) return { inputs: {}, outputs: {} };
+  visited.add(decl);
+
+  let baseInputs: Record<string, string> = {};
+  let baseOutputs: Record<string, string> = {};
+  if (decl.extendsRef !== undefined) {
+    const base = resolveExtendsRef(ctx, decl.extendsRef, file);
+    if (base !== undefined) {
+      const merged = mergedInputsOutputs(ctx, base.decl, base.file, visited);
+      baseInputs = merged.inputs;
+      baseOutputs = merged.outputs;
+    }
+  }
+  return { inputs: { ...baseInputs, ...decl.inputs }, outputs: { ...baseOutputs, ...decl.outputs } };
 }
 
 /** The name `exportsMap` exports `localName`'s class (declared in `file`) under, if any. */
@@ -431,7 +507,7 @@ function matchExportPattern(exportsMap: Record<string, unknown>, key: string): u
 }
 
 function substituteWildcard(value: unknown, wildcard: string): unknown {
-  if (typeof value === "string") return value.replace("*", wildcard);
+  if (typeof value === "string") return value.replaceAll("*", wildcard);
   if (value !== null && typeof value === "object" && !Array.isArray(value)) {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) out[k] = substituteWildcard(v, wildcard);
@@ -472,6 +548,8 @@ type ClassDecl = {
   outputs: Record<string, string>;
   /** Set only for `kind: "module"`: its `ɵmod`'s Exports type argument, unresolved. */
   moduleExportRefs: TypeofRef[];
+  /** This class's `extends` clause, as a `TypeofRef`, when it names a base class with a readable name; undefined with no `extends` or a dynamic one. Resolved and merged into `inputs`/`outputs` by `mergedInputsOutputs`. */
+  extendsRef: TypeofRef | undefined;
 };
 
 type FileInfo = {
@@ -612,10 +690,30 @@ function classDeclFrom(node: OxcClass): ClassDecl {
     } else if (keyName === "ɵdir" && declName === "ɵɵDirectiveDeclaration") {
       kind = "directive";
       selector = literalStringOf(params[1]);
+      Object.assign(inputs, readAliasMap(params[3]));
+      Object.assign(outputs, readStringLiteralMap(params[4]));
     }
   }
 
-  return { kind, selector, inputs, outputs, moduleExportRefs };
+  return { kind, selector, inputs, outputs, moduleExportRefs, extendsRef: superClassRef(node) };
+}
+
+/**
+ * A class's `extends` clause, as a `TypeofRef` - the same shape
+ * `readTypeofRefs` produces for a `typeof` reference: a bare name
+ * (`extends Base`), or a qualified one through a namespace import (`extends
+ * ns.Base`). Anything else - no `extends`, or a dynamic base expression such
+ * as a call (`extends mixin(Base)`) - yields none, since there's no name to
+ * resolve.
+ */
+function superClassRef(node: OxcClass): TypeofRef | undefined {
+  const sc = node.superClass;
+  if (sc === null) return undefined;
+  if (sc.type === "Identifier") return { kind: "bare", name: sc.name };
+  if (sc.type === "MemberExpression" && sc.computed === false && sc.object.type === "Identifier" && sc.property.type === "Identifier") {
+    return { kind: "qualified", ns: sc.object.name, name: sc.property.name };
+  }
+  return undefined;
 }
 
 function propertyKeyName(key: OxcPropertyKey): string | undefined {

@@ -51,7 +51,14 @@ describe("buildAngularLibraryIndex", () => {
       const index = await build(configDir, ["@example/ng-ui"]);
 
       expect(index.components).toEqual([
-        { specifier: "@example/ng-ui", exportName: "ExButton", selector: "button[ex-button], a[ex-button]", inputs: [], outputs: [] },
+        {
+          specifier: "@example/ng-ui",
+          exportName: "ExButton",
+          selector: "button[ex-button], a[ex-button]",
+          // color/disabled come from ExButtonBase, which ExButton `extends` (see angular-library-index.test.ts's "extends" describe block for dedicated coverage).
+          inputs: ["color", "disabled"],
+          outputs: [],
+        },
       ]);
       expect(index.modules).toEqual([]);
       expect(index.unreadable).toEqual([]);
@@ -95,6 +102,29 @@ describe("buildAngularLibraryIndex", () => {
   });
 
   describe("the three silent cases (nothing to read, never an unreadable row)", () => {
+    it("substitutes every `*` in a pattern export's types target, as Node does", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/patterned",
+        { exports: { "./*": { types: "./types/*/*.d.ts", default: "./fesm/*.mjs" } } },
+        {
+          "types/chip/chip.d.ts": [
+            "import * as i0 from '@angular/core';",
+            "export declare class ExChip {",
+            '    static ɵcmp: i0.ɵɵComponentDeclaration<ExChip, "ex-chip", never, {}, {}, never, never, true, never>;',
+            "}",
+            "",
+          ].join("\n"),
+        },
+      );
+
+      const index = await build(configDir, ["@example/patterned/chip"]);
+
+      expect(index.components).toEqual([{ specifier: "@example/patterned/chip", exportName: "ExChip", selector: "ex-chip", inputs: [], outputs: [] }]);
+      expect(index.unreadable).toEqual([]);
+    });
+
     it("silently contributes nothing for a package that isn't installed (the caller already warns dependency-not-installed)", async () => {
       const configDir = await freshConfigDir();
 
@@ -387,6 +417,184 @@ export { ExFromB };
       const index = await build(configDir, ["@example/cyclic"]);
 
       expect(index.components.map((c) => c.exportName).sort()).toEqual(["ExFromA", "ExFromB"]);
+    });
+  });
+
+  describe("extends (a base class's declared inputs/outputs merge into the extending component's)", () => {
+    it("merges a base directive's inputs, aliases included, declared in the same chunk as the extending component", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/extends-same-file",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExBaseDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExBaseDirective, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExBaseDirective, never, never, { "color": { "alias": "color"; "required": false; }; "disabled": { "alias": "disabled"; "required": false; }; "ariaDisabled": { "alias": "aria-disabled"; "required": false; }; }, {}, never, never, true, never>;
+}
+declare class ExButton extends ExBaseDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExButton, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExButton, "button[ex-button]", never, { "appearance": { "alias": "exButton"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExButton };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/extends-same-file"]);
+
+      const button = index.components.find((c) => c.exportName === "ExButton");
+      expect(button?.inputs.sort()).toEqual(["aria-disabled", "color", "disabled", "exButton"]);
+    });
+
+    it("resolves a base class imported from a different chunk file than the extending component", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/extends-other-chunk",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+import { ExBaseDirective } from './_base-chunk.js';
+declare class ExButton extends ExBaseDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExButton, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExButton, "ex-button", never, {}, {}, never, never, true, never>;
+}
+export { ExButton };
+`,
+          "types/_base-chunk.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExBaseDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExBaseDirective, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExBaseDirective, never, never, { "color": { "alias": "color"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExBaseDirective };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/extends-other-chunk"]);
+
+      const button = index.components.find((c) => c.exportName === "ExButton");
+      expect(button?.inputs).toEqual(["color"]);
+    });
+
+    it("walks a two-level `extends` chain, merging every ancestor's own inputs", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/extends-two-levels",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExGrandBase {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExGrandBase, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExGrandBase, never, never, { "color": { "alias": "color"; "required": false; }; }, {}, never, never, true, never>;
+}
+declare class ExMidBase extends ExGrandBase {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExMidBase, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExMidBase, never, never, { "disabled": { "alias": "disabled"; "required": false; }; }, {}, never, never, true, never>;
+}
+declare class ExButton extends ExMidBase {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExButton, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExButton, "ex-button", never, { "variant": { "alias": "variant"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExButton };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/extends-two-levels"]);
+
+      const button = index.components.find((c) => c.exportName === "ExButton");
+      expect(button?.inputs.sort()).toEqual(["color", "disabled", "variant"]);
+    });
+
+    it("lets the component's own input win over an ancestor's on a name clash", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/extends-name-clash",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExBaseDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExBaseDirective, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExBaseDirective, never, never, { "color": { "alias": "color"; "required": false; }; }, {}, never, never, true, never>;
+}
+declare class ExButton extends ExBaseDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExButton, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExButton, "ex-button", never, { "color": { "alias": "primaryColor"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExButton };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/extends-name-clash"]);
+
+      const button = index.components.find((c) => c.exportName === "ExButton");
+      // ExButton redeclares the "color" property itself, aliased "primaryColor" instead of the
+      // base's "color"; its own entry wins, so the base's alias for the same property never
+      // appears alongside it.
+      expect(button?.inputs).toEqual(["primaryColor"]);
+    });
+
+    it("terminates an `extends` cycle (A extends B extends A), still reporting each class's own inputs once", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/extends-cycle",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExA extends ExB {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExA, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExA, "ex-a", never, { "a": { "alias": "a"; "required": false; }; }, {}, never, never, true, never>;
+}
+declare class ExB extends ExA {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExB, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExB, never, never, { "b": { "alias": "b"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExA, ExB };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/extends-cycle"]);
+
+      const a = index.components.find((c) => c.exportName === "ExA");
+      expect(a?.inputs.sort()).toEqual(["a", "b"]);
+    });
+
+    it("keeps only a class's own inputs when it has no `extends` clause (negative, paired with the positive cases above)", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/no-extends",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExPlainButton {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExPlainButton, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExPlainButton, "ex-plain-button", never, { "variant": { "alias": "variant"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExPlainButton };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/no-extends"]);
+
+      const button = index.components.find((c) => c.exportName === "ExPlainButton");
+      expect(button?.inputs).toEqual(["variant"]);
     });
   });
 });

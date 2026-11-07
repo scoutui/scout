@@ -377,7 +377,12 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           },
           ["closed"],
         ),
-        row("app.component.html:2:1", exButton, appComponent, [imported("@example/ng-ui", "ExButton")]),
+        row("app.component.html:2:1", exButton, appComponent, [imported("@example/ng-ui", "ExButton")], {
+          // ExButton declares no inputs of its own; `color`/`disabled` come from
+          // ExButtonBase, which it `extends` (see _button-chunk.d.ts).
+          color: { tier: "written", value: "primary" },
+          disabled: { tier: "reference", ref: "busy" },
+        }),
       ]);
     });
 

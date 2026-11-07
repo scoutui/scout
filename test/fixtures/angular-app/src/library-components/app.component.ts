@@ -10,6 +10,7 @@ import { ExButton } from "@example/ng-ui";
 })
 export class AppComponent {
   t = "Card title";
+  busy = false;
 
   x(): void {}
 }
