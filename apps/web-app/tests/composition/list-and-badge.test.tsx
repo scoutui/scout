@@ -10,9 +10,6 @@ vi.mock("next/navigation", async () => ({
   useRouter: () => ({ replace, push: replace }),
   usePathname: () => window.location.pathname,
 }));
-vi.mock("@/components/component-detail/composition/flow-canvas", () => ({
-  FlowCanvas: () => <div data-testid="canvas-stub" />,
-}));
 
 const detail = {
   componentId: "F", repoId: "r/x", scope: "local", displayName: "F",

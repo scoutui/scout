@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validateArtifact } from "@scoutui/scan-format";
 import { compositionNeighbourhood, type CompositionGraph } from "@scoutui/web-shared";
 import { bothRoutes, buildGraphModel, findRows } from "@/components/component-detail/composition/graph-model";
-import { buildScene } from "@/components/component-detail/composition/flow-scene";
+import { buildBothEnds, NO_ENDS, normaliseEnds, pickFound } from "@/components/component-detail/composition/both-ends";
 import { projectCompositionGraph } from "../../../../packages/web-shared/tests/helpers/composition-graph.ts";
 
 const baselines = new URL("../../../../packages/cli/tests/integration/__baselines__/current/", import.meta.url);
@@ -21,13 +21,14 @@ function tabView(graph: CompositionGraph, focusId: string) {
   const model = buildGraphModel(graph);
   const routes = bothRoutes(model, focusId);
   const rows = (["up", "down"] as const).flatMap((dir) => findRows(model, focusId, routes[dir], dir));
-  const none = { lists: new Set<string>(), brought: new Set<string>(), pin: null };
   return {
     parents: model.parentsOf.get(focusId),
     children: model.childrenOf.get(focusId),
     rows,
-    scene: buildScene(model, focusId, routes, none),
-    selected: rows.map((row) => buildScene(model, focusId, routes, { ...none, pin: { dir: row.dir, id: row.node.id } })),
+    view: buildBothEnds(model, focusId, routes, NO_ENDS),
+    picked: rows.map((row) =>
+      buildBothEnds(model, focusId, routes, normaliseEnds(model, focusId, routes, pickFound(model, row.dir, row.node.id))),
+    ),
   };
 }
 
