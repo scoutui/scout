@@ -17,7 +17,7 @@ _An open-source dashboard and CLI that track which components your teams use, wh
 
 ## What is Scout?
 
-Scout is an adoption dashboard for design-system teams. Its CLI scans a React or Vue repository, web components included, and records every component the code uses, where it's used and with which props. The dashboard collects those scans from all your repos, so you can see adoption at a glance, plan migrations and track each one until it's done.
+Scout is an adoption dashboard for design-system teams. Its CLI scans a React, Vue or Angular repository, web components included, and records every component the code uses, where it's used and with which props. The dashboard collects those scans from all your repos, so you can see adoption at a glance, plan migrations and track each one until it's done.
 
 ## Features
 

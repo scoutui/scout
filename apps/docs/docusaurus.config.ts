@@ -28,7 +28,7 @@ const darkCodeTheme = {
 
 const config: Config = {
   title: "Scout",
-  tagline: "Design-system usage analytics for React and Vue",
+  tagline: "Design-system usage analytics for React, Vue and Angular",
   favicon: "img/favicon.svg",
 
   url: "https://scoutui.dev",

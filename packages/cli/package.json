@@ -1,7 +1,7 @@
 {
   "name": "@scoutui/cli",
   "version": "0.4.0",
-  "description": "Scan React and Vue repos for design-system component usage, and upload the results to a Scout dashboard.",
+  "description": "Scan React, Vue and Angular repos for design-system component usage, and upload the results to a Scout dashboard.",
   "homepage": "https://scoutui.dev",
   "keywords": [
     "design-system",
@@ -9,6 +9,7 @@
     "component-analytics",
     "react",
     "vue",
+    "angular",
     "custom-elements",
     "web-components",
     "cli"
