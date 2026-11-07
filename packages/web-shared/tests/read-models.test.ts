@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { componentKey } from "@scoutui/scan-format";
 import type { GovernanceRecord } from "../src/dto.js";
 import {
-  createProjectionContext, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows, reduceComponentRows, reduceComponentsAcrossScans,
+  createProjectionContext, deriveApiUsageCounts, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows, reduceComponentRows, reduceComponentsAcrossScans,
   reducePackageDetail, reducePackagesAcrossScans, reduceRepoSummary,
 } from "../src/index.js";
 import { projectCompositionGraph } from "./helpers/composition-graph.js";
@@ -105,5 +105,60 @@ describe("immutable read models", () => {
     const expected = { [button.id]: "", [buttonEntry.id]: "dist/button/index", [card.id]: null };
     expect(disambiguators(reducePackageDetail(facts, "@example/ui")?.components ?? [])).toEqual(expected);
     expect(disambiguators(reduceComponentsAcrossScans(facts))).toEqual(expected);
+  });
+});
+
+describe("declared-prop usage: shared by the component fact and the detail head's summary", () => {
+  it("counts a declared prop as never used only when it's absent from props entirely, not merely unwritten", () => {
+    const panel = component(repoDeclaration("repo-a", "src/Panel.tsx", "Panel"), {
+      declared: { props: { size: {}, tone: {}, label: {} }, hasRest: false },
+      props: {
+        size: { values: [], dynamic: 1, omitted: 0 }, // declared, used (dynamic counts as used)
+        extra: { values: [], dynamic: 0, omitted: 1 }, // not declared: undeclared
+      },
+    });
+    expect(deriveApiUsageCounts(panel)).toEqual({ declaredCount: 3, usedCount: 1, neverUsedCount: 2, undeclaredCount: 1 });
+  });
+
+  it("is null for a component with no declared API, even one with props", () => {
+    const button = component(packageExport("@example/ui", "Button"), { props: { onClick: { values: [], dynamic: 1, omitted: 0 } } });
+    expect(deriveApiUsageCounts(button)).toBeNull();
+  });
+
+  it("counts zero never-used when every declared prop appears, whether or not the component also takes a rest/index-signature", () => {
+    for (const hasRest of [false, true]) {
+      const panel = component(repoDeclaration("repo-a", "src/Panel.tsx", "Panel"), {
+        declared: { props: { size: {} }, hasRest },
+        props: { size: { values: [], dynamic: 0, omitted: 1 } },
+      });
+      expect(deriveApiUsageCounts(panel)).toMatchObject({ declaredCount: 1, neverUsedCount: 0 });
+    }
+  });
+
+  it("promotes the same declared/never-used counts onto ComponentFact that the detail head's summary carries, absent from both without a declared API", () => {
+    const panel = component(repoDeclaration("repo-a", "src/Panel.tsx", "Panel"), {
+      declared: { props: { size: {}, tone: {} }, hasRest: true },
+      props: { size: { values: [], dynamic: 1, omitted: 0 } },
+    });
+    const button = component(packageExport("@example/ui", "Button"), { props: { onClick: { values: [], dynamic: 1, omitted: 0 } } });
+    const scan = artifact({ components: [panel, button], occurrences: [] });
+    const context = createProjectionContext(scan);
+    const facts = deriveFactScan(scan, context).components;
+    expect(facts.find(c => c.id === panel.id)?.apiUsage).toEqual({ declaredCount: 2, neverUsedCount: 1 });
+    expect(facts.find(c => c.id === button.id)?.apiUsage).toBeUndefined();
+    expect(deriveComponentDetailHead(context, panel.id)?.summary.apiUsage).toEqual({ declaredCount: 2, usedCount: 1, neverUsedCount: 1, undeclaredCount: 0 });
+  });
+
+  it("carries a row's declared-prop counts through reduceComponentRows unchanged, since one repo's one scan has nothing to aggregate", () => {
+    const panel = component(repoDeclaration("repo-a", "src/Panel.tsx", "Panel"), {
+      declared: { props: { size: {}, tone: {} }, hasRest: false },
+      props: { size: { values: [], dynamic: 1, omitted: 0 } },
+    });
+    const button = component(packageExport("@example/ui", "Button"));
+    const scan = artifact({ components: [panel, button], occurrences: [] });
+    const fact = { ...deriveFactScan(scan), meta: received(scan).meta };
+    const rows = reduceComponentRows(fact, "");
+    expect(rows.find(r => r.componentId === panel.id)?.apiUsage).toEqual({ declaredCount: 2, neverUsedCount: 1 });
+    expect(rows.find(r => r.componentId === button.id)?.apiUsage).toBeUndefined();
   });
 });

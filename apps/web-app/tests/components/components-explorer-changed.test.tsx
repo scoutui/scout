@@ -56,7 +56,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     expect(screen.getByText("Gone")).toBeInTheDocument();
     expect(occurrencesOf("Grew")).toBe("9 (+3)");
     expect(occurrencesOf("Gone")).toBe("0 (−6)");
-    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
     expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "ascending");
     expect(screen.getByRole("button", { name: DELTA_SORT_NAME })).toBeInTheDocument();
     // The chip counts every row the view shows: 1 added + 1 changed + 1 removed.

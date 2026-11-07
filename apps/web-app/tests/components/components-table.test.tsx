@@ -109,6 +109,36 @@ describe("ComponentsTable", () => {
     });
   });
 
+  describe("Unused props column", () => {
+    it("shows the shortened label `Unused`, with the full name as its title and accessible name", () => {
+      render(<ComponentsTable repoId="r1" rows={[row]} />);
+      const sort = screen.getByRole("button", { name: "Unused props" });
+      expect(sort).toHaveAttribute("title", "Unused props");
+      expect(sort.textContent).toBe("Unused");
+    });
+
+    it("reads `N of M` for a component with a declared API, and a dash for one without", () => {
+      const declared: ComponentRow = { ...row, componentId: "d", displayName: "Panel", apiUsage: { declaredCount: 5, neverUsedCount: 2 } };
+      const undeclared: ComponentRow = { ...row, componentId: "u", displayName: "Tag" };
+      render(<ComponentsTable repoId="r1" rows={[declared, undeclared]} />);
+      const trOf = (name: string) => screen.getByText(name).closest("tr") as HTMLElement;
+      expect(within(trOf("Panel")).getByTitle("2 of 5 declared props never passed").textContent).toBe("2 of 5");
+      expect(within(trOf("Tag")).getByTitle("no readable declared API").textContent).toBe("—");
+    });
+
+    it("sorts by the never-used count descending by default, blanks last either way", () => {
+      const names = () => screen.getAllByRole("link").map((l) => l.textContent);
+      const high: ComponentRow = { ...row, componentId: "h", displayName: "High", apiUsage: { declaredCount: 5, neverUsedCount: 4 } };
+      const low: ComponentRow = { ...row, componentId: "l", displayName: "Low", apiUsage: { declaredCount: 5, neverUsedCount: 1 } };
+      const none: ComponentRow = { ...row, componentId: "n", displayName: "None" };
+      render(<ComponentsTable repoId="r1" rows={[low, none, high]} />);
+      fireEvent.click(screen.getByRole("button", { name: "Unused props" }));
+      expect(names()).toEqual(["High", "Low", "None"]);
+      fireEvent.click(screen.getByRole("button", { name: "Unused props" }));
+      expect(names()).toEqual(["Low", "High", "None"]);
+    });
+  });
+
   describe("changed view (scan diff)", () => {
     const removed = ghostRow({
       componentId: "gone", displayName: "OldModal", packageName: "@x/lib", scope: "external",
@@ -118,25 +148,26 @@ describe("ComponentsTable", () => {
 
     const headers = () =>
       screen.getAllByRole("columnheader").map((h) => ({ name: h.textContent, width: h.className.match(/w-\[\d+%\]/)?.[0] }));
-    const FIVE = [
-      { name: "Component", width: "w-[40%]" },
-      { name: "Package", width: "w-[23%]" },
-      { name: "Version", width: "w-[11%]" },
-      { name: "Files", width: "w-[9%]" },
-      { name: "Uses", width: "w-[17%]" },
+    const SIX = [
+      { name: "Component", width: "w-[36%]" },
+      { name: "Package", width: "w-[20%]" },
+      { name: "Version", width: "w-[10%]" },
+      { name: "Files", width: "w-[8%]" },
+      { name: "Unused", width: "w-[10%]" },
+      { name: "Uses", width: "w-[16%]" },
     ];
     const occurrencesCell = (tr: HTMLElement) => within(tr).getAllByRole("cell").at(-1) as HTMLElement;
     const DELTA_SORT_NAME = "Uses, sorts by change since previous scan";
 
-    it("renders the same five columns at the same widths in both views, so toggling reflows nothing", () => {
+    it("renders the same six columns at the same widths in both views, so toggling reflows nothing", () => {
       const { unmount } = render(<ComponentsTable repoId="r1" rows={[row]} />);
-      expect(headers()).toEqual(FIVE);
-      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(5);
+      expect(headers()).toEqual(SIX);
+      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(6);
       unmount();
       render(<ComponentsTable repoId="r1" rows={[row, removed]} marks={{ c1: { kind: "changed", delta: 2 }, gone: { kind: "removed" } }} />);
-      expect(headers()).toEqual(FIVE);
-      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(5);
-      expect(within(rowOf(screen.getByText("OldModal"))).getAllByRole("cell")).toHaveLength(5);
+      expect(headers()).toEqual(SIX);
+      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(6);
+      expect(within(rowOf(screen.getByText("OldModal"))).getAllByRole("cell")).toHaveLength(6);
     });
 
     it("outside the changed view the Uses cell is the bare medium-weight count", () => {
@@ -200,7 +231,7 @@ describe("ComponentsTable", () => {
       expect(cell.textContent).toBe("0 (−5)");
       expect(within(cell).getByText("0").className).toBe("text-faint");
       expect(within(cell).getByText("−5").className).toMatch(/font-medium/);
-      expect(within(tr).getAllByText("—")).toHaveLength(2); // version, files
+      expect(within(tr).getAllByText("—")).toHaveLength(3); // version, files, unused props
       expect(within(tr).queryByText(/^(external|local)$/)).toBeNull(); // no origin word: the table has no Origin column
     });
 

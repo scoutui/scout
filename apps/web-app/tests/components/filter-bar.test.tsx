@@ -18,6 +18,8 @@ const options: FacetOptions = {
   changedCount: null,
   deprecatedMax: 2,
   changedMax: 0,
+  hasUnusedPropsCount: 0,
+  hasUnusedPropsMax: 0,
 };
 
 type UsedInProps = Pick<React.ComponentProps<typeof FilterBar>, "usedIn" | "packageFolders">;
@@ -249,6 +251,35 @@ describe("FilterBar status chips", () => {
       expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe(text);
     },
   );
+});
+
+describe("FilterBar unused props chip", () => {
+  it("is absent when no component in the table has an unused declared prop", () => {
+    renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 });
+    expect(screen.queryByRole("button", { name: /^unused props/ })).toBeNull();
+  });
+
+  it("toggles hasUnusedProps:true and back, like the deprecated chip", () => {
+    const onChange = renderBar({ ...options, hasUnusedPropsMax: 3, hasUnusedPropsCount: 3 });
+    const chip = screen.getByRole("button", { name: /^unused props/ });
+    expect(chip).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(chip);
+    expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), hasUnusedProps: true });
+  });
+
+  it("renders pressed and enabled under a pasted ?unused-props=true, even with no matching components, so it can be unpressed", () => {
+    renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 }, { ...emptyFacets(), hasUnusedProps: true });
+    const chip = screen.getByRole("button", { name: /^unused props/ });
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    expect(chip).not.toBeDisabled();
+  });
+
+  it("a pasted ?unused-props=false has no chip of its own but shows as a removable pill", () => {
+    const onChange = renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 }, { ...emptyFacets(), hasUnusedProps: false });
+    expect(screen.queryByRole("button", { name: /^unused props/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remove unused props no" }));
+    expect(onChange).toHaveBeenCalledWith(emptyFacets());
+  });
 });
 
 describe("PackageFilterBar deprecated chip and count line", () => {

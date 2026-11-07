@@ -34,7 +34,7 @@ Open **This scan couldn't see everything** to see each kind of problem: how many
 
 ## Find components in a repo
 
-The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it and its total **Uses**. Select a row to open the component's page for this repo.
+The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it, its total **Uses** and, when the scan could read its declared props, **Unused props**: how many of them this scan never saw passed, for example `2 of 5`. The column is blank for a component whose declaration the scan couldn't read, such as one from a package without readable source. Select a row to open the component's page for this repo.
 
 ![The Components tab of vue-vben-admin filtered to the vue-ui-kits tag, with the deprecated chip and the Filter menu open on Package](/img/dashboard/repo-components-tab.png)
 
@@ -42,6 +42,7 @@ To narrow the table:
 
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components in use. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
+- Press the **unused props** chip to show only components with a declared prop this scan never saw passed.
 - Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
@@ -70,6 +71,7 @@ The tab keeps its search and filters in the page URL, so you can copy the addres
 | `uses` | `uses=gte:10` for 10 or more, `uses=lte:10` for 10 or fewer (also `gt:`, `lt:`, or a number alone for exactly that many) |
 | `used-in` | `used-in=@acme/web`, which keeps the components used in that package |
 | `changed` | `changed=true` |
+| `unused-props` | `unused-props=true` |
 
 Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. Write a space as `+`. For example:
 
