@@ -1,5 +1,13 @@
 # @scoutui/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- [#177](https://github.com/scoutui/scout/pull/177) [`c687300`](https://github.com/scoutui/scout/commit/c687300ec1d26fade6adbe4e2ea8ace955594331) Thanks [@nhunsaker](https://github.com/nhunsaker)! - Angular scans now count components from installed libraries, such as Angular Material, read from the compiled typings every Angular library ships: `<mat-card>` and `<button mat-button>` count as `MatCard` and `MatButton` with their inputs and outputs. A library's directives, such as `<mat-error>`, are no longer counted as web components.
+
+- [#176](https://github.com/scoutui/scout/pull/176) [`6a3e1bb`](https://github.com/scoutui/scout/commit/6a3e1bb07ccb6638e52c5793efeaf52c89bb54e8) Thanks [@nhunsaker](https://github.com/nhunsaker)! - The CLI now scans Angular repos, alongside React and Vue. It reads `@Component` classes and their templates (inline or `templateUrl`), matching elements and attribute selectors to standalone `imports` or `NgModule` declarations, and reads inputs and outputs from both the decorator and signal APIs. It uses the scanned repo's own `@angular/compiler`, so install your dependencies before scanning an Angular repo running Angular 19 or later. Upload Angular scans to a dashboard from the same release or later: earlier dashboards don't recognise Angular components.
+
 ## 0.3.5
 
 ### Patch Changes
