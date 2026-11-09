@@ -20,6 +20,7 @@ import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { VISIBILITY, visibilityTitle } from "@/components/dashboards/chart-visibility";
 import { ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { pickableForRepo, previewDashboard, saveDashboard } from "@/app/charts/dashboard-actions";
 
 // Each chart type's toggle shows a 14px glyph of the shape it draws.
@@ -347,26 +348,27 @@ export function DashboardBuilder({
             />
           </div>
 
-          <div className="min-w-[10rem] space-y-1.5">
+          <div className="flex min-w-[10rem] flex-col gap-1.5">
             <label htmlFor="dashboard-scope" className="block text-label text-muted-foreground">
               Repos
             </label>
-            <select
-              id="dashboard-scope"
-              value={scopeRepoId ?? ""}
-              onChange={(e) => setScopeRepoId(e.target.value || null)}
-              className={cn(
-                "h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-base transition-colors sm:text-sm dark:bg-input/30",
-                scopeRepoId ? "font-mono" : "font-sans",
-              )}
+            <Select
+              value={scopeRepoId}
+              onValueChange={setScopeRepoId}
+              items={[{ value: null, label: "All repos" }, ...repos.map((r) => ({ value: r, label: r }))]}
             >
-              <option value="">All repos</option>
-              {repos.map((r) => (
-                <option key={r} value={r} className="font-mono">
-                  {r}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="dashboard-scope" className={scopeRepoId ? "font-mono" : "font-sans"}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>All repos</SelectItem>
+                {repos.map((r) => (
+                  <SelectItem key={r} value={r} className="font-mono">
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

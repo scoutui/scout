@@ -17,13 +17,11 @@ This page assumes the dashboard already has scans uploaded. If it has none, star
 
 ![The page for components.Option from react-select across repos, with the version bar, deprecated in 2 of 2 repos, the Retired line and the Used in table](/img/dashboard/component-across-repos.png)
 
-The header gives the component's type, how many repos use it and its total [uses](/docs/reference/glossary#use). If the component is [deprecated](/docs/reference/glossary#deprecated), the header says so, for example **deprecated in 5 of 5 repos**, with a line naming its replacement or reading **Retired**.
-
-The version bar splits the component's uses by [version](/docs/reference/glossary#version), summed across repos. The highest version is teal and every lower one is grey. "Highest" means the highest version found in these scans, not the newest one published.
+The header gives the component's type, how many repos use it and its total [uses](/docs/reference/glossary#use). For a component from a package, it also gives the range of [versions](/docs/reference/glossary#version) those repos are on, such as `3.1.0 – 4.2.0`. If the component is [deprecated](/docs/reference/glossary#deprecated), the header says so, for example **deprecated in 5 of 5 repos**, with a line naming its replacement or reading **Retired**.
 
 The **Used in** table has one row per repo whose latest scan includes the component, heaviest users first:
 
-- **Version**: a teal dot marks repos on the highest version, so a grey dot is a repo that is behind.
+- **Version**: the version installed in that repo.
 - **Deprecated**: whether a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the component.
 - **Committed**: the date of the commit that repo's numbers come from.
 

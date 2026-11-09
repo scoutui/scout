@@ -18,23 +18,23 @@ const row = (over: Partial<PackageSummary>): PackageSummary => ({
   totalOccurrences: 1,
   deprecatedCount: 0,
   distinctVersionCount: 1,
-  soleVersion: "1.0.0",
+  versionRange: { oldest: "1.0.0", newest: "1.0.0" },
   ...over,
 });
 
 describe("versionsValueOf", () => {
   it("classifies by distinctVersionCount", () => {
-    expect(versionsValueOf(row({ distinctVersionCount: 0, soleVersion: null }))).toBe("unversioned");
+    expect(versionsValueOf(row({ distinctVersionCount: 0, versionRange: null }))).toBe("unversioned");
     expect(versionsValueOf(row({ distinctVersionCount: 1 }))).toBe("single");
-    expect(versionsValueOf(row({ distinctVersionCount: 4, soleVersion: null }))).toBe("multi");
+    expect(versionsValueOf(row({ distinctVersionCount: 4, versionRange: { oldest: "1.0.0", newest: "2.0.0" } }))).toBe("multi");
   });
 });
 
 describe("filterPackageRows", () => {
   const rows = [
-    row({ packageName: "@x/lib", distinctVersionCount: 3, soleVersion: null, tags: [{ id: "t1", value: "ds", color: "teal", category: null }] }),
+    row({ packageName: "@x/lib", distinctVersionCount: 3, versionRange: { oldest: "1.0.0", newest: "2.0.0" }, tags: [{ id: "t1", value: "ds", color: "teal", category: null }] }),
     row({ packageName: "@x/wc", deprecatedCount: 2 }),
-    row({ packageName: "local-pkg", distinctVersionCount: 0, soleVersion: null }),
+    row({ packageName: "local-pkg", distinctVersionCount: 0, versionRange: null }),
   ];
 
   it("matches name substring case-insensitively", () => {
@@ -62,10 +62,10 @@ describe("packageFacetOptions: every count follows the other filters", () => {
   const forms = { id: "t1", value: "forms", color: "teal" as const, category: null };
   const core = { id: "t2", value: "core", color: "blue" as const, category: null };
   const rows = [
-    row({ packageName: "@x/forms", distinctVersionCount: 3, soleVersion: null, deprecatedCount: 1, tags: [forms] }),
+    row({ packageName: "@x/forms", distinctVersionCount: 3, versionRange: { oldest: "1.0.0", newest: "2.0.0" }, deprecatedCount: 1, tags: [forms] }),
     row({ packageName: "@x/core", tags: [core] }),
     row({ packageName: "@x/both", deprecatedCount: 2, tags: [forms, core] }),
-    row({ packageName: "lodash", distinctVersionCount: 0, soleVersion: null }),
+    row({ packageName: "lodash", distinctVersionCount: 0, versionRange: null }),
   ];
 
   it("counts versions and the deprecated chip over the packages the selected tag leaves", () => {

@@ -10,6 +10,7 @@ import { CellLink } from "@/components/ui/cell-link";
 import { deprecatedComponentsHref } from "@/lib/package-facets";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
 import { TagChips } from "@/components/tags/tag-chip";
+import { versionRangeLabel } from "@/lib/version-order";
 
 type SortKey = "packageName" | "consumerCount" | "componentCount" | "distinctVersionCount" | "totalOccurrences" | "deprecatedCount";
 
@@ -80,7 +81,7 @@ export function PackagesTable({
                   <span aria-hidden className="text-border">·</span>
                   <span>{p.componentCount.toLocaleString()} {p.componentCount === 1 ? "component" : "components"}</span>
                   <span aria-hidden className="text-border">·</span>
-                  <span className={p.distinctVersionCount === 1 && p.soleVersion ? "font-mono" : undefined}>{versionLabel(p)}</span>
+                  <span className="font-mono">{versionRangeLabel(p.versionRange) ?? "unversioned"}</span>
                   <span aria-hidden className="text-border">·</span>
                   <span>{plural(p.totalOccurrences, "use")}</span>
                 </span>
@@ -115,29 +116,19 @@ export function PackagesTable({
   );
 }
 
-/** Same semantics as VersionCell, as plain text for the stacked mobile tier. */
-function versionLabel(pkg: PackageSummary): string {
-  if (pkg.distinctVersionCount === 0) return "unversioned";
-  if (pkg.distinctVersionCount === 1 && pkg.soleVersion) return pkg.soleVersion;
-  return `${pkg.distinctVersionCount.toLocaleString()} versions`;
-}
-
-/** One version shows the version itself, several show the count, none shows a
- *  dash (an unversioned workspace package). */
+/** The oldest to the newest version in use, or a dash when none is recorded. */
 function VersionCell({ pkg }: { pkg: PackageSummary }) {
-  if (pkg.distinctVersionCount === 0) {
+  const label = versionRangeLabel(pkg.versionRange);
+  if (label === null) {
     return (
       <span className="text-muted-foreground" title="No version recorded">
         —
       </span>
     );
   }
-  if (pkg.distinctVersionCount === 1 && pkg.soleVersion) {
-    return <span className="font-mono text-xs tabular-nums">{pkg.soleVersion}</span>;
-  }
   return (
-    <span className="whitespace-nowrap text-xs font-medium tabular-nums">
-      {pkg.distinctVersionCount.toLocaleString()} versions
+    <span className="whitespace-nowrap font-mono text-xs tabular-nums" title={plural(pkg.distinctVersionCount, "version")}>
+      {label}
     </span>
   );
 }

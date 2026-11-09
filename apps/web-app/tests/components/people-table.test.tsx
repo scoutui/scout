@@ -10,6 +10,7 @@ vi.mock("@/app/settings/people-actions", () => ({
 
 import { changeRole, removeFromPeople } from "@/app/settings/people-actions";
 import { PeopleTable } from "@/components/settings/people-table";
+import { pickOption } from "../helpers/select";
 
 const person = (userId: string, email: string, extra: Partial<PersonListing> = {}): PersonListing => ({
   userId, name: null, email, lastSignedInAt: null, role: "viewer", roleSource: "people", canChangeRole: true, canRemove: true, ...extra,
@@ -37,7 +38,7 @@ describe("PeopleTable", () => {
       expect(within(row).queryByRole("button", { name: "Remove" })).toBeNull();
     }
     const sam = rowOf("sam@example.com");
-    expect(within(sam).getByRole("combobox", { name: "Role for sam@example.com" })).toHaveValue("viewer");
+    expect(within(sam).getByRole("combobox", { name: "Role for sam@example.com" })).toHaveTextContent("Viewer");
     expect(within(sam).getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
@@ -51,7 +52,7 @@ describe("PeopleTable", () => {
 
   it("changes the role to the one picked", () => {
     render(<PeopleTable people={people} />);
-    fireEvent.change(screen.getByRole("combobox", { name: "Role for sam@example.com" }), { target: { value: "editor" } });
+    pickOption(screen.getByRole("combobox", { name: "Role for sam@example.com" }), "Editor");
     expect(changeRole).toHaveBeenCalledExactlyOnceWith("sam", "editor");
   });
 

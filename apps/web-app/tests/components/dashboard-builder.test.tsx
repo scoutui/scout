@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
+import { pickOption } from "../helpers/select";
 
 const actions = vi.hoisted(() => ({ preview: vi.fn(), picker: vi.fn(), save: vi.fn() }));
 vi.mock("@/app/charts/dashboard-actions", () => ({
@@ -17,7 +18,7 @@ function builder() {
 }
 
 function selectRepo(repoId: string) {
-  fireEvent.change(screen.getByLabelText("Repos"), { target: { value: repoId } });
+  pickOption(screen.getByLabelText("Repos"), repoId || "All repos");
 }
 
 const seriesBox = () => screen.getByRole("combobox", { name: "Add a series" });

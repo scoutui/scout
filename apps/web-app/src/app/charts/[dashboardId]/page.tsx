@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/ui/back-link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Clock, SearchX } from "lucide-react";
 import { changeByRange, cohortChange, componentDisambiguators, renderDashboard, type ChangeByRange, type Dashboard, type DashboardMetric, type DashboardScope, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
@@ -154,12 +155,8 @@ export default async function DashboardViewPage({
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Link href="/charts" className="transition-colors hover:text-foreground">
-          Charts
-        </Link>
-        <span aria-hidden>/</span>
-        <span className="max-w-[24rem] truncate">{dashboard.name}</span>
+      <div className="mb-2">
+        <BackLink href="/charts">Charts</BackLink>
       </div>
 
       <ChartExportProvider title={title}>

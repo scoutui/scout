@@ -71,7 +71,7 @@ A [web component](#web-component) that nothing in the scan defines: no package's
 
 The version of a component's package that was installed when the scan ran, such as `4.2.0`. It is read from the installed package, not from the version range in your `package.json`. Components defined in the repo, and web components that belong to no package, have no version, and the dashboard shows a dash or **unversioned** in its place.
 
-You see it in the **Version** columns and the version bar on a package page. See [Packages](/docs/guides/dashboard/packages).
+You see it in the **Version** columns and in the range of versions on a package page. See [Packages](/docs/guides/dashboard/packages).
 
 ## Custom Elements Manifest
 
