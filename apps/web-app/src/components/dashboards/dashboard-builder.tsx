@@ -20,6 +20,7 @@ import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { VISIBILITY, visibilityTitle } from "@/components/dashboards/chart-visibility";
 import { ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
+import { NativeSelect } from "@/components/ui/native-select";
 import { pickableForRepo, previewDashboard, saveDashboard } from "@/app/charts/dashboard-actions";
 
 // Each chart type's toggle shows a 14px glyph of the shape it draws.
@@ -351,14 +352,12 @@ export function DashboardBuilder({
             <label htmlFor="dashboard-scope" className="block text-label text-muted-foreground">
               Repos
             </label>
-            <select
+            <NativeSelect
               id="dashboard-scope"
               value={scopeRepoId ?? ""}
               onChange={(e) => setScopeRepoId(e.target.value || null)}
-              className={cn(
-                "h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-base transition-colors sm:text-sm dark:bg-input/30",
-                scopeRepoId ? "font-mono" : "font-sans",
-              )}
+              wrapperClassName="w-full"
+              className={scopeRepoId ? "font-mono" : "font-sans"}
             >
               <option value="">All repos</option>
               {repos.map((r) => (
@@ -366,7 +365,7 @@ export function DashboardBuilder({
                   {r}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
           <div className="space-y-1.5">

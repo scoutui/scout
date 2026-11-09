@@ -3,6 +3,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 
 export function DevSignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [email, setEmail] = useState("");
@@ -53,16 +54,16 @@ export function DevSignInForm({ callbackUrl }: { callbackUrl: string }) {
         <label htmlFor="dev-sign-in-role" className="block text-label text-muted-foreground">
           Role
         </label>
-        <select
+        <NativeSelect
           id="dev-sign-in-role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-sm transition-colors dark:bg-input/30"
+          wrapperClassName="w-full"
         >
           <option value="viewer">Viewer</option>
           <option value="editor">Editor</option>
           <option value="admin">Admin</option>
-        </select>
+        </NativeSelect>
       </div>
       <Button type="submit" variant="outline" className="w-full" disabled={submitting}>
         {submitting ? "Signing in…" : "Dev sign-in"}
