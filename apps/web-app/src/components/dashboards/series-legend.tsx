@@ -79,7 +79,7 @@ export function SeriesLegend({
                 <span className={cn("truncate text-xs text-muted-foreground", s.unknown ? "font-sans" : "font-mono")}>{secondary}</span>
               ) : null}
               {s.missingFrom ? (
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate text-xs text-foreground">
                   Not in <span className="font-mono">{s.missingFrom}</span>
                 </span>
               ) : null}
