@@ -17,7 +17,7 @@ This page assumes the dashboard already has scans uploaded. If it has none, star
 
 ![The page for components.Option from react-select across repos, with the version bar, deprecated in 2 of 2 repos, the Retired line and the Used in table](/img/dashboard/component-across-repos.png)
 
-The header gives the component's type, how many repos use it, the range of [versions](/docs/reference/glossary#version) they're on, such as `3.1.0 – 4.2.0`, and its total [uses](/docs/reference/glossary#use). If the component is [deprecated](/docs/reference/glossary#deprecated), the header says so, for example **deprecated in 5 of 5 repos**, with a line naming its replacement or reading **Retired**.
+The header gives the component's type, how many repos use it and its total [uses](/docs/reference/glossary#use). For a component from a package, it also gives the range of [versions](/docs/reference/glossary#version) those repos are on, such as `3.1.0 – 4.2.0`. If the component is [deprecated](/docs/reference/glossary#deprecated), the header says so, for example **deprecated in 5 of 5 repos**, with a line naming its replacement or reading **Retired**.
 
 The **Used in** table has one row per repo whose latest scan includes the component, heaviest users first:
 
