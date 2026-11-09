@@ -79,9 +79,9 @@ export function SeriesLegend({
                 <span className={cn("truncate text-xs text-muted-foreground", s.unknown ? "font-sans" : "font-mono")}>{secondary}</span>
               ) : null}
               {s.missingFrom ? (
-                <span className="flex min-w-0 items-center gap-1 text-xs text-status-err">
-                  <AlertTriangle aria-hidden className="size-3 shrink-0" />
-                  <span className="truncate">Not in <span className="font-mono">{s.missingFrom}</span></span>
+                <span className="flex min-w-0 items-center gap-1 text-xs text-status-warn-text">
+                  <AlertTriangle aria-hidden className="size-3.5 shrink-0" />
+                  <span className="truncate" title={`Not in ${s.missingFrom}`}>Not in <span className="font-mono">{s.missingFrom}</span></span>
                 </span>
               ) : null}
             </span>
