@@ -1,5 +1,5 @@
 "use client";
-import { Ellipsis, X } from "lucide-react";
+import { AlertTriangle, Ellipsis, X } from "lucide-react";
 import type { CohortRole, CohortSelector } from "@scoutui/web-shared";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,8 +79,9 @@ export function SeriesLegend({
                 <span className={cn("truncate text-xs text-muted-foreground", s.unknown ? "font-sans" : "font-mono")}>{secondary}</span>
               ) : null}
               {s.missingFrom ? (
-                <span className="truncate text-xs text-foreground">
-                  Not in <span className="font-mono">{s.missingFrom}</span>
+                <span className="flex min-w-0 items-center gap-1 text-xs text-status-err">
+                  <AlertTriangle aria-hidden className="size-3 shrink-0" />
+                  <span className="truncate">Not in <span className="font-mono">{s.missingFrom}</span></span>
                 </span>
               ) : null}
             </span>
