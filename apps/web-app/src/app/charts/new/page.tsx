@@ -1,6 +1,6 @@
 
 import { BackLink } from "@/components/ui/back-link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
 import { chartBuilderOptions } from "@/lib/chart-builder-options";
@@ -22,6 +22,7 @@ export default async function NewDashboardPage({
   searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const identity = await identify({ browser: true });
+  if (identity?.kind === "guest") redirect("/charts");
   if (!can(identity, "edit")) {
     return <EmptyState titleAs="h1" title="Only Editors can make charts. Ask an Admin for access." />;
   }

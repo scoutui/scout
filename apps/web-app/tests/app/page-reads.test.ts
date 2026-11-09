@@ -13,7 +13,7 @@ import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/
 import { claimScanJob, enqueueScanJob, failScanJob, SCAN_JOB_PRIORITY } from "../../src/lib/scan-jobs.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
 import { readModelPage } from "../../src/lib/read-model-page.ts";
-import type { Person } from "../../src/lib/access.ts";
+import type { Identity, Person } from "../../src/lib/access.ts";
 import { baseline } from "../helpers/cli-baseline.ts";
 import { withReadModelDatabase } from "../helpers/read-model-db.ts";
 
@@ -24,7 +24,7 @@ let database: Pool;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 const editor: Person = { kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
-let reader = editor;
+let reader: Identity = editor;
 vi.mock("@/lib/identity", () => ({ identify: async () => reader }));
 
 const scope = new AsyncLocalStorage<{ usage: boolean }>();
@@ -214,7 +214,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
     });
   });
 
-  it("collects repo header, table, history and adoption data before returning JSX, and shows an empty state for a scan with no components", async () => {
+  it("collects repo header, table, history and adoption data before returning JSX, shows a guest the same rows without editing or settings, and shows an empty state for a scan with no components", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const { default: page } = await import("@/app/repos/[repoId]/page");
@@ -225,6 +225,12 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(propsFor(tree, "RepoAdoptionPanel")).toMatchObject({ tracking: null, notice: null });
       expect(recorder.queries.filter(q => q.startsWith("BEGIN"))).toHaveLength(1);
       expect(recorder.queries.at(-1)).toBe("COMMIT");
+      expect(propsFor(tree, "RepoDetailHeader")).toMatchObject({ canOpenSettings: true });
+      expect(explorer).toMatchObject({ canEdit: true });
+      reader = { kind: "guest" };
+      const guest = await page({ ...repoParams, searchParams });
+      expect(propsFor(guest, "ComponentsExplorer")).toMatchObject({ rows: explorer?.rows, canEdit: false });
+      expect(propsFor(guest, "RepoDetailHeader")).toMatchObject({ canOpenSettings: false });
       const empty = await page({ params: Promise.resolve({ repoId: "repo-empty" }), searchParams });
       expect(propsFor(empty, "EmptyState")).toMatchObject({
         title: "No components found",

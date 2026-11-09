@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ uploadId
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-  if (!can(identity, "view") && !can(identity, "upload")) {
+  if (identity?.kind === "guest" || (!can(identity, "view") && !can(identity, "upload"))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { uploadId } = await params;

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
 import { chartResultsNotice } from "@/lib/read-model-progress";
@@ -13,7 +14,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance" };
 
 export default async function GovernancePage() {
-  if (!can(await identify({ browser: true }), "edit")) {
+  const identity = await identify({ browser: true });
+  if (identity?.kind === "guest") redirect("/repos");
+  if (!can(identity, "edit")) {
     return <EmptyState titleAs="h1" title="Only Editors can see Governance. Ask an Admin for access." />;
   }
   const { records, authors, tags, registry } = await getStorage().withReadSnapshot(async snapshot => ({

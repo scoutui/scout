@@ -126,12 +126,14 @@ describe.skipIf(!databaseUrl)("GET /api/scans/uploads/[uploadId]", { timeout: 30
     await pool.query("TRUNCATE repos, scan_uploads CASCADE");
   });
 
-  it("requires an upload bearer or a signed-in session", async () => {
+  it("requires an upload bearer or a signed-in session, and refuses a guest", async () => {
     const uploadId = await receiveArtifact(pool, sampleArtifact());
     const anonymous = await status(uploadId, null);
     expect(anonymous.status).toBe(401);
     expect(await anonymous.json()).toEqual({ error: "unauthorized" });
     expect((await status(uploadId, "Bearer expired")).status).toBe(401);
+    session.value = { kind: "guest" };
+    expect((await status(uploadId, null)).status).toBe(401);
   });
 
   it("accepts a user bearer, a repo token and a browser session", async () => {

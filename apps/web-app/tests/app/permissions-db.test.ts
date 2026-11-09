@@ -7,6 +7,7 @@ import { deleteTag, quickTagPackage, saveTag } from "@/app/packages/tag-actions"
 import { createToken, regenerateToken, revokeToken } from "@/app/repos/repo-actions";
 import { removeFromPeople } from "@/app/settings/people-actions";
 import { getPool } from "@/db/client";
+import { identify } from "@/lib/identity";
 import { CHART_REFUSAL, EDIT_REFUSAL } from "@/lib/access";
 import { repoSettings, TOKEN_CHANGED } from "@/lib/repo-upload-tokens";
 import { getStorage } from "@/lib/storage";
@@ -144,6 +145,18 @@ describe.skipIf(!RUN_DB)("edit actions against PostgreSQL", () => {
       signInAs(admin);
       expect(await setDashboardVisibility(id, "private")).toEqual({ ok: true });
       expect(await visibility()).toBe("private");
+    });
+  });
+
+  describe("a guest", () => {
+    it("is refused a new chart and a CI upload token without storing either, with guest view on", async () => {
+      vi.stubEnv("SCOUTUI_GUEST_VIEW", "true");
+      await pool.query("INSERT INTO repos (repo_id) VALUES ('repo-a')");
+      expect(await identify({ browser: true })).toEqual({ kind: "guest" });
+      expect(await saveDashboard(dashboard)).toEqual({ ok: false, error: "not_authenticated" });
+      expect(await createToken("repo-a")).toEqual({ ok: false, error: "not_authenticated" });
+      expect(await count("dashboards")).toBe(0);
+      expect((await pool.query("SELECT count(*)::int AS n FROM repo_upload_tokens")).rows[0].n).toBe(0);
     });
   });
 

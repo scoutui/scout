@@ -276,6 +276,16 @@ Without a restriction, anyone your provider can authenticate can sign in. That's
 
 To let in only your own email domains, set `auth.oidc.allowedDomains` to them, separated by commas, such as `"acme.com,acme.co.uk"`. The provider must mark the email as verified.
 
+### Let people view the dashboard without signing in
+
+For a public demo, set `auth.guestView: true`. Anyone who isn't signed in can then view the dashboard, read-only.
+
+:::warning
+Guest view makes every repo on the dashboard public. Anyone who can reach its address sees every repo, package, component and scan, including the name or email address of whoever uploaded each scan, and every chart shared with everyone. Turn it on only for a dashboard that holds nothing private.
+:::
+
+A visitor who isn't signed in sees **Guest** at the right of the top bar. They can't make or change charts, change governance or tags, or see charts that aren't shared with everyone. The dashboard shows them no sign-in link: people sign in at `/login`, such as `https://scout.example.com/login`.
+
 ### Check client addresses behind a proxy
 
 CLI sign-in is rate limited per client address. The dashboard reads that address from the `X-Forwarded-For` header, which proxies in front of it add to. If it reads the wrong entry, every caller may share one limit, or a caller can choose their own address to get around it.
