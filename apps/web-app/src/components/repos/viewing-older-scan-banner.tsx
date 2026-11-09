@@ -6,11 +6,9 @@ import { relativeTime } from "@/lib/relative-time";
 export function ViewingOlderScanBanner({
   repoId,
   committedAt,
-  arrivedAt,
 }: {
   repoId: string;
   committedAt: string;
-  arrivedAt: string;
 }) {
   return (
     <aside
@@ -20,13 +18,9 @@ export function ViewingOlderScanBanner({
       <span className="flex min-w-0 grow basis-72 items-start gap-x-3">
         <History aria-hidden className="mt-px size-3.5 shrink-0 text-muted-foreground" />
         <span>
-          Viewing an older scan: committed{" "}
+          Viewing an older scan from{" "}
           <span title={formatAbsoluteUtc(committedAt)} className="font-medium">
             {relativeTime(committedAt)}
-          </span>
-          , scanned{" "}
-          <span title={formatAbsoluteUtc(arrivedAt)} className="font-medium">
-            {relativeTime(arrivedAt)}
           </span>
           .
         </span>

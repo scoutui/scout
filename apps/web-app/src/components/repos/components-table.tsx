@@ -218,19 +218,8 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
-          {/* An added row with no occurrences says so beside the badge instead
-              of showing ±0 (below sm the occurrences tier already reads
-              `0 uses`). Changed rows carry no badge: the Δ beside their
-              count marks them. */}
-          {mark?.kind === "added" ? (
-            <>
-              <Badge variant="outline" className={MARK_BADGE}>Added</Badge>
-              {r.occurrenceCount === 0 ? (
-                <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">0 uses</span>
-              ) : null}
-            </>
-          ) : null}
-          {href === undefined ? <span className="shrink-0 text-xs text-muted-foreground">not in the latest scan</span> : null}
+          {/* Changed rows carry no badge: the Δ beside their count marks them. */}
+          {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
         {r.disambiguator ? (
           <div className="truncate text-code text-muted-foreground" title={r.disambiguator}>

@@ -226,18 +226,16 @@ describe("ComponentsTable", () => {
       expect(classesOf("PlainGrew", "+3")).toEqual(["font-medium tabular-nums text-foreground", "font-medium text-foreground"]);
     });
 
-    it("marks a zero-occurrence added row in words, never ±0", () => {
+    it("marks a zero-occurrence added row with the badge alone, never ±0", () => {
       const held = { ...row, componentId: "held", displayName: "Held", occurrenceCount: 0, fileCount: 0 };
       const moved = { ...row, componentId: "m", displayName: "Moved", occurrenceCount: 36 };
       render(<ComponentsTable repoId="r1" rows={[held, moved]} marks={{ held: { kind: "added" }, m: { kind: "changed", delta: -23 } }} />);
       const tr = rowOf(screen.getByText("Held"));
-      // The same outline badge as `removed`, then the muted words.
+      // The same outline badge as `removed`.
       const badge = within(tr).getByText("Added");
       expect(badge.className).toMatch(/rounded-4xl/);
       expect(badge.className).toMatch(/border-muted-foreground\/70/);
-      const zero = within(tr).getByText("0 uses");
-      expect(zero.className).toMatch(/text-muted-foreground/);
-      expect(badge.compareDocumentPosition(zero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(within(tr).queryByText("0 uses")).toBeNull();
       expect(tr.textContent).not.toContain("±0");
       // A zero Δ shows no brackets and no dash; the empty slot keeps its width so the count lines up.
       const cell = occurrencesCell(tr);
@@ -330,8 +328,6 @@ describe("ComponentsTable", () => {
       const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
       expect(screen.getByText("Added").parentElement?.className).toBe(NAME_ROW);
       expect(screen.getByText("Removed").parentElement?.className).toBe(NAME_ROW);
-      // The beside-badge `0 uses` note is desktop-only; the mobile tier already says it.
-      expect(screen.getByText("0 uses").className).toBe("hidden shrink-0 text-xs text-muted-foreground sm:inline");
       const tier = within(rowOf(screen.getByText("PharmacyLicenseLogoExample"))).getByText("0 files").parentElement as HTMLElement;
       expect(tier.textContent).toBe("0 uses·0 files");
     });
