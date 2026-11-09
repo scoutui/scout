@@ -36,6 +36,8 @@ tests:
           path: data.SCOUTUI_ADMINS
       - notExists:
           path: data.SCOUTUI_ADMIN_GROUP
+      - notExists:
+          path: data.SCOUTUI_GUEST_VIEW
 
   - it: includes allowedDomains when set
     set:
@@ -88,3 +90,16 @@ tests:
       - equal:
           path: data.SCOUTUI_ADMIN_GROUP
           value: "scout-admins"
+
+  - it: turns on guest view when set
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+        guestView: true
+    asserts:
+      - equal:
+          path: data.SCOUTUI_GUEST_VIEW
+          value: "true"
