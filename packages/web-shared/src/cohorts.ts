@@ -74,6 +74,24 @@ function cohortIdentity(selector: CohortSelector, artifacts: DigestScan[], tags:
   }
 }
 
+/** A series a chart leaves out, and why: `elsewhere` when another repo's latest scan holds it, `missing` when none does. */
+export type LeftOutCohort = { key: string; kind: CohortSelector["kind"]; label: string | null; reason: "elsewhere" | "missing" };
+
+/**
+ * The series in `unknown` (from `unknownCohortKeys`), named as the chart would name them from `elsewhere`, the latest
+ * scans outside the chart's scope that hold them. A series none of them holds keeps the name the chart saved for it,
+ * if any.
+ */
+export function leftOutCohorts(cohorts: CohortSelector[], unknown: ReadonlySet<string>, elsewhere: DigestScan[], tags: Tag[]): LeftOutCohort[] {
+  return cohorts.flatMap((selector): LeftOutCohort[] => {
+    const key = cohortKey(selector);
+    if (!unknown.has(key)) return [];
+    const identity = cohortIdentity(selector, elsewhere, tags);
+    if (identity) return [{ key, kind: selector.kind, label: identity.label, reason: "elsewhere" }];
+    return [{ key, kind: selector.kind, label: selector.kind === "component" ? (selector.label ?? null) : null, reason: "missing" }];
+  });
+}
+
 /**
  * The component a `component` selector names, as its `representativeUsage` presents it
  * (a tag's package is that scan's attribution); null when no scan holds the id.

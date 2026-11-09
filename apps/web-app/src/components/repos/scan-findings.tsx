@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { ChevronDown, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import type { ScanFinding, ScanFindingKind } from "@scoutui/web-shared";
 import { cn } from "@/lib/utils";
+import { CollapsibleNotice, CollapsibleNoticeRow } from "@/components/collapsible-notice";
 
 const DOCS = "https://scoutui.dev/docs";
 
@@ -80,21 +81,20 @@ export function ScanFindings({ findings }: { findings: ScanFinding[] }) {
   if (findings.length === 0) return null;
   const toFix = findings.reduce((sum, finding) => sum + (KINDS[finding.kind].toFix ? finding.count : 0), 0);
   return (
-    <details className="group rounded-md border border-border bg-accent/40 text-xs">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 [&::-webkit-details-marker]:hidden">
-        <Info aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="flex flex-wrap items-baseline gap-x-1.5">
+    <CollapsibleNotice
+      icon={<Info aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />}
+      summary={
+        <>
           <span className="font-medium text-foreground">This scan couldn&apos;t see everything</span>
           {toFix > 0 ? <> <span className="flex items-baseline gap-x-1.5 text-muted-foreground"><Dot /> {counted(toFix, "thing to fix", "things to fix")}</span></> : null}
-        </span>
-        <ChevronDown aria-hidden className="ml-auto size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-180 motion-reduce:transition-none" />
-      </summary>
-      <ul className="divide-y divide-border border-t border-border">
+        </>
+      }
+    >
         {findings.map(finding => {
           const kind = KINDS[finding.kind];
           const labelId = `scan-finding-${finding.kind}`;
           return (
-            <li key={finding.kind} className="space-y-1 px-3 py-2.5 sm:pl-[2.125rem]">
+            <CollapsibleNoticeRow key={finding.kind}>
               <p id={labelId} className={cn(kind.toFix ? "text-foreground" : "text-muted-foreground")}>
                 <span className="font-medium tabular-nums">{finding.count.toLocaleString()}</span>{" "}
                 {finding.count === 1 ? kind.label[0] : kind.label[1]}
@@ -115,10 +115,9 @@ export function ScanFindings({ findings }: { findings: ScanFinding[] }) {
                   Learn more
                 </a>
               </p>
-            </li>
+            </CollapsibleNoticeRow>
           );
         })}
-      </ul>
-    </details>
+    </CollapsibleNotice>
   );
 }

@@ -192,6 +192,21 @@ describe("editing a saved chart", () => {
     expect(container.innerHTML).not.toContain(componentId);
   });
 
+  it.each([
+    ["in another repo's latest scan", null, "Not in checkout"],
+    ["only in older scans", "2026-01-01T00:00:00Z", null],
+  ])("says which repo a left-out series isn't in only when it is %s", async (_, lastSeenAt, line) => {
+    const app = { componentId: "app-admin", displayName: "App", packageName: "admin", disambiguator: null, deprecated: false, occurrences: 1, local: true, lastSeenAt };
+    const config = { scope: { kind: "repo" as const, repoId: "checkout" }, cohorts: [{ kind: "component" as const, componentId: app.componentId }], chartType: "trend" as const, metric: "count" as const };
+    render(<DashboardBuilder libraryTags={[]} repos={["admin", "checkout"]} components={[app]} packages={[]} saved={{ id: "chart-1", name: "App", description: null, config, visibility: "private" }} />);
+    await waitFor(() => expect(actions.preview).toHaveBeenCalled());
+    await act(async () => {});
+    const notIn = (text: string | RegExp) => (_: string, el: Element | null) =>
+      el?.tagName === "SPAN" && el.firstChild?.nodeType === Node.TEXT_NODE && (typeof text === "string" ? el.textContent === text : text.test(el.textContent ?? ""));
+    if (line) expect(await screen.findByText(notIn(line))).toBeInTheDocument();
+    else expect(screen.queryByText(notIn(/^Not in /))).toBeNull();
+  });
+
   it("marks a deprecated series in the series list", async () => {
     const config = {
       scope: { kind: "all" as const },

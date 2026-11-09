@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BackLink } from "@/components/ui/back-link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, Clock, SearchX } from "lucide-react";
-import { changeByRange, cohortChange, componentDisambiguators, renderDashboard, type ChangeByRange, type Dashboard, type DashboardMetric, type DashboardScope, type DashboardView, type GovernanceTracking } from "@scoutui/web-shared";
+import { changeByRange, cohortChange, componentDisambiguators, leftOutCohorts, renderDashboard, unknownCohortKeys, type ChangeByRange, type Dashboard, type DashboardMetric, type DashboardScope, type DashboardView, type GovernanceTracking, type LeftOutCohort } from "@scoutui/web-shared";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
 import { chartResultsNotice, chartResultsUnavailable } from "@/lib/read-model-progress";
@@ -19,6 +19,7 @@ import { ChartVisibilityLabel } from "@/components/dashboards/chart-visibility";
 import { DeleteDashboardButton } from "@/components/dashboards/delete-dashboard-button";
 import { privateChart } from "@/components/dashboards/private-chart";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
+import { LeftOutSeriesNotice } from "@/components/dashboards/left-out-series-notice";
 import { CHART_KIND_LABEL } from "@/lib/dashboard-format";
 import { derivedChartHref } from "@/lib/derived-dashboards";
 import { chartSkippedNotices, loadChartDigests } from "@/lib/dashboard-load";
@@ -76,10 +77,14 @@ export default async function DashboardViewPage({
     if (!dashboard) return null;
     if (!can(identity, "view", { chart: dashboard })) return { kind: "private" as const, createdBy: dashboard.createdBy, creatorRemoved: dashboard.creatorRemoved };
     const repoId = dashboard.config.scope.kind === "repo" ? dashboard.config.scope.repoId : undefined;
+    const charted = await loadChartDigests(snapshot, dashboard.config);
+    const held = new Set([...charted.digests, ...charted.names].flatMap(scan => scan.components.map(c => c.id)));
+    const notHeld = dashboard.config.cohorts.flatMap(c => (c.kind === "component" && !held.has(c.componentId) ? [c.componentId] : []));
     return {
       kind: "saved" as const,
       dashboard,
-      ...(await loadChartDigests(snapshot, dashboard.config)),
+      ...charted,
+      elsewhere: repoId && notHeld.length ? await snapshot.listScanDigests(undefined, { latestOnly: true, componentIds: notHeld }) : [],
       tags: await snapshot.listTags(),
       governance: await snapshot.listGovernance(),
       missingRepo: repoId && !(await snapshot.getRepo(repoId))
@@ -96,6 +101,7 @@ export default async function DashboardViewPage({
   let missingRepo: { repoId: string; missing: "scans" | "repo" } | null = null;
   let change: ChangeByRange | undefined;
   let paths: Record<string, string> = {};
+  let leftOut: LeftOutCohort[] = [];
   if (page.value.kind === "tracking") {
     const { tracking, registry, governance } = page.value;
     const entry = tracking?.find((t) => t.id === id);
@@ -138,6 +144,7 @@ export default async function DashboardViewPage({
     if (dashboard.config.chartType === "trend" && view.kind === "series") {
       change = changeByRange(view.series, cohortChange(dashboard.config, view.series, digests, tags, governance));
     }
+    if (!isEmptyView(view)) leftOut = leftOutCohorts(dashboard.config.cohorts, unknownCohortKeys(dashboard.config.cohorts, view), page.value.elsewhere, tags);
   }
   const notice = derivedEntry ? await chartResultsNotice(getPool(), true) : null;
   const config = dashboard.config;
@@ -240,6 +247,15 @@ export default async function DashboardViewPage({
         {skipped.gaps.length || skipped.fallbacks.length ? (
           <div className="mb-6">
             <SkippedScansNotice {...skipped} />
+          </div>
+        ) : null}
+        {leftOut.length ? (
+          <div className="mb-6">
+            <LeftOutSeriesNotice
+              series={leftOut}
+              repoId={config.scope.kind === "repo" ? config.scope.repoId : null}
+              editHref={canChange ? `/charts/${encodeURIComponent(dashboard.id)}/edit` : null}
+            />
           </div>
         ) : null}
 
