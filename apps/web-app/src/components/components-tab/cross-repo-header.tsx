@@ -2,9 +2,8 @@
 import { BackLink } from "@/components/ui/back-link";
 import { AlertTriangle } from "lucide-react";
 import type { CrossRepoComponentDetail } from "@scoutui/web-shared";
-import { plural } from "@scoutui/web-shared/client";
-import { frameworkLabel } from "@/lib/framework-label";
-import { ORIGIN_LABEL } from "@/lib/component-facets";
+import { friendlyKind, plural } from "@scoutui/web-shared/client";
+import { kindLabel, ORIGIN_LABEL } from "@/lib/component-facets";
 import { MigrationLine } from "@/components/governance/migration-line";
 import { versionRangeLabel } from "@/lib/version-order";
 
@@ -23,7 +22,7 @@ export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponen
           <h1 className="font-mono text-2xl font-semibold">{detail.displayName}</h1>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span>{frameworkLabel(detail.kind)}</span>
+          <span>{kindLabel(friendlyKind(detail.kind))}</span>
           {detail.scope === "local" ? (<><Sep /><span>{ORIGIN_LABEL.local}</span></>) : null}
           <Sep />
           <span className="tabular-nums">{detail.repoCount.toLocaleString()} {repoNoun}</span>

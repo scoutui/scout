@@ -3,7 +3,8 @@ import { BackLink } from "@/components/ui/back-link";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
-import { frameworkLabel } from "@/lib/framework-label";
+import { friendlyKind } from "@scoutui/web-shared/client";
+import { kindLabel } from "@/lib/component-facets";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { commitUrl } from "@/lib/git-remote";
 import { relativeTime } from "@/lib/relative-time";
@@ -89,7 +90,7 @@ export function RepoDetailHeader({
             .sort((a, b) => b.count - a.count)
             .map((f) => (
               <span key={f.kind} className="whitespace-nowrap">
-                {frameworkLabel(f.kind)}{" "}
+                {kindLabel(friendlyKind(f.kind))}{" "}
                 <span className="tabular-nums text-foreground">{f.count.toLocaleString()}</span>
               </span>
             ))}
