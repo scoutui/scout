@@ -12,9 +12,9 @@ vi.mock("next/navigation", async () =>
 );
 
 const rows: PackageSummary[] = [
-  { packageName: "@x/lib",  consumerCount: 3, componentCount: 12, totalOccurrences: 40, deprecatedCount: 0, distinctVersionCount: 2, soleVersion: null },
-  { packageName: "@x/wc",   consumerCount: 1, componentCount: 4,  totalOccurrences: 5,  deprecatedCount: 1, distinctVersionCount: 1, soleVersion: "2.1.0" },
-  { packageName: "lodash",  consumerCount: 2, componentCount: 1,  totalOccurrences: 20, deprecatedCount: 0, distinctVersionCount: 3, soleVersion: null },
+  { packageName: "@x/lib",  consumerCount: 3, componentCount: 12, totalOccurrences: 40, deprecatedCount: 0, distinctVersionCount: 2, versionRange: { oldest: "1.0.0", newest: "1.2.0" } },
+  { packageName: "@x/wc",   consumerCount: 1, componentCount: 4,  totalOccurrences: 5,  deprecatedCount: 1, distinctVersionCount: 1, versionRange: { oldest: "2.1.0", newest: "2.1.0" } },
+  { packageName: "lodash",  consumerCount: 2, componentCount: 1,  totalOccurrences: 20, deprecatedCount: 0, distinctVersionCount: 3, versionRange: { oldest: "4.0.0", newest: "4.17.21" } },
 ];
 
 describe("PackagesTable", () => {
@@ -36,17 +36,17 @@ describe("PackagesTable", () => {
     expect(within(xwcRow as HTMLElement).getAllByRole("cell")[3]).toHaveTextContent("2.1.0");
   });
 
-  it("shows a fragmentation count when a package has several versions", () => {
+  it("shows the oldest to the newest version when a package has several", () => {
     render(<PackagesTable rows={rows} />);
-    const xlibRow = screen.getByRole("link", { name: /@x\/lib/ }).closest("tr")!;
     const lodashRow = screen.getByRole("link", { name: /lodash/ }).closest("tr")!;
-    expect(within(xlibRow as HTMLElement).getAllByRole("cell")[3]).toHaveTextContent("2 versions");
-    expect(within(lodashRow as HTMLElement).getAllByRole("cell")[3]).toHaveTextContent("3 versions");
+    const versionCell = within(lodashRow as HTMLElement).getAllByRole("cell")[3]!;
+    expect(versionCell).toHaveTextContent("4.0.0 – 4.17.21");
+    expect(within(versionCell).getByTitle("3 versions")).toBeInTheDocument();
   });
 
   it("renders an em-dash when the package is unversioned (workspace-local)", () => {
     const zeroVersion: PackageSummary[] = [
-      { packageName: "@no/versions", consumerCount: 1, componentCount: 2, totalOccurrences: 3, deprecatedCount: 0, distinctVersionCount: 0, soleVersion: null },
+      { packageName: "@no/versions", consumerCount: 1, componentCount: 2, totalOccurrences: 3, deprecatedCount: 0, distinctVersionCount: 0, versionRange: null },
     ];
     render(<PackagesTable rows={zeroVersion} />);
     const row = screen.getByRole("link", { name: /@no\/versions/ }).closest("tr")!;
@@ -113,7 +113,7 @@ describe("PackagesTable", () => {
   });
 
   it("counts a single use as `1 use` in the stacked phone row", () => {
-    render(<PackagesTable rows={[{ packageName: "@x/wc", consumerCount: 1, componentCount: 1, totalOccurrences: 1, deprecatedCount: 0, distinctVersionCount: 1, soleVersion: "2.1.0" }]} />);
+    render(<PackagesTable rows={[{ packageName: "@x/wc", consumerCount: 1, componentCount: 1, totalOccurrences: 1, deprecatedCount: 0, distinctVersionCount: 1, versionRange: { oldest: "2.1.0", newest: "2.1.0" } }]} />);
     expect(screen.getByText("1 use")).toBeInTheDocument();
   });
 });

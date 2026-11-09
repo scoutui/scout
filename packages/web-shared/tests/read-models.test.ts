@@ -3,7 +3,7 @@ import { componentKey } from "@scoutui/scan-format";
 import type { GovernanceRecord } from "../src/dto.js";
 import {
   createProjectionContext, deriveComponentDetailHead, deriveFactScan, deriveReadModelRows, reduceComponentRows, reduceComponentsAcrossScans,
-  reducePackageDetail, reducePackagesAcrossScans, reduceRepoSummary,
+  reduceCrossRepoComponent, reducePackageDetail, reducePackagesAcrossScans, reduceRepoSummary,
 } from "../src/index.js";
 import { projectCompositionGraph } from "./helpers/composition-graph.js";
 import { genericArtifacts } from "./helpers/fixtures.ts";
@@ -90,6 +90,18 @@ describe("immutable read models", () => {
     expect(detail?.components.filter(row => row.deprecated).map(row => row.componentId)).toEqual([button.id]);
     expect(detail?.deprecatedCount).toBe(1);
     expect(reducePackagesAcrossScans(facts, governance).find(row => row.packageName === "@example/ui")?.deprecatedCount).toBe(1);
+  });
+
+  it("ranges a package's and a component's versions in SemVer order, not text order", () => {
+    const facts = ["1.5.0", "1.14.0", "1.10.0"].map(version => {
+      const button = component(packageExport("@example/ui", "Button"), { version });
+      const scan = artifact({ scanId: `scan-${version}`, repoId: `repo-${version}`, components: [button], occurrences: [resolvedAt(button, "src/App.tsx")] });
+      return { ...deriveFactScan(scan), meta: received(scan).meta };
+    });
+    const range = { oldest: "1.5.0", newest: "1.14.0" };
+    expect(reducePackagesAcrossScans(facts)[0]?.versionRange).toEqual(range);
+    expect(reducePackageDetail(facts, "@example/ui")?.versionRange).toEqual(range);
+    expect(reduceCrossRepoComponent(facts, componentKey(packageExport("@example/ui", "Button")))?.versionRange).toEqual(range);
   });
 
   it("gives components that share a package and a name, in any repo, their entry point to tell them apart", () => {

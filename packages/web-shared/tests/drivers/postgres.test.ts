@@ -322,10 +322,10 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
       await publishScan(pool, scanOf("repo-b", scannedAt, [[ui("Button", "1.1.0"), 2]]), { uploadedByUserId: null });
       const driver = new PostgresDriver(pool);
       // Tooltip is never rendered, so it adds no used component to its package.
-      const uiTotals = { packageName: "@example/ui", consumerCount: 2, componentCount: 2, totalOccurrences: 6, deprecatedCount: 0, distinctVersionCount: 2, soleVersion: null };
+      const uiTotals = { packageName: "@example/ui", consumerCount: 2, componentCount: 2, totalOccurrences: 6, deprecatedCount: 0, distinctVersionCount: 2, versionRange: { oldest: "1.0.0", newest: "1.1.0" } };
       expect(await driver.listPackages()).toEqual([
         uiTotals,
-        { packageName: "@example/icons", consumerCount: 1, componentCount: 1, totalOccurrences: 2, deprecatedCount: 0, distinctVersionCount: 1, soleVersion: "2.0.0" },
+        { packageName: "@example/icons", consumerCount: 1, componentCount: 1, totalOccurrences: 2, deprecatedCount: 0, distinctVersionCount: 1, versionRange: { oldest: "2.0.0", newest: "2.0.0" } },
       ]);
       const row = (exportName: string, totalOccurrences: number, consumerCount: number, usage: Component["usage"]) => ({
         componentId: componentKey(packageExport("@example/ui", exportName)), displayName: exportName, kind: "react-component", disambiguator: null, totalOccurrences, consumerCount, deprecated: false, usage,

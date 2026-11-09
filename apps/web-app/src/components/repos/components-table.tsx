@@ -8,11 +8,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DeprecatedMark } from "@/components/deprecated-mark";
-import { SortButton, ariaSort, sortRows, useSort, type SortDir } from "@/components/ui/sortable";
+import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
 import { hrefWithQuery } from "@/lib/query-string";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
-import { compareVersions } from "@/lib/version-order";
+import { sortByVersion } from "@/lib/version-order";
 
 const COLUMN_COUNT = 5;
 
@@ -185,21 +185,6 @@ export function ComponentsTable({
       </TableBody>
     </Table>
   );
-}
-
-/** Sorts versions semver-aware: `sortRows` compares strings lexically, which
- *  puts `1.14.11` before `1.5.0`. Nulls last in both directions, as in
- *  `sortRows`. */
-function sortByVersion(rows: readonly ComponentRow[], dir: SortDir): ComponentRow[] {
-  const sign = dir === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const av = a.version;
-    const bv = b.version;
-    if (av === null && bv === null) return 0;
-    if (av === null) return 1;
-    if (bv === null) return -1;
-    return compareVersions(av, bv) * sign;
-  });
 }
 
 /** A component's page, with `area` picked on its Usage tab when given. */

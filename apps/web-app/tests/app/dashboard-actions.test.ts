@@ -27,7 +27,7 @@ const storage = {
         totalOccurrences: 1,
         deprecatedCount: 0,
         distinctVersionCount: 1,
-        soleVersion: "1.0.0",
+        versionRange: { oldest: "1.0.0", newest: "1.0.0" },
       }))
     : [],
 };

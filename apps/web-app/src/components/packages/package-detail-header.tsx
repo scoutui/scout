@@ -5,7 +5,7 @@ import { plural } from "@scoutui/web-shared/client";
 import { frameworkLabel } from "@/lib/framework-label";
 import { TagChips } from "@/components/tags/tag-chip";
 import { QuickTag } from "@/components/tags/quick-tag";
-import { VersionComposition, computeVersionShare } from "@/components/viz/version-composition";
+import { versionRangeLabel } from "@/lib/version-order";
 
 export function PackageDetailHeader({
   detail,
@@ -22,7 +22,7 @@ export function PackageDetailHeader({
     .map(frameworkLabel)
     .join(" · ");
 
-  const versionShare = computeVersionShare(detail.cells, detail.distinctVersionCount);
+  const versions = versionRangeLabel(detail.versionRange);
 
   return (
     <header className="space-y-4">
@@ -45,24 +45,22 @@ export function PackageDetailHeader({
           {frameworks ? (<><span>{frameworks}</span><Sep /></>) : null}
           <span className="tabular-nums">{detail.consumerCount.toLocaleString()} {detail.consumerCount === 1 ? "repo" : "repos"}</span>
           <Sep />
+          {versions ? (<><span className="font-mono tabular-nums" title={plural(detail.distinctVersionCount, "version")}>{versions}</span><Sep /></>) : null}
           <span className="tabular-nums">{detail.componentCount.toLocaleString()} components</span>
           <Sep />
           <span className="tabular-nums">{plural(detail.totalOccurrences, "use")}</span>
         </div>
       </div>
 
-      {/* Version composition and the deprecated alarm */}
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-        <VersionComposition share={versionShare} />
-
-        {detail.deprecatedCount > 0 ? (
+      {detail.deprecatedCount > 0 ? (
+        <div>
           <span className="inline-flex items-center gap-1.5 text-xs text-status-warn-text">
             <AlertTriangle aria-hidden className="size-3.5 shrink-0" />
             <span className="font-medium tabular-nums">{detail.deprecatedCount.toLocaleString()}</span>
             {detail.deprecatedCount === 1 ? "deprecated component in use" : "deprecated components in use"}
           </span>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </header>
   );
 }
