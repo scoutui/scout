@@ -141,8 +141,8 @@ export function DashboardBuilder({
   const [range, setRange] = useState<ChartRange>(saved?.config.range ?? "all");
   const [visibility, setVisibility] = useState<ChartVisibility>(saved?.visibility ?? "private");
   const [preview, setPreview] = useState<{ config: DashboardConfig; view: DashboardView; skipped: SkippedNotices } | null>(null);
-  // The last preview that landed, and the keys of the series its config held that its view left out.
-  const [landed, setLanded] = useState<{ view: DashboardView; unknown: ReadonlySet<string> } | null>(null);
+  // The last preview that landed, the keys of the series its config held that its view left out, and the repo it was scoped to.
+  const [landed, setLanded] = useState<{ view: DashboardView; unknown: ReadonlySet<string>; repoId: string | null } | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewUnavailable, setPreviewUnavailable] = useState<ReadModelUnavailable | null>(null);
   const [previewError, setPreviewError] = useState(false);
@@ -260,12 +260,14 @@ export function DashboardBuilder({
           deprecatedOnly = { on: sel.deprecatedOnly === true, text: deprecatedShareText(share, label) };
         }
       }
+      const elsewhere = sel.kind === "component" && components.some((c) => c.componentId === sel.componentId && c.lastSeenAt === null);
       return {
         selector: sel,
         label,
         color: unknown ? "" : (colors.get(key) ?? ""),
         role: drawn?.role,
         unknown,
+        missingFrom: unknown && elsewhere ? (landed?.repoId ?? null) : null,
         deprecatedOnly,
       };
     });
@@ -294,7 +296,11 @@ export function DashboardBuilder({
         if (request === previewRequest.current) {
           if (result.state === "ready") {
             setPreview({ config: reqConfig, view: result.value, skipped: { fallbacks: result.fallbacks, gaps: result.gaps } });
-            setLanded({ view: result.value, unknown: unknownCohortKeys(reqConfig.cohorts, result.value) });
+            setLanded({
+              view: result.value,
+              unknown: unknownCohortKeys(reqConfig.cohorts, result.value),
+              repoId: reqConfig.scope.kind === "repo" ? reqConfig.scope.repoId : null,
+            });
           } else {
             setPreview(null);
             setPreviewUnavailable(result);

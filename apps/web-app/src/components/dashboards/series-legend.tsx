@@ -19,7 +19,8 @@ import { CohortSwatch } from "@/components/dashboards/cohort-swatch";
  * null when the row offers no "Only deprecated components" option; otherwise it holds
  * whether the option is on and the line shown under it, if any.
  * `label` is "" while no name is known. `unknown` marks a series the chart left out, and
- * its `color` is "".
+ * its `color` is "". `missingFrom` names the repo a left-out series isn't in, when another
+ * repo's latest scan holds it.
  */
 export type LegendSeries = {
   selector: CohortSelector;
@@ -27,6 +28,7 @@ export type LegendSeries = {
   color: string;
   role?: CohortRole | undefined;
   unknown: boolean;
+  missingFrom: string | null;
   deprecatedOnly: { on: boolean; text: string | null } | null;
 };
 
@@ -35,7 +37,8 @@ export type LegendSeries = {
  * series' chart colour, its name, and a remove control. A package or tag series that
  * can be narrowed to its deprecated components gets a row menu holding that option, and
  * reads `<name> · deprecated` while it is on. A series the chart left out reads muted in
- * sans, as "Unknown component" or "Deleted tag" when it has no name, with an empty swatch.
+ * sans, as "Unknown component" or "Deleted tag" when it has no name, with an empty swatch,
+ * and reads "Not in <repo>" beneath when it is only missing from the chart's repo.
  */
 export function SeriesLegend({
   series,
@@ -74,6 +77,11 @@ export function SeriesLegend({
               </span>
               {secondary ? (
                 <span className={cn("truncate text-xs text-muted-foreground", s.unknown ? "font-sans" : "font-mono")}>{secondary}</span>
+              ) : null}
+              {s.missingFrom ? (
+                <span className="truncate text-xs text-muted-foreground">
+                  Not in <span className="font-mono">{s.missingFrom}</span>
+                </span>
               ) : null}
             </span>
             {s.deprecatedOnly ? (

@@ -60,7 +60,7 @@ If the preview reads **Trends appear once these repos have been scanned more tha
 - A package narrows the search to itself. Its first row, **All of** and the package's name, adds the whole package, such as `@acme/icons`, as one series. Press **×** beside the package in the box to search everything again.
 - A component adds just that component, such as `Button` from `@acme/ui`. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
 
-With one repo picked under **Repos**, the list holds only what that repo uses or has used. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list at the top of the **Series** panel, or pick it in **Add a series** again.
+With one repo picked under **Repos**, the list holds only what that repo uses or has used. A component series you added before picking the repo greys out if that repo doesn't have the component, and reads, for example, **Not in checkout**: pick **All repos** or a repo that has it to chart it again. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list at the top of the **Series** panel, or pick it in **Add a series** again.
 
 ### Count only deprecated components
 
