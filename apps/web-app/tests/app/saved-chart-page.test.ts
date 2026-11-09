@@ -72,20 +72,32 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     vi.restoreAllMocks();
   });
 
-  it("shows an empty state when none of a chart's components can be found, and nothing extra when some can", async () => {
+  it("shows an empty state when none of a chart's components can be found, and says which series it leaves out and why when some can", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const button = componentKey(packageExport("@sample/core", "Button"));
+      const otherPanel = componentKey(repoDeclaration("repo-b", "src/panel.tsx", "Panel"));
       const missing = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: "v1-logical-id" }, { kind: "component", componentId: "v1-labelled-id", label: "Old button" }], chartType: "trend", metric: "count" });
-      const partly = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: "v1-logical-id" }, { kind: "component", componentId: button }], chartType: "trend", metric: "count" });
+      const partly = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: "v1-labelled-id", label: "Old button" }, { kind: "component", componentId: button }], chartType: "trend", metric: "count" });
+      const scoped = await renderSaved({ scope: { kind: "repo", repoId: "repo-a" }, cohorts: [{ kind: "component", componentId: otherPanel }, { kind: "component", componentId: button }], chartType: "trend", metric: "count" });
       const current = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: button }], chartType: "trend", metric: "count" });
       expect(propsOf(missing, "EmptyState")).toMatchObject({
         title: "Couldn't find the components in this chart.",
         description: "Edit the chart to pick them again.",
       });
       expect(propsOf(missing, "LinkedDashboardChart")).toBeUndefined();
+      expect(propsOf(missing, "LeftOutSeriesNotice")).toBeUndefined();
       expect(propsOf(partly, "EmptyState")).toBeUndefined();
-      expect(textOf(partly)).toBe(textOf(current));
+      expect(propsOf(partly, "LeftOutSeriesNotice")).toEqual({
+        series: [{ key: "component:v1-labelled-id", kind: "component", label: "Old button", reason: "missing" }],
+        repoId: null,
+        editHref: expect.stringMatching(/^\/charts\/[^/]+\/edit$/),
+      });
+      expect(propsOf(scoped, "LeftOutSeriesNotice")).toMatchObject({
+        series: [{ kind: "component", label: "Panel · @example/app-kit", reason: "elsewhere" }],
+        repoId: "repo-a",
+      });
+      expect(propsOf(current, "LeftOutSeriesNotice")).toBeUndefined();
     });
   });
 
