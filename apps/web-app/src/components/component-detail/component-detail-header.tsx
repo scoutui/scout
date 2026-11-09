@@ -1,6 +1,6 @@
 import { Fragment } from "react";
-import Link from "next/link";
-import { AlertTriangle, ChevronLeft } from "lucide-react";
+import { BackLink } from "@/components/ui/back-link";
+import { AlertTriangle } from "lucide-react";
 import type { ComponentDetail } from "@scoutui/web-shared";
 import { friendlyKind } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
@@ -12,13 +12,7 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
   return (
     <header className="space-y-2">
       <div className="text-xs text-muted-foreground">
-        <Link
-          href={`/repos/${encodeURIComponent(detail.repoId)}`}
-          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft aria-hidden className="size-3" />
-          <span className="font-mono">{detail.repoId}</span>
-        </Link>
+        <BackLink href={`/repos/${encodeURIComponent(detail.repoId)}`} code>{detail.repoId}</BackLink>
       </div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
         <h1 className="font-mono text-2xl font-semibold">{detail.displayName}</h1>

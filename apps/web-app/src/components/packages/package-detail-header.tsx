@@ -1,5 +1,6 @@
-import Link from "next/link";
-import { AlertTriangle, ChevronLeft } from "lucide-react";
+
+import { BackLink } from "@/components/ui/back-link";
+import { AlertTriangle } from "lucide-react";
 import type { PackageDetail, Tag } from "@scoutui/web-shared";
 import { plural } from "@scoutui/web-shared/client";
 import { frameworkLabel } from "@/lib/framework-label";
@@ -27,13 +28,7 @@ export function PackageDetailHeader({
   return (
     <header className="space-y-4">
       <div className="space-y-2">
-        <Link
-          href="/packages"
-          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft aria-hidden className="size-3" />
-          Packages
-        </Link>
+        <BackLink href="/packages">Packages</BackLink>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h1 className="font-mono text-2xl font-semibold">{detail.packageName}</h1>
           <span className="flex items-center gap-1.5">

@@ -1,5 +1,6 @@
-import Link from "next/link";
-import { AlertTriangle, ChevronLeft } from "lucide-react";
+
+import { BackLink } from "@/components/ui/back-link";
+import { AlertTriangle } from "lucide-react";
 import type { CrossRepoComponentDetail } from "@scoutui/web-shared";
 import { plural } from "@scoutui/web-shared/client";
 import { frameworkLabel } from "@/lib/framework-label";
@@ -16,13 +17,7 @@ export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponen
     <header className="space-y-4">
       <div className="space-y-2">
         {detail.packageName ? (
-          <Link
-            href={`/packages/${encodeURIComponent(detail.packageName)}`}
-            className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft aria-hidden className="size-3" />
-            <span className="font-mono">{detail.packageName}</span>
-          </Link>
+          <BackLink href={`/packages/${encodeURIComponent(detail.packageName)}`} code>{detail.packageName}</BackLink>
         ) : null}
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 className="font-mono text-2xl font-semibold">{detail.displayName}</h1>

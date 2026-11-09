@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { BackLink } from "@/components/ui/back-link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, CircleX } from "lucide-react";
+import { CircleX } from "lucide-react";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import { getPool } from "@/db/client";
 import { getStorage } from "@/lib/storage";
@@ -56,13 +57,7 @@ export default async function RepoScansPage({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Link
-          href={`/repos/${encodeURIComponent(repoId)}`}
-          className="inline-flex items-center gap-1 rounded-sm font-mono text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft aria-hidden className="size-3" />
-          {repoId}
-        </Link>
+        <BackLink href={`/repos/${encodeURIComponent(repoId)}`} code>{repoId}</BackLink>
         <h1 className="text-2xl font-semibold tracking-headline">
           Scan history
           <span className="ml-2 text-sm tabular-nums text-muted-foreground">

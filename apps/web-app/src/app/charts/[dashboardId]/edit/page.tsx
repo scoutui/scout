@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/ui/back-link";
 import { notFound } from "next/navigation";
 import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
@@ -48,16 +49,10 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Link href="/charts" className="transition-colors hover:text-foreground">
-          Charts
-        </Link>
-        <span aria-hidden>/</span>
-        <Link href={`/charts/${encodeURIComponent(dashboard.id)}`} className="max-w-[24rem] truncate transition-colors hover:text-foreground">
-          {dashboard.name}
-        </Link>
-        <span aria-hidden>/</span>
-        <span>Edit</span>
+      <div className="mb-2">
+        <BackLink href={`/charts/${encodeURIComponent(dashboard.id)}`}>
+          <span className="max-w-[24rem] truncate">{dashboard.name}</span>
+        </BackLink>
       </div>
       <h1 className="mb-6 text-2xl font-semibold tracking-headline">Edit chart</h1>
       <DashboardBuilder
