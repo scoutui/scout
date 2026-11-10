@@ -88,8 +88,8 @@ const config: Config = {
           "aria-label": "Scout on GitHub",
         },
         {
-          to: "/docs/tutorials/scan-your-first-repo",
-          label: "Get started",
+          href: "https://demo.scoutui.dev",
+          label: "Demo",
           position: "right",
           className: "navbar-cta",
         },
