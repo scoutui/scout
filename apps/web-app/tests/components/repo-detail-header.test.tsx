@@ -91,7 +91,7 @@ describe("RepoDetailHeader meta line and status row", () => {
         recentScans={[]}
       />,
     );
-    expect(screen.queryAllByText(/^react\b/)).toHaveLength(0);
+    expect(screen.queryAllByText(/^React\b/)).toHaveLength(0);
     rerender(
       <RepoDetailHeader
         detail={makeDetail({
@@ -103,8 +103,8 @@ describe("RepoDetailHeader meta line and status row", () => {
         recentScans={[]}
       />,
     );
-    expect(screen.queryAllByText(/^react\b/).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText(/^web components\b/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/^React\b/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/^Web component\b/).length).toBeGreaterThan(0);
   });
 
   it("labels an unknown framework by its own name, never as react", () => {
@@ -120,7 +120,7 @@ describe("RepoDetailHeader meta line and status row", () => {
       />,
     );
     // Exact match: the stripped name, never the raw "svelte-component" kind.
-    expect(screen.getByText("svelte")).toBeInTheDocument();
+    expect(screen.getByText("Svelte")).toBeInTheDocument();
     expect(screen.queryByText("svelte-component")).toBeNull();
     // The svelte row's own count, not folded into react's.
     expect(screen.getByText("5")).toBeInTheDocument();

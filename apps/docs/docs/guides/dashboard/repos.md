@@ -93,7 +93,7 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 Press the **scan** button in the header to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-On an older scan, the header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link and reads **not in the latest scan**. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
+On an older scan, the header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
 
 A link copied while you look at an older scan opens the same scan.
 

@@ -72,7 +72,7 @@ export default async function RepoDetailPage({
   return (
     <div className="space-y-6">
       {showOlderScanBanner ? (
-        <ViewingOlderScanBanner repoId={repoId} committedAt={detail.committedAt} arrivedAt={detail.arrivedAt} />
+        <ViewingOlderScanBanner repoId={repoId} committedAt={detail.committedAt} />
       ) : null}
       <RepoDetailHeader detail={detail} recentScans={recentScans} canOpenSettings={can(identity, "upload", { repoId })} />
       <ScanFindings findings={detail.findings} />

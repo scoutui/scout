@@ -2,8 +2,8 @@
 import { BackLink } from "@/components/ui/back-link";
 import { AlertTriangle } from "lucide-react";
 import type { PackageDetail, Tag } from "@scoutui/web-shared";
-import { plural } from "@scoutui/web-shared/client";
-import { frameworkLabel } from "@/lib/framework-label";
+import { friendlyKind, plural } from "@scoutui/web-shared/client";
+import { kindLabel } from "@/lib/component-facets";
 import { TagChips } from "@/components/tags/tag-chip";
 import { QuickTag } from "@/components/tags/quick-tag";
 import { versionRangeLabel } from "@/lib/version-order";
@@ -20,7 +20,7 @@ export function PackageDetailHeader({
   // A package is single-framework, so derive it once from its components and
   // show it here instead of repeating a uniform "Kind" column on every row.
   const frameworks = [...new Set(detail.components.map(c => c.kind))]
-    .map(frameworkLabel)
+    .map(kind => kindLabel(friendlyKind(kind)))
     .join(" · ");
 
   const versions = versionRangeLabel(detail.versionRange);
