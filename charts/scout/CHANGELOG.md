@@ -1,5 +1,9 @@
 # scout chart
 
+## 0.13.0
+
+- Run web app 0.9.0 by default.
+
 ## 0.12.0
 
 - New: `auth.guestView`, which lets anyone view the dashboard without signing in, read-only. Every repo on the dashboard becomes public, so it's off by default. People can still sign in at `/login`. It takes effect from web app 0.9.0.
