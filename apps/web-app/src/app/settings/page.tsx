@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { PeopleTable } from "@/components/settings/people-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getPool } from "@/db/client";
@@ -27,6 +28,7 @@ function removalLine({ actorEmail, repoId, commitSha }: Removal): string {
 
 export default async function SettingsPage() {
   const identity = await identify({ browser: true });
+  if (identity?.kind === "guest") redirect("/repos");
   if (identity?.kind !== "person" || !can(identity, "manage-people")) {
     return <EmptyState titleAs="h1" title="Only Admins can see settings. Ask an Admin for access." />;
   }

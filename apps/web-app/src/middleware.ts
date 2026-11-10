@@ -1,6 +1,7 @@
 import type { NextAuthRequest } from "next-auth";
 import { type NextFetchEvent, type NextMiddleware, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { guestViewEnabled } from "@/lib/access";
 import { contentSecurityPolicy, newNonce } from "@/lib/content-security-policy";
 
 /**
@@ -32,7 +33,7 @@ const middleware: NextMiddleware = auth(
     // The login page is open to everyone, otherwise the redirect below loops.
     if (pathname === "/login") return withContentSecurityPolicy(req);
 
-    if (!req.auth) {
+    if (!req.auth && !(guestViewEnabled() && !pathname.startsWith("/login/"))) {
       const loginUrl = new URL("/login", req.nextUrl.origin);
       const dest = req.nextUrl.pathname + req.nextUrl.search;
       // "/" already redirects to /repos, the default, so don't carry it.

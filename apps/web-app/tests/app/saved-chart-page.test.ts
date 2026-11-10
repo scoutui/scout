@@ -8,7 +8,7 @@ import type { PickableComponent } from "@/lib/chart-builder-series";
 import { artifact, component, packageExport, repoDeclaration, resolvedAt } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
 import { publishScan } from "../../src/lib/scan-projection.ts";
-import type { Person } from "../../src/lib/access.ts";
+import type { Identity, Person } from "../../src/lib/access.ts";
 import { withReadModelDatabase } from "../helpers/read-model-db.ts";
 
 const { DATABASE_URL: databaseUrl } = process.env;
@@ -17,7 +17,7 @@ let driver: StorageDriver;
 let database: Pool;
 let session: { user: { id: string } } | null = null;
 const editor: Person = { kind: "person", userId: "reader", email: "ana@example.com", name: null, role: "editor", roleSource: "people" };
-let reader = editor;
+let reader: Identity = editor;
 vi.mock("@/lib/storage", () => ({ getStorage: () => driver }));
 vi.mock("@/db/client", () => ({ getPool: () => database }));
 vi.mock("@/lib/identity", () => ({
@@ -314,6 +314,13 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       expect(textOf(theirs)).not.toContain("Secret rollout");
       expect(await generateMetadata({ params: Promise.resolve({ dashboardId: saved.id }) })).toEqual({ title: "Private chart" });
 
+      reader = { kind: "guest" };
+      const guests = await open();
+      expect(propsOf(guests, "LinkedDashboardChart")).toBeUndefined();
+      expect(propsOf(guests, "EmptyState")).toEqual({ titleAs: "h1", title: "This chart is private.", description: "Ask Ana Lopez to share it with everyone." });
+      expect(textOf(guests)).not.toContain("Secret rollout");
+      expect(await generateMetadata({ params: Promise.resolve({ dashboardId: saved.id }) })).toEqual({ title: "Private chart" });
+
       reader = { ...editor, userId: "someone-else", role: "admin" };
       const admins = await open();
       expect(propsOf(admins, "LinkedDashboardChart")).toBeDefined();
@@ -323,6 +330,12 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const everyone = await renderSaved(config, { createdByUserId: null });
       expect(textOf(everyone)).not.toContain("Created by");
       expect(propsOf(everyone, "ChartVisibilityLabel")).toEqual({ visibility: "everyone", mine: false });
+
+      reader = { kind: "guest" };
+      const shared = await renderSaved(config);
+      expect(propsOf(shared, "LinkedDashboardChart")).toBeDefined();
+      expect(propsOf(shared, "DeleteDashboardButton")).toBeUndefined();
+      expect(propsOf(shared, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null, exportSubmenu: true });
     });
   });
 

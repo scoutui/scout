@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { can, type Person, ROLE_NAMES } from "@/lib/access";
+import { can, type Identity, type Person, ROLE_NAMES } from "@/lib/access";
 import { cn } from "@/lib/utils";
 import { CURRENT_PAGE, isUnder } from "@/components/nav/top-tabs";
 import { type Theme, useTheme } from "@/components/theme/theme-provider";
@@ -31,27 +31,35 @@ function initials({ name, email }: Person): string {
   return letters.toUpperCase();
 }
 
-export function AccountMenu({ person }: { person: Person | null }) {
+export function AccountMenu({ identity }: { identity: Identity | null }) {
   const { theme, setTheme } = useTheme();
   const onSettings = isUnder(usePathname(), "/settings");
-  if (!person) return null;
+  if (identity?.kind !== "person" && identity?.kind !== "guest") return null;
+  const person = identity.kind === "person" ? identity : null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Account"
-        className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent"
+        className={cn(
+          "inline-flex h-8 items-center justify-center rounded-full border border-border bg-background text-xs font-medium text-foreground transition-colors hover:bg-accent",
+          person ? "w-8" : "px-3",
+        )}
       >
-        {initials(person)}
+        {person ? initials(person) : "Guest"}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-sm">
-            {person.name ? <p className="font-medium wrap-anywhere">{person.name}</p> : null}
-            <p className="text-muted-foreground wrap-anywhere">{person.email}</p>
-            <p className="text-muted-foreground">{ROLE_NAMES[person.role]}</p>
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        {person ? (
+          <>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-sm">
+                {person.name ? <p className="font-medium wrap-anywhere">{person.name}</p> : null}
+                <p className="text-muted-foreground wrap-anywhere">{person.email}</p>
+                <p className="text-muted-foreground">{ROLE_NAMES[person.role]}</p>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-label text-muted-foreground">Theme</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={theme} onValueChange={(value: Theme) => setTheme(value)}>
@@ -62,19 +70,23 @@ export function AccountMenu({ person }: { person: Person | null }) {
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          {can(person, "manage-people") ? (
-            <DropdownMenuLinkItem
-              closeOnClick
-              render={<Link href="/settings" aria-current={onSettings ? "page" : undefined} />}
-              className={cn(onSettings && CURRENT_PAGE)}
-            >
-              Settings
-            </DropdownMenuLinkItem>
-          ) : null}
-          <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>Sign out</DropdownMenuItem>
-        </DropdownMenuGroup>
+        {person ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {can(person, "manage-people") ? (
+                <DropdownMenuLinkItem
+                  closeOnClick
+                  render={<Link href="/settings" aria-current={onSettings ? "page" : undefined} />}
+                  className={cn(onSettings && CURRENT_PAGE)}
+                >
+                  Settings
+                </DropdownMenuLinkItem>
+              ) : null}
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>Sign out</DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -22,3 +22,6 @@ data:
   {{- with .Values.auth.adminGroup }}
   SCOUTUI_ADMIN_GROUP: {{ . | quote }}
   {{- end }}
+  {{- if .Values.auth.guestView }}
+  SCOUTUI_GUEST_VIEW: "true"
+  {{- end }}

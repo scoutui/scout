@@ -32,7 +32,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Set by the middleware with the page's Content-Security-Policy.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   const identity = await identify({ browser: true });
-  const person = identity?.kind === "person" ? identity : null;
   return (
     <html lang="en" className={monaSans.variable} suppressHydrationWarning>
       <head>
@@ -44,8 +43,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="font-sans antialiased">
         <ThemeProvider>
           <TopTabs
-            showGovernance={can(person, "edit")}
-            rightSlot={<AccountMenu person={person} />}
+            showGovernance={can(identity, "view")}
+            rightSlot={<AccountMenu identity={identity} />}
           />
           <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
             {/* Lets the page wait for its code inside a boundary while it hydrates, so React 19.2

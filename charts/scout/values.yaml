@@ -151,6 +151,9 @@ auth:
   # A group in your sign-in provider whose members are Admins, checked at each
   # browser sign-in.
   adminGroup: ""
+  # Lets anyone view the dashboard without signing in, read-only. Every repo on
+  # the dashboard becomes public. People can still sign in at /login.
+  guestView: false
 
 # Database connection.
 # When postgresql.enabled is true, host, port, user, name and the password

@@ -1,7 +1,7 @@
 "use client";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronRight, CircleCheck, Eye, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Radio } from "@base-ui/react/radio";
 import type {
@@ -178,6 +178,8 @@ function FieldError({ id, message }: { id: string; message: string | undefined }
 // ---------------------------------------------------------------------------
 
 interface GovernanceManagerProps {
+  /** False shows the records and counts without Add record or Edit. */
+  canEdit: boolean;
   records: GovernanceRecord[];
   sources: GovernanceTarget[];
   stats: Record<string, RecordStat>;
@@ -190,9 +192,9 @@ interface GovernanceManagerProps {
   sourcesUnavailable?: SkippedState | null | undefined;
 }
 
-export function GovernanceManager({ records, sources, stats, repoCount, summary, authors, notice, sourcesUnavailable }: GovernanceManagerProps) {
+export function GovernanceManager({ canEdit, records, sources, stats, repoCount, summary, authors, notice, sourcesUnavailable }: GovernanceManagerProps) {
   // With no records, the form opens straight away.
-  const [formOpen, setFormOpen] = useState(records.length === 0);
+  const [formOpen, setFormOpen] = useState(canEdit && records.length === 0);
   const [form, setForm] = useState<FormState>(emptyForm());
   // Only a form the user opens takes focus, not the one that opens on its own.
   const [focusForm, setFocusForm] = useState(false);
@@ -343,16 +345,27 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-3xl font-semibold tracking-display">Governance</h1>
-            <Button ref={addRecordRef} size="sm" onClick={openNew} disabled={formOpen && !form.id}>
-              <Plus />
-              Add record
-            </Button>
+            {canEdit ? (
+              <Button ref={addRecordRef} size="sm" onClick={openNew} disabled={formOpen && !form.id}>
+                <Plus />
+                Add record
+              </Button>
+            ) : null}
           </div>
           {summary ? <p className="text-xs tabular-nums text-muted-foreground">{summary}</p> : null}
         </div>
+        {canEdit ? null : (
+          <div className="flex min-w-0 items-start gap-2 rounded-md border border-border bg-accent/40 px-3 py-2 text-xs">
+            <Eye aria-hidden className="mt-px size-3.5 shrink-0 text-muted-foreground" />
+            <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p className="font-medium text-foreground">View only</p>
+              <p className="text-muted-foreground">Only Editors can add or change records and tags.</p>
+            </div>
+          </div>
+        )}
         {notice}
         <p className="max-w-prose text-sm text-muted-foreground">
-          Mark packages and components as replaced or retired. Each record marks the package or component as deprecated everywhere it appears.
+          Each record marks a package or component as replaced or retired. Its uses show as deprecated in every repo, and the record counts how many are left.
         </p>
       </header>
 
@@ -389,7 +402,7 @@ export function GovernanceManager({ records, sources, stats, repoCount, summary,
               completeOpen={completeOpen}
               onFold={setPackageOpen}
               onToggleComplete={() => setCompleteOpen((open) => !open)}
-              onEdit={openEdit}
+              onEdit={canEdit ? openEdit : null}
             />
           ) : null}
         </div>
@@ -441,7 +454,7 @@ function RecordTable({
   completeOpen: boolean;
   onFold: (packageName: string, open: boolean) => void;
   onToggleComplete: () => void;
-  onEdit: (record: GovernanceRecord) => void;
+  onEdit: ((record: GovernanceRecord) => void) | null;
 }) {
   const titleId = useId();
   const completeShown = searching || completeOpen;
@@ -458,7 +471,7 @@ function RecordTable({
         standalone={standalone}
         repoCount={repoCount}
         highlighted={row.record.id === highlightId}
-        onEdit={() => onEdit(row.record)}
+        onEdit={onEdit ? () => onEdit(row.record) : null}
       />
     );
 
@@ -524,7 +537,7 @@ function RecordTable({
               Uses left
             </th>
             <th scope="col" className={EDIT_CELL}>
-              <span className="sr-only">Edit</span>
+              {onEdit ? <span className="sr-only">Edit</span> : null}
             </th>
           </tr>
         </thead>
@@ -631,7 +644,7 @@ function RecordRow({
   standalone: boolean;
   repoCount: number;
   highlighted: boolean;
-  onEdit: () => void;
+  onEdit: (() => void) | null;
 }) {
   const { record, stat, componentCount, nextHop } = row;
   const name = rowName(record);
@@ -702,17 +715,19 @@ function RecordRow({
         />
       </td>
       <td className={cn(EDIT_CELL, "max-md:col-start-2 max-md:row-start-1 max-md:self-start")}>
-        <Button
-          id={editButtonId(record.id)}
-          variant="ghost"
-          size="icon-xs"
-          onClick={onEdit}
-          aria-label={`Edit ${name}`}
-          title="Edit"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Pencil strokeWidth={1.5} className="size-3.5" />
-        </Button>
+        {onEdit ? (
+          <Button
+            id={editButtonId(record.id)}
+            variant="ghost"
+            size="icon-xs"
+            onClick={onEdit}
+            aria-label={`Edit ${name}`}
+            title="Edit"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Pencil strokeWidth={1.5} className="size-3.5" />
+          </Button>
+        ) : null}
       </td>
     </tr>
   );

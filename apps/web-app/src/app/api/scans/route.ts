@@ -90,7 +90,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-  if (!identity) {
+  if (!identity || identity.kind === "guest") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!can(identity, "upload")) {
