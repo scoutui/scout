@@ -3,7 +3,7 @@ import Link from "@docusaurus/Link";
 import clsx from "clsx";
 import Code from "./Code";
 import { TriangleAlert } from "./Icons";
-import { DEPLOY_DASHBOARD, REPO_URL, SCAN_FIRST_REPO } from "./product";
+import { DEMO_URL, REPO_URL, SCAN_FIRST_REPO } from "./product";
 import shared from "./shared.module.css";
 import styles from "./Hero.module.css";
 
@@ -240,8 +240,8 @@ export default function Hero(): React.ReactElement {
                 <Link className={clsx(shared.button, shared.primary)} to={SCAN_FIRST_REPO}>
                   Scan your first repo
                 </Link>
-                <Link className={clsx(shared.button, shared.outline)} to={DEPLOY_DASHBOARD}>
-                  Deploy the dashboard
+                <Link className={clsx(shared.button, shared.outline)} to={DEMO_URL}>
+                  See the demo
                 </Link>
                 <Link className={clsx(shared.textLink, shared.github)} to={REPO_URL}>
                   GitHub
