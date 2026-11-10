@@ -826,7 +826,7 @@ describe("argument-site seeding: a component passed to a hook inside a body", ()
     expect(occs.map(exportOf).filter((e) => ["M", "shallowEqual", "pick", "config"].includes(e))).toEqual([]);
   });
 
-  it("a constant-case import passed to a hook seeds nothing; a component-named import beside it seeds", () => {
+  it("a constant-case import passed to a hook seeds nothing; a component-named import and a constant-case local component seed", () => {
     const occs = scan({
       "src/use-layout.ts": `
         import { useCssVar, useModalHolder } from "@example/ui";
@@ -837,8 +837,14 @@ describe("argument-site seeding: a component passed to a hook inside a body", ()
           return { height, modal };
         }
       `,
+      "src/Page.tsx": `
+        import { Modal, useModalHolder } from "@example/ui";
+        const CONFIRM_MODAL = () => <Modal />;
+        export const Page = () => { const [modal] = useModalHolder(CONFIRM_MODAL); return <div>{modal}</div>; };
+      `,
     });
-    expect(occs.filter((o) => o.viaChain.some((v) => v.kind === "passed-as-argument")).map(exportOf)).toEqual(["ConfirmModal"]);
+    const seededExports = occs.filter((o) => o.viaChain.some((v) => v.kind === "passed-as-argument")).map(exportOf);
+    expect(seededExports.sort()).toEqual(["CONFIRM_MODAL", "ConfirmModal"]);
   });
 });
 
