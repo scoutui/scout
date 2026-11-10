@@ -46,7 +46,7 @@ const record: GovernanceRecord = {
 
 function governance() {
   render(
-    <GovernanceManager
+    <GovernanceManager canEdit
       records={[record]}
       sources={[
         { packageName: "@example/old", exportName: "Button", occurrences: 3 },
@@ -96,7 +96,7 @@ describe("forms after the session has ended", () => {
   });
 
   it("tells the tag editor to sign in again to save or delete", async () => {
-    render(<TagsPanel allTags={[tag]} packageNames={[]} />);
+    render(<TagsPanel canEdit allTags={[tag]} packageNames={[]} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit core" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Your session has ended. Sign in again to save this tag.")).toBeInTheDocument();

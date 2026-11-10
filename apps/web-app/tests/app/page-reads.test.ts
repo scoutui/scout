@@ -64,7 +64,7 @@ function recordQueries(allowUsage = false) {
   };
 }
 
-type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown };
+type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown; authors?: Record<string, unknown> };
 
 /** A read of every component fact in a scan, not one component's. */
 const readsEveryComponent = (query: string) => /\bscan_component_facts\b/.test(query) && !/\bcomponent_id = \$2\b/.test(query);
@@ -350,11 +350,23 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
     });
   });
 
+  it("shows Governance to Viewers and guests without its edit controls or record authors, and to an Editor with them", async () => {
+    await withReadModelDatabase(async pool => {
+      await seed(pool);
+      await driver.createGovernance({ grain: "package", targetPackage: "@sample/core", targetExport: null, disposition: { kind: "retired", reason: "Retired" } });
+      const { default: page } = await import("@/app/governance/page");
+      for (const [who, canEdit] of [[{ ...editor, role: "viewer" }, false], [{ kind: "guest" }, false], [editor, true]] as const) {
+        reader = who;
+        const tree = await page();
+        const manager = propsFor(tree, "GovernanceManager");
+        expect(manager).toMatchObject({ canEdit, records: [expect.objectContaining({ targetPackage: "@sample/core" })] });
+        expect(Object.keys(manager?.authors ?? {}).length > 0).toBe(canEdit);
+        expect(propsFor(tree, "TagsPanel")).toMatchObject({ canEdit });
+      }
+    });
+  });
+
   it.each([
-    {
-      url: "/governance", page: "GovernanceManager", line: "Only Editors can see Governance. Ask an Admin for access.",
-      open: async () => (await import("@/app/governance/page")).default(),
-    },
     {
       url: "/charts/new", page: "DashboardBuilder", line: "Only Editors can make charts. Ask an Admin for access.",
       open: async () => (await import("@/app/charts/new/page")).default({ searchParams: Promise.resolve({}) }),

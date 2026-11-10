@@ -281,7 +281,7 @@ To let in only your own email domains, set `auth.oidc.allowedDomains` to them, s
 For a public demo, set `auth.guestView: true`. Anyone who isn't signed in can then view the dashboard, read-only.
 
 :::warning
-Guest view makes every repo on the dashboard public. Anyone who can reach its address sees every repo, package, component and scan, including the name or email address of whoever uploaded each scan, and every chart shared with everyone. Turn it on only for a dashboard that holds nothing private.
+Guest view makes every repo on the dashboard public. Anyone who can reach its address sees every repo, package, component and scan, including the name or email address of whoever uploaded each scan, every governance record and tag, and every chart shared with everyone. Turn it on only for a dashboard that holds nothing private.
 :::
 
 A visitor who isn't signed in sees **Guest** at the right of the top bar. They can't make or change charts, change governance or tags, or see charts that aren't shared with everyone. The dashboard shows them no sign-in link: people sign in at `/login`, such as `https://scout.example.com/login`.

@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="font-sans antialiased">
         <ThemeProvider>
           <TopTabs
-            showGovernance={can(identity, "edit")}
+            showGovernance={can(identity, "view")}
             rightSlot={<AccountMenu identity={identity} />}
           />
           <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">

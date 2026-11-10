@@ -14,9 +14,12 @@ const CELL = "px-3 py-2.5 align-middle max-md:py-0";
 const editButtonId = (tagId: string) => `edit-tag-${tagId}`;
 
 export function TagsPanel({
+  canEdit,
   allTags,
   packageNames,
 }: {
+  /** False shows the tags without Add tag or Edit. */
+  canEdit: boolean;
   allTags: Tag[];
   /** Null while scan results are rebuilding. */
   packageNames: string[] | null;
@@ -61,17 +64,19 @@ export function TagsPanel({
             {allTags.length.toLocaleString()} {allTags.length === 1 ? "tag" : "tags"}
           </span>
         ) : null}
-        <Button
-          ref={addTagRef}
-          variant="outline"
-          size="sm"
-          onClick={openNew}
-          disabled={creating || editingId !== null}
-          className="ml-auto self-center"
-        >
-          <Plus />
-          Add tag
-        </Button>
+        {canEdit ? (
+          <Button
+            ref={addTagRef}
+            variant="outline"
+            size="sm"
+            onClick={openNew}
+            disabled={creating || editingId !== null}
+            className="ml-auto self-center"
+          >
+            <Plus />
+            Add tag
+          </Button>
+        ) : null}
       </div>
       <p className="mt-1 mb-4 text-sm text-muted-foreground">
         Group packages by library for adoption charts and filtering.
@@ -95,7 +100,7 @@ export function TagsPanel({
                   Matches
                 </th>
                 <th scope="col" className={TH}>
-                  <span className="sr-only">Edit</span>
+                  {canEdit ? <span className="sr-only">Edit</span> : null}
                 </th>
               </tr>
             </thead>
@@ -119,7 +124,7 @@ export function TagsPanel({
                     onDeleted={() => closeForm()}
                   />
                 ) : (
-                  <TagRow key={tag.id} tag={tag} packageNames={packageNames} onEdit={() => openEdit(tag.id)} />
+                  <TagRow key={tag.id} tag={tag} packageNames={packageNames} onEdit={canEdit ? () => openEdit(tag.id) : null} />
                 ),
               )}
             </tbody>
@@ -130,7 +135,7 @@ export function TagsPanel({
   );
 }
 
-function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[] | null; onEdit: () => void }) {
+function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[] | null; onEdit: (() => void) | null }) {
   const matches = packageNames?.filter((n) => tagMatchesPackage(tag, n));
   const matchText = !matches ? (
     <span className="text-muted-foreground">No data</span>
@@ -156,17 +161,19 @@ function TagRow({ tag, packageNames, onEdit }: { tag: Tag; packageNames: string[
         {matchText}
       </td>
       <td className={cn(CELL, "text-right max-md:col-start-2 max-md:row-start-1")}>
-        <Button
-          id={editButtonId(tag.id)}
-          variant="ghost"
-          size="icon-xs"
-          onClick={onEdit}
-          aria-label={`Edit ${tag.value}`}
-          title="Edit"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Pencil strokeWidth={1.5} className="size-3.5" />
-        </Button>
+        {onEdit ? (
+          <Button
+            id={editButtonId(tag.id)}
+            variant="ghost"
+            size="icon-xs"
+            onClick={onEdit}
+            aria-label={`Edit ${tag.value}`}
+            title="Edit"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Pencil strokeWidth={1.5} className="size-3.5" />
+          </Button>
+        ) : null}
       </td>
     </tr>
   );
