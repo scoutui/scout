@@ -1,5 +1,29 @@
 # @scoutui/web-app
 
+## 0.9.0
+
+### Minor Changes
+
+- [#190](https://github.com/scoutui/scout/pull/190) [`d178731`](https://github.com/scoutui/scout/commit/d178731e0548b7c5959b221be26e2137c0613197) Thanks [@siggerzz](https://github.com/siggerzz)! - Adds a guest view, off by default. Set `SCOUTUI_GUEST_VIEW=true`, or `auth.guestView: true` in the Helm chart, to let anyone view the dashboard without signing in, read-only. Guests see repos, packages, components, governance and charts shared with everyone, and can't change anything. Turning it on makes every repo on the dashboard public. People still sign in at `/login`.
+
+  Viewers can now see the governance page too: its records, uses left and tags, without the controls to add or change them.
+
+- [#185](https://github.com/scoutui/scout/pull/185) [`c0238d8`](https://github.com/scoutui/scout/commit/c0238d8e1a65afc1d8a0580407409600f31e576e) Thanks [@siggerzz](https://github.com/siggerzz)! - The packages list, package pages and a component's page across repos now show the versions in use as a range, such as `3.1.0 – 4.2.0`, instead of a count or a version bar. The version bar and the coloured dots in the **Used in** tables are gone: they marked the highest version found in your scans, which isn't necessarily the newest one published. Sorting the **Used in** tables by **Version** now orders versions correctly, so `1.5.0` comes before `1.14.0`.
+
+  Chart pages now have the same back link above the title as other detail pages, in place of the `Charts / <chart name>` trail.
+
+  The **Repos** picker when building a chart, the role picker in settings and the dev sign-in role picker now open a menu in the dashboard's own style, and their arrow no longer sits against the edge.
+
+### Patch Changes
+
+- [#186](https://github.com/scoutui/scout/pull/186) [`b173e56`](https://github.com/scoutui/scout/commit/b173e568795defbbe9b6861b5c4366fda556ed5d) Thanks [@siggerzz](https://github.com/siggerzz)! - A saved chart that leaves out some of its series now says so above the chart, for example **2 series are left out · not in checkout**. Open the notice to see which series and how to get them back.
+
+- [#189](https://github.com/scoutui/scout/pull/189) [`6f3dfc7`](https://github.com/scoutui/scout/commit/6f3dfc7250aab84cb583d906ca554cb41889b1e7) Thanks [@siggerzz](https://github.com/siggerzz)! - Repo, package and component page headers name a component's type the way its badge and the **Type** filter do: **React**, **Vue**, **Web component** and **Undefined element**. A single web component's page no longer reads **web components**.
+
+- [#189](https://github.com/scoutui/scout/pull/189) [`6f3dfc7`](https://github.com/scoutui/scout/commit/6f3dfc7250aab84cb583d906ca554cb41889b1e7) Thanks [@siggerzz](https://github.com/siggerzz)! - A repo page showing an older scan says less: the notice reads **Viewing an older scan from 3 days ago.** without when the scan arrived, and the **Components** table drops the **not in the latest scan** label and the **0 uses** note beside **Added**. A row without a component page still has no link, and the **Uses** column still shows 0.
+
+- [#186](https://github.com/scoutui/scout/pull/186) [`b173e56`](https://github.com/scoutui/scout/commit/b173e568795defbbe9b6861b5c4366fda556ed5d) Thanks [@siggerzz](https://github.com/siggerzz)! - When building a chart scoped to one repo, a component series that repo doesn't have now reads, for example, **Not in checkout** under its name, so it no longer looks like a component the dashboard can't find.
+
 ## 0.8.0
 
 ### Minor Changes
