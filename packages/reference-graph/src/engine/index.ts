@@ -33,7 +33,7 @@ import { ownershipOf, resolveOwnerChain } from "./owner-resolution.js";
 import { createCycleGuard } from "./cycle-detection.js";
 import { compoundExportName, memberOfObjectPath } from "./member-identity.js";
 import { buildComponentRegistry, excludeFoldedHolders, excludeHostElementNames, entryKey, type ComponentRegistry, type FoldedHolder } from "./registry.js";
-import { hasOnlyHostElementNames, isHostElementName, HOOK_NAME } from "./host-element.js";
+import { hasOnlyHostElementNames, isConstantCaseName, isHostElementName, HOOK_NAME } from "./host-element.js";
 import { firstDynamicImport } from "./component-shape.js";
 import { creditedTerminals, isCallable, renderOutcome, type Evaluation, type Terminal } from "./denotation.js";
 
@@ -1232,8 +1232,10 @@ function registryTagged(registry: ComponentRegistry, graph: Graph, id: Component
  * rendered as a component, whatever it resolves to: an external leaf has
  * no shape to check and would otherwise synthesise a component out of any
  * import. The parser's held references and the roster naming gate apply the
- * same predicate (`isHostElementName`). A local identity declared in a React
- * file is seeded only when the registry's component judge accepts its
+ * same predicate (`isHostElementName`). An identifier in constant case
+ * (`useCssVar(CSS_VARIABLE_HEADER_HEIGHT)`, `isConstantCaseName`) is seeded
+ * only when it resolves to a local declaration. A local identity declared in
+ * a React file is seeded only when the registry's component judge accepts its
  * declaration (`registryHolds`).
  *
  * A call-valued argument is followed by what its own fold says
@@ -1273,6 +1275,7 @@ function pushCallArgumentOccurrences(
     const argSite: OccurrenceSite = { filePath, line: arg.ref.loc.line, column: arg.ref.loc.column, props: {}, events: [] };
     for (const ft of creditedTerminals(walkWithFolding(graph, fileGraph, arg, argMap))) {
       if (ft.identity === null) continue;
+      if (ft.identity.kind !== "local" && isConstantCaseName(arg.ref.symbol)) continue;
       const target = targetFromIdentity(ft.identity, unusedFallback, fileGraph.dialect, {
         filePath,
         resolveExternalLeaf: opts?.resolveExternalLeaf,

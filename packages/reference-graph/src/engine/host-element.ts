@@ -29,6 +29,17 @@ export function isHostElementName(name: string): boolean {
 }
 
 /**
+ * Constant case: upper-case letters and digits in two or more words joined by
+ * `_`, as in `MAX_SIZE` or `CSS_VARIABLE_HEADER_HEIGHT`. A single word such
+ * as `M` or `UI` is not constant case. Argument-site seeding skips such a
+ * name when no declaration can be checked (`pushCallArgumentOccurrences`,
+ * `engine/index.ts`). Not a JSX rule: `<MAX_SIZE />` still renders a binding.
+ */
+export function isConstantCaseName(name: string): boolean {
+  return /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$/.test(name);
+}
+
+/**
  * The "this declaration can never be rendered as a component" test:
  * every name it could be rendered under is a host-element name. Roster
  * membership calls it (`excludeHostElementNames`, `registry.ts`); owner

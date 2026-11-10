@@ -825,6 +825,21 @@ describe("argument-site seeding: a component passed to a hook inside a body", ()
     expect(seeded(occs)).toEqual([]);
     expect(occs.map(exportOf).filter((e) => ["M", "shallowEqual", "pick", "config"].includes(e))).toEqual([]);
   });
+
+  it("a constant-case import passed to a hook seeds nothing; a component-named import beside it seeds", () => {
+    const occs = scan({
+      "src/use-layout.ts": `
+        import { useCssVar, useModalHolder } from "@example/ui";
+        import { CSS_VARIABLE_HEADER_HEIGHT, ConfirmModal } from "@example/shared";
+        export function useLayout() {
+          const height = useCssVar(CSS_VARIABLE_HEADER_HEIGHT);
+          const [modal] = useModalHolder(ConfirmModal);
+          return { height, modal };
+        }
+      `,
+    });
+    expect(occs.filter((o) => o.viaChain.some((v) => v.kind === "passed-as-argument")).map(exportOf)).toEqual(["ConfirmModal"]);
+  });
 });
 
 describe("argument-site seeding: hook arguments resolve in the function's scope; the host-element name rule reaches the holder loop; a rendered hook product is credited once", () => {
