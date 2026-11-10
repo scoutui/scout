@@ -51,7 +51,7 @@
       "usage": "none",
       "props": {},
       "definition": {
-        "line": 4,
+        "line": 5,
         "column": 14
       },
       "owningPackage": "@workspace-exports/consumer",
@@ -63,6 +63,66 @@
         "renderedByCount": {},
         "isRootCount": 0,
         "isLeafCount": 0
+      }
+    },
+    {
+      "id": "cc066c033f3951c7",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-exports-resolution",
+        "filePath": "packages/consumer/src/App.tsx",
+        "exportName": "Badge"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "definition": {
+        "line": 6,
+        "column": 14
+      },
+      "owningPackage": "@workspace-exports/consumer",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "bf8f3d48f50867f1": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "bf8f3d48f50867f1",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "workspace-exports-resolution",
+        "filePath": "packages/icons/src/badge-set/index.tsx",
+        "exportName": "IcBadge"
+      },
+      "framework": "react",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "definition": {
+        "line": 1,
+        "column": 14
+      },
+      "owningPackage": "@example/icons",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "cc066c033f3951c7": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
       }
     },
     {
@@ -110,14 +170,14 @@
   ],
   "occurrences": [
     {
-      "occurrenceId": "c6e681df78ca1437",
+      "occurrenceId": "397aca4ef673b7de",
       "resolution": {
         "status": "resolved",
         "componentId": "9948bbe70d0f421e"
       },
       "filePath": "packages/consumer/src/App.tsx",
       "usedIn": "@workspace-exports/consumer",
-      "line": 4,
+      "line": 5,
       "column": 42,
       "credit": {
         "kind": "render"
@@ -136,6 +196,29 @@
         }
       },
       "ownerComponentId": "744883b021ba9fe8"
+    },
+    {
+      "occurrenceId": "a46530cab254668d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "bf8f3d48f50867f1"
+      },
+      "filePath": "packages/consumer/src/App.tsx",
+      "usedIn": "@workspace-exports/consumer",
+      "line": 6,
+      "column": 28,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/icons/badges",
+          "name": "IcBadge"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "cc066c033f3951c7"
     }
   ],
   "diagnostics": []

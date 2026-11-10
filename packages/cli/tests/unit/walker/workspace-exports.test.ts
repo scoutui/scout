@@ -67,15 +67,24 @@ describe("buildWorkspaceExportEntries: subpath exports", () => {
     expect(entries[1].targets).toEqual(["./icons/*.tsx"]);
   });
 
-  it("skips conditional-object subpath targets (member tail still emitted)", () => {
+  it("emits every string condition of a conditional subpath target, import/module/default first, then the rest in declaration order", () => {
     const graph = mkGraph([
       mkPkg("@example/x", "/repo/packages/x", {
-        exports: { "./a": { import: "./a.mjs", require: "./a.cjs" } },
+        exports: {
+          "./a": {
+            types: "./src/a.ts",
+            require: "./dist/a.cjs",
+            default: "./dist/a.mjs",
+            nested: { import: "./dist/nested.mjs" },
+            import: "./dist/a.js",
+          },
+        },
       }),
     ]);
     const entries = buildWorkspaceExportEntries(graph);
-    expect(entries).toHaveLength(2); // no subpath entry, just bare + wildcard
-    expect(entries[0].targets).toEqual([".", "./src"]);
+    expect(entries).toHaveLength(3); // subpath + bare + wildcard
+    expect(entries[0].pattern.test("@example/x/a")).toBe(true);
+    expect(entries[0].targets).toEqual(["./dist/a.js", "./dist/a.mjs", "./src/a.ts", "./dist/a.cjs"]);
   });
 
   it("skips null targets (Node deny form)", () => {
