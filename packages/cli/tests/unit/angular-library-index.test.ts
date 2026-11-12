@@ -181,6 +181,70 @@ describe("buildAngularLibraryIndex", () => {
     });
   });
 
+  describe("typings next to the JavaScript (an `exports` target with no `types` condition, as TypeScript resolves it)", () => {
+    const ionStyleTypings = {
+      "dist/standalone/index.d.ts": "export * from './directives/ion-item';\n",
+      "dist/standalone/index.js": "export {};\n",
+      "dist/standalone/directives/ion-item.d.ts": [
+        "import * as i0 from '@angular/core';",
+        "export declare class IonItem {",
+        '    static ɵcmp: i0.ɵɵComponentDeclaration<IonItem, "ion-item", never, { "button": { "alias": "button"; "required": false; }; }, {}, never, ["*"], true, never>;',
+        "}",
+        "",
+      ].join("\n"),
+      "dist/standalone/directives/ion-item.js": "export class IonItem {}\n",
+    };
+    // `@ionic/angular`'s shape: plain string targets, typings only via the root `typings` field and sibling `.d.ts` files.
+    const ionStylePackage = {
+      typings: "./dist/standalone/index.d.ts",
+      exports: { ".": "./dist/standalone/index.js", "./ion-item": "./dist/standalone/directives/ion-item.js" },
+    };
+
+    it("reads the root entry's `.d.ts` next to a plain string `exports` target", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(configDir, "@example/ion-style", ionStylePackage, ionStyleTypings);
+
+      const index = await build(configDir, ["@example/ion-style"]);
+
+      expect(index.components).toEqual([{ specifier: "@example/ion-style", exportName: "IonItem", selector: "ion-item", inputs: ["button"], outputs: [] }]);
+      expect(index.unreadable).toEqual([]);
+    });
+
+    it("reads a subpath entry's `.d.ts` next to its string target", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(configDir, "@example/ion-style", ionStylePackage, ionStyleTypings);
+
+      const index = await build(configDir, ["@example/ion-style/ion-item"]);
+
+      expect(index.components).toEqual([{ specifier: "@example/ion-style/ion-item", exportName: "IonItem", selector: "ion-item", inputs: ["button"], outputs: [] }]);
+      expect(index.unreadable).toEqual([]);
+    });
+
+    it("reads a `.d.mts` next to an `.mjs` condition target", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/mjs-style",
+        { exports: { ".": { import: "./index.mjs" } } },
+        {
+          "index.mjs": "export class ExChip {}\n",
+          "index.d.mts": [
+            "import * as i0 from '@angular/core';",
+            "export declare class ExChip {",
+            '    static ɵcmp: i0.ɵɵComponentDeclaration<ExChip, "ex-chip", never, {}, {}, never, never, true, never>;',
+            "}",
+            "",
+          ].join("\n"),
+        },
+      );
+
+      const index = await build(configDir, ["@example/mjs-style"]);
+
+      expect(index.components).toEqual([{ specifier: "@example/mjs-style", exportName: "ExChip", selector: "ex-chip", inputs: [], outputs: [] }]);
+      expect(index.unreadable).toEqual([]);
+    });
+  });
+
   describe("real problems (reported as unreadable, so the caller can warn about them)", () => {
     it("reports a declared but missing types file as unreadable", async () => {
       const configDir = await freshConfigDir();

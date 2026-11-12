@@ -63,6 +63,11 @@ describe("buildProviders", () => {
     });
   });
 
+  it("sends a state with the sign-in request as well as PKCE, because Okta rejects a request without one", () => {
+    const [provider] = buildProviders({ NODE_ENV: "production", ...OIDC });
+    expect(provider).toMatchObject({ checks: ["pkce", "state"] });
+  });
+
   it("allows the dev bypass to run without any OIDC config", () => {
     const env = { NODE_ENV: "development", DEV_AUTH_PASSWORD: "hunter2" };
     expect(() => buildProviders(env)).not.toThrow();
