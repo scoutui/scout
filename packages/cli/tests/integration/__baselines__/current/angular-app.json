@@ -314,6 +314,144 @@
       }
     },
     {
+      "id": "24b5d13158c62b8c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/const-array-scope/bare-page.component.ts",
+        "exportName": "ConstBarePageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 9,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "3fbbfeeafd818236": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "4528e2009b7ace4e",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/const-array-scope/partial-page.component.ts",
+        "exportName": "ConstPartialPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 14,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "3fbbfeeafd818236": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "2276a89c95344830",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/const-array-scope/spread-page.component.ts",
+        "exportName": "ConstSpreadPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 9,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "3fbbfeeafd818236": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "3fbbfeeafd818236",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/const-array-scope/widget.component.ts",
+        "exportName": "ConstWidgetComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 3,
+        "fileCount": 3
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 4,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "24b5d13158c62b8c": 1,
+          "4528e2009b7ace4e": 1,
+          "2276a89c95344830": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 3
+      }
+    },
+    {
       "id": "af3e0d568167857d",
       "identity": {
         "kind": "repository-declaration",
@@ -553,7 +691,7 @@
         "hasRest": false
       },
       "definition": {
-        "line": 18,
+        "line": 15,
         "column": 8
       },
       "owningPackage": "angular-app",
@@ -713,40 +851,6 @@
         "rendersByCount": {
           "81b316339f047835": 1,
           "1e2760229c78e2c6": 1
-        },
-        "renderedByCount": {},
-        "isRootCount": 0,
-        "isLeafCount": 0
-      }
-    },
-    {
-      "id": "3d5bd00dabdd5490",
-      "identity": {
-        "kind": "repository-declaration",
-        "repoId": "angular-app",
-        "filePath": "src/library-const-array/page.component.ts",
-        "exportName": "LibraryConstArrayPageComponent"
-      },
-      "framework": "angular",
-      "stats": {
-        "occurrenceCount": 0,
-        "fileCount": 0
-      },
-      "usage": "none",
-      "props": {},
-      "declared": {
-        "props": {},
-        "hasRest": false
-      },
-      "definition": {
-        "line": 9,
-        "column": 8
-      },
-      "owningPackage": "angular-app",
-      "version": null,
-      "composition": {
-        "rendersByCount": {
-          "53447e07e0715285": 1
         },
         "renderedByCount": {},
         "isRootCount": 0,
@@ -1072,6 +1176,74 @@
         },
         "isRootCount": 0,
         "isLeafCount": 1
+      }
+    },
+    {
+      "id": "feb4a1df3ce80c96",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/package-const-array/bare-page.component.ts",
+        "exportName": "PkgArrayBarePageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 10,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "09d6ae02c79d25f1": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "30ffbee7b04bf274",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/package-const-array/spread-page.component.ts",
+        "exportName": "PkgArraySpreadPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 10,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "09d6ae02c79d25f1": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
       }
     },
     {
@@ -1409,17 +1581,17 @@
       }
     },
     {
-      "id": "53447e07e0715285",
+      "id": "09d6ae02c79d25f1",
       "identity": {
         "kind": "package-export",
-        "packageName": "@example/ng-ui",
-        "publicEntry": "badge",
-        "exportName": "ExBadge"
+        "packageName": "@example/ng-imports",
+        "publicEntry": "",
+        "exportName": "ExampleBadge"
       },
       "framework": "angular",
       "stats": {
-        "occurrenceCount": 1,
-        "fileCount": 1
+        "occurrenceCount": 2,
+        "fileCount": 2
       },
       "usage": "direct",
       "props": {},
@@ -1427,10 +1599,11 @@
       "composition": {
         "rendersByCount": {},
         "renderedByCount": {
-          "3d5bd00dabdd5490": 1
+          "feb4a1df3ce80c96": 1,
+          "30ffbee7b04bf274": 1
         },
         "isRootCount": 0,
-        "isLeafCount": 1
+        "isLeafCount": 2
       }
     },
     {
@@ -1534,6 +1707,72 @@
       "ownerComponentId": "d54ade222f351af9"
     },
     {
+      "occurrenceId": "4c0c7ba1f45ba69c",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "3fbbfeeafd818236"
+      },
+      "filePath": "src/const-array-scope/bare-page.component.ts",
+      "line": 7,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./widget.component",
+          "name": "ConstWidgetComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "24b5d13158c62b8c"
+    },
+    {
+      "occurrenceId": "7380c687233c87e8",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "3fbbfeeafd818236"
+      },
+      "filePath": "src/const-array-scope/partial-page.component.ts",
+      "line": 12,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./widget.component",
+          "name": "ConstWidgetComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "4528e2009b7ace4e"
+    },
+    {
+      "occurrenceId": "054dfd17ec99c371",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "3fbbfeeafd818236"
+      },
+      "filePath": "src/const-array-scope/spread-page.component.ts",
+      "line": 7,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./widget.component",
+          "name": "ConstWidgetComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "2276a89c95344830"
+    },
+    {
       "occurrenceId": "9b6d8a4ee3b287b9",
       "resolution": {
         "status": "resolved",
@@ -1622,13 +1861,13 @@
       "ownerComponentId": "a16da6982113fdaf"
     },
     {
-      "occurrenceId": "7467a91a20ab5f67",
+      "occurrenceId": "85af51f929cd6e7c",
       "resolution": {
         "status": "resolved",
         "componentId": "209342e18a1d08fa"
       },
       "filePath": "src/imports-spread/imports-spread-page.component.ts",
-      "line": 14,
+      "line": 11,
       "column": 5,
       "credit": {
         "kind": "render"
@@ -1644,13 +1883,13 @@
       "ownerComponentId": "42c98e5f356f1b53"
     },
     {
-      "occurrenceId": "5ad305df64aabc90",
+      "occurrenceId": "cd916c86ee3c21a8",
       "resolution": {
         "status": "resolved",
         "componentId": "b40c0c54529104b5"
       },
       "filePath": "src/imports-spread/imports-spread-page.component.ts",
-      "line": 15,
+      "line": 12,
       "column": 5,
       "credit": {
         "kind": "render"
@@ -1756,28 +1995,6 @@
         }
       },
       "ownerComponentId": "4da1c363872c317d"
-    },
-    {
-      "occurrenceId": "22ee5e006cc02dfa",
-      "resolution": {
-        "status": "resolved",
-        "componentId": "53447e07e0715285"
-      },
-      "filePath": "src/library-const-array/page.component.ts",
-      "line": 7,
-      "column": 14,
-      "credit": {
-        "kind": "render"
-      },
-      "trace": [
-        {
-          "kind": "import",
-          "specifier": "@example/ng-ui/badge",
-          "name": "ExBadge"
-        }
-      ],
-      "props": {},
-      "ownerComponentId": "3d5bd00dabdd5490"
     },
     {
       "occurrenceId": "73824564c2fe5dc0",
@@ -1893,6 +2110,50 @@
       ],
       "props": {},
       "ownerComponentId": "901c5844e3e782db"
+    },
+    {
+      "occurrenceId": "ac4b38ed9654e088",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "09d6ae02c79d25f1"
+      },
+      "filePath": "src/package-const-array/bare-page.component.ts",
+      "line": 8,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-imports",
+          "name": "ExampleBadge"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "feb4a1df3ce80c96"
+    },
+    {
+      "occurrenceId": "e3f16ae28ef50f1d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "09d6ae02c79d25f1"
+      },
+      "filePath": "src/package-const-array/spread-page.component.ts",
+      "line": 8,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-imports",
+          "name": "ExampleBadge"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "30ffbee7b04bf274"
     },
     {
       "occurrenceId": "3a9ee79df9d336b6",

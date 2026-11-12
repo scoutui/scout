@@ -15,7 +15,8 @@
  *
  * An entry point is found through `package.json#exports[subpath].types`
  * (falling back to `types`/`typings` for the root entry, when there is no
- * `exports` map). A declaration may live in the entry file itself or be
+ * `exports` map, and to the `.d.ts` next to the target's JavaScript when the
+ * target has no `types` condition, as TypeScript does). A declaration may live in the entry file itself or be
  * re-exported from a "chunk" file the entry imports - as a re-export with a
  * source (`export { X } from './_x-chunk.js'`, `export * from './y.js'`), or
  * as a plain `export { X };` of a name the entry otherwise only `import`s
@@ -73,6 +74,14 @@ export type LibraryModule = {
  */
 export type LibraryDirective = { specifier: string; exportName: string; selector: string };
 
+/**
+ * Every class an indexed entry exports, whether or not it's an Angular
+ * declaration: what tells a class listed in a component's `imports` (a pipe, an
+ * attribute directive) apart from a name the index can't account for, such as
+ * a `const` array of imports a package exports.
+ */
+export type LibraryClass = { specifier: string; exportName: string };
+
 /** A requested specifier whose typings are broken in some way a user can fix, with a reason they can act on. Not used for a package that's simply missing or has no typings - see `buildAngularLibraryIndex`. */
 export type UnreadableLibrary = { specifier: string; reason: string };
 
@@ -80,6 +89,7 @@ export type AngularLibraryIndex = {
   components: LibraryComponent[];
   modules: LibraryModule[];
   directives: LibraryDirective[];
+  classes: LibraryClass[];
   unreadable: UnreadableLibrary[];
 };
 
@@ -101,6 +111,7 @@ export function buildAngularLibraryIndex(opts: { configDir: string; specifiers: 
     components: [],
     modules: [],
     directives: [],
+    classes: [],
     unreadable: [],
     unreadableSpecifiers: new Set(),
     indexedSpecifiers: new Set(),
@@ -110,7 +121,7 @@ export function buildAngularLibraryIndex(opts: { configDir: string; specifiers: 
   };
   const configDir = resolve(opts.configDir);
   for (const specifier of opts.specifiers) indexSpecifier(ctx, specifier, configDir);
-  return { components: ctx.components, modules: ctx.modules, directives: ctx.directives, unreadable: ctx.unreadable };
+  return { components: ctx.components, modules: ctx.modules, directives: ctx.directives, classes: ctx.classes, unreadable: ctx.unreadable };
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +134,7 @@ type Ctx = {
   components: LibraryComponent[];
   modules: LibraryModule[];
   directives: LibraryDirective[];
+  classes: LibraryClass[];
   unreadable: UnreadableLibrary[];
   unreadableSpecifiers: Set<string>;
   /** Specifiers already indexed (or attempted), so a cross-package reference is indexed once. */
@@ -174,6 +186,7 @@ function indexSpecifier(ctx: Ctx, specifier: string, fromDir: string): void {
   }
 
   for (const [exportName, { decl, file }] of entryExports) {
+    ctx.classes.push({ specifier, exportName });
     if (decl.kind === "component" && decl.selector !== undefined) {
       const merged = mergedInputsOutputs(ctx, decl, file, new Set());
       ctx.components.push({
@@ -478,7 +491,8 @@ function resolveEntryTypesPath(pkgDir: string, subpath: string): EntryResolution
   let typesRel: string | undefined;
   if (pkg.exports !== undefined && pkg.exports !== null && typeof pkg.exports === "object" && !Array.isArray(pkg.exports)) {
     const exportsMap = pkg.exports as Record<string, unknown>;
-    typesRel = typesFromTarget(exportsMap[key] ?? matchExportPattern(exportsMap, key));
+    const target = exportsMap[key] ?? matchExportPattern(exportsMap, key);
+    typesRel = typesFromTarget(target) ?? siblingTypesOf(pkgDir, codeFromTarget(target));
   } else if (subpath === "") {
     typesRel = typeof pkg.types === "string" ? pkg.types : typeof pkg.typings === "string" ? pkg.typings : undefined;
   }
@@ -528,6 +542,40 @@ function typesFromTarget(target: unknown): string | undefined {
   for (const condition of ["import", "module", "require", "default", "node"] as const) {
     const nested = typesFromTarget(obj[condition]);
     if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
+/** The JavaScript file an `exports` subpath target points at: a string target itself, or the first of `import`/`module`/`require`/`default`/`node` that has one. */
+function codeFromTarget(target: unknown): string | undefined {
+  if (typeof target === "string") return target;
+  if (target === null || typeof target !== "object" || Array.isArray(target)) return undefined;
+  const obj = target as ExportConditions;
+  for (const condition of ["import", "module", "require", "default", "node"] as const) {
+    const nested = codeFromTarget(obj[condition]);
+    if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
+const SIBLING_TYPES_EXTENSIONS: ReadonlyArray<readonly [string, string]> = [
+  [".js", ".d.ts"],
+  [".mjs", ".d.mts"],
+  [".cjs", ".d.cts"],
+];
+
+/**
+ * The `.d.ts` file next to `codeRel` (`./dist/index.js` -> `./dist/index.d.ts`)
+ * when it exists, as TypeScript finds typings for an `exports` target that
+ * has no `types` condition (`@ionic/angular` publishes its typings this way).
+ * Undefined when there's no such file.
+ */
+function siblingTypesOf(pkgDir: string, codeRel: string | undefined): string | undefined {
+  if (codeRel === undefined) return undefined;
+  for (const [codeExt, typesExt] of SIBLING_TYPES_EXTENSIONS) {
+    if (!codeRel.endsWith(codeExt)) continue;
+    const typesRel = codeRel.slice(0, -codeExt.length) + typesExt;
+    return existsSync(resolve(pkgDir, typesRel)) ? typesRel : undefined;
   }
   return undefined;
 }

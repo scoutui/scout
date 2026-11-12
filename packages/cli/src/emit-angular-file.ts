@@ -12,13 +12,32 @@ import {
   type SelectorIndex,
 } from "@scoutui/parser-angular";
 import type { DeclaredPropApi } from "@scoutui/scan-format";
-import type { AngularComponentDecl, AngularModuleDecl } from "./local-index/detect-angular.js";
+import type { AngularConstArray, AngularComponentDecl, AngularModuleDecl } from "./local-index/detect-angular.js";
 import type { AngularLibraryIndex } from "./scan/angular-library-index.js";
 import type { LocalDefinition } from "./local-index/types.js";
 import { errorMessage } from "./util/errors.js";
 
 /** A value import as the graph records it. */
 export type AngularImport = { specifier: string; imported: string; local: string };
+
+/**
+ * What the scan read of each parsed script, so a `const` array of imports
+ * (`export const ExampleButtonImports = [ExampleButton]`) can be followed to its
+ * members, and a name an import lands on can be told apart from a class that
+ * isn't a component (a directive or pipe).
+ */
+export type AngularScripts = ReadonlyMap<
+  string,
+  {
+    /** The imports this file's const arrays name their members through. */
+    imports: readonly AngularImport[];
+    arrays: ReadonlyMap<string, AngularConstArray>;
+    /** Every class declared at the top level. */
+    classes: ReadonlySet<string>;
+    /** Sources of its `export * from` lines. */
+    stars: readonly string[];
+  }
+>;
 
 /** One parsed Angular file, held until every file's selectors are known: a template names its components by selector, not by import. */
 export type PendingAngularFile = {
@@ -201,17 +220,27 @@ export type AngularModuleScopes = {
   isModule(key: string): boolean;
   /** Resolves an identifier written in `fromFile` to a stable key: `${graphKey}#${name}` for a repo file (through relative paths, aliases and re-exports), the bare name for an installed package, or undefined when a repo target isn't one of this scan's Angular files. */
   resolveRef(fromFile: PendingAngularFile, identifier: string): string | undefined;
+  /**
+   * The keys an `imports` entry written in `fromFile` stands for: `resolveRef`'s key for a class or module, every member of a const array
+   * (followed through spreads, nested arrays and other files), nothing for a repo class that is neither component nor module (a directive or pipe).
+   * `complete` is false when part of it can't be read.
+   */
+  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean };
 };
 
 export function buildModuleScopes(
   files: readonly PendingAngularFile[],
   resolver?: AngularRefResolver,
   library?: AngularLibraryIndex,
+  scripts?: AngularScripts,
 ): AngularModuleScopes {
   const byKey = new Map(files.map((f) => [f.graphKey, f]));
   const resolve = resolver ?? relativeOnly(byKey);
   // An installed library's NgModules, by the name they're exported under: what each makes available, by name.
   const libraryModules = new Map((library?.modules ?? []).map((m) => [m.exportName, m.exports.map((e) => e.exportName)]));
+  // Every class an installed entry exports, by `${specifier}#${exportName}`. Without an index (no compiler, or a caller
+  // that has none) a package import counts as read, as before.
+  const libraryClasses = library === undefined ? undefined : new Set(library.classes.map((c) => `${c.specifier}#${c.exportName}`));
 
   const resolveRef = (fromFile: PendingAngularFile, identifier: string): string | undefined => {
     const spec = fromFile.imports.find((i) => i.local === identifier);
@@ -219,6 +248,53 @@ export function buildModuleScopes(
     if (spec !== undefined && resolve(fromFile.graphKey, spec.specifier, spec.imported) === null) return spec.imported;
     const target = resolveRepoRef(fromFile.graphKey, fromFile.imports, identifier, byKey, resolve);
     return target?.file === undefined ? undefined : `${target.file.graphKey}#${target.name}`;
+  };
+
+  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean } => {
+    const keys: string[] = [];
+    let complete = true;
+    const seen = new Set<string>();
+    // True once `name` in `graphKey` is accounted for: a key it adds, a const array it expands, or a class that isn't a component or module.
+    const follow = (graphKey: string, imports: readonly AngularImport[], name: string): boolean => {
+      const spec = imports.find((i) => i.local === name);
+      let at = { graphKey, name };
+      if (spec !== undefined) {
+        const target = resolve(graphKey, spec.specifier, spec.imported);
+        // An installed package's export is matched by name. It counts as read only when the library index knows it
+        // as a class the package exports: anything else (a `const` array of imports in its typings, or a package the
+        // index didn't reach) may stand for components the scope can't see.
+        if (target === null) {
+          if (libraryClasses !== undefined && !libraryClasses.has(`${spec.specifier}#${spec.imported}`)) return false;
+          keys.push(spec.imported);
+          return true;
+        }
+        at = target;
+      }
+      const id = `${at.graphKey}#${at.name}`;
+      if (seen.has(id)) return true;
+      seen.add(id);
+      const script = scripts?.get(at.graphKey);
+      const array = script?.arrays.get(at.name);
+      if (array !== undefined) {
+        if (!array.complete) complete = false;
+        for (const member of array.members) if (!follow(at.graphKey, script?.imports ?? [], member)) complete = false;
+        return true;
+      }
+      const declaring = byKey.get(at.graphKey);
+      if (declaring?.components.some((c) => c.className === at.name) || declaring?.modules.some((m) => m.className === at.name)) {
+        keys.push(id);
+        return true;
+      }
+      if (script?.classes.has(at.name)) return true;
+      // A barrel that only re-exports: look for the name in what it re-exports.
+      for (const star of script?.stars ?? []) {
+        const next = resolve(at.graphKey, star, at.name);
+        if (next !== null && follow(next.graphKey, [], next.name)) return true;
+      }
+      return false;
+    };
+    if (!follow(fromFile.graphKey, fromFile.imports, identifier)) complete = false;
+    return { keys, complete };
   };
 
   type ModuleEntry = { module: AngularModuleDecl; file: PendingAngularFile };
@@ -281,52 +357,56 @@ export function buildModuleScopes(
     exportedBy,
     isModule: (key) => modules.has(key) || libraryModules.has(key),
     resolveRef,
+    resolveImports,
   };
 }
 
 /**
- * The file-qualified keys a component's template can use, or null when the
- * scan can't tell (including when any `imports`/`declarations`/`exports`
- * list it would need is incomplete — see `AngularComponentDecl.importsComplete`)
- * and every selector in the repo is a candidate. A standalone component sees
- * what its `imports` list names (and the exports of modules listed there); a
- * component declared in an NgModule sees that module's declarations and the
- * exports of the modules it imports.
+ * The file-qualified keys a component's template can use. A standalone
+ * component sees what its `imports` list names (and the exports of modules
+ * listed there); a component declared in an NgModule sees that module's
+ * declarations and the exports of the modules it imports.
+ *
+ * `complete` is false when part of that can't be read (an `imports`,
+ * `declarations` or `exports` list with an entry that isn't a plain name, or a
+ * name no file in the repo declares). `visible` then holds only what could be read,
+ * and an element nothing in it matches may still come from the part that
+ * couldn't, so it is matched against every component in the repo instead.
+ * A standalone component with an empty `imports` list is treated as unreadable
+ * too: the scan can't tell it from a component whose list was lost.
  */
-function templateScope(c: AngularComponentDecl, file: PendingAngularFile, scopes: AngularModuleScopes): ReadonlySet<string> | null {
+function templateScope(c: AngularComponentDecl, file: PendingAngularFile, scopes: AngularModuleScopes): { visible: ReadonlySet<string>; complete: boolean } {
   const visible = new Set<string>();
   let complete = true;
   const addImports = (fromFile: PendingAngularFile, names: readonly string[]) => {
     for (const name of names) {
-      const key = scopes.resolveRef(fromFile, name);
-      if (key === undefined) {
-        complete = false;
-        continue;
-      }
-      if (scopes.isModule(key)) {
-        const exported = scopes.exportedBy(key);
-        if (exported === null) {
-          complete = false;
-          continue;
+      const resolved = scopes.resolveImports(fromFile, name);
+      if (!resolved.complete) complete = false;
+      for (const key of resolved.keys) {
+        if (scopes.isModule(key)) {
+          const exported = scopes.exportedBy(key);
+          if (exported === null) {
+            complete = false;
+            continue;
+          }
+          for (const e of exported) visible.add(e);
+        } else {
+          visible.add(key);
         }
-        for (const e of exported) visible.add(e);
-      } else {
-        visible.add(key);
       }
     }
   };
 
   if (c.standalone) {
-    if (!c.importsComplete || c.imports.length === 0) return null;
     addImports(file, c.imports);
     visible.add(`${file.graphKey}#${c.className}`);
-    return complete ? visible : null;
+    return { visible, complete: complete && c.importsComplete && c.imports.length > 0 };
   }
 
   const found = scopes.declaringModule(`${file.graphKey}#${c.className}`);
-  if (found === undefined) return null;
+  if (found === undefined) return { visible, complete: false };
   const { module, file: moduleFile } = found;
-  if (!module.declarationsComplete || !module.importsComplete) return null;
+  if (!module.declarationsComplete || !module.importsComplete) complete = false;
   for (const d of module.declarations) {
     const key = scopes.resolveRef(moduleFile, d);
     if (key === undefined) {
@@ -336,7 +416,7 @@ function templateScope(c: AngularComponentDecl, file: PendingAngularFile, scopes
     visible.add(key);
   }
   addImports(moduleFile, module.imports);
-  return complete ? visible : null;
+  return { visible, complete };
 }
 
 function relativeSpecifier(fromGraphKey: string, toGraphKey: string): string {
@@ -420,7 +500,7 @@ export function emitAngularFile(opts: {
       builder = opts.templateBuilders.get(template.graphKey) ?? opts.graphBuilder.beginFile(template.graphKey, "angular");
       opts.templateBuilders.set(template.graphKey, builder);
     }
-    const scope = templateScope(c, file, opts.scopes);
+    const { visible, complete } = templateScope(c, file, opts.scopes);
     emitAngularTemplate({
       compiler,
       template: template.source,
@@ -432,7 +512,9 @@ export function emitAngularFile(opts: {
       // Repo entries compare by their file-qualified key, same as the scope
       // set holds them; a package entry still matches by name alone (no
       // library index yet to qualify it with).
-      inScope: (entry) => scope === null || scope.has(entry.source.type === "file" ? `${entry.source.graphKey}#${entry.exportName}` : entry.exportName),
+      inScope: (entry) => visible.has(entry.source.type === "file" ? `${entry.source.graphKey}#${entry.exportName}` : entry.exportName),
+      // An element nothing readable matches may come from what the scan couldn't read: it falls back to every component in the repo.
+      scopeIsPartial: !complete,
       resolveLocal,
       onTemplateError: (message) => opts.onTemplateError(template.graphKey, message),
       // A class several entry points re-export: the entry this file imports from, else the first by name.

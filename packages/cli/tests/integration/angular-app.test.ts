@@ -270,7 +270,9 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
 
     it("reports the ambiguity as a diagnostic naming both candidates, instead of guessing one", () => {
-      const diag = out.diagnostics?.find((d) => (d as { code?: string }).code === "angular-selector-ambiguous");
+      const diag = out.diagnostics?.find(
+        (d) => (d as { code?: string }).code === "angular-selector-ambiguous" && (d as { tagName?: string }).tagName === "app-thing",
+      );
       expect(diag).toMatchObject({
         tagName: "app-thing",
         candidates: [
@@ -325,18 +327,13 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     const spreadButton = local(S, "spread-button.component.ts", "SpreadButtonComponent");
     const page = local(S, "imports-spread-page.component.ts", "ImportsSpreadPageComponent");
 
-    // `imports: [SpreadCardComponent, ...SHARED_UI]` can't be fully read (the
-    // spread's contents aren't known to the detector), so the component's
-    // template scope falls back to global - the same way an empty `imports`
-    // list does - instead of only seeing SpreadCardComponent and silently
-    // dropping SpreadButtonComponent, which SHARED_UI (in another file)
-    // holds. SpreadCardComponent proves the already-working case still
-    // works; SpreadButtonComponent proves the entry the spread hid is no
-    // longer dropped.
+    // `imports: [SpreadCardComponent, ...SHARED_UI]`: the scope is
+    // SpreadCardComponent plus every member of SHARED_UI, a const array in
+    // another file that holds SpreadButtonComponent.
     it("resolves both the plainly-imported component and the one only reachable through the spread", () => {
       expect(rendersIn(S)).toEqual([
-        row("imports-spread-page.component.ts:14:5", card, page, [imported("./card.component", "SpreadCardComponent")]),
-        row("imports-spread-page.component.ts:15:5", spreadButton, page, [imported("./spread-button.component", "SpreadButtonComponent")]),
+        row("imports-spread-page.component.ts:11:5", card, page, [imported("./card.component", "SpreadCardComponent")]),
+        row("imports-spread-page.component.ts:12:5", spreadButton, page, [imported("./spread-button.component", "SpreadButtonComponent")]),
       ]);
     });
   });
@@ -351,6 +348,51 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
       expect(rendersIn(S)).toEqual([
         row("page.component.ts:7:14", pkg("@example/ng-ui", "badge", "ExBadge"), page, [imported("@example/ng-ui/badge", "ExBadge")]),
       ]);
+    });
+  });
+
+  describe("const-array-scope", () => {
+    const S = "const-array-scope";
+    const widget = local(S, "widget.component.ts", "ConstWidgetComponent");
+    const widgetImport = imported("./widget.component", "ConstWidgetComponent");
+
+    // `imports` names constants that hold the classes (a bare name, a spread,
+    // a nested constant), or has an entry the scan can't read. The scope is
+    // what those hold, so the same-selector decoy that no page imports never
+    // makes the use ambiguous.
+    it("resolves <app-const-widget> within the scope a const array of imports gives, bare or spread", () => {
+      expect(rendersIn(S)).toEqual([
+        row("bare-page.component.ts:7:14", widget, local(S, "bare-page.component.ts", "ConstBarePageComponent"), [widgetImport]),
+        row("partial-page.component.ts:12:14", widget, local(S, "partial-page.component.ts", "ConstPartialPageComponent"), [widgetImport]),
+        row("spread-page.component.ts:7:14", widget, local(S, "spread-page.component.ts", "ConstSpreadPageComponent"), [widgetImport]),
+      ]);
+    });
+
+    it("reports no ambiguity for the decoy's selector", () => {
+      const ambiguous = (out.diagnostics ?? []).filter((d) => (d as { code?: string }).code === "angular-selector-ambiguous");
+      expect(ambiguous.filter((d) => (d as { tagName?: string }).tagName === "app-const-widget")).toEqual([]);
+    });
+  });
+
+  describe("package-const-array", () => {
+    const S = "package-const-array";
+    const badge = pkg("@example/ng-imports", "", "ExampleBadge");
+    const badgeImport = imported("@example/ng-imports", "ExampleBadge");
+
+    // `@example/ng-imports` exports `ExampleImports`, a const array its typings
+    // declare but don't spell out. The scope can't read what it holds, so it
+    // is partial, not complete-and-empty: the package's own <ex-badge> is
+    // still found, bare or spread, instead of being dropped as out of scope.
+    it("resolves <ex-badge> when a page lists a const array the package exports, bare or spread", () => {
+      expect(rendersIn(S)).toEqual([
+        row("bare-page.component.ts:8:14", badge, local(S, "bare-page.component.ts", "PkgArrayBarePageComponent"), [badgeImport]),
+        row("spread-page.component.ts:8:14", badge, local(S, "spread-page.component.ts", "PkgArraySpreadPageComponent"), [badgeImport]),
+      ]);
+    });
+
+    it("reports no <ex-badge> as out of scope", () => {
+      const outOfScope = (out.diagnostics ?? []).filter((d) => (d as { code?: string }).code === "angular-not-in-scope");
+      expect(outOfScope.filter((d) => (d as { tagName?: string }).tagName === "ex-badge")).toEqual([]);
     });
   });
 
@@ -458,6 +500,10 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/decorator-io/decorator-io-page.component.ts",
           "src/decorator-io/toggle.component.ts",
           "src/alias-import/alias-page.component.ts",
+          "src/const-array-scope/bare-page.component.ts",
+          "src/const-array-scope/partial-page.component.ts",
+          "src/const-array-scope/spread-page.component.ts",
+          "src/const-array-scope/widget.component.ts",
           "src/alias-import/shared/components/alias-badge.component.ts",
           "src/library-components/app.component.ts",
           "src/library-const-array/page.component.ts",
@@ -475,6 +521,8 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/ng-content-projection/projection-page.component.ts",
           "src/ng-module-scope/panel.component.ts",
           "src/ng-module-scope/widget.component.ts",
+          "src/package-const-array/bare-page.component.ts",
+          "src/package-const-array/spread-page.component.ts",
           "src/signal-io/counter.component.ts",
           "src/signal-io/signal-io-page.component.ts",
           "src/standalone-import/app.component.ts",

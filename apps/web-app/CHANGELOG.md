@@ -1,5 +1,11 @@
 # @scoutui/web-app
 
+## 0.9.1
+
+### Patch Changes
+
+- [#202](https://github.com/scoutui/scout/pull/202) [`cfb439b`](https://github.com/scoutui/scout/commit/cfb439ba083b6261e54d61fa052a28bd433804ca) Thanks [@siggerzz](https://github.com/siggerzz)! - Fix: browser sign-in now sends a `state` to your sign-in provider as well as PKCE. Providers that require one, such as Okta, rejected the sign-in without it, and the dashboard showed `OAuthCallbackError`.
+
 ## 0.9.0
 
 ### Minor Changes
