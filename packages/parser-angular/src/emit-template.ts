@@ -62,9 +62,11 @@ function packageNameOf(specifier: string): string {
 }
 
 /**
- * Collapses matches that are one library class re-exported by several entry
- * points of its package: same package, same export name, same selector. Two
- * different components that share a selector stay separate.
+ * Collapses matches that are one library class reached more than once: by
+ * several entry points of its package, or under several export names (such
+ * as `NgIcon` and `NgIcon as NgIconComponent`). Same package, same declared
+ * class and same selector; an entry without a known class falls back to its
+ * export name. Two different components that share a selector stay separate.
  */
 function collapseReexports(matches: readonly ElementMatch[], choose: (group: readonly ElementMatch[]) => ElementMatch): ElementMatch[] {
   const groups = new Map<string, ElementMatch[]>();
@@ -72,7 +74,7 @@ function collapseReexports(matches: readonly ElementMatch[], choose: (group: rea
   for (const m of matches) {
     const key =
       m.entry.source.type === "package"
-        ? `${packageNameOf(m.entry.source.specifier)}#${m.entry.exportName}#${m.selector}`
+        ? `${packageNameOf(m.entry.source.specifier)}#${m.entry.declaredAs ? `${m.entry.declaredAs.file}#${m.entry.declaredAs.className}` : m.entry.exportName}#${m.selector}`
         : `file:${m.entry.source.graphKey}#${m.entry.exportName}`;
     const group = groups.get(key);
     if (group === undefined) {
@@ -88,8 +90,14 @@ function collapseReexports(matches: readonly ElementMatch[], choose: (group: rea
   });
 }
 
+/** The default entry for a collapsed class: first by specifier, then the name the class is declared under, then export name. */
 const firstBySpecifier = (group: readonly ElementMatch[]): ElementMatch =>
-  [...group].sort((a, b) => specifierOf(a).localeCompare(specifierOf(b)))[0] as ElementMatch;
+  [...group].sort(
+    (a, b) =>
+      specifierOf(a).localeCompare(specifierOf(b)) ||
+      Number(b.entry.exportName === b.entry.declaredAs?.className) - Number(a.entry.exportName === a.entry.declaredAs?.className) ||
+      a.entry.exportName.localeCompare(b.entry.exportName),
+  )[0] as ElementMatch;
 const specifierOf = (m: ElementMatch) => (m.entry.source.type === "package" ? m.entry.source.specifier : m.entry.source.graphKey);
 
 type TmplNode = { [key: string]: unknown };

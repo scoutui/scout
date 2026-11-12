@@ -162,7 +162,7 @@ export function buildAngularSelectorIndex(
   for (const c of library?.components ?? []) {
     components.push({
       selector: c.selector,
-      entry: { source: { type: "package", specifier: c.specifier }, exportName: c.exportName, inputs: c.inputs, outputs: c.outputs },
+      entry: { source: { type: "package", specifier: c.specifier }, exportName: c.exportName, declaredAs: c.declaredAs, inputs: c.inputs, outputs: c.outputs },
     });
   }
   for (const file of files) {
@@ -435,11 +435,20 @@ export function emitAngularFile(opts: {
       inScope: (entry) => scope === null || scope.has(entry.source.type === "file" ? `${entry.source.graphKey}#${entry.exportName}` : entry.exportName),
       resolveLocal,
       onTemplateError: (message) => opts.onTemplateError(template.graphKey, message),
-      // A class several entry points re-export: the entry this file imports from, else the first by name.
+      // One library class reached through several entry points or export names: the entry this file imports
+      // (by specifier, then by name), else the one named for the class's own declaration, else the first by label.
       chooseEntry: (group) => {
-        const imported = new Set(file.imports.map((i) => i.specifier));
-        const sorted = [...group].sort((a, b) => entryLabel(a.entry).localeCompare(entryLabel(b.entry)));
-        return sorted.find((m) => m.entry.source.type === "package" && imported.has(m.entry.source.specifier)) ?? (sorted[0] as ElementMatch);
+        const imports = file.imports;
+        const rank = (m: ElementMatch) => {
+          const src = m.entry.source;
+          if (src.type !== "package") return 3;
+          const fromHere = imports.filter((i) => i.specifier === src.specifier);
+          if (fromHere.some((i) => i.imported === m.entry.exportName)) return 0;
+          if (fromHere.length > 0) return 1;
+          return m.entry.declaredAs?.className === m.entry.exportName ? 2 : 3;
+        };
+        const sorted = [...group].sort((a, b) => rank(a) - rank(b) || entryLabel(a.entry).localeCompare(entryLabel(b.entry)));
+        return sorted[0] as ElementMatch;
       },
       onAmbiguous: (tagName, loc, matches: readonly ElementMatch[]) =>
         opts.onAmbiguous({ filePath: template.graphKey, line: loc.line, column: loc.column, tagName, candidates: matches.map((m) => entryLabel(m.entry)) }),
