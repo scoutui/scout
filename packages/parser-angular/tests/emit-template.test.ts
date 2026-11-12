@@ -83,6 +83,15 @@ describe("emitAngularTemplate: matching elements to components", () => {
     expect(emit(template).uses).toEqual([]);
   });
 
+  test("keeps an unknown element as a tag use when only an attribute-only directive matches it", () => {
+    const { uses } = emit('<ex-item exLink="/x">Go</ex-item>', { directives: ["[exLink]"] });
+    expect(uses.map((u) => (u.kind === "tag" ? u.tagName : u.symbol))).toEqual(["ex-item"]);
+  });
+
+  test("an element-part directive selector with attributes still claims its tag", () => {
+    expect(emit('<ex-item exLink="/x">Go</ex-item>', { directives: ["ex-item[exLink]"] }).uses).toEqual([]);
+  });
+
   test("records no custom element for an element a directive's selector matches", () => {
     expect(emit("<ex-hint>Shown below</ex-hint><span exHint>x</span>", { directives: ["ex-hint, [exHint]"] }).uses).toEqual([]);
   });

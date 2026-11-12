@@ -15,7 +15,8 @@
  *
  * An entry point is found through `package.json#exports[subpath].types`
  * (falling back to `types`/`typings` for the root entry, when there is no
- * `exports` map). A declaration may live in the entry file itself or be
+ * `exports` map, and to the `.d.ts` next to the target's JavaScript when the
+ * target has no `types` condition, as TypeScript does). A declaration may live in the entry file itself or be
  * re-exported from a "chunk" file the entry imports - as a re-export with a
  * source (`export { X } from './_x-chunk.js'`, `export * from './y.js'`), or
  * as a plain `export { X };` of a name the entry otherwise only `import`s
@@ -478,7 +479,8 @@ function resolveEntryTypesPath(pkgDir: string, subpath: string): EntryResolution
   let typesRel: string | undefined;
   if (pkg.exports !== undefined && pkg.exports !== null && typeof pkg.exports === "object" && !Array.isArray(pkg.exports)) {
     const exportsMap = pkg.exports as Record<string, unknown>;
-    typesRel = typesFromTarget(exportsMap[key] ?? matchExportPattern(exportsMap, key));
+    const target = exportsMap[key] ?? matchExportPattern(exportsMap, key);
+    typesRel = typesFromTarget(target) ?? siblingTypesOf(pkgDir, codeFromTarget(target));
   } else if (subpath === "") {
     typesRel = typeof pkg.types === "string" ? pkg.types : typeof pkg.typings === "string" ? pkg.typings : undefined;
   }
@@ -528,6 +530,40 @@ function typesFromTarget(target: unknown): string | undefined {
   for (const condition of ["import", "module", "require", "default", "node"] as const) {
     const nested = typesFromTarget(obj[condition]);
     if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
+/** The JavaScript file an `exports` subpath target points at: a string target itself, or the first of `import`/`module`/`require`/`default`/`node` that has one. */
+function codeFromTarget(target: unknown): string | undefined {
+  if (typeof target === "string") return target;
+  if (target === null || typeof target !== "object" || Array.isArray(target)) return undefined;
+  const obj = target as ExportConditions;
+  for (const condition of ["import", "module", "require", "default", "node"] as const) {
+    const nested = codeFromTarget(obj[condition]);
+    if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
+const SIBLING_TYPES_EXTENSIONS: ReadonlyArray<readonly [string, string]> = [
+  [".js", ".d.ts"],
+  [".mjs", ".d.mts"],
+  [".cjs", ".d.cts"],
+];
+
+/**
+ * The `.d.ts` file next to `codeRel` (`./dist/index.js` -> `./dist/index.d.ts`)
+ * when it exists, as TypeScript finds typings for an `exports` target that
+ * has no `types` condition (`@ionic/angular` publishes its typings this way).
+ * Undefined when there's no such file.
+ */
+function siblingTypesOf(pkgDir: string, codeRel: string | undefined): string | undefined {
+  if (codeRel === undefined) return undefined;
+  for (const [codeExt, typesExt] of SIBLING_TYPES_EXTENSIONS) {
+    if (!codeRel.endsWith(codeExt)) continue;
+    const typesRel = codeRel.slice(0, -codeExt.length) + typesExt;
+    return existsSync(resolve(pkgDir, typesRel)) ? typesRel : undefined;
   }
   return undefined;
 }

@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.4.1
+
+### Patch Changes
+
+- [#193](https://github.com/scoutui/scout/pull/193) [`103a46c`](https://github.com/scoutui/scout/commit/103a46cad3398352a3bef8c31b834abedb323701) Thanks [@siggerzz](https://github.com/siggerzz)! - Imports through a workspace package's `exports` subpath that lists conditions, such as `"./constants": { "types": "./src/constants/index.ts", "default": "./dist/constants/index.mjs" }`, now resolve to the file the first existing condition names. Before, the scan skipped these subpaths. A component imported this way is now listed as defined in your repo, at the file that declares it, rather than as a package export with no file. A value that isn't a component, such as a constant passed to a hook, is no longer reported as a component.
+
 ## 0.4.0
 
 ### Minor Changes

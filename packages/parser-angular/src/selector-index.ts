@@ -25,7 +25,7 @@ type ElementShape = { name: string; attributes: readonly string[]; classNames: r
 export type SelectorIndex = {
   /** Every distinct component whose selector matches the element. */
   match(element: ElementShape): ElementMatch[];
-  /** Whether a directive's selector matches the element: Angular owns it, so it is no custom element. */
+  /** Whether a directive's selector, one with an element part, matches the element: Angular owns it, so it is no custom element. Attribute- or class-only directive selectors never claim the tag. */
   matchesDirective(element: ElementShape): boolean;
 };
 
@@ -42,7 +42,13 @@ export function createSelectorIndex(
     selectorOf.set(entry, selector);
   }
   const directives: SelectorMatcher<true> = new compiler.SelectorMatcher<true>();
-  for (const selector of directiveSelectors) directives.addSelectables(compiler.CssSelector.parse(selector), true);
+  // Only a selector that names an element (`ex-hint`, `ex-card[kind]`) claims that tag.
+  // A directive reached purely through attributes or classes (`[routerLink]`, `.foo`) leaves the tag its own.
+  for (const selector of directiveSelectors) {
+    for (const parsed of compiler.CssSelector.parse(selector)) {
+      if (parsed.element !== null && parsed.element !== "*") directives.addSelectables([parsed], true);
+    }
+  }
   const toCss = (element: ElementShape) => {
     const css = new compiler.CssSelector();
     css.setElement(element.name);
