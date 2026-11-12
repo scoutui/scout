@@ -9,6 +9,12 @@ on:
         description: Scan and upload even when the dashboard already has the commit
         type: boolean
         default: false
+  # The release workflow calls this after it publishes the CLI, with rescan on.
+  workflow_call:
+    inputs:
+      rescan:
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -22,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [pie-aperture, cal.diy, elk, vue-vben-admin, payload, ng-matero]
+        target: [pie-aperture, cal.diy, elk, vue-vben-admin, payload, ng-matero, spartan, ng-alain, ionic-conference-app]
     env:
       TARGET: ${{ matrix.target }}
     steps:
@@ -49,6 +55,9 @@ jobs:
           SCOUTUI_TOKEN_VUE_VBEN_ADMIN: ${{ matrix.target == 'vue-vben-admin' && secrets.SCOUTUI_TOKEN_VUE_VBEN_ADMIN || '' }}
           SCOUTUI_TOKEN_PAYLOADCMS_PAYLOAD: ${{ matrix.target == 'payload' && secrets.SCOUTUI_TOKEN_PAYLOADCMS_PAYLOAD || '' }}
           SCOUTUI_TOKEN_NG_MATERO: ${{ matrix.target == 'ng-matero' && secrets.SCOUTUI_TOKEN_NG_MATERO || '' }}
+          SCOUTUI_TOKEN_SPARTAN: ${{ matrix.target == 'spartan' && secrets.SCOUTUI_TOKEN_SPARTAN || '' }}
+          SCOUTUI_TOKEN_NG_ALAIN: ${{ matrix.target == 'ng-alain' && secrets.SCOUTUI_TOKEN_NG_ALAIN || '' }}
+          SCOUTUI_TOKEN_IONIC_CONFERENCE_APP: ${{ matrix.target == 'ionic-conference-app' && secrets.SCOUTUI_TOKEN_IONIC_CONFERENCE_APP || '' }}
           RESCAN: ${{ inputs.rescan }}
         run: |
           args=(--target "$TARGET" --step scan --work-dir "$RUNNER_TEMP/consumer-ci")

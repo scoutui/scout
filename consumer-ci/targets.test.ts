@@ -38,7 +38,7 @@ describe("TARGETS", () => {
     const target = TARGETS.find((t) => t.name === "ng-matero");
     expect(target?.install).toMatch(/--ignore-scripts/);
     expect(target?.scans).toMatchObject([
-      { repoId: "ng-matero", include: ["src/**/*.{ts,html}"], tokenSecret: "SCOUTUI_TOKEN_NG_MATERO" },
+      { repoId: "ng-matero/ng-matero", include: ["src/**/*.{ts,html}"], tokenSecret: "SCOUTUI_TOKEN_NG_MATERO" },
     ]);
   });
 });

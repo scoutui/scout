@@ -4,6 +4,7 @@ import {
   detectAngularComponents,
   detectAngularModules,
   detectAngularBootstrap,
+  readConstArrays,
   type AngularComponentDecl,
 } from "../../src/local-index/detect-angular.js";
 
@@ -145,24 +146,43 @@ export class Foo {}
     expect(decls[0]?.importsComplete).toBe(true);
   });
 
-  // Negative/positive pair: a spread (or any non-identifier element) can't be
+  // Negative/positive pair: a call (or any element that isn't a name) can't be
   // read, so it marks the list incomplete even though the readable entries
-  // still come through — unlike the complete, all-identifiers case above.
-  it("imports: [A, ...SHARED] keeps the readable identifier but marks the list incomplete", () => {
+  // still come through. A spread of a name or a bare name is read as that
+  // name, for the scope reading to expand when it is a const array.
+  it("imports: [A, make()] keeps the readable identifier but marks the list incomplete", () => {
     const decls = detect(`import { Component } from "@angular/core";
-@Component({ selector: "x", imports: [A, ...SHARED] })
+@Component({ selector: "x", imports: [A, make()] })
 export class Foo {}
 `);
     expect(decls[0]?.imports).toEqual(["A"]);
     expect(decls[0]?.importsComplete).toBe(false);
   });
 
-  it("imports: SOME_CONST (not an array literal) is incomplete, with no entries read", () => {
+  it("imports: [A, ...SHARED] reads the spread's name as an entry", () => {
+    const decls = detect(`import { Component } from "@angular/core";
+@Component({ selector: "x", imports: [A, ...SHARED] })
+export class Foo {}
+`);
+    expect(decls[0]?.imports).toEqual(["A", "SHARED"]);
+    expect(decls[0]?.importsComplete).toBe(true);
+  });
+
+  it("imports: SOME_CONST (not an array literal) reads the name as the only entry", () => {
     const decls = detect(`import { Component } from "@angular/core";
 @Component({ selector: "x", imports: SOME_CONST })
 export class Foo {}
 `);
-    expect(decls[0]?.imports).toEqual([]);
+    expect(decls[0]?.imports).toEqual(["SOME_CONST"]);
+    expect(decls[0]?.importsComplete).toBe(true);
+  });
+
+  it("imports: [A, [B]] (a nested array literal) is incomplete", () => {
+    const decls = detect(`import { Component } from "@angular/core";
+@Component({ selector: "x", imports: [A, [B]] })
+export class Foo {}
+`);
+    expect(decls[0]?.imports).toEqual(["A"]);
     expect(decls[0]?.importsComplete).toBe(false);
   });
 
@@ -283,13 +303,13 @@ export class Foo {}
     expect(decls).toEqual([]);
   });
 
-  it("skips spreads and call expressions in module arrays, keeping only identifiers, and marks that list incomplete", () => {
+  it("reads spread names in module imports, skips call expressions, and marks that list incomplete", () => {
     const decls = detectModules(`import { NgModule } from "@angular/core";
 const extra = [ExtraModule];
 @NgModule({ imports: [CommonModule, ...extra, someFactory()] })
 export class AppModule {}
 `);
-    expect(decls[0]?.imports).toEqual(["CommonModule"]);
+    expect(decls[0]?.imports).toEqual(["CommonModule", "extra"]);
     expect(decls[0]?.importsComplete).toBe(false);
   });
 
@@ -317,12 +337,12 @@ export class AppModule {}
     });
   });
 
-  it("imports: SHARED_IMPORTS (not an array literal) is incomplete, with no entries read", () => {
+  it("imports: SHARED_IMPORTS (not an array literal) reads the name as the only entry", () => {
     const decls = detectModules(`import { NgModule } from "@angular/core";
 @NgModule({ imports: SHARED_IMPORTS })
 export class AppModule {}
 `);
-    expect(decls[0]).toMatchObject({ imports: [], importsComplete: false });
+    expect(decls[0]).toMatchObject({ imports: ["SHARED_IMPORTS"], importsComplete: true });
   });
 });
 
@@ -356,5 +376,31 @@ someObject.notBootstrapModule(AppModule);
 export class Foo {}
 `);
     expect(refs).toEqual([]);
+  });
+});
+
+describe("readConstArrays", () => {
+  const read = (source: string) => {
+    const { program } = parseSync("t.ts", source);
+    return Object.fromEntries(readConstArrays(program));
+  };
+
+  it("reads exported and local const arrays, flattening spreads, nested arrays and `as const`", () => {
+    expect(
+      read(`export const A = [X, Y] as const;
+const B = [...A, [Z]] satisfies unknown[];
+`),
+    ).toEqual({
+      A: { members: ["X", "Y"], complete: true },
+      B: { members: ["A", "Z"], complete: true },
+    });
+  });
+
+  it("marks an array with a call, a member access or a hole as incomplete, keeping the names it could read", () => {
+    expect(read("const A = [X, make(), ns.Y, , Z];")).toEqual({ A: { members: ["X", "Z"], complete: false } });
+  });
+
+  it("leaves out let/var, destructuring and values that aren't an array literal", () => {
+    expect(read("let A = [X]; var B = [X]; const { C } = obj; const D = make([X]); const E = X;")).toEqual({});
   });
 });

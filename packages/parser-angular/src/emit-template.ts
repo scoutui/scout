@@ -35,6 +35,14 @@ export type EmitAngularTemplateOpts = {
   index: SelectorIndex;
   /** Narrows an element's matches to the components in scope for this template, such as a standalone component's `imports`. */
   inScope: (entry: SelectorEntry) => boolean;
+  /**
+   * The scope couldn't be read in full, so `inScope` only knows part of it. An
+   * element no in-scope component matches is then matched against every
+   * component instead, since the unread part may supply it; an element an
+   * in-scope component does match stays within the scope, so a same-named
+   * component elsewhere in the repo doesn't make it ambiguous.
+   */
+  scopeIsPartial?: boolean;
   /** The binding name the owner's file reaches a matched component by, adding an import there when it has none. */
   resolveLocal: (entry: SelectorEntry, loc: { line: number; column: number }) => ResolvedLocal;
   onTemplateError: (message: string) => void;
@@ -156,10 +164,8 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
     const classNames = el.attributes.find((a) => a.name === "class")?.value.split(/\s+/).filter(Boolean) ?? [];
     const attributeNames = [...el.attributes.map((a) => a.name), ...el.inputs.map((i) => i.name)];
     const found = opts.index.match({ name: tag, attributes: attributeNames, classNames });
-    const matches = collapseReexports(
-      found.filter((m) => opts.inScope(m.entry)),
-      opts.chooseEntry ?? firstBySpecifier,
-    );
+    const inScope = found.filter((m) => opts.inScope(m.entry));
+    const matches = collapseReexports(inScope.length === 0 && opts.scopeIsPartial === true ? found : inScope, opts.chooseEntry ?? firstBySpecifier);
 
     if (matches.length > 1) {
       opts.onAmbiguous(tag, loc, matches);

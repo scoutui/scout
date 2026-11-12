@@ -76,6 +76,14 @@ export type LibraryModule = {
  */
 export type LibraryDirective = { specifier: string; exportName: string; selector: string };
 
+/**
+ * Every class an indexed entry exports, whether or not it's an Angular
+ * declaration: what tells a class listed in a component's `imports` (a pipe, an
+ * attribute directive) apart from a name the index can't account for, such as
+ * a `const` array of imports a package exports.
+ */
+export type LibraryClass = { specifier: string; exportName: string };
+
 /** A requested specifier whose typings are broken in some way a user can fix, with a reason they can act on. Not used for a package that's simply missing or has no typings - see `buildAngularLibraryIndex`. */
 export type UnreadableLibrary = { specifier: string; reason: string };
 
@@ -83,6 +91,7 @@ export type AngularLibraryIndex = {
   components: LibraryComponent[];
   modules: LibraryModule[];
   directives: LibraryDirective[];
+  classes: LibraryClass[];
   unreadable: UnreadableLibrary[];
 };
 
@@ -104,6 +113,7 @@ export function buildAngularLibraryIndex(opts: { configDir: string; specifiers: 
     components: [],
     modules: [],
     directives: [],
+    classes: [],
     unreadable: [],
     unreadableSpecifiers: new Set(),
     indexedSpecifiers: new Set(),
@@ -113,7 +123,7 @@ export function buildAngularLibraryIndex(opts: { configDir: string; specifiers: 
   };
   const configDir = resolve(opts.configDir);
   for (const specifier of opts.specifiers) indexSpecifier(ctx, specifier, configDir);
-  return { components: ctx.components, modules: ctx.modules, directives: ctx.directives, unreadable: ctx.unreadable };
+  return { components: ctx.components, modules: ctx.modules, directives: ctx.directives, classes: ctx.classes, unreadable: ctx.unreadable };
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +136,7 @@ type Ctx = {
   components: LibraryComponent[];
   modules: LibraryModule[];
   directives: LibraryDirective[];
+  classes: LibraryClass[];
   unreadable: UnreadableLibrary[];
   unreadableSpecifiers: Set<string>;
   /** Specifiers already indexed (or attempted), so a cross-package reference is indexed once. */
@@ -177,6 +188,7 @@ function indexSpecifier(ctx: Ctx, specifier: string, fromDir: string): void {
   }
 
   for (const [exportName, { decl, file }] of entryExports) {
+    ctx.classes.push({ specifier, exportName });
     if (decl.kind === "component" && decl.selector !== undefined) {
       const merged = mergedInputsOutputs(ctx, decl, file, new Set());
       ctx.components.push({
