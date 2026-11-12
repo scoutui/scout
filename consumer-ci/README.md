@@ -23,8 +23,9 @@ changes, is still there when the scan step runs. Without `--step`, one run
 does both and removes the work tree afterward.
 
 `--rescan` scans and uploads even when the dashboard already has the commit.
-In CI, tick **rescan** when you run the workflow by hand; the nightly run never
-rescans.
+In CI, tick **rescan** when you run the workflow by hand. The nightly run never
+rescans. A release that publishes the CLI runs the workflow with rescan on, so
+each target's latest commit is scanned again with the new CLI.
 
 ## Run locally
 
