@@ -55,6 +55,7 @@ describe("buildAngularLibraryIndex", () => {
           specifier: "@example/ng-ui",
           exportName: "ExButton",
           selector: "button[ex-button], a[ex-button]",
+          declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExButton" },
           // color/disabled come from ExButtonBase, which ExButton `extends` (see angular-library-index.test.ts's "extends" describe block for dedicated coverage).
           inputs: ["color", "disabled"],
           outputs: [],
@@ -75,6 +76,7 @@ describe("buildAngularLibraryIndex", () => {
         specifier: "@example/ng-ui/card",
         exportName: "ExCard",
         selector: "ex-card",
+        declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExCard" },
         inputs: ["elevation", "title"],
         outputs: ["closed"],
       });
@@ -121,7 +123,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/patterned/chip"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/patterned/chip", exportName: "ExChip", selector: "ex-chip", inputs: [], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/patterned/chip", exportName: "ExChip", selector: "ex-chip", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExChip" }, inputs: [], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
 
@@ -204,7 +206,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/ion-style"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/ion-style", exportName: "IonItem", selector: "ion-item", inputs: ["button"], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/ion-style", exportName: "IonItem", selector: "ion-item", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "IonItem" }, inputs: ["button"], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
 
@@ -214,7 +216,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/ion-style/ion-item"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/ion-style/ion-item", exportName: "IonItem", selector: "ion-item", inputs: ["button"], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/ion-style/ion-item", exportName: "IonItem", selector: "ion-item", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "IonItem" }, inputs: ["button"], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
 
@@ -238,7 +240,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/mjs-style"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/mjs-style", exportName: "ExChip", selector: "ex-chip", inputs: [], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/mjs-style", exportName: "ExChip", selector: "ex-chip", declaredAs: { file: expect.stringMatching(/\.d\.mts$/), className: "ExChip" }, inputs: [], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
   });
@@ -351,7 +353,7 @@ export { ExInternalToggle };
       const index = await build(configDir, ["@example/import-then-export"]);
 
       expect(index.components).toEqual([
-        { specifier: "@example/import-then-export", exportName: "ExToggle", selector: "ex-toggle", inputs: [], outputs: [] },
+        { specifier: "@example/import-then-export", exportName: "ExToggle", selector: "ex-toggle", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExInternalToggle" }, inputs: [], outputs: [] },
       ]);
     });
 
@@ -377,7 +379,7 @@ export { ExWidget };
       const index = await build(configDir, ["@example/star-reexport"]);
 
       expect(index.components).toEqual([
-        { specifier: "@example/star-reexport", exportName: "ExWidget", selector: "ex-widget", inputs: [], outputs: [] },
+        { specifier: "@example/star-reexport", exportName: "ExWidget", selector: "ex-widget", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExWidget" }, inputs: [], outputs: [] },
       ]);
     });
 
@@ -403,7 +405,34 @@ export { ExInternalWidget };
       const index = await build(configDir, ["@example/aliased-export"]);
 
       expect(index.components).toEqual([
-        { specifier: "@example/aliased-export", exportName: "ExWidget", selector: "ex-widget", inputs: [], outputs: [] },
+        { specifier: "@example/aliased-export", exportName: "ExWidget", selector: "ex-widget", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExInternalWidget" }, inputs: [], outputs: [] },
+      ]);
+    });
+
+    it("reports one class exported under two names as two entries sharing one declaration", async () => {
+      const configDir = await freshConfigDir();
+      await installPackage(
+        configDir,
+        "@example/dual-export",
+        { exports: { ".": { types: "./types/index.d.ts" } } },
+        {
+          "types/index.d.ts": `
+import * as i0 from '@angular/core';
+declare class ExGlyph {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExGlyph, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<ExGlyph, "ex-glyph", never, {}, {}, never, never, true, never>;
+}
+export { ExGlyph, ExGlyph as ExGlyphComponent };
+`,
+        },
+      );
+
+      const index = await build(configDir, ["@example/dual-export"]);
+
+      const declaredAs = { file: expect.stringMatching(/\.d\.ts$/), className: "ExGlyph" };
+      expect(index.components).toEqual([
+        { specifier: "@example/dual-export", exportName: "ExGlyph", selector: "ex-glyph", declaredAs, inputs: [], outputs: [] },
+        { specifier: "@example/dual-export", exportName: "ExGlyphComponent", selector: "ex-glyph", declaredAs, inputs: [], outputs: [] },
       ]);
     });
 
@@ -447,7 +476,7 @@ export { ExToolbarModule };
         { specifier: "@example/ng-toolbar", exportName: "ExToolbarModule", exports: [{ specifier: "@example/ng-icons", exportName: "ExIcon" }] },
       ]);
       // The referenced package is indexed transitively, so its own component surfaces too.
-      expect(index.components).toContainEqual({ specifier: "@example/ng-icons", exportName: "ExIcon", selector: "ex-icon", inputs: [], outputs: [] });
+      expect(index.components).toContainEqual({ specifier: "@example/ng-icons", exportName: "ExIcon", selector: "ex-icon", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "ExIcon" }, inputs: [], outputs: [] });
     });
 
     it("is cycle-safe when two chunk files re-export each other with `export *`", async () => {

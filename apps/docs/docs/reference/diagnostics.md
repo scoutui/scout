@@ -125,7 +125,7 @@ Warning: The installed @angular/compiler is version 18, older than the Angular 1
 
 **Severity:** `warning`
 
-An element in a template matches the selector of more than one component the template can use, for example two components that both declare `selector: 'app-button'`. Angular rejects that when it compiles the template, so the scan counts the element for neither component.
+An element in a template matches the selector of more than one component the template can use, for example two components that both declare `selector: 'app-button'`. Angular rejects that when it compiles the template, so the scan counts the element for neither component. One class that a library exports under two names, such as `NgIcon` and `NgIconComponent`, is one component, not two.
 
 | Field | Type | Meaning |
 | --- | --- | --- |

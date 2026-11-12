@@ -133,12 +133,34 @@ describe("emitAngularTemplate: matching elements to components", () => {
     expect(ambiguous).toEqual([]);
   });
 
+  test("counts one library class exported under two names as one use, under the name it is declared as", () => {
+    const declaredAs = { file: "/lib/index.d.ts", className: "ExIcon" };
+    const alias: SelectorEntry = { source: { type: "package", specifier: "@example/ng-icons" }, exportName: "ExIconComponent", declaredAs };
+    const declared: SelectorEntry = { source: { type: "package", specifier: "@example/ng-icons" }, exportName: "ExIcon", declaredAs };
+    const { uses, ambiguous } = emit("<ex-icon></ex-icon>", {
+      entries: [
+        { selector: "ex-icon", entry: alias },
+        { selector: "ex-icon", entry: declared },
+      ],
+    });
+    expect(ambiguous).toEqual([]);
+    expect(uses.map((u) => u.kind === "jsx" && u.symbol)).toEqual(["ExIcon"]);
+  });
+
   test("keeps two different library classes that share a selector ambiguous", () => {
     const a: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui/field" }, exportName: "ExField" };
     const b: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui/input" }, exportName: "ExInputField" };
     const { uses, ambiguous } = emit("<ex-field></ex-field>", { entries: [{ selector: "ex-field", entry: a }, { selector: "ex-field", entry: b }] });
     expect(uses).toEqual([]);
     expect(ambiguous).toEqual(["ex-field"]);
+  });
+
+  test("keeps two classes with different declarations ambiguous even when they are exported under one package", () => {
+    const a: SelectorEntry = { source: { type: "package", specifier: "@example/ng-icons" }, exportName: "ExIconA", declaredAs: { file: "/lib/a.d.ts", className: "ExIconA" } };
+    const b: SelectorEntry = { source: { type: "package", specifier: "@example/ng-icons" }, exportName: "ExIconB", declaredAs: { file: "/lib/b.d.ts", className: "ExIconB" } };
+    const { uses, ambiguous } = emit("<ex-icon></ex-icon>", { entries: [{ selector: "ex-icon", entry: a }, { selector: "ex-icon", entry: b }] });
+    expect(uses).toEqual([]);
+    expect(ambiguous).toEqual(["ex-icon"]);
   });
 
   test("reports an element two components in scope both match, and counts it for neither", () => {
