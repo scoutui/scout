@@ -136,16 +136,92 @@ type NgModuleOptions = {
  * `complete` is false when the value isn't an array literal at all, or any
  * element is a spread, a call, a hole, or anything else that isn't a plain
  * identifier — the list it returns only ever holds what it could read.
+ *
+ * With `allowReferences` (the `imports` option), `...NAME` elements and a bare
+ * `NAME` value count as names too: each may stand for a `const` array of
+ * imports, which the scope reading expands.
  */
-function readIdentifierList(value: Expression): { names: string[]; complete: boolean } {
+function readIdentifierList(value: Expression, allowReferences = false): { names: string[]; complete: boolean } {
+  if (allowReferences && value.type === "Identifier") return { names: [value.name], complete: true };
   if (value.type !== "ArrayExpression") return { names: [], complete: false };
   const names: string[] = [];
   let complete = true;
   for (const el of value.elements) {
     if (el && el.type === "Identifier") names.push(el.name);
+    else if (allowReferences && el && el.type === "SpreadElement" && el.argument.type === "Identifier") names.push(el.argument.name);
     else complete = false;
   }
   return { names, complete };
+}
+
+/** A top-level `const NAME = [...]` list: the identifiers it holds, nested arrays and spreads flattened. */
+export type AngularConstArray = { members: string[]; complete: boolean };
+
+/**
+ * The names of a program's top-level classes (decorated or not, exported or
+ * not), and the sources of its `export * from` lines: where a name an import
+ * lands on is declared, or which files to look in when that file only re-exports.
+ */
+export function readTopLevelNames(program: Program): { classes: string[]; stars: string[] } {
+  const classes: string[] = [];
+  const stars: string[] = [];
+  for (const stmt of program.body) {
+    if (stmt.type === "ClassDeclaration" && stmt.id) classes.push(stmt.id.name);
+    else if (stmt.type === "ExportNamedDeclaration" && stmt.declaration?.type === "ClassDeclaration" && stmt.declaration.id) classes.push(stmt.declaration.id.name);
+    else if (stmt.type === "ExportDefaultDeclaration" && stmt.declaration.type === "ClassDeclaration" && stmt.declaration.id) classes.push(stmt.declaration.id.name);
+    else if (stmt.type === "ExportAllDeclaration" && stmt.exported === null) stars.push(stmt.source.value);
+  }
+  return { classes, stars };
+}
+
+/**
+ * The top-level `const` arrays of identifiers in a program, by name, such as
+ * `export const HlmButtonImports = [HlmButton] as const`. A component's
+ * `imports` lists such a name to bring in everything the array holds. An array
+ * with any element that isn't an identifier, a spread of one, or a nested
+ * array of those (a call, a member access, a hole) is `complete: false`: its
+ * `members` only hold what could be read.
+ */
+export function readConstArrays(program: Program): Map<string, AngularConstArray> {
+  const out = new Map<string, AngularConstArray>();
+  const flatten = (expr: Expression, acc: AngularConstArray): void => {
+    switch (expr.type) {
+      case "TSAsExpression":
+      case "TSSatisfiesExpression":
+      case "ParenthesizedExpression":
+        flatten(expr.expression, acc);
+        return;
+      case "ArrayExpression":
+        for (const el of expr.elements) {
+          if (el === null) acc.complete = false;
+          else if (el.type === "SpreadElement") flatten(el.argument, acc);
+          else flatten(el, acc);
+        }
+        return;
+      case "Identifier":
+        acc.members.push(expr.name);
+        return;
+      default:
+        acc.complete = false;
+    }
+  };
+  const read = (decl: { kind: string; declarations: { id: { type: string; name?: string }; init?: Expression | null }[] }): void => {
+    if (decl.kind !== "const") return;
+    for (const d of decl.declarations) {
+      if (d.id.type !== "Identifier" || d.id.name === undefined || d.init === null || d.init === undefined) continue;
+      let init: Expression = d.init;
+      while (init.type === "TSAsExpression" || init.type === "TSSatisfiesExpression" || init.type === "ParenthesizedExpression") init = init.expression;
+      if (init.type !== "ArrayExpression") continue;
+      const acc: AngularConstArray = { members: [], complete: true };
+      flatten(init, acc);
+      out.set(d.id.name, acc);
+    }
+  };
+  for (const stmt of program.body) {
+    if (stmt.type === "VariableDeclaration") read(stmt);
+    else if (stmt.type === "ExportNamedDeclaration" && stmt.declaration?.type === "VariableDeclaration") read(stmt.declaration);
+  }
+  return out;
 }
 
 function readNgModuleOptions(obj: ObjectExpression | undefined): NgModuleOptions {
@@ -169,7 +245,7 @@ function readNgModuleOptions(obj: ObjectExpression | undefined): NgModuleOptions
       continue;
     }
     if (name !== "declarations" && name !== "imports" && name !== "exports") continue;
-    const { names, complete } = readIdentifierList(p.value);
+    const { names, complete } = readIdentifierList(p.value, name === "imports");
     if (name === "declarations") {
       options.declarations = names;
       options.declarationsComplete = complete;
@@ -333,7 +409,7 @@ function readComponentOptions(obj: ObjectExpression | undefined, source: string)
         const v = readLiteralValue(p.value);
         if (typeof v === "boolean") standalone = v;
       } else if (name === "imports") {
-        const result = readIdentifierList(p.value);
+        const result = readIdentifierList(p.value, true);
         imports = result.names;
         importsComplete = result.complete;
       } else if (name === "template") {
