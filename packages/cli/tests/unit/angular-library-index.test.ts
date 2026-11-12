@@ -300,7 +300,7 @@ export { ExHighlight };
       expect(index.unreadable).toEqual([]);
     });
 
-    it("collects a directive's element selector into `directives`, never into `components`", async () => {
+    it("collects a directive's selector and API into `directives`, never into `components`", async () => {
       const configDir = await freshConfigDir();
       await installPackage(
         configDir,
@@ -311,16 +311,37 @@ export { ExHighlight };
 import * as i0 from '@angular/core';
 declare class ExLabel {
     static ɵfac: i0.ɵɵFactoryDeclaration<ExLabel, never>;
-    static ɵdir: i0.ɵɵDirectiveDeclaration<ExLabel, "ex-label, [exLabel]", never, {}, {}, never, never, true, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExLabel, "ex-label, [exLabel]", never, { "for": { "alias": "for"; "required": false; }; }, { "picked": "picked"; }, never, never, true, never>;
 }
-export { ExLabel };
+/** A base with no selector of its own: never reported. */
+declare class ExTooltipBase {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExTooltipBase, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExTooltipBase, never, never, { "position": { "alias": "exTooltipPosition"; "required": false; }; }, {}, never, never, true, never>;
+}
+/** An attribute-only directive whose selector attribute is also an input, with more inputs from its base. */
+declare class ExTooltip extends ExTooltipBase {
+    static ɵfac: i0.ɵɵFactoryDeclaration<ExTooltip, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<ExTooltip, "[exTooltip]", never, { "message": { "alias": "exTooltip"; "required": false; }; }, {}, never, never, true, never>;
+}
+export { ExLabel, ExTooltip };
 `,
         },
       );
 
       const index = await build(configDir, ["@example/element-directive"]);
 
-      expect(index.directives).toEqual([{ specifier: "@example/element-directive", exportName: "ExLabel", selector: "ex-label, [exLabel]" }]);
+      const declaredAs = (className: string) => ({ file: expect.stringMatching(/\.d\.ts$/), className });
+      expect(index.directives).toEqual([
+        { specifier: "@example/element-directive", exportName: "ExLabel", selector: "ex-label, [exLabel]", declaredAs: declaredAs("ExLabel"), inputs: ["for"], outputs: ["picked"] },
+        {
+          specifier: "@example/element-directive",
+          exportName: "ExTooltip",
+          selector: "[exTooltip]",
+          declaredAs: declaredAs("ExTooltip"),
+          inputs: ["exTooltipPosition", "exTooltip"],
+          outputs: [],
+        },
+      ]);
       expect(index.components).toEqual([]);
       expect(index.modules).toEqual([]);
     });

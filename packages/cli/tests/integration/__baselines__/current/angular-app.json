@@ -348,6 +348,40 @@
       }
     },
     {
+      "id": "39e22de501e56417",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/const-array-scope/highlight.directive.ts",
+        "exportName": "HighlightDirective"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 4,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "2276a89c95344830": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "4528e2009b7ace4e",
       "identity": {
         "kind": "repository-declaration",
@@ -408,7 +442,8 @@
       "version": null,
       "composition": {
         "rendersByCount": {
-          "3fbbfeeafd818236": 1
+          "3fbbfeeafd818236": 1,
+          "39e22de501e56417": 1
         },
         "renderedByCount": {},
         "isRootCount": 0,
@@ -632,6 +667,266 @@
         "rendersByCount": {},
         "renderedByCount": {
           "a16da6982113fdaf": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "5119af9bd9b92846",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/directives/dir-button.component.ts",
+        "exportName": "DirButtonComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 4,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "b49eaa2fcd0bf725",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/directives/field.directive.ts",
+        "exportName": "FieldDirective"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "label": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "Name",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 1
+        }
+      },
+      "declared": {
+        "props": {
+          "label": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 5,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 2
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "5dfb47dff22a0c61",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/directives/page.component.ts",
+        "exportName": "DirectivesPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 15,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "b49eaa2fcd0bf725": 2,
+          "510ab28946c19789": 3,
+          "5119af9bd9b92846": 1,
+          "e9411006fee35b3a": 1,
+          "e90ae6e2d21d94ff": 1,
+          "02d08e2d6db16b14": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "a239c1abfaa74502",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/directives/partial-page.component.ts",
+        "exportName": "DirectivesPartialPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 12,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "510ab28946c19789": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
+      "id": "510ab28946c19789",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/directives/tip.directive.ts",
+        "exportName": "TipDirective"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 4,
+        "fileCount": 2
+      },
+      "usage": "direct",
+      "props": {
+        "tipPosition": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "above",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 3
+        },
+        "appTip": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "message",
+              "count": 1
+            },
+            {
+              "provenance": "written",
+              "value": "Save",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 2
+        }
+      },
+      "declared": {
+        "props": {
+          "appTip": {},
+          "tipPosition": {}
+        },
+        "hasRest": false
+      },
+      "definition": {
+        "line": 5,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 3,
+          "a239c1abfaa74502": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 4
+      }
+    },
+    {
+      "id": "e9411006fee35b3a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/directives/track.directive.ts",
+        "exportName": "TrackDirective"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "events": {
+        "tracked": {
+          "boundCount": 1
+        }
+      },
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 4,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 1
         },
         "isRootCount": 0,
         "isLeafCount": 1
@@ -1480,6 +1775,79 @@
       }
     },
     {
+      "id": "e90ae6e2d21d94ff",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/ng-ui",
+        "publicEntry": "tooltip",
+        "exportName": "ExTooltip"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "exTooltip": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "Hi",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "exTooltipPosition": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "left",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "02d08e2d6db16b14",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/ng-ui",
+        "publicEntry": "tooltip",
+        "exportName": "ExForm"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "81b316339f047835",
       "identity": {
         "kind": "package-export",
@@ -1773,6 +2141,28 @@
       "ownerComponentId": "2276a89c95344830"
     },
     {
+      "occurrenceId": "04db46100e187c3a",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "39e22de501e56417"
+      },
+      "filePath": "src/const-array-scope/spread-page.component.ts",
+      "line": 7,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./highlight.directive",
+          "name": "HighlightDirective"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "2276a89c95344830"
+    },
+    {
       "occurrenceId": "9b6d8a4ee3b287b9",
       "resolution": {
         "status": "resolved",
@@ -1859,6 +2249,257 @@
         "toggled"
       ],
       "ownerComponentId": "a16da6982113fdaf"
+    },
+    {
+      "occurrenceId": "90f55e833be77bb3",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b49eaa2fcd0bf725"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 1,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./field.directive",
+          "name": "FieldDirective"
+        }
+      ],
+      "props": {
+        "label": {
+          "tier": "written",
+          "value": "Name"
+        }
+      },
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "abf42a1aadc9684f",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "b49eaa2fcd0bf725"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 2,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./field.directive",
+          "name": "FieldDirective"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "24d9621c551b81dc",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "510ab28946c19789"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 3,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./tip.directive",
+          "name": "TipDirective"
+        }
+      ],
+      "props": {
+        "tipPosition": {
+          "tier": "written",
+          "value": "above"
+        },
+        "appTip": {
+          "tier": "reference",
+          "ref": "message"
+        }
+      },
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "b222fb7bfa72d48d",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "510ab28946c19789"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 4,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./tip.directive",
+          "name": "TipDirective"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "fc508ad9aa0e3ec1",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "5119af9bd9b92846"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 5,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./dir-button.component",
+          "name": "DirButtonComponent"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "df4e7b7c48e396c9",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "510ab28946c19789"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 5,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./tip.directive",
+          "name": "TipDirective"
+        }
+      ],
+      "props": {
+        "appTip": {
+          "tier": "written",
+          "value": "Save"
+        }
+      },
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "ee9ea1dbbf093bbe",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e9411006fee35b3a"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 5,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./track.directive",
+          "name": "TrackDirective"
+        }
+      ],
+      "props": {},
+      "events": [
+        "tracked"
+      ],
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "dcae3fd5fbc28fd9",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "e90ae6e2d21d94ff"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 7,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-ui/tooltip",
+          "name": "ExTooltip"
+        }
+      ],
+      "props": {
+        "exTooltip": {
+          "tier": "written",
+          "value": "Hi"
+        },
+        "exTooltipPosition": {
+          "tier": "written",
+          "value": "left"
+        }
+      },
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "1aaa1b901c555d6e",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "02d08e2d6db16b14"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 9,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-ui/tooltip",
+          "name": "ExForm"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "ac91c8e6b3e635ab",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "510ab28946c19789"
+      },
+      "filePath": "src/directives/partial-page.component.ts",
+      "line": 10,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "./tip.directive",
+          "name": "TipDirective"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "a239c1abfaa74502"
     },
     {
       "occurrenceId": "85af51f929cd6e7c",
@@ -2241,6 +2882,18 @@
     }
   ],
   "diagnostics": [
+    {
+      "code": "angular-selector-ambiguous",
+      "severity": "warning",
+      "filePath": "src/directives/partial-page.component.ts",
+      "line": 10,
+      "column": 34,
+      "tagName": "span",
+      "candidates": [
+        "src/directives/mark-one.directive.ts#MarkOneDirective",
+        "src/directives/mark-two.directive.ts#MarkTwoDirective"
+      ]
+    },
     {
       "code": "angular-selector-ambiguous",
       "severity": "warning",

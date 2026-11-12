@@ -167,34 +167,60 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
     const inScope = found.filter((m) => opts.inScope(m.entry));
     const matches = collapseReexports(inScope.length === 0 && opts.scopeIsPartial === true ? found : inScope, opts.chooseEntry ?? firstBySpecifier);
 
-    if (matches.length > 1) {
-      opts.onAmbiguous(tag, loc, matches);
-      return;
-    }
-    const match = matches[0];
-    if (match !== undefined) {
+    const shape = { name: tag, attributes: attributeNames, classNames };
+    const addUse = (match: ElementMatch) => {
       const { props, events } = readBindings(el, match);
       const { local, via } = opts.resolveLocal(match.entry, loc);
       const ref = opts.owner.originFile === undefined ? refTo(local, loc) : { ...refTo(local, loc), originFile: opts.owner.originFile };
       opts.fileBuilder.addJsxUsage({ ref, loc, props, events });
       opts.fileBuilder.setOwner(opts.owner, via);
-      return;
-    }
-    // Every selector match for this tag exists, but none is in scope. Angular
-    // would reject this the same as an unknown element, but in a repo that
-    // builds, it's a sign the scan's own scope reading missed something.
-    if (found.length > 0) {
+    };
+
+    // At most one component renders the element.
+    const match = matches[0];
+    if (matches.length > 1) {
+      opts.onAmbiguous(tag, loc, matches);
+    } else if (match !== undefined) {
+      addUse(match);
+    } else if (found.length > 0) {
+      // Every selector match for this tag exists, but none is in scope. Angular
+      // would reject this the same as an unknown element, but in a repo that
+      // builds, it's a sign the scan's own scope reading missed something.
       opts.onOutOfScope?.(tag, loc, found);
-      return;
-    }
-    // An element a library directive claims is Angular's own, not a custom element.
-    const shape = { name: tag, attributes: attributeNames, classNames };
-    if (!opts.index.matchesDirective(shape) && isValidCustomElementName(canonicalTagName(tag))) {
+    } else if (!opts.index.matchesDirective(shape) && isValidCustomElementName(canonicalTagName(tag))) {
+      // An element a directive claims is Angular's own, not a custom element.
       const { props, events } = readBindings(el, undefined);
       opts.fileBuilder.addTagUsage({ tagName: tag, loc, props, events });
       opts.fileBuilder.setTagOwner(opts.owner);
     }
     // Plain HTML falls through: never tracked, never diagnosed.
+
+    // Any number of directives apply to one element, each its own use.
+    for (const directive of directivesOn(shape, tag, loc)) addUse(directive);
+  };
+
+  /**
+   * The directives an element writes that apply to it: every one in scope, as Angular applies them all. When none is
+   * and the scope is only partly known, every directive the element writes instead, except where two different
+   * classes answer to the same written selector: the scan can't tell which the unread part brings in, so neither counts.
+   */
+  const directivesOn = (shape: { name: string; attributes: string[]; classNames: string[] }, tag: string, loc: { line: number; column: number }): ElementMatch[] => {
+    const choose = opts.chooseEntry ?? firstBySpecifier;
+    const found = opts.index.matchDirectives(shape);
+    const inScope = found.filter((m) => opts.inScope(m.entry));
+    if (inScope.length > 0 || opts.scopeIsPartial !== true) return collapseReexports(inScope, choose);
+    const byPart = new Map<string, ElementMatch[]>();
+    for (const m of found) {
+      const part = m.matchedPart ?? m.selector;
+      byPart.set(part, [...(byPart.get(part) ?? []), m]);
+    }
+    const out: ElementMatch[] = [];
+    for (const group of byPart.values()) {
+      const classes = collapseReexports(group, choose);
+      if (classes.length > 1) opts.onAmbiguous(tag, loc, classes);
+      else for (const m of classes) if (!out.some((o) => o.entry === m.entry)) out.push(m);
+    }
+    return out;
   };
 
   for (const node of parsed.nodes) if (node !== null && typeof node === "object") visit(node as TmplNode);
@@ -205,23 +231,27 @@ function refTo(symbol: string, loc: { line: number; column: number }): Reference
 }
 
 /**
- * The props and events an element binds on its component. When the component's
- * API is known, only its declared inputs and outputs count, so `class`, `id`
- * and the attribute its own selector requires aren't reported as props. When it
- * isn't known, every binding but the selector's own attributes counts.
+ * The props and events an element binds on its component or directive. When
+ * its API is known, only its declared inputs and outputs count, so `class` and
+ * `id` aren't reported as props. The attribute its own selector requires is
+ * left out too, unless that attribute is also an input and carries a value
+ * (`[exTooltip]="text"`, `exTooltip="Save"`): then it's the input's value.
+ * When the API isn't known, every binding but the selector's own attributes
+ * counts.
  */
 export function readBindings(el: TmplElement, match: ElementMatch | undefined): { props: PropUsage[]; events: string[] } {
   const inputs = match?.entry.inputs;
   const outputs = match?.entry.outputs;
-  const skip = match?.selectorAttributes ?? new Set<string>();
-  const isInput = (name: string) => !skip.has(name) && (inputs === undefined || inputs.includes(name));
+  const selectorAttributes = match?.selectorAttributes ?? new Set<string>();
+  const isInput = (name: string, hasValue: boolean) =>
+    inputs === undefined ? !selectorAttributes.has(name) : inputs.includes(name) && (hasValue || !selectorAttributes.has(name));
   const props: PropUsage[] = [];
   for (const attr of el.attributes) {
-    if (!isInput(attr.name)) continue;
+    if (!isInput(attr.name, attr.value !== "")) continue;
     props.push({ name: attr.name, tier: "written", value: attr.value === "" ? true : attr.value });
   }
   for (const input of el.inputs) {
-    if (!isInput(input.name)) continue;
+    if (!isInput(input.name, true)) continue;
     props.push(classifyBound(input.name, input.value?.source ?? ""));
   }
   const events = el.outputs.map((o) => o.name).filter((name) => outputs === undefined || outputs.includes(name));

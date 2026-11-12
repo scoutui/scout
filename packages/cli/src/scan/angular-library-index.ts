@@ -7,9 +7,10 @@
  * Angular's compiler stamps each compiled class with a static describing it:
  * `ɵcmp: i0.ɵɵComponentDeclaration<Class, Selector, ExportAs, Inputs, Outputs, ...>`,
  * `ɵmod: i0.ɵɵNgModuleDeclaration<Class, Declarations, Imports, Exports>`, or
- * `ɵdir: i0.ɵɵDirectiveDeclaration<Class, Selector, ...>` (reported as a
- * `LibraryDirective` - its selector still names a real Angular element, but
- * it renders nothing of its own, so it's never a `LibraryComponent`). This
+ * `ɵdir: i0.ɵɵDirectiveDeclaration<Class, Selector, ExportAs, Inputs, Outputs, ...>`
+ * (reported as a `LibraryDirective`: counted like a component wherever its
+ * selector is written, but kept apart because it renders nothing of its own
+ * and any number of them can sit on one element). This
  * module parses those type arguments directly; it never runs or bundles
  * `@angular/compiler`.
  *
@@ -69,12 +70,11 @@ export type LibraryModule = {
 };
 
 /**
- * One library directive (`ɵɵDirectiveDeclaration`) with an element selector,
- * e.g. Material's `mat-error`/`mat-label`: never a component (it renders
- * nothing of its own), but its selector still names a real Angular element,
- * not an unknown custom element.
+ * One library directive (`ɵɵDirectiveDeclaration`) with a selector, element
+ * (`mat-error`) or attribute (`[matTooltip]`) alike, and the same API a
+ * component reports. A base class with no selector of its own is left out.
  */
-export type LibraryDirective = { specifier: string; exportName: string; selector: string };
+export type LibraryDirective = LibraryComponent;
 
 /**
  * Every class an indexed entry exports, whether or not it's an Angular
@@ -206,7 +206,15 @@ function indexSpecifier(ctx: Ctx, specifier: string, fromDir: string): void {
         exports: resolveModuleExports(ctx, decl.moduleExportRefs, file, specifier, entryExports),
       });
     } else if (decl.kind === "directive" && decl.selector !== undefined) {
-      ctx.directives.push({ specifier, exportName, selector: decl.selector });
+      const merged = mergedInputsOutputs(ctx, decl, file, new Set());
+      ctx.directives.push({
+        specifier,
+        exportName,
+        selector: decl.selector,
+        declaredAs: { file, className: decl.className },
+        inputs: Object.values(merged.inputs),
+        outputs: Object.values(merged.outputs),
+      });
     }
   }
 }

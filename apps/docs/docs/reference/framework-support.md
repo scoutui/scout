@@ -61,15 +61,17 @@ Requires `@angular/compiler` installed in the repo being scanned: Scout uses tha
 
 **Recognised:** a class decorated with `@Component`, matched against a template element or attribute selector such as `<app-button>` or `button[app-icon-button]`. A component is in scope for a standalone component's template (the default from Angular 19 on) when it's listed in that component's `imports`, directly or inside a `const` array listed there (such as `imports: [SHARED_IMPORTS]` or `[...SHARED_IMPORTS]`, including arrays imported from other files and nested arrays); for a non-standalone component, through an `NgModule`'s `declarations` and `exports`. Both inline templates and a `templateUrl` file are read, whichever API a component's inputs and outputs use: `@Input()`/`@Output()` decorators, or the `input()`/`output()`/`model()` signal functions — `model()`'s matching `<name>Change` output included. An element that matches more than one component in scope isn't counted: the scan reports why.
 
+A `@Directive`, your repo's own or an installed library's, counts the same way wherever a template writes its selector, element (`<app-field>`) or attribute (`<span appTooltip>`), with its inputs as props. An element can carry any number of directives, and each is its own use, next to the component that renders the element. A selector that only names a plain HTML element doesn't count, so `<form>` isn't a use of a directive whose selector is `form`, but `<form appForm>` is when the selector also lists `[appForm]`. Structural directives (`*ngIf`, `<ng-template>`) aren't counted, and neither are Angular's own (`@angular/*`, such as `NgClass` or `RouterLink`).
+
 **Renders and rendered by:** each use counts for the component whose template contains it, found inside `@if`/`@for`/`@switch`/`@case`/`@defer` (and its `@placeholder`/`@loading`/`@error`) blocks the same as directly in the template, and inside content projected into another component (`<ng-content>`).
 
 **Known gaps:**
 
-- Directives and pipes aren't counted as components.
+- Pipes aren't counted.
 - A component created in code rather than written in a template — a route's `loadComponent`, or `ViewContainerRef.createComponent()` — isn't counted.
 - Host bindings and `hostDirectives` aren't read.
 
-- A component from an installed library is matched only when the library is installed and ships Angular's compiled typings, which every library built with the Angular CLI does. The typings are found through the package's `exports` (its `types` condition, or the `.d.ts` file next to the JavaScript an entry points to, as TypeScript finds them) or its `types`/`typings` field. Scout reads its components, inputs and outputs from those typings, so `<mat-card>` and `<button mat-button>` count as Angular Material's `MatCard` and `MatButton`. A library's directives, such as `<mat-error>`, aren't counted, and aren't counted as web components either. When several of a library's entry points export the same component, a use is credited to the entry point your file imports from.
+- A component from an installed library is matched only when the library is installed and ships Angular's compiled typings, which every library built with the Angular CLI does. The typings are found through the package's `exports` (its `types` condition, or the `.d.ts` file next to the JavaScript an entry points to, as TypeScript finds them) or its `types`/`typings` field. Scout reads its components, inputs and outputs from those typings, so `<mat-card>` and `<button mat-button>` count as Angular Material's `MatCard` and `MatButton`. A library's directives, such as `<mat-error>` or `matTooltip`, count as uses of the library. When several of a library's entry points export the same component, a use is credited to the entry point your file imports from.
 
 ## Web components
 
