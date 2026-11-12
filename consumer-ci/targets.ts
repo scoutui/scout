@@ -94,11 +94,58 @@ export const TARGETS: Target[] = [
     scans: [
       {
         cwd: ".",
-        repoId: "ng-matero",
+        repoId: "ng-matero/ng-matero",
         include: ["src/**/*.{ts,html}"],
         // Resolves the `@core`/`@shared`/`@theme`/`@env` paths aliases the app imports through.
         tsconfigPath: "tsconfig.json",
         tokenSecret: "SCOUTUI_TOKEN_NG_MATERO",
+      },
+    ],
+  },
+  {
+    // An Nx workspace that builds its own Angular design system (`libs/brain`,
+    // `libs/helm`), mostly directives, and uses it in its docs app.
+    name: "spartan",
+    repo: "goetzrobin/spartan",
+    install: "corepack pnpm install --frozen-lockfile --ignore-scripts",
+    scans: [
+      {
+        cwd: ".",
+        repoId: "goetzrobin/spartan",
+        include: ["apps/app/src/**/*.{ts,html}", "libs/brain/**/*.{ts,html}", "libs/helm/**/*.{ts,html}"],
+        // Resolves the `@spartan-ng/*` paths the app and libraries import each other through.
+        tsconfigPath: "tsconfig.base.json",
+        tokenSecret: "SCOUTUI_TOKEN_SPARTAN",
+      },
+    ],
+  },
+  {
+    // An NG-ZORRO admin app mixing NgModule and standalone components.
+    name: "ng-alain",
+    repo: "ng-alain/ng-alain",
+    // No lockfile is committed, so the install can't be frozen.
+    install: "corepack pnpm install --ignore-scripts",
+    scans: [
+      {
+        cwd: ".",
+        repoId: "ng-alain/ng-alain",
+        include: ["src/**/*.{ts,html}"],
+        tsconfigPath: "tsconfig.json",
+        tokenSecret: "SCOUTUI_TOKEN_NG_ALAIN",
+      },
+    ],
+  },
+  {
+    // An Ionic Angular app.
+    name: "ionic-conference-app",
+    repo: "ionic-team/ionic-conference-app",
+    install: "npm ci --ignore-scripts",
+    scans: [
+      {
+        cwd: ".",
+        repoId: "ionic-team/ionic-conference-app",
+        include: ["src/**/*.{ts,html}"],
+        tokenSecret: "SCOUTUI_TOKEN_IONIC_CONFERENCE_APP",
       },
     ],
   },
