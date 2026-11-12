@@ -9,6 +9,12 @@ on:
         description: Scan and upload even when the dashboard already has the commit
         type: boolean
         default: false
+  # The release workflow calls this after it publishes the CLI, with rescan on.
+  workflow_call:
+    inputs:
+      rescan:
+        type: boolean
+        default: false
 
 permissions: {}
 
