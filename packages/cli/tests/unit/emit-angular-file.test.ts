@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { createRequire } from "node:module";
 import { parseSync } from "oxc-parser";
 import type { AngularCompiler } from "@scoutui/parser-angular";
-import { buildAngularSelectorIndex, buildModuleScopes, importsOf, type PendingAngularFile } from "../../src/emit-angular-file.js";
-import { detectAngularComponents, detectAngularModules } from "../../src/local-index/detect-angular.js";
+import { type AngularRefResolver, type AngularScripts, buildAngularSelectorIndex, buildModuleScopes, importsOf, type PendingAngularFile } from "../../src/emit-angular-file.js";
+import { detectAngularComponents, detectAngularModules, readConstArrays, readTopLevelNames } from "../../src/local-index/detect-angular.js";
 
 /** A `PendingAngularFile` built from real detector output, same shape scan.ts assembles. */
 function pendingFile(graphKey: string, source: string): PendingAngularFile {
@@ -219,5 +219,52 @@ export class PageComponent {}
     );
     const scopes = buildModuleScopes([page]);
     expect(scopes.resolveRef(page, "Missing")).toBeUndefined();
+  });
+});
+
+describe("buildModuleScopes: packages an imports entry reaches", () => {
+  /** What scan.ts keeps for a plain `.ts` file: its imports, const arrays, classes and `export *` sources. */
+  const script = (graphKey: string, source: string): [string, AngularScripts extends ReadonlyMap<string, infer V> ? V : never] => {
+    const { program } = parseSync(graphKey, source);
+    const { classes, stars } = readTopLevelNames(program);
+    return [graphKey, { imports: importsOf(program), arrays: readConstArrays(program), classes: new Set(classes), stars }];
+  };
+  // Relative imports land on `<path>.ts`; anything else is an installed package.
+  const resolver: AngularRefResolver = (from, specifier, imported) =>
+    specifier.startsWith(".") ? { graphKey: `${specifier.replace(/^\.\//, "")}.ts`, name: imported } : null;
+
+  const page = pendingFile(
+    "page.component.ts",
+    `import { Component } from "@angular/core";
+import { SHARED } from "./shared";
+@Component({ selector: "app-page", imports: [...SHARED], template: "" })
+export class PageComponent {}
+`,
+  );
+  const scripts: AngularScripts = new Map([
+    script(
+      "shared.ts",
+      `import { ExButtonModule } from "@example/button";
+import { ExIconModule } from "@example/icon";
+const MORE = [[ExIconModule]] as const;
+export const SHARED = [ExButtonModule, ...MORE];
+`,
+    ),
+    script(
+      "unused.ts",
+      `import { ExOtherModule } from "@example/other";
+export const UNUSED = [ExOtherModule];
+`,
+    ),
+  ]);
+
+  it("lists every package a const array reaches, through spreads and nested arrays", () => {
+    const scopes = buildModuleScopes([page], resolver, undefined, scripts);
+    expect(scopes.resolveImports(page, "SHARED").packages.sort()).toEqual(["@example/button", "@example/icon"]);
+  });
+
+  it("lists nothing from an array no imports entry names", () => {
+    const scopes = buildModuleScopes([page], resolver, undefined, scripts);
+    expect(scopes.resolveImports(page, "SHARED").packages).not.toContain("@example/other");
   });
 });

@@ -223,9 +223,10 @@ export type AngularModuleScopes = {
   /**
    * The keys an `imports` entry written in `fromFile` stands for: `resolveRef`'s key for a class or module, every member of a const array
    * (followed through spreads, nested arrays and other files), nothing for a repo class that is neither component nor module (a directive or pipe).
-   * `complete` is false when part of it can't be read.
+   * `complete` is false when part of it can't be read. `packages` holds the specifier of every installed-package import it reached,
+   * however deep in a const array, so the scan can index those libraries before it matches templates.
    */
-  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean };
+  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean; packages: string[] };
 };
 
 export function buildModuleScopes(
@@ -250,8 +251,9 @@ export function buildModuleScopes(
     return target?.file === undefined ? undefined : `${target.file.graphKey}#${target.name}`;
   };
 
-  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean } => {
+  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean; packages: string[] } => {
     const keys: string[] = [];
+    const packages: string[] = [];
     let complete = true;
     const seen = new Set<string>();
     // True once `name` in `graphKey` is accounted for: a key it adds, a const array it expands, or a class that isn't a component or module.
@@ -264,6 +266,7 @@ export function buildModuleScopes(
         // as a class the package exports: anything else (a `const` array of imports in its typings, or a package the
         // index didn't reach) may stand for components the scope can't see.
         if (target === null) {
+          packages.push(spec.specifier);
           if (libraryClasses !== undefined && !libraryClasses.has(`${spec.specifier}#${spec.imported}`)) return false;
           keys.push(spec.imported);
           return true;
@@ -294,7 +297,7 @@ export function buildModuleScopes(
       return false;
     };
     if (!follow(fromFile.graphKey, fromFile.imports, identifier)) complete = false;
-    return { keys, complete };
+    return { keys, complete, packages };
   };
 
   type ModuleEntry = { module: AngularModuleDecl; file: PendingAngularFile };
@@ -547,48 +550,6 @@ function readTemplate(
     onTemplateMissing?.(file.graphKey, c.template.url);
     return undefined;
   }
-}
-
-/**
- * The value imports a program's top-level `const` arrays list, however they are
- * nested (`[A, ...B, [C]]`, `as const`, `satisfies`). A shared array like
- * `export const SHARED_MODULES = [NzButtonModule]` in a file with no Angular
- * decorator is how a component's `imports` reaches an installed library.
- */
-export function importsListedInConstArrays(program: { body: readonly unknown[] }): AngularImport[] {
-  type Node = { type: string; elements?: (Node | null)[]; argument?: Node; expression?: Node; name?: string };
-  type Statement = { type: string; kind?: string; declarations?: { init?: Node | null }[]; declaration?: Statement | null };
-  const names = new Set<string>();
-  const collect = (node: Node | null | undefined): void => {
-    if (node === null || node === undefined) return;
-    switch (node.type) {
-      case "Identifier":
-        if (node.name !== undefined) names.add(node.name);
-        break;
-      case "ArrayExpression":
-        for (const el of node.elements ?? []) collect(el);
-        break;
-      case "SpreadElement":
-        collect(node.argument);
-        break;
-      case "TSAsExpression":
-      case "TSSatisfiesExpression":
-      case "TSNonNullExpression":
-      case "ParenthesizedExpression":
-        collect(node.expression);
-        break;
-    }
-  };
-  for (const stmt of program.body as Statement[]) {
-    const decl = stmt.type === "ExportNamedDeclaration" ? stmt.declaration : stmt;
-    if (decl?.type !== "VariableDeclaration" || decl.kind !== "const") continue;
-    for (const d of decl.declarations ?? []) {
-      let init = d.init;
-      while (init !== null && init !== undefined && init.type !== "ArrayExpression" && init.expression !== undefined) init = init.expression;
-      if (init?.type === "ArrayExpression") collect(init);
-    }
-  }
-  return names.size === 0 ? [] : importsOf(program).filter((i) => names.has(i.local));
 }
 
 /** The value imports an oxc program declares. Type-only imports are left out: they never reach a template. */
