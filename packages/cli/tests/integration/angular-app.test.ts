@@ -341,6 +341,19 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("library-const-array", () => {
+    const S = "library-const-array";
+    const page = local(S, "page.component.ts", "LibraryConstArrayPageComponent");
+
+    // The library modules are listed only in a decorator-free file's const
+    // array, which the component spreads into `imports`.
+    it("resolves a library component reached only through a const array in a file with no Angular decorator", () => {
+      expect(rendersIn(S)).toEqual([
+        row("page.component.ts:7:14", pkg("@example/ng-ui", "badge", "ExBadge"), page, [imported("@example/ng-ui/badge", "ExBadge")]),
+      ]);
+    });
+  });
+
   describe("alias-import", () => {
     const S = "alias-import";
     const badge = local(S, "shared/components/alias-badge.component.ts", "AliasBadgeComponent");
@@ -447,6 +460,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/alias-import/alias-page.component.ts",
           "src/alias-import/shared/components/alias-badge.component.ts",
           "src/library-components/app.component.ts",
+          "src/library-const-array/page.component.ts",
           "src/imports-spread/card.component.ts",
           "src/imports-spread/imports-spread-page.component.ts",
           "src/imports-spread/spread-button.component.ts",

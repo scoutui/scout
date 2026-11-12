@@ -467,6 +467,48 @@ function readTemplate(
   }
 }
 
+/**
+ * The value imports a program's top-level `const` arrays list, however they are
+ * nested (`[A, ...B, [C]]`, `as const`, `satisfies`). A shared array like
+ * `export const SHARED_MODULES = [NzButtonModule]` in a file with no Angular
+ * decorator is how a component's `imports` reaches an installed library.
+ */
+export function importsListedInConstArrays(program: { body: readonly unknown[] }): AngularImport[] {
+  type Node = { type: string; elements?: (Node | null)[]; argument?: Node; expression?: Node; name?: string };
+  type Statement = { type: string; kind?: string; declarations?: { init?: Node | null }[]; declaration?: Statement | null };
+  const names = new Set<string>();
+  const collect = (node: Node | null | undefined): void => {
+    if (node === null || node === undefined) return;
+    switch (node.type) {
+      case "Identifier":
+        if (node.name !== undefined) names.add(node.name);
+        break;
+      case "ArrayExpression":
+        for (const el of node.elements ?? []) collect(el);
+        break;
+      case "SpreadElement":
+        collect(node.argument);
+        break;
+      case "TSAsExpression":
+      case "TSSatisfiesExpression":
+      case "TSNonNullExpression":
+      case "ParenthesizedExpression":
+        collect(node.expression);
+        break;
+    }
+  };
+  for (const stmt of program.body as Statement[]) {
+    const decl = stmt.type === "ExportNamedDeclaration" ? stmt.declaration : stmt;
+    if (decl?.type !== "VariableDeclaration" || decl.kind !== "const") continue;
+    for (const d of decl.declarations ?? []) {
+      let init = d.init;
+      while (init !== null && init !== undefined && init.type !== "ArrayExpression" && init.expression !== undefined) init = init.expression;
+      if (init?.type === "ArrayExpression") collect(init);
+    }
+  }
+  return names.size === 0 ? [] : importsOf(program).filter((i) => names.has(i.local));
+}
+
 /** The value imports an oxc program declares. Type-only imports are left out: they never reach a template. */
 export function importsOf(program: { body: readonly unknown[] }): AngularImport[] {
   type Specifier = { type: string; importKind?: string; imported?: { name?: string; value?: string }; local: { name: string } };

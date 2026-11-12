@@ -11,6 +11,10 @@
     "./card": {
       "types": "./types/card.d.ts",
       "default": "./card.mjs"
+    },
+    "./badge": {
+      "types": "./types/badge.d.ts",
+      "default": "./badge.mjs"
     }
   }
 }
