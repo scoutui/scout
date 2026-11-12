@@ -176,7 +176,7 @@ export function readTopLevelNames(program: Program): { classes: string[]; stars:
 
 /**
  * The top-level `const` arrays of identifiers in a program, by name, such as
- * `export const HlmButtonImports = [HlmButton] as const`. A component's
+ * `export const ExampleButtonImports = [ExampleButton] as const`. A component's
  * `imports` lists such a name to bring in everything the array holds. An array
  * with any element that isn't an identifier, a spread of one, or a nested
  * array of those (a call, a member access, a hole) is `complete: false`: its

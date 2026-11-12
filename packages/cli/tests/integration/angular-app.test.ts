@@ -361,6 +361,28 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("package-const-array", () => {
+    const S = "package-const-array";
+    const badge = pkg("@example/ng-imports", "", "ExampleBadge");
+    const badgeImport = imported("@example/ng-imports", "ExampleBadge");
+
+    // `@example/ng-imports` exports `ExampleImports`, a const array its typings
+    // declare but don't spell out. The scope can't read what it holds, so it
+    // is partial, not complete-and-empty: the package's own <ex-badge> is
+    // still found, bare or spread, instead of being dropped as out of scope.
+    it("resolves <ex-badge> when a page lists a const array the package exports, bare or spread", () => {
+      expect(rendersIn(S)).toEqual([
+        row("bare-page.component.ts:8:14", badge, local(S, "bare-page.component.ts", "PkgArrayBarePageComponent"), [badgeImport]),
+        row("spread-page.component.ts:8:14", badge, local(S, "spread-page.component.ts", "PkgArraySpreadPageComponent"), [badgeImport]),
+      ]);
+    });
+
+    it("reports no <ex-badge> as out of scope", () => {
+      const outOfScope = (out.diagnostics ?? []).filter((d) => (d as { code?: string }).code === "angular-not-in-scope");
+      expect(outOfScope.filter((d) => (d as { tagName?: string }).tagName === "ex-badge")).toEqual([]);
+    });
+  });
+
   describe("alias-import", () => {
     const S = "alias-import";
     const badge = local(S, "shared/components/alias-badge.component.ts", "AliasBadgeComponent");
@@ -485,6 +507,8 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/ng-content-projection/projection-page.component.ts",
           "src/ng-module-scope/panel.component.ts",
           "src/ng-module-scope/widget.component.ts",
+          "src/package-const-array/bare-page.component.ts",
+          "src/package-const-array/spread-page.component.ts",
           "src/signal-io/counter.component.ts",
           "src/signal-io/signal-io-page.component.ts",
           "src/standalone-import/app.component.ts",

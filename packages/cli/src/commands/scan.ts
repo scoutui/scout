@@ -506,7 +506,7 @@ export async function scanRepository(input: {
   // template names its components by selector, and what it can see by scope.
   const pendingAngular: PendingAngularFile[] = [];
   const angularBootstraps: AngularBootstrapCall[] = [];
-  // Every parsed script's top-level const arrays and classes: a component's `imports` may name a const array (`HlmButtonImports`) instead of the classes in it.
+  // Parsed scripts' top-level const arrays and classes: a component's `imports` may name a const array (`ExampleImports`) instead of the classes in it.
   const scripts = new Map<string, { imports: ReturnType<typeof importsOf>; arrays: ReturnType<typeof readConstArrays>; classes: Set<string>; stars: string[] }>();
 
   // ── Phase 1: read + parse + emit local definitions ──────────────────────
@@ -548,9 +548,14 @@ export async function scanRepository(input: {
     }
     filesScanned++;
     // Angular sources are `.ts`; a `.tsx`, `.jsx` or `.js` file is left to the other frameworks.
+    // Only what following a const array can need is kept: a file's imports and arrays when it declares one, else
+    // just its class names (a directive or pipe a list names) and `export *` sources (a barrel to look through).
     if (parsed.kind === "babel" && /\.[cm]?ts$/.test(relPath)) {
+      const arrays = readConstArrays(parsed.ast);
       const { classes, stars } = readTopLevelNames(parsed.ast);
-      scripts.set(relPath, { imports: importsOf(parsed.ast), arrays: readConstArrays(parsed.ast), classes: new Set(classes), stars });
+      if (arrays.size > 0 || classes.length > 0 || stars.length > 0) {
+        scripts.set(relPath, { imports: arrays.size > 0 ? importsOf(parsed.ast) : [], arrays, classes: new Set(classes), stars });
+      }
     }
     const angular =
       parsed.kind === "babel" && /@(Component|NgModule)\s*\(/.test(source) && importsAngularCore(parsed.ast)

@@ -22,7 +22,7 @@ export type AngularImport = { specifier: string; imported: string; local: string
 
 /**
  * What the scan read of each parsed script, so a `const` array of imports
- * (`export const HlmButtonImports = [HlmButton]`) can be followed to its
+ * (`export const ExampleButtonImports = [ExampleButton]`) can be followed to its
  * members, and a name an import lands on can be told apart from a class that
  * isn't a component (a directive or pipe).
  */
@@ -238,6 +238,9 @@ export function buildModuleScopes(
   const resolve = resolver ?? relativeOnly(byKey);
   // An installed library's NgModules, by the name they're exported under: what each makes available, by name.
   const libraryModules = new Map((library?.modules ?? []).map((m) => [m.exportName, m.exports.map((e) => e.exportName)]));
+  // Every class an installed entry exports, by `${specifier}#${exportName}`. Without an index (no compiler, or a caller
+  // that has none) a package import counts as read, as before.
+  const libraryClasses = library === undefined ? undefined : new Set(library.classes.map((c) => `${c.specifier}#${c.exportName}`));
 
   const resolveRef = (fromFile: PendingAngularFile, identifier: string): string | undefined => {
     const spec = fromFile.imports.find((i) => i.local === identifier);
@@ -257,8 +260,11 @@ export function buildModuleScopes(
       let at = { graphKey, name };
       if (spec !== undefined) {
         const target = resolve(graphKey, spec.specifier, spec.imported);
-        // An installed package's export is matched by name.
+        // An installed package's export is matched by name. It counts as read only when the library index knows it
+        // as a class the package exports: anything else (a `const` array of imports in its typings, or a package the
+        // index didn't reach) may stand for components the scope can't see.
         if (target === null) {
+          if (libraryClasses !== undefined && !libraryClasses.has(`${spec.specifier}#${spec.imported}`)) return false;
           keys.push(spec.imported);
           return true;
         }
