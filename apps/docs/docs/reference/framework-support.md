@@ -69,7 +69,7 @@ Requires `@angular/compiler` installed in the repo being scanned: Scout uses tha
 - A component created in code rather than written in a template — a route's `loadComponent`, or `ViewContainerRef.createComponent()` — isn't counted.
 - Host bindings and `hostDirectives` aren't read.
 
-- A component from an installed library is matched only when the library is installed and ships Angular's compiled typings, which every library built with the Angular CLI does. Scout reads its components, inputs and outputs from those typings, so `<mat-card>` and `<button mat-button>` count as Angular Material's `MatCard` and `MatButton`. A library's directives, such as `<mat-error>`, aren't counted, and aren't counted as web components either. When several of a library's entry points export the same component, a use is credited to the entry point your file imports from.
+- A component from an installed library is matched only when the library is installed and ships Angular's compiled typings, which every library built with the Angular CLI does. The typings are found through the package's `exports` (its `types` condition, or the `.d.ts` file next to the JavaScript an entry points to, as TypeScript finds them) or its `types`/`typings` field. Scout reads its components, inputs and outputs from those typings, so `<mat-card>` and `<button mat-button>` count as Angular Material's `MatCard` and `MatButton`. A library's directives, such as `<mat-error>`, aren't counted, and aren't counted as web components either. When several of a library's entry points export the same component, a use is credited to the entry point your file imports from.
 
 ## Web components
 
