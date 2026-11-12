@@ -206,7 +206,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/ion-style"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/ion-style", exportName: "IonItem", selector: "ion-item", inputs: ["button"], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/ion-style", exportName: "IonItem", selector: "ion-item", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "IonItem" }, inputs: ["button"], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
 
@@ -216,7 +216,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/ion-style/ion-item"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/ion-style/ion-item", exportName: "IonItem", selector: "ion-item", inputs: ["button"], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/ion-style/ion-item", exportName: "IonItem", selector: "ion-item", declaredAs: { file: expect.stringMatching(/\.d\.ts$/), className: "IonItem" }, inputs: ["button"], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
 
@@ -240,7 +240,7 @@ describe("buildAngularLibraryIndex", () => {
 
       const index = await build(configDir, ["@example/mjs-style"]);
 
-      expect(index.components).toEqual([{ specifier: "@example/mjs-style", exportName: "ExChip", selector: "ex-chip", inputs: [], outputs: [] }]);
+      expect(index.components).toEqual([{ specifier: "@example/mjs-style", exportName: "ExChip", selector: "ex-chip", declaredAs: { file: expect.stringMatching(/\.d\.mts$/), className: "ExChip" }, inputs: [], outputs: [] }]);
       expect(index.unreadable).toEqual([]);
     });
   });

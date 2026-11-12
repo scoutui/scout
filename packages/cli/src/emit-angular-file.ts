@@ -348,6 +348,27 @@ const entryLabel = (entry: SelectorEntry) =>
   `${entry.source.type === "file" ? entry.source.graphKey : entry.source.specifier}#${entry.exportName}`;
 
 /**
+ * Picks the entry to report for one library class reached through several entry points or export names.
+ * First the entry this file imports by name, then any entry from a specifier this file imports from, then the
+ * rest. Within a rank, the name the class is declared under wins, then the label, so an unrelated import from
+ * the same package (such as `provideIcons` next to `NgIcon`) can't change which name is reported.
+ */
+export function chooseLibraryEntry(group: readonly ElementMatch[], imports: readonly AngularImport[]): ElementMatch {
+  const rank = (m: ElementMatch) => {
+    const src = m.entry.source;
+    if (src.type !== "package") return 3;
+    const fromHere = imports.filter((i) => i.specifier === src.specifier);
+    if (fromHere.some((i) => i.imported === m.entry.exportName)) return 0;
+    return fromHere.length > 0 ? 1 : 2;
+  };
+  const isDeclaredName = (m: ElementMatch) => Number(m.entry.declaredAs?.className === m.entry.exportName);
+  const sorted = [...group].sort(
+    (a, b) => rank(a) - rank(b) || isDeclaredName(b) - isDeclaredName(a) || entryLabel(a.entry).localeCompare(entryLabel(b.entry)),
+  );
+  return sorted[0] as ElementMatch;
+}
+
+/**
  * Emits one Angular file into the graph: its component classes as components,
  * and each component's template elements as uses it owns. An inline template's
  * uses are recorded in the `.ts` file; a `templateUrl` template's in its own
@@ -435,21 +456,7 @@ export function emitAngularFile(opts: {
       inScope: (entry) => scope === null || scope.has(entry.source.type === "file" ? `${entry.source.graphKey}#${entry.exportName}` : entry.exportName),
       resolveLocal,
       onTemplateError: (message) => opts.onTemplateError(template.graphKey, message),
-      // One library class reached through several entry points or export names: the entry this file imports
-      // (by specifier, then by name), else the one named for the class's own declaration, else the first by label.
-      chooseEntry: (group) => {
-        const imports = file.imports;
-        const rank = (m: ElementMatch) => {
-          const src = m.entry.source;
-          if (src.type !== "package") return 3;
-          const fromHere = imports.filter((i) => i.specifier === src.specifier);
-          if (fromHere.some((i) => i.imported === m.entry.exportName)) return 0;
-          if (fromHere.length > 0) return 1;
-          return m.entry.declaredAs?.className === m.entry.exportName ? 2 : 3;
-        };
-        const sorted = [...group].sort((a, b) => rank(a) - rank(b) || entryLabel(a.entry).localeCompare(entryLabel(b.entry)));
-        return sorted[0] as ElementMatch;
-      },
+      chooseEntry: (group) => chooseLibraryEntry(group, file.imports),
       onAmbiguous: (tagName, loc, matches: readonly ElementMatch[]) =>
         opts.onAmbiguous({ filePath: template.graphKey, line: loc.line, column: loc.column, tagName, candidates: matches.map((m) => entryLabel(m.entry)) }),
       onOutOfScope: (tagName, loc, matches: readonly ElementMatch[]) =>
