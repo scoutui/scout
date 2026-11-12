@@ -73,7 +73,7 @@ Requires `@angular/compiler` installed in the repo being scanned: Scout uses tha
 
 ## Web components
 
-**Recognised:** a tag with a hyphen in its name, such as `<acme-button>`, in React JSX, a Vue template or an Angular template. It is counted even though nothing imports it. Capitals don't matter: `<Acme-Button>` is the same `acme-button`. The few SVG and MathML elements with a hyphen, such as `<font-face>`, are not counted.
+**Recognised:** a tag with a hyphen in its name, such as `<acme-button>`, in React JSX, a Vue template or an Angular template. It is counted even though nothing imports it, and in an Angular template even when an attribute directive such as `routerLink` is on it: only a directive whose selector names the element itself, such as `mat-error`, leaves it out. Capitals don't matter: `<Acme-Button>` is the same `acme-button`. The few SVG and MathML elements with a hyphen, such as `<font-face>`, are not counted.
 
 **Linked to a package or your repo:** each tag belongs to one of these, in this order:
 
