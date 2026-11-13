@@ -25,6 +25,8 @@ export type CssSelector = {
   setElement(name: string): void;
   addAttribute(name: string, value: string): void;
   addClassName(name: string): void;
+  /** The selector as Angular prints it, `:not(...)` parts included. */
+  toString(): string;
 };
 
 export type SelectorMatcher<T> = {

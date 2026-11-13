@@ -7,6 +7,7 @@ import {
   createSelectorIndex,
   emitAngularTemplate,
   type AngularCompiler,
+  type DirectiveSelector,
   type ElementMatch,
   type SelectorEntry,
   type SelectorIndex,
@@ -180,6 +181,20 @@ export function buildAngularSelectorIndex(
   onSelectorUnreadable?: (filePath: string, className: string, selector: string, message: string) => void,
 ): SelectorIndex {
   const components: { selector: string; entry: SelectorEntry }[] = [];
+  const directives: DirectiveSelector[] = [];
+  for (const d of library?.directives ?? []) {
+    // A name starting with `ɵ` is a library's private API by Angular's convention (NG-ZORRO's
+    // `ɵNzTransitionPatchDirective`, which its public modules bring along): it still claims the elements it names, but
+    // isn't counted.
+    if (d.exportName.startsWith("ɵ")) {
+      directives.push(d.selector);
+      continue;
+    }
+    directives.push({
+      selector: d.selector,
+      entry: { source: { type: "package", specifier: d.specifier }, exportName: d.exportName, declaredAs: d.declaredAs, inputs: d.inputs, outputs: d.outputs },
+    });
+  }
   for (const c of library?.components ?? []) {
     components.push({
       selector: c.selector,
@@ -195,13 +210,12 @@ export function buildAngularSelectorIndex(
         onSelectorUnreadable?.(file.graphKey, c.className, c.selector, errorMessage(err));
         continue;
       }
-      components.push({
-        selector: c.selector,
-        entry: { source: { type: "file", graphKey: file.graphKey }, exportName: c.className, inputs: writtenNames(c.inputs), outputs: writtenNames(c.outputs) },
-      });
+      const entry: SelectorEntry = { source: { type: "file", graphKey: file.graphKey }, exportName: c.className, inputs: writtenNames(c.inputs), outputs: writtenNames(c.outputs) };
+      if (c.kind === "directive") directives.push({ selector: c.selector, entry });
+      else components.push({ selector: c.selector, entry });
     }
   }
-  return createSelectorIndex(compiler, components, (library?.directives ?? []).map((d) => d.selector));
+  return createSelectorIndex(compiler, components, directives);
 }
 
 /**

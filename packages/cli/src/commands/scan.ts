@@ -25,7 +25,7 @@ import {
   loadAngularCompiler,
   type PendingAngularFile,
 } from "../emit-angular-file.js";
-import { detectAngularBootstrap, detectAngularComponents, detectAngularModules, readConstArrays, readTopLevelNames } from "../local-index/detect-angular.js";
+import { detectAngularBootstrap, detectAngularComponents, detectAngularDirectives, detectAngularModules, readConstArrays, readTopLevelNames } from "../local-index/detect-angular.js";
 import { buildAngularLibraryIndex } from "../scan/angular-library-index.js";
 import { createProgress, startPhase } from "../util/progress.js";
 import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
@@ -560,8 +560,12 @@ export async function scanRepository(input: {
       }
     }
     const angular =
-      parsed.kind === "babel" && /@(Component|NgModule)\s*\(/.test(source) && importsAngularCore(parsed.ast)
-        ? { components: detectAngularComponents(parsed.ast, source), modules: detectAngularModules(parsed.ast, source) }
+      parsed.kind === "babel" && /@(Component|NgModule|Directive)\s*\(/.test(source) && importsAngularCore(parsed.ast)
+        ? {
+            // A directive is counted like a component wherever its selector is written, so it's held with them.
+            components: [...detectAngularComponents(parsed.ast, source), ...detectAngularDirectives(parsed.ast, source)],
+            modules: detectAngularModules(parsed.ast, source),
+          }
         : undefined;
     if (parsed.kind === "babel" && /\b(bootstrapApplication|bootstrapModule)\s*\(/.test(source)) {
       const imports = importsOf(parsed.ast);
