@@ -4,6 +4,7 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import type { RepoSummary } from "@scoutui/web-shared";
 import { ReposTable } from "@/components/repos/repos-table";
 import { ReposExplorer } from "@/components/repos/repos-explorer";
+import { formatAbsoluteUtc } from "@/lib/format-absolute";
 
 // ReposExplorer reads its search text from the URL; the mock re-renders on a
 // history write, as Next.js does.
@@ -17,6 +18,7 @@ function repo(overrides: Partial<RepoSummary> & { repoId: string }): RepoSummary
     branch: "main",
     commit: "abcdef1234567890",
     committedAt: "2026-07-18T10:00:00.000Z",
+    arrivedAt: "2026-07-18T10:05:00.000Z",
     scanCount: 1,
     componentCount: 0,
     externalComponentCount: 0,
@@ -35,6 +37,7 @@ const rows: RepoSummary[] = [
     repoId: "acme-web",
     gitRemote: "https://github.com/acme/acme-web.git",
     committedAt: "2026-07-18T10:00:00.000Z",
+    arrivedAt: "2026-07-19T09:00:00.000Z",
     componentCount: 50,
     externalComponentCount: 40,
     localComponentCount: 10,
@@ -44,6 +47,7 @@ const rows: RepoSummary[] = [
     repoId: "beta-app",
     branch: "develop",
     committedAt: "2026-07-19T10:00:00.000Z",
+    arrivedAt: "2026-07-19T10:05:00.000Z",
     componentCount: 5,
     externalComponentCount: 5,
     localComponentCount: 0,
@@ -51,6 +55,7 @@ const rows: RepoSummary[] = [
   repo({
     repoId: "gamma-tool",
     committedAt: "2026-07-01T10:00:00.000Z",
+    arrivedAt: "2026-07-20T10:00:00.000Z",
     componentCount: 300,
     externalComponentCount: 100,
     localComponentCount: 200,
@@ -58,18 +63,22 @@ const rows: RepoSummary[] = [
 ];
 
 describe("ReposTable", () => {
-  it("renders all rows, default sort by Committed desc", () => {
+  it("renders all rows, most recently scanned first, with the scan time in the Last scan column", () => {
     render(<ReposTable rows={rows} />);
-    const rendered = screen.getAllByRole("row").slice(1).map(r => r.textContent ?? "");
-    expect(rendered[0]).toContain("beta-app");   // most recent
-    expect(rendered[1]).toContain("acme-web");
-    expect(rendered[2]).toContain("gamma-tool");
+    const rendered = screen.getAllByRole("row").slice(1);
+    expect(rendered.map(r => r.textContent ?? "")).toEqual([
+      expect.stringContaining("gamma-tool"), // scanned last, though committed first
+      expect.stringContaining("beta-app"),
+      expect.stringContaining("acme-web"),
+    ]);
+    const lastScan = within(rendered[0] as HTMLElement).getAllByRole("cell")[1]!;
+    expect(lastScan.querySelector("span")).toHaveAttribute("title", formatAbsoluteUtc("2026-07-20T10:00:00.000Z"));
   });
 
   it("shows the component count as a plain size cue, no origin split", () => {
     render(<ReposTable rows={rows} />);
     const row = screen.getByRole("link", { name: "acme-web" }).closest("tr")!;
-    const componentsCell = within(row as HTMLElement).getAllByRole("cell")[2]!;
+    const componentsCell = within(row as HTMLElement).getAllByRole("cell")[3]!;
     expect(componentsCell).toHaveTextContent("50");
     expect(row).not.toHaveTextContent(/external|local/);
   });
@@ -85,10 +94,10 @@ describe("ReposTable", () => {
 
   it("puts aria-sort on the active column header, not the button", () => {
     render(<ReposTable rows={rows} />);
-    const committed = screen.getByRole("columnheader", { name: /committed/i });
-    expect(committed).toHaveAttribute("aria-sort", "descending");
-    expect(screen.getByRole("columnheader", { name: /^repo/i })).toHaveAttribute("aria-sort", "none");
-    expect(screen.getByRole("button", { name: /committed/i })).not.toHaveAttribute("aria-sort");
+    const lastScan = screen.getByRole("columnheader", { name: /last scan/i });
+    expect(lastScan).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("columnheader", { name: /committed/i })).toHaveAttribute("aria-sort", "none");
+    expect(screen.getByRole("button", { name: /last scan/i })).not.toHaveAttribute("aria-sort");
   });
 
   it("flags deprecated rows with warn styling and mutes zero to a dash", () => {
@@ -116,12 +125,12 @@ describe("ReposTable", () => {
     expect(screen.queryByRole("link", { name: "github.com/acme/acme-web" })).toBeNull();
   });
 
-  it("shows branch and short commit as scan provenance, never the scan count", () => {
+  it("shows branch and short commit under the name, never the scan count", () => {
     render(<ReposTable rows={[repo({ repoId: "many", scanCount: 54, branch: "develop" })]} />);
-    const row = screen.getByRole("link", { name: "many" }).closest("tr")!;
-    expect(row).toHaveTextContent("develop");
-    expect(row).toHaveTextContent("abcdef1");
-    expect(row).not.toHaveTextContent(/scans/);
+    const name = screen.getByRole("link", { name: "many" });
+    expect(name.closest("td")).toHaveTextContent("develop·abcdef1");
+    expect(name).toHaveAttribute("title", "many\ndevelop · abcdef1");
+    expect(name.closest("tr")).not.toHaveTextContent(/scans/);
   });
 });
 
@@ -180,36 +189,25 @@ describe("ReposTable: Changes", () => {
   ];
   const rowOf = (name: string) => screen.getByRole("link", { name }).closest("tr") as HTMLElement;
   const lastCell = (tr: HTMLElement) => within(tr).getAllByRole("cell").at(-1) as HTMLElement;
-  // The Changes cell renders both forms; CSS shows words from lg, the compact form below it.
-  const wordsOf = (name: string) => lastCell(rowOf(name)).querySelector(".lg\\:inline") as HTMLElement;
-  const compactOf = (name: string) => lastCell(rowOf(name)).querySelector(".lg\\:hidden") as HTMLElement;
+  const wordsOf = (name: string) => lastCell(rowOf(name));
   const HEADER_NAME = "Changes: added, removed or changed since the previous scan";
 
-  it("from lg reads in words, `+3 added · −16 removed · 18 changed`, zero parts omitted, numbers ink and words muted", () => {
+  it("reads in words, `+3 added · −16 removed · 18 changed`, zero parts omitted, numbers ink and words muted", () => {
     const changedOnly = repo({ repoId: "changed-only", scanCount: 2, delta: { added: 0, removed: 0, changed: 18, deprecated: 0 } });
     render(<ReposTable rows={[...moved, changedOnly]} />);
     const big = wordsOf("big-move");
     expect(big.textContent).toBe("+3 added · −16 removed · 18 changed");
-    expect(big.className).toBe("hidden text-muted-foreground lg:inline");
+    expect(big.className).toMatch(/text-muted-foreground/);
     for (const n of ["+3", "−16", "18"]) expect(within(big).getByText(n).className).toBe("font-medium text-foreground");
     expect(wordsOf("small-move").textContent).toBe("−2 removed");
     expect(wordsOf("changed-only").textContent).toBe("18 changed");
   });
 
-  it("below lg keeps the compact `+3 −16 · 18 changed`, the header's title spelling out what it counts; a dash when unmoved, visible first-scan text", () => {
-    const changedOnly = repo({ repoId: "changed-only", scanCount: 2, delta: { added: 0, removed: 0, changed: 18, deprecated: 0 } });
-    render(<ReposTable rows={[...moved, changedOnly]} />);
+  it("the header's title spells out what Changes counts; a dash when unmoved, visible first-scan text", () => {
+    render(<ReposTable rows={moved} />);
     const sort = screen.getByRole("button", { name: HEADER_NAME });
     expect(sort).toHaveAttribute("title", HEADER_NAME);
     expect(sort.textContent).toBe("Changes");
-    const big = compactOf("big-move");
-    expect(big.textContent).toBe("+3 −16 · 18 changed");
-    // The counts are ink medium; the word `changed` is muted.
-    expect(within(big).getByText("+3 −16").className).toMatch(/font-medium.*text-foreground|text-foreground.*font-medium/);
-    expect(within(big).getByText("18").className).toMatch(/font-medium/);
-    expect(within(big).getByText("18").parentElement?.className).toMatch(/text-muted-foreground/);
-    expect(compactOf("small-move").textContent).toBe("−2");
-    expect(compactOf("changed-only").textContent).toBe("18 changed");
     expect(lastCell(rowOf("still")).textContent).toBe("—");
     const first = lastCell(rowOf("first"));
     expect(first.textContent).toBe("first scan");
@@ -256,14 +254,14 @@ describe("ReposTable: Changes", () => {
     expect(order[5]).toContain("first");        // null → last
   });
 
-  it("mobile tier carries one line: +added −removed · N changed · deprecated (Δ), only the deprecated number toned", () => {
+  it("mobile tier spells the movement out on one line, only the deprecated number toned", () => {
     const grew = repo({ repoId: "dep-grew", scanCount: 2, delta: { added: 1, removed: 0, changed: 0, deprecated: 2 } });
     render(<ReposTable rows={[moved[0] as RepoSummary, grew]} />);
     const line = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
-    const big = within(rowOf("big-move")).getByText(line("+3 −16 · 18 changed · deprecated (−2)"));
+    const big = within(rowOf("big-move")).getByText(line("+3 added · −16 removed · 18 changed · deprecated (−2) since previous scan"));
     expect(big.className).toBe("text-xs font-medium tabular-nums text-foreground");
     expect(within(big).getByText("−2").className).toBe("text-foreground");
-    const up = within(rowOf("dep-grew")).getByText(line("+1 · deprecated (+2)"));
+    const up = within(rowOf("dep-grew")).getByText(line("+1 added · deprecated (+2) since previous scan"));
     expect(within(up).getByText("+2").className).toBe("text-status-err");
   });
 
@@ -273,20 +271,20 @@ describe("ReposTable: Changes", () => {
     // Scoped to the mobile-tier movement span: the desktop Changes cell
     // renders "—" for this row's zero added and removed.
     const line = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
-    const mobileMovement = within(rowOf("dep-only")).getByText(line("deprecated (−2)"));
+    const mobileMovement = within(rowOf("dep-only")).getByText(line("deprecated (−2) since previous scan"));
     expect(mobileMovement.className).toBe("text-xs font-medium tabular-nums text-foreground");
     expect(mobileMovement.textContent).not.toContain("—");
   });
 });
 
-describe("ReposExplorer: since previous scan chip", () => {
+describe("ReposExplorer: Changed since previous scan chip", () => {
   const mixed = [
     repo({ repoId: "moved-a", delta: { added: 1, removed: 0, changed: 0, deprecated: 0 } }),
     repo({ repoId: "moved-b", delta: { added: 0, removed: 0, changed: 0, deprecated: -1 } }),
     repo({ repoId: "quiet", delta: { added: 0, removed: 0, changed: 0, deprecated: 0 } }),
     repo({ repoId: "changed-only", delta: { added: 0, removed: 0, changed: 18, deprecated: 0 } }),
   ];
-  const chip = () => screen.getByRole("button", { name: /^since previous scan/ });
+  const chip = () => screen.getByRole("button", { name: /^Changed since previous scan/ });
   // The narrowed-count <span> holds "N of M"; its child span holds N.
   const count = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos"));
@@ -294,7 +292,7 @@ describe("ReposExplorer: since previous scan chip", () => {
   it("counts the repos that moved, a changed-only repo included; pressing narrows to them, pressing again restores", () => {
     render(<ReposExplorer rows={mixed} />);
     expect(chip()).toHaveAttribute("aria-pressed", "false");
-    expect(chip().textContent).toBe("since previous scan3");
+    expect(chip().textContent).toBe("Changed since previous scan3");
     expect(screen.getByText("quiet")).toBeInTheDocument();
     fireEvent.click(chip());
     expect(chip()).toHaveAttribute("aria-pressed", "true");
@@ -303,7 +301,7 @@ describe("ReposExplorer: since previous scan chip", () => {
     expect(screen.getByText("moved-a")).toBeInTheDocument();
     expect(screen.getByText("moved-b")).toBeInTheDocument();
     const changedOnly = screen.getByRole("link", { name: "changed-only" }).closest("tr") as HTMLElement;
-    expect(within(changedOnly).getAllByRole("cell").at(-1)?.querySelector(".lg\\:inline")?.textContent).toBe("18 changed");
+    expect(within(changedOnly).getAllByRole("cell").at(-1)?.textContent).toBe("18 changed");
     expect(screen.getByText(count("3 of 4"))).toBeInTheDocument();
     expect(window.location.search).toBe("?changed=true");
     fireEvent.click(chip());
@@ -315,7 +313,7 @@ describe("ReposExplorer: since previous scan chip", () => {
   it("renders no chip when no repo moved, and a pasted ?changed=true narrows nothing", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos?changed=true");
     render(<ReposExplorer rows={[mixed[2] as RepoSummary]} />); // quiet
-    expect(screen.queryByRole("button", { name: /^since previous scan/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Changed since previous scan/ })).toBeNull();
     expect(screen.getByText("quiet")).toBeInTheDocument();
   });
 

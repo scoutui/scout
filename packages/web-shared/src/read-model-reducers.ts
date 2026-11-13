@@ -134,6 +134,7 @@ export function reduceRepoSummary(
     branch: repo.branch,
     commit: repo.commit,
     committedAt: meta.committedAt,
+    arrivedAt: meta.arrivedAt,
     scanCount: ctx.scanCount,
     // Every component in the scan, rendered or not: the repo page lists the same set.
     componentCount: components.length,
@@ -164,7 +165,6 @@ export function reduceRepoDetail(
     ...summary,
     initialCommit: artifact.meta.repo.initialCommit ?? null,
     scanId: artifact.meta.scanId,
-    arrivedAt: artifact.meta.arrivedAt,
     scannerVersion: artifact.meta.scannerVersion,
     diff,
     scope: artifact.meta.scope ?? null,

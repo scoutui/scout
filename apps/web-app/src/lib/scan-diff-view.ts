@@ -1,4 +1,4 @@
-import type { ComponentRow, DiffMark, RemovedComponent, RepoDelta } from "@scoutui/web-shared";
+import type { ComponentRow, DiffMark, RemovedComponent } from "@scoutui/web-shared";
 import { deltaDirection } from "@/lib/dashboard-format";
 
 /** `+3`, `−16` (U+2212), or a faint-dash `—` for zero. Never `±0`. */
@@ -12,12 +12,6 @@ export function signedCount(n: number): string {
  *  zero parts omitted. Every movement readout uses this order. */
 export function movementParts(counts: { added: number; removed: number; changed: number }): { word: "added" | "removed" | "changed"; n: number }[] {
   return (["added", "removed", "changed"] as const).map((word) => ({ word, n: counts[word] })).filter((p) => p.n > 0);
-}
-
-/** `+3 −16`, zero parts omitted; null when neither count moved. */
-export function sinceLastScan(delta: RepoDelta): string | null {
-  const parts = [delta.added, -delta.removed].filter((n) => n !== 0).map((n) => signedCount(n));
-  return parts.length === 0 ? null : parts.join(" ");
 }
 
 /** A row's signed occurrence Δ under its mark: added rows gained everything

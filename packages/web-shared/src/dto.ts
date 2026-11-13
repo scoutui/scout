@@ -117,6 +117,8 @@ export const RepoSummarySchema = z.object({
   branch: z.string().nullable(),
   commit: z.string(),
   committedAt: z.string(),              // ISO commit date of the latest scan
+  // When the dashboard received the latest scan; on RepoDetail, the shown scan.
+  arrivedAt: z.string(),
   scanCount: z.number().int().positive(),
   componentCount: z.number().int().nonnegative(),
   externalComponentCount: z.number().int().nonnegative(),
@@ -150,8 +152,6 @@ export type ScanFinding = z.infer<typeof ScanFindingSchema>;
 export const RepoDetailSchema = RepoSummarySchema.extend({
   initialCommit: z.string().nullable(),
   scanId: z.string(),
-  // When the dashboard received the shown scan.
-  arrivedAt: z.string(),
   scannerVersion: z.string(),
   // The shown scan vs the scan immediately before it; null on a first scan.
   diff: ScanDiffSchema.nullable(),
