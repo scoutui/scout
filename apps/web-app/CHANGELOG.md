@@ -1,5 +1,19 @@
 # @scoutui/web-app
 
+## 0.10.0
+
+### Minor Changes
+
+- [#215](https://github.com/scoutui/scout/pull/215) [`032cd9a`](https://github.com/scoutui/scout/commit/032cd9a0ee9690e9f38d9cbc6b8f447a816f3524) Thanks [@siggerzz](https://github.com/siggerzz)! - The repo page has a shorter header. Under the repo's name, one status line shows the repo's git remote, the commit and branch, how many deprecated components are in use, what changed since the previous scan (for example `+3 added · −1 removed · 4 changed since previous scan`), and, when the scan couldn't see everything, "Some uses may be missing" with a button that lists the gaps. ‹ and › beside the scan button step to the previous and next scan, and the scan button's menu lists recent scans followed by the scan ID, package count and scanner version. An older scan says "Viewing the scan from 7d ago" with a "Back to latest" button. Settings is now a labelled button in the header instead of an item in the "⋯" menu.
+
+- [#214](https://github.com/scoutui/scout/pull/214) [`55eac69`](https://github.com/scoutui/scout/commit/55eac694fa1d80c9e2f29bc1ac7de37532e0aae8) Thanks [@siggerzz](https://github.com/siggerzz)! - The repos list has a **Last scan** column, showing when the dashboard received each repo's latest scan, and lists the most recently scanned repos first. **Committed** stays beside it. The branch and commit now sit under the repo's name, so a long branch name no longer pushes the other columns off the edge. **Changes** always reads in words, such as **+3 added · −16 removed**, at every width, and the filter button now reads **Changed since previous scan**. On a phone, each repo starts with when it was scanned and spells out what changed since its previous scan.
+
+### Patch Changes
+
+- [#213](https://github.com/scoutui/scout/pull/213) [`6942413`](https://github.com/scoutui/scout/commit/694241343904e9fa9ea4d495a00b440cb9ec3700) Thanks [@siggerzz](https://github.com/siggerzz)! - A chart page now has an **Export** button for its image and table, and the **⋯** menu holds only sharing and **Duplicate**, so it's hidden for people who can't use either. In bar charts, a package under a bar's name is no longer cut off at its start, and one too long for the label column breaks after its scope onto another line. The components table on a repo page keeps its **Version**, **Files** and **Uses** headings whole at narrow widths, and on a phone a long component or package name ends in an ellipsis instead of running off the row. A component's **Usage** tab calls its packages or folders **Used in** throughout, the folder or package filter chip says **Used in** too, and on a phone the props under each file wrap instead of being cut off. The Governance page's description and the roles on **Settings → People** are shorter, and the roles now say that Viewers can see governance.
+
+- [#212](https://github.com/scoutui/scout/pull/212) [`62a6e3d`](https://github.com/scoutui/scout/commit/62a6e3d1c0f704f2ea3926f05606a9b52b3384d0) Thanks [@siggerzz](https://github.com/siggerzz)! - Column headings and labels are no longer in capitals; they read in sentence case, such as **Uses** and **Chart type**. Words that were shown in the faintest grey, such as a package's scope, a file's folders and **first scan**, now use the same grey as other secondary text, and the faintest grey is kept for dashes and separators. On a repo page, the **Components** and **Adoption** tabs show how many each holds, and on a component's page the **Composition** tab shows how many components render it or are rendered by it. The Governance and Settings pages now sit on the same page width as the other pages, so their titles line up with the rest, while the record form and the people table keep a comfortable width. A repo page's tabs now line up with its title and sit on a rule, like the tabs on a component's page.
+
 ## 0.9.1
 
 ### Patch Changes

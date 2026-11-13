@@ -1,5 +1,25 @@
 # @scoutui/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- [#208](https://github.com/scoutui/scout/pull/208) [`33d08c9`](https://github.com/scoutui/scout/commit/33d08c9510b0b82dec1385ad5f1d16860ca2a14a) Thanks [@nhunsaker](https://github.com/nhunsaker)! - Angular directives are now counted wherever a template writes their selector, your repo's own and installed libraries' alike (Angular Material and Angular's own included), so Angular usage numbers go up. A directive that only rides along on a name another class owns, such as `NgControlStatus` on `ngModel`, isn't counted.
+
+- [#210](https://github.com/scoutui/scout/pull/210) [`25e5b6d`](https://github.com/scoutui/scout/commit/25e5b6dc2caa47c9358c1057e78f72a2257ee65f) Thanks [@siggerzz](https://github.com/siggerzz)! - A web component now belongs to the package whose type declarations list its tag in `HTMLElementTagNameMap`, when a file in the repo imports the module they describe. Before, a tag from a package that ships TypeScript types but no Custom Elements Manifest, such as `<icon-close>` after `import "@acme/icons/dist/IconClose.js"`, was an Undefined element. Side-effect imports count; `import type` doesn't. The scan file records this as a new evidence `source`, `tag-map`. When it names a different package from a manifest that declares the same tag, the tag is a conflict, as it is between two manifests.
+
+  Angular components from an installed library are also found in three more places, as TypeScript finds their typings: the `.d.ts` file beside a package's `main` when it has no `types` field, the `.d.ts` file beside a deep import such as `@acme/ui/dist/button.js` when the package has no `exports`, and a re-export written with a `.ts` extension.
+
+### Patch Changes
+
+- [#199](https://github.com/scoutui/scout/pull/199) [`af2626e`](https://github.com/scoutui/scout/commit/af2626e1f07c3a00e395c366656fbed94ecc8ac3) Thanks [@nhunsaker](https://github.com/nhunsaker)! - An Angular component's `imports` can now name a constant that holds a list of imports, such as `imports: [ExampleButtonImports]` or `imports: [...SHARED_IMPORTS]`, where `export const ExampleButtonImports = [ExampleButton] as const` is declared in another file. The scan follows the constant (through spreads, nested arrays and files that re-export it) to what it holds, so the template only matches the components that list brings in. Before, such an entry made the scan treat every component in the repo as in scope, which reported elements as matching more than one component (`angular-selector-ambiguous`) and left their uses out. When part of a list still can't be read, the components it names are matched first, and the rest of the repo is only searched for an element none of them match. A constant an installed package exports counts as a part that can't be read, since its typings don't list what it holds.
+
+- [#198](https://github.com/scoutui/scout/pull/198) [`355f88d`](https://github.com/scoutui/scout/commit/355f88d12ad6940644ca375465f6552ae96d7217) Thanks [@nhunsaker](https://github.com/nhunsaker)! - Angular components from an installed library are now found when the library's modules are listed only in a shared constant, such as `export const SHARED_ZORRO_MODULES = [NzButtonModule, ...]` in a file with no `@Component` or `@NgModule`, that a component or module lists in its `imports`. The scan follows the constant the same way it reads the template's scope, so only libraries a component can actually use are read. Before, the scan never read those libraries, so their elements were counted as custom elements (tags) instead of the library's components.
+
+- [#197](https://github.com/scoutui/scout/pull/197) [`4fce69e`](https://github.com/scoutui/scout/commit/4fce69e33fcbdaee771c8a6e8f94bd81b87bfc2d) Thanks [@nhunsaker](https://github.com/nhunsaker)! - An Angular library component that a package exports under two names, such as `NgIcon` and `NgIcon as NgIconComponent`, is now counted as one component instead of making every element that uses it ambiguous. Scout reports it under the name your file imports, otherwise under the name the library declares the class with. Before, each such element produced an `angular-selector-ambiguous` warning and its uses weren't counted.
+
+- [#195](https://github.com/scoutui/scout/pull/195) [`f919d8f`](https://github.com/scoutui/scout/commit/f919d8f3814b058fdc3bd86b891e3d976461ddb3) Thanks [@nhunsaker](https://github.com/nhunsaker)! - An installed Angular library whose `package.json#exports` points at JavaScript files with no `types` condition, such as `@ionic/angular` (`".": "./dist/standalone/index.js"`), now has its components read from the `.d.ts` file next to each target, the way TypeScript finds them. Before, the scan treated the library as having no typings, so all of its elements (every `<ion-*>` tag) were listed as custom elements instead of the library's components.
+
 ## 0.4.1
 
 ### Patch Changes
