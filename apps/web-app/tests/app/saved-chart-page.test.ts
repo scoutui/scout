@@ -239,7 +239,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const viewerGone = await renderSaved(goneRepo, anas);
       expect(editLinks(viewerGone)).toEqual([]);
       expect(propsOf(viewerGone, "DeleteDashboardButton")).toBeUndefined();
-      expect(propsOf(viewerGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null, exportSubmenu: true });
+      expect(propsOf(viewerGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null });
       expect(propsOf(viewerGone, "EmptyState")).toMatchObject({
         title: "This chart's repo no longer exists.",
         description: "There are no scans for repo-gone any more. It may have been renamed or deleted.",
@@ -253,14 +253,14 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const otherEditorGone = await renderSaved(goneRepo, anas);
       expect(editLinks(otherEditorGone)).toEqual([]);
       expect(propsOf(otherEditorGone, "DeleteDashboardButton")).toBeUndefined();
-      expect(propsOf(otherEditorGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: true, visibility: null, exportSubmenu: true });
+      expect(propsOf(otherEditorGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: true, visibility: null });
       expect(propsOf(otherEditorGone, "EmptyState")).toMatchObject({ description: "There are no scans for repo-gone any more. It may have been renamed or deleted." });
 
       reader = editor;
       const creatorGone = await renderSaved(goneRepo, anas);
       expect(editLinks(creatorGone)).toHaveLength(1);
       expect(propsOf(creatorGone, "DeleteDashboardButton")).toEqual({ id: expect.any(String) });
-      expect(propsOf(creatorGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: true, visibility: "everyone", exportSubmenu: true });
+      expect(propsOf(creatorGone, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: true, visibility: "everyone" });
       expect(propsOf(creatorGone, "EmptyState")).toMatchObject({ description: expect.stringContaining("Edit the chart to pick another repo") });
 
       reader = { ...editor, userId: "someone-else", role: "admin" };
@@ -277,7 +277,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const tree = await renderSaved({ scope: { kind: "all" }, cohorts: [{ kind: "local" }], chartType: "trend", metric: "count" }, { name: "Local usage" });
       expect(propsOf(tree, "LinkedDashboardChart")).toMatchObject({ view: { kind: "series" } });
       expect(propsOf(tree, "ChartExportProvider")).toEqual({ title: "Local usage", children: expect.anything() });
-      expect(propsOf(tree, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null, exportSubmenu: true });
+      expect(propsOf(tree, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null });
     });
   });
 
@@ -335,7 +335,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       const shared = await renderSaved(config);
       expect(propsOf(shared, "LinkedDashboardChart")).toBeDefined();
       expect(propsOf(shared, "DeleteDashboardButton")).toBeUndefined();
-      expect(propsOf(shared, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null, exportSubmenu: true });
+      expect(propsOf(shared, "ChartMenu")).toEqual({ id: expect.any(String), canDuplicate: false, visibility: null });
     });
   });
 

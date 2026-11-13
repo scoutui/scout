@@ -220,7 +220,7 @@ export default async function DashboardViewPage({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {showMetricToggle ? <DashboardMetricToggle metric={metric} /> : null}
             {canChange ? (
               <>
@@ -234,7 +234,6 @@ export default async function DashboardViewPage({
               id={dashboard.id}
               canDuplicate={!derived && canEdit}
               visibility={canChange ? dashboard.visibility : null}
-              exportSubmenu={!derived}
             />
           </div>
         </div>

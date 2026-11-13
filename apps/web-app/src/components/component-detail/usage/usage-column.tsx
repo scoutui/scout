@@ -81,7 +81,10 @@ export function UsageColumn({
   columnRef: RefObject<HTMLElement | null>;
   spacerRef: RefObject<HTMLDivElement | null>;
 }) {
-  const title = view.props.length > 0 ? "Where it’s used and prop values" : "Where it’s used";
+  const where = whereHeading(due);
+  const title = view.props.length > 0 ? `${where} and prop values` : where;
+  // A heading only when the column also lists prop values; otherwise the column's title reads the same.
+  const WhereHeading = view.props.length > 0 ? "h3" : "p";
   return (
     // From lg this fills its grid area, and the spacer sets where in that area the sticky column sits.
     <div className="min-w-0">
@@ -101,7 +104,7 @@ export function UsageColumn({
           {title}
         </button>
         {/* Folded above the files: from sm at most 24rem wide, and two columns once the panel has room for two columns of
-            at least 20rem, the column's width from lg. Where it's used is on the left, the props on the right. */}
+            at least 20rem, the column's width from lg. Used in is on the left, the props on the right. */}
         <div
           id="usage-column-body"
           className={cn(
@@ -115,17 +118,18 @@ export function UsageColumn({
           {view.areas.length > 0 ? (
             <section aria-labelledby="usage-where">
               <div className="mb-1 flex items-baseline gap-2 px-1.5">
-                <h3 id="usage-where" className="text-label shrink-0 text-muted-foreground">
-                  {whereHeading(due, view.byPackage || onePackage !== null)}
-                </h3>
-                {onePackage ? (
-                  <span className="min-w-0 truncate font-mono text-xs text-muted-foreground" title={onePackage}>
-                    {onePackage}
-                  </span>
-                ) : prefix ? (
-                  <span className="min-w-0 truncate text-xs text-muted-foreground" title={`${prefix}/`}>
-                    under <span className="font-mono">{prefix}/</span>
-                  </span>
+                <WhereHeading id="usage-where" className="text-label shrink-0 text-muted-foreground">
+                  {where}
+                </WhereHeading>
+                {onePackage || prefix ? (
+                  <>
+                    <span aria-hidden className="text-xs text-faint">
+                      ·
+                    </span>
+                    <span className="min-w-0 truncate font-mono text-xs text-muted-foreground" title={onePackage ?? `${prefix}/`}>
+                      {onePackage ?? `${prefix}/`}
+                    </span>
+                  </>
                 ) : null}
               </div>
               <FolderRows view={view} onArea={onArea} />

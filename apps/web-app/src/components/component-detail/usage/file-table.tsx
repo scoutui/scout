@@ -245,7 +245,7 @@ function FileRow({
             </span>
           )}
           {file.jsx ? (
-            <span className="mt-0.5 block truncate font-mono text-xs text-muted-foreground md:hidden" title={file.jsx}>
+            <span className="mt-0.5 block font-mono text-xs text-muted-foreground wrap-break-word md:hidden" title={file.jsx}>
               {file.jsx}
             </span>
           ) : null}

@@ -141,13 +141,11 @@ describe("count and empty-list text", () => {
     expect(usageDue(deprecated, status)).toBe(due);
   });
 
-  it.each<[string, UsageDue | null, boolean, string]>([
-    ["folders as where it's used for a component that isn't deprecated", null, false, "Where it’s used"],
-    ["folders as where it's still used for a deprecated one", "to remove", false, "Where it’s still used"],
-    ["packages as used in for a component that isn't deprecated", null, true, "Used in"],
-    ["packages as still used in for a deprecated one", "to migrate", true, "Still used in"],
-  ])("heads the %s", (_title, due, byPackage, heading) => {
-    expect(whereHeading(due, byPackage)).toBe(heading);
+  it.each<[string, UsageDue | null, string]>([
+    ["packages or folders as used in for a component that isn't deprecated", null, "Used in"],
+    ["packages or folders as still used in for a deprecated one", "to migrate", "Still used in"],
+  ])("heads the %s", (_title, due, heading) => {
+    expect(whereHeading(due)).toBe(heading);
   });
 
   it.each<[string, Partial<UsageFilters>, string | null]>([

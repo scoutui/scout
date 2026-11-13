@@ -258,7 +258,7 @@ export function FilterPills({
             onRemoveArea();
           }}
         >
-          <span className="text-muted-foreground">{view.byPackage ? "Package" : "Folder"}</span>
+          <span className="text-muted-foreground">Used in</span>
           <span className="truncate font-mono font-medium">{area.label}</span>
         </Pill>
       ) : null}

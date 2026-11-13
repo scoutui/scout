@@ -804,9 +804,8 @@ export function countText(view: UsageView, due: UsageDue | null): { short: strin
 }
 
 /** The heading over the packages or the folders the calls are in. */
-export function whereHeading(due: UsageDue | null, byPackage = false): string {
-  if (byPackage) return due ? "Still used in" : "Used in";
-  return due ? "Where it’s still used" : "Where it’s used";
+export function whereHeading(due: UsageDue | null): string {
+  return due ? "Still used in" : "Used in";
 }
 
 /** A file's value cell as its title reads: each value with its hint and calls, one a line, then the calls without the prop. */
