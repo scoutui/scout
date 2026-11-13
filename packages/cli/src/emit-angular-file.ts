@@ -242,9 +242,10 @@ export type AngularModuleScopes = {
   /**
    * The keys an `imports` entry written in `fromFile` stands for: `resolveRef`'s key for a class or module, every member of a const array
    * (followed through spreads, nested arrays and other files), nothing for a repo class that is neither component nor module (a directive or pipe).
-   * `complete` is false when part of it can't be read.
+   * `complete` is false when part of it can't be read. `packages` holds the specifier of every installed-package import it reached,
+   * however deep in a const array, so the scan can index those libraries before it matches templates.
    */
-  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean };
+  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean; packages: string[] };
 };
 
 export function buildModuleScopes(
@@ -269,8 +270,9 @@ export function buildModuleScopes(
     return target?.file === undefined ? undefined : `${target.file.graphKey}#${target.name}`;
   };
 
-  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean } => {
+  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean; packages: string[] } => {
     const keys: string[] = [];
+    const packages: string[] = [];
     let complete = true;
     const seen = new Set<string>();
     // True once `name` in `graphKey` is accounted for: a key it adds, a const array it expands, or a class that isn't a component or module.
@@ -283,6 +285,7 @@ export function buildModuleScopes(
         // as a class the package exports: anything else (a `const` array of imports in its typings, or a package the
         // index didn't reach) may stand for components the scope can't see.
         if (target === null) {
+          packages.push(spec.specifier);
           if (libraryClasses !== undefined && !libraryClasses.has(`${spec.specifier}#${spec.imported}`)) return false;
           keys.push(spec.imported);
           return true;
@@ -313,7 +316,7 @@ export function buildModuleScopes(
       return false;
     };
     if (!follow(fromFile.graphKey, fromFile.imports, identifier)) complete = false;
-    return { keys, complete };
+    return { keys, complete, packages };
   };
 
   type ModuleEntry = { module: AngularModuleDecl; file: PendingAngularFile };

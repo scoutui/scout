@@ -1153,6 +1153,40 @@
       }
     },
     {
+      "id": "3d5bd00dabdd5490",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/library-const-array/page.component.ts",
+        "exportName": "LibraryConstArrayPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 9,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "53447e07e0715285": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "3aca91295feb9b15",
       "identity": {
         "kind": "repository-declaration",
@@ -1949,6 +1983,31 @@
       }
     },
     {
+      "id": "53447e07e0715285",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@example/ng-ui",
+        "publicEntry": "badge",
+        "exportName": "ExBadge"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "3d5bd00dabdd5490": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "09d6ae02c79d25f1",
       "identity": {
         "kind": "package-export",
@@ -2636,6 +2695,28 @@
         }
       },
       "ownerComponentId": "4da1c363872c317d"
+    },
+    {
+      "occurrenceId": "22ee5e006cc02dfa",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "53447e07e0715285"
+      },
+      "filePath": "src/library-const-array/page.component.ts",
+      "line": 7,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@example/ng-ui/badge",
+          "name": "ExBadge"
+        }
+      ],
+      "props": {},
+      "ownerComponentId": "3d5bd00dabdd5490"
     },
     {
       "occurrenceId": "73824564c2fe5dc0",

@@ -15,6 +15,10 @@
     "./tooltip": {
       "types": "./types/tooltip.d.ts",
       "default": "./tooltip.mjs"
+    },
+    "./badge": {
+      "types": "./types/badge.d.ts",
+      "default": "./badge.mjs"
     }
   }
 }
