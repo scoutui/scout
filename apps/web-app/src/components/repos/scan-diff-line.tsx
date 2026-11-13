@@ -87,7 +87,7 @@ function Sep() {
   return (
     <>
       {" "}
-      <span aria-hidden className="text-muted-foreground/70">
+      <span aria-hidden className="text-faint">
         ·
       </span>{" "}
     </>

@@ -1044,7 +1044,7 @@ function RecordForm({
   );
 
   return (
-    <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
+    <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 max-w-3xl space-y-4", !isEdit && "panel p-4")}>
       <div>
         <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
         {byline ? <p className="mt-1 text-xs text-muted-foreground">{byline}</p> : null}

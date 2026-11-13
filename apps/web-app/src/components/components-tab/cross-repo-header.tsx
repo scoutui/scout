@@ -49,5 +49,5 @@ export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponen
 }
 
 function Sep() {
-  return <span aria-hidden className="text-muted-foreground/60">·</span>;
+  return <span aria-hidden className="text-faint">·</span>;
 }

@@ -6,7 +6,7 @@ import { CollapsibleNotice, CollapsibleNoticeRow } from "@/components/collapsibl
 
 const SHOWN = 3;
 
-const Dot = () => <span aria-hidden className="text-muted-foreground/60">·</span>;
+const Dot = () => <span aria-hidden className="text-faint">·</span>;
 
 /** The series a reason row lists: names first, then a count of each kind it has no name for. */
 function seriesNames(series: LeftOutCohort[]): string[] {

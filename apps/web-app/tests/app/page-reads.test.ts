@@ -470,10 +470,10 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
         ["2026-06-01 00:00 UTC", "2026-06-05 09:00 UTC"],
         ["2026-05-01 00:00 UTC", "2026-05-01 00:05 UTC"],
       ]);
-      expect(rows.map(row => [...row.matchAll(/>(latest|couldn(?:'|&#x27;)t be prepared|can(?:'|&#x27;)t be read)</g)].map(match => match[1]?.replace("&#x27;", "'")))).toEqual([
-        ["latest", "couldn't be prepared"],
+      expect(rows.map(row => [...row.matchAll(/>(Latest|Couldn(?:'|&#x27;)t be prepared|Can(?:'|&#x27;)t be read)</g)].map(match => match[1]?.replace("&#x27;", "'")))).toEqual([
+        ["Latest", "Couldn't be prepared"],
         [],
-        ["can't be read"],
+        ["Can't be read"],
       ]);
     });
   });
