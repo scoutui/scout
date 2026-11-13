@@ -105,14 +105,14 @@ export default async function RepoScansPage({
                           </span>
                           {isLatest ? (
                             <span className="rounded-sm border border-border px-1.5 py-0.5 text-label text-muted-foreground">
-                              latest
+                              Latest
                             </span>
                           ) : null}
                         </div>
                         {state === "failed" || state === "degraded" ? (
                           <span className="inline-flex items-baseline gap-1 rounded-sm border border-border px-1.5 py-0.5 text-label text-status-err">
                             <CircleX aria-hidden className="size-3 shrink-0 self-center" />
-                            {fallbackStates[state]}
+                            {fallbackStates[state].charAt(0).toUpperCase() + fallbackStates[state].slice(1)}
                           </span>
                         ) : null}
                       </div>

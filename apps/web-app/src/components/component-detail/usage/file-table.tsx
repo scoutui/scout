@@ -288,11 +288,11 @@ function FileRow({
   );
 }
 
-/** A file's name after its faint parent folders, which give way first when the name doesn't fit. */
+/** A file's name after its muted parent folders, which give way first when the name doesn't fit. */
 function FileName({ file }: { file: UsageFile }) {
   return (
     <span className="flex min-w-0">
-      {file.lead ? <span className="min-w-0 truncate text-faint">{file.lead}</span> : null}
+      {file.lead ? <span className="min-w-0 truncate text-muted-foreground">{file.lead}</span> : null}
       <span className="max-w-full shrink-0 truncate">{file.base}</span>
     </span>
   );

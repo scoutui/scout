@@ -481,3 +481,110 @@ describe("integration: per-scan tag attribution from registration and CEM eviden
     }
   });
 });
+
+describe("integration: tag attribution from the HTMLElementTagNameMap of imported packages' typings", () => {
+  let stage: string;
+  let artifact: ScanArtifact;
+  let text: string;
+
+  /** A `.d.ts` that puts `tag` into `HTMLElementTagNameMap`, keyed by `key` (the literal, or `[name]` with `prelude` declaring `name`). */
+  const tagMap = (key: string, prelude = "") =>
+    `${prelude}export declare class El extends HTMLElement {}\ndeclare global {\n  interface HTMLElementTagNameMap {\n    ${key}: El;\n  }\n}\n`;
+
+  beforeAll(() => {
+    stage = mkdtempSync(join(tmpdir(), "cc-tag-map-"));
+    writeFiles(stage, {
+      "package.json": JSON.stringify({ name: "tag-map", private: true, version: "0.0.0" }),
+      "scout.config.json": JSON.stringify({ repoId: "tag-map", include: ["src/**/*.{ts,tsx,vue}"] }),
+      "src/App.vue": [
+        "<template>",
+        "  <icon-close></icon-close>",
+        "  <icon-open></icon-open>",
+        "  <kit-button></kit-button>",
+        "  <typed-badge></typed-badge>",
+        "  <typed-pill></typed-pill>",
+        "</template>",
+        '<script setup lang="ts">',
+        'import "@example/icons/dist/IconClose.js";',
+        'import { ButtonStyles } from "@example/kit/button";',
+        'import type { TypedBadge } from "@example/typed";',
+        'import { type PillEl } from "@example/typed-inline";',
+        "</script>",
+        "",
+      ].join("\n"),
+      "src/Page.tsx": 'import "@example/chips/chip.js";\nexport function Page() {\n  return <x-chip></x-chip>;\n}\n',
+      // No `exports`, `types` or CEM: a deep import's typings sit beside its JavaScript.
+      "node_modules/@example/icons/package.json": JSON.stringify({ name: "@example/icons", version: "1.2.0", main: "dist/index.js" }),
+      "node_modules/@example/icons/dist/package.json": JSON.stringify({ name: "@example/icons/dist", type: "module" }),
+      "node_modules/@example/icons/dist/IconClose.js": "export {};\n",
+      "node_modules/@example/icons/dist/IconClose.d.ts": `import { IconBase } from "./IconBase.ts";\n${tagMap("[componentSelector]", 'declare const componentSelector = "icon-close";\n')}`,
+      "node_modules/@example/icons/dist/IconBase.d.ts": "export declare class IconBase extends HTMLElement {}\n",
+      "node_modules/@example/icons/dist/IconOpen.d.ts": tagMap('"icon-open"'),
+      // An `exports` types condition whose file re-exports another package, installed under it, which declares the tag beside its `main`.
+      "node_modules/@example/kit/package.json": JSON.stringify({
+        name: "@example/kit",
+        version: "1.0.0",
+        exports: { "./button": { types: "./dist/button.d.ts", import: "./dist/button.js" } },
+      }),
+      "node_modules/@example/kit/dist/button.js": "export {};\n",
+      "node_modules/@example/kit/dist/button.d.ts": 'export * from "@example/kit-core";\n',
+      "node_modules/@example/kit/node_modules/@example/kit-core/package.json": JSON.stringify({ name: "@example/kit-core", version: "3.0.0", main: "index.js" }),
+      "node_modules/@example/kit/node_modules/@example/kit-core/index.js": "export {};\n",
+      "node_modules/@example/kit/node_modules/@example/kit-core/index.d.ts": tagMap("'kit-button'"),
+      "node_modules/@example/typed/package.json": JSON.stringify({ name: "@example/typed", version: "1.0.0", types: "index.d.ts" }),
+      "node_modules/@example/typed/index.d.ts": tagMap('"typed-badge"'),
+      "node_modules/@example/typed-inline/package.json": JSON.stringify({ name: "@example/typed-inline", version: "1.0.0", types: "index.d.ts" }),
+      "node_modules/@example/typed-inline/index.d.ts": tagMap('"typed-pill"'),
+      "node_modules/@example/chips/package.json": JSON.stringify({ name: "@example/chips", version: "0.1.0" }),
+      "node_modules/@example/chips/chip.js": "export {};\n",
+      "node_modules/@example/chips/chip.d.ts": 'export { El } from "./element.ts";\n',
+      "node_modules/@example/chips/element.d.ts": tagMap("[tag]", 'declare const tag: "x-chip";\n'),
+    });
+    commit(stage);
+    ({ artifact, text } = scan(stage));
+  });
+
+  afterAll(() => {
+    rmSync(stage, { recursive: true, force: true });
+  });
+
+  /** A tag resolved to `packageName` by its tag map alone. */
+  const resolvedByTagMap = (packageName: string, version: string) => {
+    const target = { kind: "package", packageName };
+    return {
+      status: "resolved",
+      target,
+      confidence: "declared",
+      evidence: [{ source: "tag-map", strength: "declared", locator: { packageName, version }, target, disposition: "supports" }],
+    };
+  };
+
+  it("attributes a tag a side-effect import's typings declare under a same-file const to their package", () => {
+    expect(tagNamed(artifact, "icon-close")?.attribution).toEqual(resolvedByTagMap("@example/icons", "1.2.0"));
+  });
+
+  it("leaves a tag declared only by typings no file imports unattributed", () => {
+    expect(tagNamed(artifact, "icon-open")?.attribution).toEqual({ status: "unknown", reason: "absent", evidence: [] });
+  });
+
+  it("attributes a tag a named import's typings reach through a re-export to the package that declares it, with that package's version", () => {
+    expect(tagNamed(artifact, "kit-button")).toMatchObject({ attribution: resolvedByTagMap("@example/kit-core", "3.0.0"), version: "3.0.0" });
+  });
+
+  it.each([
+    ["import type", "typed-badge"],
+    ["import { type … }", "typed-pill"],
+  ])("reads no typings through a type-only import written as %s", (_, tagName) => {
+    expect(tagNamed(artifact, tagName)?.attribution).toEqual({ status: "unknown", reason: "absent", evidence: [] });
+  });
+
+  it("attributes a tag a React file's side-effect import reaches through a `.ts` re-export, declared under a const's literal type", () => {
+    expect(tagNamed(artifact, "x-chip")?.attribution).toEqual(resolvedByTagMap("@example/chips", "0.1.0"));
+  });
+
+  it("writes no absolute or install path into the artefact", () => {
+    for (const leak of ["/Users/", "/private/", "/tmp/", "node_modules/", stage]) {
+      expect(text.includes(leak), leak).toBe(false);
+    }
+  });
+});

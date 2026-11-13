@@ -63,7 +63,7 @@ const emit = (seeds: ComponentSeed[], occurrences: EngineOccurrence[], cem: [str
     seeds,
     occurrences,
     diagnostics: [],
-    tagEvidence: { registrations: new Map(), cem: new Map(cem), globalDeclarations: new Map() },
+    tagEvidence: { registrations: new Map(), cem: new Map(cem), globalDeclarations: new Map(), tagMaps: new Map() },
     declaredIn: new Map(),
     readVersion: async () => null,
   } satisfies EmitInput);
@@ -153,7 +153,7 @@ describe("emitArtifact", () => {
       seeds: [localSeed("Page")],
       occurrences: [unresolvedOccurrence(4, local("Page")), unresolvedOccurrence(5, local("Page"))],
       diagnostics: [cycle],
-      tagEvidence: { registrations: new Map(), cem: new Map(), globalDeclarations: new Map() },
+      tagEvidence: { registrations: new Map(), cem: new Map(), globalDeclarations: new Map(), tagMaps: new Map() },
       declaredIn: new Map([["@example/ui", "apps/web/package.json"]]),
       readVersion: async () => null,
     });

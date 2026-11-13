@@ -195,10 +195,11 @@ describe("ComponentsTable", () => {
       // No link and no tab stop: there is no detail page to reach.
       expect(within(tr).queryAllByRole("link")).toHaveLength(0);
       expect(tr.querySelector("a, button, [tabindex]")).toBeNull();
-      // Desktop: a faint zero (it has none now), then the lost count as the Δ.
+      // Desktop: a muted zero (it has none now), then the lost count as the Δ.
       const cell = occurrencesCell(tr);
       expect(cell.textContent).toBe("0 (−5)");
-      expect(within(cell).getByText("0").className).toBe("text-faint");
+      expect(cell.className).toMatch(/text-muted-foreground/);
+      expect(cell.querySelector(".text-faint")).toBeNull();
       expect(within(cell).getByText("−5").className).toMatch(/font-medium/);
       expect(within(tr).getAllByText("—")).toHaveLength(2); // version, files
       expect(within(tr).queryByText(/^(external|local)$/)).toBeNull(); // no origin word: the table has no Origin column

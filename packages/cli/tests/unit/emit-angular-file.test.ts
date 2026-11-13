@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { createRequire } from "node:module";
 import { parseSync } from "oxc-parser";
 import type { AngularCompiler, ElementMatch } from "@scoutui/parser-angular";
-import { type AngularImport, type AngularRefResolver, type AngularScripts, buildAngularSelectorIndex, buildModuleScopes, chooseLibraryEntry, importsOf, type PendingAngularFile } from "../../src/emit-angular-file.js";
+import { type AngularImport, type AngularRefResolver, type AngularScripts, buildAngularSelectorIndex, buildModuleScopes, chooseLibraryEntry, importedModulesOf, importsOf, type PendingAngularFile } from "../../src/emit-angular-file.js";
 import { detectAngularComponents, detectAngularModules, readConstArrays, readTopLevelNames } from "../../src/local-index/detect-angular.js";
 
 /** A `PendingAngularFile` built from real detector output, same shape scan.ts assembles. */
@@ -15,6 +15,7 @@ function pendingFile(graphKey: string, source: string): PendingAngularFile {
     components: detectAngularComponents(program, source),
     modules: detectAngularModules(program, source),
     imports: importsOf(program),
+    importedModules: importedModulesOf(program),
   };
 }
 

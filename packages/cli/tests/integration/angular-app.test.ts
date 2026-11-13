@@ -262,6 +262,20 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("tag-map", () => {
+    it("attributes a tag the typings of a component file's side-effect import declare to their package", () => {
+      const ngUi = { kind: "package", packageName: "@example/ng-ui" };
+      expect(componentOf(tag("ex-widget"))?.attribution).toEqual({
+        status: "resolved",
+        target: ngUi,
+        confidence: "declared",
+        evidence: [
+          { source: "tag-map", strength: "declared", locator: { packageName: "@example/ng-ui", version: "0.0.0-test" }, target: ngUi, disposition: "supports" },
+        ],
+      });
+    });
+  });
+
   describe("selector-conflict", () => {
     const S = "selector-conflict";
 
@@ -600,6 +614,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/signal-io/signal-io-page.component.ts",
           "src/standalone-import/app.component.ts",
           "src/standalone-import/button.component.ts",
+          "src/tag-map/tag-map-page.component.ts",
           "src/unimported-tag/unimported-tag-page.component.ts",
         ].sort(),
       );

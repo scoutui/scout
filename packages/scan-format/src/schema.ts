@@ -171,7 +171,7 @@ export type EvidenceRecord = z.infer<typeof evidenceRecordSchema>;
 
 /** An evidence record as this scanner writes it: `source`, `strength` and `disposition` hold only values it knows. */
 export type KnownEvidenceRecord = EvidenceRecord & {
-  source: "registration" | "global-declaration" | "cem";
+  source: "registration" | "global-declaration" | "cem" | "tag-map";
   strength: "observed" | "declared";
   disposition: "supports" | "candidate" | "contradicts" | "unresolved";
 };

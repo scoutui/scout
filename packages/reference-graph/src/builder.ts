@@ -40,6 +40,8 @@ export interface FileBuilder {
    */
   scopeForNode(key: string, parent: ScopeId): ScopeId;
   addImport(record: Omit<ImportRecord, "scope"> & { scope?: ScopeId }): void;
+  /** Record a runtime import declaration's specifier. See `FileGraph.importedModules`. */
+  addImportedModule(specifier: string): void;
   addDeclaration(decl: Omit<BindingDecl, "scope"> & { scope?: ScopeId }): void;
   addExport(record: ExportRecord): void;
   addJsxUsage(usage: {
@@ -126,6 +128,7 @@ export function createGraphBuilder(opts: CreateGraphBuilderOptions): GraphBuilde
       const declarations = new Map<string, BindingDecl>();
       const imports: ImportRecord[] = [];
       const importsByLocal = new Map<string, ImportRecord>();
+      const importedModules: string[] = [];
       const exports: ExportRecord[] = [];
       const jsxUsages: JsxUsage[] = [];
       const tagUsages: TagUsage[] = [];
@@ -145,7 +148,7 @@ export function createGraphBuilder(opts: CreateGraphBuilderOptions): GraphBuilde
       // later entries reuse the id.
       const keyedScopes = new Map<string, ScopeId>();
 
-      const fg: FileGraph = { filePath, dialect, scopes, declarations, imports, importsByLocal, exports, jsxUsages, tagUsages, ownership, bodyCalls, heldRefs, memberAssignments, unrecordedMemberWrites };
+      const fg: FileGraph = { filePath, dialect, scopes, declarations, imports, importsByLocal, importedModules, exports, jsxUsages, tagUsages, ownership, bodyCalls, heldRefs, memberAssignments, unrecordedMemberWrites };
       files.set(filePath, fg);
 
       return {
@@ -186,6 +189,9 @@ export function createGraphBuilder(opts: CreateGraphBuilderOptions): GraphBuilde
           // ES modules disallow duplicate local bindings, so each local name
           // appears at most once. Skip the overwrite check.
           importsByLocal.set(full.local, full);
+        },
+        addImportedModule(specifier): void {
+          importedModules.push(specifier);
         },
         addDeclaration(decl): void {
           const scope = decl.scope ?? scopeStack[scopeStack.length - 1] ?? MODULE_SCOPE;

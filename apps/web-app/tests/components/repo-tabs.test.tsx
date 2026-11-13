@@ -25,6 +25,15 @@ describe("RepoTabs", () => {
     expect(screen.getByText("Adoption charts")).toBeInTheDocument();
   });
 
+  it("shows each tab's count beside its name, and no count where there is none", () => {
+    const { rerender } = render(<RepoTabs components={null} adoption={null} componentCount={1234} adoptionCount={3} />);
+    expect(screen.getByRole("tab", { name: /Components/ })).toHaveTextContent("Components1,234");
+    expect(screen.getByRole("tab", { name: /Adoption/ })).toHaveTextContent("Adoption3");
+    rerender(<RepoTabs components={null} adoption={null} componentCount={0} adoptionCount={null} />);
+    expect(screen.getByRole("tab", { name: /Components/ })).toHaveTextContent("Components0");
+    expect(screen.getByRole("tab", { name: /Adoption/ }).textContent).toBe("Adoption");
+  });
+
   it("writes a tab switch into ?tab= without asking the server for the page, so Back reopens that tab", () => {
     const { unmount } = render(tabs());
     fireEvent.click(screen.getByRole("tab", { name: "Adoption" }));

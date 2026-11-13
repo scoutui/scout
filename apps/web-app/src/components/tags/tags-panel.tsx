@@ -78,7 +78,7 @@ export function TagsPanel({
           </Button>
         ) : null}
       </div>
-      <p className="mt-1 mb-4 text-sm text-muted-foreground">
+      <p className="mt-1 mb-4 max-w-prose text-sm text-muted-foreground">
         Group packages by library for adoption charts and filtering.
       </p>
 

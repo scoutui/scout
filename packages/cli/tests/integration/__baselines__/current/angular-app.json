@@ -1776,6 +1776,40 @@
       }
     },
     {
+      "id": "9ffbc477713f995a",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "angular-app",
+        "filePath": "src/tag-map/tag-map-page.component.ts",
+        "exportName": "TagMapPageComponent"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "declared": {
+        "props": {},
+        "hasRest": false
+      },
+      "definition": {
+        "line": 8,
+        "column": 8
+      },
+      "owningPackage": "angular-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "eab2e6c778dc74a3": 1
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "5befec9c81450b99",
       "identity": {
         "kind": "repository-declaration",
@@ -2069,6 +2103,51 @@
         },
         "isRootCount": 0,
         "isLeafCount": 2
+      }
+    },
+    {
+      "id": "eab2e6c778dc74a3",
+      "identity": {
+        "kind": "tag",
+        "tagName": "ex-widget"
+      },
+      "attribution": {
+        "status": "resolved",
+        "target": {
+          "kind": "package",
+          "packageName": "@example/ng-ui"
+        },
+        "confidence": "declared",
+        "evidence": [
+          {
+            "source": "tag-map",
+            "strength": "declared",
+            "locator": {
+              "packageName": "@example/ng-ui",
+              "version": "0.0.0-test"
+            },
+            "target": {
+              "kind": "package",
+              "packageName": "@example/ng-ui"
+            },
+            "disposition": "supports"
+          }
+        ]
+      },
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "9ffbc477713f995a": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
       }
     },
     {
@@ -3009,6 +3088,22 @@
         "pressed"
       ],
       "ownerComponentId": "3ef0b805ffa3b1fe"
+    },
+    {
+      "occurrenceId": "0a6b79a2c67a6581",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "eab2e6c778dc74a3"
+      },
+      "filePath": "src/tag-map/tag-map-page.component.ts",
+      "line": 6,
+      "column": 14,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
+      "ownerComponentId": "9ffbc477713f995a"
     },
     {
       "occurrenceId": "5a1f82cfe3a4ed3f",

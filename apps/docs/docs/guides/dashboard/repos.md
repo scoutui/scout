@@ -45,7 +45,7 @@ To narrow the table:
 - Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
-**Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
+**Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a package or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
 
 In a monorepo, **Used in** lists the repo's packages. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
 
