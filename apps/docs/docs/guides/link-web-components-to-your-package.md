@@ -7,6 +7,8 @@ sidebar_label: "Link web components to your package"
 
 In a repo that uses your [web components](/docs/reference/glossary#web-component), a tag such as `<acme-button>` has no package unless something links it to yours. With no package it has no [version](/docs/reference/glossary#version), and a [lifecycle record](/docs/reference/glossary#lifecycle-record) on your package can't cover it. To link your tags in every repo that installs your package, ship a [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) and point your `package.json` at it.
 
+Type declarations that list a tag in `HTMLElementTagNameMap` also link it, but only in a repo that imports the module they describe (see [Web components](/docs/reference/framework-support#web-components)). The manifest links every tag your package declares, wherever it's used.
+
 ## 1. Ship the manifest
 
 Generate a `custom-elements.json` with your usual tooling, or write one by hand. The scan reads only which tags you declare: each declaration needs `"customElement": true` and a `tagName`.
@@ -74,5 +76,5 @@ The scan warns when a package's `customElements` field points at a file that is 
 - **The file isn't at that path in the installed package.** Look for it in `node_modules/@acme/elements/`. A `files` list or a build step that leaves the manifest out gives a field that points at nothing.
 - **The manifest isn't valid JSON.** A file that doesn't parse, for example because of a trailing comma, is skipped.
 - **The declaration lacks `"customElement": true` or a `tagName`.**
-- **Two installed packages declare the tag.** The tag gets no package, its `attribution.status` is `conflict`, and its component page names both packages after **From**. Declare each tag in one package's manifest only: if `@acme/ui` re-exports the elements of `@acme/ui-core`, don't copy the manifest into both.
+- **Two installed packages declare the tag.** The tag gets no package, its `attribution.status` is `conflict`, and its component page names both packages after **From**. Declare each tag in one package's manifest only: if `@acme/ui` re-exports the elements of `@acme/ui-core`, don't copy the manifest into both. A tag listed in `HTMLElementTagNameMap` counts too: if your manifest is in `@acme/ui` but the type declarations that list the tag are in `@acme/ui-core`, both packages claim it, so ship the manifest from the package whose declarations list the tag.
 - **The repo registers the tag with a class of its own.** When the repo's code runs `customElements.define("acme-button", …)` or uses `@customElement("acme-button")` with a class it defines itself, the tag belongs to that repo, not to your package: its `attribution.target` names the file that defines the class. A class imported from `@acme/elements` links the tag to your package instead, with or without the manifest.
