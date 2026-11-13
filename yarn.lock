@@ -5767,7 +5767,7 @@ __metadata:
     "@babel/types": "npm:7.29.0"
     "@clack/prompts": "npm:^1.5.1"
     "@oxc-project/types": "npm:0.130.0"
-    "@scoutui/parser-angular": "npm:0.1.0"
+    "@scoutui/parser-angular": "npm:0.1.1"
     "@scoutui/parser-react": "npm:0.1.0"
     "@scoutui/parser-vue": "npm:0.1.0"
     "@scoutui/reference-graph": "npm:0.1.0"
@@ -5826,7 +5826,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@scoutui/parser-angular@npm:0.1.0, @scoutui/parser-angular@workspace:packages/parser-angular":
+"@scoutui/parser-angular@npm:0.1.1, @scoutui/parser-angular@workspace:packages/parser-angular":
   version: 0.0.0-use.local
   resolution: "@scoutui/parser-angular@workspace:packages/parser-angular"
   dependencies:

@@ -1,6 +1,6 @@
 {
   "name": "@scoutui/cli",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Scan React, Vue and Angular repos for design-system component usage, and upload the results to a Scout dashboard.",
   "homepage": "https://scoutui.dev",
   "keywords": [
@@ -59,7 +59,7 @@
     "@babel/types": "7.29.0",
     "@clack/prompts": "^1.5.1",
     "@oxc-project/types": "0.130.0",
-    "@scoutui/parser-angular": "0.1.0",
+    "@scoutui/parser-angular": "0.1.1",
     "@scoutui/parser-react": "0.1.0",
     "@scoutui/parser-vue": "0.1.0",
     "@scoutui/reference-graph": "0.1.0",

@@ -1,6 +1,6 @@
 {
   "name": "@scoutui/parser-angular",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Finds the components used in Angular templates for the Scout CLI.",
   "homepage": "https://scoutui.dev",
   "private": true,
