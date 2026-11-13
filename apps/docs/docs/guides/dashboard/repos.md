@@ -9,11 +9,11 @@ The repos area shows every repo the dashboard has a [scan](/docs/reference/gloss
 
 ## Find a repo
 
-Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, with **Committed** (the date of the commit its numbers come from), how many **Components** its latest scan found, how many are **Deprecated**, and **Changes**: what was added, removed or changed since its previous scan.
+Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, most recently scanned first. Under the repo's name are the branch and commit its latest scan ran on. The columns give **Last scan** (when the dashboard received that scan), **Committed** (the date of the commit its numbers come from), how many **Components** it found, how many are **Deprecated**, and **Changes**: what was added, removed or changed since its previous scan.
 
-![The repos list with four repos, the search box and the since previous scan chip](/img/dashboard/repos-list.png)
+![The repos list with four repos, the search box and the Changed since previous scan button](/img/dashboard/repos-list.png)
 
-Type in the search box to match a repo's id, git remote or branch. Press the **since previous scan** chip to list only repos whose latest scan differs from the one before. Select a row to open the repo page.
+Type in the search box to match a repo's id, git remote or branch. Press **Changed since previous scan** to list only repos whose latest scan differs from the one before. Select a row to open the repo page.
 
 If the list reads **No repos scanned yet.**, no scan has been uploaded. Upload a repo's first scan while signed in ([Authenticate the CLI for uploads](/docs/guides/authenticate-uploads)), then [Run in CI](/docs/guides/run-in-ci) to upload from CI.
 

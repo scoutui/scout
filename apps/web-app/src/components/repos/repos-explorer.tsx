@@ -12,7 +12,7 @@ import { useQueryParamsState } from "@/lib/use-query-synced-state";
 import { parseRepoQuery, REPO_QUERY_PARAMS, serializeRepoQuery, type RepoQuery } from "@/lib/repo-query";
 
 /**
- * The repos page's search strip: a text search plus the `since previous scan`
+ * The repos page's search strip: a text search plus the `Changed since previous scan`
  * status chip. The server ships every row once and filtering runs here; the
  * query lives in the URL via useQueryParamsState and writes back through
  * history.replaceState, so a filtered view stays shareable.
@@ -42,8 +42,8 @@ export function ReposExplorer({
       {/* The search caps at max-w-md and the narrowed count sits at the right
           edge (`ml-auto`), so the count appearing only fills the free gap and
           never moves the chip. */}
-      <div className="flex items-center gap-2 border-b px-3 py-2.5">
-        <div className="relative min-w-0 max-w-md flex-1">
+      <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+        <div className="relative min-w-0 max-w-md flex-1 basis-48">
           <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="Search repos by id, remote, or branch"
@@ -68,7 +68,7 @@ export function ReposExplorer({
           <StatusFilterChip
             icon={GitCompareArrows}
             tone="neutral"
-            label="since previous scan"
+            label="Changed since previous scan"
             count={movedCount}
             active={changedActive}
             onToggle={() => setQuery({ ...query, changed: !changedActive })}

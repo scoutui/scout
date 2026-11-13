@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deltaOf, deltaTone, ghostRow, movementParts, signedCount, sinceLastScan } from "@/lib/scan-diff-view";
+import { deltaOf, deltaTone, ghostRow, movementParts, signedCount } from "@/lib/scan-diff-view";
 
 describe("movementParts", () => {
   it("orders added · removed · changed and omits zero parts", () => {
@@ -22,15 +22,6 @@ describe("signedCount", () => {
     expect(signedCount(-16)).toBe("−16");
     expect(signedCount(1234)).toBe("+1,234");
     expect(signedCount(0)).toBe("—");
-  });
-});
-
-describe("sinceLastScan", () => {
-  it("joins the signed non-zero parts and is null when nothing was added or removed", () => {
-    expect(sinceLastScan({ added: 3, removed: 16, changed: 18, deprecated: 0 })).toBe("+3 −16");
-    expect(sinceLastScan({ added: 0, removed: 2, changed: 0, deprecated: -1 })).toBe("−2");
-    expect(sinceLastScan({ added: 1, removed: 0, changed: 0, deprecated: 0 })).toBe("+1");
-    expect(sinceLastScan({ added: 0, removed: 0, changed: 5, deprecated: -2 })).toBeNull();
   });
 });
 

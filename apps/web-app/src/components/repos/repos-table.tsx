@@ -13,16 +13,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
+import { cn } from "@/lib/utils";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import { relativeTime } from "@/lib/relative-time";
-import { deltaTone, movementParts, signedCount, sinceLastScan } from "@/lib/scan-diff-view";
+import { deltaTone, movementParts, signedCount } from "@/lib/scan-diff-view";
 
 // Identity, scan provenance, size and deprecated use only. Everything else
 // (remote, packages, occurrences, origin split) is on the repo's masthead.
-type SortKey = "repoId" | "committedAt" | "componentCount" | "deprecatedCount" | "delta";
+type SortKey = "repoId" | "arrivedAt" | "committedAt" | "componentCount" | "deprecatedCount" | "delta";
 
 // Columns that open descending (most-recent / highest-count first); repoId opens A→Z.
 const DESC_KEYS: ReadonlySet<SortKey> = new Set([
+  "arrivedAt",
   "committedAt",
   "componentCount",
   "deprecatedCount",
@@ -36,7 +38,7 @@ function movement(r: RepoSummary): number | null {
 
 export function ReposTable({ rows }: { rows: RepoSummary[] }) {
   // Default: most recently scanned first.
-  const { sortKey, sortDir, toggleSort } = useSort<SortKey>("committedAt", "desc", DESC_KEYS);
+  const { sortKey, sortDir, toggleSort } = useSort<SortKey>("arrivedAt", "desc", DESC_KEYS);
 
   const visible = useMemo(
     () => sortRows(rows, sortKey, sortDir, (r, k) => (k === "delta" ? movement(r) : r[k])),
@@ -45,11 +47,14 @@ export function ReposTable({ rows }: { rows: RepoSummary[] }) {
 
   return (
     <Table containerClassName="max-h-[70vh] overflow-y-auto">
-      {/* Below sm the rows stack, so there are no headers and no sorting. */}
-      <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
+      {/* Below lg the rows stack, so there are no headers and no sorting. */}
+      <TableHeader className="sticky top-0 z-10 hidden lg:table-header-group">
         <TableRow>
-          <TableHead className="w-full" aria-sort={ariaSort("repoId", sortKey, sortDir)}>
+          <TableHead className="w-full min-w-48" aria-sort={ariaSort("repoId", sortKey, sortDir)}>
             <SortButton label="Repo" sortKey="repoId" current={sortKey} dir={sortDir} onClick={toggleSort} />
+          </TableHead>
+          <TableHead className="whitespace-nowrap" aria-sort={ariaSort("arrivedAt", sortKey, sortDir)}>
+            <SortButton label="Last scan" sortKey="arrivedAt" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           <TableHead className="whitespace-nowrap" aria-sort={ariaSort("committedAt", sortKey, sortDir)}>
             <SortButton label="Committed" sortKey="committedAt" current={sortKey} dir={sortDir} onClick={toggleSort} />
@@ -60,8 +65,6 @@ export function ReposTable({ rows }: { rows: RepoSummary[] }) {
           <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("deprecatedCount", sortKey, sortDir)}>
             <SortButton label="Deprecated" sortKey="deprecatedCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          {/* The title spells out what the column counts, which the cells' compact
-              form below lg doesn't. */}
           <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
             <SortButton
               label="Changes"
@@ -91,17 +94,18 @@ function RepoRow({ row: r }: { row: RepoSummary }) {
     // The repo-id link's ::after fills the positioned <tr>, so the whole row is
     // the pointer target and keyboard users get one stop per row.
     <TableRow className="relative cursor-pointer">
-      <TableCell className="w-full max-w-0 align-top">
+      <TableCell className="w-full min-w-48 max-w-0 align-top">
         <div className="flex flex-col gap-0.5">
           <Link
             href={href}
-            title={r.repoId}
+            title={[r.repoId, provenance(r)].filter(Boolean).join("\n")}
             className="block max-w-full font-mono text-sm font-medium text-foreground focus-row after:absolute after:inset-0 after:content-['']"
           >
             <span className="block truncate">{r.repoId}</span>
           </Link>
-          {/* Stacked tiers below sm. */}
-          <div className="flex flex-col gap-1 pt-1 sm:hidden">
+          <ScanMeta row={r} className="hidden lg:flex" />
+          {/* Stacked tiers below lg. */}
+          <div className="flex flex-col gap-1 whitespace-normal pt-1 lg:hidden">
             <ScanMeta row={r} lead />
             <span className="text-xs tabular-nums text-muted-foreground">
               {r.componentCount.toLocaleString()} components
@@ -117,17 +121,17 @@ function RepoRow({ row: r }: { row: RepoSummary }) {
           </div>
         </div>
       </TableCell>
-      <TableCell className="hidden align-top sm:table-cell">
-        <div className="flex flex-col gap-0.5">
-          <span title={formatAbsoluteUtc(r.committedAt)}>{relativeTime(r.committedAt)}</span>
-          <ScanMeta row={r} />
-        </div>
+      <TableCell className="hidden align-top lg:table-cell">
+        <span title={formatAbsoluteUtc(r.arrivedAt)}>{relativeTime(r.arrivedAt)}</span>
       </TableCell>
-      <TableCell className="hidden align-top text-right tabular-nums sm:table-cell">
+      <TableCell className="hidden align-top text-muted-foreground lg:table-cell">
+        <span title={formatAbsoluteUtc(r.committedAt)}>{relativeTime(r.committedAt)}</span>
+      </TableCell>
+      <TableCell className="hidden align-top text-right tabular-nums lg:table-cell">
         {r.componentCount.toLocaleString()}
       </TableCell>
       <TableCell
-        className={`hidden align-top text-right tabular-nums sm:table-cell ${
+        className={`hidden align-top text-right tabular-nums lg:table-cell ${
           r.deprecatedCount > 0 ? "font-medium text-status-warn-text" : r.delta !== null && r.delta.deprecated !== 0 ? "text-muted-foreground" : "text-faint"
         }`}
       >
@@ -150,12 +154,17 @@ function RepoRow({ row: r }: { row: RepoSummary }) {
   );
 }
 
-/** The mobile tier's movement line, `+3 −16 · 18 changed · deprecated (−2)`,
- *  with zero parts omitted. Only the deprecated Δ takes `deltaTone`, as in the
- *  desktop cell. */
+/** `+3`, `−16` or `18`: a movement part's number, signed unless it counts changed components. */
+function partCount(p: ReturnType<typeof movementParts>[number]): string {
+  return p.word === "changed" ? p.n.toLocaleString() : signedCount(p.word === "added" ? p.n : -p.n);
+}
+
+/** The mobile tier's movement line, `+3 added · −16 removed · 18 changed ·
+ *  deprecated (−2) since previous scan`, with zero parts omitted. Only the
+ *  deprecated Δ takes `deltaTone`, as in the desktop cell. */
 function MobileMovement({ delta }: { delta: NonNullable<RepoSummary["delta"]> }) {
-  const lead = [sinceLastScan(delta), delta.changed > 0 ? `${delta.changed.toLocaleString()} changed` : null]
-    .filter((part) => part !== null)
+  const lead = movementParts(delta)
+    .map((p) => `${partCount(p)} ${p.word}`)
     .join(" · ");
   return (
     <span className="text-xs font-medium tabular-nums text-foreground">
@@ -168,16 +177,16 @@ function MobileMovement({ delta }: { delta: NonNullable<RepoSummary["delta"]> })
           {")"}
         </>
       ) : null}
+      {" since previous scan"}
     </span>
   );
 }
 
-/** The Changes cell. From lg it reads in words, `+3 added · −16 removed ·
- *  13 changed`, so signs never read as a net sum; below lg it is the compact
- *  `+3 −16 · 13 changed`. Zero parts are omitted; a faint dash when no
+/** The Changes cell, in words: `+3 added · −16 removed · 13 changed`, so signs
+ *  never read as a net sum. Zero parts are omitted; a faint dash when no
  *  component moved, and `first scan` when there is no earlier scan. */
 function SinceLastScanCell({ delta }: { delta: RepoSummary["delta"] }) {
-  const cell = "hidden align-top text-right tabular-nums sm:table-cell";
+  const cell = "hidden align-top text-right tabular-nums lg:table-cell";
   if (delta === null) {
     return (
       <TableCell className={cell}>
@@ -185,61 +194,61 @@ function SinceLastScanCell({ delta }: { delta: RepoSummary["delta"] }) {
       </TableCell>
     );
   }
-  const counts = sinceLastScan(delta);
-  if (counts === null && delta.changed === 0) {
+  const parts = movementParts(delta);
+  if (parts.length === 0) {
     return <TableCell className={`${cell} text-faint`}>—</TableCell>;
   }
   return (
-    <TableCell className={cell}>
-      <span className="hidden text-muted-foreground lg:inline">
-        {movementParts(delta).map((p, i) => (
-          <span key={p.word}>
-            {i > 0 ? " · " : null}
-            <span className="font-medium text-foreground">
-              {p.word === "changed" ? p.n.toLocaleString() : signedCount(p.word === "added" ? p.n : -p.n)}
-            </span>
-            {` ${p.word}`}
-          </span>
-        ))}
-      </span>
-      <span className="lg:hidden">
-        {counts !== null ? <span className="font-medium text-foreground">{counts}</span> : null}
-        {delta.changed > 0 ? (
-          <span className="text-muted-foreground">
-            {counts !== null ? " · " : null}
-            <span className="font-medium text-foreground">{delta.changed.toLocaleString()}</span> changed
-          </span>
-        ) : null}
-      </span>
+    <TableCell className={`${cell} text-muted-foreground`}>
+      {parts.map((p, i) => (
+        <span key={p.word}>
+          {i > 0 ? " · " : null}
+          <span className="font-medium text-foreground">{partCount(p)}</span>
+          {` ${p.word}`}
+        </span>
+      ))}
     </TableCell>
   );
 }
 
-/** Scan provenance: branch · short sha. With `lead`, the relative time opens
- *  the line (the mobile tier has no Last-scan column to carry it). */
-function ScanMeta({ row: r, lead }: { row: RepoSummary; lead?: boolean }) {
-  const shortCommit = r.commit ? r.commit.slice(0, 7) : "";
-  if (!lead && !r.branch && !shortCommit) return null;
+/** `branch · short sha`, whichever the scan recorded. */
+function provenance(r: RepoSummary): string {
+  return [r.branch, r.commit.slice(0, 7)].filter(Boolean).join(" · ");
+}
+
+/** The line under a repo's name: branch · short sha, on one line where a branch
+ *  past its cap truncates and the sha never does. With
+ *  `lead`, the scan time opens it (the mobile tier has no Last scan column). */
+function ScanMeta({ row: r, lead, className }: { row: RepoSummary; lead?: boolean; className?: string }) {
+  const shortCommit = r.commit.slice(0, 7);
+  const parts = [
+    lead ? (
+      <span key="scanned" className="shrink-0 text-foreground">
+        Scanned {relativeTime(r.arrivedAt)}
+      </span>
+    ) : null,
+    r.branch ? (
+      <span key="branch" className="min-w-0 max-w-[24ch] truncate font-mono">
+        {r.branch}
+      </span>
+    ) : null,
+    shortCommit ? (
+      <span key="commit" className="shrink-0 font-mono">
+        {shortCommit}
+      </span>
+    ) : null,
+  ].filter((part) => part !== null);
+  if (parts.length === 0) return null;
   return (
-    // The mobile tier wraps (it shares the name cell's width); the desktop
-    // column doesn't, because a wrapped sha doubles the row height.
-    <span
-      className={`flex items-center gap-x-1.5 gap-y-0.5 text-xs tabular-nums text-muted-foreground ${
-        lead ? "flex-wrap whitespace-normal" : "whitespace-nowrap"
-      }`}
-    >
-      {lead ? <span className="text-foreground">{relativeTime(r.committedAt)}</span> : null}
-      {lead && r.branch ? <Dot /> : null}
-      {r.branch ? <span className="font-mono">{r.branch}</span> : null}
-      {(lead || r.branch) && shortCommit ? <Dot /> : null}
-      {shortCommit ? <span className="font-mono">{shortCommit}</span> : null}
+    <span className={cn("flex min-w-0 items-center gap-1.5 text-xs tabular-nums text-muted-foreground", className)}>
+      {parts.map((part, i) => (i === 0 ? part : [<Dot key={`dot-${part.key}`} />, part]))}
     </span>
   );
 }
 
 function Dot() {
   return (
-    <span aria-hidden className="text-border">
+    <span aria-hidden className="shrink-0 text-border">
       ·
     </span>
   );

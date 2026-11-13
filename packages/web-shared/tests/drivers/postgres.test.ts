@@ -68,6 +68,7 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
       expect((await driver.listScans("tiny-repo")).map(scan => [scan.scanId, scan.committedAt, scan.arrivedAt]))
         .toEqual(scans.map(([scanId, committedAt, arrivedAt]) => [scanId, new Date(committedAt).toISOString(), new Date(arrivedAt).toISOString()]));
       expect(await driver.getRepo("tiny-repo")).toMatchObject({ scanId: scans[0][0], diff: { baselineScanId: scans[1][0] } });
+      expect((await driver.listRepos())[0]?.arrivedAt).toBe(new Date(scans[0][2]).toISOString());
       expect(projectCohortSeries(await driver.listScanDigests("tiny-repo"), [], [{ kind: "package", packageName: "@x/wc" }], "count")[0]?.points)
         .toEqual(points.map(([t, value]) => ({ t, value })));
     });
