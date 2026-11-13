@@ -5,7 +5,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 const actions = vi.hoisted(() => ({ createToken: vi.fn(), regenerateToken: vi.fn(), revokeToken: vi.fn(), deleteRepo: vi.fn() }));
 vi.mock("@/app/repos/repo-actions", () => actions);
 
-import { RepoActionsMenu } from "@/components/repos/repo-actions-menu";
 import { DeleteRepoSection, UploadTokenSection } from "@/components/repos/repo-settings";
 
 const REPO = "payloadcms/payload";
@@ -131,17 +130,5 @@ describe("DeleteRepoSection", () => {
   ])("says $sentence", ({ scanCount, hasToken, sentence }) => {
     render(<DeleteRepoSection repoId={REPO} scanCount={scanCount} hasToken={hasToken} />);
     expect(screen.getByText(/^Deletes the repo/).textContent).toBe(sentence);
-  });
-});
-
-describe("RepoActionsMenu", () => {
-  it("holds one item, Settings, linking to the repo's Settings page", async () => {
-    render(<RepoActionsMenu repoId={REPO} />);
-    fireEvent.click(screen.getByRole("button", { name: "Repo actions" }));
-
-    await screen.findByRole("menu");
-    expect(screen.getAllByRole("menuitem").map(item => [item.textContent, item.getAttribute("href")])).toEqual([
-      ["Settings", "/repos/payloadcms%2Fpayload/settings"],
-    ]);
   });
 });

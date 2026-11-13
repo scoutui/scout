@@ -19,18 +19,19 @@ If the list reads **No repos scanned yet.**, no scan has been uploaded. Upload a
 
 ## Read a repo page
 
-The header line gives the repo's git remote, the **commit** and **branch** the scan ran on, the date of that commit (after **committed**), and how many packages its components come from. When the remote is on GitHub or GitLab, the commit links to it there.
+Under the repo's name, a status line tells you what the scan saw and what needs attention:
 
-Below it, a status line tells you what needs attention:
+- **The repo's git remote**, such as `github.com/acme/storefront`, which opens the repo on its git host, then **the commit and branch** the scan ran on, such as `ef7954d` on `main`. When the remote is on GitHub or GitLab, the commit links to it there.
+- **Deprecated count.** For example **5 deprecated in use (−2)**: 5 deprecated components are in use, 2 fewer than in the previous scan. To list just those components, press the **deprecated** chip above the table.
+- **What changed since the previous scan.** For example **+3 added · −1 removed · 4 changed since previous scan**: 3 components are new in this scan, 1 from the previous scan is gone, and 4 have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table.
 
-- **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
-- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table.
+Beside the name, the scan button shows when the dashboard received the shown scan, such as **Scanned 6h ago**. Press it to see the scan's ID, how many packages its components come from, which frameworks it found and the scanner version.
 
 ### Fix what the scan couldn't see
 
-When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, the repo page says **This scan couldn't see everything**. When some of those problems are yours to fix, it also says how many there are, such as **16 things to fix**. The repo's numbers leave those uses out, or count them without a package.
+When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, the status line ends with **Some uses may be missing**. The repo's numbers leave those uses out, or count them without a package.
 
-Open **This scan couldn't see everything** to see each kind of problem: how many there are, the names or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A problem whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
+Press **See N gaps** to see each kind of problem: how many there are, the names or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A problem whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
 
 ## Find components in a repo
 
@@ -91,9 +92,9 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 ## Look at an older scan
 
-Press the **scan** button in the header to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
+Press **‹** and **›** beside the scan button to step to the previous or next scan. To jump further, press the scan button and pick a scan from the list. **All N scans** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-On an older scan, the header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
+On an older scan, a line above the name reads, for example, **Viewing the scan from 7d ago. Counts are from that scan.** The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
 
 A link copied while you look at an older scan opens the same scan.
 
@@ -110,7 +111,7 @@ If a page shows **Preparing scan data** instead of its content, the dashboard is
 [Admins](/docs/guides/manage-people-and-roles) can remove a scan that shouldn't count, such as a test run or a scan of the wrong branch, and delete a repo.
 
 - **Remove a scan.** On the repo's **Scan history**, press **⋯** at the end of the scan's row, select **Remove scan**, then press **Remove**. If it was the latest scan, the scan before it becomes the latest. This can't be undone. On a repo's only scan the menu offers **Delete repo…** instead.
-- **Delete a repo.** On the repo page, press **⋯**, then **Settings**, then **Delete repo…**. Type the repo's id, then press **Delete repo**. The repo and all its scans are deleted, and the repos list opens. The repo comes back the next time someone uploads a scan of it. Its CI upload token is deleted too. To upload from CI again, upload a scan of it while signed in, then [create a new token](/docs/guides/run-in-ci).
+- **Delete a repo.** On the repo page, press **Settings**, then **Delete repo…**. Type the repo's id, then press **Delete repo**. The repo and all its scans are deleted, and the repos list opens. The repo comes back the next time someone uploads a scan of it. Its CI upload token is deleted too. To upload from CI again, upload a scan of it while signed in, then [create a new token](/docs/guides/run-in-ci).
 
 Charts leave out what you removed, earlier points included. A saved chart about a deleted repo stays, and its scope reads **storefront · missing**. [**History** on the dashboard's **Settings** page](/docs/guides/manage-people-and-roles#see-who-changed-what) records who removed or deleted what.
 

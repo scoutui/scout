@@ -10,8 +10,6 @@ import { RepoDetailHeader } from "@/components/repos/repo-detail-header";
 import { RepoTabs } from "@/components/repos/repo-tabs";
 import { RepoAdoptionPanel } from "@/components/repos/repo-adoption-panel";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
-import { ViewingOlderScanBanner } from "@/components/repos/viewing-older-scan-banner";
-import { ScanFindings } from "@/components/repos/scan-findings";
 import { EmptyState } from "@/components/ui/empty-state";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
@@ -67,15 +65,11 @@ export default async function RepoDetailPage({
   const canEdit = can(identity, "edit");
 
   // listScans puts the latest scan first.
-  const showOlderScanBanner = isOlderScan(scanId, recentScans[0]?.scanId, detail.scanId);
+  const olderScan = isOlderScan(scanId, recentScans[0]?.scanId, detail.scanId);
 
   return (
     <div className="space-y-6">
-      {showOlderScanBanner ? (
-        <ViewingOlderScanBanner repoId={repoId} committedAt={detail.committedAt} />
-      ) : null}
-      <RepoDetailHeader detail={detail} recentScans={recentScans} canOpenSettings={can(identity, "upload", { repoId })} />
-      <ScanFindings findings={detail.findings} />
+      <RepoDetailHeader detail={detail} recentScans={recentScans} olderScan={olderScan} canOpenSettings={can(identity, "upload", { repoId })} />
       <SkippedScansNotice fallbacks={page.fallbacks} ownPage />
       <RepoTabs
         componentCount={rows.length}

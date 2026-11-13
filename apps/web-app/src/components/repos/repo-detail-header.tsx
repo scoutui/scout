@@ -1,158 +1,113 @@
-
-import { BackLink } from "@/components/ui/back-link";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, CheckCircle2, Settings } from "lucide-react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
-import { formatAbsoluteUtc } from "@/lib/format-absolute";
-import { friendlyKind } from "@scoutui/web-shared/client";
-import { kindLabel } from "@/lib/component-facets";
+import { BackLink } from "@/components/ui/back-link";
+import { buttonVariants } from "@/components/ui/button";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { commitUrl } from "@/lib/git-remote";
-import { relativeTime } from "@/lib/relative-time";
-import { deltaTone } from "@/lib/scan-diff-view";
-import { RepoActionsMenu } from "./repo-actions-menu";
+import { deltaTone, signedCount } from "@/lib/scan-diff-view";
+import { cn } from "@/lib/utils";
 import { ScanDiffLine } from "./scan-diff-line";
+import { ScanFindingRows } from "./scan-findings";
+import { StatusLine } from "./scan-gaps";
 import { ScanSwitcher } from "./scan-switcher";
+import { ViewingOlderScanBanner } from "./viewing-older-scan-banner";
 
-/** Quiet meta-line link: inherits the muted colour, lifts to ink on hover, and
- *  wears the focus ring on keyboard focus. */
-const META_LINK =
-  "rounded-sm underline-offset-4 hover:text-foreground hover:underline";
-
+/** The repo page's header. Every count in it comes from the shown scan, which an older-scan strip names when it isn't the latest. */
 export function RepoDetailHeader({
   detail,
   recentScans,
+  olderScan = false,
   canOpenSettings = false,
 }: {
   detail: RepoDetail;
   recentScans: ScanSummary[];
+  olderScan?: boolean;
   canOpenSettings?: boolean;
 }) {
   const remote = parseGitRemote(detail.gitRemote);
   const commitHref = commitUrl(detail.gitRemote, detail.commit);
+  const shortCommit = detail.commit.slice(0, 7);
+  const { repoId, scanId, gitRemote, arrivedAt, scanCount, packageCount, frameworkCounts, scannerVersion } = detail;
 
   return (
-    <header className="space-y-4">
-      <div className="space-y-2">
-        <BackLink href="/repos">Repos</BackLink>
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="font-mono text-2xl font-semibold">{detail.repoId}</h1>
-          {canOpenSettings ? <RepoActionsMenu repoId={detail.repoId} /> : null}
-        </div>
-        {/* Each item leads with its separator, and the row starts one separator's
-            width to the left, so the clip hides the separator at the start of a line. */}
-        <div className="-m-1 overflow-hidden p-1">
-          <div className="-ml-7 flex flex-wrap items-baseline gap-y-1 text-xs text-muted-foreground">
-            <span>
-              <Sep />
-              {remote ? (
-                <a href={remote.href} className={`font-mono ${META_LINK}`}>
-                  {remote.display}
-                </a>
-              ) : (
-                "no git remote"
-              )}
-            </span>
-            <span>
-              <Sep />
-              commit{" "}
-              {commitHref ? (
-                <a href={commitHref} className={`font-mono ${META_LINK}`}>
-                  {detail.commit.slice(0, 8)}
-                </a>
-              ) : (
-                <span className="font-mono">{detail.commit.slice(0, 8)}</span>
-              )}
-            </span>
-            {detail.branch ? (<span><Sep />branch <span className="font-mono">{detail.branch}</span></span>) : null}
-            <span>
-              <Sep />
-              committed <span title={formatAbsoluteUtc(detail.committedAt)}>{relativeTime(detail.committedAt)}</span>
-            </span>
-            <span className="tabular-nums"><Sep />{detail.packageCount.toLocaleString()} {detail.packageCount === 1 ? "package" : "packages"}</span>
-            <span>
-              <Sep />
-              <ScanSwitcher
-                repoId={detail.repoId}
-                currentScanId={detail.scanId}
-                recentScans={recentScans}
-                totalScanCount={detail.scanCount}
-                gitRemote={detail.gitRemote}
-              />
-            </span>
-          </div>
+    <header className="space-y-3">
+      <BackLink href="/repos">Repos</BackLink>
+      {olderScan ? <ViewingOlderScanBanner repoId={detail.repoId} arrivedAt={detail.arrivedAt} /> : null}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h1 className="min-w-0 font-mono text-2xl font-semibold [overflow-wrap:anywhere]">{detail.repoId}</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          <ScanSwitcher detail={{ repoId, scanId, gitRemote, arrivedAt, scanCount, packageCount, frameworkCounts, scannerVersion }} recentScans={recentScans} />
+          {canOpenSettings ? (
+            <Link
+              href={`/repos/${encodeURIComponent(detail.repoId)}/settings`}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-muted-foreground")}
+            >
+              <Settings aria-hidden />
+              Settings
+            </Link>
+          ) : null}
         </div>
       </div>
-
-      {/* Framework split */}
-      {detail.frameworkCounts.length > 1 ? (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          {[...detail.frameworkCounts]
-            .sort((a, b) => b.count - a.count)
-            .map((f) => (
-              <span key={f.kind} className="whitespace-nowrap">
-                {kindLabel(friendlyKind(f.kind))}{" "}
-                <span className="tabular-nums text-foreground">{f.count.toLocaleString()}</span>
-              </span>
-            ))}
-        </div>
-      ) : null}
-
-      {/* Status row: deprecated components in use and their movement since
-          the previous scan first, then what else changed. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        {detail.deprecatedCount > 0 ? (
-          // Centred, not baseline-aligned: the alarm is itself a centred
-          // flex box whose baseline is its icon's, so baseline alignment
-          // drops the suffix 2.5px below the alarm's text.
-          <span className="inline-flex flex-wrap items-center gap-x-1.5">
-            <span className="inline-flex items-center gap-1.5 text-xs text-status-warn-text">
-              <AlertTriangle aria-hidden className="size-3.5 shrink-0" />
-              <span className="font-medium tabular-nums">{detail.deprecatedCount.toLocaleString()}</span>
-              {detail.deprecatedCount === 1 ? "deprecated component in use" : "deprecated components in use"}
-            </span>
-            {detail.diff !== null && detail.diff.deprecatedNow !== detail.diff.deprecatedPrev ? (
-              <span className="text-xs text-muted-foreground">
-                <span aria-hidden className="text-faint">·</span>{" "}
-                <DeprecatedMovement prev={detail.diff.deprecatedPrev} now={detail.diff.deprecatedNow} />
+      <StatusLine gapCount={detail.findings.length} gaps={<ScanFindingRows findings={detail.findings} />}>
+        <span className="inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-4">
+          {remote ? (
+            <a href={remote.href} className="min-w-0 rounded-sm font-mono [overflow-wrap:anywhere] underline-offset-4 hover:text-foreground hover:underline">
+              {remote.display}
+            </a>
+          ) : null}
+          <span className="flex min-w-0 max-w-full items-baseline gap-x-1.5">
+            {commitHref ? (
+              <a href={commitHref} title={detail.commit} className="shrink-0 rounded-sm font-mono text-foreground underline-offset-4 hover:underline">
+                {shortCommit}
+              </a>
+            ) : (
+              <span title={detail.commit} className="shrink-0 font-mono text-foreground">{shortCommit}</span>
+            )}
+            {detail.branch ? (
+              <span title={detail.branch} className="min-w-0 truncate">
+                on <span className="font-mono text-foreground">{detail.branch}</span>
               </span>
             ) : null}
           </span>
-        ) : detail.diff !== null && detail.diff.deprecatedPrev > 0 ? (
-          // A finished retirement: no alarm, but the movement still shows in
-          // the same slot.
-          <span className="inline-flex items-baseline gap-1.5 text-xs text-muted-foreground">
-            <CheckCircle2 aria-hidden className="size-3.5 shrink-0 translate-y-0.5" />
-            <span>
-              no deprecated components in use{" "}
-              <span aria-hidden className="text-faint">·</span>{" "}
-              <DeprecatedMovement prev={detail.diff.deprecatedPrev} now={detail.diff.deprecatedNow} />
-            </span>
-          </span>
-        ) : null}
-
-        <ScanDiffLine diff={detail.diff} committedAt={detail.committedAt} />
-      </div>
+        </span>
+        <DeprecatedInUse detail={detail} />
+        <ScanDiffLine delta={detail.delta} />
+      </StatusLine>
     </header>
   );
 }
 
-function Sep() {
-  return <span aria-hidden className="inline-block w-7 text-center text-border">·</span>;
-}
-
-/** `2 fewer than the previous scan` / `3 more than the previous scan`. The count
- *  and the diff come from the same governance data at the same grain, so the
- *  movement agrees with the alarm's number. `2 fewer` / `3 more` take
- *  `deltaTone`'s retirement polarity (more is red, fewer is plain ink). */
-function DeprecatedMovement({ prev, now }: { prev: number; now: number }) {
-  const fewer = prev - now;
-  return (
-    <>
-      <span className={`font-medium tabular-nums ${deltaTone(now - prev, true)}`}>
-        {Math.abs(fewer).toLocaleString()}
-        {fewer > 0 ? " fewer" : " more"}
+/** `5 deprecated in use (−2)`: the count in warning colour, and its movement since the previous scan in `deltaTone`'s
+ *  retirement polarity (more is red, fewer is plain ink). A finished retirement keeps the movement without the alarm. */
+function DeprecatedInUse({ detail }: { detail: RepoDetail }) {
+  const moved = detail.delta?.deprecated ?? 0;
+  const movement = moved !== 0 ? (
+    <span className="text-muted-foreground">
+      {" ("}
+      <span className={cn("font-medium tabular-nums", deltaTone(moved, true))}>{signedCount(moved)}</span>
+      <span className="sr-only"> since previous scan</span>
+      {")"}
+    </span>
+  ) : null;
+  if (detail.deprecatedCount > 0) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <AlertTriangle aria-hidden className="size-3.5 shrink-0 text-status-warn" />
+        <span>
+          <span className="text-status-warn-text">
+            <span className="font-medium tabular-nums">{detail.deprecatedCount.toLocaleString()}</span> deprecated in use
+          </span>
+          {movement}
+        </span>
       </span>
-      {" than the previous scan"}
-    </>
+    );
+  }
+  if (moved === 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <CheckCircle2 aria-hidden className="size-3.5 shrink-0" />
+      <span>None deprecated in use{movement}</span>
+    </span>
   );
 }

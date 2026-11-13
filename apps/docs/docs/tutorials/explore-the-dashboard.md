@@ -73,7 +73,7 @@ The row shows the date of the commit we scanned, with its branch and commit. **C
 
 ## Step 3: Read the repo page
 
-We click the `acme/storefront` row. The repo page opens on its **Components** tab. Near the top, the status line reads `first scan · nothing to compare`. After the next scan, it will say what changed since this one.
+We click the `acme/storefront` row. The repo page opens on its **Components** tab. Near the top, the status line reads `First scan, nothing to compare`. After the next scan, it will say what changed since this one.
 
 The table has one row per component, sorted by **Uses**, highest first. A [use](/docs/reference/glossary#use) is one place in the code where a component is used. We see:
 
