@@ -1,5 +1,19 @@
 # @scoutui/cli
 
+## 0.4.1
+
+### Patch Changes
+
+- [#193](https://github.com/scoutui/scout/pull/193) [`103a46c`](https://github.com/scoutui/scout/commit/103a46cad3398352a3bef8c31b834abedb323701) Thanks [@siggerzz](https://github.com/siggerzz)! - Imports through a workspace package's `exports` subpath that lists conditions, such as `"./constants": { "types": "./src/constants/index.ts", "default": "./dist/constants/index.mjs" }`, now resolve to the file the first existing condition names. Before, the scan skipped these subpaths. A component imported this way is now listed as defined in your repo, at the file that declares it, rather than as a package export with no file. A value that isn't a component, such as a constant passed to a hook, is no longer reported as a component.
+
+## 0.4.0
+
+### Minor Changes
+
+- [#177](https://github.com/scoutui/scout/pull/177) [`c687300`](https://github.com/scoutui/scout/commit/c687300ec1d26fade6adbe4e2ea8ace955594331) Thanks [@nhunsaker](https://github.com/nhunsaker)! - Angular scans now count components from installed libraries, such as Angular Material, read from the compiled typings every Angular library ships: `<mat-card>` and `<button mat-button>` count as `MatCard` and `MatButton` with their inputs and outputs. A library's directives, such as `<mat-error>`, are no longer counted as web components.
+
+- [#176](https://github.com/scoutui/scout/pull/176) [`6a3e1bb`](https://github.com/scoutui/scout/commit/6a3e1bb07ccb6638e52c5793efeaf52c89bb54e8) Thanks [@nhunsaker](https://github.com/nhunsaker)! - The CLI now scans Angular repos, alongside React and Vue. It reads `@Component` classes and their templates (inline or `templateUrl`), matching elements and attribute selectors to standalone `imports` or `NgModule` declarations, and reads inputs and outputs from both the decorator and signal APIs. It uses the scanned repo's own `@angular/compiler`, so install your dependencies before scanning an Angular repo running Angular 19 or later. Upload Angular scans to a dashboard from the same release or later: earlier dashboards don't recognise Angular components.
+
 ## 0.3.5
 
 ### Patch Changes

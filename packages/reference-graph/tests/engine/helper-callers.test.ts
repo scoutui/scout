@@ -591,3 +591,32 @@ describe("buildHelperCallers: classification is membership", () => {
     expect([...(callers ?? [])]).toEqual([{ file: "src/Panel.tsx", symbol: "Panel" }]);
   });
 });
+
+describe("classifyDeclaration: template-dialect files own their declarations unconditionally", () => {
+  /** One Function-returns-JSX declaration in a file of `dialect`, default-exported when asked.
+   *  Never otherwise exported, held or JSX-referenced, so a React file's registry rule would
+   *  see it as unconsumed. */
+  function classifyTemplateDecl(dialect: "react" | "vue" | "angular", opts: { isDefault?: boolean } = {}) {
+    const gb = createGraphBuilder({ moduleResolver: () => null });
+    const fb = gb.beginFile("src/Widget.tsx", dialect);
+    fb.addDeclaration({ symbol: "Widget", value: fn(JSX), loc: at(1), isExported: opts.isDefault ?? false });
+    if (opts.isDefault) fb.addExport({ kind: "default", local: "Widget" });
+    const graph = gb.build();
+    const decl = graph.files.get("src/Widget.tsx")!.declarations.get(`${MODULE_SCOPE}::Widget`)!;
+    return classifyDeclaration(decl, rosterOf(graph), graph.files.get("src/Widget.tsx")!);
+  }
+
+  it.each([
+    { dialect: "vue" as const, isDefault: true, expected: "component", why: "a Vue SFC's default export owns its template" },
+    { dialect: "vue" as const, isDefault: false, expected: "helper", why: "a Vue file's non-default declaration is judged like a React one, not admitted by the blanket rule" },
+    {
+      dialect: "angular" as const,
+      isDefault: false,
+      expected: "component",
+      why: "every Function-returns-JSX declaration the Angular parser emits owns its template, default export or not",
+    },
+    { dialect: "react" as const, isDefault: false, expected: "helper", why: "negative row: a React declaration nothing consumes is not admitted" },
+  ])("$dialect (isDefault=$isDefault): $why", ({ dialect, isDefault, expected }) => {
+    expect(classifyTemplateDecl(dialect, { isDefault })).toBe(expected);
+  });
+});

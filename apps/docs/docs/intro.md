@@ -10,7 +10,7 @@ Scout shows how design-system components are used across your codebase. The CLI 
 
 For example, the dashboard can show that `storefront` and `checkout` both use `Button` from `@acme/ui`, which version of the package each is on, and the file and line of every `Button` in `storefront`.
 
-The CLI reads React and Vue. Web components such as `<acme-button>` are counted in both. [Framework support](/docs/reference/framework-support) lists what it reads in each.
+The CLI reads React, Vue and Angular. Web components such as `<acme-button>` are counted in all three. [Framework support](/docs/reference/framework-support) lists what it reads in each.
 
 Install the repo's dependencies before you scan: components from a package that isn't installed aren't found. [How components are found](/docs/explanation/mental-model) explains what happens when they aren't.
 

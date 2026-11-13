@@ -114,6 +114,19 @@ jobs:
       upload-tag-name: "@scoutui/cli@${{ needs.release.outputs.cli-version }}"
       provenance-name: scoutui-cli-${{ needs.release.outputs.cli-version }}.intoto.jsonl
 
+  # Rescans each consumer-ci target's latest commit with the CLI just published,
+  # so the dashboard shows what the release finds.
+  consumer-ci:
+    name: Rescan consumer repos
+    needs: release
+    if: needs.release.outputs.cli-version != ''
+    permissions:
+      contents: read
+    uses: ./.github/workflows/consumer-ci-cadence.yml
+    with:
+      rescan: true
+    secrets: inherit
+
   versions:
     name: Check versions
     if: github.repository == 'scoutui/scout'

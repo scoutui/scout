@@ -1,8 +1,10 @@
-import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ChevronLeft } from "lucide-react";
+
+import { BackLink } from "@/components/ui/back-link";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
-import { frameworkLabel } from "@/lib/framework-label";
+import { friendlyKind } from "@scoutui/web-shared/client";
+import { kindLabel } from "@/lib/component-facets";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { commitUrl } from "@/lib/git-remote";
 import { relativeTime } from "@/lib/relative-time";
@@ -31,13 +33,7 @@ export function RepoDetailHeader({
   return (
     <header className="space-y-4">
       <div className="space-y-2">
-        <Link
-          href="/repos"
-          className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft aria-hidden className="size-3" />
-          Repos
-        </Link>
+        <BackLink href="/repos">Repos</BackLink>
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-mono text-2xl font-semibold">{detail.repoId}</h1>
           {canOpenSettings ? <RepoActionsMenu repoId={detail.repoId} /> : null}
@@ -94,7 +90,7 @@ export function RepoDetailHeader({
             .sort((a, b) => b.count - a.count)
             .map((f) => (
               <span key={f.kind} className="whitespace-nowrap">
-                {frameworkLabel(f.kind)}{" "}
+                {kindLabel(friendlyKind(f.kind))}{" "}
                 <span className="tabular-nums text-foreground">{f.count.toLocaleString()}</span>
               </span>
             ))}

@@ -65,7 +65,10 @@ export function buildProviders(env: Record<string, string | undefined> = process
       clientId: requiredEnv(env, "OIDC_CLIENT_ID"),
       clientSecret: requiredEnv(env, "OIDC_CLIENT_SECRET"),
       authorization: { params: { scope: oidcScopes(env) } },
-      // Auth.js v5 handles OIDC discovery, PKCE, and token exchange automatically
+      // Auth.js only checks PKCE for OIDC by default and leaves out `state`,
+      // which Okta requires, so ask for both.
+      checks: ["pkce", "state"],
+      // Auth.js v5 handles OIDC discovery and token exchange automatically
       // when type: "oidc" + issuer is set.
     });
   }

@@ -2,7 +2,7 @@
 
 The CLI for [Scout](https://scoutui.dev), the design-system adoption dashboard.
 
-It scans a React or Vue repository, web components included, and records every component the code uses, where it's used and with which props. `scout scan` uploads that scan to a [Scout dashboard](https://scoutui.dev/docs/tutorials/explore-the-dashboard), where you compare repos, track migrations and follow adoption over time.
+It scans a React, Vue or Angular repository, web components included, and records every component the code uses, where it's used and with which props. `scout scan` uploads that scan to a [Scout dashboard](https://scoutui.dev/docs/tutorials/explore-the-dashboard), where you compare repos, track migrations and follow adoption over time.
 
 ## Get started
 

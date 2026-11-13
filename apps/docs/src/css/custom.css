@@ -280,7 +280,7 @@ html.plugin-pages .navbar__inner {
   height: 1rem;
 }
 
-/* "Get started": the landing page's primary button, compact. */
+/* "Demo": the landing page's primary button, compact. */
 .navbar__link.navbar-cta {
   margin: 0 0.5rem;
   padding: 0.4375rem 0.875rem;
@@ -291,6 +291,13 @@ html.plugin-pages .navbar__inner {
   color: var(--pal-neutral-ink-inverse);
   background: var(--pal-neutral-ink);
   transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.navbar__link.navbar-cta svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-left: 0.25rem;
+  vertical-align: -0.0625rem;
+  opacity: 0.7;
 }
 .navbar__link.navbar-cta:hover {
   color: var(--pal-neutral-ink-inverse);

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { auth } from "@/auth";
 import { getDb, getPool, schema } from "@/db/client";
-import { adminSettings, can, EDIT_REFUSAL, type Identity, type Person, personIdentity } from "@/lib/access";
+import { adminSettings, can, EDIT_REFUSAL, guestViewEnabled, type Identity, type Person, personIdentity } from "@/lib/access";
 import { withCredentialStoreError } from "@/lib/cli-credential-store-errors";
 import { resolveCliSession } from "@/lib/cli-session-store";
 import { isRepoUploadToken, uploadTokenRepo } from "@/lib/repo-upload-tokens";
@@ -18,12 +18,13 @@ async function loadPerson(userId: string): Promise<Person | null> {
   return row ? personIdentity(row, adminSettings()) : null;
 }
 
-const browserIdentity = cache(async (): Promise<Person | null> => {
+const browserIdentity = cache(async (): Promise<Identity | null> => {
   const userId = (await auth())?.user?.id;
-  return userId ? loadPerson(userId) : null;
+  if (userId) return loadPerson(userId);
+  return guestViewEnabled() ? { kind: "guest" } : null;
 });
 
-/** Who `caller` is, with their role read now, or null when they aren't signed in. */
+/** Who `caller` is, with their role read now: a guest for a browser without a session when guest view is on, or null when they aren't signed in. */
 export async function identify(caller: Caller): Promise<Identity | null> {
   if ("browser" in caller) return browserIdentity();
   if (!caller.bearer?.startsWith("Bearer ")) return null;

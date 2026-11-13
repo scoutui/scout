@@ -12,7 +12,7 @@ import {
 import { CellLink } from "@/components/ui/cell-link";
 import { SlashBreaks } from "@/components/dashboards/cohort-label";
 import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
-import { computeVersionShare, latestVersion } from "@/components/viz/version-composition";
+import { sortByVersion } from "@/lib/version-order";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import { relativeTime } from "@/lib/relative-time";
 
@@ -28,16 +28,12 @@ export function CrossRepoUsedInTable({
 }) {
   const { sortKey, sortDir, toggleSort } = useSort<SortKey>("occurrenceCount", "desc", DESC_KEYS);
   const sorted = useMemo(
-    () => sortRows(usages, sortKey, sortDir, (u, k) => (k === "deprecated" ? (u.deprecated ? 1 : 0) : u[k])),
+    () =>
+      sortKey === "version"
+        ? sortByVersion(usages, sortDir)
+        : sortRows(usages, sortKey, sortDir, (u, k) => (k === "deprecated" ? (u.deprecated ? 1 : 0) : u[k])),
     [usages, sortKey, sortDir],
   );
-  // Uses the masthead bar's version logic, so the dot colour and the bar's
-  // "latest" segment agree. Null when the component is fully unversioned, and
-  // then no dots render.
-  const latest = useMemo(() => {
-    const distinct = new Set(usages.filter(u => u.version !== null).map(u => u.version)).size;
-    return latestVersion(computeVersionShare(usages, distinct));
-  }, [usages]);
 
   return (
     <div className="panel overflow-hidden">
@@ -64,18 +60,12 @@ export function CrossRepoUsedInTable({
         <TableBody>
           {sorted.map(u => {
             const href = `/repos/${encodeURIComponent(u.repoId)}/components/${encodeURIComponent(componentId)}`;
-            const dot = latest !== null ? (
-              <span
-                aria-hidden
-                className={`size-1.5 shrink-0 rounded-full ${u.version === latest ? "bg-viz-primary" : "bg-viz-legacy"}`}
-              />
-            ) : null;
             return (
               <TableRow key={u.repoId} className="cursor-pointer hover:bg-muted/50">
                 <CellLink href={href} cellClassName="w-full max-w-0" title={u.repoId}>
                   <span className="block text-code max-sm:whitespace-normal max-sm:wrap-anywhere sm:truncate"><SlashBreaks text={u.repoId} /></span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs tabular-nums text-muted-foreground sm:hidden">
-                    <span className="inline-flex items-center gap-1.5 font-mono">{dot}{u.version ?? "unversioned"}</span>
+                    <span className="font-mono">{u.version ?? "unversioned"}</span>
                     <Dot />
                     <span>{plural(u.occurrenceCount, "use")}</span>
                     {u.deprecated ? (<><Dot /><span className="font-medium text-status-warn-text">deprecated</span></>) : null}
@@ -83,8 +73,7 @@ export function CrossRepoUsedInTable({
                     <span>{relativeTime(u.committedAt)}</span>
                   </span>
                 </CellLink>
-                <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted-foreground">
-                  {dot}
+                <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="font-mono text-xs tabular-nums text-muted-foreground">
                   {u.version ?? "—"}
                 </CellLink>
                 <CellLink href={href} tabIndex={-1} cellClassName="hidden sm:table-cell" className="text-right tabular-nums">

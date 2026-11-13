@@ -3,6 +3,13 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const DEV_ROLES = [
+  { value: "viewer", label: "Viewer" },
+  { value: "editor", label: "Editor" },
+  { value: "admin", label: "Admin" },
+];
 
 export function DevSignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [email, setEmail] = useState("");
@@ -49,20 +56,24 @@ export function DevSignInForm({ callbackUrl }: { callbackUrl: string }) {
         onChange={(e) => setPassword(e.target.value)}
         autoComplete="current-password"
       />
-      <div className="space-y-1.5">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="dev-sign-in-role" className="block text-label text-muted-foreground">
           Role
         </label>
-        <select
-          id="dev-sign-in-role"
+        <Select
           value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-sm transition-colors dark:bg-input/30"
+          onValueChange={(next: string | null) => { if (next) setRole(next); }}
+          items={DEV_ROLES}
         >
-          <option value="viewer">Viewer</option>
-          <option value="editor">Editor</option>
-          <option value="admin">Admin</option>
-        </select>
+          <SelectTrigger id="dev-sign-in-role">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DEV_ROLES.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <Button type="submit" variant="outline" className="w-full" disabled={submitting}>
         {submitting ? "Signing in…" : "Dev sign-in"}

@@ -8,11 +8,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DeprecatedMark } from "@/components/deprecated-mark";
-import { SortButton, ariaSort, sortRows, useSort, type SortDir } from "@/components/ui/sortable";
+import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
 import { hrefWithQuery } from "@/lib/query-string";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
-import { compareVersions } from "@/lib/version-order";
+import { sortByVersion } from "@/lib/version-order";
 
 const COLUMN_COUNT = 6;
 
@@ -194,21 +194,6 @@ export function ComponentsTable({
   );
 }
 
-/** Sorts versions semver-aware: `sortRows` compares strings lexically, which
- *  puts `1.14.11` before `1.5.0`. Nulls last in both directions, as in
- *  `sortRows`. */
-function sortByVersion(rows: readonly ComponentRow[], dir: SortDir): ComponentRow[] {
-  const sign = dir === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const av = a.version;
-    const bv = b.version;
-    if (av === null && bv === null) return 0;
-    if (av === null) return 1;
-    if (bv === null) return -1;
-    return compareVersions(av, bv) * sign;
-  });
-}
-
 /** A component's page, with `area` picked on its Usage tab when given. */
 function hrefFor(repoId: string, componentId: string, area: string | null): string {
   return hrefWithQuery(`/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}`, area ? [["area", area]] : []);
@@ -240,19 +225,8 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
-          {/* An added row with no occurrences says so beside the badge instead
-              of showing ±0 (below sm the occurrences tier already reads
-              `0 uses`). Changed rows carry no badge: the Δ beside their
-              count marks them. */}
-          {mark?.kind === "added" ? (
-            <>
-              <Badge variant="outline" className={MARK_BADGE}>Added</Badge>
-              {r.occurrenceCount === 0 ? (
-                <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">0 uses</span>
-              ) : null}
-            </>
-          ) : null}
-          {href === undefined ? <span className="shrink-0 text-xs text-muted-foreground">not in the latest scan</span> : null}
+          {/* Changed rows carry no badge: the Δ beside their count marks them. */}
+          {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
         {r.disambiguator ? (
           <div className="truncate text-code text-muted-foreground" title={r.disambiguator}>

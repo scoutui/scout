@@ -20,6 +20,7 @@ import { DashboardChart } from "@/components/dashboards/dashboard-chart";
 import { DashboardScopeBadge } from "@/components/dashboards/dashboard-scope-badge";
 import { VISIBILITY, visibilityTitle } from "@/components/dashboards/chart-visibility";
 import { ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { pickableForRepo, previewDashboard, saveDashboard } from "@/app/charts/dashboard-actions";
 
 // Each chart type's toggle shows a 14px glyph of the shape it draws.
@@ -141,8 +142,8 @@ export function DashboardBuilder({
   const [range, setRange] = useState<ChartRange>(saved?.config.range ?? "all");
   const [visibility, setVisibility] = useState<ChartVisibility>(saved?.visibility ?? "private");
   const [preview, setPreview] = useState<{ config: DashboardConfig; view: DashboardView; skipped: SkippedNotices } | null>(null);
-  // The last preview that landed, and the keys of the series its config held that its view left out.
-  const [landed, setLanded] = useState<{ view: DashboardView; unknown: ReadonlySet<string> } | null>(null);
+  // The last preview that landed, the keys of the series its config held that its view left out, and the repo it was scoped to.
+  const [landed, setLanded] = useState<{ view: DashboardView; unknown: ReadonlySet<string>; repoId: string | null } | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewUnavailable, setPreviewUnavailable] = useState<ReadModelUnavailable | null>(null);
   const [previewError, setPreviewError] = useState(false);
@@ -260,12 +261,14 @@ export function DashboardBuilder({
           deprecatedOnly = { on: sel.deprecatedOnly === true, text: deprecatedShareText(share, label) };
         }
       }
+      const elsewhere = sel.kind === "component" && components.some((c) => c.componentId === sel.componentId && c.lastSeenAt === null);
       return {
         selector: sel,
         label,
         color: unknown ? "" : (colors.get(key) ?? ""),
         role: drawn?.role,
         unknown,
+        missingFrom: unknown && elsewhere ? (landed?.repoId ?? null) : null,
         deprecatedOnly,
       };
     });
@@ -294,7 +297,11 @@ export function DashboardBuilder({
         if (request === previewRequest.current) {
           if (result.state === "ready") {
             setPreview({ config: reqConfig, view: result.value, skipped: { fallbacks: result.fallbacks, gaps: result.gaps } });
-            setLanded({ view: result.value, unknown: unknownCohortKeys(reqConfig.cohorts, result.value) });
+            setLanded({
+              view: result.value,
+              unknown: unknownCohortKeys(reqConfig.cohorts, result.value),
+              repoId: reqConfig.scope.kind === "repo" ? reqConfig.scope.repoId : null,
+            });
           } else {
             setPreview(null);
             setPreviewUnavailable(result);
@@ -347,26 +354,27 @@ export function DashboardBuilder({
             />
           </div>
 
-          <div className="min-w-[10rem] space-y-1.5">
+          <div className="flex min-w-[10rem] flex-col gap-1.5">
             <label htmlFor="dashboard-scope" className="block text-label text-muted-foreground">
               Repos
             </label>
-            <select
-              id="dashboard-scope"
-              value={scopeRepoId ?? ""}
-              onChange={(e) => setScopeRepoId(e.target.value || null)}
-              className={cn(
-                "h-8 w-full rounded-lg border border-control bg-transparent px-2.5 text-base transition-colors sm:text-sm dark:bg-input/30",
-                scopeRepoId ? "font-mono" : "font-sans",
-              )}
+            <Select
+              value={scopeRepoId}
+              onValueChange={setScopeRepoId}
+              items={[{ value: null, label: "All repos" }, ...repos.map((r) => ({ value: r, label: r }))]}
             >
-              <option value="">All repos</option>
-              {repos.map((r) => (
-                <option key={r} value={r} className="font-mono">
-                  {r}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="dashboard-scope" className={scopeRepoId ? "font-mono" : "font-sans"}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>All repos</SelectItem>
+                {repos.map((r) => (
+                  <SelectItem key={r} value={r} className="font-mono">
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
@@ -476,7 +484,7 @@ export function DashboardBuilder({
         <aside aria-label="Series" className="flex min-w-0 flex-col gap-3 lg:border-r lg:pr-4">
           <span className="text-label text-muted-foreground">Series</span>
           {cohorts.length > 0 ? (
-            <div className="border-b pb-3">
+            <div className="relative max-h-[24rem] overflow-y-auto overscroll-contain border-b pb-3">
               <SeriesLegend
                 series={legend}
                 onRemove={removeSeries}

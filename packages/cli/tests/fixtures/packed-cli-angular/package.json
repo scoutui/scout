@@ -1,0 +1,9 @@
+{
+  "name": "packed-cli-angular",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@angular/compiler": "*",
+    "@angular/core": "*"
+  }
+}

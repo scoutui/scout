@@ -39,6 +39,23 @@ describe("diagnosticLogLines", () => {
       { code: "auto-import-manifest-missing", severity: "warning", filePath: ".nuxt/components.d.ts", detail: "no components manifest" },
       "This Nuxt app hasn't been prepared, so auto-imported components aren't counted. Run npx nuxt prepare and scan again.",
     ],
+    [
+      "an Angular compiler older than Scout supports",
+      {
+        code: "angular-compiler-unsupported",
+        severity: "warning",
+        filePath: "package.json",
+        version: "18",
+        detail:
+          "The installed @angular/compiler is version 18, older than the Angular 19+ Scout supports, so its templates may be missed or misread. Upgrade @angular/compiler and scan again.",
+      },
+      "The installed @angular/compiler is version 18, older than the Angular 19+ Scout supports, so its templates may be missed or misread. Upgrade @angular/compiler and scan again.",
+    ],
+    [
+      "a missing Angular templateUrl file",
+      { code: "angular-template-missing", severity: "warning", filePath: "src/app.component.ts", templateUrl: "./app.component.html" },
+      "src/app.component.ts: couldn't read its template at ./app.component.html, so that component's template wasn't counted.",
+    ],
   ])("prints one plain line for %s", (_case, diagnostic, line) => {
     expect(diagnosticLogLines([diagnostic])).toEqual({ warnings: [line], counts: [] });
   });
@@ -64,5 +81,23 @@ describe("diagnosticLogLines", () => {
 
   it("prints nothing for no diagnostics", () => {
     expect(diagnosticLogLines([])).toEqual({ warnings: [], counts: [] });
+  });
+
+  it("counts an Angular element matched out of its template's scope, singular and plural", () => {
+    const outOfScope = (line: number): Diagnostic => ({
+      code: "angular-not-in-scope",
+      severity: "info",
+      filePath: "src/app.component.html",
+      line,
+      column: 3,
+      tagName: "app-thing",
+      candidates: ["src/thing.component.ts#ThingComponent"],
+    });
+    expect(diagnosticLogLines([outOfScope(1)]).counts).toEqual([
+      "1 element matched an Angular component out of its template's scope and wasn't counted as a use.",
+    ]);
+    expect(diagnosticLogLines([outOfScope(1), outOfScope(2)]).counts).toEqual([
+      "2 elements matched an Angular component out of their template's scope and weren't counted as uses.",
+    ]);
   });
 });

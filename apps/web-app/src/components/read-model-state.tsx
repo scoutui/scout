@@ -1,6 +1,7 @@
-import Link from "next/link";
+
+import { BackLink } from "@/components/ui/back-link";
 import type { ReactNode } from "react";
-import { ChevronLeft, CircleX, Clock } from "lucide-react";
+import { CircleX, Clock } from "lucide-react";
 import {
   readModelTitle, type ChartResultsNotice, type ReadModelUnavailable, type ScanFallbackNotice, type ScanGapNotice, type SkippedState, type UnavailableScan,
 } from "@/lib/read-model-state";
@@ -167,13 +168,7 @@ export function ReadModelState({ state, scans, retryable, heading, embedded = fa
       {heading ? (
         <header className="space-y-2">
           {heading.back ? (
-            <Link
-              href={heading.back.href}
-              className={cn("inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground hover:text-foreground", heading.back.code && "font-mono")}
-            >
-              <ChevronLeft aria-hidden className="size-3" />
-              {heading.back.label}
-            </Link>
+            <BackLink href={heading.back.href} code={heading.back.code}>{heading.back.label}</BackLink>
           ) : null}
           <h1 className={cn(heading.back ? "text-2xl" : "text-3xl", "font-semibold", heading.code ? "font-mono" : heading.back ? "tracking-headline" : "tracking-display")}>
             {heading.title}

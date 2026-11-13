@@ -6,8 +6,11 @@ export const ROLE_NAMES: Record<Role, string> = { viewer: "Viewer", editor: "Edi
 /** Where a person's role comes from: the People page, `SCOUTUI_ADMINS`, or `SCOUTUI_ADMIN_GROUP`. */
 export type RoleSource = "people" | "install" | "group";
 export type Person = { kind: "person"; userId: string; email: string; name: string | null; role: Role; roleSource: RoleSource };
-/** Who is asking, with their role as it stands for this request. `repo-token` is a repo's CI upload token, which uploads only scans of `repoId`. */
-export type Identity = Person | { kind: "repo-token"; repoId: string };
+/**
+ * Who is asking, with their role as it stands for this request. `repo-token` is a repo's CI upload token, which uploads
+ * only scans of `repoId`. `guest` is a browser without a session on a dashboard with `SCOUTUI_GUEST_VIEW` on.
+ */
+export type Identity = Person | { kind: "repo-token"; repoId: string } | { kind: "guest" };
 export type Action = "view" | "edit" | "upload" | "manage-people" | "manage-repos";
 /** The parts of a saved chart its access depends on. */
 export type ChartTarget = Pick<Dashboard, "createdByUserId" | "visibility">;
@@ -27,12 +30,13 @@ const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
 const NEEDS: Record<Exclude<Action, "view">, Role> = { edit: "editor", upload: "editor", "manage-people": "admin", "manage-repos": "admin" };
 
 /**
- * Whether `identity` may do `action` to `target`. Everyone signed in may view a chart shared with everyone; only its
- * creator and Admins may view a private one, or edit or delete any chart.
+ * Whether `identity` may do `action` to `target`. Everyone signed in, and a guest, may view a chart shared with
+ * everyone; only its creator and Admins may view a private one, or edit or delete any chart. A guest may only view.
  */
 export function can(identity: Identity | null, action: Action, target?: Target): boolean {
   if (identity === null) return false;
   if (identity.kind === "repo-token") return action === "upload" && !(target && "repoId" in target && target.repoId !== identity.repoId);
+  if (identity.kind === "guest") return action === "view" && !(target && "chart" in target && target.chart.visibility !== "everyone");
   const chart = target && "chart" in target ? target.chart : null;
   const ownsOrAdmin = chart === null || chart.createdByUserId === identity.userId || identity.role === "admin";
   if (action === "view") return chart?.visibility === "everyone" || ownsOrAdmin;
@@ -49,6 +53,12 @@ export function adminSettings(env: Record<string, string | undefined> = process.
   // biome-ignore lint/complexity/useLiteralKeys: env access
   const group = env["SCOUTUI_ADMIN_GROUP"]?.trim() ?? "";
   return { emails: new Set(emails), group: group === "" ? null : group };
+}
+
+/** Whether `SCOUTUI_GUEST_VIEW` is `true`, letting browsers without a session view the dashboard. */
+export function guestViewEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  // biome-ignore lint/complexity/useLiteralKeys: env access
+  return env["SCOUTUI_GUEST_VIEW"] === "true";
 }
 
 /** Throws unless `SCOUTUI_ADMINS` or `SCOUTUI_ADMIN_GROUP` is set. */

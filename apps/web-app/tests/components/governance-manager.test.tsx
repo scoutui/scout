@@ -91,8 +91,22 @@ describe("GovernanceManager", () => {
     window.location.hash = "";
   });
 
+  it("shows someone who can't edit the records with no Add record or Edit, and says only Editors can change them", () => {
+    render(<GovernanceManager canEdit={false} records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    openPackages();
+    expect(row("r1")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^(Add record|Edit )/ })).toBeNull();
+    expect(screen.getByText("View only").nextElementSibling?.textContent).toBe("Only Editors can add or change records and tags.");
+  });
+
+  it("doesn't open the record form for someone who can't edit when there are no records", () => {
+    render(<GovernanceManager canEdit={false} records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    expect(screen.getByText("No records yet.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+  });
+
   it("shows one Records table with the name, replacement or reason, and uses left columns", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     expect(screen.getByText("6 records")).toBeInTheDocument();
     const table = screen.getByRole("table", { name: "Records" });
@@ -107,7 +121,7 @@ describe("GovernanceManager", () => {
   });
 
   it("says on every row whether the record is superseded or retired", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     const button = row("r1");
     expect(button.children[1]?.textContent).toBe("Replaced by");
@@ -118,7 +132,7 @@ describe("GovernanceManager", () => {
   });
 
   it("links each count to the record's trend, named by its visible text and the record", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     const button = screen.getByRole("link", { name: "20 left in 2 repos , trend for Button" });
     expect(button).toHaveAttribute("href", "/charts/migration%3Ar1");
@@ -130,14 +144,14 @@ describe("GovernanceManager", () => {
   });
 
   it("drops the repo from counts when fewer than two repos are scanned", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={1} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={1} summary={null} authors={{}} notice={null} />);
     openPackages();
     expect(screen.getByRole("link", { name: "17 left , trend for Field" })).toBeInTheDocument();
     expect(countText(row("r3"))).not.toContain("repo-a");
   });
 
   it("shows each package's total as plain text in its header", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const header = groupHeader("@acme/old");
     expect(header.textContent).toContain("@acme/old · 2 components");
     expect(countText(header)).toContain("23");
@@ -147,7 +161,7 @@ describe("GovernanceManager", () => {
   });
 
   it("links a name to its component page, or its package page for a whole package, and leaves it plain when nothing is left to show", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     expect(within(row("r1")).getByRole("link", { name: "Button" })).toHaveAttribute("href", "/components/c-button");
     expect(within(row("r-icons")).getByRole("link", { name: "old-icons" })).toHaveAttribute("href", "/packages/old-icons");
@@ -159,13 +173,13 @@ describe("GovernanceManager", () => {
 
   it("leaves a package name plain when none of its records covers a component", () => {
     const plain = { ...stats, r1: { ...stats.r1, componentIds: [] }, r2: { ...stats.r2, componentIds: [] } };
-    render(<GovernanceManager records={records} sources={sources} stats={plain} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={plain} repoCount={3} summary={null} authors={{}} notice={null} />);
     expect(within(groupHeader("@acme/old")).getByText("@acme/old")).toBeInTheDocument();
     expect(within(groupHeader("@acme/old")).queryByRole("link", { name: "@acme/old" })).toBeNull();
   });
 
   it("shows no data in every count and total while results are rebuilding", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     const table = screen.getByRole("table", { name: "Records" });
     const rows = [...table.querySelectorAll<HTMLElement>("tbody > tr")];
@@ -178,7 +192,7 @@ describe("GovernanceManager", () => {
 
   it("shows no data for a record saved since the last rebuild, and for its package's total, keeping the other counts", () => {
     const { r2: _saved, ...rest } = stats;
-    render(<GovernanceManager records={records} sources={sources} stats={rest} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={rest} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     expect(countText(row("r2"))).toBe("No data");
     expect(countText(groupHeader("@acme/old"))).toBe("No data");
@@ -187,7 +201,7 @@ describe("GovernanceManager", () => {
   });
 
   it("folds finished packages behind Show N complete, which opens with each package open, and each still folds from its own button", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const toggle = screen.getByRole("button", { name: "Show 1 complete" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(row("r-done")).toBeNull();
@@ -205,7 +219,7 @@ describe("GovernanceManager", () => {
   });
 
   it("starts every package folded and opens and folds one from its own button, and a search shows matches in a folded package, without fold buttons, until it's cleared", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const fold = screen.getByRole("button", { name: "Records in @acme/old" });
     expect(fold).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Records in @acme/forms" })).toHaveAttribute("aria-expanded", "false");
@@ -232,7 +246,7 @@ describe("GovernanceManager", () => {
 
   it("opens the package of a record linked from another page, leaving the other packages folded, and keeps it open once the mark clears", () => {
     window.location.hash = "#record-r3";
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     expect(row("r3")).toHaveAttribute("aria-current", "true");
     expect(screen.getByRole("button", { name: "Records in @acme/forms" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("button", { name: "Records in @acme/old" })).toHaveAttribute("aria-expanded", "false");
@@ -242,7 +256,7 @@ describe("GovernanceManager", () => {
   });
 
   it("opens the complete section, without its toggle, while a search matches a finished package", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "oldthing" } });
     expect(screen.getByText("1 complete")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /complete/ })).toBeNull();
@@ -253,7 +267,7 @@ describe("GovernanceManager", () => {
 
   it("marks, scrolls to and focuses a record linked from another page, opening the complete section", () => {
     window.location.hash = "#record-r-done";
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     const done = row("r-done");
     expect(done).toHaveAttribute("aria-current", "true");
     expect(done).toHaveClass("selected");
@@ -263,7 +277,7 @@ describe("GovernanceManager", () => {
   });
 
   it("keeps the edit form as it is, and focus on the toggle, when the complete section folds", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Show 1 complete" }));
     fireEvent.click(screen.getByRole("button", { name: "Edit OldThing" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
@@ -279,7 +293,7 @@ describe("GovernanceManager", () => {
   });
 
   it("keeps the edit form as it is, and focus on the fold button, when its package folds", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={stats} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
@@ -300,7 +314,7 @@ describe("GovernanceManager", () => {
       { ...(records[0] as GovernanceRecord), id: "b", targetExport: "Input", disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Input" } } },
     ];
     const chainStats = { a: { status: "active", left: 1, leftIn: ["repo-a"], componentIds: [], trackingId: "migration:a", successorDeprecated: true } as RecordStat };
-    render(<GovernanceManager records={chain} sources={sources} stats={chainStats} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={chain} sources={sources} stats={chainStats} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     expect(screen.getByText("Replacement deprecated")).toBeInTheDocument();
     expect(screen.getByText("→ Input · @acme/new")).toBeInTheDocument();
@@ -308,7 +322,7 @@ describe("GovernanceManager", () => {
 
   it("reports every invalid field inline as an alert on submit", async () => {
     // Empty registry: the form is already open (first-run), no click needed.
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: /create/i }));
     const alerts = await screen.findAllByRole("alert");
     const text = alerts.map((a) => a.textContent).join(" | ");
@@ -322,13 +336,13 @@ describe("GovernanceManager", () => {
     [null, "Nothing scanned yet"],
     ["preparing", "Preparing scan data"],
   ] as const)("says why there is nothing to search when the stored results are %s", (state, text) => {
-    render(<GovernanceManager records={[]} sources={[]} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} sourcesUnavailable={state} />);
+    render(<GovernanceManager canEdit records={[]} sources={[]} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} sourcesUnavailable={state} />);
     fireEvent.click(screen.getByRole("combobox", { name: "Package or component" }));
     expect(statuses()).toContain(text);
   });
 
   it("labels the form's fields in plain words, with hints", () => {
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(screen.getByRole("heading", { name: "New record" })).toBeInTheDocument();
     expect(screen.getByText("Package or component")).toBeInTheDocument();
     expect(screen.getByRole("radiogroup", { name: "Type" })).toBeInTheDocument();
@@ -340,7 +354,7 @@ describe("GovernanceManager", () => {
   });
 
   it("marks both empty pickers invalid on Create", async () => {
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     await screen.findAllByRole("alert");
     expect(screen.getByRole("combobox", { name: "Package or component" })).toHaveAttribute("aria-invalid", "true");
@@ -348,12 +362,12 @@ describe("GovernanceManager", () => {
   });
 
   it("names the source search box after its label, empty before a pick", () => {
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(screen.getByRole("combobox", { name: "Package or component" })).toHaveValue("");
   });
 
   it("opens the form via Add record for a non-empty registry, closing an open edit form", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     openPackages();
     expect(screen.queryByRole("heading", { level: 2, name: "New record" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
@@ -363,7 +377,7 @@ describe("GovernanceManager", () => {
   });
 
   it("opens the form automatically on an empty registry, and Cancel reveals the teaching copy which Add record can reopen from", () => {
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(screen.getByRole("heading", { level: 2, name: "New record" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
@@ -375,7 +389,7 @@ describe("GovernanceManager", () => {
   });
 
   it("opens Edit in the record's row and moves focus into the form, and Cancel returns focus to its Edit button", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     const row = document.getElementById("record-r1");
@@ -395,7 +409,7 @@ describe("GovernanceManager", () => {
         r.id === "r1" ? { ...r, createdAt: "2026-10-02T09:00:00.000Z", updatedAt: "2026-10-03T09:00:00.000Z" } : r,
       );
       const authors = { r1: { createdBy: "Ana", updatedBy: "Sam" } };
-      render(<GovernanceManager records={changed} sources={sources} stats={{}} repoCount={3} summary={null} authors={authors} notice={null} />);
+      render(<GovernanceManager canEdit records={changed} sources={sources} stats={{}} repoCount={3} summary={null} authors={authors} notice={null} />);
       openPackages();
       fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
       expect(within(row("r1")).getByText("Added by Ana on 2 Oct · changed by Sam on 3 Oct")).toBeInTheDocument();
@@ -408,7 +422,7 @@ describe("GovernanceManager", () => {
   });
 
   it("deletes from the edit form after a confirm, then focuses Add record", async () => {
-    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
@@ -422,7 +436,7 @@ describe("GovernanceManager", () => {
   });
 
   it("keeps the edited row on screen while the search hides its record", () => {
-    render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "chip" } });
@@ -430,23 +444,23 @@ describe("GovernanceManager", () => {
   });
 
   it("keeps the search box while a search is set, even once one record is left", () => {
-    const { rerender } = render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    const { rerender } = render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "button" } });
-    rerender(<GovernanceManager records={[records[1] as GovernanceRecord]} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    rerender(<GovernanceManager canEdit records={[records[1] as GovernanceRecord]} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     expect(screen.getByRole("searchbox")).toHaveValue("button");
   });
 
   it("clears the search and highlights the saved record once it appears", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     vi.mocked(saveGovernance).mockResolvedValueOnce({ ok: true, id: "r1" });
-    const { rerender } = render(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    const { rerender } = render(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     openPackages();
     fireEvent.click(screen.getByRole("button", { name: "Edit Button" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "chip" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() => expect(screen.queryByRole("heading", { name: "Edit record" })).not.toBeInTheDocument());
     expect(screen.getByRole("searchbox")).toHaveValue("");
-    rerender(<GovernanceManager records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
+    rerender(<GovernanceManager canEdit records={records} sources={sources} stats={{}} repoCount={3} summary={null} authors={{}} notice={null} />);
     await vi.waitFor(() => expect(document.getElementById("record-r1")).toHaveAttribute("aria-current", "true"));
     fireEvent.pointerDown(document.body);
     expect(document.getElementById("record-r1")).not.toHaveAttribute("aria-current");
@@ -454,7 +468,7 @@ describe("GovernanceManager", () => {
 
   it("keeps the form open after Create, saying what was added, with both search boxes blank and Type kept, and blank again when closed with nothing picked", async () => {
     const { saveGovernance } = await import("@/app/governance/governance-actions");
-    const { rerender } = render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    const { rerender } = render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     const source = screen.getByRole("combobox", { name: "Package or component" });
     fireEvent.change(source, { target: { value: "old-icons" } });
     fireEvent.keyDown(source, { key: "ArrowUp" });
@@ -483,7 +497,7 @@ describe("GovernanceManager", () => {
     expect(screen.queryByRole("button", { name: "Search all packages" })).not.toBeInTheDocument();
 
     const created = rec("new", "old-icons", "Star", { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } });
-    rerender(<GovernanceManager records={[created]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    rerender(<GovernanceManager canEdit records={[created]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(document.getElementById("record-new")).toHaveAttribute("aria-current", "true");
 
     for (const [box, packageName] of [[source, "old-icons"], [by, "@acme/new"]] as const) {
@@ -516,7 +530,7 @@ describe("GovernanceManager", () => {
       conflict: { kind: "target_governed", existingId: "r1" },
     });
 
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     pickAcmeOldPackage();
 
     fireEvent.click(screen.getByRole("radio", { name: /retired/i }));
@@ -535,7 +549,7 @@ describe("GovernanceManager", () => {
       conflict: { kind: "target_governed", existingId: "r1" },
     });
     const done = { r1: { ...stats.r1, status: "complete", left: 0, leftIn: [] } as RecordStat };
-    render(<GovernanceManager records={[records[0] as GovernanceRecord]} sources={sources} stats={done} repoCount={3} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[records[0] as GovernanceRecord]} sources={sources} stats={done} repoCount={3} summary={null} authors={{}} notice={null} />);
     expect(document.getElementById("record-r1")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /add record/i }));
@@ -558,7 +572,7 @@ describe("GovernanceManager", () => {
       conflict: { kind: "component_grain_overlap", existingIds: ["r1", "r2"], packageName: "@acme/old" },
     });
 
-    render(<GovernanceManager records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     pickAcmeOldPackage();
 
     fireEvent.click(screen.getByRole("radio", { name: /retired/i }));

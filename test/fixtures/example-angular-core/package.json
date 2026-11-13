@@ -1,0 +1,6 @@
+{
+  "name": "@angular/core",
+  "version": "0.0.0-test",
+  "private": true,
+  "main": "index.cjs"
+}

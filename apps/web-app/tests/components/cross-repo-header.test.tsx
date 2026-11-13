@@ -6,7 +6,7 @@ import { CrossRepoHeader } from "@/components/components-tab/cross-repo-header";
 
 const detail: CrossRepoComponentDetail = {
   componentId: "c", packageName: "@example/ui", displayName: "Button", kind: "react-component", scope: "external",
-  repoCount: 1, totalOccurrences: 1, distinctVersionCount: 1, deprecatedAnywhere: false,
+  repoCount: 1, totalOccurrences: 1, distinctVersionCount: 1, versionRange: { oldest: "1.0.0", newest: "1.0.0" }, deprecatedAnywhere: false,
   migrationStatus: { status: "active" }, governedByRecordId: null,
   usages: [{ repoId: "shop", version: "1.0.0", occurrenceCount: 1, deprecated: false, committedAt: "2026-05-15T10:00:00Z" }],
 };
@@ -15,5 +15,10 @@ describe("CrossRepoHeader", () => {
   it("counts a single use as `1 use`", () => {
     render(<CrossRepoHeader detail={detail} canEdit={false} />);
     expect(screen.getByText("1 use")).toBeInTheDocument();
+  });
+
+  it("shows the oldest to the newest version in the meta line", () => {
+    render(<CrossRepoHeader detail={{ ...detail, distinctVersionCount: 3, versionRange: { oldest: "1.0.0", newest: "2.4.1" } }} canEdit={false} />);
+    expect(screen.getByTitle("3 versions")).toHaveTextContent("1.0.0 – 2.4.1");
   });
 });

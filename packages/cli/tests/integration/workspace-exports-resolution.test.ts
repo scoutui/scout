@@ -1,9 +1,11 @@
 /**
  * workspace-exports-resolution fixture: `@workspace-exports/consumer` imports
  * `@example/icons/icons/IcDemo`, a path that only the workspace package's
- * `exports` subpath pattern (`"./icons/*": "./src/icons/*.tsx"`) maps to a file.
- * The fixture's tsconfig has no `paths`, and the pattern maps into a folder
- * other than its subpath's, so nothing else can resolve it.
+ * `exports` subpath pattern (`"./icons/*": "./src/icons/*.tsx"`) maps to a file,
+ * and `@example/icons/badges`, a conditional subpath whose `default` target
+ * (`./dist/badges.mjs`) doesn't exist and whose `types` target is the source.
+ * The fixture's tsconfig has no `paths`, and both map into a folder other than
+ * their subpath's, so nothing else can resolve them.
  */
 import { describe, it, expect, beforeAll } from "vitest";
 import type { ScanArtifact } from "@scoutui/scan-format";
@@ -16,7 +18,7 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("integration: workspace-exports-resolution fixture", () => {
-  it("credits an import through a workspace package's `exports` pattern to the declaration in the mapped file", () => {
+  it("credits imports through a workspace package's `exports` pattern and conditional subpath to the declarations in the mapped files", () => {
     const identityOf = new Map(out.components.map((c) => [c.id, c.identity]));
     expect(
       out.occurrences.map((o) => ({
@@ -28,7 +30,7 @@ describe("integration: workspace-exports-resolution fixture", () => {
       })),
     ).toEqual([
       {
-        at: "packages/consumer/src/App.tsx:4:42",
+        at: "packages/consumer/src/App.tsx:5:42",
         component: {
           kind: "repository-declaration",
           repoId: "workspace-exports-resolution",
@@ -43,6 +45,23 @@ describe("integration: workspace-exports-resolution fixture", () => {
         },
         trace: [{ kind: "import", specifier: "@example/icons/icons/IcDemo", name: "IcDemo" }],
         props: { size: { tier: "reference", ref: "props.size" } },
+      },
+      {
+        at: "packages/consumer/src/App.tsx:6:28",
+        component: {
+          kind: "repository-declaration",
+          repoId: "workspace-exports-resolution",
+          filePath: "packages/icons/src/badge-set/index.tsx",
+          exportName: "IcBadge",
+        },
+        owner: {
+          kind: "repository-declaration",
+          repoId: "workspace-exports-resolution",
+          filePath: "packages/consumer/src/App.tsx",
+          exportName: "Badge",
+        },
+        trace: [{ kind: "import", specifier: "@example/icons/badges", name: "IcBadge" }],
+        props: {},
       },
     ]);
   });

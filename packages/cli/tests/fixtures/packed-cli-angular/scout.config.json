@@ -1,0 +1,4 @@
+{
+  "repoId": "packed-cli-angular",
+  "include": ["src/**/*.{ts,html}"]
+}

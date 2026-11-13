@@ -29,12 +29,19 @@ export function emptyFacets(): FacetState {
   return { text: "", origin: null, kinds: [], packages: [], tags: [], deprecated: null, changed: false, occurrences: null, usedIn: null, hasUnusedProps: null };
 }
 
-export const KIND_LABEL: Record<KindValue, string> = {
+/** Labels for the kinds this dashboard knows by name. A kind it doesn't know — an unknown
+ *  framework's own name, e.g. "svelte" — has no entry here; `kindLabel` capitalises it instead. */
+export const KIND_LABEL: Partial<Record<KindValue, string>> = {
   react: "React",
   vue: "Vue",
   wc: "Web component",
   "undefined-element": "Undefined element",
 };
+
+/** `KIND_LABEL`'s entry for a known kind; an unknown kind (a framework's own name) capitalised. */
+export function kindLabel(kind: KindValue): string {
+  return KIND_LABEL[kind] ?? (kind.charAt(0).toUpperCase() + kind.slice(1));
+}
 
 export const ORIGIN_LABEL: Record<OriginValue, string> = {
   external: "External",
@@ -211,10 +218,9 @@ export function facetOptions(
     if (counted && hasUnusedProps(r) && matchesRow(r, withoutUnusedProps)) hasUnusedPropsCount++;
   }
 
-  const kinds = (Object.keys(KIND_LABEL) as KindValue[])
-    .filter((k) => kindCounts.has(k))
-    .map((k) => ({ value: k, count: kindCounts.get(k) ?? 0 }))
-    .sort((a, b) => b.count - a.count);
+  const kinds = [...kindCounts.entries()]
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
   const packages = [...pkgCounts.entries()]
     .map(([value, count]) => ({ value, count }))
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
@@ -242,7 +248,6 @@ export function facetOptions(
 /** The params the components table keeps its facets in. */
 export const FACET_PARAMS = ["q", "origin", "kind", "package", "tag", "deprecated", "uses", "used-in", "changed", "unused-props"];
 
-const KINDS: readonly KindValue[] = ["react", "vue", "wc", "undefined-element"];
 const OCCURRENCE_WORDS: Record<OccurrenceOp, string> = { ">=": "gte:", ">": "gt:", "<=": "lte:", "<": "lt:", "=": "" };
 const OCCURRENCE_RE = /^(gte:|gt:|lte:|lt:)?(\d+)$/;
 
@@ -267,13 +272,15 @@ export function facetsToParams(f: FacetState): QueryParams {
   return params;
 }
 
-/** Facet state from the URL. Values it doesn't know are skipped, so a hand-edited link reads as far as it can. */
+/** Facet state from the URL. Values it doesn't know are skipped, so a hand-edited link reads as far as it can.
+ *  `kind` is open: any non-empty value is kept, including a framework this dashboard doesn't recognise by
+ *  name (its filter still works through `friendlyKind`, which names an unknown kind the same way). */
 export function paramsToFacets(params: URLSearchParams): FacetState {
   const f = emptyFacets();
   f.text = params.get("q") ?? "";
   const origin = params.get("origin");
   if (origin === "external" || origin === "local") f.origin = origin;
-  f.kinds = [...new Set(params.getAll("kind"))].filter((k): k is KindValue => KINDS.includes(k as KindValue));
+  f.kinds = [...new Set(params.getAll("kind"))].filter(Boolean);
   f.packages = [...new Set(params.getAll("package"))].filter(Boolean);
   f.tags = [...new Set(params.getAll("tag"))].filter(Boolean);
   const deprecated = params.get("deprecated");

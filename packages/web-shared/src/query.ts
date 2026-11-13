@@ -1,7 +1,7 @@
 // Query semantics:
 // - liqe string match is case-insensitive substring (so `name:button` finds IconButton).
 // - array fields match by membership (so `tag` is projected as string[]).
-import type { ComponentKind, GovernanceRecord, Tag } from "./dto.js";
+import type { ComponentKind, GovernanceRecord, KnownComponentKind, Tag } from "./dto.js";
 import { componentDeprecated } from "./governance.js";
 import { presentIdentity, type PresentableComponent } from "./present-identity.js";
 import { resolveTags } from "./tags.js";
@@ -10,28 +10,38 @@ import type { LiqeQuery } from "liqe";
 
 type Component = PresentableComponent & { stats: { occurrenceCount: number }; writtenNames?: readonly string[] | undefined };
 
-/** The flat object liqe.test() matches a query against. */
+/** The known friendly kinds `friendlyKind` returns for the four kinds this dashboard knows by name. */
+export type KnownFriendlyKind = "react" | "vue" | "wc" | "undefined-element";
+
+/** The flat object liqe.test() matches a query against. `kind` is open: a known friendly kind, or the
+ *  framework's own name (e.g. "svelte") for a component whose framework this dashboard doesn't know. */
 export type QueryView = {
   name: string;
   /** The other names files render the component under, so a bare term finds it by any of them. */
   written: string[];
   scope: "external" | "local";
-  kind: "react" | "vue" | "wc" | "undefined-element";
+  kind: KnownFriendlyKind | string;
   package: string;
   deprecated: boolean;
   uses: number;
   tag: string[];
 };
 
-const KIND_FRIENDLY: Record<ComponentKind, QueryView["kind"]> = {
+const KIND_FRIENDLY: Record<KnownComponentKind, KnownFriendlyKind> = {
   "react-component": "react",
   "vue-component": "vue",
   "custom-element": "wc",
   tag: "undefined-element",
 };
 
-export function friendlyKind(kind: ComponentKind): QueryView["kind"] {
-  return KIND_FRIENDLY[kind];
+const COMPONENT_SUFFIX = "-component";
+
+/** `kind`'s friendly form: the known word for a kind this dashboard recognises, otherwise the
+ *  framework name an open `${framework}-component` kind carries (e.g. "svelte-component" → "svelte"). */
+export function friendlyKind(kind: ComponentKind): KnownFriendlyKind | string {
+  const known = (KIND_FRIENDLY as Partial<Record<ComponentKind, KnownFriendlyKind>>)[kind];
+  if (known !== undefined) return known;
+  return kind.endsWith(COMPONENT_SUFFIX) ? kind.slice(0, -COMPONENT_SUFFIX.length) : kind;
 }
 
 export function toQueryView(

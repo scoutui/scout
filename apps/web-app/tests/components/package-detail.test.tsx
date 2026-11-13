@@ -27,7 +27,7 @@ const baseDetail: PackageDetail = {
   totalOccurrences: 11,
   deprecatedCount: 1,
   distinctVersionCount: 2,
-  soleVersion: null,
+  versionRange: { oldest: "1.2.3", newest: "2.0.0" },
   cells: [
     { repoId: "r1", version: "1.2.3", occurrenceCount: 3, committedAt: "2026-05-15T10:00:00Z" },
     { repoId: "r1", version: null, occurrenceCount: 0, committedAt: "2026-05-15T10:00:00Z" },
@@ -68,37 +68,14 @@ describe("PackageDetailHeader", () => {
     expect(screen.getByText("1 use")).toBeInTheDocument();
   });
 
-  it("renders the version composition bar, latest first, unversioned last", () => {
+  it("shows the oldest to the newest version in the meta line", () => {
     render(<PackageDetailHeader detail={baseDetail} canEdit />);
-    const bar = screen.getByRole("img");
-    expect(bar).toHaveAttribute(
-      "aria-label",
-      "Uses by version: 2.0.0 8, 1.2.3 3, unversioned 0",
-    );
+    expect(screen.getByTitle("2 versions")).toHaveTextContent("1.2.3 – 2.0.0");
   });
 
-  it.each([
-    ["the latest version, then every other one together", ["1.0.0", "1.1.0", "1.2.0", "2.0.0", "2.1.0", "3.0.0"], [["3.0.0", "6"], ["other", "15"]]],
-    ["only the latest version when there is one", ["3.0.0"], [["3.0.0", "1"]]],
-  ])("keys the version bar with %s", (_, versions, entries) => {
-    const cells = versions.map((version, i) => ({ repoId: `r${i}`, version, occurrenceCount: i + 1, committedAt: "2026-05-15T10:00:00Z" }));
-    render(<PackageDetailHeader detail={{ ...baseDetail, distinctVersionCount: versions.length, cells }} canEdit />);
-    const legend = screen.getByRole("img").nextElementSibling;
-    expect([...(legend?.children ?? [])].map((entry) => [...entry.children].slice(1).map((part) => part.textContent))).toEqual(entries);
-  });
-
-  it("omits the version bar for unversioned (workspace-local) packages", () => {
-    render(
-      <PackageDetailHeader
-        detail={{
-          ...baseDetail,
-          distinctVersionCount: 0,
-          cells: [{ repoId: "r1", version: null, occurrenceCount: 5, committedAt: "2026-05-15T10:00:00Z" }],
-        }}
-        canEdit
-      />,
-    );
-    expect(screen.queryByRole("img")).toBeNull();
+  it("shows no versions for a package with none recorded", () => {
+    render(<PackageDetailHeader detail={{ ...baseDetail, distinctVersionCount: 0, versionRange: null }} canEdit />);
+    expect(screen.queryByTitle(/version/)).toBeNull();
   });
 
   it("renders the deprecated count as plain warn-coloured status text when non-zero", () => {
@@ -160,22 +137,24 @@ describe("PackageConsumersTable", () => {
     expect(bodyRows[2]).toContain("low");
   });
 
-  it("marks only the latest version's rows with the primary dot", () => {
-    render(<PackageConsumersTable packageName="@x/lib" cells={baseDetail.cells} />);
-    // Latest is 2.0.0 (one cell) → primary; 1.2.3 + unversioned → legacy. Each row shows its dot twice: in the
-    // phone line and in the Version column.
-    expect(document.querySelectorAll(".bg-viz-primary")).toHaveLength(2);
-    expect(document.querySelectorAll(".bg-viz-legacy")).toHaveLength(4);
+  it("sorts by Version in SemVer order, unversioned last", () => {
+    const cells = [
+      { repoId: "a", version: "1.14.0", occurrenceCount: 1, committedAt: "2026-05-15T00:00:00Z" },
+      { repoId: "n", version: null, occurrenceCount: 1, committedAt: "2026-05-15T00:00:00Z" },
+      { repoId: "b", version: "1.5.0", occurrenceCount: 1, committedAt: "2026-05-15T00:00:00Z" },
+    ];
+    render(<PackageConsumersTable packageName="@x/lib" cells={cells} />);
+    fireEvent.click(screen.getByRole("button", { name: /^version/i }));
+    expect(screen.getAllByRole("row").slice(1).map(r => r.querySelector("a")?.title)).toEqual(["b", "a", "n"]);
   });
 
-  it("renders no dots and an em-dash version for fully unversioned packages", () => {
+  it("renders an em-dash version for fully unversioned packages", () => {
     render(
       <PackageConsumersTable
         packageName="@x/lib"
         cells={[{ repoId: "r1", version: null, occurrenceCount: 3, committedAt: "2026-05-15T00:00:00Z" }]}
       />,
     );
-    expect(document.querySelectorAll(".bg-viz-primary, .bg-viz-legacy")).toHaveLength(0);
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 

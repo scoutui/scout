@@ -4,7 +4,13 @@ import { z } from "zod";
 // ---- Identity enums (referenced across summary + detail shapes) ----
 export const ComponentScope = z.enum(["external", "local"]);
 export type ComponentScope = z.infer<typeof ComponentScope>;
-export const ComponentKind = z.enum(["custom-element", "react-component", "vue-component", "tag"]);
+// The kinds this dashboard recognises by name. An unknown framework (one `@scoutui/scan-format`'s
+// open `framework` list carries, that isn't "react" or "vue") presents as the open string
+// `${framework}-component` instead, e.g. "svelte-component" — never as one of these, and never
+// folded into "react-component". See `presentIdentity`.
+export const KNOWN_COMPONENT_KINDS = ["custom-element", "react-component", "vue-component", "tag"] as const;
+export type KnownComponentKind = (typeof KNOWN_COMPONENT_KINDS)[number];
+export const ComponentKind = z.string().min(1);
 export type ComponentKind = z.infer<typeof ComponentKind>;
 // Mirrors the scan file `Component`'s `usage` (`@scoutui/scan-format`): why a component
 // is in the inventory. Precedence: direct > root > none.
@@ -311,6 +317,11 @@ export const ComponentRowSchema = z.object({
 export type ComponentRow = z.infer<typeof ComponentRowSchema>;
 
 // ---- Package summary (Packages tab) ----
+// The oldest and newest version in use, in SemVer order; equal when there is
+// one version, null when none is recorded.
+export const VersionRangeSchema = z.object({ oldest: z.string(), newest: z.string() }).nullable();
+export type VersionRange = z.infer<typeof VersionRangeSchema>;
+
 export const PackageSummarySchema = z.object({
   packageName: z.string(),
   consumerCount: z.number().int().nonnegative(),
@@ -318,9 +329,7 @@ export const PackageSummarySchema = z.object({
   totalOccurrences: z.number().int().nonnegative(),
   deprecatedCount: z.number().int().nonnegative(),
   distinctVersionCount: z.number().int().nonnegative(),
-  // The one version in use when distinctVersionCount === 1; null when fragmented
-  // (multiple versions) or unversioned (workspace-local packages).
-  soleVersion: z.string().nullable(),
+  versionRange: VersionRangeSchema,
   tags: z.array(TagRefSchema).optional(),
 });
 export type PackageSummary = z.infer<typeof PackageSummarySchema>;
@@ -565,6 +574,7 @@ export const CrossRepoComponentDetailSchema = z.object({
   repoCount: z.number().int().nonnegative(),
   totalOccurrences: z.number().int().nonnegative(),
   distinctVersionCount: z.number().int().nonnegative(),
+  versionRange: VersionRangeSchema,
   deprecatedAnywhere: z.boolean(),
   migrationStatus: MigrationStatusSchema,
   /** The record that governs this identity, for the edge back to /governance. Null when ungoverned. */

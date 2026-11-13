@@ -26,7 +26,7 @@ To narrow the list:
 
 The search and each **Filter** choice show as a pill you can remove, and **Clear all** removes every filter.
 
-The **Version** column shows the version itself, such as `4.2.0`, or a count such as `3 versions` when the scans recorded more than one. Sort by **Version** to bring the packages on the most versions to the top.
+The **Version** column shows the version itself, such as `4.2.0`, or the oldest and newest version when the scans recorded more than one, such as `3.1.0 – 4.2.0`. Hover over a range to see how many versions it spans. Sort by **Version** to bring the packages on the most versions to the top.
 
 If the list reads **No packages tracked yet.**, no scan has been uploaded. [Run in CI](/docs/guides/run-in-ci) sets up uploads.
 
@@ -34,13 +34,13 @@ If the list reads **No packages tracked yet.**, no scan has been uploaded. [Run 
 
 Select a row to open the package's page.
 
-Below that, a version bar splits the package's uses by version. The highest version found in the scans is coloured and every older one is grey, so the grey share is the code still on an older version. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains what counts as highest.
+The line under the package name gives its framework, how many repos use it, the range of versions they're on, and how many components and uses it has. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains where the versions come from.
 
 When deprecated components are in use, a **deprecated components in use** line counts them. When a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the whole package, a line reads **Replaced by →** with its replacement, or **Retired ·** with the reason, and links to the record on the **governance** page.
 
 ### See who uses it
 
-**Used in** has one row per repo and version, so a repo on two versions of `@acme/ui` gets two rows. In the **Version** column a coloured dot marks the highest version and a grey dot every other, which shows at a glance which repos are behind. **Committed** gives the date of the commit each repo's numbers come from.
+**Used in** has one row per repo and version, so a repo on two versions of `@acme/ui` gets two rows. **Committed** gives the date of the commit each repo's numbers come from.
 
 Select a row to open that repo's **Components** tab filtered to this package. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo).
 

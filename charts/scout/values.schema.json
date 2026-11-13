@@ -191,7 +191,8 @@
           }
         },
         "admins": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "adminGroup": { "type": "string" }
+        "adminGroup": { "type": "string" },
+        "guestView": { "type": "boolean" }
       }
     },
     "database": {

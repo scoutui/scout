@@ -72,7 +72,8 @@ const identitySchema = z.discriminatedUnion("kind", [
 ]);
 export type Identity = z.infer<typeof identitySchema>;
 
-const frameworkSchema = z.enum(["react", "vue"]);
+/** An open list: any non-empty string passes, including a framework this version doesn't know. */
+const frameworkSchema = openValue;
 export type Framework = z.infer<typeof frameworkSchema>;
 
 const creditSchema = openKinds(

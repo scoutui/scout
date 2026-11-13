@@ -73,6 +73,8 @@ Open `http://localhost:3000`, enter any email address and your dev password, pic
 
 **Admin**, the default role, can do everything. Pick **Viewer** or **Editor** to try the dashboard as someone with that role; [Manage people and roles](/docs/guides/manage-people-and-roles) lists what each can do. To switch, sign out from the account menu and sign in again. Locally you don't need `SCOUTUI_ADMINS` or `SCOUTUI_ADMIN_GROUP`; a deployed dashboard does.
 
+To try the [guest view](/docs/guides/deploy-the-dashboard#let-people-view-the-dashboard-without-signing-in), add `SCOUTUI_GUEST_VIEW=true` to `.env.local`, restart `yarn dev`, and open `http://localhost:3000` in a private window, where you aren't signed in.
+
 ## 7. Sign the CLI in
 
 In a repo that has its dependencies and the CLI installed and a `scout.config.json` (see [Scan your first repo](/docs/tutorials/scan-your-first-repo)), run:

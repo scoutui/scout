@@ -76,6 +76,7 @@ Optional settings on the web server:
 | `OIDC_ALLOWED_DOMAINS` | Which email domains may sign in. See [Restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), where it appears as `auth.oidc.allowedDomains`. |
 | `OIDC_EXTRA_SCOPES` | Scopes to ask your provider for on top of `openid profile email`, separated by spaces, such as `groups`. See [By group](/docs/guides/manage-people-and-roles#by-group). |
 | `SCOUTUI_TRUSTED_PROXY_HOPS` | The number of proxies in front of the dashboard. See [step 6](#6-configure-the-ingress-or-proxy). |
+| `SCOUTUI_GUEST_VIEW` | `true` lets anyone view the dashboard without signing in, read-only. It makes every repo on the dashboard public. See [Let people view the dashboard without signing in](/docs/guides/deploy-the-dashboard#let-people-view-the-dashboard-without-signing-in), where it appears as `auth.guestView`. |
 | `DATABASE_POOL_MAX` | Database connections per web server pod. Default 10. |
 
 On the worker, `WORKER_DATABASE_POOL_MAX` sets its database connections per pod. It defaults to 3, which is also the minimum.

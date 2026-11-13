@@ -81,7 +81,8 @@ export async function setDashboardVisibility(id: string, visibility: ChartVisibi
  * visible to the user and never sets createdByUserId.
  */
 export async function previewDashboard(config: DashboardConfig): Promise<ReadModelResult<DashboardView>> {
-  if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
+  const identity = await identify({ browser: true });
+  if (identity?.kind !== "person" || !can(identity, "view")) throw new Error("not_authenticated");
   return loadDashboardView(config);
 }
 
@@ -91,6 +92,7 @@ export async function previewDashboard(config: DashboardConfig): Promise<ReadMod
  * read-only stance as previewDashboard.
  */
 export async function pickableForRepo(repoId: string): Promise<ReadModelResult<PickableSeries>> {
-  if (!can(await identify({ browser: true }), "view")) throw new Error("not_authenticated");
+  const identity = await identify({ browser: true });
+  if (identity?.kind !== "person" || !can(identity, "view")) throw new Error("not_authenticated");
   return readModelPage(getStorage(), snapshot => pickableSeries(snapshot, repoId));
 }

@@ -5,3 +5,4 @@ export const REPO_URL = "https://github.com/scoutui/scout";
 
 export const SCAN_FIRST_REPO = "/docs/tutorials/scan-your-first-repo";
 export const DEPLOY_DASHBOARD = "/docs/guides/deploy-the-dashboard";
+export const DEMO_URL = "https://demo.scoutui.dev";

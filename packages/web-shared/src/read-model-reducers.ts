@@ -17,7 +17,9 @@ import type {
   Tag,
   GovernanceRecord,
   RepoDelta,
+  VersionRange,
 } from "./dto.js";
+import { compareCliVersions } from "@scoutui/scan-format/cli-version";
 import { resolveTags } from "./tags.js";
 import { resolveGovernance, isDeprecated, governingRecord, componentDeprecated, type GovernanceLookup } from "./governance.js";
 import { parseQuery, matchesQuery } from "./query.js";
@@ -207,8 +209,12 @@ export function reduceComponentRows(
   return rows;
 }
 
-const soleVersionOf = (versions: Set<string>): string | null =>
-  versions.size === 1 ? (versions.values().next().value ?? null) : null;
+function versionRangeOf(versions: Set<string>): VersionRange {
+  const sorted = [...versions].sort(compareCliVersions);
+  const [oldest] = sorted;
+  const newest = sorted.at(-1);
+  return oldest === undefined || newest === undefined ? null : { oldest, newest };
+}
 
 export function reducePackagesAcrossScans(artifacts: FactScan<PackageFact>[], governance: GovernanceRecord[] = []): PackageSummary[] {
   // Map: packageName → accumulator
@@ -247,7 +253,7 @@ export function reducePackagesAcrossScans(artifacts: FactScan<PackageFact>[], go
       totalOccurrences: e.totalOccurrences,
       deprecatedCount: e.deprecatedIds.size,
       distinctVersionCount: e.versions.size,
-      soleVersion: soleVersionOf(e.versions),
+      versionRange: versionRangeOf(e.versions),
     }))
     .sort((a, b) => b.totalOccurrences - a.totalOccurrences);
 }
@@ -313,7 +319,7 @@ export function reducePackageDetail(
     totalOccurrences,
     deprecatedCount: components.filter(row => row.deprecated && isUsed(row)).length,
     distinctVersionCount: versions.size,
-    soleVersion: soleVersionOf(versions),
+    versionRange: versionRangeOf(versions),
     cells: [...cells.values()],
     components,
   };
@@ -409,6 +415,7 @@ export function reduceCrossRepoComponent(
     repoCount: usages.length,
     totalOccurrences: usages.reduce((sum, u) => sum + u.occurrenceCount, 0),
     distinctVersionCount: versions.size,
+    versionRange: versionRangeOf(versions),
     deprecatedAnywhere: usages.some(u => u.deprecated),
     migrationStatus: resolveGovernance(lookup, governance),
     governedByRecordId: governingRecord(lookup, governance)?.id ?? null,

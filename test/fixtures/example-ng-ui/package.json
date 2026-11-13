@@ -1,0 +1,16 @@
+{
+  "name": "@example/ng-ui",
+  "version": "0.0.0-test",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./index.mjs"
+    },
+    "./card": {
+      "types": "./types/card.d.ts",
+      "default": "./card.mjs"
+    }
+  }
+}

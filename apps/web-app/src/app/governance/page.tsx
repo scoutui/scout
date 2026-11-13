@@ -5,7 +5,6 @@ import { progressLabel } from "@/lib/governance-map";
 import { ChartResultsState } from "@/components/read-model-state";
 import { TagsPanel } from "@/components/tags/tags-panel";
 import { GovernanceManager } from "@/components/governance/governance-manager";
-import { EmptyState } from "@/components/ui/empty-state";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
 
@@ -13,12 +12,10 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance" };
 
 export default async function GovernancePage() {
-  if (!can(await identify({ browser: true }), "edit")) {
-    return <EmptyState titleAs="h1" title="Only Editors can see Governance. Ask an Admin for access." />;
-  }
+  const canEdit = can(await identify({ browser: true }), "edit");
   const { records, authors, tags, registry } = await getStorage().withReadSnapshot(async snapshot => ({
     records: await snapshot.listGovernance(),
-    authors: await snapshot.listGovernanceAuthors(),
+    authors: canEdit ? await snapshot.listGovernanceAuthors() : {},
     tags: await snapshot.listTags(),
     registry: await snapshot.getStoredRegistry(),
   }));
@@ -41,6 +38,7 @@ export default async function GovernancePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-10">
       <GovernanceManager
+        canEdit={canEdit}
         records={records}
         sources={sources}
         stats={stats}
@@ -52,7 +50,7 @@ export default async function GovernancePage() {
       />
 
       <section id="tags" aria-labelledby="tags-title" className="scroll-mt-24">
-        <TagsPanel allTags={tags} packageNames={packageNames} />
+        <TagsPanel canEdit={canEdit} allTags={tags} packageNames={packageNames} />
       </section>
     </div>
   );

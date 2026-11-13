@@ -3,6 +3,7 @@ import { useId, useOptimistic, useRef, useState, useTransition } from "react";
 import { changeRole, removeFromPeople } from "@/app/settings/people-actions";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ROLE_NAMES, ROLES, type Role } from "@/lib/access";
 import { actionErrorMessage } from "@/lib/action-error";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
@@ -76,17 +77,21 @@ export function PeopleTable({ people }: { people: PersonListing[] }) {
                   </TableCell>
                   <TableCell className={`${STACKED_CELL} max-md:pt-1`}>
                     {person.canChangeRole ? (
-                      <select
-                        aria-label={`Role for ${person.email}`}
+                      <Select
                         value={person.role}
                         disabled={pending}
-                        onChange={(e) => pickRole(person.userId, e.target.value as Role)}
-                        className="h-7 rounded-lg border border-control bg-transparent px-2.5 text-base transition-colors disabled:opacity-50 sm:text-sm dark:bg-input/30"
+                        onValueChange={(role: Role | null) => { if (role) pickRole(person.userId, role); }}
+                        items={ROLES.map((role) => ({ value: role, label: ROLE_NAMES[role] }))}
                       >
-                        {ROLES.map((role) => (
-                          <option key={role} value={role}>{ROLE_NAMES[role]}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger aria-label={`Role for ${person.email}`} className="h-7 w-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map((role) => (
+                            <SelectItem key={role} value={role}>{ROLE_NAMES[role]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : person.roleSource === "people" ? ROLE_NAMES[person.role] : FIXED_ROLE[person.roleSource]}
                   </TableCell>
                   <TableCell className={`${STACKED_CELL} max-md:pt-1 whitespace-normal max-md:empty:hidden`}>

@@ -214,10 +214,7 @@
           },
           "framework": {
             "type": "string",
-            "enum": [
-              "react",
-              "vue"
-            ]
+            "minLength": 1
           },
           "attribution": {
             "anyOf": [

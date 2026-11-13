@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { computeVersionShare } from "@/components/viz/version-composition";
 import { compareVersions } from "@/lib/version-order";
 
 describe("compareVersions", () => {
@@ -15,20 +14,5 @@ describe("compareVersions", () => {
 
   it("puts a release above its prereleases", () => {
     expect(["5.0.0", "5.0.0-rc.2", "4.9.0", "5.0.0-beta.1"].sort(compareVersions)).toEqual(["4.9.0", "5.0.0-beta.1", "5.0.0-rc.2", "5.0.0"]);
-  });
-});
-
-describe("computeVersionShare ordering", () => {
-  it("puts the numerically latest version first and unversioned last", () => {
-    const share = computeVersionShare(
-      [
-        { version: "1.5.0", occurrenceCount: 3 },
-        { version: "1.14.11", occurrenceCount: 2 },
-        { version: null, occurrenceCount: 1 },
-      ],
-      2,
-    );
-    expect(share.map((s) => s.label)).toEqual(["1.14.11", "1.5.0", "unversioned"]);
-    expect(share[0]?.latest).toBe(true);
   });
 });

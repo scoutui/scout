@@ -5,7 +5,7 @@ sidebar_label: "How components are found"
 
 # How components are found
 
-A scan reads your repo's React and Vue files and records every component it sees in use. [Framework support](/docs/reference/framework-support) lists what counts as a component in each framework. This page explains the two kinds of component and how each is matched across repos, and what happens when your dependencies aren't installed.
+A scan reads your repo's React, Vue and Angular files and records every component it sees in use. [Framework support](/docs/reference/framework-support) lists what counts as a component in each framework. This page explains the two kinds of component and how each is matched across repos, and what happens when your dependencies aren't installed.
 
 ## What gets an entry
 

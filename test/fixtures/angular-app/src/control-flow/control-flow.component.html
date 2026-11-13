@@ -1,0 +1,19 @@
+@let total = items.length;
+@switch (mode) {
+  @case ("list") {
+    @for (item of items; track item) {
+      <app-item [text]="item"></app-item>
+    }
+  }
+  @case ("grid") {
+    <div>Grid of {{ total }}</div>
+  }
+  @default {
+    <div>Unknown mode</div>
+  }
+}
+@defer (on viewport) {
+  <app-item text="deferred"></app-item>
+} @placeholder {
+  <div>Loading…</div>
+}

@@ -11,6 +11,21 @@ import { detectWebComponents } from "../local-index/detect-wc.js";
 import type { LocalDefinition } from "../local-index/types.js";
 import { isParsable, parseByExt, syntaxErrorWarning, type ParsedFile } from "../parse-by-ext.js";
 import { emitVueFile } from "../emit-vue-file.js";
+import {
+  angularDefinitions,
+  buildAngularSelectorIndex,
+  buildModuleScopes,
+  bootstrappedComponents,
+  type AngularRefResolver,
+  emitAngularFile,
+  type AngularBootstrapCall,
+  type AngularScripts,
+  importsOf,
+  loadAngularCompiler,
+  type PendingAngularFile,
+} from "../emit-angular-file.js";
+import { detectAngularBootstrap, detectAngularComponents, detectAngularModules, readConstArrays, readTopLevelNames } from "../local-index/detect-angular.js";
+import { buildAngularLibraryIndex } from "../scan/angular-library-index.js";
 import { createProgress, startPhase } from "../util/progress.js";
 import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
 import { createImportResolver } from "../walker/resolve-import.js";
@@ -487,6 +502,13 @@ export async function scanRepository(input: {
     }
   }
 
+  // Angular files wait until every file's selectors and NgModules are known: a
+  // template names its components by selector, and what it can see by scope.
+  const pendingAngular: PendingAngularFile[] = [];
+  const angularBootstraps: AngularBootstrapCall[] = [];
+  // Parsed scripts' top-level const arrays and classes: a component's `imports` may name a const array (`ExampleImports`) instead of the classes in it.
+  const scripts = new Map<string, { imports: ReturnType<typeof importsOf>; arrays: ReturnType<typeof readConstArrays>; classes: Set<string>; stars: string[] }>();
+
   // ── Phase 1: read + parse + emit local definitions ──────────────────────
   let filesScanned = 0;
   for (const file of files) {
@@ -525,7 +547,27 @@ export async function scanRepository(input: {
       continue;
     }
     filesScanned++;
-    if (parsed.kind === "babel") {
+    // Angular sources are `.ts`; a `.tsx`, `.jsx` or `.js` file is left to the other frameworks.
+    // Only what following a const array can need is kept: a file's imports and arrays when it declares one, else
+    // just its class names (a directive or pipe a list names) and `export *` sources (a barrel to look through).
+    if (parsed.kind === "babel" && /\.[cm]?ts$/.test(relPath)) {
+      const arrays = readConstArrays(parsed.ast);
+      const { classes, stars } = readTopLevelNames(parsed.ast);
+      if (arrays.size > 0 || classes.length > 0 || stars.length > 0) {
+        scripts.set(relPath, { imports: arrays.size > 0 ? importsOf(parsed.ast) : [], arrays, classes: new Set(classes), stars });
+      }
+    }
+    const angular =
+      parsed.kind === "babel" && /@(Component|NgModule)\s*\(/.test(source) && importsAngularCore(parsed.ast)
+        ? { components: detectAngularComponents(parsed.ast, source), modules: detectAngularModules(parsed.ast, source) }
+        : undefined;
+    if (parsed.kind === "babel" && /\b(bootstrapApplication|bootstrapModule)\s*\(/.test(source)) {
+      const imports = importsOf(parsed.ast);
+      for (const call of detectAngularBootstrap(parsed.ast)) angularBootstraps.push({ graphKey: relPath, ...call, imports });
+    }
+    if (parsed.kind === "babel" && angular !== undefined && (angular.components.length > 0 || angular.modules.length > 0)) {
+      pendingAngular.push({ graphKey: relPath, definitionPath: outRel, absPath: file, ...angular, imports: importsOf(parsed.ast) });
+    } else if (parsed.kind === "babel") {
       declaredByFile.set(outRel, extractReactDeclaredProps(parsed.ast));
       localDefs.push(...detectWebComponents(parsed.ast, source, outRel));
       // Script mode finds Vue `defineComponent` calls in plain .ts/.js files, as
@@ -560,6 +602,102 @@ export async function scanRepository(input: {
     parseProgress.tick();
   }
 
+  // Bounded re-export resolver pins an unparsed first-party file's identity to
+  // its definition file so ids are scope-invariant between whole-repo and
+  // single-app scans. Only invoked for first-party files outside the graph.
+  const firstParty = (p: string): boolean => isFirstPartyPath(workspaceGraph, p);
+  const boundedDefinitions = createBoundedDefinitionResolver({
+    moduleResolver: resolveImport,
+    firstParty,
+    onWarning: (msg) => scanWarning(msg),
+    onSyntaxErrors: reportSyntaxErrors,
+  });
+  // Angular scope and bootstrap names resolve the way React imports do: relative
+  // paths, tsconfig `paths` and other aliases, then re-exports to the declaring
+  // file. An import that leaves the repo is an installed package's.
+  const angularRefResolver: AngularRefResolver = (fromGraphKey, specifier, imported) => {
+    const target = resolveImport(resolve(cfg.configDir, fromGraphKey), specifier);
+    if (target === null || !firstParty(target)) return null;
+    const pinned = boundedDefinitions.resolveDefinition(target, imported, []);
+    const declared = pinned !== null && "absFile" in pinned ? pinned : undefined;
+    return {
+      graphKey: posixPath(relative(cfg.configDir, declared?.absFile ?? target)),
+      name: declared?.exportName ?? imported,
+    };
+  };
+  if (pendingAngular.length > 0) {
+    const bootstrapped = bootstrappedComponents(angularBootstraps, pendingAngular, angularRefResolver);
+    for (const pending of pendingAngular) {
+      localDefs.push(...angularDefinitions(pending.components, pending.definitionPath, bootstrapped.get(pending.graphKey)));
+    }
+    const compiler = loadAngularCompiler(cfg.configDir);
+    if (compiler === null) {
+      const missing = {
+        code: "angular-compiler-missing",
+        severity: "warning",
+        filePath: "package.json",
+        detail: "Angular components were found, but @angular/compiler isn't installed, so their templates weren't read. Install your dependencies and scan again.",
+      } as const;
+      collector.emit(missing);
+      log.warn(formatWarning(missing));
+    } else {
+      // Older than the oldest major Scout's template parser is built against:
+      // scanning continues, but a template its parser reads differently may
+      // be missed or misread.
+      const majorStr = compiler.VERSION?.major;
+      if (majorStr !== undefined) {
+        const major = Number(majorStr);
+        if (Number.isFinite(major) && major < 19) {
+          const unsupported = {
+            code: "angular-compiler-unsupported",
+            severity: "warning",
+            filePath: "package.json",
+            version: majorStr,
+            detail: `The installed @angular/compiler is version ${majorStr}, older than the Angular 19+ Scout supports, so its templates may be missed or misread. Upgrade @angular/compiler and scan again.`,
+          } as const;
+          collector.emit(unsupported);
+          log.warn(formatWarning(unsupported));
+        }
+      }
+    }
+    // Installed libraries the Angular files import from describe their components in their typings.
+    // An import that resolves inside the repo (a relative path or an alias) is the repo's own.
+    const librarySpecifiers = new Set(
+      pendingAngular.flatMap((p) => p.imports.filter((i) => angularRefResolver(p.graphKey, i.specifier, i.imported) === null).map((i) => i.specifier)),
+    );
+    const library = compiler === null ? undefined : buildAngularLibraryIndex({ configDir: cfg.configDir, specifiers: librarySpecifiers });
+    for (const u of library?.unreadable ?? []) scanWarning(`Couldn't read the Angular components ${u.specifier} declares (${u.reason}), so its components aren't counted.`);
+    const index =
+      compiler === null
+        ? undefined
+        : buildAngularSelectorIndex(compiler, pendingAngular, library, (filePath, className, selector, message) =>
+            scanWarning(
+              `Couldn't read the selector "${selector}" on ${className} in ${rebase(filePath)} (${oneLine(message)}), so uses of it aren't matched.`,
+            ),
+          );
+    const scopes = buildModuleScopes(pendingAngular, angularRefResolver, library, scripts satisfies AngularScripts);
+    const templateBuilders = new Map<string, ReturnType<typeof graphBuilder.beginFile>>();
+    for (const pending of pendingAngular) {
+      try {
+        emitAngularFile({
+          graphBuilder,
+          compiler,
+          index,
+          scopes,
+          file: pending,
+          templateBuilders,
+          onTemplateError: (filePath, message) => scanWarning(`Couldn't read part of the template ${filePath} (${oneLine(message)}).`),
+          onTemplateMissing: (filePath, templateUrl) =>
+            collector.emit({ code: "angular-template-missing", severity: "warning", filePath: rebase(filePath), templateUrl }),
+          onAmbiguous: (d) => collector.emit({ code: "angular-selector-ambiguous", severity: "warning", ...d, filePath: rebase(d.filePath) }),
+          onOutOfScope: (d) => collector.emit({ code: "angular-not-in-scope", severity: "info", ...d, filePath: rebase(d.filePath) }),
+        });
+      } catch (err) {
+        log.warn(`Couldn't finish reading ${pending.absPath} (${errorMessage(err)}), so some uses in it may be missing.`, errorStack(err));
+      }
+    }
+  }
+
   parseProgress.done();
   const matching = startPhase({ label: "Matching uses to components…", writer, isTTY, columns, motion });
   const localIndex = buildLocalIndex(localDefs);
@@ -571,16 +709,6 @@ export async function scanRepository(input: {
   const declaringManifest = new Map<string, string>();
   const absoluteFromGraphKey = (fromFile: string): string =>
     isAbsolute(fromFile) ? fromFile : resolve(cfg.configDir, fromFile);
-  // Bounded re-export resolver pins an unparsed first-party file's identity to
-  // its definition file so ids are scope-invariant between whole-repo and
-  // single-app scans. Only invoked for first-party files outside the graph.
-  const firstParty = (p: string): boolean => isFirstPartyPath(workspaceGraph, p);
-  const boundedDefinitions = createBoundedDefinitionResolver({
-    moduleResolver: resolveImport,
-    firstParty,
-    onWarning: (msg) => scanWarning(msg),
-    onSyntaxErrors: reportSyntaxErrors,
-  });
   const resolveOpts: ResolveOpts = {
     // Follow external aggregator barrels to the leaf package that
     // defines the export, keyed by the entry the chain crossed into it by.
@@ -770,6 +898,20 @@ export async function scanRepository(input: {
   });
 
   return { artifact, stats };
+}
+
+/**
+ * Whether an oxc program imports anything — value or type, including a
+ * namespace import (`import * as ng from "@angular/core"`) — from
+ * `@angular/core`. A file is only read as Angular when this is true: a
+ * `@Component(` decorator alone isn't enough, since other frameworks such as
+ * Stencil reuse the same decorator name.
+ */
+function importsAngularCore(program: { body: readonly unknown[] }): boolean {
+  type Statement = { type: string; source?: { value: string } };
+  return (program.body as Statement[]).some(
+    (stmt) => stmt.type === "ImportDeclaration" && stmt.source?.value === "@angular/core",
+  );
 }
 
 /**

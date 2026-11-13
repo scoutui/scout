@@ -28,7 +28,7 @@ const darkCodeTheme = {
 
 const config: Config = {
   title: "Scout",
-  tagline: "Design-system usage analytics for React and Vue",
+  tagline: "Design-system usage analytics for React, Vue and Angular",
   favicon: "img/favicon.svg",
 
   url: "https://scoutui.dev",
@@ -88,8 +88,8 @@ const config: Config = {
           "aria-label": "Scout on GitHub",
         },
         {
-          to: "/docs/tutorials/scan-your-first-repo",
-          label: "Get started",
+          href: "https://demo.scoutui.dev",
+          label: "Demo",
           position: "right",
           className: "navbar-cta",
         },

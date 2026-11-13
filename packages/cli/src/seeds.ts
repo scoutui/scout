@@ -29,6 +29,8 @@ export type SeedContext = {
   declared?: DeclaredPropApi;
   /** True when the local definition is `export default` (root eligibility). */
   isDefaultExport?: boolean;
+  /** True when the app starts by rendering this component (root eligibility). */
+  isBootstrapped?: boolean;
 };
 
 /**
@@ -52,6 +54,7 @@ export function seedFor(componentId: ComponentId, ctx: SeedContext): ComponentSe
     ...(local && ctx.definition !== undefined ? { definition: ctx.definition } : {}),
     ...(owningPackage !== undefined ? { owningPackage } : {}),
     ...(ctx.isDefaultExport !== undefined ? { isDefaultExport: ctx.isDefaultExport } : {}),
+    ...(ctx.isBootstrapped === true ? { isBootstrapped: true } : {}),
   };
 }
 /** Output-space view of the engine's component registry. Paths
@@ -70,7 +73,7 @@ export type RosterRegistry = {
     filePath: string;
     symbol: string;
     exportName: string;
-    kind: "react-component" | "vue-component";
+    kind: "react-component" | "vue-component" | "angular-component";
     loc: { line: number; column: number };
     isDefault: boolean;
   }[];
@@ -119,6 +122,7 @@ export function buildComponentSeeds(
           ...(def.loc !== undefined ? { definition: { line: def.loc.line, column: def.loc.column } } : {}),
           ...(def.declared ? { declared: def.declared } : {}),
           ...(def.isDefault !== undefined ? { isDefaultExport: def.isDefault } : {}),
+          ...(def.isBootstrapped === true ? { isBootstrapped: true } : {}),
         });
         seedsById.set(seed.id, seed);
       }

@@ -9,7 +9,7 @@ Everyone who signs in to the dashboard has a role, which decides what they can c
 
 | Role | What they can do |
 | --- | --- |
-| Viewer | Look at repos, packages, components and the charts shared with everyone. |
+| Viewer | Look at repos, packages, components, governance and the charts shared with everyone. |
 | Editor | Also upload scans, create a repo's CI upload token, make charts and change their own, and change governance and tags. |
 | Admin | Also change or delete anyone's chart, open private ones, set people's roles, remove people and [remove scans and delete repos](/docs/guides/dashboard/repos#remove-a-scan-or-delete-a-repo). |
 

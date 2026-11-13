@@ -35,6 +35,7 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     vi.stubEnv("DATABASE_URL", pool.options.connectionString);
     vi.stubEnv("SCOUTUI_ADMINS", undefined);
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_GUEST_VIEW", undefined);
     session.current = null;
     warn = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
@@ -61,6 +62,16 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     expect(await browser()).toEqual({
       kind: "person", userId: id, email: "ana@example.com", name: "Ana", role: "editor", roleSource: "people",
     });
+  });
+
+  it("with SCOUTUI_GUEST_VIEW on, makes a browser without a session a guest, and still gives a signed-in person themselves and a missing or unknown CLI token nobody", async () => {
+    vi.stubEnv("SCOUTUI_GUEST_VIEW", "true");
+    const id = await insertPerson(pool, { email: "ana@example.com", role: "editor" });
+    expect(await browser()).toEqual({ kind: "guest" });
+    signInAs(id);
+    expect(await browser()).toMatchObject({ kind: "person", userId: id, role: "editor" });
+    expect(await identify({ bearer: null })).toBeNull();
+    expect(await identify({ bearer: `Bearer scout_u_${"a".repeat(43)}` })).toBeNull();
   });
 
   it("makes a verified email in SCOUTUI_ADMINS an Admin in any letter case, and leaves it its stored role unverified", async () => {
@@ -220,6 +231,11 @@ describe("can", () => {
     { who: "a repo token", identity: { kind: "repo-token", repoId: "repo-a" }, action: "edit", allowed: false },
     { who: "a repo token", identity: { kind: "repo-token", repoId: "repo-a" }, action: "manage-people", allowed: false },
     { who: "a repo token", identity: { kind: "repo-token", repoId: "repo-a" }, action: "manage-repos", allowed: false },
+    { who: "a guest", identity: { kind: "guest" }, action: "view", allowed: true },
+    { who: "a guest", identity: { kind: "guest" }, action: "edit", allowed: false },
+    { who: "a guest", identity: { kind: "guest" }, action: "upload", allowed: false },
+    { who: "a guest", identity: { kind: "guest" }, action: "manage-people", allowed: false },
+    { who: "a guest", identity: { kind: "guest" }, action: "manage-repos", allowed: false },
   ];
 
   it.each(rows)("$who may $action: $allowed", ({ identity, action, allowed }) => {
@@ -232,6 +248,9 @@ describe("can", () => {
     { who: "nobody", identity: null, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
     { who: "a repo token", identity: { kind: "repo-token", repoId: "repo-a" }, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
     { who: "a Viewer", identity: person("viewer"), action: "view", chart: "someone else's Everyone chart", target: theirs("everyone"), allowed: true },
+    { who: "a guest", identity: { kind: "guest" }, action: "view", chart: "an Everyone chart", target: theirs("everyone"), allowed: true },
+    { who: "a guest", identity: { kind: "guest" }, action: "view", chart: "a private chart", target: theirs("private"), allowed: false },
+    { who: "a guest", identity: { kind: "guest" }, action: "edit", chart: "an Everyone chart", target: theirs("everyone"), allowed: false },
     { who: "an Editor", identity: person("editor"), action: "view", chart: "someone else's private chart", target: theirs("private"), allowed: false },
     { who: "a Viewer", identity: person("viewer"), action: "view", chart: "their own private chart", target: mine("private"), allowed: true },
     { who: "an Admin", identity: person("admin"), action: "view", chart: "someone else's private chart", target: theirs("private"), allowed: true },

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { BackLink } from "@/components/ui/back-link";
+import { notFound, redirect } from "next/navigation";
 import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
 import { chartBuilderOptions } from "@/lib/chart-builder-options";
@@ -21,6 +22,7 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
   const id = decodeURIComponent(dashboardId);
   if (isDerivedId(id)) notFound();
   const identity = await identify({ browser: true });
+  if (identity?.kind === "guest") redirect(`/charts/${encodeURIComponent(id)}`);
   if (!can(identity, "edit")) {
     return <EmptyState titleAs="h1" title="Only Editors can change charts. Ask an Admin for access." />;
   }
@@ -48,16 +50,10 @@ export default async function EditDashboardPage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Link href="/charts" className="transition-colors hover:text-foreground">
-          Charts
-        </Link>
-        <span aria-hidden>/</span>
-        <Link href={`/charts/${encodeURIComponent(dashboard.id)}`} className="max-w-[24rem] truncate transition-colors hover:text-foreground">
-          {dashboard.name}
-        </Link>
-        <span aria-hidden>/</span>
-        <span>Edit</span>
+      <div className="mb-2">
+        <BackLink href={`/charts/${encodeURIComponent(dashboard.id)}`}>
+          <span className="max-w-[24rem] truncate">{dashboard.name}</span>
+        </BackLink>
       </div>
       <h1 className="mb-6 text-2xl font-semibold tracking-headline">Edit chart</h1>
       <DashboardBuilder

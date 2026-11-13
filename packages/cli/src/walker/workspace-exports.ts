@@ -10,8 +10,11 @@ import type { WorkspaceGraph, WorkspacePackage } from "../workspace/types.js";
 //   1. Declared `exports` subpaths:
 //      - Constant: "./types" -> "./types.ts"  matches <pkgName>/types exactly.
 //      - Pattern:  "./icons/<star>" -> "./icons/<star>.tsx".
-//      Skipped: conditional objects, null targets, multi-wildcard targets,
-//      non-subpath keys. A `null` (deny) subpath is still reached by the
+//      - Conditional: "./constants" -> { types, default } contributes every
+//        string condition (one level deep), import/module/default first, then
+//        the rest in declaration order; the first that exists on disk wins.
+//      Skipped: null targets, multi-wildcard targets, non-subpath keys.
+//      A `null` (deny) subpath is still reached by the
 //      wildcard source probe below: this layer attributes usage to source, it
 //      doesn't enforce publish-time encapsulation.
 //   2. One bare-name entry: <pkgName> -> [exports["."], module, main, ".", "./src"].
@@ -50,20 +53,31 @@ function subpathExportEntries(pkg: WorkspacePackage): AliasEntry[] {
     .sort(([a], [b]) => staticPrefixLength(b) - staticPrefixLength(a));
 
   for (const [subpath, target] of subpaths) {
-    if (target === null) continue;
-    if (typeof target !== "string") continue;
-    if (target.includes("**")) continue;
-    if (target.split("*").length > 2) continue;
+    const targets = subpathTargets(target).filter((t) => !t.includes("**") && t.split("*").length <= 2);
+    if (targets.length === 0) continue;
 
     // "./icons/*" + "@example/icons" → "@example/icons/icons/*"
     const fullPattern = `${pkg.name}${subpath.slice(1)}`;
     out.push({
       pattern: compileAliasPattern(fullPattern),
-      targets: [target],
+      targets,
       base: pkg.absolutePath,
     });
   }
   return out;
+}
+
+const ENTRY_CONDITIONS = ["import", "module", "default"] as const;
+
+// A subpath's targets: a string target itself, or a conditional object's
+// string values (one level deep), ENTRY_CONDITIONS first, then the rest in
+// declaration order. Anything else → none.
+function subpathTargets(target: unknown): string[] {
+  if (typeof target === "string") return [target];
+  if (target === null || typeof target !== "object" || Array.isArray(target)) return [];
+  const conditions = target as Record<string, unknown>;
+  const keys = [...ENTRY_CONDITIONS.filter((k) => k in conditions), ...Object.keys(conditions).filter((k) => !(ENTRY_CONDITIONS as readonly string[]).includes(k))];
+  return keys.map((k) => conditions[k]).filter((v): v is string => typeof v === "string");
 }
 
 function bareNameEntry(pkg: WorkspacePackage): AliasEntry {
@@ -100,7 +114,7 @@ function dotExportTarget(exports: unknown): string | null {
   const dot = (exports as Record<string, unknown>)["."];
   if (typeof dot === "string") return dot;
   if (dot !== null && typeof dot === "object" && !Array.isArray(dot)) {
-    for (const key of ["import", "module", "default"]) {
+    for (const key of ENTRY_CONDITIONS) {
       const value = (dot as Record<string, unknown>)[key];
       if (typeof value === "string") return value;
     }

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { readdirSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import type { Person } from "@/lib/access";
+import type { Identity, Person } from "@/lib/access";
 
 const nav = vi.hoisted(() => ({ pathname: "/repos" }));
 vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
@@ -16,10 +16,10 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 
 const admin: Person = { kind: "person", userId: "ana", email: "ana@example.com", name: "Ana Ruiz", role: "admin", roleSource: "people" };
 
-const renderAccount = (person: Person) =>
+const renderAccount = (identity: Identity) =>
   render(
     <ThemeProvider>
-      <AccountMenu person={person} />
+      <AccountMenu identity={identity} />
     </ThemeProvider>,
   );
 
@@ -72,6 +72,16 @@ describe("AccountMenu", () => {
     expect(await screen.findByText("Editor")).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Settings" })).toBeNull();
+  });
+
+  it("shows a guest a Guest chip whose menu holds only the theme choice", async () => {
+    renderAccount({ kind: "guest" });
+    const trigger = screen.getByRole("button", { name: "Account" });
+    expect(trigger.textContent).toBe("Guest");
+    fireEvent.click(trigger);
+    expect((await screen.findAllByRole("menuitemradio")).map(t => t.textContent)).toEqual(["System", "Light", "Dark"]);
+    expect(screen.getByRole("menu").textContent).toBe("ThemeSystemLightDark");
+    expect(screen.queryAllByRole("menuitem")).toEqual([]);
   });
 
   it("ticks only the theme you picked, and picks another", async () => {

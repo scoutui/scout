@@ -74,6 +74,7 @@ describe("validateArtifact", () => {
     ["an evidence record's disposition", "components[1].attribution.evidence[0].disposition", "superseded"],
     ["an evidence record's strength", "components[1].attribution.evidence[0].strength", "inferred"],
     ["a resolved attribution's confidence", "components[1].attribution.confidence", "inferred"],
+    ["a component's framework", "components[0].framework", "svelte"],
     ["a conflict attribution's strongestClass", "components[1].attribution", { status: "conflict", strongestClass: "inferred", candidates: [], evidence: [] }],
     ["an unknown attribution's reason", "components[1].attribution", { status: "unknown", reason: "ambiguous", evidence: [] }],
   ])("accepts a value it doesn't know in %s, kept as written", (_list, path, value) => {
@@ -88,7 +89,6 @@ describe("validateArtifact", () => {
     ["a resolution's status", "occurrences[0].resolution.status", "deferred"],
     ["an attribution's status", "components[1].attribution.status", "disputed"],
     ["an attribution target's kind", "components[1].attribution.target.kind", "registry"],
-    ["a component's framework", "components[0].framework", "svelte"],
     ["a component's usage", "components[0].usage", "indirect"],
   ])("rejects a value it doesn't know in %s, at its path", (_list, path, value) => {
     const a = fixture(); setAt(a, path, value);
@@ -103,6 +103,7 @@ describe("validateArtifact", () => {
     ["an evidence strength that isn't a string", "components[1].attribution.evidence[0].strength", 1],
     ["an empty credit kind", "occurrences[0].credit.kind", ""],
     ["an empty evidence disposition", "components[1].attribution.evidence[0].disposition", ""],
+    ["an empty framework", "components[0].framework", ""],
     ["a scan without its commit date", "meta.repo.committedAt", undefined],
     ["a commit date that isn't a timestamp", "meta.repo.committedAt", "not a date"],
     ["a branch position that isn't a whole number", "meta.repo.branchPosition", 1.5],
