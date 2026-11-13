@@ -213,7 +213,7 @@ describe("ReposTable: Changes", () => {
     expect(lastCell(rowOf("still")).textContent).toBe("—");
     const first = lastCell(rowOf("first"));
     expect(first.textContent).toBe("first scan");
-    expect(within(first).getByText("first scan").className).toMatch(/text-faint/);
+    expect(within(first).getByText("first scan").className).toMatch(/text-muted-foreground/);
   });
 
   it("shows the deprecated Δ in brackets beside the orange count, `14 (−2)`: only the number takes the retirement polarity", () => {

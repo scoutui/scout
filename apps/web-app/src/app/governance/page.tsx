@@ -36,7 +36,7 @@ export default async function GovernancePage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10">
+    <div className="space-y-10">
       <GovernanceManager
         canEdit={canEdit}
         records={records}

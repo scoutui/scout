@@ -74,7 +74,7 @@ const KINDS: Record<ScanFindingKind, { label: [string, string]; fix: ReactNode; 
   },
 };
 
-const Dot = () => <span aria-hidden className="text-muted-foreground/60">·</span>;
+const Dot = () => <span aria-hidden className="text-faint">·</span>;
 
 /** What the shown scan couldn't see, closed to one line; nothing when it reported nothing. */
 export function ScanFindings({ findings }: { findings: ScanFinding[] }) {

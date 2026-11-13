@@ -290,7 +290,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
  * A row removed since the previous scan. It stays visible because a finished
  * retirement looks like a row disappearing. Muted ink at full opacity (half
  * opacity failed contrast), no link or focus stop (there is no detail page),
- * version and files a dash, and occurrences `0 (−5)`: a faint zero beside the
+ * version and files a dash, and occurrences `0 (−5)`: a muted zero beside the
  * negated previous count.
  */
 function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: number; measure: (el: HTMLTableRowElement | null) => void; slotCh: number }) {
@@ -310,7 +310,7 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
         ) : null}
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
           <span>
-            <span className="tabular-nums text-faint">0</span>
+            <span className="tabular-nums">0</span>
             {" uses"}
             {/* A held reference with no occurrences lost none, so it shows no Δ. */}
             {r.occurrenceCount > 0 ? (
@@ -325,8 +325,7 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
       <TableCell className="hidden text-faint sm:table-cell">—</TableCell>
       <TableCell className="hidden text-right text-faint sm:table-cell">—</TableCell>
       <TableCell className="hidden pr-3 text-right tabular-nums text-muted-foreground sm:table-cell">
-        <span className="text-faint">0</span>
-        {" "}
+        0{" "}
         <DeltaSlot delta={deltaOf({ kind: "removed" }, r.occurrenceCount)} deprecated={r.deprecated} slotCh={slotCh} />
       </TableCell>
     </TableRow>
@@ -389,7 +388,7 @@ export function shortenPath(path: string, segments = 2): string {
  */
 function Dot() {
   return (
-    <span aria-hidden className="text-muted-foreground/70">
+    <span aria-hidden className="text-faint">
       ·
     </span>
   );

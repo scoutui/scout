@@ -78,6 +78,8 @@ export default async function RepoDetailPage({
       <ScanFindings findings={detail.findings} />
       <SkippedScansNotice fallbacks={page.fallbacks} ownPage />
       <RepoTabs
+        componentCount={rows.length}
+        adoptionCount={tracking?.length ?? null}
         components={
           <div className="pt-4">
             {rows.length === 0 ? (

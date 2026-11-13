@@ -64,10 +64,10 @@ export default async function LoginPage({
             {oidcEnabled ? (
               <div
                 aria-hidden
-                className="flex items-center gap-3 text-label text-muted-foreground/50"
+                className="flex items-center gap-3 text-label text-muted-foreground"
               >
                 <div className="h-px flex-1 bg-border" />
-                <span>dev</span>
+                <span>Dev</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
             ) : null}

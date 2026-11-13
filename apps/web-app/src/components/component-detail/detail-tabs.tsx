@@ -48,7 +48,8 @@ export function DetailTabs({
 
   const tabs: { value: DetailTab; label: string; count: string | null }[] = [
     { value: "usage", label: "Usage", count: detail.occurrences.length.toLocaleString() },
-    { value: "composition", label: "Composition", count: null },
+    // `graph` holds the component and every component connected to it, in either direction.
+    { value: "composition", label: "Composition", count: graph.nodes.length > 0 ? (graph.nodes.length - 1).toLocaleString() : null },
   ];
 
   return (

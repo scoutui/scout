@@ -63,6 +63,6 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
 
 // Not `text-border`: it measured 1.15:1 against the panel, which is invisible.
 function Sep({ className }: { className?: string }) {
-  return <span aria-hidden className={cn("text-muted-foreground/60", className)}>·</span>;
+  return <span aria-hidden className={cn("text-faint", className)}>·</span>;
 }
 

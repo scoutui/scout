@@ -41,7 +41,7 @@ export default async function SettingsPage() {
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, HISTORY_LENGTH);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10">
+    <div className="space-y-10">
       <h1 className="text-3xl font-semibold tracking-display">Settings</h1>
 
       <section aria-labelledby="people-title" className="space-y-3">

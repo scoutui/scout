@@ -112,7 +112,7 @@ export function RepoDetailHeader({
             </span>
             {detail.diff !== null && detail.diff.deprecatedNow !== detail.diff.deprecatedPrev ? (
               <span className="text-xs text-muted-foreground">
-                <span aria-hidden className="text-muted-foreground/70">·</span>{" "}
+                <span aria-hidden className="text-faint">·</span>{" "}
                 <DeprecatedMovement prev={detail.diff.deprecatedPrev} now={detail.diff.deprecatedNow} />
               </span>
             ) : null}
@@ -124,7 +124,7 @@ export function RepoDetailHeader({
             <CheckCircle2 aria-hidden className="size-3.5 shrink-0 translate-y-0.5" />
             <span>
               no deprecated components in use{" "}
-              <span aria-hidden className="text-muted-foreground/70">·</span>{" "}
+              <span aria-hidden className="text-faint">·</span>{" "}
               <DeprecatedMovement prev={detail.diff.deprecatedPrev} now={detail.diff.deprecatedNow} />
             </span>
           </span>

@@ -128,7 +128,7 @@ function RepoRow({ row: r }: { row: RepoSummary }) {
       </TableCell>
       <TableCell
         className={`hidden align-top text-right tabular-nums sm:table-cell ${
-          r.deprecatedCount > 0 ? "font-medium text-status-warn-text" : "text-faint"
+          r.deprecatedCount > 0 ? "font-medium text-status-warn-text" : r.delta !== null && r.delta.deprecated !== 0 ? "text-muted-foreground" : "text-faint"
         }`}
       >
         {/* Zero shows as a faint dash, unless it moved: a finished retirement
@@ -181,7 +181,7 @@ function SinceLastScanCell({ delta }: { delta: RepoSummary["delta"] }) {
   if (delta === null) {
     return (
       <TableCell className={cell}>
-        <span className="text-xs text-faint">first scan</span>
+        <span className="text-xs text-muted-foreground">first scan</span>
       </TableCell>
     );
   }
