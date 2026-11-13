@@ -96,6 +96,10 @@ export type FileGraph = {
    *  paths. Populated by the builder's `addImport` in lockstep with
    *  `imports[]`. */
   importsByLocal: Map<string, ImportRecord>;
+  /** The specifier of every runtime import declaration in the file, in
+   *  source order: side-effect imports (`import "pkg/x.js"`) included,
+   *  type-only ones left out (see `isRuntimeImport`). */
+  importedModules: string[];
   exports: ExportRecord[];
   jsxUsages: JsxUsage[];
   /** Tag-based usages (Vue auto-imports). Indexed

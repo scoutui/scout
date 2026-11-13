@@ -9,9 +9,9 @@ import { dirname, join, resolve } from "node:path";
 
 export const isRelativeSpecifier = (specifier: string): boolean => specifier.startsWith(".");
 
-/** `./_x-chunk.js` (or `.mjs`/`.cjs`, or extensionless) -> its sibling `.d.ts`, trying `index.d.ts` for a directory. Null when neither exists. */
+/** `./_x-chunk.js` (or `.mjs`/`.cjs`, `.ts`/`.mts`/`.cts`, or extensionless) -> its sibling `.d.ts`, trying `index.d.ts` for a directory. Null when neither exists. */
 export function relativeDtsPath(fromFile: string, source: string): string | null {
-  const base = resolve(dirname(fromFile), source).replace(/\.(m|c)?js$/, "");
+  const base = resolve(dirname(fromFile), source).replace(/\.(m|c)?[jt]s$/, "");
   for (const candidate of [`${base}.d.ts`, join(base, "index.d.ts")]) {
     if (existsSync(candidate)) return candidate;
   }
@@ -51,9 +51,14 @@ function findPackageDir(fromDir: string, packageName: string): string | null {
   }
 }
 
-/** The `types` (or `typings`) entry `subpath` resolves to in the package at `pkgDir`, reading `package.json#exports` when present. */
+/**
+ * The typings `subpath` resolves to in the package at `pkgDir`, as TypeScript
+ * finds them: through `package.json#exports` when present; otherwise the root's
+ * `types` (or `typings`), else the `.d.ts` beside its `main`; and a deeper
+ * subpath's own `.d.ts` beside the file it names.
+ */
 function resolveEntryTypesPath(pkgDir: string, subpath: string): EntryResolution {
-  let pkg: { exports?: unknown; types?: unknown; typings?: unknown };
+  let pkg: { exports?: unknown; types?: unknown; typings?: unknown; main?: unknown };
   try {
     pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
   } catch {
@@ -67,7 +72,12 @@ function resolveEntryTypesPath(pkgDir: string, subpath: string): EntryResolution
     const target = exportsMap[key] ?? matchExportPattern(exportsMap, key);
     typesRel = typesFromTarget(target) ?? siblingTypesOf(pkgDir, codeFromTarget(target));
   } else if (subpath === "") {
-    typesRel = typeof pkg.types === "string" ? pkg.types : typeof pkg.typings === "string" ? pkg.typings : undefined;
+    typesRel =
+      typeof pkg.types === "string" ? pkg.types
+      : typeof pkg.typings === "string" ? pkg.typings
+      : siblingTypesOf(pkgDir, typeof pkg.main === "string" ? pkg.main : "index.js");
+  } else {
+    typesRel = siblingTypesOf(pkgDir, subpath);
   }
 
   // No `types` condition for this subpath at all: a plain JS library, or one
@@ -141,6 +151,7 @@ const SIBLING_TYPES_EXTENSIONS: ReadonlyArray<readonly [string, string]> = [
  * The `.d.ts` file next to `codeRel` (`./dist/index.js` -> `./dist/index.d.ts`)
  * when it exists, as TypeScript finds typings for an `exports` target that
  * has no `types` condition (`@ionic/angular` publishes its typings this way).
+ * An extensionless `codeRel` names `<codeRel>.d.ts` or `<codeRel>/index.d.ts`.
  * Undefined when there's no such file.
  */
 function siblingTypesOf(pkgDir: string, codeRel: string | undefined): string | undefined {
@@ -150,6 +161,7 @@ function siblingTypesOf(pkgDir: string, codeRel: string | undefined): string | u
     const typesRel = codeRel.slice(0, -codeExt.length) + typesExt;
     return existsSync(resolve(pkgDir, typesRel)) ? typesRel : undefined;
   }
-  return undefined;
+  if (/\.[a-z]+$/i.test(codeRel)) return undefined;
+  return [`${codeRel}.d.ts`, `${codeRel}/index.d.ts`].find((typesRel) => existsSync(resolve(pkgDir, typesRel)));
 }
 

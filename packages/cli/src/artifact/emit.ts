@@ -157,6 +157,7 @@ function toRow(seed: ComponentSeed, tagEvidence: TagEvidenceSources): ComponentR
     registrations: tagEvidence.registrations.get(tagName) ?? [],
     cem: tagEvidence.cem.get(tagName) ?? [],
     globalDeclarations: tagEvidence.globalDeclarations.get(tagName) ?? [],
+    tagMaps: tagEvidence.tagMaps.get(tagName) ?? [],
   });
   return { id, identity, attribution: resolveTagAttribution(evidence) };
 }
