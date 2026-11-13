@@ -14,7 +14,7 @@ import { hrefWithQuery } from "@/lib/query-string";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { sortByVersion } from "@/lib/version-order";
 
-const COLUMN_COUNT = 6;
+const COLUMN_COUNT = 5;
 
 /** The outline badge for `added` and `removed` rows. Its border clears the 3:1
  *  non-text minimum on the panel (3.3:1 light, 3.8:1 dark); the default
@@ -25,11 +25,11 @@ const MARK_BADGE = "shrink-0 border-muted-foreground/70 text-muted-foreground";
  *  390px table 44px past its scroller), one truncating line from sm up. */
 const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
 
-type SortKey = "displayName" | "packageName" | "version" | "fileCount" | "unusedProps" | "occurrenceCount" | "delta";
+type SortKey = "displayName" | "packageName" | "version" | "fileCount" | "occurrenceCount" | "delta";
 // `delta` is not here: the changed view's Occurrences header opens ascending
 // (biggest drop first) every time, including on coming back to it from
 // another column.
-const DESC_KEYS: ReadonlySet<SortKey> = new Set(["fileCount", "unusedProps", "occurrenceCount"]);
+const DESC_KEYS: ReadonlySet<SortKey> = new Set(["fileCount", "occurrenceCount"]);
 
 /** One row per component, keyed and linked by its component id. */
 export function ComponentsTable({
@@ -39,6 +39,7 @@ export function ComponentsTable({
   notInLatest,
   search,
   usedIn,
+  showUnusedProps = false,
 }: {
   repoId: string;
   rows: ComponentRow[];
@@ -53,6 +54,8 @@ export function ComponentsTable({
   search?: string;
   /** The Used in package: a row used in more than one package links to its Usage tab with this package picked. */
   usedIn?: string | null;
+  /** The unused props filter is on: each row says how many of its declared props were never passed (`2 of 5 unused`). */
+  showUnusedProps?: boolean;
 }) {
   // Default: most-used first. The changed view's Occurrences header sorts by
   // the signed Δ instead, biggest drop first.
@@ -68,7 +71,7 @@ export function ComponentsTable({
       sortKey === "version"
         ? sortByVersion(rows, sortDir)
         : sortRows(rows, sortKey, sortDir, (r, k) =>
-            k === "delta" ? deltaOf(marks?.[r.componentId], r.occurrenceCount) : k === "unusedProps" ? r.apiUsage?.neverUsedCount : r[k],
+            k === "delta" ? deltaOf(marks?.[r.componentId], r.occurrenceCount) : r[k],
           ),
     [rows, sortKey, sortDir, marks],
   );
@@ -113,30 +116,23 @@ export function ComponentsTable({
       {/* Below sm the rows stack, so there are no headers and no sorting. */}
       <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
         <TableRow>
-          <TableHead className="w-[36%]" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
+          <TableHead className="w-[40%]" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
             <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           {/* Below xl, Uses takes 5 points from Package: at 11% the
               changed view's `475 (−9)` overflowed at 640 and the header
               truncated at 1024. Both views share the widths, so toggling
               reflows nothing. */}
-          <TableHead className="w-[20%] xl:w-[25%]" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
+          <TableHead className="w-[23%] xl:w-[28%]" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
             <SortButton label="Package" sortKey="packageName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="w-[10%]" aria-sort={ariaSort("version", sortKey, sortDir)}>
+          <TableHead className="w-[11%]" aria-sort={ariaSort("version", sortKey, sortDir)}>
             <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="w-[8%] text-right" aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
+          <TableHead className="w-[9%] text-right" aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
             <SortButton label="Files" sortKey="fileCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="w-[10%] text-right" aria-sort={ariaSort("unusedProps", sortKey, sortDir)}>
-            {/* The visible label is the shorter `Unused`: `Unused props` truncated
-                at 10% once a vertical scrollbar (present once the list overflows
-                its max-height) shaved a few px off every column's share. The
-                title and accessible name still say `Unused props` in full. */}
-            <SortButton label="Unused" title="Unused props" sortKey="unusedProps" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
-          </TableHead>
-          <TableHead className="w-[16%] text-right pr-3 xl:w-[11%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
+          <TableHead className="w-[17%] text-right pr-3 xl:w-[12%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
             {/* The visible label stays `Uses`; in the changed view the
                 title and accessible name say the sort key is the Δ, so
                 "ascending" is never announced over counts that aren't. */}
@@ -180,6 +176,7 @@ export function ComponentsTable({
                 delta={marks ? deltaOf(mark, row.occurrenceCount) : undefined}
                 slotCh={slotCh}
                 writtenAs={search ? writtenNameMatch(row, search) : undefined}
+                showUnusedProps={showUnusedProps}
               />
             </TableRow>
           );
@@ -200,7 +197,7 @@ function hrefFor(repoId: string, componentId: string, area: string | null): stri
 }
 
 /** The cells of one component: name and detail link, package, version, files and occurrences. */
-function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow; href: string | undefined; mark?: DiffMark | undefined; delta?: number | undefined; slotCh: number; writtenAs?: string | undefined }) {
+function RowCells({ r, href, mark, delta, slotCh, writtenAs, showUnusedProps }: { r: ComponentRow; href: string | undefined; mark?: DiffMark | undefined; delta?: number | undefined; slotCh: number; writtenAs?: string | undefined; showUnusedProps: boolean }) {
   const deprecated = r.deprecated;
 
   return (
@@ -225,6 +222,17 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
+          {/* Only while the unused props filter is on: most rows have none, so
+              a column for it was mostly blank (#179). */}
+          {showUnusedProps && r.apiUsage && r.apiUsage.neverUsedCount > 0 ? (
+            <Badge
+              variant="outline"
+              className={MARK_BADGE}
+              title={`${r.apiUsage.neverUsedCount} of ${r.apiUsage.declaredCount} declared props never passed`}
+            >
+              {r.apiUsage.neverUsedCount.toLocaleString()} of {r.apiUsage.declaredCount.toLocaleString()} unused
+            </Badge>
+          ) : null}
           {/* Changed rows carry no badge: the Δ beside their count marks them. */}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
@@ -276,9 +284,6 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
       </TableCell>
       <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">
         {r.fileCount.toLocaleString()}
-      </TableCell>
-      <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell" title={unusedPropsTitle(r)}>
-        {unusedPropsLabel(r)}
       </TableCell>
       {delta !== undefined ? (
         // Changed view: the count is muted so the signed Δ stands out.
@@ -334,7 +339,6 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
       </TableCell>
       <TableCell className="hidden text-faint sm:table-cell">—</TableCell>
       <TableCell className="hidden text-right text-faint sm:table-cell">—</TableCell>
-      <TableCell className="hidden text-right text-faint sm:table-cell">—</TableCell>
       <TableCell className="hidden pr-3 text-right tabular-nums text-muted-foreground sm:table-cell">
         <span className="text-faint">0</span>
         {" "}
@@ -383,18 +387,6 @@ function OccurrenceDelta({ delta, deprecated }: { delta: number; deprecated: boo
       {")"}
     </>
   );
-}
-
-/** The Unused props cell's text: `2 of 5` for a component with a declared API, blank for one without. */
-function unusedPropsLabel(r: ComponentRow): string {
-  return r.apiUsage ? `${r.apiUsage.neverUsedCount.toLocaleString()} of ${r.apiUsage.declaredCount.toLocaleString()}` : "—";
-}
-
-/** The Unused props cell's title: spells out the fraction for a declared API, says why it's blank otherwise. */
-function unusedPropsTitle(r: ComponentRow): string | undefined {
-  return r.apiUsage
-    ? `${r.apiUsage.neverUsedCount} of ${r.apiUsage.declaredCount} declared props never passed`
-    : "no readable declared API";
 }
 
 // Shortens a disambiguator path to its last two segments with a leading

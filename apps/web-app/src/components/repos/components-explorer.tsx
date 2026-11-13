@@ -118,6 +118,7 @@ export function ComponentsExplorer({
           notInLatest={notInLatestIds}
           search={facets.text}
           usedIn={facets.usedIn}
+          showUnusedProps={facets.hasUnusedProps === true}
         />
       )}
     </div>

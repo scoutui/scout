@@ -109,33 +109,33 @@ describe("ComponentsTable", () => {
     });
   });
 
-  describe("Unused props column", () => {
-    it("shows the shortened label `Unused`, with the full name as its title and accessible name", () => {
-      render(<ComponentsTable repoId="r1" rows={[row]} />);
-      const sort = screen.getByRole("button", { name: "Unused props" });
-      expect(sort).toHaveAttribute("title", "Unused props");
-      expect(sort.textContent).toBe("Unused");
+  describe("unused props pill", () => {
+    const panel: ComponentRow = { ...row, componentId: "p", displayName: "Panel", deprecated: true, apiUsage: { declaredCount: 5, neverUsedCount: 2 } };
+    const allUsed: ComponentRow = { ...row, componentId: "a", displayName: "Card", apiUsage: { declaredCount: 3, neverUsedCount: 0 } };
+    const undeclared: ComponentRow = { ...row, componentId: "u", displayName: "Tag" };
+    const trOf = (name: string) => screen.getByText(name).closest("tr") as HTMLElement;
+
+    it("shows nothing about unused props while the filter is off, and adds no column", () => {
+      render(<ComponentsTable repoId="r1" rows={[panel]} />);
+      expect(screen.queryByText(/unused/)).toBeNull();
+      expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     });
 
-    it("reads `N of M` for a component with a declared API, and a dash for one without", () => {
-      const declared: ComponentRow = { ...row, componentId: "d", displayName: "Panel", apiUsage: { declaredCount: 5, neverUsedCount: 2 } };
-      const undeclared: ComponentRow = { ...row, componentId: "u", displayName: "Tag" };
-      render(<ComponentsTable repoId="r1" rows={[declared, undeclared]} />);
-      const trOf = (name: string) => screen.getByText(name).closest("tr") as HTMLElement;
-      expect(within(trOf("Panel")).getByTitle("2 of 5 declared props never passed").textContent).toBe("2 of 5");
-      expect(within(trOf("Tag")).getByTitle("no readable declared API").textContent).toBe("—");
+    it("reads `N of M unused` beside the name while the filter is on, after the deprecated mark", () => {
+      render(<ComponentsTable repoId="r1" rows={[panel]} showUnusedProps />);
+      const pill = within(trOf("Panel")).getByText("2 of 5 unused");
+      expect(pill).toHaveAttribute("title", "2 of 5 declared props never passed");
+      // In the name line, so it shows on the stacked mobile row too.
+      const nameLine = screen.getByRole("link", { name: "Panel" }).parentElement as HTMLElement;
+      expect(nameLine).toContainElement(pill);
+      expect(within(nameLine).getByText("deprecated").compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     });
 
-    it("sorts by the never-used count descending by default, blanks last either way", () => {
-      const names = () => screen.getAllByRole("link").map((l) => l.textContent);
-      const high: ComponentRow = { ...row, componentId: "h", displayName: "High", apiUsage: { declaredCount: 5, neverUsedCount: 4 } };
-      const low: ComponentRow = { ...row, componentId: "l", displayName: "Low", apiUsage: { declaredCount: 5, neverUsedCount: 1 } };
-      const none: ComponentRow = { ...row, componentId: "n", displayName: "None" };
-      render(<ComponentsTable repoId="r1" rows={[low, none, high]} />);
-      fireEvent.click(screen.getByRole("button", { name: "Unused props" }));
-      expect(names()).toEqual(["High", "Low", "None"]);
-      fireEvent.click(screen.getByRole("button", { name: "Unused props" }));
-      expect(names()).toEqual(["Low", "High", "None"]);
+    it("gives no pill to a component with every declared prop passed, or without a declared API", () => {
+      render(<ComponentsTable repoId="r1" rows={[allUsed, undeclared]} showUnusedProps />);
+      expect(within(trOf("Card")).queryByText(/unused/)).toBeNull();
+      expect(within(trOf("Tag")).queryByText(/unused/)).toBeNull();
     });
   });
 
@@ -148,26 +148,25 @@ describe("ComponentsTable", () => {
 
     const headers = () =>
       screen.getAllByRole("columnheader").map((h) => ({ name: h.textContent, width: h.className.match(/w-\[\d+%\]/)?.[0] }));
-    const SIX = [
-      { name: "Component", width: "w-[36%]" },
-      { name: "Package", width: "w-[20%]" },
-      { name: "Version", width: "w-[10%]" },
-      { name: "Files", width: "w-[8%]" },
-      { name: "Unused", width: "w-[10%]" },
-      { name: "Uses", width: "w-[16%]" },
+    const FIVE = [
+      { name: "Component", width: "w-[40%]" },
+      { name: "Package", width: "w-[23%]" },
+      { name: "Version", width: "w-[11%]" },
+      { name: "Files", width: "w-[9%]" },
+      { name: "Uses", width: "w-[17%]" },
     ];
     const occurrencesCell = (tr: HTMLElement) => within(tr).getAllByRole("cell").at(-1) as HTMLElement;
     const DELTA_SORT_NAME = "Uses, sorts by change since previous scan";
 
-    it("renders the same six columns at the same widths in both views, so toggling reflows nothing", () => {
+    it("renders the same five columns at the same widths in both views, so toggling reflows nothing", () => {
       const { unmount } = render(<ComponentsTable repoId="r1" rows={[row]} />);
-      expect(headers()).toEqual(SIX);
-      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(6);
+      expect(headers()).toEqual(FIVE);
+      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(5);
       unmount();
       render(<ComponentsTable repoId="r1" rows={[row, removed]} marks={{ c1: { kind: "changed", delta: 2 }, gone: { kind: "removed" } }} />);
-      expect(headers()).toEqual(SIX);
-      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(6);
-      expect(within(rowOf(screen.getByText("OldModal"))).getAllByRole("cell")).toHaveLength(6);
+      expect(headers()).toEqual(FIVE);
+      expect(within(rowOf(screen.getByText("Button"))).getAllByRole("cell")).toHaveLength(5);
+      expect(within(rowOf(screen.getByText("OldModal"))).getAllByRole("cell")).toHaveLength(5);
     });
 
     it("outside the changed view the Uses cell is the bare medium-weight count", () => {
@@ -231,7 +230,7 @@ describe("ComponentsTable", () => {
       expect(cell.textContent).toBe("0 (−5)");
       expect(within(cell).getByText("0").className).toBe("text-faint");
       expect(within(cell).getByText("−5").className).toMatch(/font-medium/);
-      expect(within(tr).getAllByText("—")).toHaveLength(3); // version, files, unused props
+      expect(within(tr).getAllByText("—")).toHaveLength(2); // version, files
       expect(within(tr).queryByText(/^(external|local)$/)).toBeNull(); // no origin word: the table has no Origin column
     });
 
