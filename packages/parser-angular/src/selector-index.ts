@@ -5,6 +5,8 @@ export type SelectorEntry = {
   /** The graph key of the file that declares the class, or the package a library component comes from. */
   source: { type: "file"; graphKey: string } | { type: "package"; specifier: string };
   exportName: string;
+  /** The class behind a library entry, when known: entries with the same `declaredAs` are one component exported under several names. */
+  declaredAs?: { file: string; className: string };
   /** Input names as written in templates (aliases applied). Absent when the component's API isn't known. */
   inputs?: readonly string[];
   /** Output names as written in templates (aliases applied). Absent when the component's API isn't known. */

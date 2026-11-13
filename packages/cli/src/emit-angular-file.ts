@@ -181,7 +181,7 @@ export function buildAngularSelectorIndex(
   for (const c of library?.components ?? []) {
     components.push({
       selector: c.selector,
-      entry: { source: { type: "package", specifier: c.specifier }, exportName: c.exportName, inputs: c.inputs, outputs: c.outputs },
+      entry: { source: { type: "package", specifier: c.specifier }, exportName: c.exportName, declaredAs: c.declaredAs, inputs: c.inputs, outputs: c.outputs },
     });
   }
   for (const file of files) {
@@ -431,6 +431,27 @@ const entryLabel = (entry: SelectorEntry) =>
   `${entry.source.type === "file" ? entry.source.graphKey : entry.source.specifier}#${entry.exportName}`;
 
 /**
+ * Picks the entry to report for one library class reached through several entry points or export names.
+ * First the entry this file imports by name, then any entry from a specifier this file imports from, then the
+ * rest. Within a rank, the name the class is declared under wins, then the label, so an unrelated import from
+ * the same package (such as `provideIcons` next to `NgIcon`) can't change which name is reported.
+ */
+export function chooseLibraryEntry(group: readonly ElementMatch[], imports: readonly AngularImport[]): ElementMatch {
+  const rank = (m: ElementMatch) => {
+    const src = m.entry.source;
+    if (src.type !== "package") return 3;
+    const fromHere = imports.filter((i) => i.specifier === src.specifier);
+    if (fromHere.some((i) => i.imported === m.entry.exportName)) return 0;
+    return fromHere.length > 0 ? 1 : 2;
+  };
+  const isDeclaredName = (m: ElementMatch) => Number(m.entry.declaredAs?.className === m.entry.exportName);
+  const sorted = [...group].sort(
+    (a, b) => rank(a) - rank(b) || isDeclaredName(b) - isDeclaredName(a) || entryLabel(a.entry).localeCompare(entryLabel(b.entry)),
+  );
+  return sorted[0] as ElementMatch;
+}
+
+/**
  * Emits one Angular file into the graph: its component classes as components,
  * and each component's template elements as uses it owns. An inline template's
  * uses are recorded in the `.ts` file; a `templateUrl` template's in its own
@@ -520,12 +541,7 @@ export function emitAngularFile(opts: {
       scopeIsPartial: !complete,
       resolveLocal,
       onTemplateError: (message) => opts.onTemplateError(template.graphKey, message),
-      // A class several entry points re-export: the entry this file imports from, else the first by name.
-      chooseEntry: (group) => {
-        const imported = new Set(file.imports.map((i) => i.specifier));
-        const sorted = [...group].sort((a, b) => entryLabel(a.entry).localeCompare(entryLabel(b.entry)));
-        return sorted.find((m) => m.entry.source.type === "package" && imported.has(m.entry.source.specifier)) ?? (sorted[0] as ElementMatch);
-      },
+      chooseEntry: (group) => chooseLibraryEntry(group, file.imports),
       onAmbiguous: (tagName, loc, matches: readonly ElementMatch[]) =>
         opts.onAmbiguous({ filePath: template.graphKey, line: loc.line, column: loc.column, tagName, candidates: matches.map((m) => entryLabel(m.entry)) }),
       onOutOfScope: (tagName, loc, matches: readonly ElementMatch[]) =>

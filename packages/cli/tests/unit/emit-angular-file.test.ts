@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { createRequire } from "node:module";
 import { parseSync } from "oxc-parser";
-import type { AngularCompiler } from "@scoutui/parser-angular";
-import { type AngularRefResolver, type AngularScripts, buildAngularSelectorIndex, buildModuleScopes, importsOf, type PendingAngularFile } from "../../src/emit-angular-file.js";
+import type { AngularCompiler, ElementMatch } from "@scoutui/parser-angular";
+import { type AngularImport, type AngularRefResolver, type AngularScripts, buildAngularSelectorIndex, buildModuleScopes, chooseLibraryEntry, importsOf, type PendingAngularFile } from "../../src/emit-angular-file.js";
 import { detectAngularComponents, detectAngularModules, readConstArrays, readTopLevelNames } from "../../src/local-index/detect-angular.js";
 
 /** A `PendingAngularFile` built from real detector output, same shape scan.ts assembles. */
@@ -266,5 +266,37 @@ export const UNUSED = [ExOtherModule];
   it("lists nothing from an array no imports entry names", () => {
     const scopes = buildModuleScopes([page], resolver, undefined, scripts);
     expect(scopes.resolveImports(page, "SHARED").packages).not.toContain("@example/other");
+  });
+});
+
+describe("chooseLibraryEntry: one library class exported under two names", () => {
+  // `XButtonComponent` is the declared class; the library also exports it as `XButton`.
+  const declaredAs = { file: "node_modules/@example/x/index.d.ts", className: "XButtonComponent" };
+  const entry = (exportName: string): ElementMatch => ({
+    entry: { source: { type: "package", specifier: "@example/x" }, exportName, declaredAs },
+    selector: "x-button",
+    selectorAttributes: new Set(),
+  });
+  const group = [entry("XButton"), entry("XButtonComponent")];
+  const imp = (imported: string): AngularImport => ({ specifier: "@example/x", imported, local: imported });
+  const chosen = (imports: AngularImport[]) => chooseLibraryEntry(group, imports).entry.exportName;
+
+  it("reports the name the file imports, whichever it is", () => {
+    expect(chosen([imp("XButton")])).toBe("XButton");
+    expect(chosen([imp("XButtonComponent")])).toBe("XButtonComponent");
+  });
+
+  it("reports the declared name when the file imports something else from the same package", () => {
+    // Both names rank the same here (the file imports from the specifier, but neither name);
+    // without the declared-name tiebreak the label sort would pick `XButton`.
+    expect(chosen([imp("provideX")])).toBe("XButtonComponent");
+  });
+
+  it("reports the declared name when the file imports nothing from the package", () => {
+    expect(chosen([])).toBe("XButtonComponent");
+  });
+
+  it("doesn't depend on the order the entries come in", () => {
+    expect(chooseLibraryEntry([...group].reverse(), [imp("provideX")]).entry.exportName).toBe("XButtonComponent");
   });
 });

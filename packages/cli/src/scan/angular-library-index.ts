@@ -52,6 +52,8 @@ export type LibraryComponent = {
   specifier: string;
   exportName: string;
   selector: string;
+  /** The class behind this export: its declaring file and the name it's declared under. Equal for every name one class is exported as. */
+  declaredAs: { file: string; className: string };
   /** Template-facing input names (each input's alias). */
   inputs: string[];
   /** Template-facing output names (each output's alias). */
@@ -193,6 +195,7 @@ function indexSpecifier(ctx: Ctx, specifier: string, fromDir: string): void {
         specifier,
         exportName,
         selector: decl.selector,
+        declaredAs: { file, className: decl.className },
         inputs: Object.values(merged.inputs),
         outputs: Object.values(merged.outputs),
       });
@@ -587,6 +590,8 @@ function siblingTypesOf(pkgDir: string, codeRel: string | undefined): string | u
 type TypeofRef = { kind: "bare"; name: string } | { kind: "qualified"; ns: string; name: string };
 
 type ClassDecl = {
+  /** The name the class is declared under in its own file. */
+  className: string;
   kind: "component" | "module" | "directive" | "other";
   /** Set for `kind: "component"` or `"directive"` when its selector is a readable string literal; one without it is never reported. */
   selector: string | undefined;
@@ -743,7 +748,7 @@ function classDeclFrom(node: OxcClass): ClassDecl {
     }
   }
 
-  return { kind, selector, inputs, outputs, moduleExportRefs, extendsRef: superClassRef(node) };
+  return { className: node.id?.name ?? "", kind, selector, inputs, outputs, moduleExportRefs, extendsRef: superClassRef(node) };
 }
 
 /**
