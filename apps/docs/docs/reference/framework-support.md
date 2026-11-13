@@ -80,7 +80,7 @@ Requires `@angular/compiler` installed in the repo being scanned: Scout uses tha
 1. Your repo, when one of its files registers the tag with `customElements.define("…", …)` or `@customElement("…")`. When the registered class is imported from a package, the tag belongs to that package instead.
 2. The package that declares the tag, in either of two ways:
    - Its [Custom Elements Manifest](/docs/reference/glossary#custom-elements-manifest) declares the tag. The package must be installed, and its `package.json` must point at the manifest with a `customElements` field. A copy in a folder your `.gitignore` ignores, such as a build's output, doesn't count, unless the config sets [`gitignore`](/docs/reference/config#other-fields) to `false`. See [Link web components to your package](/docs/guides/link-web-components-to-your-package).
-   - Its type declarations list the tag in `HTMLElementTagNameMap`, as Lit components do, and a file in your repo imports the module they describe. A side-effect import such as `import "@acme/elements/button.js"` counts; an `import type` doesn't. The declarations are found as TypeScript finds them: through the package's `exports` or `types`, or the `.d.ts` file next to the JavaScript an import names, following the imports and re-exports in them. The tag belongs to the package whose declaration file lists it.
+   - Its type declarations list the tag in `HTMLElementTagNameMap`, as Lit components do, and a file in your repo imports the module they describe. A side-effect import such as `import "@acme/elements/button.js"` counts; an `import type` doesn't. The declarations are read from the file the package's `exports` or `types` names, or the `.d.ts` file next to the JavaScript an import names, and from every file those import or re-export. The tag belongs to the package whose declaration file lists it.
 
    When two packages declare the tag, it gets no package.
 3. No package, when neither applies. The tag is still counted, and the dashboard's **Type** filter shows it as **Undefined element**.
@@ -91,6 +91,7 @@ Requires `@angular/compiler` installed in the repo being scanned: Scout uses tha
 
 - A package that registers its own tags when you import it, such as `import "@acme/elements"`, isn't linked to them unless its type declarations list them in `HTMLElementTagNameMap`: the scan only looks for registrations in the files it scans. Give the package a manifest.
 - A manifest that no `customElements` field points at is not read, including a `custom-elements.json` at your repo's root.
+- Type declarations are reached only through `import` statements in your files: a dynamic `import()` or an `export … from` in your code doesn't count. `HTMLElementTagNameMap` is read only inside a `declare global` block at the top of a declaration file, not inside a `declare module` block, and a file reached only through a `/// <reference>` comment isn't read.
 
 ## In all three frameworks
 

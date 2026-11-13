@@ -101,7 +101,12 @@ function realPath(path: string): string | null {
   }
 }
 
-/** The package `file` is in, with its installed version: the nearest `package.json` above it that has a `name`. Memoized by directory. */
+/**
+ * The package `file` is in, with its installed version: the nearest
+ * `package.json` above it whose `name` is a package name. A nested manifest
+ * named like a subpath (`"name": "@acme/ui/button"`) is passed over.
+ * Memoized by directory.
+ */
 function packageOwning(file: string, owners: Map<string, TagMapClaim | null>): TagMapClaim | null {
   const walked: string[] = [];
   let owner: TagMapClaim | null = null;
@@ -113,7 +118,7 @@ function packageOwning(file: string, owners: Map<string, TagMapClaim | null>): T
     }
     walked.push(dir);
     const pkg = readPackageJson(join(dir, "package.json"));
-    if (pkg !== null && typeof pkg.name === "string" && pkg.name !== "") {
+    if (pkg !== null && typeof pkg.name === "string" && packageNameFromSpecifier(pkg.name) === pkg.name) {
       owner = { packageName: pkg.name, version: typeof pkg.version === "string" ? pkg.version : null };
       break;
     }

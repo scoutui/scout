@@ -68,10 +68,10 @@ export async function withInstalledVersions(
   });
 }
 
-/** The version a tag's Custom Elements Manifest evidence records for `packageName`, or null. */
+/** The version a tag's Custom Elements Manifest or tag map evidence records for `packageName`, or null. */
 function manifestVersion(c: Component, packageName: string): string | null {
   for (const e of c.attribution?.evidence ?? []) {
-    if (e.source === "cem" && "packageName" in e.locator && e.locator.packageName === packageName && e.locator.version !== null) {
+    if ((e.source === "cem" || e.source === "tag-map") && "packageName" in e.locator && e.locator.packageName === packageName && e.locator.version !== null) {
       return e.locator.version;
     }
   }

@@ -873,10 +873,10 @@ export async function scanRepository(input: {
   };
 
   // The tags installed packages declare in the typings of the modules the repo
-  // imports, read only when the scan renders a custom element.
-  const rendersTag = outputOccurrences.some((o) => o.rawComponentId?.kind === "custom-element");
+  // imports, read only when the scan has a tag component.
+  const hasTag = [...seedsById.values()].some((seed) => seed.identity.kind === "tag");
   const tagMapIndex = buildTagMapIndex(
-    rendersTag
+    hasTag
       ? [...graph.files.values()].flatMap((file) => {
           const fromDir = dirname(resolve(cfg.configDir, file.filePath));
           return file.importedModules.map((specifier) => ({ fromDir, specifier }));
