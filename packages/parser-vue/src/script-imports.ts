@@ -1,6 +1,6 @@
 import type { Program } from "@oxc-project/types";
 import { walk } from "oxc-walker";
-import { posixPath } from "@scoutui/reference-graph";
+import { isRuntimeImport, posixPath } from "@scoutui/reference-graph";
 
 interface WarningBase {
   message: string;
@@ -41,12 +41,15 @@ export type ExtractResult = {
   imports: FileImport[];
   /** Structured imports carrying both local + imported names; used for resolver lookups. */
   importSpecs: ImportSpec[];
+  /** The specifier of every runtime import, side-effect imports included and type-only ones left out, in source order. */
+  importedModules: string[];
   warnings: Warning[];
 };
 
 export function extractScriptImports(opts: ExtractOptions): ExtractResult {
   const imports: FileImport[] = [];
   const importSpecs: ImportSpec[] = [];
+  const importedModules: string[] = [];
   const warnings: Warning[] = [];
 
   const filePosix = posixPath(opts.file);
@@ -55,6 +58,7 @@ export function extractScriptImports(opts: ExtractOptions): ExtractResult {
     enter(node) {
       if (node.type !== "ImportDeclaration") return;
       const source = node.source.value;
+      if (isRuntimeImport(node)) importedModules.push(source);
       // Side-effect import: `import "pkg"`. No binding to track.
       if (node.specifiers.length === 0) return;
       // A type-only import has no runtime value, so it can never be the
@@ -94,5 +98,5 @@ export function extractScriptImports(opts: ExtractOptions): ExtractResult {
     },
   });
 
-  return { imports, importSpecs, warnings };
+  return { imports, importSpecs, importedModules, warnings };
 }

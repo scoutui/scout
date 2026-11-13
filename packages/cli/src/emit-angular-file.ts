@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, posix } from "node:path";
 import type { FileBuilder, GraphBuilder, OccurrenceVia } from "@scoutui/reference-graph";
-import { MODULE_SCOPE } from "@scoutui/reference-graph";
+import { MODULE_SCOPE, isRuntimeImport } from "@scoutui/reference-graph";
 import {
   createSelectorIndex,
   emitAngularTemplate,
@@ -49,6 +49,8 @@ export type PendingAngularFile = {
   components: AngularComponentDecl[];
   modules: AngularModuleDecl[];
   imports: AngularImport[];
+  /** The specifier of every runtime import, side-effect imports included. */
+  importedModules: string[];
 };
 
 /** Loads `@angular/compiler` the way the scanned repo would, or null when it isn't installed there. */
@@ -478,6 +480,7 @@ export function emitAngularFile(opts: {
   for (const spec of file.imports) {
     fileBuilder.addImport({ specifier: spec.specifier, imported: spec.imported, local: spec.local, loc: { line: 1, column: 1 } });
   }
+  for (const specifier of file.importedModules) fileBuilder.addImportedModule(specifier);
   for (const c of file.components) {
     fileBuilder.addDeclaration({ symbol: c.className, value: { kind: "Function", returns: [{ kind: "JSX" }] }, loc: c.loc, isExported: c.isExported });
     if (!c.isExported) continue;
@@ -566,6 +569,12 @@ function readTemplate(
     onTemplateMissing?.(file.graphKey, c.template.url);
     return undefined;
   }
+}
+
+/** The specifier of every runtime import an oxc program declares, side-effect imports included. */
+export function importedModulesOf(program: { body: readonly unknown[] }): string[] {
+  type Statement = { type: string; importKind?: string; source: { value: string }; specifiers: { type: string; importKind?: string }[] };
+  return (program.body as Statement[]).filter((stmt) => stmt.type === "ImportDeclaration" && isRuntimeImport(stmt)).map((stmt) => stmt.source.value);
 }
 
 /** The value imports an oxc program declares. Type-only imports are left out: they never reach a template. */

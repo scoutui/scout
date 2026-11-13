@@ -20,6 +20,7 @@ import {
   emitAngularFile,
   type AngularBootstrapCall,
   type AngularScripts,
+  importedModulesOf,
   importsOf,
   loadAngularCompiler,
   type PendingAngularFile,
@@ -38,6 +39,7 @@ import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../sc
 import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload-policy/git-state.js";
 import { installedVersionReader } from "../scan/stamp-version.js";
 import { buildCemIndex } from "../scan/cem-index.js";
+import { buildTagMapIndex } from "../scan/tag-map.js";
 import { buildScanScope } from "../scan/scope.js";
 import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
@@ -566,7 +568,14 @@ export async function scanRepository(input: {
       for (const call of detectAngularBootstrap(parsed.ast)) angularBootstraps.push({ graphKey: relPath, ...call, imports });
     }
     if (parsed.kind === "babel" && angular !== undefined && (angular.components.length > 0 || angular.modules.length > 0)) {
-      pendingAngular.push({ graphKey: relPath, definitionPath: outRel, absPath: file, ...angular, imports: importsOf(parsed.ast) });
+      pendingAngular.push({
+        graphKey: relPath,
+        definitionPath: outRel,
+        absPath: file,
+        ...angular,
+        imports: importsOf(parsed.ast),
+        importedModules: importedModulesOf(parsed.ast),
+      });
     } else if (parsed.kind === "babel") {
       declaredByFile.set(outRel, extractReactDeclaredProps(parsed.ast));
       localDefs.push(...detectWebComponents(parsed.ast, source, outRel));
@@ -863,6 +872,18 @@ export async function scanRepository(input: {
     },
   };
 
+  // The tags installed packages declare in the typings of the modules the repo
+  // imports, read only when the scan has a tag component.
+  const hasTag = [...seedsById.values()].some((seed) => seed.identity.kind === "tag");
+  const tagMapIndex = buildTagMapIndex(
+    hasTag
+      ? [...graph.files.values()].flatMap((file) => {
+          const fromDir = dirname(resolve(cfg.configDir, file.filePath));
+          return file.importedModules.map((specifier) => ({ fromDir, specifier }));
+        })
+      : [],
+  );
+
   const scope = buildScanScope({ cfg, outputRoot, workspaceGraph, files });
   const artifact = await emitArtifact({
     meta: { ...meta, scope },
@@ -874,6 +895,7 @@ export async function scanRepository(input: {
       localIndex,
       cemIndex,
       globalComponents: autoImports,
+      tagMapIndex,
       resolveTarget,
       outputRoot,
     }),

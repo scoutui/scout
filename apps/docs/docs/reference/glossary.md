@@ -45,7 +45,7 @@ It heads the repo page and is `meta.repo.id` in the JSON. [Repo identity](/docs/
 
 ## External
 
-A component that isn't defined in the scanned repo, usually one your code imports from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package's [Custom Elements Manifest](#custom-elements-manifest) declares it or your code registers a class imported from it. [Undefined elements](#undefined-element) count as external too.
+A component that isn't defined in the scanned repo, usually one your code imports from an installed package, such as `Button` from `@acme/ui`. It is the same component in every repo, so `Button` used in `storefront` and `checkout` counts as one component across both. The import path is part of it: `Button` from `@acme/ui` and `Button` from `@acme/ui/button` are two components. A web component is from a package too, when the package declares it, in its [Custom Elements Manifest](#custom-elements-manifest) or in the type declarations of a module your code imports, or when your code registers a class imported from it. [Undefined elements](#undefined-element) count as external too.
 
 The **Origin** filter on a repo page and a component's badge call it **External**. In the JSON its `identity.kind` is `"package-export"`, or `"tag"` for a web component. See the [scan file reference](/docs/reference/artifact).
 
@@ -59,13 +59,13 @@ The **Origin** filter and a component's badge call it **Local**. In the JSON its
 
 ## Web component
 
-A tag with a hyphen in its name, such as `<acme-button>`, in React JSX or a Vue template. The scan counts it as a component even though nothing imports it. It belongs to your repo when your code defines and registers it, or to a package when your code registers a class imported from that package or the package's [Custom Elements Manifest](#custom-elements-manifest) declares the tag. In every case, a tag is one component across every repo that uses it.
+A tag with a hyphen in its name, such as `<acme-button>`, in React JSX or a Vue template. The scan counts it as a component even though nothing imports it. It belongs to your repo when your code defines and registers it, or to a package when your code registers a class imported from that package, or the package declares the tag in its [Custom Elements Manifest](#custom-elements-manifest) or in the type declarations of a module your code imports. In every case, a tag is one component across every repo that uses it.
 
-The **Type** filter splits web components in two: **Web component** when a manifest or your code defines the tag, and [**Undefined element**](#undefined-element) when nothing does. In the JSON its `identity.kind` is `"tag"`.
+The **Type** filter splits web components in two: **Web component** when a package or your code defines the tag, and [**Undefined element**](#undefined-element) when nothing does. In the JSON its `identity.kind` is `"tag"`.
 
 ## Undefined element
 
-A [web component](#web-component) that nothing in the scan defines: no package's [Custom Elements Manifest](#custom-elements-manifest) declares it and no code registers it. The **Type** filter and a component's badge call it **Undefined element**.
+A [web component](#web-component) that nothing in the scan defines: no package declares it, in a [Custom Elements Manifest](#custom-elements-manifest) or in the type declarations of a module your code imports, and no code registers it. The **Type** filter and a component's badge call it **Undefined element**.
 
 ## Version
 
