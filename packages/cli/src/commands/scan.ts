@@ -665,6 +665,17 @@ export async function scanRepository(input: {
     const librarySpecifiers = new Set(
       pendingAngular.flatMap((p) => p.imports.filter((i) => angularRefResolver(p.graphKey, i.specifier, i.imported) === null).map((i) => i.specifier)),
     );
+    // A library can also be reached only through a const array that an `imports` list names, declared in a file with
+    // no decorator (`export const SHARED = [NzButtonModule]`). Follow each list the way template scopes will, and index
+    // every package it reaches: only arrays a component or module actually lists, never one elsewhere in the repo.
+    if (compiler !== null) {
+      const reach = buildModuleScopes(pendingAngular, angularRefResolver, undefined, scripts satisfies AngularScripts);
+      for (const p of pendingAngular) {
+        for (const name of [...p.components.flatMap((c) => c.imports), ...p.modules.flatMap((m) => m.imports)]) {
+          for (const specifier of reach.resolveImports(p, name).packages) librarySpecifiers.add(specifier);
+        }
+      }
+    }
     const library = compiler === null ? undefined : buildAngularLibraryIndex({ configDir: cfg.configDir, specifiers: librarySpecifiers });
     for (const u of library?.unreadable ?? []) scanWarning(`Couldn't read the Angular components ${u.specifier} declares (${u.reason}), so its components aren't counted.`);
     const index =
