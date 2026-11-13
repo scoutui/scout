@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
-/** A notice closed to one summary line that opens to its details: what a scan couldn't see, or what a chart leaves out. */
+/** A notice closed to one summary line that opens to its details, such as what a chart leaves out. */
 export function CollapsibleNotice({ icon, summary, children }: { icon: ReactNode; summary: ReactNode; children: ReactNode }) {
   return (
     <details className="group rounded-md border border-border bg-accent/40 text-xs">

@@ -1,12 +1,8 @@
 import type { ReactNode } from "react";
-import { Info } from "lucide-react";
 import type { ScanFinding, ScanFindingKind } from "@scoutui/web-shared";
 import { cn } from "@/lib/utils";
-import { CollapsibleNotice, CollapsibleNoticeRow } from "@/components/collapsible-notice";
 
 const DOCS = "https://scoutui.dev/docs";
-
-const counted = (n: number, one: string, many: string) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 const Code = ({ children }: { children: ReactNode }) => <span className="font-mono">{children}</span>;
 
@@ -76,48 +72,34 @@ const KINDS: Record<ScanFindingKind, { label: [string, string]; fix: ReactNode; 
 
 const Dot = () => <span aria-hidden className="text-faint">·</span>;
 
-/** What the shown scan couldn't see, closed to one line; nothing when it reported nothing. */
-export function ScanFindings({ findings }: { findings: ScanFinding[] }) {
-  if (findings.length === 0) return null;
-  const toFix = findings.reduce((sum, finding) => sum + (KINDS[finding.kind].toFix ? finding.count : 0), 0);
-  return (
-    <CollapsibleNotice
-      icon={<Info aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />}
-      summary={
-        <>
-          <span className="font-medium text-foreground">This scan couldn&apos;t see everything</span>
-          {toFix > 0 ? <> <span className="flex items-baseline gap-x-1.5 text-muted-foreground"><Dot /> {counted(toFix, "thing to fix", "things to fix")}</span></> : null}
-        </>
-      }
-    >
-        {findings.map(finding => {
-          const kind = KINDS[finding.kind];
-          const labelId = `scan-finding-${finding.kind}`;
-          return (
-            <CollapsibleNoticeRow key={finding.kind}>
-              <p id={labelId} className={cn(kind.toFix ? "text-foreground" : "text-muted-foreground")}>
-                <span className="font-medium tabular-nums">{finding.count.toLocaleString()}</span>{" "}
-                {finding.count === 1 ? kind.label[0] : kind.label[1]}
-              </p>
-              <p className="flex flex-wrap gap-x-1.5 text-muted-foreground">
-                {finding.examples.map((example, index) => (
-                  <span key={example.text} className="flex min-w-0 items-baseline gap-x-1.5">
-                    {index > 0 ? <><Dot />{" "}</> : null}
-                    <span className="break-all font-mono text-foreground/80">{example.text}</span>{" "}
-                    <span className="tabular-nums">{example.count.toLocaleString()}</span>{" "}
-                  </span>
-                ))}
-                {finding.more > 0 ? <span className="flex items-baseline gap-x-1.5 whitespace-nowrap"><Dot /> {finding.more.toLocaleString()} more</span> : null}
-              </p>
-              <p className="text-muted-foreground">
-                {kind.fix}{" "}
-                <a href={`${DOCS}/${kind.docs}`} aria-describedby={labelId} className="whitespace-nowrap rounded-sm text-foreground underline-offset-4 hover:underline">
-                  Learn more
-                </a>
-              </p>
-            </CollapsibleNoticeRow>
-          );
-        })}
-    </CollapsibleNotice>
-  );
+/** What the shown scan couldn't see, one row per kind: its count, its most frequent examples, its fix and a link to the docs. */
+export function ScanFindingRows({ findings }: { findings: ScanFinding[] }) {
+  return findings.map(finding => {
+    const kind = KINDS[finding.kind];
+    const labelId = `scan-finding-${finding.kind}`;
+    return (
+      <li key={finding.kind} className="space-y-1 px-3 py-2.5">
+        <p id={labelId} className={cn(kind.toFix ? "text-foreground" : "text-muted-foreground")}>
+          <span className="font-medium tabular-nums">{finding.count.toLocaleString()}</span>{" "}
+          {finding.count === 1 ? kind.label[0] : kind.label[1]}
+        </p>
+        <p className="flex flex-wrap gap-x-1.5 text-muted-foreground">
+          {finding.examples.map((example, index) => (
+            <span key={example.text} className="flex min-w-0 items-baseline gap-x-1.5">
+              {index > 0 ? <><Dot />{" "}</> : null}
+              <span className="break-all font-mono text-foreground/80">{example.text}</span>{" "}
+              <span className="tabular-nums">{example.count.toLocaleString()}</span>{" "}
+            </span>
+          ))}
+          {finding.more > 0 ? <span className="flex items-baseline gap-x-1.5 whitespace-nowrap"><Dot /> {finding.more.toLocaleString()} more</span> : null}
+        </p>
+        <p className="text-muted-foreground">
+          {kind.fix}{" "}
+          <a href={`${DOCS}/${kind.docs}`} aria-describedby={labelId} className="whitespace-nowrap rounded-sm text-foreground underline-offset-4 hover:underline">
+            Learn more
+          </a>
+        </p>
+      </li>
+    );
+  });
 }
