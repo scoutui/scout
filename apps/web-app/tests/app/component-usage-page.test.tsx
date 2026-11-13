@@ -142,7 +142,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("reopens the rows, props and filter panel the reader left open on Back from Composition, and keeps rows opened later through an empty list", async () => {
     await show(button.id);
-    fireEvent.click(screen.getByRole("button", { name: "Where it’s used and prop values" }));
+    fireEvent.click(screen.getByRole("button", { name: "Used in and prop values" }));
     fireEvent.click(screen.getByRole("button", { name: /^size, set on/ }));
     fireEvent.click(screen.getByRole("button", { name: "Uses in src/checkout/Pay.tsx" }));
     fireEvent.click(screen.getAllByRole("link", { name: "Show PayDialog in Composition" })[0] as HTMLElement);
@@ -152,7 +152,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
       window.history.back();
     }));
     const expanded = (name: string | RegExp) => screen.getByRole("button", { name }).getAttribute("aria-expanded");
-    expect([expanded("Where it’s used and prop values"), expanded(/^size, set on/), expanded("Uses in src/checkout/Pay.tsx"), expanded("Uses in src/settings/Panel.tsx")]).toEqual(["true", "true", "true", "false"]);
+    expect([expanded("Used in and prop values"), expanded(/^size, set on/), expanded("Uses in src/checkout/Pay.tsx"), expanded("Uses in src/settings/Panel.tsx")]).toEqual(["true", "true", "true", "false"]);
     fireEvent.click(screen.getByRole("button", { name: "Uses in src/settings/Panel.tsx" }));
     const search = screen.getByRole("textbox", { name: "Search files and props" });
     fireEvent.change(search, { target: { value: "zzz" } });
@@ -249,7 +249,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("lists where it's used with each folder's calls", async () => {
     await show(button.id);
-    expect(screen.getByRole("heading", { name: "Where it’s used" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Used in" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder checkout, 3 uses", "Folder settings, 3 uses", "Folder home, 1 use"]);
   });
 
@@ -258,7 +258,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     ["leaves Prop values out for a component that declares no props and whose uses set none", badge, false],
   ])("%s", async (_title, shown, listed) => {
     await show(shown.id);
-    const fold = listed ? "Where it’s used and prop values" : "Where it’s used";
+    const fold = listed ? "Used in and prop values" : "Used in";
     expect([screen.queryByRole("heading", { name: "Prop values" }) !== null, screen.getByRole("button", { name: fold })]).toEqual([listed, expect.anything()]);
   });
 
@@ -285,8 +285,9 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
 
   it("names the one package its calls are in above their folders", async () => {
     await show(chip.id);
-    const heading = screen.getByRole("heading", { name: "Used in" });
-    expect(within(heading.parentElement as HTMLElement).getByText("@example/web")).toBeInTheDocument();
+    const where = document.getElementById("usage-where") as HTMLElement;
+    expect(where).toHaveTextContent("Used in");
+    expect(within(where.parentElement as HTMLElement).getByText("@example/web")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Folder / }).map(row => row.getAttribute("aria-label"))).toEqual(["Folder home, 2 uses", "Folder cart, 1 use"]);
   });
 
@@ -358,9 +359,9 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     const search = screen.getByRole("textbox", { name: "Search files and props" });
     search.focus();
     fireEvent.keyDown(search, { key: "f" });
-    expect([document.activeElement, screen.getByRole("button", { name: "Where it’s used and prop values" }).getAttribute("aria-expanded")]).toEqual([search, "false"]);
+    expect([document.activeElement, screen.getByRole("button", { name: "Used in and prop values" }).getAttribute("aria-expanded")]).toEqual([search, "false"]);
     fireEvent.keyDown(document.body, { key: "f" });
-    expect(screen.getByRole("button", { name: "Where it’s used and prop values" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Used in and prop values" })).toHaveAttribute("aria-expanded", "true");
     expect(document.getElementById("usage-column-body")?.contains(document.activeElement)).toBe(true);
   });
 
@@ -389,7 +390,7 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
   it("counts a deprecated component's calls as still to migrate", async () => {
     await show(oldButton.id);
     expect(document.body).toHaveTextContent("still to migrate");
-    expect(screen.getByRole("heading", { name: "Where it’s still used" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Still used in" })).toBeInTheDocument();
   });
 
   it("moves focus to the next filter after removing one", async () => {

@@ -91,7 +91,7 @@ We go back to the **Components** tab and click the `Button` row. The component p
 
 The tab has a column of filters on the left and the list of files on the right:
 
-- **Where it’s used** has **under** `src/` beside it, and lists two folders, `components` and `src/`, with `1` use each.
+- **Used in** has `src/` beside it, and lists two folders, `components` and `src/`, with `1` use each.
 - **Prop values** lists `variant`, set on both uses.
 - The list has a row for each file, `src/App.tsx` and `ProductCard.tsx`, and the count above it reads `2 uses · 2 files`.
 

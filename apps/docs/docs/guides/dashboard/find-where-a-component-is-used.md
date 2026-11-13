@@ -44,11 +44,11 @@ It has two tabs: **Usage** (the default) and **Composition**. The tab you pick, 
 
 ![The Usage tab for Button in payloadcms/payload, with secondary picked under buttonStyle, its pill above the file list, and one file open to its uses with Rendered by](/img/dashboard/component-usage-tab.png)
 
-The **Usage** tab lists the files that use the component, with filters beside them. On a narrow window, press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show the filters.
+The **Usage** tab lists the files that use the component, with filters beside them. On a narrow window, press **Filter**, or **Used in and prop values** (**Used in** for a component with no props), to show the filters.
 
 ### Filter by package or folder
 
-**Where it’s used** lists the folders the uses are in, with how many uses each holds. When the uses sit in more than one of the repo's packages, as in a monorepo, it reads **Used in** and lists those packages instead, such as `@acme/web` and `@acme/admin`.
+**Used in** lists the folders the uses are in, with how many uses each holds. When the uses sit in more than one of the repo's packages, as in a monorepo, it lists those packages instead, such as `@acme/web` and `@acme/admin`.
 
 Press a folder or package to keep only its uses, and press it again to remove the filter.
 

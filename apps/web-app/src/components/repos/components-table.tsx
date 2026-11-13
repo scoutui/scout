@@ -21,6 +21,10 @@ const COLUMN_COUNT = 5;
  *  `--hairline` outline measured 1.21:1 on dark, and `/35` 1.4:1 on light. */
 const MARK_BADGE = "shrink-0 border-muted-foreground/70 text-muted-foreground";
 
+/** A row's name cell. Below sm it is the row's one visible cell and fills
+ *  the table without growing past it, so a long name truncates. */
+const NAME_CELL = "overflow-hidden align-middle max-sm:w-full max-sm:max-w-0";
+
 /** A row's name line: wraps below sm (a badge beside a long name pushed the
  *  390px table 44px past its scroller), one truncating line from sm up. */
 const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
@@ -113,23 +117,23 @@ export function ComponentsTable({
       {/* Below sm the rows stack, so there are no headers and no sorting. */}
       <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
         <TableRow>
-          <TableHead className="w-[40%]" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
+          <TableHead aria-sort={ariaSort("displayName", sortKey, sortDir)}>
             <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          {/* Below xl, Uses takes 5 points from Package: at 11% the
-              changed view's `475 (−9)` overflowed at 640 and the header
-              truncated at 1024. Both views share the widths, so toggling
+          {/* Version, Files and Uses take fixed widths that fit their
+              headers and the changed view's `1,234 (−56)`, and Component
+              takes what's left. Both views share the widths, so toggling
               reflows nothing. */}
           <TableHead className="w-[23%] xl:w-[28%]" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
             <SortButton label="Package" sortKey="packageName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="w-[11%]" aria-sort={ariaSort("version", sortKey, sortDir)}>
+          <TableHead className="w-24" aria-sort={ariaSort("version", sortKey, sortDir)}>
             <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="w-[9%] text-right" aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
+          <TableHead className="w-18 text-right" aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
             <SortButton label="Files" sortKey="fileCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="w-[17%] text-right pr-3 xl:w-[12%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
+          <TableHead className="w-32 text-right pr-3 lg:w-40" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
             {/* The visible label stays `Uses`; in the changed view the
                 title and accessible name say the sort key is the Δ, so
                 "ascending" is never announced over counts that aren't. */}
@@ -198,7 +202,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
 
   return (
     <>
-      <TableCell className="overflow-hidden align-middle">
+      <TableCell className={NAME_CELL}>
         <div className={NAME_ROW}>
           {/* The row's one link: its ::after fills the positioned <tr>, so the
               whole row is the pointer target and keyboard users get one stop
@@ -234,7 +238,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
         {/* Stacked summary tiers below sm. */}
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
           {r.packageName ? (
-            <span className="font-mono">{r.packageName}</span>
+            <span className="min-w-0 max-w-full truncate font-mono" title={r.packageName}>{r.packageName}</span>
           ) : null}
           {r.packageName && r.version ? <Dot /> : null}
           {r.version ? (
@@ -296,7 +300,7 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs }: { r: ComponentRow
 function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: number; measure: (el: HTMLTableRowElement | null) => void; slotCh: number }) {
   return (
     <TableRow data-index={index} ref={measure}>
-      <TableCell className="overflow-hidden align-middle">
+      <TableCell className={NAME_CELL}>
         <div className={NAME_ROW}>
           <span className="truncate font-mono font-medium text-muted-foreground" title={r.deprecated ? `${r.displayName} (deprecated)` : r.displayName}>{r.displayName}</span>
           {r.deprecated ? <DeprecatedMark /> : null}
@@ -305,7 +309,7 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
         {/* Stacked tiers below sm: the package, then `0 uses (−5)`. */}
         {r.packageName ? (
           <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
-            <span className="font-mono">{r.packageName}</span>
+            <span className="min-w-0 max-w-full truncate font-mono" title={r.packageName}>{r.packageName}</span>
           </div>
         ) : null}
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">

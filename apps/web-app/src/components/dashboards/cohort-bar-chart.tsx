@@ -9,19 +9,33 @@ import { DEPRECATED_ONLY, barRowLabel, formatMetric } from "@/lib/dashboard-form
 import { TooltipSeriesName } from "./cohort-label";
 
 // Each row label renders on two lines: the name, then its package (or a package's
-// scope) and "deprecated only" muted beneath. SVG text can't truncate, so the lines
-// take hard character caps; the tooltip carries the full label.
-const ATTR_CAP = 38;
-const NAME_CHAR_PX = 6.6;
+// scope) and "deprecated only" muted beneath. A second line wider than the label
+// column breaks after its scope onto a third. SVG text can't truncate, so each line
+// takes a character cap from the column's width; the tooltip carries the full label.
+const LABEL_MAX_PX = 240;
+const LABEL_PAD_PX = 16;
+const MONO_CHAR_PX = 6.6;
+const LINE_CHARS = Math.floor((LABEL_MAX_PX - LABEL_PAD_PX) / MONO_CHAR_PX);
 const ICON_PX = 12;
 const ICON_GAP_PX = 4;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-function tickLines(label: string, deprecatedOnly: boolean): { name: string; attribution: string; qualifier: string } {
+/**
+ * The muted lines under a row's name, the qualifier ending the last: the attribution on one line, else broken after
+ * its scope, else with the qualifier on a line of its own.
+ */
+function attributionLines(attribution: string, qualifier: string): string[] {
+  const tail = qualifier ? ` · ${qualifier}` : "";
+  if (attribution.length + tail.length <= LINE_CHARS) return attribution || qualifier ? [attribution] : [];
+  const slash = attribution.startsWith("@") ? attribution.indexOf("/") : -1;
+  if (slash >= 0) return [clip(attribution.slice(0, slash + 1), LINE_CHARS), clip(attribution.slice(slash + 1), LINE_CHARS - tail.length)];
+  return qualifier ? [clip(attribution, LINE_CHARS), ""] : [clip(attribution, LINE_CHARS)];
+}
+
+function tickLines(label: string, deprecatedOnly: boolean): { name: string; lines: string[]; qualifier: string } {
   const { name, attribution } = barRowLabel(label);
   const qualifier = deprecatedOnly ? DEPRECATED_ONLY : "";
-  const room = ATTR_CAP - (qualifier ? ` · ${qualifier}`.length : 0);
-  return { name, attribution: clip(attribution ?? "", room), qualifier };
+  return { name, lines: attributionLines(attribution ?? "", qualifier), qualifier };
 }
 
 type BarRow = { cohortKey: string; label: string; value: number; seriesColor: string; role?: CohortRole | undefined; deprecatedOnly: boolean };
@@ -40,15 +54,14 @@ function BarTick({
   rows: BarRow[];
 }) {
   const row = rows[index];
-  const { name, attribution, qualifier } = tickLines(String(payload?.value ?? ""), row?.deprecatedOnly === true);
-  const twoLines = attribution.length > 0 || qualifier.length > 0;
-  const nameBaseline = twoLines ? y - 2 : y + 4;
+  const { name, lines, qualifier } = tickLines(String(payload?.value ?? ""), row?.deprecatedOnly === true);
+  const nameDy = lines.length === 0 ? 4 : lines.length === 1 ? -2 : -8;
   return (
     <g>
       {row?.role === "deprecated" ? (
         <AlertTriangle
-          x={x - name.length * NAME_CHAR_PX - ICON_GAP_PX - ICON_PX}
-          y={nameBaseline - 10}
+          x={x - name.length * MONO_CHAR_PX - ICON_GAP_PX - ICON_PX}
+          y={y + nameDy - 10}
           size={ICON_PX}
           color={row.seriesColor}
         >
@@ -56,22 +69,20 @@ function BarTick({
         </AlertTriangle>
       ) : null}
       <text x={x} y={y} textAnchor="end" fontFamily="var(--font-mono)">
-        {twoLines ? (
-          <>
-            <tspan x={x} dy={-2} fontSize={11} fill="var(--foreground)">
-              {name}
-            </tspan>
-            <tspan x={x} dy={12} fontSize={11} fill="var(--muted-foreground)">
-              {attribution}
-              {attribution && qualifier ? " · " : null}
-              {qualifier ? <tspan fontFamily="var(--font-sans)">{qualifier}</tspan> : null}
-            </tspan>
-          </>
-        ) : (
-          <tspan x={x} dy={4} fontSize={11} fill="var(--muted-foreground)">
-            {name}
+        <tspan x={x} dy={nameDy} fontSize={11} fill={lines.length > 0 ? "var(--foreground)" : "var(--muted-foreground)"}>
+          {name}
+        </tspan>
+        {lines.map((line, i) => (
+          <tspan key={line} x={x} dy={12} fontSize={11} fill="var(--muted-foreground)">
+            {line}
+            {i === lines.length - 1 && qualifier ? (
+              <>
+                {line ? " · " : null}
+                <tspan fontFamily="var(--font-sans)">{qualifier}</tspan>
+              </>
+            ) : null}
           </tspan>
-        )}
+        ))}
       </text>
     </g>
   );
@@ -108,12 +119,12 @@ export function CohortBarChart({
   const config = cohortChartConfig(points);
 
   const labelWidth = Math.min(
-    240,
-    16 + Math.max(...rows.map((r) => {
-      const { name, attribution, qualifier } = tickLines(r.label, r.deprecatedOnly);
+    LABEL_MAX_PX,
+    LABEL_PAD_PX + Math.max(...rows.map((r) => {
+      const { name, lines, qualifier } = tickLines(r.label, r.deprecatedOnly);
       const mark = r.role === "deprecated" ? ICON_PX + ICON_GAP_PX : 0;
-      const secondLine = [attribution, qualifier].filter(Boolean).join(" · ");
-      return Math.max(name.length * NAME_CHAR_PX + mark, secondLine.length * 6);
+      const widest = Math.max(0, ...lines.map((line, i) => (i === lines.length - 1 && qualifier ? [line, qualifier].filter(Boolean).join(" · ") : line).length));
+      return Math.max(name.length * MONO_CHAR_PX + mark, widest * MONO_CHAR_PX);
     })),
   );
   const valueWidth = 12 + Math.max(...rows.map((r) => formatMetric(r.value, metric).length)) * 7;

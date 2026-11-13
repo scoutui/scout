@@ -117,13 +117,13 @@ describe("ComponentsTable", () => {
     const rowOf = (el: HTMLElement) => el.closest("tr") as HTMLElement;
 
     const headers = () =>
-      screen.getAllByRole("columnheader").map((h) => ({ name: h.textContent, width: h.className.match(/w-\[\d+%\]/)?.[0] }));
+      screen.getAllByRole("columnheader").map((h) => ({ name: h.textContent, width: h.className.match(/(?<=^|\s)w-\S+/)?.[0] }));
     const FIVE = [
-      { name: "Component", width: "w-[40%]" },
+      { name: "Component", width: undefined },
       { name: "Package", width: "w-[23%]" },
-      { name: "Version", width: "w-[11%]" },
-      { name: "Files", width: "w-[9%]" },
-      { name: "Uses", width: "w-[17%]" },
+      { name: "Version", width: "w-24" },
+      { name: "Files", width: "w-18" },
+      { name: "Uses", width: "w-32" },
     ];
     const occurrencesCell = (tr: HTMLElement) => within(tr).getAllByRole("cell").at(-1) as HTMLElement;
     const DELTA_SORT_NAME = "Uses, sorts by change since previous scan";
