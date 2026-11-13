@@ -317,6 +317,62 @@ describe("emitAngularTemplate: directives", () => {
     expect(names(uses)).toEqual(["TipDirective"]);
   });
 
+  describe("a name the element writes belongs to the classes that take it as an input, else the component, else every directive that matched through it", () => {
+    const model = dir("NgModel", ["ngModel"], ["ngModelChange"]);
+    const status = dir("NgControlStatus");
+    const row = dir("RowDirective", ["gutter"]);
+
+    test("counts the directive that takes the name, and not one that only rides along on it", () => {
+      const { uses } = emit(`<input [(ngModel)]="v" />`, {
+        directives: [
+          { selector: "[ngModel]", entry: model },
+          { selector: "[ngModel],[formControlName]", entry: status },
+        ],
+      });
+      expect(names(uses)).toEqual(["NgModel"]);
+    });
+
+    test("gives a tag a component matched through to the component, unless the element binds the directive's own input", () => {
+      const formItem: SelectorEntry = { source: { type: "file", graphKey: "src/form-item.ts" }, exportName: "FormItemComponent", inputs: [], outputs: [] };
+      const opts = { entries: [{ selector: "app-form-item", entry: formItem }], directives: [{ selector: "[app-row],app-form-item", entry: row }] };
+      expect(names(emit("<app-form-item></app-form-item>", opts).uses)).toEqual(["FormItemComponent"]);
+      expect(names(emit(`<app-form-item gutter="8"></app-form-item>`, opts).uses)).toEqual(["FormItemComponent", "RowDirective"]);
+      expect(names(emit("<div app-row></div>", opts).uses)).toEqual(["RowDirective"]);
+    });
+
+    test("drops a helper matched through the component's own attribute", () => {
+      const wave = dir("WaveDirective", ["waveExtra"]);
+      const { uses } = emit("<button app-button></button>", {
+        entries: [{ selector: "button[app-button]", entry: button }],
+        directives: [{ selector: "[app-wave],button[app-button]", entry: wave }],
+      });
+      expect(names(uses)).toEqual(["ButtonComponent"]);
+    });
+
+    test("counts every directive that matched through a name no class takes", () => {
+      const one = dir("MarkOneDirective");
+      const two = dir("MarkTwoDirective");
+      const { uses } = emit("<span appMark></span>", {
+        directives: [
+          { selector: "[appMark]", entry: one },
+          { selector: "[appMark]", entry: two },
+        ],
+      });
+      expect(names(uses)).toEqual(["MarkOneDirective", "MarkTwoDirective"]);
+    });
+
+    test("counts a directive whose inputs aren't known", () => {
+      const unknown: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui" }, exportName: "ExStatus" };
+      const { uses } = emit(`<input [ngModel]="v" />`, {
+        directives: [
+          { selector: "[ngModel]", entry: model },
+          { selector: "[ngModel]", entry: unknown },
+        ],
+      });
+      expect(names(uses)).toEqual(["NgModel", "ExStatus"]);
+    });
+  });
+
   test("with a partly read scope, counts neither of two different directives that answer to the same selector", () => {
     const one = dir("MarkOneDirective");
     const two = dir("MarkTwoDirective");

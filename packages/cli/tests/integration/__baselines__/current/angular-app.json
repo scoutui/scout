@@ -786,7 +786,8 @@
           "5119af9bd9b92846": 1,
           "e9411006fee35b3a": 1,
           "e90ae6e2d21d94ff": 1,
-          "02d08e2d6db16b14": 1
+          "02d08e2d6db16b14": 1,
+          "27bd12359d5849bc": 1
         },
         "renderedByCount": {},
         "isRootCount": 0,
@@ -1882,6 +1883,43 @@
       }
     },
     {
+      "id": "27bd12359d5849bc",
+      "identity": {
+        "kind": "package-export",
+        "packageName": "@angular/forms",
+        "publicEntry": "",
+        "exportName": "NgModel"
+      },
+      "framework": "angular",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "ngModel": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "value",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "version": "0.0.0-test",
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "5dfb47dff22a0c61": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "81b316339f047835",
       "identity": {
         "kind": "package-export",
@@ -2536,6 +2574,33 @@
         }
       ],
       "props": {},
+      "ownerComponentId": "5dfb47dff22a0c61"
+    },
+    {
+      "occurrenceId": "9e6e547cf1842535",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "27bd12359d5849bc"
+      },
+      "filePath": "src/directives/page.component.html",
+      "line": 10,
+      "column": 1,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "@angular/forms",
+          "name": "NgModel"
+        }
+      ],
+      "props": {
+        "ngModel": {
+          "tier": "reference",
+          "ref": "value"
+        }
+      },
       "ownerComponentId": "5dfb47dff22a0c61"
     },
     {

@@ -22,6 +22,12 @@ export type ElementMatch = {
   selectorAttributes: ReadonlySet<string>;
   /** The part of the selector that matched, as Angular prints it (`[exTooltip]` of `ex-tip, [exTooltip]`): what an element writes to get this match. */
   matchedPart?: string;
+  /**
+   * The names the matched part has the element write: its element when hyphenated (`ex-card`), and each attribute it
+   * requires without a value (`exTooltip`, not `type` in `input[type=checkbox]`). Across every matching part of a
+   * directive's selector.
+   */
+  names?: ReadonlySet<string>;
 };
 
 /**
@@ -48,6 +54,19 @@ export type SelectorIndex = {
 function restsOnPlainTag(selector: CssSelector): boolean {
   const element = selector.element;
   return element !== null && element !== "*" && !element.includes("-") && selector.attrs.length === 0 && selector.classNames.length === 0;
+}
+
+/** The names a matched selector part has the element write: see `ElementMatch.names`. */
+function writtenNames(selector: CssSelector): Set<string> {
+  const names = new Set<string>();
+  const element = selector.element;
+  if (element?.includes("-")) names.add(element);
+  // `attrs` holds name/value pairs.
+  for (let i = 0; i < selector.attrs.length; i += 2) {
+    const name = selector.attrs[i];
+    if (name !== undefined && name !== "" && selector.attrs[i + 1] === "") names.add(name);
+  }
+  return names;
 }
 
 /** Indexes components by their selectors, using Angular's own matcher so every selector form Angular accepts matches as it does in Angular. */
@@ -93,7 +112,7 @@ export function createSelectorIndex(
       const name = selector.attrs[i];
       if (name !== undefined) names.add(name);
     }
-    return { entry, selector: selectorOf.get(entry) ?? "", selectorAttributes: names, matchedPart: selector.toString() };
+    return { entry, selector: selectorOf.get(entry) ?? "", selectorAttributes: names, matchedPart: selector.toString(), names: writtenNames(selector) };
   };
   return {
     matchesDirective: (element) => directives.match(toCss(element), null),
@@ -107,7 +126,9 @@ export function createSelectorIndex(
     matchDirectives(element) {
       const matches: ElementMatch[] = [];
       counted.match(toCss(element), (selector: CssSelector, entry) => {
-        if (!matches.some((m) => m.entry === entry)) matches.push(toMatch(selector, entry));
+        const seen = matches.find((m) => m.entry === entry);
+        if (seen === undefined) matches.push(toMatch(selector, entry));
+        else seen.names = new Set([...(seen.names ?? []), ...writtenNames(selector)]);
       });
       return matches;
     },

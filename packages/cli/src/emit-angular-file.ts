@@ -181,10 +181,10 @@ export function buildAngularSelectorIndex(
   const components: { selector: string; entry: SelectorEntry }[] = [];
   const directives: DirectiveSelector[] = [];
   for (const d of library?.directives ?? []) {
-    // Angular's own directives (`NgClass`, `RouterLink`, `NgModel`) are the framework, not a design system, and a name
-    // starting with `ɵ` is a library's private API by Angular's convention (NG-ZORRO's `ɵNzTransitionPatchDirective`,
-    // which its public modules bring along): they still claim the elements they name, but aren't counted.
-    if (isAngularFramework(d.specifier) || d.exportName.startsWith("ɵ")) {
+    // A name starting with `ɵ` is a library's private API by Angular's convention (NG-ZORRO's
+    // `ɵNzTransitionPatchDirective`, which its public modules bring along): it still claims the elements it names, but
+    // isn't counted.
+    if (d.exportName.startsWith("ɵ")) {
       directives.push(d.selector);
       continue;
     }
@@ -214,11 +214,6 @@ export function buildAngularSelectorIndex(
     }
   }
   return createSelectorIndex(compiler, components, directives);
-}
-
-/** A package of Angular itself (`@angular/common`, `@angular/router`, `@angular/forms`, ...). */
-function isAngularFramework(specifier: string): boolean {
-  return specifier.startsWith("@angular/");
 }
 
 /**

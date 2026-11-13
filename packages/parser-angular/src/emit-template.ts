@@ -195,8 +195,9 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
     }
     // Plain HTML falls through: never tracked, never diagnosed.
 
-    // Any number of directives apply to one element, each its own use.
-    for (const directive of directivesOn(shape, tag, loc)) addUse(directive);
+    // Any number of directives apply to one element, each its own use, when it's written there rather than riding along.
+    const bound = new Set(attributeNames);
+    for (const directive of owned(directivesOn(shape, tag, loc), matches.length === 1 ? match : undefined, bound)) addUse(directive);
   };
 
   /**
@@ -224,6 +225,30 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
   };
 
   for (const node of parsed.nodes) if (node !== null && typeof node === "object") visit(node as TmplNode);
+}
+
+/**
+ * The directives an element counts as uses of, out of every one it matches. Each name the element writes (see
+ * `ElementMatch.names`) belongs to the classes that take it as an input; failing that, to the component that matched
+ * through it; failing that, to every directive that did. A directive counts when it owns one of its names, or when the
+ * element binds one of its other inputs. So `NgModel` owns `ngModel` and counts, while `NgControlStatus`, which only
+ * rides along on `ngModel`, doesn't. A directive whose inputs aren't known counts.
+ */
+function owned(directives: readonly ElementMatch[], component: ElementMatch | undefined, bound: ReadonlySet<string>): ElementMatch[] {
+  const takesInput = (m: ElementMatch, name: string) => m.entry.inputs?.includes(name) === true;
+  const ownerOf = (name: string): readonly ElementMatch[] => {
+    const all = component === undefined ? directives : [component, ...directives];
+    const takers = all.filter((m) => takesInput(m, name));
+    if (takers.length > 0) return takers;
+    if (component?.names?.has(name) === true) return [component];
+    return directives.filter((m) => m.names?.has(name) === true);
+  };
+  return directives.filter((d) => {
+    if (d.entry.inputs === undefined) return true;
+    const names = d.names ?? new Set<string>();
+    if ([...names].some((name) => ownerOf(name).includes(d))) return true;
+    return d.entry.inputs.some((input) => !names.has(input) && bound.has(input));
+  });
 }
 
 function refTo(symbol: string, loc: { line: number; column: number }): Reference {

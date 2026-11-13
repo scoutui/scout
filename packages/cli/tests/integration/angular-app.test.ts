@@ -410,6 +410,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     const button = local(S, "dir-button.component.ts", "DirButtonComponent");
     const exTooltip = pkg("@example/ng-ui", "tooltip", "ExTooltip");
     const exForm = pkg("@example/ng-ui", "tooltip", "ExForm");
+    const ngModel = pkg("@angular/forms", "", "NgModel");
     const written = (value: string) => ({ tier: "written", value });
     const label = (c: unknown) => (c as { exportName?: string }).exportName ?? "";
     /** Uses at one element come in the order the matcher finds them; sort them by name so the test doesn't depend on it. */
@@ -418,7 +419,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     // One template writes each kind of directive use: an element directive and its attribute form, an attribute
     // directive whose selector attribute is also an input, a component with two directives on it, a structural
     // directive, a library directive, `NgForm`-style selectors on a bare and a marked `<form>`, and Angular's own
-    // `NgModel`.
+    // `NgModel` with `NgControlStatus` riding along on it.
     it("counts each directive written on an element as its own use, with its inputs as props", () => {
       expect(sorted(rendersIn(S).filter((r) => r.at.startsWith("page.component.html")))).toEqual([
         row("page.component.html:1:1", field, page, [imported("./field.directive", "FieldDirective")], { label: written("Name") }),
@@ -436,6 +437,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           exTooltipPosition: written("left"),
         }),
         row("page.component.html:9:1", exForm, page, [imported("@example/ng-ui/tooltip", "ExForm")]),
+        row("page.component.html:10:1", ngModel, page, [imported("@angular/forms", "NgModel")], { ngModel: { tier: "reference", ref: "value" } }),
       ]);
     });
 
@@ -444,12 +446,11 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
       expect(out.components.filter((c) => (c.identity as { exportName?: string }).exportName?.startsWith("ɵ"))).toEqual([]);
     });
 
-    it("counts no structural directive, no bare <form> and none of Angular's own directives", () => {
+    it("counts no structural directive, no bare <form>, and no directive that only rides along on another's input", () => {
       const lines = rendersIn(S).map((r) => r.at);
       expect(lines).not.toContain("page.component.html:6:1"); // <p *appIf>
       expect(lines).not.toContain("page.component.html:8:1"); // <form>
-      expect(lines).not.toContain("page.component.html:10:1"); // <input [ngModel]>
-      expect(out.components.some((c) => (c.identity as { packageName?: string }).packageName === "@angular/forms")).toBe(false);
+      expect(out.components.filter((c) => (c.identity as { exportName?: string }).exportName === "NgControlStatus")).toEqual([]);
     });
 
     it("with a partly read scope, counts a directive one class answers to, and neither of two that share a selector", () => {
