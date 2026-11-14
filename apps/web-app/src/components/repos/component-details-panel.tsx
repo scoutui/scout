@@ -97,6 +97,7 @@ export function ComponentDetailsPanel({
   const sourceHref = ready?.source && source ? sourceFileUrl(source.remote, source.commit, ready.source.filePath, ready.source.line ?? undefined) : null;
   // A uses story, or its place while the facts load, says the row's change after its summary, so the facts don't.
   const usesStory = entry === null && facts.state !== "error";
+  const change = showChange && !usesStory ? changeText(mark, row.occurrenceCount) : null;
   const factItems = [
     ...(mode !== "column"
       ? [
@@ -104,7 +105,7 @@ export function ComponentDetailsPanel({
           <span key="files"><span className="font-medium tabular-nums text-foreground">{row.fileCount.toLocaleString()}</span> {row.fileCount === 1 ? "file" : "files"}</span>,
         ]
       : []),
-    ...(showChange && !usesStory ? [<span key="change" className="text-foreground">{changeText(mark, row.occurrenceCount)}</span>] : []),
+    ...(change ? [<span key="change" className="text-foreground">{change}</span>] : []),
     ...(otherRepos !== null && otherRepos > 0
       ? [
           <span key="repos">

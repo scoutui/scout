@@ -36,9 +36,9 @@ describe("deltaOf", () => {
 });
 
 describe("changeText", () => {
-  it.each<[string, DiffMark | undefined, number, string]>([
+  it.each<[string, DiffMark | undefined, number, string | null]>([
     ["a drop", { kind: "changed", delta: -4 }, 10, "−4 since previous scan"],
-    ["no change", undefined, 10, "No change since previous scan"],
+    ["no change, as nothing", undefined, 10, null],
     ["a new component", { kind: "added" }, 3, "New in this scan"],
   ])("words %s", (_title, mark, occurrenceCount, text) => {
     expect(changeText(mark, occurrenceCount)).toBe(text);

@@ -401,7 +401,7 @@ describe("ComponentsExplorer details", () => {
     explorer();
     fireEvent.click(rowButton("Same"));
     expect(screen.getByRole("complementary", { name: "Details for Same" })).toBeInTheDocument();
-    expect(screen.getByText("Same. 4 uses in 1 file. No change since previous scan.")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText("Same. 4 uses in 1 file.")).toHaveAttribute("aria-live", "polite");
   });
 
   it("says the selected row's change beside the table, except in the changed view, whose Change column says it", async () => {
