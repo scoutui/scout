@@ -18,7 +18,7 @@ export function MigrationLine({ status, replacementHref }: { status: MigrationSt
   const name = (
     <>
       <span className="grid min-w-0" style={{ flex: `0 1 calc(${packageName.length}ch + 1px)` }}>
-        <PackageName name={packageName} />
+        <PackageName name={packageName} mutedScope={false} />
       </span>
       {exportName ? <span className="shrink-0">/{exportName}</span> : null}
     </>

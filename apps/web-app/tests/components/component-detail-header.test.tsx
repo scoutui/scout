@@ -86,10 +86,11 @@ describe("ComponentDetailHeader", () => {
     expect(screen.getByText("Local")).toHaveAttribute("title", "Defined in this repo");
   });
 
-  it("names the replacement as plain text, linking neither to it nor to its Governance record", () => {
+  it("names the replacement as plain text in one colour, linking neither to it nor to its Governance record", () => {
     const superseded = makeDetail({ migrationStatus: { status: "superseded", by: { packageName: "@example/new-ui", exportName: "Button" } }, governedByRecordId: "g1" });
     render(<ComponentDetailHeader detail={superseded} />);
     expect(screen.getByText("Replaced by")).toBeInTheDocument();
+    expect(screen.getByText("@example")).not.toHaveClass("text-muted-foreground");
     expect(screen.getByTitle("@example/new-ui/Button").closest("a")).toBeNull();
     expect(screen.queryByRole("link", { name: /Replaced by|@example\/new-ui/ })).toBeNull();
     expect(document.querySelector("a[href^='/governance']")).toBeNull();
