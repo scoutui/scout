@@ -12,7 +12,7 @@ In this tutorial we'll upload a scan to the dashboard and walk through it. We'll
 - **The repo from [Scan your first repo](/docs/tutorials/scan-your-first-repo)**, with its dependencies and the CLI installed and its `scout.config.json` in place.
 - **That repo checked out on its default branch**, up to date with a remote we can push to, and with no uncommitted changes besides what the first tutorial added.
 - **A running dashboard that we can sign in to as an Editor or Admin.** [Run the dashboard locally](/docs/guides/run-the-dashboard-locally) sets one up at `http://localhost:3000` and signs us in to it in the browser.
-- **A browser window at least 1280 pixels wide**, such as a laptop screen at full width. On a narrower window, the repo page in step 3 can list each component's numbers under its name instead of in columns, and the component page in step 4 can fold its filters away above the list of files.
+- **A browser window at least 1280 pixels wide**, such as a laptop screen at full width. On a narrower window, the pages in steps 3 and 4 fold their columns, so they won't match what we describe.
 
 We'll keep following the `storefront` example from that tutorial. Its scan found:
 
@@ -81,7 +81,7 @@ The table has one row per component, sorted by **Uses**, highest first. A [use](
 - `Card`, from `@acme/ui`, and `LegacyButton`, from `@acme/ui-legacy`, with `1` each.
 - `ProductCard` with `1`, and `App` and `Checkout` with `0`. These show `—` under **Package**, because they are defined in the repo.
 
-Beside the table, the details of the first row, `Button`, are open, with `variant` under **Top props**. Clicking anywhere on a row except its name shows that component's details instead.
+Beside the table, the details of the first row, `Button`, are open. Clicking anywhere on another row except its name shows that component's details instead.
 
 ![The acme/storefront repo page on its Components tab, with the first scan status line and six components](/img/tutorial/repo-page.png)
 

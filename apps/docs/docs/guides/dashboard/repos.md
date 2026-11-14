@@ -43,7 +43,7 @@ To narrow the table:
 
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components in use. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
-- Press the **since previous scan** chip to show what was added, removed or changed. A **Change** column gives each component's change in uses, biggest drop first, such as `−3` or `+2`. A new component has an **Added** badge, and all its uses are its change, such as `+5`. A component that's gone stays in the list with a **Removed** badge and the uses it lost. A row whose uses didn't change shows `—` and always sorts last.
+- Press the **since previous scan** chip to show what was added, removed or changed, with a **Change** column of each component's change in uses, biggest drop first. New components carry an **Added** badge and removed ones a **Removed** badge.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
 **Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a package or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
@@ -60,21 +60,16 @@ The same name can appear on two rows when the repo imports a component through t
 
 Select anywhere on a row except the name to see that component's details beside the table:
 
-- Its package and framework, and if it's deprecated, its replacement or why it was retired. When the repo uses the replacement, select it: a replacement component opens its usage, and a whole replacement package filters the table to it.
+- If it's deprecated, its replacement or why it was retired. Select a replacement the repo uses to go to it.
 - **Used in N other repos**, which opens the component across every repo.
-- **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host at the scanned commit.
-- A chart of the last 3 months, or of every scan when fewer than two fall in that time. When its title has **ⓘ**, press it to see what the chart counts. It counts the whole repo, even while a **Used in** package is picked:
-  - A component with a replacement: its uses and the replacement's, with the same numbers as the **Adoption** tab, for example **16.1% migrated · 374 left**. A retired component: its uses left. Records that name the same replacement share one chart, which counts all of their components, and a record that covers a whole package counts the whole package. **Open chart** opens the chart for this repo. See [Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress).
-  - Any other component: its uses in each scan of this repo. A component that's renamed or moved to another file counts as a new component, so its line starts at that scan.
-  - A component new in this scan, or any component on a repo's first scan, has no history yet.
-- **Top props**: the three props set most often, how many uses set each, and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression. **N props never set** counts props the component declares that no use sets.
+- **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host.
+- A chart of its uses over the last 3 months. For a component with a replacement, it shows the migration with the **Adoption** tab's numbers, and **Open chart** opens the full chart ([Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress)). When the chart's title has **ⓘ**, press it to see what it counts.
+- **Top props**: the props set most often and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression.
 - **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
 
-In the table, **↑** and **↓** move between components and the details follow. **Enter** or **Space** opens the details, as selecting a row does. Selecting a row, with the mouse or a key, never closes them: press **×** in the details, or **Details** above the table, to hide them. To open the component's page from the keyboard, press **Tab** to move to its name, then **Enter**. The up and down arrow buttons in the details also move between components.
+**↑** and **↓** move between components, and so do the arrow buttons in the details. **Enter** or **Space** opens the details, and **×** or **Details** above the table hides them. To open a component's page from the keyboard, press **Tab** to reach its name, then **Enter**.
 
-In a window at least 1024 pixels wide, the details sit beside the table and open on the first component each time you open the page. In a narrower window, on a tablet or on a phone, select a row to open the same details in a sheet from the bottom of the screen. Swipe the sheet down, or press **×**, to close it.
-
-When the table is too narrow for its columns, each row shows its package, version, uses and files under the component's name instead. When the details sit beside the table, hide them to give it more room.
+In a narrower window or on a phone, the details open in a sheet from the bottom of the screen. Swipe it down or press **×** to close it.
 
 ### Share a filtered view
 
@@ -114,7 +109,7 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 Press **‹** and **›** beside the scan button to step to the previous or next scan. To jump further, press the scan button and pick a scan from the list. **All N scans** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-On an older scan, the scan button names it, for example **Scanned 7d ago**, and **Back to latest** appears beside it. The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. Prop values are kept for the latest scan only, so the details show **Top props are kept for the latest scan only.** instead of **Top props**. The details' chart ends at the scan you picked, with the counts from that scan, and leaves out a migration's or retirement's summary, which describes the latest scan. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
+On an older scan, the scan button names it, for example **Scanned 7d ago**, and **Back to latest** appears beside it. The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
 
 A link copied while you look at an older scan opens the same scan.
 
