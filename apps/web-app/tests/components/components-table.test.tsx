@@ -133,23 +133,25 @@ describe("ComponentsTable", () => {
     const named = (id: string, displayName: string, occurrenceCount: number): ComponentRow => ({ ...row, componentId: id, displayName, occurrenceCount });
     const rows = [named("a", "Alpha", 30), named("b", "Beta", 20), named("c", "Gamma", 10)];
     const gone = ghostRow({ componentId: "gone", displayName: "Gone", packageName: "@x/lib", scope: "external", kind: "react-component", occurrenceCount: 25, deprecated: false, tags: [] });
-    function Selecting({ given = rows, marks, onSelect, onToggleDetails }: { given?: ComponentRow[]; marks?: Record<string, DiffMark>; onSelect?: (id: string) => void; onToggleDetails?: () => void }) {
+    function Selecting({ given = rows, marks, onSelect }: { given?: ComponentRow[]; marks?: Record<string, DiffMark>; onSelect?: (id: string) => void }) {
       const [selectedId, setSelectedId] = useState<string | null>("a");
       return (
         <ComponentsTable repoId="r1" rows={given} marks={marks} changedView={false} selectedId={selectedId}
-          onSelect={(id) => { setSelectedId(id); onSelect?.(id); }} onToggleDetails={onToggleDetails} />
+          onSelect={(id) => { setSelectedId(id); onSelect?.(id); }} />
       );
     }
     const link = (name: string) => screen.getByRole("link", { name });
+    const button = (name: string) => screen.getByRole("button", { name: `Details for ${name}` });
 
-    it("selects a row clicked beside its name and marks its name current; a click on the name only follows the link", () => {
+    it("selects a row from its button, focusing it and marking it current; a click on the name only follows the link", () => {
       const onSelect = vi.fn();
       render(<Selecting onSelect={onSelect} />);
-      expect(link("Alpha")).toHaveAttribute("aria-current", "true");
-      fireEvent.click(within(link("Beta").closest("tr") as HTMLElement).getAllByRole("cell")[1] as HTMLElement);
+      expect(button("Alpha")).toHaveAttribute("aria-current", "true");
+      fireEvent.click(button("Beta"));
       expect(onSelect).toHaveBeenLastCalledWith("b");
-      expect(link("Beta")).toHaveAttribute("aria-current", "true");
-      expect(link("Alpha")).not.toHaveAttribute("aria-current");
+      expect(button("Beta")).toHaveAttribute("aria-current", "true");
+      expect(button("Beta")).toHaveFocus();
+      expect(button("Alpha")).not.toHaveAttribute("aria-current");
       const stay = (e: Event) => e.preventDefault();
       window.addEventListener("click", stay);
       fireEvent.click(link("Gamma"));
@@ -157,24 +159,18 @@ describe("ComponentsTable", () => {
       expect(onSelect).toHaveBeenCalledTimes(1);
     });
 
-    it("moves the selection and focus with ↓ and ↑, past a removed row, keeping one tab stop", () => {
+    it("moves the selection and focus between rows' buttons with ↓ and ↑, from a button or a name, past a removed row; the selected row's button, then its name, are the only tab stops", () => {
       render(<Selecting given={[...rows, gone]} marks={{ gone: { kind: "removed" } }} />);
-      link("Alpha").focus();
-      fireEvent.keyDown(link("Alpha"), { key: "ArrowDown" });
-      expect(link("Beta")).toHaveAttribute("aria-current", "true");
-      expect(link("Beta")).toHaveFocus();
+      button("Alpha").focus();
+      fireEvent.keyDown(button("Alpha"), { key: "ArrowDown" });
+      expect(button("Beta")).toHaveAttribute("aria-current", "true");
+      expect(button("Beta")).toHaveFocus();
       fireEvent.keyDown(link("Beta"), { key: "ArrowDown" });
-      expect(link("Gamma")).toHaveFocus();
+      expect(button("Gamma")).toHaveFocus();
       fireEvent.keyDown(link("Gamma"), { key: "ArrowUp" });
-      expect(link("Beta")).toHaveFocus();
-      expect(screen.getAllByRole("link").filter((a) => a.tabIndex === 0)).toEqual([link("Beta")]);
-    });
-
-    it("toggles details with Space on a row's name, without scrolling the page", () => {
-      const onToggleDetails = vi.fn();
-      render(<Selecting onToggleDetails={onToggleDetails} />);
-      expect(fireEvent.keyDown(link("Alpha"), { key: " " })).toBe(false);
-      expect(onToggleDetails).toHaveBeenCalledTimes(1);
+      expect(button("Beta")).toHaveFocus();
+      const tabStops = Array.from(document.querySelectorAll<HTMLElement>("tbody a, tbody button")).filter((el) => el.tabIndex === 0);
+      expect(tabStops).toEqual([button("Beta"), link("Beta")]);
     });
   });
 

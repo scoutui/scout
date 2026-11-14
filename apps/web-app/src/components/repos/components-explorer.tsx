@@ -236,8 +236,7 @@ export function ComponentsExplorer({
       size="sm"
       pressed={open}
       onPressedChange={setOpen}
-      aria-keyshortcuts="Space"
-      title="Show or hide details (Space)"
+      title="Show or hide details"
       className="shrink-0 gap-1.5 font-normal not-aria-pressed:border-border not-aria-pressed:bg-background max-sm:hidden dark:not-aria-pressed:border-input dark:not-aria-pressed:bg-input/30"
     >
       <PanelRight aria-hidden />
@@ -283,7 +282,6 @@ export function ComponentsExplorer({
           usedIn={facets.usedIn}
           selectedId={selected?.componentId ?? null}
           onSelect={select}
-          onToggleDetails={() => setOpen(!open)}
           packageChars={packageChars}
           nameChars={nameChars}
         />

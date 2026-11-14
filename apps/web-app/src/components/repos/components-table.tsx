@@ -88,14 +88,14 @@ export function useSortedRows(rows: ComponentRow[], marks: Record<string, DiffMa
 
 export type SortedRows = ReturnType<typeof useSortedRows>;
 
-/** How a row came to be selected: a click on it, or ↑↓ from the row before. */
+/** How a row came to be selected: its button, by a click, Enter or Space, or ↑↓ from the row before. */
 export type SelectHow = "click" | "key";
 
 /**
- * One row per component, keyed and linked by its component id. The table is
- * one tab stop, the selected row's name: ↑↓ move the selection, Enter follows
- * the name's link and Space toggles details. A click on a row outside its name
- * selects it.
+ * One row per component, keyed and linked by its component id. Each row has a
+ * button stretched over it, which selects the row, and a link on its name.
+ * The selected row's button and name are the table's tab stops, and ↑↓ move
+ * the selection and focus between rows' buttons.
  */
 export function ComponentsTable({
   repoId,
@@ -106,7 +106,6 @@ export function ComponentsTable({
   usedIn,
   selectedId,
   onSelect,
-  onToggleDetails,
   packageChars = longestPackageName(sort.sorted),
   nameChars = typicalNameLength(sort.sorted),
 }: {
@@ -124,7 +123,6 @@ export function ComponentsTable({
   usedIn?: string | null;
   selectedId?: string | null | undefined;
   onSelect?: ((componentId: string, how: SelectHow) => void) | undefined;
-  onToggleDetails?: (() => void) | undefined;
   /** The longest package name the Package column fits, in characters; the shown rows' longest when not given. */
   packageChars?: number | undefined;
   /** The name length the Component column makes room for, in characters; the shown rows' typical length when not given. */
@@ -154,8 +152,8 @@ export function ComponentsTable({
   const paddingTop = first ? first.start : 0;
   const paddingBottom = last ? totalSize - last.end : 0;
 
-  // The selected row's name is the tab stop; while it isn't rendered, the
-  // first rendered row's is.
+  // The selected row's button and name are the tab stops; while it isn't
+  // rendered, the first rendered row's are.
   const rendered = virtualRows.map((vr) => sorted[vr.index]).filter((row): row is ComponentRow => row !== undefined && selectable(row));
   const tabStop = rendered.some((row) => row.componentId === selectedId) ? selectedId : rendered[0]?.componentId;
 
@@ -166,38 +164,33 @@ export function ComponentsTable({
     if (selectedIndex >= 0) virtualizer.scrollToIndex(selectedIndex, { align: "auto" });
   }, [selectedIndex, virtualizer]);
 
-  // The row ↑↓ moved to takes focus once it renders.
+  // The button of the row ↑↓ moved to takes focus once it renders.
   const focusNext = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (focusNext.current === null) return;
-    const name = scrollRef.current?.querySelector<HTMLElement>(`[data-row-name="${CSS.escape(focusNext.current)}"]`);
-    if (!name) return;
+    const button = scrollRef.current?.querySelector<HTMLElement>(`[data-row-name="${CSS.escape(focusNext.current)}"]`);
+    if (!button) return;
     focusNext.current = null;
-    name.focus({ preventScroll: true });
+    button.focus({ preventScroll: true });
   });
 
+  // ↑↓ from a row's button or name.
   function onKeyDown(e: KeyboardEvent<HTMLTableSectionElement>) {
-    const id = (e.target as HTMLElement).closest("[data-row-name]")?.getAttribute("data-row-name");
-    if (id == null) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      const step = e.key === "ArrowDown" ? 1 : -1;
-      let index = sorted.findIndex((row) => row.componentId === id) + step;
-      while (sorted[index] && !selectable(sorted[index] as ComponentRow)) index += step;
-      const next = sorted[index];
-      if (!next) return;
-      focusNext.current = next.componentId;
-      onSelect?.(next.componentId, "key");
-    } else if (e.key === " ") {
-      e.preventDefault();
-      if (id !== selectedId) onSelect?.(id, "key");
-      onToggleDetails?.();
-    }
+    const id = (e.target as HTMLElement).closest("tr[data-row-id]")?.getAttribute("data-row-id");
+    if (id == null || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    e.preventDefault();
+    const step = e.key === "ArrowDown" ? 1 : -1;
+    let index = sorted.findIndex((row) => row.componentId === id) + step;
+    while (sorted[index] && !selectable(sorted[index] as ComponentRow)) index += step;
+    const next = sorted[index];
+    if (!next) return;
+    focusNext.current = next.componentId;
+    onSelect?.(next.componentId, "key");
   }
 
-  function onRowClick(e: MouseEvent<HTMLTableRowElement>, row: ComponentRow) {
-    if ((e.target as HTMLElement).closest("a")) return;
-    e.currentTarget.querySelector<HTMLElement>("[data-row-name]")?.focus({ preventScroll: true });
+  // A click, Enter or Space on a row's button focuses it and selects the row.
+  function onRowButtonClick(e: MouseEvent<HTMLButtonElement>, row: ComponentRow) {
+    e.currentTarget.focus({ preventScroll: true });
     onSelect?.(row.componentId, "click");
   }
 
@@ -250,15 +243,16 @@ export function ComponentsTable({
             <TableRow
               key={row.componentId}
               data-index={vr.index}
+              data-row-id={row.componentId}
               ref={virtualizer.measureElement}
-              onClick={(e) => onRowClick(e, row)}
-              className={cn("relative cursor-pointer", selected ? "selected" : "hover:bg-muted/50")}
+              className={cn("relative", selected ? "selected" : "hover:bg-muted/50")}
             >
               <RowCells
                 r={row}
                 href={linked ? componentHref(repoId, row.componentId, packageArea(row.usedIn, usedIn)) : undefined}
                 selected={selected}
                 tabStop={row.componentId === tabStop}
+                onButtonClick={(e) => onRowButtonClick(e, row)}
                 mark={mark}
                 showChange={marks !== undefined}
                 writtenAs={search ? writtenNameMatch(row, search) : undefined}
@@ -287,28 +281,31 @@ export function typicalNameLength(rows: readonly ComponentRow[]): number {
   return lengths[Math.ceil(lengths.length * 0.95) - 1] ?? 0;
 }
 
-/** The cells of one component: name and detail link, package, version, files, uses and, given, its change. */
-function RowCells({ r, href, selected, tabStop, mark, showChange, writtenAs }: { r: ComponentRow; href: string | undefined; selected: boolean; tabStop: boolean; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined }) {
+/** The cells of one component: its button, name and detail link, package, version, files, uses and, given, its change. */
+function RowCells({ r, href, selected, tabStop, onButtonClick, mark, showChange, writtenAs }: { r: ComponentRow; href: string | undefined; selected: boolean; tabStop: boolean; onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined }) {
   const deprecated = r.deprecated;
   const delta = deltaOf(mark, r.occurrenceCount);
-  // The name's ::after only draws the focus ring around the whole row: it
-  // takes no clicks, so a click beside the name selects the row.
-  const name = {
-    "data-row-name": r.componentId,
-    tabIndex: tabStop ? 0 : -1,
-    "aria-current": selected ? ("true" as const) : undefined,
-    title: deprecated ? `${r.displayName} (deprecated)` : r.displayName,
-    className: "truncate font-mono font-medium focus-row after:pointer-events-none after:absolute after:inset-0 after:content-['']",
-  };
+  const title = deprecated ? `${r.displayName} (deprecated)` : r.displayName;
 
   return (
     <>
       <TableCell className={NAME_CELL}>
+        {/* The row's button takes no space; its ::after covers the row, under the name's link. */}
+        <button
+          type="button"
+          data-row-name={r.componentId}
+          tabIndex={tabStop ? 0 : -1}
+          aria-current={selected ? "true" : undefined}
+          onClick={onButtonClick}
+          className="block size-0 focus-row after:absolute after:inset-0 after:content-['']"
+        >
+          <span className="sr-only">Details for {r.displayName}</span>
+        </button>
         <div className={NAME_ROW}>
           {href === undefined ? (
-            <span {...name}>{r.displayName}</span>
+            <span title={title} className="truncate font-mono font-medium">{r.displayName}</span>
           ) : (
-            <Link href={href} prefetch={false} {...name}>
+            <Link href={href} prefetch={false} tabIndex={tabStop ? 0 : -1} title={title} className="relative z-1 truncate font-mono font-medium underline-offset-3 hover:underline">
               {r.displayName}
             </Link>
           )}

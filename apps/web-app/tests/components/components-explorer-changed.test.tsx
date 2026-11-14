@@ -322,7 +322,7 @@ describe("ComponentsExplorer details", () => {
   });
   const explorer = () => render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
   const toggle = () => screen.getByRole("button", { name: "Details" });
-  const rowCell = (name: string) => within(screen.getByRole("table")).getByText(name).closest("tr")?.querySelectorAll("td")[1] as HTMLElement;
+  const rowButton = (name: string) => screen.getByRole("button", { name: `Details for ${name}` });
 
   it("from 1024px opens beside the table on the first row, and closes and opens again from the toggle and the close button", () => {
     viewport(1024);
@@ -338,14 +338,28 @@ describe("ComponentsExplorer details", () => {
     expect(spoken()).toBe("Details shown for Grew");
     fireEvent.click(screen.getByRole("button", { name: "Close details" }));
     expect(screen.queryByRole("complementary", { name: /^Details for/ })).toBeNull();
-    fireEvent.click(rowCell("Same"));
+    fireEvent.click(rowButton("Same"));
     expect(screen.getByRole("complementary", { name: "Details for Same" })).toBeInTheDocument();
+  });
+
+  it("opens the details from the selected row's button and never closes them from it, leaving Enter and Space to the browser's click", () => {
+    viewport(1024);
+    explorer();
+    const details = () => screen.queryByRole("complementary", { name: "Details for Grew" });
+    expect(fireEvent.keyDown(rowButton("Grew"), { key: "Enter" })).toBe(true);
+    expect(fireEvent.keyDown(rowButton("Grew"), { key: " " })).toBe(true);
+    expect(details()).toBeInTheDocument();
+    fireEvent.click(toggle());
+    fireEvent.click(rowButton("Grew"));
+    expect(details()).toBeInTheDocument();
+    fireEvent.click(rowButton("Grew"));
+    expect(details()).toBeInTheDocument();
   });
 
   it("shows a clicked row's details and says its facts to screen readers", () => {
     viewport(1440);
     explorer();
-    fireEvent.click(rowCell("Same"));
+    fireEvent.click(rowButton("Same"));
     expect(screen.getByRole("complementary", { name: "Details for Same" })).toBeInTheDocument();
     expect(screen.getByText("Same. 4 uses in 1 file. No change since previous scan.")).toHaveAttribute("aria-live", "polite");
   });
@@ -369,7 +383,7 @@ describe("ComponentsExplorer details", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     await act(() => vi.advanceTimersByTimeAsync(200));
     expect(reads).not.toHaveBeenCalled();
-    fireEvent.click(rowCell("Same"));
+    fireEvent.click(rowButton("Same"));
     expect(within(screen.getByRole("dialog", { name: "Details for Same" })).queryByRole("button", { name: "Next component" })).toBeNull();
   });
 

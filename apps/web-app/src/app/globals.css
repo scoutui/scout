@@ -174,7 +174,7 @@
   outline-offset: -2px;
 }
 
-/* Keyboard focus for a link stretched over its table row with ::after. */
+/* Keyboard focus for a link or button stretched over its table row with ::after. */
 @utility focus-row {
   &:focus-visible {
     outline: none;
