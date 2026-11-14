@@ -66,7 +66,9 @@ function usePanelReads(repoId: string, scanId: string, componentId: string | nul
             const others = detail.usages.filter((usage) => usage.repoId !== repoId).length;
             if (!controller.signal.aborted) setReads((r) => ({ ...r, otherRepos: new Map(r.otherRepos).set(componentId, others) }));
           })
-          .catch(() => {});
+          .catch(() => {
+            if (!controller.signal.aborted) setReads((r) => ({ ...r, otherRepos: new Map(r.otherRepos).set(componentId, 0) }));
+          });
       }
     }, SETTLE_MS);
     return () => {

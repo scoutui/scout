@@ -58,9 +58,9 @@ describe("ComponentDetailsPanel", () => {
     ["a component with twelve declared props never set", {}, { props: { kept: true, uses: 40, top: [], neverSet: 12 } }, () => {
       expect(screen.getByRole("link", { name: "12 props never set" })).toHaveAttribute("href", "/repos/r1/components/c1");
     }],
-    ["an older scan, whose prop values aren't kept, with no props section and no note", {}, { props: { kept: false } }, () => {
-      expect(screen.queryByText("Top props")).toBeNull();
-      expect(screen.queryByText(/latest scan/)).toBeNull();
+    ["an older scan, whose prop values aren't kept, with a note in place of the props", {}, { props: { kept: false } }, () => {
+      expect(screen.queryByRole("heading", { name: "Top props" })).toBeNull();
+      expect(screen.getByText("Top props are kept for the latest scan only.")).toBeInTheDocument();
     }],
     ["a component the latest scan doesn't have", { linked: false }, {}, () => {
       expect(screen.queryByRole("link", { name: /Open usage/ })).toBeNull();
@@ -79,6 +79,15 @@ describe("ComponentDetailsPanel", () => {
       expect(screen.queryByText((_, el) => el?.tagName === "SPAN" && el.textContent === "40 uses") !== null).toBe(repeated);
     },
   );
+
+  it("breaks the name only between words, and the package and path only after slashes", () => {
+    panel({ row: { ...row, displayName: "HTMLDataTable", packageName: "@example/ui", disambiguator: "src/components/data-table.tsx" } });
+    const breaks = (el: Element) => el.innerHTML.replaceAll("<wbr>", "|").replace(/<[^>]*>/g, "");
+    expect(breaks(screen.getByRole("heading", { level: 2, name: "HTMLDataTable" }))).toBe("HTML|Data|Table");
+    expect(screen.getByRole("link", { name: "HTMLDataTable" })).toBeInTheDocument();
+    expect(breaks(screen.getByText((_, el) => el?.textContent === "@example/ui"))).toBe("@example/|ui");
+    expect(breaks(screen.getByText((_, el) => el?.textContent === "src/components/data-table.tsx"))).toBe("src/|components/|data-table.tsx");
+  });
 
   it("links each prop value to usage filtered to it, reads {…} as an expression, and leaves the prop name plain", () => {
     panel({}, { props: { kept: true, uses: 40, top: [variant], neverSet: null } });
