@@ -73,6 +73,7 @@ A directive that only rides along on a name another class owns isn't counted eit
 - A component created in code rather than written in a template — a route's `loadComponent`, or `ViewContainerRef.createComponent()` — isn't counted.
 - Host bindings and `hostDirectives` aren't read.
 - Directives on `<ng-container>` and `<ng-template>`, such as `ngTemplateOutlet`, aren't counted.
+- A directive whose selector is a global HTML attribute, such as ngx-translate's `[translate]` or a custom `[autofocus]`, only counts when the element binds another of its inputs, so `<h1 translate>KEY</h1>` isn't counted but `<h1 translate [translateParams]="p">KEY</h1>` is.
 
 - A component from an installed library is matched only when the library is installed and ships Angular's compiled typings, which every library built with the Angular CLI does. The typings are found through the package's `exports` (its `types` condition, or the `.d.ts` file next to the JavaScript an entry points to, as TypeScript finds them) or its `types`/`typings` field. Scout reads its components, inputs and outputs from those typings, so `<mat-card>` and `<button mat-button>` count as Angular Material's `MatCard` and `MatButton`. A library's directives, such as `<mat-error>` or `matTooltip`, count as uses of the library, Angular's own included (`NgModel`, `RouterLink`). When several of a library's entry points export the same component, a use is credited to the entry point your file imports from.
 
