@@ -113,12 +113,26 @@ describe("RepoDetailHeader scan control", () => {
 });
 
 describe("RepoDetailHeader older scan", () => {
-  it("says which scan is shown and links back to the latest only on an older scan", () => {
+  it("tells screen readers which scan is shown, without a visible notice, only on an older scan", () => {
     const { rerender } = render(<RepoDetailHeader detail={makeDetail({ scanId: "S0" })} recentScans={scans} olderScan />);
-    expect(screen.getByRole("complementary", { name: "Older scan notice" })).toHaveTextContent(/^Viewing the scan from .+ ago\. Counts are from that scan\.Back to latest$/);
-    expect(screen.getByRole("link", { name: "Back to latest" })).toHaveAttribute("href", "/repos/elk-zone%2Felk");
+    const notice = screen.getByRole("complementary", { name: "Older scan notice" });
+    expect(notice).toHaveTextContent(/^Viewing the scan from .+ ago\. Counts are from that scan\.$/);
+    expect(notice).toHaveClass("sr-only");
     rerender(<RepoDetailHeader detail={makeDetail()} recentScans={scans} />);
     expect(screen.queryByRole("complementary", { name: "Older scan notice" })).toBeNull();
+  });
+
+  it("puts Back to latest before the scan control from sm up, and on its own line after the title row below sm, only on an older scan", () => {
+    const { rerender } = render(<RepoDetailHeader detail={makeDetail({ scanId: "S0", scanCount: 2 })} recentScans={scans} olderScan />);
+    const [wide, narrow] = screen.getAllByRole("link", { name: "Back to latest" });
+    for (const back of [wide, narrow]) expect(back).toHaveAttribute("href", "/repos/elk-zone%2Felk");
+    expect(wide).toHaveClass("max-sm:hidden");
+    expect(wide?.nextElementSibling).toContainElement(screen.getByRole("button", { name: /^Scanned/ }));
+    expect(narrow).toHaveClass("sm:hidden");
+    expect(narrow?.previousElementSibling).toContainElement(screen.getByRole("heading", { level: 1 }));
+    rerender(<RepoDetailHeader detail={makeDetail({ scanCount: 2 })} recentScans={scans} />);
+    expect(screen.getByRole("button", { name: /^Scanned/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Back to latest" })).toBeNull();
   });
 });
 

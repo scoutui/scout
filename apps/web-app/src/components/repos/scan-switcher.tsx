@@ -183,7 +183,7 @@ function Step({ label, scan, repoId, latestScanId, children }: {
 
 /** A missing step's width, outside the group at either end of the history, so the right-aligned trigger doesn't move. Not shown on a phone, where the control sits on the left edge. */
 function StepSpacer() {
-  return <span aria-hidden className="invisible hidden w-7 shrink-0 sm:block" />;
+  return <span aria-hidden className="invisible block w-7 shrink-0" />;
 }
 
 /** A scan's commit: linked to the forge when the remote is a known host

@@ -1,4 +1,4 @@
-/** Display logic for the scan switcher and the older-scan banner. */
+/** Display logic for the scan switcher and the older-scan notice. */
 
 /**
  * Href for a scan row. The latest scan links to the bare repo URL (canonical,
@@ -40,9 +40,9 @@ export function scanCountLabel(totalScanCount: number): string {
 
 /**
  * Whether the page is showing an explicitly requested scan that isn't the latest
- * (and should render the older-scan banner). `resolvedScanId` is the scan the
+ * (and should render the older-scan notice and Back to latest). `resolvedScanId` is the scan the
  * storage layer served; comparing the latest against it, not the raw query
- * param, keeps the banner off when the requested id is the latest.
+ * param, keeps them off when the requested id is the latest.
  */
 export function isOlderScan(
   requestedScanId: string | undefined,
