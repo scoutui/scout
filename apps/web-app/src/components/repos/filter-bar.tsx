@@ -2,7 +2,6 @@
 
 import { type ReactNode, useState } from "react";
 import { GitCompareArrows } from "lucide-react";
-import { plural } from "@scoutui/web-shared/client";
 import { Input } from "@/components/ui/input";
 import { movementParts } from "@/lib/scan-diff-view";
 import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
@@ -168,7 +167,7 @@ export function FilterBar({
         value: facets.text,
         onChange: (text) => onChange({ ...facets, text }),
         label: "Search components by name",
-        placeholder: `Search ${plural(total, "component")} by name…`,
+        placeholder: "Search components…",
       }}
       chips={
         <>

@@ -218,14 +218,14 @@ export function ComponentsTable({
           <TableHead style={{ width: `${WIDTH.version}rem` }} aria-sort={ariaSort("version", sortKey, sortDir)}>
             <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="text-right" style={{ width: `${WIDTH.files}rem` }} aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
+          <TableHead className="text-end" style={{ width: `${WIDTH.files}rem` }} aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
             <SortButton label="Files" sortKey="fileCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className={cn("text-right", !marks && "pr-3")} style={{ width: `${WIDTH.uses}rem` }} aria-sort={ariaSort("occurrenceCount", sortKey, sortDir)}>
+          <TableHead className={cn("text-end", !marks && "pe-3")} style={{ width: `${WIDTH.uses}rem` }} aria-sort={ariaSort("occurrenceCount", sortKey, sortDir)}>
             <SortButton label="Uses" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
           {marks ? (
-            <TableHead className="pr-3 text-right" style={{ width: `${WIDTH.change}rem` }} aria-sort={ariaSort("delta", sortKey, sortDir)}>
+            <TableHead className="pe-3 text-end" style={{ width: `${WIDTH.change}rem` }} aria-sort={ariaSort("delta", sortKey, sortDir)}>
               <SortButton label="Change" title="Change since previous scan" sortKey="delta" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
             </TableHead>
           ) : null}
