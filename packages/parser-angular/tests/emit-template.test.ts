@@ -93,6 +93,34 @@ describe("emitAngularTemplate: matching elements to components", () => {
     expect(emit(template).uses).toEqual([]);
   });
 
+  describe("a selector that requires an attribute's value", () => {
+    const submit: SelectorEntry = { source: { type: "file", graphKey: "src/submit.ts" }, exportName: "SubmitButtonComponent", inputs: [], outputs: [] };
+    const entries = [{ selector: "button[type=submit]", entry: submit }];
+    const symbols = (template: string, opts: Parameters<typeof emit>[1] = { entries }) =>
+      emit(template, opts).uses.map((u) => (u.kind === "jsx" ? u.symbol : u.tagName));
+
+    test("matches an element written with that value", () => {
+      expect(symbols(`<button type="submit"></button>`)).toEqual(["SubmitButtonComponent"]);
+    });
+
+    test("doesn't match another value, a bound attribute, or no value", () => {
+      expect(symbols(`<button type="reset"></button>`)).toEqual([]);
+      expect(symbols(`<button [type]="t"></button>`)).toEqual([]);
+      expect(symbols("<button type></button>")).toEqual([]);
+    });
+
+    test("leaves out the element a :not() with a value excludes, as Angular does", () => {
+      const text = { source: { type: "file" as const, graphKey: "src/text.ts" }, exportName: "TextAccessor", inputs: [], outputs: [] };
+      const check = { source: { type: "file" as const, graphKey: "src/check.ts" }, exportName: "CheckboxAccessor", inputs: [], outputs: [] };
+      const directives: DirectiveSelector[] = [
+        { selector: "input:not([type=checkbox])[appModel]", entry: text },
+        { selector: "input[type=checkbox][appModel]", entry: check },
+      ];
+      expect(symbols(`<input type="checkbox" appModel />`, { directives })).toEqual(["CheckboxAccessor"]);
+      expect(symbols(`<input type="text" appModel />`, { directives })).toEqual(["TextAccessor"]);
+    });
+  });
+
   test("keeps an unknown element as a tag use when only an attribute-only directive matches it", () => {
     const { uses } = emit('<ex-item exLink="/x">Go</ex-item>', { directives: ["[exLink]"] });
     expect(uses.map((u) => (u.kind === "tag" ? u.tagName : u.symbol))).toEqual(["ex-item"]);
