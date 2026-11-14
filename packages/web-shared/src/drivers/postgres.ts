@@ -191,9 +191,11 @@ export class PostgresDriver implements StorageDriver {
     });
   }
 
-  async getComponentDetailHead(repoId: string, componentId: string) {
+  async getComponentDetailHead(repoId: string, componentId: string, scanId?: string) {
     return this.read(async (reader, snapshot) => {
-      const scans = await reader.select(repoId, { latestOnly: true });
+      const scans = await reader.select(repoId, scanId ? { scanId } : { latestOnly: true });
+      const [scan] = scans;
+      if (scanId && (!scan || !scanModelReady(scan, true))) return null;
       const row = await reader.detail(scans, componentId);
       if (!row) return null;
       const fact = (await reader.facts(scans, ["attribution"], { componentId }))[0]?.components[0];

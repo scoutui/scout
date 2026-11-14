@@ -35,7 +35,7 @@ Press **See N gaps** to see each kind of problem: how many there are, the names 
 
 ## Find components in a repo
 
-The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it and its total **Uses**. Select a row to open the component's page for this repo.
+The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it, its total **Uses** and its **Change** since the previous scan: for example `+2`, `−3`, **New**, or `—` for no change. Select a component's name to open its page for this repo.
 
 ![The Components tab of vue-vben-admin filtered to the vue-ui-kits tag, with the deprecated chip and the Filter menu open on Package](/img/dashboard/repo-components-tab.png)
 
@@ -43,18 +43,32 @@ To narrow the table:
 
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components in use. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
-- Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
+- Press the **since previous scan** chip to show what was added, removed or changed, biggest drop first. A component that's gone stays in the list with a **Removed** badge.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
 **Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a package or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
 
 In a monorepo, **Used in** lists the repo's packages. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
 
-Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. You can pick one package at a time, and **since previous scan** isn't available while a package is picked. Scans from older CLI versions don't offer **Used in**: scan again with the latest CLI.
+Picking a package keeps only the components used in it. **Files** and **Uses** then count that package's files and uses, and the number of components and the **deprecated** chip count its components. You can pick one package at a time, and **since previous scan** and **Change** aren't available while a package is picked. Scans from older CLI versions don't offer **Used in**: scan again with the latest CLI.
 
 Each active filter shows as a pill you can remove, and **Clear all** removes them all.
 
 The same name can appear on two rows when the repo imports a component through two entry points, such as `@acme/ui` and `@acme/ui/button`. They are two components, and the subpath row shows `button` under the name.
+
+### See a component's details
+
+Select anywhere on a row except the name to see that component's details beside the table:
+
+- Its package and framework, and if it's deprecated, its replacement or why it was retired.
+- **Used in N other repos**, which opens the component across every repo.
+- **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host at the scanned commit.
+- **Top props**: the three props set most often, how many uses set each, and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression. **N props never set** counts props the component declares that no use sets.
+- **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
+
+In the table, **↑** and **↓** move between components and the details follow, **Enter** opens the component's page, and **Space** shows or hides the details. The up and down arrow buttons in the details also move between components, and **Details** above the table shows or hides them.
+
+On a wide screen the details open on the first component each time you open the page. On a mid-sized window, **Details** opens them in a drawer over the table. On a tablet, a phone or a narrower window, select a row to open the same details in a sheet from the bottom of the screen. Swipe the sheet down, or press **×**, to close it.
 
 ### Share a filtered view
 
@@ -94,7 +108,7 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 Press **‹** and **›** beside the scan button to step to the previous or next scan. To jump further, press the scan button and pick a scan from the list. **All N scans** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-On an older scan, a line above the name reads, for example, **Viewing the scan from 7d ago. Counts are from that scan.** The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
+On an older scan, a line above the name reads, for example, **Viewing the scan from 7d ago. Counts are from that scan.** The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. Prop values are kept for the latest scan only, so the details leave out **Top props**. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
 
 A link copied while you look at an older scan opens the same scan.
 

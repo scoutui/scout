@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OccurrencePropChip, OccurrenceRow, PropUsage } from "../src/dto.js";
-import { callJsx, cellTitle, copyListText, countText, DEFAULT_USAGE_SORT, emptyText, filterText, nextUsageSort, oneFolderText, pickGroups, propSections, togglePick, usageDue, usageIndex, usageView, valueColumns, valueLabel, valueSpeech, whereHeading, type CopyListInput, type UsageDue, type UsageFilters, type UsageInput, type UsagePick, type UsageSortKey, type UsageView } from "../src/usage-view.js";
+import { callJsx, cellTitle, copyListText, countText, DEFAULT_USAGE_SORT, emptyText, filterText, nextUsageSort, oneFolderText, pickGroups, propSections, togglePick, topProps, usageDue, usageIndex, usageView, valueColumns, valueLabel, valueSpeech, whereHeading, type CopyListInput, type UsageDue, type UsageFilters, type UsageInput, type UsagePick, type UsageSortKey, type UsageView } from "../src/usage-view.js";
 
 const lit = (name: string, value: string): OccurrencePropChip => ({ kind: "literal", name, value });
 const ref = (name: string, target: string): OccurrencePropChip => ({ kind: "reference", name, ref: target });
@@ -80,6 +80,32 @@ describe("usageView groups", () => {
   });
 });
 
+describe("topProps", () => {
+  it("picks the three most set props, leaving out styling, events, attributes, spreads and never-set declared props", () => {
+    const props = [
+      prop("variant", { omittedCount: 2 }), prop("size", { omittedCount: 5 }), prop("tone", { omittedCount: 5 }), prop("label", { omittedCount: 8 }),
+      prop("className"), prop("onClick"), prop("data-state"), prop("...rest"), prop("hidden", { status: "unused" }),
+    ];
+    const { top, neverSet } = topProps({ props, events: [{ name: "onClick", boundCount: 10 }], hasDeclaredApi: false }, 10);
+    expect(top.map(p => [p.name, p.set])).toEqual([["variant", 8], ["size", 5], ["tone", 5]]);
+    expect(neverSet).toBeNull();
+    expect(topProps({ props: props.map(p => ({ ...p, status: p.status ?? "used" })), events: [], hasDeclaredApi: true }, 10).neverSet).toBe(1);
+  });
+
+  it("counts written values that read the same once, and variables with expressions as one {…}, keeping the three most used", () => {
+    const tone = prop("tone", {
+      written: [{ value: "true", count: 2 }, { value: "red", count: 4 }, { value: "true", count: 3 }, { value: "blue", count: 1 }],
+      references: [{ ref: "tone", count: 2 }],
+      dynamicCount: 3,
+    });
+    expect(topProps({ props: [tone], events: [], hasDeclaredApi: false }, 15).top[0]?.values).toEqual([
+      { kind: "value", label: "true", count: 5 },
+      { kind: "dynamic", label: "", count: 5 },
+      { kind: "value", label: "red", count: 4 },
+    ]);
+  });
+});
+
 describe("usageView filters", () => {
   const sizes = input([call("a.tsx", 1, [lit("size", "large")]), call("a.tsx", 2, [lit("size", "small")]), call("a.tsx", 3, [lit("size", "medium")])]);
   const both = input([
@@ -91,6 +117,7 @@ describe("usageView filters", () => {
   it.each<[string, UsageInput, Partial<UsageFilters>, number]>([
     ["two values of one prop match either", sizes, { picks: [pick("size", "value", "large"), pick("size", "value", "small")] }, 2],
     ["picks on two props must both match", both, { picks: [pick("size", "value", "large"), pick("tone", "value", "red")] }, 1],
+    ["a value set picked in another order matches it, and no other set", input([call("a.tsx", 1, [lit("size", "9 | 12")]), call("a.tsx", 2, [lit("size", "9 | 16")])]), { picks: [pick("size", "value", "12 | 9")] }, 1],
     ["a not-set pick matches calls without the prop", input([call("a.tsx", 1, [lit("size", "large")]), call("a.tsx", 2)]), { picks: [pick("size", "unset")] }, 1],
     ["a {…} pick matches variables and expressions", input([call("a.tsx", 1, [ref("tone", "t")]), call("a.tsx", 2, [dyn("tone")]), call("a.tsx", 3, [lit("tone", "red")])]), { picks: [pick("tone", "dynamic")] }, 2],
     ["search matches the path", both, { find: "A.TSX" }, 3],

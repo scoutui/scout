@@ -69,6 +69,10 @@ describe("immutable read models", () => {
     const [fact] = facts;
     if (!fact) throw new Error("Missing fact");
     expect(reduceComponentRows(fact, "", governance).filter(row => row.deprecated).map(row => row.displayName)).toEqual([retired]);
+    expect(reduceComponentRows(fact, "", governance).map(row => [row.displayName, row.migration])).toEqual([
+      ["Button", retired === "Button" ? { status: { status: "retired", reason: "replaced" }, recordId: "retire" } : undefined],
+      ["Tree", retired === "Tree" ? { status: { status: "retired", reason: "replaced" }, recordId: "retire" } : undefined],
+    ]);
     expect(reduceRepoSummary(fact, { scanCount: 1, delta: null }, governance).deprecatedCount).toBe(inUse);
     expect(reducePackagesAcrossScans(facts, governance).find(row => row.packageName === "@example/ui")?.deprecatedCount).toBe(inUse);
     expect(reducePackageDetail(facts, "@example/ui", governance)?.deprecatedCount).toBe(inUse);

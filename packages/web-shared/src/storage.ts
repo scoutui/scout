@@ -102,7 +102,11 @@ export interface StorageDriver {
     scanId?: string,
   ): Promise<ComponentRow[]>;
 
-  getComponentDetailHead(repoId: string, componentId: string): Promise<ComponentDetailHead | null>;
+  /**
+   * One component's detail at the repo's latest scan, or at `scanId`. Null when the scan doesn't hold it, or when
+   * `scanId` is unknown or a scan whose details aren't kept (only the latest scan keeps them).
+   */
+  getComponentDetailHead(repoId: string, componentId: string, scanId?: string): Promise<ComponentDetailHead | null>;
   getComponentUsage(repoId: string, componentId: string): Promise<OccurrenceRow[]>;
   getCompositionGraph(repoId: string): Promise<CompositionGraph | null>;
 

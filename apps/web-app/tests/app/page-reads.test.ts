@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { componentKey } from "@scoutui/scan-format";
 import {
   PostgresDriver, PROJECTION_VERSION, type ComponentRow, type ComponentSummary, type CompositionGraph, type PackageDetail,
-  type PackageSummary, type RepoDetail, type RepoSummary, type ScanSummary, type StorageDriver,
+  type PackageSummary, type CrossRepoComponentDetail, type RepoDetail, type RepoSummary, type ScanSummary, type StorageDriver,
 } from "@scoutui/web-shared";
 import { component, packageExport, repoDeclaration } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
@@ -84,8 +84,8 @@ function propsFor(node: ReactNode, name: string): PageProps | undefined {
   }
 }
 
-async function seed(pool: Pool) {
-  for (const artifact of genericArtifacts()) await publishScan(pool, artifact, { uploadedByUserId: null });
+async function seed(pool: Pool, artifacts = genericArtifacts()) {
+  for (const artifact of artifacts) await publishScan(pool, artifact, { uploadedByUserId: null });
   await pool.query("UPDATE scans SET artifact = '{}'::json");
   driver = new PostgresDriver(pool);
   database = pool;
@@ -480,7 +480,11 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
 
   it("serves API data after closing each snapshot", async () => {
     await withReadModelDatabase(async pool => {
-      await seed(pool);
+      const artifacts = genericArtifacts();
+      const declared = artifacts[0]?.components.find(c => c.id === panel);
+      if (!declared) throw new Error("Missing Panel");
+      declared.definition = { line: 3, column: 1 };
+      await seed(pool, artifacts);
       const repos = await import("@/app/api/repos/route");
       const repo = await import("@/app/api/repos/[repoId]/route");
       const components = await import("@/app/api/components/route");
@@ -488,6 +492,8 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const history = await import("@/app/api/repos/[repoId]/scans/route");
       const packages = await import("@/app/api/packages/route");
       const pkg = await import("@/app/api/packages/[packageName]/route");
+      const details = await import("@/app/api/repos/[repoId]/components/[componentId]/route");
+      const crossRepo = await import("@/app/api/components/[componentId]/route");
       const request = (query = "") => new Request(`http://localhost/api${query}`);
       const recorder = recordQueries();
       const served = async (read: () => Promise<Response>) => {
@@ -520,6 +526,18 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(packageDetail.packageName).toBe("@sample/core");
       expect(packageDetail.cells.map(cell => cell.repoId)).toContain("repo-a");
       expect(packageDetail.components.map(row => row.componentId)).toContain(button);
+      const detailsOf = (componentId: string, scan: string) => () => details.GET(request(`?scan=${scan}`), { params: Promise.resolve({ repoId: "repo-a", componentId: encodeURIComponent(componentId) }) });
+      expect(await served(detailsOf(button, "scan-current"))).toEqual({
+        source: null,
+        props: { kept: true, uses: 1, top: [{ name: "size", set: 1, values: [{ kind: "value", label: "small", count: 1 }] }], neverSet: null },
+      });
+      expect(await served(detailsOf(panel, "scan-current"))).toMatchObject({ source: { filePath: "src/panel.tsx", line: 3 }, props: { kept: true, neverSet: 1 } });
+      expect(await served(detailsOf(panel, "scan-previous"))).toEqual({ source: { filePath: "src/panel.tsx", line: null }, props: { kept: false } });
+      const member = componentKey(packageExport("@sample/core", "Button.Icon"));
+      const across: CrossRepoComponentDetail = await served(() => crossRepo.GET(request(), { params: Promise.resolve({ componentId: member }) }));
+      expect(across.usages.map(usage => usage.repoId).sort()).toEqual(["repo-a", "repo-b"]);
+      expect((await details.GET(request("?scan=scan-missing"), componentParams)).status).toBe(404);
+      expect((await details.GET(request("?scan=scan-current"), { params: Promise.resolve({ repoId: "repo-a", componentId: "missing" }) })).status).toBe(404);
       expect(recorder.forbiddenRawQueries).toEqual([]);
       expect(recorder.componentHeadOccurrenceQueries).toEqual([]);
     });

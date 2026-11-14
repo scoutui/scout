@@ -87,7 +87,7 @@ We click the **Adoption** tab. It reads `No migrations or retirements tracked ye
 
 ## Step 4: Open a component and see where it's used
 
-We go back to the **Components** tab and click the `Button` row. The component page opens on its **Usage** tab, with `2` beside the tab's name. These are `Button`'s two uses.
+We go back to the **Components** tab and click `Button`'s name. The component page opens on its **Usage** tab, with `2` beside the tab's name. These are `Button`'s two uses.
 
 The tab has a column of filters on the left and the list of files on the right:
 

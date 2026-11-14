@@ -1,11 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
-import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
-import { scanDiffRowCount } from "@scoutui/web-shared/client";
-import { ghostRow } from "@/lib/scan-diff-view";
-import { ComponentsTable } from "@/components/repos/components-table";
+import { useEffect, useMemo, useState } from "react";
+import { PanelRight } from "lucide-react";
+import type { ComponentRow, CrossRepoComponentDetail, ScanDiff } from "@scoutui/web-shared";
+import { plural, scanDiffRowCount } from "@scoutui/web-shared/client";
+import { changeText, ghostRow } from "@/lib/scan-diff-view";
+import { ComponentsTable, longestPackageName, type SelectHow, useSortedRows } from "@/components/repos/components-table";
+import { ComponentDetailsPanel, type PanelFactsState, type PanelMode } from "@/components/repos/component-details-panel";
 import { FilterBar } from "@/components/repos/filter-bar";
+import { useMedia } from "@/components/component-detail/usage/usage-layout-hooks";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Toggle } from "@/components/ui/toggle";
+import type { ComponentPanelFacts } from "@/lib/component-panel";
+import type { SourceRef } from "@/lib/source-link";
+import { cn } from "@/lib/utils";
 import { useQueryParamsState } from "@/lib/use-query-synced-state";
 import {
   deprecatedInUse,
@@ -21,22 +29,91 @@ import {
   type FacetState,
 } from "@/lib/component-facets";
 
+/** Laptop widths and up: the details sit beside the table. */
+const WIDE = "(min-width: 80rem)";
+/** From here to laptop widths the details open in a drawer from the right; below it, in a bottom sheet. */
+const DRAWER = "(min-width: 64rem)";
+/** How long the selection rests before the panel reads its details, so holding ↓ doesn't read every row. */
+const SETTLE_MS = 150;
+
+type PanelReads = { facts: Map<string, PanelFactsState>; otherRepos: Map<string, number> };
+
+/**
+ * The selected component's details beyond its row, read once it has rested, while `active`: this repo's facts from the
+ * panel's route, and the other repos holding it from the cross-repo read, which reads every repo's latest scan and so
+ * never holds up the rest. Each is kept for the page's life.
+ */
+function usePanelReads(repoId: string, scanId: string, componentId: string | null, active: boolean) {
+  const [reads, setReads] = useState<PanelReads>({ facts: new Map(), otherRepos: new Map() });
+  const factsKey = `${scanId}:${componentId}`;
+  const needFacts = componentId !== null && !reads.facts.has(factsKey);
+  const needRepos = componentId !== null && !reads.otherRepos.has(componentId);
+  useEffect(() => {
+    if (!active || componentId === null || (!needFacts && !needRepos)) return;
+    const controller = new AbortController();
+    const json = async (url: string) => {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error(String(response.status));
+      return response.json();
+    };
+    const timer = setTimeout(() => {
+      if (needFacts) {
+        json(`/api/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}?scan=${encodeURIComponent(scanId)}`)
+          .then((facts: ComponentPanelFacts) => ({ state: "ready" as const, facts }), () => ({ state: "error" as const }))
+          .then((state) => { if (!controller.signal.aborted) setReads((r) => ({ ...r, facts: new Map(r.facts).set(factsKey, state) })); });
+      }
+      if (needRepos) {
+        json(`/api/components/${encodeURIComponent(componentId)}`)
+          .then((detail: CrossRepoComponentDetail) => {
+            const others = detail.usages.filter((usage) => usage.repoId !== repoId).length;
+            if (!controller.signal.aborted) setReads((r) => ({ ...r, otherRepos: new Map(r.otherRepos).set(componentId, others) }));
+          })
+          .catch(() => {});
+      }
+    }, SETTLE_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [repoId, scanId, componentId, active, factsKey, needFacts, needRepos]);
+  return {
+    facts: reads.facts.get(factsKey) ?? ({ state: "loading" } as const),
+    otherRepos: componentId === null ? null : (reads.otherRepos.get(componentId) ?? null),
+  };
+}
+
+/** What a screen reader hears when the selection changes: the name and the row's facts, never the whole panel. */
+function announcement(row: ComponentRow, change: string | null): string {
+  return [
+    row.displayName,
+    `${plural(row.occurrenceCount, "use")} in ${plural(row.fileCount, "file")}`,
+    ...(change ? [change] : []),
+    ...(row.deprecated ? ["Deprecated"] : []),
+  ].join(". ").concat(".");
+}
+
 /**
  * Client-side faceted explorer over the repo's full component set. The server
  * ships every row once and filtering runs here. Facet state lives in the URL
  * (via useQueryParamsState) and writes back with history.replaceState, so a
- * URL stays shareable.
+ * URL stays shareable. The selected row's details sit beside the table from
+ * laptop widths, open on every visit; below that they open in a drawer, and
+ * on tablets and phones in a bottom sheet.
  */
 export function ComponentsExplorer({
   repoId,
+  scanId,
   rows,
   notInLatest,
   deprecatedTotal,
   diff,
   packages,
+  source,
   canEdit,
 }: {
   repoId: string;
+  /** The shown scan. */
+  scanId: string;
   rows: ComponentRow[];
   /** Ids of the shown scan's components that the latest scan doesn't have. */
   notInLatest?: string[] | undefined;
@@ -45,6 +122,8 @@ export function ComponentsExplorer({
   diff: ScanDiff | null;
   /** The scan's packages, each with its folder. */
   packages: ReadonlyArray<{ name: string; folder: string }>;
+  /** The shown scan's remote and commit, for source links. */
+  source: SourceRef | null;
   canEdit: boolean;
 }) {
   const notInLatestIds = useMemo(() => new Set(notInLatest), [notInLatest]);
@@ -70,6 +149,8 @@ export function ComponentsExplorer({
   const options = useMemo(() => facetOptions(scoped, changedRows, facets), [scoped, changedRows, facets]);
   const usedIn = useMemo(() => usedInOptions(rows, facets), [rows, facets]);
   const filtered = useMemo(() => filterRows(candidates, facets), [candidates, facets]);
+  // The longest package name over every row the table can show, whatever the filters.
+  const packageChars = useMemo(() => longestPackageName([...rows, ...(diff?.removedRows.map(ghostRow) ?? [])]), [rows, diff]);
   const packageFolders = useMemo(() => new Map(packages.map((p) => [p.name, p.folder])), [packages]);
   // The changed view's toolbar breakdown, `12 of 29 changes · 2 removed ·
   // 10 changed`, counted from the shown rows' marks.
@@ -82,9 +163,90 @@ export function ComponentsExplorer({
     }
     return counts;
   }, [filtered, changedActive, diff]);
+  // The change since the previous scan is whole-scan, so it has no column
+  // while a Used in package scopes the counts, and none when there's nothing
+  // to compare.
+  const marks = facets.usedIn || diff === null || scanDiffRowCount(diff) === 0 ? undefined : diff.marks;
+  const sort = useSortedRows(filtered, marks, changedActive);
+
+  // The selection is a component id, so it survives sorting, filtering and
+  // the changed view; a row the filters remove hands it to the first row.
+  // Removed rows have no details, so they can't be selected.
+  const selectable = useMemo(() => sort.sorted.filter((r) => marks?.[r.componentId]?.kind !== "removed"), [sort.sorted, marks]);
+  const [chosenId, setChosenId] = useState<string | null>(null);
+  const selectedIndex = Math.max(0, selectable.findIndex((r) => r.componentId === chosenId));
+  const selected = selectable[selectedIndex] ?? null;
+
+  const wide = useMedia(WIDE, true);
+  const sheet = !useMedia(DRAWER, true);
+  const [inlineOpen, setInlineOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const mode: PanelMode = wide ? "column" : sheet ? "sheet" : "drawer";
+  const open = mode === "column" ? inlineOpen : mode === "drawer" ? drawerOpen : sheetOpen;
+  const setShown = mode === "column" ? setInlineOpen : mode === "drawer" ? setDrawerOpen : setSheetOpen;
+  const reads = usePanelReads(repoId, scanId, selected?.componentId ?? null, open);
+  // Before mount the column is assumed and CSS hides it below laptop widths;
+  // once the width is known it leaves the page there.
+  const column = mode === "column" && inlineOpen && selected !== null;
+  const [spoken, setSpoken] = useState("");
+
+  function select(id: string, how: SelectHow | "step") {
+    const row = selectable.find((r) => r.componentId === id);
+    if (!row) return;
+    setChosenId(id);
+    if (how === "click") setShown(true);
+    setSpoken(announcement(row, marks ? changeText(marks[id], row.occurrenceCount) : null));
+  }
+  /** Shows or hides the details and says so, since focus often stays in the table. */
+  function setOpen(next: boolean) {
+    if (next === open) return;
+    setShown(next);
+    setSpoken(next && selected ? `Details shown for ${selected.displayName}` : "Details hidden");
+  }
+  const step = (by: number) => {
+    const next = selectable[selectedIndex + by];
+    return next ? () => select(next.componentId, "step") : undefined;
+  };
+
+  const panel = (inMode: PanelMode) =>
+    selected ? (
+      <ComponentDetailsPanel
+        repoId={repoId}
+        row={selected}
+        linked={!notInLatestIds.has(selected.componentId)}
+        usedIn={facets.usedIn}
+        mark={marks?.[selected.componentId]}
+        showChange={marks !== undefined}
+        facts={reads.facts}
+        otherRepos={reads.otherRepos}
+        source={source}
+        mode={inMode}
+        canEdit={canEdit}
+        onPrevious={step(-1)}
+        onNext={step(1)}
+        onClose={() => setOpen(false)}
+      />
+    ) : null;
+
+  const detailsToggle = (
+    <Toggle
+      variant="outline"
+      size="sm"
+      pressed={open}
+      onPressedChange={setOpen}
+      aria-keyshortcuts="Space"
+      title="Show or hide details (Space)"
+      className="shrink-0 gap-1.5 font-normal not-aria-pressed:border-border not-aria-pressed:bg-background max-sm:hidden dark:not-aria-pressed:border-input dark:not-aria-pressed:bg-input/30"
+    >
+      <PanelRight aria-hidden />
+      Details
+    </Toggle>
+  );
 
   return (
-    <div className="panel overflow-hidden">
+    <div className={cn(column && "xl:grid xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start xl:gap-6")}>
+    <div className="panel min-w-0 overflow-hidden">
       <FilterBar
         facets={facets}
         onChange={setFacets}
@@ -97,6 +259,7 @@ export function ComponentsExplorer({
         diffShown={diffShown}
         filtering={isFiltering({ ...facets, changed: false, usedIn: null })}
         canEdit={canEdit}
+        actions={detailsToggle}
       />
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-3 py-12 text-center">
@@ -111,15 +274,43 @@ export function ComponentsExplorer({
         </div>
       ) : (
         <ComponentsTable
-          key={changedActive ? "changed" : "all"}
           repoId={repoId}
-          rows={filtered}
-          marks={changedActive && diff !== null ? diff.marks : undefined}
+          sort={sort}
+          marks={marks}
           notInLatest={notInLatestIds}
           search={facets.text}
           usedIn={facets.usedIn}
+          selectedId={selected?.componentId ?? null}
+          onSelect={select}
+          onToggleDetails={() => setOpen(!open)}
+          onEscape={mode === "drawer" ? () => setOpen(false) : undefined}
+          packageChars={packageChars}
         />
       )}
+    </div>
+      {column && selected ? (
+        <aside
+          aria-label={`Details for ${selected.displayName}`}
+          className="panel pin-under-top-bar hidden max-h-[calc(100dvh-var(--top-bar-height)-2rem)] overflow-y-auto p-5 [--pin-below:1rem] xl:block"
+        >
+          {panel("column")}
+        </aside>
+      ) : null}
+      {mode === "drawer" ? (
+        <Drawer open={drawerOpen} onOpenChange={setOpen} modal={false} disablePointerDismissal>
+          <DrawerContent side="right" initialFocus={false} finalFocus={false} aria-label={selected ? `Details for ${selected.displayName}` : "Details"} className="p-5">
+            {panel("drawer")}
+          </DrawerContent>
+        </Drawer>
+      ) : null}
+      {mode === "sheet" ? (
+        <Drawer open={sheetOpen} onOpenChange={setOpen} swipeDirection="down">
+          <DrawerContent side="bottom" aria-label={selected ? `Details for ${selected.displayName}` : "Details"} className="px-4 pt-3 pb-6">
+            {panel("sheet")}
+          </DrawerContent>
+        </Drawer>
+      ) : null}
+      <p aria-live="polite" className="sr-only">{spoken}</p>
     </div>
   );
 }

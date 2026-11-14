@@ -62,6 +62,7 @@ export function FacetedFilterBar({
   count,
   pills,
   onClearAll,
+  actions,
 }: {
   search: { value: string; onChange: (text: string) => void; label: string; placeholder: string };
   chips: React.ReactNode;
@@ -69,6 +70,8 @@ export function FacetedFilterBar({
   count: React.ReactNode;
   pills: FilterPill[];
   onClearAll: () => void;
+  /** Controls after the Filter menu that act on the view rather than filter it. */
+  actions?: React.ReactNode;
 }) {
   const allPills: FilterPill[] = search.value.trim()
     ? [{ key: "text", field: "name", value: search.value.trim(), mono: true, onRemove: () => search.onChange("") }, ...pills]
@@ -83,7 +86,7 @@ export function FacetedFilterBar({
           max-w-xs below xl because at 1024 only ~328px is left beside the
           controls and the changed view's count. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-0 grow basis-full sm:basis-0 sm:max-w-xs xl:max-w-md">
+        <div className="relative min-w-0 grow basis-full sm:min-w-48 sm:basis-0 sm:max-w-xs xl:max-w-md">
           <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           {/* pr-8 keeps the value clear of the absolutely-positioned clear
               button; without it a long term runs underneath the ×. */}
@@ -109,6 +112,8 @@ export function FacetedFilterBar({
         {chips}
 
         <FilterMenu facets={facets} />
+
+        {actions}
 
         {/* Below sm the count takes its own line; from sm up it sits at the
             right edge, so its width only changes the free gap. */}

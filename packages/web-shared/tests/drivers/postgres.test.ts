@@ -112,6 +112,18 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
     });
   });
 
+  it("serves a component head at the latest scan's id, and none at an older scan, whose details aren't kept, or an unknown one", async () => {
+    await withReadModelDatabase(async pool => {
+      const button = component(packageExport("@example/ui", "Button"));
+      await publishScan(pool, scanOf("kept", "2026-06-01T00:00:00.000Z", [[button, 1]], "scan-old"), { uploadedByUserId: null });
+      await publishScan(pool, scanOf("kept", "2026-06-02T00:00:00.000Z", [[button, 2]], "scan-new"), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      expect((await driver.getComponentDetailHead("kept", button.id, "scan-new"))?.summary.footprint.callCount).toBe(2);
+      expect(await driver.getComponentDetailHead("kept", button.id, "scan-old")).toBeNull();
+      expect(await driver.getComponentDetailHead("kept", button.id, "scan-missing")).toBeNull();
+    });
+  });
+
   const conflict = (candidates: Extract<TagAttribution, { status: "conflict" }>["candidates"]): TagAttribution => ({ status: "conflict", strongestClass: "declared", candidates, evidence: [] });
   const inRepo = (filePath: string) => ({ kind: "repository" as const, repoId: "claims", filePath, exportName: "Badge" });
   it.each([

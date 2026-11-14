@@ -147,7 +147,7 @@ export function UsageColumn({
 }
 
 /** A bar of a share of the calls. It shows at its length at once; only its dimming fades. */
-function Track({ share, dim = false, muted = false }: { share: number; dim?: boolean; muted?: boolean }) {
+export function Track({ share, dim = false, muted = false }: { share: number; dim?: boolean; muted?: boolean }) {
   const scale = share > 0 ? Math.min(1, Math.max(0.03, share)) : 0;
   return (
     <span aria-hidden className="relative h-1.5 overflow-hidden rounded-full bg-border/70">

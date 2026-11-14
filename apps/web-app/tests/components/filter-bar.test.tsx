@@ -460,7 +460,7 @@ describe("FilterBar result count in the changed view", () => {
   it("from sm up the search is capped and the count takes the free gap, so a count change cannot move the controls", () => {
     renderCount(filtered, { filtering: true, resultCount: 12 });
     const search = screen.getByRole("textbox", { name: "Search components by name" }).parentElement as HTMLElement;
-    expect(search.className).toBe("relative min-w-0 grow basis-full sm:basis-0 sm:max-w-xs xl:max-w-md");
+    expect(search.className).toBe("relative min-w-0 grow basis-full sm:min-w-48 sm:basis-0 sm:max-w-xs xl:max-w-md");
     expect(screen.getByText(sentence("12 of 29 changes · 2 removed · 10 changed")).className).toMatch(/(^|\s)sm:ml-auto(\s|$)/);
   });
 });

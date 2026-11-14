@@ -176,6 +176,41 @@ function propRows(input: UsageInput): UsagePropInfo[] {
   return rows.filter((r) => !isSpread(r.name)).sort((a, b) => setOf(b.name) - setOf(a.name) || a.name.localeCompare(b.name));
 }
 
+/** One of a prop's most used values across the scan: a written value, or `{…}` for its variables and expressions. */
+export type TopPropValue = { kind: "value" | "dynamic"; label: string; count: number };
+export type TopProp = { name: string; set: number; values: TopPropValue[] };
+
+const TOP = 3;
+
+/** A prop's values by calls, written values that read the same counted as one, then `{…}`; on a tie a written value comes first. */
+function topValues(p: PropUsage): TopPropValue[] {
+  const written = new Map<string, number>();
+  for (const w of p.written) written.set(w.value, (written.get(w.value) ?? 0) + w.count);
+  const values: TopPropValue[] = [...written].map(([label, count]) => ({ kind: "value", label, count }));
+  const dynamic = p.references.reduce((n, r) => n + r.count, 0) + p.dynamicCount;
+  if (dynamic > 0) values.push({ kind: "dynamic", label: "", count: dynamic });
+  return values
+    .sort((a, b) => b.count - a.count || (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === "value" ? -1 : 1))
+    .slice(0, TOP);
+}
+
+/**
+ * The component's three most set props, from its scan-wide prop counts over `uses` calls: props only (no styling,
+ * events, attributes or spreads), most set first, then by name, each with its three most used values. A prop is set on
+ * the calls that don't leave it out. `neverSet` counts the declared props no call sets, and is null when the scan
+ * knows no declared props.
+ */
+export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclaredApi">, uses: number): { top: TopProp[]; neverSet: number | null } {
+  const events = new Set(input.events.map((e) => e.name));
+  const top = input.props
+    .filter((p) => p.status !== "unused" && !isSpread(p.name) && groupOf(p.name, p.status, events, input.hasDeclaredApi) === "prop")
+    .map((p) => ({ name: p.name, set: uses - p.omittedCount, values: topValues(p) }))
+    .filter((p) => p.set > 0)
+    .sort((a, b) => b.set - a.set || a.name.localeCompare(b.name))
+    .slice(0, TOP);
+  return { top, neverSet: input.hasDeclaredApi ? input.props.filter((p) => p.status === "unused").length : null };
+}
+
 /** The leading directories every path shares. */
 function sharedDirs(paths: readonly string[]): string[] {
   const dirs = paths.map((p) => p.split("/").slice(0, -1));
@@ -248,8 +283,11 @@ function setValues(row: OccurrenceRow): Map<string, SetValue> {
   return values;
 }
 
-/** What tells values apart: a written value by its text, `{…}` and not set by kind. */
-const valueKey = (value: Pick<UsageValue, "kind" | "label">) => (value.kind === "value" ? `value:${value.label}` : value.kind);
+/** A written value's text with a value set's values (`9 | 12`) each once and in one order, so `12 | 9` reads the same. */
+const sameSetText = (label: string) => [...new Set(label.split(" | "))].sort().join(" | ");
+
+/** What tells values apart: a written value by its text, a value set's values in any order, `{…}` and not set by kind. */
+const valueKey = (value: Pick<UsageValue, "kind" | "label">) => (value.kind === "value" ? `value:${sameSetText(value.label)}` : value.kind);
 
 type PicksByProp = ReadonlyMap<string, ReadonlyMap<string, UsagePick>>;
 

@@ -28,6 +28,13 @@ export function deltaOf(mark: DiffMark | undefined, occurrenceCount: number): nu
   }
 }
 
+/** A component's change since the previous scan in words: `−4 since previous scan`, `No change since previous scan` or `New in this scan`. */
+export function changeText(mark: DiffMark | undefined, occurrenceCount: number): string {
+  if (mark?.kind === "added") return "New in this scan";
+  const delta = deltaOf(mark, occurrenceCount);
+  return delta === 0 ? "No change since previous scan" : `${signedCount(delta)} since previous scan`;
+}
+
 /** Ink for a signed occurrence Δ. A deprecated component (retired or superseded)
  *  takes its direction from `deltaDirection`: more occurrences is red,
  *  and fewer stays plain ink, since green beside the orange deprecated marker reads
