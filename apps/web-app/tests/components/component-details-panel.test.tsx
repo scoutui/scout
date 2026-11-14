@@ -56,7 +56,8 @@ describe("ComponentDetailsPanel", () => {
       expect(screen.queryByRole("link", { name: "@example/lab" })).toBeNull();
     }],
     ["a component with twelve declared props never set", {}, { props: { kept: true, uses: 40, top: [], neverSet: 12 } }, () => {
-      expect(screen.getByRole("link", { name: "12 props never set" })).toHaveAttribute("href", "/repos/r1/components/c1");
+      expect(screen.getByText("12 props never set")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "12 props never set" })).toBeNull();
     }],
     ["an older scan, whose prop values aren't kept, with a note in place of the props", {}, { props: { kept: false } }, () => {
       expect(screen.queryByRole("heading", { name: "Top props" })).toBeNull();

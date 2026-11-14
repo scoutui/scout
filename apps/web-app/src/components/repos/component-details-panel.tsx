@@ -175,7 +175,7 @@ export function ComponentDetailsPanel({
           </div>
         </div>
 
-        <TopProps repoId={repoId} row={row} linked={linked} usage={usage} facts={facts} />
+        <TopProps repoId={repoId} row={row} linked={linked} facts={facts} />
         <TopPackages repoId={repoId} row={row} linked={linked} />
       </div>
     </div>
@@ -215,7 +215,7 @@ function ListHead({ id, title, more }: { id: string; title: string; more?: strin
 }
 
 /** The three most set props with their most used values, each value linking to usage filtered to it. */
-function TopProps({ repoId, row, linked, usage, facts }: { repoId: string; row: ComponentRow; linked: boolean; usage: string; facts: PanelFactsState }) {
+function TopProps({ repoId, row, linked, facts }: { repoId: string; row: ComponentRow; linked: boolean; facts: PanelFactsState }) {
   if (facts.state === "error") return <p className="text-xs text-muted-foreground">Couldn't load some details.</p>;
   if (facts.state === "loading") {
     return (
@@ -265,13 +265,7 @@ function TopProps({ repoId, row, linked, usage, facts }: { repoId: string; row: 
       ) : null}
       {props.neverSet ? (
         <p className={cn("text-xs text-muted-foreground", props.top.length > 0 && "mt-3")}>
-          {linked ? (
-            <Link href={usage} className={LINK} title="Opens usage, which lists the declared props no use sets under Not set">
-              {plural(props.neverSet, "prop")} never set
-            </Link>
-          ) : (
-            `${plural(props.neverSet, "prop")} never set`
-          )}
+          {plural(props.neverSet, "prop")} never set
         </p>
       ) : null}
     </section>
