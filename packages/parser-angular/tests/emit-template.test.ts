@@ -361,6 +361,25 @@ describe("emitAngularTemplate: directives", () => {
       expect(names(uses)).toEqual(["MarkOneDirective", "MarkTwoDirective"]);
     });
 
+    test("never makes a directive the owner of a native HTML attribute, even one it takes as an input", () => {
+      const required = dir("RequiredValidator", ["required"]);
+      const email = dir("EmailValidator", ["email"]);
+      const directives: DirectiveSelector[] = [
+        { selector: "[ngModel]", entry: model },
+        { selector: ":not([type=checkbox])[required][ngModel]", entry: required },
+        { selector: "[email][ngModel]", entry: email },
+      ];
+      // `required` is the input's own; `email` is no HTML attribute, so EmailValidator still owns it.
+      expect(names(emit(`<input required email [(ngModel)]="v" />`, { directives }).uses).sort()).toEqual(["EmailValidator", "NgModel"]);
+    });
+
+    test("drops a directive whose only names are native attributes, unless the element binds another of its inputs", () => {
+      const textDir = dir("DirDirective", ["dir", "dirFallback"]);
+      const directives: DirectiveSelector[] = [{ selector: "[dir]", entry: textDir }];
+      expect(names(emit(`<div dir="rtl"></div>`, { directives }).uses)).toEqual([]);
+      expect(names(emit(`<div dir="rtl" dirFallback="ltr"></div>`, { directives }).uses)).toEqual(["DirDirective"]);
+    });
+
     test("counts a directive whose inputs aren't known", () => {
       const unknown: SelectorEntry = { source: { type: "package", specifier: "@example/ng-ui" }, exportName: "ExStatus" };
       const { uses } = emit(`<input [ngModel]="v" />`, {

@@ -14,6 +14,11 @@ export type AngularCompiler = {
     parse(selector: string): CssSelector[];
   };
   SelectorMatcher: new <T>() => SelectorMatcher<T>;
+  /** Angular's schema of the DOM: which elements exist, and the properties each has. */
+  DomElementSchemaRegistry: new () => {
+    allKnownElementNames(): string[];
+    allKnownAttributesOfElement(tagName: string): string[];
+  };
   /** Not every version exports this; absent on a copy too old to carry it. */
   VERSION?: { major: string };
 };

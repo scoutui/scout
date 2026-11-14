@@ -197,7 +197,8 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
 
     // Any number of directives apply to one element, each its own use, when it's written there rather than riding along.
     const bound = new Set(attributeNames);
-    for (const directive of owned(directivesOn(shape, tag, loc), matches.length === 1 ? match : undefined, bound)) addUse(directive);
+    const native = nativeAttributes(opts.compiler);
+    for (const directive of owned(directivesOn(shape, tag, loc), matches.length === 1 ? match : undefined, bound, native)) addUse(directive);
   };
 
   /**
@@ -227,14 +228,30 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
   for (const node of parsed.nodes) if (node !== null && typeof node === "object") visit(node as TmplNode);
 }
 
+const nativeByCompiler = new WeakMap<AngularCompiler, ReadonlySet<string>>();
+
+/** Every attribute some HTML element has natively (`required`, `maxlength`, `dir`), lowercased, from Angular's own DOM schema. */
+function nativeAttributes(compiler: AngularCompiler): ReadonlySet<string> {
+  let names = nativeByCompiler.get(compiler);
+  if (names === undefined) {
+    const schema = new compiler.DomElementSchemaRegistry();
+    const all = new Set<string>();
+    for (const element of schema.allKnownElementNames()) for (const name of schema.allKnownAttributesOfElement(element)) all.add(name.toLowerCase());
+    names = all;
+    nativeByCompiler.set(compiler, names);
+  }
+  return names;
+}
+
 /**
  * The directives an element counts as uses of, out of every one it matches. Each name the element writes (see
  * `ElementMatch.names`) belongs to the classes that take it as an input; failing that, to the component that matched
  * through it; failing that, to every directive that did. A directive counts when it owns one of its names, or when the
  * element binds one of its other inputs. So `NgModel` owns `ngModel` and counts, while `NgControlStatus`, which only
- * rides along on `ngModel`, doesn't. A directive whose inputs aren't known counts.
+ * rides along on `ngModel`, doesn't. A native HTML attribute never makes a directive its owner: `required` belongs to
+ * the element, so `RequiredValidator` rides along on it the same way. A directive whose inputs aren't known counts.
  */
-function owned(directives: readonly ElementMatch[], component: ElementMatch | undefined, bound: ReadonlySet<string>): ElementMatch[] {
+function owned(directives: readonly ElementMatch[], component: ElementMatch | undefined, bound: ReadonlySet<string>, native: ReadonlySet<string>): ElementMatch[] {
   const takesInput = (m: ElementMatch, name: string) => m.entry.inputs?.includes(name) === true;
   const ownerOf = (name: string): readonly ElementMatch[] => {
     const all = component === undefined ? directives : [component, ...directives];
@@ -246,7 +263,7 @@ function owned(directives: readonly ElementMatch[], component: ElementMatch | un
   return directives.filter((d) => {
     if (d.entry.inputs === undefined) return true;
     const names = d.names ?? new Set<string>();
-    if ([...names].some((name) => ownerOf(name).includes(d))) return true;
+    if ([...names].some((name) => !native.has(name.toLowerCase()) && ownerOf(name).includes(d))) return true;
     return d.entry.inputs.some((input) => !names.has(input) && bound.has(input));
   });
 }
