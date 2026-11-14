@@ -54,7 +54,7 @@ export function ComponentDetailsPanel({
   otherRepos,
   source,
   mode,
-  canEdit,
+  replacementHref,
   onPrevious,
   onNext,
   onClose,
@@ -73,7 +73,8 @@ export function ComponentDetailsPanel({
   otherRepos: number | null;
   source: SourceRef | null;
   mode: PanelMode;
-  canEdit: boolean;
+  /** The replacement's page, when this repo's latest scan holds the replacement. */
+  replacementHref?: string | undefined;
   /** Undefined at the first row. */
   onPrevious?: (() => void) | undefined;
   /** Undefined at the last row. */
@@ -148,7 +149,7 @@ export function ComponentDetailsPanel({
             <p className={cn("flex gap-x-4 gap-y-1 text-sm text-muted-foreground", mode === "column" ? "flex-col" : "flex-wrap")}>{factItems}</p>
           ) : null}
 
-          {row.migration ? <MigrationLine status={row.migration.status} recordId={canEdit ? row.migration.recordId : null} /> : null}
+          {row.migration ? <MigrationLine status={row.migration.status} replacementHref={replacementHref} /> : null}
 
           <div className="flex flex-wrap items-center gap-2">
             {linked ? (

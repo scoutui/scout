@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
 import type { ComponentPanelFacts } from "@/lib/component-panel";
+import { packageFilterHref } from "@/lib/component-facets";
 import type { SourceRef } from "@/lib/source-link";
 
 vi.mock("next/navigation", async () =>
@@ -443,6 +444,45 @@ describe("ComponentsExplorer details", () => {
     await act(() => vi.advanceTimersByTimeAsync(200));
     expect(requested().slice(2)).toEqual(["/api/repos/r1/components/fresh?scan=S2"]);
     expect(screen.getByRole("link", { name: "1 other repo" })).toHaveAttribute("href", "/components/grew");
+  });
+
+  const used = { occurrenceCount: 1, fileCount: 1 };
+  const replacementUsedIn = (...packages: string[]): ComponentRow[] =>
+    [{ ...base, componentId: "new", displayName: "New", usedIn: Object.fromEntries(packages.map((p) => [p, used])) }];
+  it.each<[string, string, ComponentRow[], string[], string, string | null]>([
+    ["links the replacement to its page when the repo has it", "Same", [], [], "", "/repos/r1/components/same"],
+    ["names the replacement as plain text when the repo doesn't have it", "Missing", [], [], "", null],
+    ["names the replacement as plain text when only an older scan has it", "Same", [], ["same"], "", null],
+    ["keeps the Used in package in the replacement's link when the replacement is used there", "New", replacementUsedIn("@x/web", "@x/admin"), [], "?used-in=@x/web", "/repos/r1/components/new?area=@x/web"],
+    ["leaves the Used in package out of the replacement's link when the replacement isn't used there", "New", replacementUsedIn("@x/admin", "@x/docs"), [], "?used-in=@x/web", "/repos/r1/components/new"],
+  ])("%s", (_title, exportName, more, notInLatest, search, href) => {
+    window.history.replaceState(null, "", `http://localhost:3000/repos/r1${search}`);
+    viewport(1024);
+    const replaced: ComponentRow = {
+      ...base, componentId: "old", displayName: "OldButton", occurrenceCount: 20, deprecated: true, usedIn: { "@x/web": { occurrenceCount: 20, fileCount: 2 } },
+      migration: { status: { status: "superseded", by: { packageName: "@x/lib", exportName } }, recordId: "g1" },
+    };
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[replaced, ...more, ...rows]} notInLatest={notInLatest} deprecatedTotal={1} diff={null} packages={[]} canEdit />);
+    const details = within(screen.getByRole("complementary", { name: "Details for OldButton" }));
+    const name = `@x/lib/${exportName}`;
+    if (href) expect(details.getByRole("link", { name })).toHaveAttribute("href", href);
+    else expect(details.getByTitle(name).closest("a")).toBeNull();
+  });
+
+  it.each<[string, string, boolean]>([
+    ["links a whole replacement package to the table filtered to it when the repo uses it", "@x/lib", true],
+    ["names a whole replacement package as plain text when the repo doesn't use it", "@x/none", false],
+  ])("%s", (_title, packageName, linked) => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1");
+    viewport(1024);
+    const replaced: ComponentRow = {
+      ...base, componentId: "old", packageName: "@x/old", displayName: "OldButton", occurrenceCount: 20, deprecated: true,
+      migration: { status: { status: "superseded", by: { packageName } }, recordId: "g1" },
+    };
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[replaced, ...rows]} deprecatedTotal={1} diff={null} packages={[]} canEdit />);
+    const details = within(screen.getByRole("complementary", { name: "Details for OldButton" }));
+    if (linked) expect(details.getByRole("link", { name: packageName })).toHaveAttribute("href", packageFilterHref("r1", packageName));
+    else expect(details.getByTitle(packageName).closest("a")).toBeNull();
   });
 
   /** Holds each details read until `land` answers it; the other repos read answers at once. */

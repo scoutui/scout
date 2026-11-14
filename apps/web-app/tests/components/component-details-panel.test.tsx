@@ -17,7 +17,7 @@ function panel(over: Partial<ComponentProps<typeof ComponentDetailsPanel>> = {},
   return render(
     <ComponentDetailsPanel
       repoId="r1" row={row} linked usedIn={null} mark={undefined} showChange={false}
-      facts={{ state: "ready", facts: { ...facts, ...given } }} otherRepos={0} source={null} mode="column" canEdit={false} onClose={() => {}}
+      facts={{ state: "ready", facts: { ...facts, ...given } }} otherRepos={0} source={null} mode="column" onClose={() => {}}
       {...over}
     />,
   );
@@ -30,11 +30,15 @@ describe("ComponentDetailsPanel", () => {
       row: { ...row, deprecated: true, migration: { status: { status: "superseded", by: { packageName: "@some-enterprise-organisation/next-generation-design-system", exportName: "Button" } }, recordId: "r" } },
     }, {}, () => {
       expect(screen.getByText("Deprecated")).toBeInTheDocument();
-      expect(screen.getByText("@some-enterprise-organisation/next-generation-design-system/Button")).toBeInTheDocument();
+      const replacement = screen.getByTitle("@some-enterprise-organisation/next-generation-design-system/Button");
+      expect(replacement.closest("p")).toHaveClass("text-sm");
+      expect(replacement.closest("p")?.firstChild).toHaveTextContent(/^Replaced by$/);
+      expect(replacement).toHaveClass("font-mono", "text-foreground");
+      expect(document.querySelector("a[href^='/governance']")).toBeNull();
     }],
     ["a retired component with a three-sentence reason", {
       row: { ...row, deprecated: true, migration: { status: { status: "retired", reason: "Use Tag instead. Badge duplicated Tag. Migrate before Q3." }, recordId: null } },
-    }, {}, () => expect(screen.getByText("Retired · Use Tag instead. Badge duplicated Tag. Migrate before Q3.")).toBeInTheDocument()],
+    }, {}, () => expect(screen.getByText("Retired: Use Tag instead. Badge duplicated Tag. Migrate before Q3.")).toBeInTheDocument()],
     ["a component from outside the repo", {}, { props: { kept: true, uses: 40, top: [variant], neverSet: null } }, () => {
       expect(screen.queryByRole("link", { name: /source/ })).toBeNull();
       expect(screen.queryByText(/never set/)).toBeNull();

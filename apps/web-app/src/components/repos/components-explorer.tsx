@@ -16,6 +16,7 @@ import type { ComponentPanelFacts } from "@/lib/component-panel";
 import type { SourceRef } from "@/lib/source-link";
 import { cn } from "@/lib/utils";
 import { useQueryParamsState } from "@/lib/use-query-synced-state";
+import { componentHref, packageArea } from "@/lib/usage-url";
 import {
   deprecatedInUse,
   emptyFacets,
@@ -24,6 +25,7 @@ import {
   facetsToParams,
   filterRows,
   isFiltering,
+  packageFilterHref,
   paramsToFacets,
   rowsUsedIn,
   usedInOptions,
@@ -196,6 +198,18 @@ export function ComponentsExplorer({
   const [chosenId, setChosenId] = useState<string | null>(null);
   const selectedIndex = Math.max(0, selectable.findIndex((r) => r.componentId === chosenId));
   const selected = selectable[selectedIndex] ?? null;
+  // The selected row's replacement, when the latest scan holds it: a replacement component's page, in the Used in
+  // package when the replacement is used there, or for a whole replacement package, the table filtered to it.
+  const replacementHref = useMemo(() => {
+    const status = selected?.migration?.status;
+    if (status?.status !== "superseded") return undefined;
+    const { packageName, exportName } = status.by;
+    const inLatest = (r: ComponentRow) => r.packageName === packageName && !notInLatestIds.has(r.componentId);
+    if (exportName === undefined) return rows.some(inLatest) ? packageFilterHref(repoId, packageName) : undefined;
+    const match = rows.find((r) => inLatest(r) && r.displayName === exportName);
+    if (!match) return undefined;
+    return componentHref(repoId, match.componentId, packageArea(match.usedIn, facets.usedIn && match.usedIn?.[facets.usedIn] ? facets.usedIn : null));
+  }, [selected, rows, notInLatestIds, repoId, facets.usedIn]);
 
   const wide = useMedia(WIDE, true);
   const [inlineOpen, setInlineOpen] = useState(true);
@@ -241,7 +255,7 @@ export function ComponentsExplorer({
         otherRepos={otherRepoCounts === null ? null : (otherRepoCounts[selected.componentId] ?? 0)}
         source={source}
         mode={inMode}
-        canEdit={canEdit}
+        replacementHref={replacementHref}
         onPrevious={step(-1)}
         onNext={step(1)}
         onClose={() => setOpen(false)}

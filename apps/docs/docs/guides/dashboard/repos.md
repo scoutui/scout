@@ -60,7 +60,7 @@ The same name can appear on two rows when the repo imports a component through t
 
 Select anywhere on a row except the name to see that component's details beside the table:
 
-- Its package and framework, and if it's deprecated, its replacement or why it was retired.
+- Its package and framework, and if it's deprecated, its replacement or why it was retired. When the repo uses the replacement, select it: a replacement component opens its usage, and a whole replacement package filters the table to it.
 - **Used in N other repos**, which opens the component across every repo.
 - **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host at the scanned commit.
 - **Top props**: the three props set most often, how many uses set each, and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression. **N props never set** counts props the component declares that no use sets.
