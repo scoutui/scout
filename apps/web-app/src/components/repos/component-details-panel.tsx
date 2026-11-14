@@ -17,8 +17,14 @@ import { type SourceRef, sourceFileUrl } from "@/lib/source-link";
 import { componentHref, packageArea, serializeSel } from "@/lib/usage-url";
 import { cn } from "@/lib/utils";
 
-/** The panel's read for the selected component: still loading, done, or failed. */
-export type PanelFactsState = { state: "loading" } | { state: "ready"; facts: ComponentPanelFacts } | { state: "error" };
+/** A finished read of a component's facts: the facts, or that the read failed. */
+export type PanelFactsResult = { state: "ready"; facts: ComponentPanelFacts } | { state: "error" };
+
+/**
+ * The panel's read for the selected component: its result, or while it loads, the last result the panel showed, which
+ * is another component's, and `slow` once the read has taken long enough to show a skeleton when there's none.
+ */
+export type PanelFactsState = PanelFactsResult | { state: "loading"; previous: PanelFactsResult | null; slow: boolean };
 
 /**
  * Where the panel sits: beside the table, or in a bottom sheet on tablets and phones, which has no previous and next
@@ -103,13 +109,7 @@ export function ComponentDetailsPanel({
     <div>
       <div className={cn("sticky z-10 flex items-start gap-2 bg-card pb-1.5", STICKY[mode])}>
         <h2 aria-label={row.displayName} className="min-w-0 flex-1 font-mono text-xl font-medium leading-tight text-balance wrap-anywhere">
-          {linked ? (
-            <Link href={usage} aria-label={row.displayName} className="rounded-sm underline-offset-4 hover:underline" title={`Opens ${row.displayName}'s usage page`}>
-              <WordBreaks text={row.displayName} />
-            </Link>
-          ) : (
-            <WordBreaks text={row.displayName} />
-          )}
+          <WordBreaks text={row.displayName} />
         </h2>
         <div className="-mt-0.5 flex shrink-0 items-center gap-1">
           {mode !== "sheet" ? (
@@ -214,12 +214,22 @@ function ListHead({ id, title, more }: { id: string; title: string; more?: strin
   );
 }
 
-/** The three most set props with their most used values, each value linking to usage filtered to it. */
+/**
+ * The three most set props with their most used values, each value linking to usage filtered to it. While they load,
+ * the last ones shown, faded and unlinked, or with none, a skeleton once the read is slow, its space held until then.
+ */
 function TopProps({ repoId, row, linked, facts }: { repoId: string; row: ComponentRow; linked: boolean; facts: PanelFactsState }) {
   if (facts.state === "error") return <p className="text-xs text-muted-foreground">Couldn't load some details.</p>;
+  if (facts.state === "loading" && facts.previous) {
+    return (
+      <div aria-busy="true" className="opacity-60">
+        <TopProps repoId={repoId} row={row} linked={false} facts={facts.previous} />
+      </div>
+    );
+  }
   if (facts.state === "loading") {
     return (
-      <div aria-hidden>
+      <div aria-hidden className={cn(!facts.slow && "invisible")}>
         <div className="mb-2 h-[0.825rem] w-20 rounded bg-muted" />
         <ul className="space-y-3">
           {["first", "second", "third"].map((key) => (

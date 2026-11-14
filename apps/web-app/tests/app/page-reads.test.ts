@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { componentKey } from "@scoutui/scan-format";
 import {
   PostgresDriver, PROJECTION_VERSION, type ComponentRow, type ComponentSummary, type CompositionGraph, type PackageDetail,
-  type PackageSummary, type CrossRepoComponentDetail, type RepoDetail, type RepoSummary, type ScanSummary, type StorageDriver,
+  type PackageSummary, type RepoDetail, type RepoSummary, type ScanSummary, type StorageDriver,
 } from "@scoutui/web-shared";
 import { component, packageExport, repoDeclaration } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { genericArtifacts } from "../../../../packages/web-shared/tests/helpers/fixtures.ts";
@@ -493,7 +493,7 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const packages = await import("@/app/api/packages/route");
       const pkg = await import("@/app/api/packages/[packageName]/route");
       const details = await import("@/app/api/repos/[repoId]/components/[componentId]/route");
-      const crossRepo = await import("@/app/api/components/[componentId]/route");
+      const otherRepos = await import("@/app/api/repos/[repoId]/components/other-repos/route");
       const request = (query = "") => new Request(`http://localhost/api${query}`);
       const recorder = recordQueries();
       const served = async (read: () => Promise<Response>) => {
@@ -534,8 +534,8 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(await served(detailsOf(panel, "scan-current"))).toMatchObject({ source: { filePath: "src/panel.tsx", line: 3 }, props: { kept: true, neverSet: 1 } });
       expect(await served(detailsOf(panel, "scan-previous"))).toEqual({ source: { filePath: "src/panel.tsx", line: null }, props: { kept: false } });
       const member = componentKey(packageExport("@sample/core", "Button.Icon"));
-      const across: CrossRepoComponentDetail = await served(() => crossRepo.GET(request(), { params: Promise.resolve({ componentId: member }) }));
-      expect(across.usages.map(usage => usage.repoId).sort()).toEqual(["repo-a", "repo-b"]);
+      const counts: Record<string, number> = await served(() => otherRepos.GET(request("?scan=scan-current"), repoParams));
+      expect(counts[member]).toBe(1);
       expect((await details.GET(request("?scan=scan-missing"), componentParams)).status).toBe(404);
       expect((await details.GET(request("?scan=scan-current"), { params: Promise.resolve({ repoId: "repo-a", componentId: "missing" }) })).status).toBe(404);
       expect(recorder.forbiddenRawQueries).toEqual([]);

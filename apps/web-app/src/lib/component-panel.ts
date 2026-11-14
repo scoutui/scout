@@ -2,7 +2,7 @@ import { presentIdentity, topProps, type StorageDriver, type TopProp } from "@sc
 
 /**
  * What the repo page's details panel reads for one component of one scan, beyond its table row. It reads only this
- * repo's scans; the other repos that use the component come from the cross-repo read, which reads every repo's.
+ * repo's scans; the other repos that use the component come from one read for the whole scan, which reads every repo's.
  */
 export type ComponentPanelFacts = {
   /** Where a component defined in the repo is declared; the line only where the scan keeps it. */

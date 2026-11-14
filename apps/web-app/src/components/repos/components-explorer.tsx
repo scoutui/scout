@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PanelRight } from "lucide-react";
-import type { ComponentRow, CrossRepoComponentDetail, ScanDiff } from "@scoutui/web-shared";
+import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
 import { plural, scanDiffRowCount } from "@scoutui/web-shared/client";
 import { changeText, ghostRow } from "@/lib/scan-diff-view";
 import { distinctPaths } from "@/lib/dashboard-format";
 import { ComponentsTable, longestPackageName, type SelectHow, typicalNameLength, useSortedRows } from "@/components/repos/components-table";
-import { ComponentDetailsPanel, type PanelFactsState, type PanelMode } from "@/components/repos/component-details-panel";
+import { ComponentDetailsPanel, type PanelFactsResult, type PanelFactsState, type PanelMode } from "@/components/repos/component-details-panel";
 import { FilterBar } from "@/components/repos/filter-bar";
 import { useMedia } from "@/components/component-detail/usage/usage-layout-hooks";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
@@ -34,53 +34,60 @@ import {
 const WIDE = "(min-width: 64rem)";
 /** How long the selection rests before the panel reads its details, so holding ↓ doesn't read every row. */
 const SETTLE_MS = 150;
-
-type PanelReads = { facts: Map<string, PanelFactsState>; otherRepos: Map<string, number> };
+/** How long the panel's read can take, with no earlier details to show meanwhile, before its skeleton shows. */
+const SKELETON_MS = 400;
 
 /**
- * The selected component's details beyond its row, read once it has rested, while `active`: this repo's facts from the
- * panel's route, and the other repos holding it from the cross-repo read, which reads every repo's latest scan and so
- * never holds up the rest. Each is kept for the page's life.
+ * The selected component's facts from the panel's route, read once it has rested, while `active`, and kept for the
+ * page's life. Until they land, the last result shown stands in, or with none, the skeleton once the read is slow.
  */
-function usePanelReads(repoId: string, scanId: string, componentId: string | null, active: boolean) {
-  const [reads, setReads] = useState<PanelReads>({ facts: new Map(), otherRepos: new Map() });
+function usePanelFacts(repoId: string, scanId: string, componentId: string | null, active: boolean): PanelFactsState {
+  const [results, setResults] = useState<Map<string, PanelFactsResult>>(new Map());
+  const [shown, setShown] = useState<PanelFactsResult | null>(null);
+  const [slowKey, setSlowKey] = useState<string | null>(null);
   const factsKey = `${scanId}:${componentId}`;
-  const needFacts = componentId !== null && !reads.facts.has(factsKey);
-  const needRepos = componentId !== null && !reads.otherRepos.has(componentId);
+  const current = componentId === null ? undefined : results.get(factsKey);
+  if (current !== undefined && current !== shown) setShown(current);
+  const needFacts = componentId !== null && current === undefined;
   useEffect(() => {
-    if (!active || componentId === null || (!needFacts && !needRepos)) return;
+    if (!active || componentId === null || !needFacts) return;
     const controller = new AbortController();
-    const json = async (url: string) => {
-      const response = await fetch(url, { signal: controller.signal });
-      if (!response.ok) throw new Error(String(response.status));
-      return response.json();
-    };
-    const timer = setTimeout(() => {
-      if (needFacts) {
-        json(`/api/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}?scan=${encodeURIComponent(scanId)}`)
-          .then((facts: ComponentPanelFacts) => ({ state: "ready" as const, facts }), () => ({ state: "error" as const }))
-          .then((state) => { if (!controller.signal.aborted) setReads((r) => ({ ...r, facts: new Map(r.facts).set(factsKey, state) })); });
-      }
-      if (needRepos) {
-        json(`/api/components/${encodeURIComponent(componentId)}`)
-          .then((detail: CrossRepoComponentDetail) => {
-            const others = detail.usages.filter((usage) => usage.repoId !== repoId).length;
-            if (!controller.signal.aborted) setReads((r) => ({ ...r, otherRepos: new Map(r.otherRepos).set(componentId, others) }));
-          })
-          .catch(() => {
-            if (!controller.signal.aborted) setReads((r) => ({ ...r, otherRepos: new Map(r.otherRepos).set(componentId, 0) }));
-          });
-      }
+    let slow: ReturnType<typeof setTimeout> | undefined;
+    const settle = setTimeout(() => {
+      slow = setTimeout(() => setSlowKey(factsKey), SKELETON_MS);
+      fetch(`/api/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}?scan=${encodeURIComponent(scanId)}`, { signal: controller.signal })
+        .then(async (response): Promise<PanelFactsResult> => {
+          if (!response.ok) throw new Error(String(response.status));
+          return { state: "ready", facts: (await response.json()) as ComponentPanelFacts };
+        })
+        .catch((): PanelFactsResult => ({ state: "error" }))
+        .then((result) => { if (!controller.signal.aborted) setResults((r) => new Map(r).set(factsKey, result)); });
     }, SETTLE_MS);
     return () => {
-      clearTimeout(timer);
+      clearTimeout(settle);
+      clearTimeout(slow);
       controller.abort();
     };
-  }, [repoId, scanId, componentId, active, factsKey, needFacts, needRepos]);
-  return {
-    facts: reads.facts.get(factsKey) ?? ({ state: "loading" } as const),
-    otherRepos: componentId === null ? null : (reads.otherRepos.get(componentId) ?? null),
-  };
+  }, [repoId, scanId, componentId, active, factsKey, needFacts]);
+  return current ?? { state: "loading", previous: shown, slow: slowKey === factsKey };
+}
+
+/**
+ * For each component of the shown scan, how many other repos' latest scans hold it, from one read when the page
+ * loads; null until it lands, and empty if it fails.
+ */
+function useOtherRepoCounts(repoId: string, scanId: string): Record<string, number> | null {
+  const key = `${repoId}\n${scanId}`;
+  const [read, setRead] = useState<{ key: string; counts: Record<string, number> } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/repos/${encodeURIComponent(repoId)}/components/other-repos?scan=${encodeURIComponent(scanId)}`, { signal: controller.signal })
+      .then(async (response): Promise<Record<string, number>> => (response.ok ? response.json() : {}))
+      .catch(() => ({}))
+      .then((counts) => { if (!controller.signal.aborted) setRead({ key: `${repoId}\n${scanId}`, counts }); });
+    return () => controller.abort();
+  }, [repoId, scanId]);
+  return read?.key === key ? read.counts : null;
 }
 
 /** What a screen reader hears when the selection changes: the name and the row's facts, never the whole panel. */
@@ -196,7 +203,8 @@ export function ComponentsExplorer({
   const mode: PanelMode = wide ? "column" : "sheet";
   const open = mode === "column" ? inlineOpen : sheetOpen;
   const setShown = mode === "column" ? setInlineOpen : setSheetOpen;
-  const reads = usePanelReads(repoId, scanId, selected?.componentId ?? null, open);
+  const facts = usePanelFacts(repoId, scanId, selected?.componentId ?? null, open);
+  const otherRepoCounts = useOtherRepoCounts(repoId, scanId);
   // Before mount the column is assumed and CSS hides it below 64rem; once the
   // width is known it leaves the page there.
   const column = mode === "column" && inlineOpen && selected !== null;
@@ -229,8 +237,8 @@ export function ComponentsExplorer({
         usedIn={facets.usedIn}
         mark={diffMarks?.[selected.componentId]}
         showChange={diffMarks !== undefined && (inMode === "sheet" || marks === undefined)}
-        facts={reads.facts}
-        otherRepos={reads.otherRepos}
+        facts={facts}
+        otherRepos={otherRepoCounts === null ? null : (otherRepoCounts[selected.componentId] ?? 0)}
         source={source}
         mode={inMode}
         canEdit={canEdit}

@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
+import type { ComponentPanelFacts } from "@/lib/component-panel";
+import type { SourceRef } from "@/lib/source-link";
 
 vi.mock("next/navigation", async () =>
   (await import("../helpers/search-params-mock")).searchParamsNavigationMock(),
@@ -342,9 +344,10 @@ describe("ComponentsExplorer details", () => {
       addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
     }) as MediaQueryList);
   }
-  const reads = vi.fn(async (url: string) => new Response(JSON.stringify(url.startsWith("/api/components/")
-    ? { usages: [{ repoId: "r1" }, { repoId: "r2" }] }
+  const reads = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
+    ? { grew: 1 }
     : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null } })));
+  const otherRepos = "/api/repos/r1/components/other-repos?scan=S2";
   beforeEach(() => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1");
     reads.mockClear();
@@ -355,7 +358,7 @@ describe("ComponentsExplorer details", () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
-  const explorer = () => render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
+  const explorer = (source: SourceRef | null = null) => render(<ComponentsExplorer repoId="r1" scanId="S2" source={source} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
   const toggle = () => screen.getByRole("button", { name: "Details" });
   const rowButton = (name: string) => screen.getByRole("button", { name: `Details for ${name}` });
 
@@ -410,25 +413,25 @@ describe("ComponentsExplorer details", () => {
     expect(within(details()).queryByText(/since previous scan|in this scan/)).toBeNull();
   });
 
-  it("below 1024px opens a bottom sheet from a row click, starting closed and reading nothing while closed", async () => {
+  it("below 1024px opens a bottom sheet from a row click, starting closed and reading no details while closed", async () => {
     vi.useFakeTimers();
     viewport(1023);
     explorer();
     expect(toggle()).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("dialog")).toBeNull();
     await act(() => vi.advanceTimersByTimeAsync(200));
-    expect(reads).not.toHaveBeenCalled();
+    expect(reads.mock.calls.map(([url]) => url)).toEqual([otherRepos]);
     fireEvent.click(rowButton("Same"));
     expect(within(screen.getByRole("dialog", { name: "Details for Same" })).queryByRole("button", { name: "Next component" })).toBeNull();
   });
 
-  it("reads a row's details once the selection rests, and again only for a row it hasn't read", async () => {
+  it("reads every row's other repos once, and a row's details once the selection rests, again only for a row it hasn't read", async () => {
     vi.useFakeTimers();
     viewport(1440);
     explorer();
     const requested = () => reads.mock.calls.map(([url]) => url);
     await act(() => vi.advanceTimersByTimeAsync(200));
-    expect(requested()).toEqual(["/api/repos/r1/components/grew?scan=S2", "/api/components/grew"]);
+    expect(requested()).toEqual([otherRepos, "/api/repos/r1/components/grew?scan=S2"]);
     const link = (name: string) => within(screen.getByRole("table")).getByRole("link", { name });
     fireEvent.keyDown(link("Grew"), { key: "ArrowDown" });
     await act(() => vi.advanceTimersByTimeAsync(50));
@@ -438,7 +441,59 @@ describe("ComponentsExplorer details", () => {
     await act(() => vi.advanceTimersByTimeAsync(50));
     fireEvent.keyDown(link("Same"), { key: "ArrowUp" });
     await act(() => vi.advanceTimersByTimeAsync(200));
-    expect(requested().slice(2)).toEqual(["/api/repos/r1/components/fresh?scan=S2", "/api/components/fresh"]);
+    expect(requested().slice(2)).toEqual(["/api/repos/r1/components/fresh?scan=S2"]);
     expect(screen.getByRole("link", { name: "1 other repo" })).toHaveAttribute("href", "/components/grew");
+  });
+
+  /** Holds each details read until `land` answers it; the other repos read answers at once. */
+  function heldReads() {
+    const held = new Map<string, (facts: ComponentPanelFacts) => void>();
+    vi.stubGlobal("fetch", vi.fn((url: string) => url === otherRepos
+      ? Promise.resolve(new Response("{}"))
+      : new Promise<Response>((resolve) => held.set(url, (facts) => resolve(new Response(JSON.stringify(facts)))))));
+    return async (id: string, facts: ComponentPanelFacts) => {
+      held.get(`/api/repos/r1/components/${id}?scan=S2`)?.(facts);
+      await act(() => vi.advanceTimersByTimeAsync(0));
+    };
+  }
+  const topProp = (name: string, label: string, count: number): ComponentPanelFacts => ({
+    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null },
+  });
+  const aside = () => screen.getByRole("complementary", { name: /^Details for/ });
+
+  it("keeps the last details, faded, busy and unlinked, until the next component's land", async () => {
+    vi.useFakeTimers();
+    viewport(1440);
+    const land = heldReads();
+    explorer({ remote: { host: "github.com", href: "https://github.com/example/app" } as never, commit: "abc" });
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    await land("grew", topProp("variant", "primary", 9));
+    expect(screen.getByRole("link", { name: "variant primary, 9 uses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Grew source" })).toBeInTheDocument();
+    fireEvent.keyDown(within(screen.getByRole("table")).getByRole("link", { name: "Grew" }), { key: "ArrowDown" });
+    expect(within(aside()).getByRole("heading", { level: 2, name: "Same" })).toBeInTheDocument();
+    const busy = () => aside().querySelector('[aria-busy="true"]');
+    expect(busy()).toHaveClass("opacity-60");
+    expect(within(busy() as HTMLElement).getByLabelText("variant primary, 9 uses").tagName).toBe("SPAN");
+    expect(screen.queryByRole("link", { name: /source/ })).toBeNull();
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    expect(busy()).toHaveTextContent("variant");
+    await land("same", topProp("size", "small", 4));
+    expect(busy()).toBeNull();
+    expect(screen.queryByLabelText("variant primary, 9 uses")).toBeNull();
+    expect(screen.getByRole("link", { name: "size small, 4 uses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Same source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc/src/size.tsx#L1");
+  });
+
+  it("holds the props' space while the first details load, and shows their skeleton only once the read is slow", async () => {
+    vi.useFakeTimers();
+    viewport(1440);
+    heldReads();
+    explorer();
+    const skeleton = () => within(aside()).getByRole("list", { hidden: true }).parentElement;
+    await act(() => vi.advanceTimersByTimeAsync(150 + 399));
+    expect(skeleton()).toHaveClass("invisible");
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(skeleton()).not.toHaveClass("invisible");
   });
 });

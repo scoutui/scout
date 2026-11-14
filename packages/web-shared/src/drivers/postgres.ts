@@ -255,6 +255,15 @@ export class PostgresDriver implements StorageDriver {
     });
   }
 
+  async getOtherRepoCounts(repoId: string, scanId: string) {
+    return this.read(async reader => {
+      const [shown] = await reader.select(repoId, { scanId });
+      if (!shown) return null;
+      const others = (await reader.select(undefined, { latestOnly: true, record: false })).filter(scan => scan.repo_id !== repoId);
+      return reader.countHolders(shown, others);
+    });
+  }
+
   // ---- Tags ----
 
   async listTags(): Promise<Tag[]> {

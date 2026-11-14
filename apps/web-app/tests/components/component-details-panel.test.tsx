@@ -81,11 +81,11 @@ describe("ComponentDetailsPanel", () => {
     },
   );
 
-  it("breaks the name only between words, and the package and path only after slashes", () => {
+  it("names the heading in plain text, not a link, breaking it only between words, and the package and path only after slashes", () => {
     panel({ row: { ...row, displayName: "HTMLDataTable", packageName: "@example/ui", disambiguator: "src/components/data-table.tsx" } });
     const breaks = (el: Element) => el.innerHTML.replaceAll("<wbr>", "|").replace(/<[^>]*>/g, "");
     expect(breaks(screen.getByRole("heading", { level: 2, name: "HTMLDataTable" }))).toBe("HTML|Data|Table");
-    expect(screen.getByRole("link", { name: "HTMLDataTable" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "HTMLDataTable" })).toBeNull();
     expect(breaks(screen.getByText((_, el) => el?.textContent === "@example/ui"))).toBe("@example/|ui");
     expect(breaks(screen.getByText((_, el) => el?.textContent === "src/components/data-table.tsx"))).toBe("src/|components/|data-table.tsx");
   });
@@ -115,7 +115,7 @@ describe("ComponentDetailsPanel", () => {
   });
 
   it("holds the props' place while they load, and says when they couldn't", () => {
-    const { unmount } = panel({ facts: { state: "loading" } });
+    const { unmount } = panel({ facts: { state: "loading", previous: null, slow: false } });
     expect(screen.queryByText("Top props")).toBeNull();
     expect(screen.getByRole("link", { name: /Open usage/ })).toBeInTheDocument();
     unmount();

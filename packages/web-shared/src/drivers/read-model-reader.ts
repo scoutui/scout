@@ -207,6 +207,19 @@ export class ReadModelReader {
     });
   }
 
+  /** For each component `scan` holds, how many of `others` hold it too; a component none of them hold is left out. */
+  async countHolders(scan: ScanSelection, others: ScanSelection[]): Promise<Record<string, number>> {
+    if (!others.length) return {};
+    const { rows } = await this.client.query<{ component_id: string; holders: number }>(`
+      SELECT other.component_id, COUNT(*)::int AS holders
+      FROM scan_component_facts other
+      WHERE other.scan_id = ANY($2::text[]) AND EXISTS (
+        SELECT 1 FROM scan_component_facts shown WHERE shown.scan_id = $1 AND shown.component_id = other.component_id)
+      GROUP BY other.component_id`,
+    [scan.scan_id, others.map(other => other.scan_id)]);
+    return Object.fromEntries(rows.map(row => [row.component_id, row.holders]));
+  }
+
   /** The facts of the components `scans` hold and no `latest` scan does, each from the newest scan holding it, grouped by that scan. */
   async lastHeldFacts<K extends keyof ComponentFact>(scans: ScanSelection[], latest: ScanSelection[], fields: readonly K[]): Promise<FactScan<Pick<ComponentFact, K>>[]> {
     if (!scans.length) return [];

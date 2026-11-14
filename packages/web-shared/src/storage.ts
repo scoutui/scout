@@ -113,6 +113,12 @@ export interface StorageDriver {
   /** Per-component detail aggregated across all scanned repos (latest scan each). Null when the id is absent. */
   getCrossRepoComponent(componentId: string): Promise<CrossRepoComponentDetail | null>;
 
+  /**
+   * For each component the repo's scan `scanId` holds, how many other repos' latest scans hold it, keyed by component
+   * id; a component no other repo holds is left out. Null when the repo has no scan `scanId`.
+   */
+  getOtherRepoCounts(repoId: string, scanId: string): Promise<Record<string, number> | null>;
+
   /** Aggregated package list, optionally scoped to one repo's latest scan. */
   listPackages(repoId?: string): Promise<PackageSummary[]>;
 

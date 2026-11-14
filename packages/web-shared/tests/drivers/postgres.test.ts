@@ -383,6 +383,24 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
     });
   });
 
+  it("counts, for each component of a repo's scan, the other repos whose latest scan holds it", async () => {
+    await withReadModelDatabase(async pool => {
+      const [button, card, panel] = ["Button", "Card", "Panel"].map(name => component(packageExport("@example/ui", name))) as [Component, Component, Component];
+      for (const [repoId, scanId, scannedAt, held] of [
+        ["repo-a", "a-old", "2026-06-01T00:00:00.000Z", [button, card]],
+        ["repo-a", "a-new", "2026-06-02T00:00:00.000Z", [button, panel]],
+        ["repo-b", "b-new", "2026-06-01T00:00:00.000Z", [button, card]],
+        ["repo-c", "c-old", "2026-06-01T00:00:00.000Z", [card, panel]],
+        ["repo-c", "c-new", "2026-06-02T00:00:00.000Z", [button]],
+      ] as const) await publishScan(pool, scanOf(repoId, scannedAt, held.map(c => [c, 1]), scanId), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      expect(await driver.getOtherRepoCounts("repo-a", "a-new")).toEqual({ [button.id]: 2 });
+      expect(await driver.getOtherRepoCounts("repo-a", "a-old")).toEqual({ [button.id]: 2, [card.id]: 1 });
+      expect(await driver.getOtherRepoCounts("repo-a", "b-new")).toBeNull();
+      expect(await driver.getOtherRepoCounts("repo-a", "missing")).toBeNull();
+    });
+  });
+
   it("marks a component deprecated and used across repos when any repo's scan does, whichever repo is read first", async () => {
     await withReadModelDatabase(async pool => {
       const scannedAt = "2026-06-01T00:00:00.000Z";
