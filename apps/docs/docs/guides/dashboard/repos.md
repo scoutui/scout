@@ -63,7 +63,7 @@ Select anywhere on a row except the name to see that component's details beside 
 - If it's deprecated, its replacement or why it was retired. Select a replacement the repo uses to go to it.
 - **Used in N other repos**, which opens the component across every repo.
 - **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host.
-- A chart of its uses over the last 3 months. For a component with a replacement, it shows the migration with the **Adoption** tab's numbers, and **Open chart** opens the full chart ([Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress)). When the chart's title has **ⓘ**, press it to see what it counts.
+- A chart of its uses over the last 3 months. For a deprecated component, it shows its migration or retirement with the **Adoption** tab's numbers, and **Open chart** opens the full chart ([Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress)). When the chart's title has **ⓘ**, press it to see what it counts.
 - **Top props**: the props set most often and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression.
 - **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
 
