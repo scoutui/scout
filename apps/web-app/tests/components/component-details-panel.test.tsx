@@ -120,7 +120,8 @@ describe("ComponentDetailsPanel", () => {
 
   it("names the heading in plain text, not a link, breaking it only between words, and the package and path only after slashes", () => {
     panel({ row: { ...row, displayName: "HTMLDataTable", packageName: "@example/ui", disambiguator: "src/components/data-table.tsx" } });
-    const breaks = (el: Element) => el.innerHTML.replaceAll("<wbr>", "|").replace(/<[^>]*>/g, "");
+    const breaks = (el: Node): string =>
+      [...el.childNodes].map((n) => (n.nodeName === "WBR" ? "|" : n.nodeType === Node.TEXT_NODE ? (n.textContent ?? "") : breaks(n))).join("");
     expect(breaks(screen.getByRole("heading", { level: 2, name: "HTMLDataTable" }))).toBe("HTML|Data|Table");
     expect(screen.queryByRole("link", { name: "HTMLDataTable" })).toBeNull();
     expect(breaks(screen.getByText((_, el) => el?.textContent === "@example/ui"))).toBe("@example/|ui");

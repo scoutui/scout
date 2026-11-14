@@ -14,6 +14,10 @@ if (typeof globalThis.MouseEvent !== "undefined" && typeof globalThis.PointerEve
 // offset* stub below.
 if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
+    callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
     observe() {}
     unobserve() {}
     disconnect() {}
