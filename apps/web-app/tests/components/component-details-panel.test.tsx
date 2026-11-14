@@ -18,7 +18,7 @@ function panel(over: Partial<ComponentProps<typeof ComponentDetailsPanel>> = {},
   return render(
     <ComponentDetailsPanel
       repoId="r1" row={row} linked usedIn={null} mark={undefined} showChange={false}
-      facts={{ state: "ready", facts: { ...facts, ...given } }} entry={null} olderScanAt={null} otherRepos={0} source={null} mode="column" onClose={() => {}}
+      facts={{ state: "ready", facts: { ...facts, ...given } }} previousUsesStory={false} entry={null} olderScanAt={null} otherRepos={0} source={null} mode="column" onClose={() => {}}
       {...over}
     />,
   );
@@ -209,13 +209,13 @@ describe("ComponentDetailsPanel", () => {
   });
 
   it("fades the last one-point story without its note while the next component's facts load", () => {
-    panel({ facts: { state: "loading", previous: { state: "ready", facts: { ...facts, history: [{ t: "2026-11-13T00:00:00.000Z", value: 9 }] } }, slow: false } });
+    panel({ facts: { state: "loading", previous: { state: "ready", facts: { ...facts, history: [{ t: "2026-11-13T00:00:00.000Z", value: 9 }] } }, previousId: "c0", slow: false }, previousUsesStory: true });
     expect(paragraph("9 uses in this scan").closest('[aria-busy="true"]')).toHaveClass("opacity-60");
     expect(screen.queryByText(/History starts/)).toBeNull();
   });
 
   it("holds the props' place while they load, and says when they couldn't", () => {
-    const { unmount } = panel({ facts: { state: "loading", previous: null, slow: false } });
+    const { unmount } = panel({ facts: { state: "loading", previous: null, previousId: null, slow: false } });
     expect(screen.queryByText("Top props")).toBeNull();
     expect(screen.getByRole("link", { name: /Open usage/ })).toBeInTheDocument();
     unmount();

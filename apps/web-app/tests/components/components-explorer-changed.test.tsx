@@ -553,8 +553,8 @@ describe("ComponentsExplorer details", () => {
     expect(skeleton()).not.toHaveClass("invisible");
   });
 
-  /** Renders a deprecated Card at `width` pixels, whose record shares its replacement with Button's and Badge's. */
-  function mergedMigration(width: number) {
+  /** Renders a deprecated Card at `width` pixels, whose record shares its replacement with Button's and Badge's, with any `more` rows. */
+  function mergedMigration(width: number, more: ComponentRow[] = []) {
     const used = (exportName: string, occurrenceCount: number, packageName = "@acme/old") =>
       component(packageExport(packageName, exportName), { stats: { occurrenceCount, fileCount: 1 }, usage: "direct" });
     const scans: DigestScan[] = ["2026-10-02", "2026-10-16", "2026-10-30", "2026-11-13"].map((d, i) => ({
@@ -571,8 +571,28 @@ describe("ComponentsExplorer details", () => {
       migration: { status: { status: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, recordId: "g-card" },
     };
     viewport(width);
-    render(<ComponentsExplorer repoId="r1" scanId="s3" source={null} rows={[card]} deprecatedTotal={1} diff={null} packages={[]} canEdit tracking={tracking} />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[card, ...more]} deprecatedTotal={1} diff={null} packages={[]} canEdit tracking={tracking} />);
   }
+
+  it("holds the story's place, keeping only the props faded, while an ordinary component's details load after a migration's", async () => {
+    vi.useFakeTimers();
+    const land = heldReads();
+    mergedMigration(1440, rows);
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    await land("card", topProp("variant", "primary", 27));
+    expect(within(aside()).getByRole("heading", { name: "Migration · 3 months" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "variant primary, 27 uses" })).toBeInTheDocument();
+    fireEvent.keyDown(within(screen.getByRole("table")).getByRole("link", { name: "Card" }), { key: "ArrowDown" });
+    expect(within(aside()).getByRole("heading", { level: 2, name: "Grew" })).toBeInTheDocument();
+    const busy = [...aside().querySelectorAll<HTMLElement>('[aria-busy="true"]')];
+    expect(busy).toHaveLength(1);
+    const props = busy[0] as HTMLElement;
+    expect(within(props).getByLabelText("variant primary, 27 uses").tagName).toBe("SPAN");
+    expect(within(aside()).queryByRole("img")).toBeNull();
+    // The story's placeholder sits just above the props'.
+    expect(props.previousElementSibling).toHaveAttribute("aria-hidden", "true");
+    expect(props.previousElementSibling).toHaveClass("invisible");
+  });
 
   it("tells the selected row the migration its record is merged into, named by how many components it moves", async () => {
     mergedMigration(1440);

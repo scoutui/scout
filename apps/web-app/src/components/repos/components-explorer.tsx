@@ -41,15 +41,16 @@ const SKELETON_MS = 400;
 
 /**
  * The selected component's facts from the panel's route, read once it has rested, while `active`, and kept for the
- * page's life. Until they land, the last result shown stands in, or with none, the skeleton once the read is slow.
+ * page's life. Until they land, the last result shown stands in with its component's id, or with none, the skeleton
+ * once the read is slow.
  */
 function usePanelFacts(repoId: string, scanId: string, componentId: string | null, active: boolean): PanelFactsState {
   const [results, setResults] = useState<Map<string, PanelFactsResult>>(new Map());
-  const [shown, setShown] = useState<PanelFactsResult | null>(null);
+  const [shown, setShown] = useState<{ componentId: string; result: PanelFactsResult } | null>(null);
   const [slowKey, setSlowKey] = useState<string | null>(null);
   const factsKey = `${scanId}:${componentId}`;
   const current = componentId === null ? undefined : results.get(factsKey);
-  if (current !== undefined && current !== shown) setShown(current);
+  if (componentId !== null && current !== undefined && current !== shown?.result) setShown({ componentId, result: current });
   const needFacts = componentId !== null && current === undefined;
   useEffect(() => {
     if (!active || componentId === null || !needFacts) return;
@@ -71,7 +72,7 @@ function usePanelFacts(repoId: string, scanId: string, componentId: string | nul
       controller.abort();
     };
   }, [repoId, scanId, componentId, active, factsKey, needFacts]);
-  return current ?? { state: "loading", previous: shown, slow: slowKey === factsKey };
+  return current ?? { state: "loading", previous: shown?.result ?? null, previousId: shown?.componentId ?? null, slow: slowKey === factsKey };
 }
 
 /**
@@ -225,8 +226,15 @@ export function ComponentsExplorer({
   const setShown = mode === "column" ? setInlineOpen : setSheetOpen;
   const facts = usePanelFacts(repoId, scanId, selected?.componentId ?? null, open);
   const otherRepoCounts = useOtherRepoCounts(repoId, scanId);
-  const recordId = selected?.migration?.recordId;
-  const entry = (recordId ? tracking?.find((e) => e.recordIds.includes(recordId)) : undefined) ?? null;
+  /** The stored tracking entry that charts a row's governing record in this repo, if any. */
+  const entryOf = (row: ComponentRow | null) => {
+    const recordId = row?.migration?.recordId;
+    return (recordId ? tracking?.find((e) => e.recordIds.includes(recordId)) : undefined) ?? null;
+  };
+  const entry = entryOf(selected);
+  // While the facts load, the row the last facts shown belong to, if this scan has it; with no tracking entry, its story was its uses.
+  const previousRow = facts.state === "loading" ? rows.find((r) => r.componentId === facts.previousId) : undefined;
+  const previousUsesStory = previousRow !== undefined && entryOf(previousRow) === null;
   // Before mount the column is assumed and CSS hides it below 64rem; once the
   // width is known it leaves the page there.
   const column = mode === "column" && inlineOpen && selected !== null;
@@ -260,6 +268,7 @@ export function ComponentsExplorer({
         mark={diff?.marks[selected.componentId]}
         showChange={diffMarks !== undefined && (inMode === "sheet" || marks === undefined)}
         facts={facts}
+        previousUsesStory={previousUsesStory}
         entry={entry}
         olderScanAt={olderScanAt}
         otherRepos={otherRepoCounts === null ? null : (otherRepoCounts[selected.componentId] ?? 0)}

@@ -47,7 +47,7 @@ const scaleY = (h: number, max: number) => (value: number) => h - 2 - (value / m
  * On an older scan each ends at that scan, and a migration or retirement leaves out its summary, which is the latest
  * scan's. While a uses story's facts load, the last one shown stays faded, or with none, its place is held.
  */
-export function ComponentStory({ repoId, row, mark, showChange, entry, facts, olderScanAt, usedIn }: {
+export function ComponentStory({ repoId, row, mark, showChange, entry, facts, previousUsesStory, olderScanAt, usedIn }: {
   repoId: string;
   row: ComponentRow;
   mark: DiffMark | undefined;
@@ -56,13 +56,15 @@ export function ComponentStory({ repoId, row, mark, showChange, entry, facts, ol
   /** The stored tracking entry that charts the row's governing record in this repo, if any. */
   entry: GovernanceTracking | null;
   facts: PanelFactsState;
+  /** While the facts load, the last facts shown drew a uses story. */
+  previousUsesStory: boolean;
   /** Where the shown scan sits in the repo's history when it isn't the latest; null on the latest. */
   olderScanAt: string | null;
   /** The Used in package the table is scoped to, if any; the story always counts the whole repo. */
   usedIn: string | null;
 }) {
-  /** While the next component's facts load, the last facts shown, whose uses story stays faded until they land. */
-  const previous = entry === null && facts.state === "loading" && facts.previous?.state === "ready" ? facts.previous.facts : null;
+  /** While the next component's facts load, the last facts shown when they drew a uses story, which stays faded until they land. */
+  const previous = entry === null && previousUsesStory && facts.state === "loading" && facts.previous?.state === "ready" ? facts.previous.facts : null;
   const history = facts.state === "ready" ? facts.facts.history : (previous?.history ?? null);
   const story = componentStory({ repoId, row, mark: previous ? undefined : mark, entry, history, olderScanAt });
   if (!story) return facts.state === "loading" ? <StoryPlaceholder slow={facts.slow} /> : null;

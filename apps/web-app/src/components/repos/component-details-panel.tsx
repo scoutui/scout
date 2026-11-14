@@ -23,9 +23,10 @@ export type PanelFactsResult = { state: "ready"; facts: ComponentPanelFacts } | 
 
 /**
  * The panel's read for the selected component: its result, or while it loads, the last result the panel showed, which
- * is another component's, and `slow` once the read has taken long enough to show a skeleton when there's none.
+ * is another component's, with that component's id, and `slow` once the read has taken long enough to show a skeleton
+ * when there's none.
  */
-export type PanelFactsState = PanelFactsResult | { state: "loading"; previous: PanelFactsResult | null; slow: boolean };
+export type PanelFactsState = PanelFactsResult | { state: "loading"; previous: PanelFactsResult | null; previousId: string | null; slow: boolean };
 
 /**
  * Where the panel sits: beside the table, or in a bottom sheet on tablets and phones, which has no previous and next
@@ -52,6 +53,7 @@ export function ComponentDetailsPanel({
   mark,
   showChange,
   facts,
+  previousUsesStory,
   entry,
   olderScanAt,
   otherRepos,
@@ -72,6 +74,8 @@ export function ComponentDetailsPanel({
   /** Says the row's change since the previous scan, from `mark`. */
   showChange: boolean;
   facts: PanelFactsState;
+  /** While the facts load, the last facts shown drew a uses story. */
+  previousUsesStory: boolean;
   /** The stored tracking entry that charts the row's governing record in this repo, if any. */
   entry: GovernanceTracking | null;
   /** Where the shown scan sits in the repo's history when it isn't the latest; null on the latest. */
@@ -185,7 +189,7 @@ export function ComponentDetailsPanel({
           </div>
         </div>
 
-        <ComponentStory repoId={repoId} row={row} mark={mark} showChange={showChange} entry={entry} facts={facts} olderScanAt={olderScanAt} usedIn={usedIn} />
+        <ComponentStory repoId={repoId} row={row} mark={mark} showChange={showChange} entry={entry} facts={facts} previousUsesStory={previousUsesStory} olderScanAt={olderScanAt} usedIn={usedIn} />
 
         <TopProps repoId={repoId} row={row} linked={linked} facts={facts} />
         <TopPackages repoId={repoId} row={row} linked={linked} />
