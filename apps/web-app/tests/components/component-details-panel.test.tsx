@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { deriveGovernanceTracking, type ComponentRow, type DigestScan, type GovernanceRecord } from "@scoutui/web-shared";
 import { component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
@@ -147,14 +147,22 @@ describe("ComponentDetailsPanel", () => {
     expect(paragraph("10.8% migrated · 370 left · 10 fewer in the last 30 days")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Button@acme/old370", "Button@acme/new45"]);
     expect(screen.getByRole("img")).toHaveAccessibleName("Button · @acme/old: 398 on 13 Aug, 370 on 13 Nov. Button · @acme/new: 0 on 13 Aug, 45 on 13 Nov.");
-    expect(screen.queryByText("Counts the whole", { exact: false })).toBeNull();
+    expect(screen.queryByRole("button", { name: "How this is counted" })).toBeNull();
   });
 
-  it("names a record that covers a whole package", () => {
+  it("names a record that covers a whole package behind an info button, which a press opens, a second press keeps open and Esc closes", async () => {
     panel({ row: { ...row, displayName: "Card" }, entry: entry("g-old") });
     expect(screen.getByRole("heading", { name: "Retirement · 3 months" })).toBeInTheDocument();
     expect(paragraph("420 left · 10 fewer in the last 30 days")).toBeInTheDocument();
-    expect(paragraph("Counts the whole @acme/old package.")).toBeInTheDocument();
+    const info = screen.getByRole("button", { name: "How this is counted" });
+    expect(screen.queryByText("Counts the whole", { exact: false })).toBeNull();
+    fireEvent.click(info);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Counts the whole @acme/old package.");
+    fireEvent.click(info);
+    expect(info).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(info, { key: "Escape" });
+    await act(async () => {});
+    expect(info).toHaveAttribute("aria-expanded", "false");
   });
 
   it("ends a migration at an older scan, with that scan's counts and without the latest scan's summary", () => {
@@ -169,12 +177,13 @@ describe("ComponentDetailsPanel", () => {
     expect(paragraph("32 to 40 uses")).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAccessibleName("Uses of Button: 32 on 13 Aug, 40 on 13 Nov.");
     expect(screen.queryByRole("link", { name: "Open chart" })).toBeNull();
-    expect(screen.queryByText(/Counts the whole repo/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "How this is counted" })).toBeNull();
   });
 
-  it("says the story counts the whole repo while a Used in package is picked", () => {
+  it("says the story counts the whole repo while a Used in package is picked, when its info button gets keyboard focus", async () => {
     panel({ usedIn: "@example/web" }, { history: [{ t: "2026-10-01T00:00:00.000Z", value: 3 }, { t: "2026-11-01T00:00:00.000Z", value: 4 }] });
-    expect(paragraph("Counts the whole repo, not just @example/web.")).toBeInTheDocument();
+    act(() => screen.getByRole("button", { name: "How this is counted" }).focus());
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Counts the whole repo, not just @example/web.");
   });
 
   it("holds the props' place while they load, and says when they couldn't", () => {

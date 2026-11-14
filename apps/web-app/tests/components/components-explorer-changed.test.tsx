@@ -538,7 +538,8 @@ describe("ComponentsExplorer details", () => {
     expect(skeleton()).not.toHaveClass("invisible");
   });
 
-  it("tells the selected row the migration its record is merged into, named by how many components it moves", () => {
+  /** Renders a deprecated Card at `width` pixels, whose record shares its replacement with Button's and Badge's. */
+  function mergedMigration(width: number) {
     const used = (exportName: string, occurrenceCount: number, packageName = "@acme/old") =>
       component(packageExport(packageName, exportName), { stats: { occurrenceCount, fileCount: 1 }, usage: "direct" });
     const scans: DigestScan[] = ["2026-10-02", "2026-10-16", "2026-10-30", "2026-11-13"].map((d, i) => ({
@@ -554,10 +555,28 @@ describe("ComponentsExplorer details", () => {
       ...base, componentId: "card", packageName: "@acme/old", displayName: "Card", occurrenceCount: 27, deprecated: true,
       migration: { status: { status: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, recordId: "g-card" },
     };
-    viewport(1440);
+    viewport(width);
     render(<ComponentsExplorer repoId="r1" scanId="s3" source={null} rows={[card]} deprecatedTotal={1} diff={null} packages={[]} canEdit tracking={tracking} />);
+  }
+
+  it("tells the selected row the migration its record is merged into, named by how many components it moves", async () => {
+    mergedMigration(1440);
     expect(screen.getAllByRole("listitem")[0]?.textContent).toMatch(/^3 components@acme\/old/);
-    expect(screen.getByText("Counts the 3 components that share this replacement.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "How this is counted" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Counts the 3 components that share this replacement.");
+  });
+
+  it("in the sheet, closes only the info note on Esc, with focus elsewhere in the sheet", async () => {
+    mergedMigration(1023);
+    fireEvent.click(rowButton("Card"));
+    const sheet = await screen.findByRole("dialog", { name: "Details for Card" });
+    const info = within(sheet).getByRole("button", { name: "How this is counted" });
+    fireEvent.click(info);
+    await screen.findByRole("tooltip");
+    fireEvent.keyDown(sheet, { key: "Escape" });
+    await act(async () => {});
+    expect(info).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("dialog", { name: "Details for Card" })).toBeInTheDocument();
   });
 
   it("still tells a component new in this scan while a Used in package is picked", async () => {

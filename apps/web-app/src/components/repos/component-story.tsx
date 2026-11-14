@@ -1,9 +1,12 @@
 "use client";
+import { Info } from "lucide-react";
 import Link from "next/link";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { CohortSeries, ComponentRow, DiffMark, GovernanceTracking } from "@scoutui/web-shared";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
 import { TrackingReadout } from "@/components/dashboards/tracking-rows";
 import type { PanelFactsState } from "@/components/repos/component-details-panel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { componentStory, type ComponentStory as Story } from "@/lib/component-story";
 import { lineColors } from "@/lib/dashboard-chart-data";
 import { formatDayTick } from "@/lib/dashboard-format";
@@ -51,9 +54,26 @@ export function ComponentStory({ repoId, row, mark, entry, facts, olderScanAt, u
   return (
     <section aria-labelledby="details-story" className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 id="details-story" className="text-label text-muted-foreground">
-          {TITLE[story.kind]} · {span}
-        </h3>
+        <div className="flex min-w-0 items-center gap-1">
+          <h3 id="details-story" className="text-label text-muted-foreground">
+            {TITLE[story.kind]} · {span}
+          </h3>
+          {usedIn || story.wholePackages.length > 0 || story.components !== null ? (
+            <HowCounted>
+              {usedIn ? (
+                <p>
+                  Counts the whole repo, not just <span className="font-mono wrap-anywhere">{usedIn}</span>.
+                </p>
+              ) : null}
+              {story.wholePackages.map((packageName) => (
+                <p key={packageName}>
+                  Counts the whole <span className="font-mono wrap-anywhere">{packageName}</span> package.
+                </p>
+              ))}
+              {story.components !== null ? <p>Counts the {story.components} components that share this replacement.</p> : null}
+            </HowCounted>
+          ) : null}
+        </div>
         {story.href ? (
           <Link
             href={story.href}
@@ -65,17 +85,6 @@ export function ComponentStory({ repoId, row, mark, entry, facts, olderScanAt, u
         ) : null}
       </div>
       {story.entry ? (olderScanAt === null ? <TrackingReadout entry={story.entry} /> : null) : <UsesLine series={story.series[0]} />}
-      {usedIn ? (
-        <p className="text-xs text-muted-foreground">
-          Counts the whole repo, not just <span className="font-mono wrap-anywhere">{usedIn}</span>.
-        </p>
-      ) : null}
-      {story.wholePackages.map((packageName) => (
-        <p key={packageName} className="text-xs text-muted-foreground">
-          Counts the whole <span className="font-mono wrap-anywhere">{packageName}</span> package.
-        </p>
-      ))}
-      {story.components !== null ? <p className="text-xs text-muted-foreground">Counts the {story.components} components that share this replacement.</p> : null}
       {story.entry ? (
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {story.series.map((s, i) => (
@@ -93,6 +102,58 @@ export function ComponentStory({ repoId, row, mark, entry, facts, olderScanAt, u
         <StoryChart series={story.series} colors={colors} names={story.entry ? names : [`Uses of ${row.displayName}`]} />
       )}
     </section>
+  );
+}
+
+/**
+ * An info button that shows how the story's counts are taken. Hover, keyboard focus or a press opens the note; a second
+ * press keeps it open, and Esc, a press outside or moving focus away closes it.
+ */
+function HowCounted({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  /** Set when Esc closes the note, and cleared when the button loses focus or the pointer. While set, focusing the button doesn't open the note. */
+  const escaped = useRef(false);
+  useEffect(() => {
+    if (!open) return;
+    /** Closes the note on Esc before anything else on the page sees the key. */
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      escaped.current = true;
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [open]);
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next, details) => {
+        if (!next && details.reason === "trigger-press") return details.cancel();
+        setOpen(next);
+      }}
+    >
+      <PopoverTrigger
+        openOnHover
+        aria-label="How this is counted"
+        aria-haspopup="false"
+        onFocus={(event) => {
+          if (!escaped.current && event.currentTarget.matches(":focus-visible")) setOpen(true);
+        }}
+        onBlur={() => {
+          escaped.current = false;
+        }}
+        onMouseLeave={() => {
+          escaped.current = false;
+        }}
+        className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors after:absolute after:-inset-1 hover:text-foreground aria-expanded:text-foreground"
+      >
+        <Info aria-hidden className="size-3.5" />
+      </PopoverTrigger>
+      <PopoverContent role="tooltip" initialFocus={false} align="start" className="w-auto max-w-64 gap-1 px-2.5 py-2 text-xs">
+        {children}
+      </PopoverContent>
+    </Popover>
   );
 }
 
