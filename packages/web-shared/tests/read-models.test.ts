@@ -27,6 +27,18 @@ describe("immutable read models", () => {
     expect(rows.flatMap(row => row.kind === "graph-node" ? [row.node.occurrenceCount] : [])).toEqual([1]);
   });
 
+  it("lists a value set's values in one order on a usage row and in the component's totals", () => {
+    const button = component(packageExport("@example/ui", "Button"), {
+      props: { size: { values: [{ provenance: "written", valueSet: ["small", "medium"], count: 1 }], dynamic: 0, omitted: 0 } },
+    });
+    const scan = artifact({ components: [button], occurrences: [resolvedAt(button, "src/App.tsx", 1, { props: { size: { tier: "written", valueSet: ["small", "medium"] } } })] });
+    const rows = [...deriveReadModelRows(scan, createProjectionContext(scan))];
+    expect({
+      row: rows.flatMap(row => row.kind === "occurrence" ? row.occurrence.props : []),
+      totals: rows.flatMap(row => row.kind === "detail" ? row.head.props.flatMap(p => p.written) : []),
+    }).toEqual({ row: [{ kind: "literal", name: "size", value: "medium | small" }], totals: [{ value: "medium | small", count: 1 }] });
+  });
+
   it("lists a repository declaration's workspace package as its identity package", () => {
     const panel = component(repoDeclaration("repo-a", "packages/app-kit/src/panel.tsx", "Panel"), { owningPackage: "@example/app-kit" });
     const scan = artifact({ components: [panel], occurrences: [] });

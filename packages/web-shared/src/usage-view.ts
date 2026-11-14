@@ -283,11 +283,8 @@ function setValues(row: OccurrenceRow): Map<string, SetValue> {
   return values;
 }
 
-/** A written value's text with a value set's values (`9 | 12`) each once and in one order, so `12 | 9` reads the same. */
-const sameSetText = (label: string) => [...new Set(label.split(" | "))].sort().join(" | ");
-
-/** What tells values apart: a written value by its text, a value set's values in any order, `{…}` and not set by kind. */
-const valueKey = (value: Pick<UsageValue, "kind" | "label">) => (value.kind === "value" ? `value:${sameSetText(value.label)}` : value.kind);
+/** What tells values apart: a written value by its text, `{…}` and not set by kind. */
+const valueKey = (value: Pick<UsageValue, "kind" | "label">) => (value.kind === "value" ? `value:${value.label}` : value.kind);
 
 type PicksByProp = ReadonlyMap<string, ReadonlyMap<string, UsagePick>>;
 

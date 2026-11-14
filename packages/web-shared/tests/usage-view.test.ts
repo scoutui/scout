@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { PropValueState, ResolvedOccurrence } from "@scoutui/scan-format";
 import type { OccurrencePropChip, OccurrenceRow, PropUsage } from "../src/dto.js";
+import { deriveOccurrenceRow } from "../src/read-models.js";
 import { callJsx, cellTitle, copyListText, countText, DEFAULT_USAGE_SORT, emptyText, filterText, nextUsageSort, oneFolderText, pickGroups, propSections, togglePick, topProps, usageDue, usageIndex, usageView, valueColumns, valueLabel, valueSpeech, whereHeading, type CopyListInput, type UsageDue, type UsageFilters, type UsageInput, type UsagePick, type UsageSortKey, type UsageView } from "../src/usage-view.js";
 
 const lit = (name: string, value: string): OccurrencePropChip => ({ kind: "literal", name, value });
@@ -8,6 +10,11 @@ const dyn = (name: string): OccurrencePropChip => ({ kind: "dynamic", name });
 let next = 0;
 function call(filePath: string, line: number, props: OccurrencePropChip[] = [], extra: Partial<OccurrenceRow> = {}): OccurrenceRow {
   return { occurrenceId: `o${next++}`, filePath, line, column: 1, credit: { kind: "render" }, trace: [], props, events: [], ...extra };
+}
+/** The stored row of a call in `a.tsx` that the scan records as writing `state` for `name`. */
+function scanned(line: number, name: string, state: PropValueState): OccurrenceRow {
+  const occurrence: ResolvedOccurrence = { occurrenceId: `o${next++}`, resolution: { status: "resolved", componentId: "c" }, filePath: "a.tsx", line, column: 1, credit: { kind: "render" }, trace: [], props: { [name]: state } };
+  return deriveOccurrenceRow(occurrence, new Map());
 }
 function prop(name: string, extra: Partial<PropUsage> = {}): PropUsage {
   return { name, written: [], references: [], dynamicCount: 0, omittedCount: 0, truncatedWrittenCount: 0, status: null, declared: null, ...extra };
@@ -117,7 +124,8 @@ describe("usageView filters", () => {
   it.each<[string, UsageInput, Partial<UsageFilters>, number]>([
     ["two values of one prop match either", sizes, { picks: [pick("size", "value", "large"), pick("size", "value", "small")] }, 2],
     ["picks on two props must both match", both, { picks: [pick("size", "value", "large"), pick("tone", "value", "red")] }, 1],
-    ["a value set picked in another order matches it, and no other set", input([call("a.tsx", 1, [lit("size", "9 | 12")]), call("a.tsx", 2, [lit("size", "9 | 16")])]), { picks: [pick("size", "value", "12 | 9")] }, 1],
+    ["a value set picked as the totals list it matches a call that wrote it in another order, and no other set", input([scanned(1, "size", { tier: "written", valueSet: ["small", "medium"] }), scanned(2, "size", { tier: "written", valueSet: ["large", "medium"] })]), { picks: [pick("size", "value", "medium | small")] }, 1],
+    ["a value set picked doesn't match a written string that lists its values in another order", input([scanned(1, "size", { tier: "written", valueSet: ["small", "medium"] }), scanned(2, "size", { tier: "written", value: "small | medium" })]), { picks: [pick("size", "value", "medium | small")] }, 1],
     ["a not-set pick matches calls without the prop", input([call("a.tsx", 1, [lit("size", "large")]), call("a.tsx", 2)]), { picks: [pick("size", "unset")] }, 1],
     ["a {…} pick matches variables and expressions", input([call("a.tsx", 1, [ref("tone", "t")]), call("a.tsx", 2, [dyn("tone")]), call("a.tsx", 3, [lit("tone", "red")])]), { picks: [pick("tone", "dynamic")] }, 2],
     ["search matches the path", both, { find: "A.TSX" }, 3],

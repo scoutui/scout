@@ -34,3 +34,4 @@ export { parseCompoundExport } from "./compound-export.js";
 export { resolvedOccurrences } from "./resolved-occurrences.js";
 export { SCHEMA_VERSION, schemaVersionOf } from "./schema-version.js";
 export { validateArtifact } from "./validate.js";
+export { canonicalValueSet } from "./value-set.js";
