@@ -163,11 +163,12 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
     const loc = position(el.sourceSpan.start);
     const classNames = el.attributes.find((a) => a.name === "class")?.value.split(/\s+/).filter(Boolean) ?? [];
     const attributeNames = [...el.attributes.map((a) => a.name), ...el.inputs.map((i) => i.name)];
-    const found = opts.index.match({ name: tag, attributes: attributeNames, classNames });
+    const attributeValues = new Map(el.attributes.map((a) => [a.name, a.value]));
+    const found = opts.index.match({ name: tag, attributes: attributeNames, attributeValues, classNames });
     const inScope = found.filter((m) => opts.inScope(m.entry));
     const matches = collapseReexports(inScope.length === 0 && opts.scopeIsPartial === true ? found : inScope, opts.chooseEntry ?? firstBySpecifier);
 
-    const shape = { name: tag, attributes: attributeNames, classNames };
+    const shape = { name: tag, attributes: attributeNames, attributeValues, classNames };
     const addUse = (match: ElementMatch) => {
       const { props, events } = readBindings(el, match);
       const { local, via } = opts.resolveLocal(match.entry, loc);
@@ -205,7 +206,7 @@ export function emitAngularTemplate(opts: EmitAngularTemplateOpts): void {
    * and the scope is only partly known, every directive the element writes instead, except where two different
    * classes answer to the same written selector: the scan can't tell which the unread part brings in, so neither counts.
    */
-  const directivesOn = (shape: { name: string; attributes: string[]; classNames: string[] }, tag: string, loc: { line: number; column: number }): ElementMatch[] => {
+  const directivesOn = (shape: Parameters<SelectorIndex["matchDirectives"]>[0], tag: string, loc: { line: number; column: number }): ElementMatch[] => {
     const choose = opts.chooseEntry ?? firstBySpecifier;
     const found = opts.index.matchDirectives(shape);
     const inScope = found.filter((m) => opts.inScope(m.entry));

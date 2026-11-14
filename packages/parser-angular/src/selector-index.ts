@@ -36,7 +36,13 @@ export type ElementMatch = {
  */
 export type DirectiveSelector = string | { selector: string; entry: SelectorEntry };
 
-type ElementShape = { name: string; attributes: readonly string[]; classNames: readonly string[] };
+type ElementShape = {
+  name: string;
+  attributes: readonly string[];
+  /** The value each static attribute is written with (`type="number"`), so a selector that requires one (`input[type=number]`) can match. A bound or missing attribute matches as if written with no value. */
+  attributeValues?: ReadonlyMap<string, string>;
+  classNames: readonly string[];
+};
 
 export type SelectorIndex = {
   /** Every distinct component whose selector matches the element. */
@@ -101,7 +107,7 @@ export function createSelectorIndex(
   const toCss = (element: ElementShape) => {
     const css = new compiler.CssSelector();
     css.setElement(element.name);
-    for (const name of element.attributes) css.addAttribute(name, "");
+    for (const name of element.attributes) css.addAttribute(name, element.attributeValues?.get(name) ?? "");
     for (const name of element.classNames) css.addClassName(name);
     return css;
   };
