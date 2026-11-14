@@ -207,6 +207,17 @@ describe("ComponentsTable", () => {
       const tabStops = Array.from(document.querySelectorAll<HTMLElement>("tbody a, tbody button")).filter((el) => el.tabIndex === 0);
       expect(tabStops).toEqual([button("Beta"), link("Beta")]);
     });
+
+    it("scrolls the row ↓ moves to into view, in the table and on the page", () => {
+      const scrolled: Element[] = [];
+      const spy = vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(function (this: Element) { scrolled.push(this); });
+      render(<Selecting given={rows} />);
+      button("Alpha").focus();
+      fireEvent.keyDown(button("Alpha"), { key: "ArrowDown" });
+      expect(scrolled).toEqual([button("Beta").closest("tr")]);
+      expect(spy).toHaveBeenCalledWith({ block: "nearest" });
+      spy.mockRestore();
+    });
   });
 
   describe("change since the previous scan", () => {

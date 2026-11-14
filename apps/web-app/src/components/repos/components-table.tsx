@@ -34,6 +34,8 @@ const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5";
 const WIDTH = { version: 6, files: 4.5, uses: 6, change: 6 };
 /** The width Component needs, in rem: room for a typical name, at least `COMPONENT_MIN` and at most `COMPONENT_MAX`. */
 const COMPONENT_MIN = 14;
+/** The sticky header row's height in px (`h-9`), which covers the top of the scroller. */
+const HEAD_HEIGHT = 36;
 const COMPONENT_MAX = 22;
 /** One character of a component name (Monaspace Neon at text-sm) and of a package name (at text-xs), and the cell's padding. */
 const NAME_CHAR = 0.5425;
@@ -147,6 +149,7 @@ export function ComponentsTable({
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 37,
     overscan: 12,
+    scrollPaddingEnd: HEAD_HEIGHT,
     initialRect: { width: 1200, height: 600 },
   });
 
@@ -177,6 +180,7 @@ export function ComponentsTable({
     if (!button) return;
     focusNext.current = null;
     button.focus({ preventScroll: true });
+    button.closest("tr")?.scrollIntoView({ block: "nearest" });
   });
 
   // ↑↓ from a row's button or name.
@@ -203,7 +207,7 @@ export function ComponentsTable({
   // in stacked rows the single visible cell must take the full width under
   // auto layout.
   return (
-    <Table containerRef={scrollRef} containerClassName="@container max-h-[70vh] overflow-y-auto" className="@min-[43rem]:table-fixed">
+    <Table containerRef={scrollRef} containerClassName="@container max-h-[70vh] overflow-y-auto @min-[43rem]:scroll-pt-9" className="@min-[43rem]:table-fixed">
       {/* In a table narrower than 43rem the rows stack, so there are no headers and no sorting. */}
       <TableHeader className="sticky top-0 z-10 hidden @min-[43rem]:table-header-group">
         <TableRow>
@@ -250,7 +254,7 @@ export function ComponentsTable({
               data-index={vr.index}
               data-row-id={row.componentId}
               ref={virtualizer.measureElement}
-              className={cn("relative", selected ? "selected" : "hover:bg-muted/50")}
+              className={cn("relative scroll-mt-(--top-bar-height)", selected ? "selected" : "hover:bg-muted/50")}
             >
               <RowCells
                 r={row}
