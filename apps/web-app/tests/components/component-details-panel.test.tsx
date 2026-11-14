@@ -44,6 +44,15 @@ const tracking = deriveGovernanceTracking(
 );
 const entry = (recordId: string) => tracking.find((e) => e.recordIds.includes(recordId)) ?? null;
 const paragraph = (text: string) => screen.getByText((_, el) => el?.tagName === "P" && el.textContent === text);
+/** The story's chart draws no line, only one dot at its end on the chart's frame, with `day` under it. */
+function expectOneDotAtTheEnd(name: string, day: string) {
+  const chart = screen.getByRole("img");
+  expect(chart).toHaveAccessibleName(name);
+  expect(chart.querySelector("polyline")).toBeNull();
+  expect([...chart.querySelectorAll("circle")].map((dot) => dot.getAttribute("cx"))).toEqual(["392"]);
+  expect(chart.getAttribute("viewBox")).toBe("0 0 400 56");
+  expect(screen.getByText(day)).toBeInTheDocument();
+}
 
 describe("ComponentDetailsPanel", () => {
   it.each<[string, Partial<ComponentProps<typeof ComponentDetailsPanel>>, Partial<ComponentPanelFacts>, () => void]>([
@@ -68,9 +77,11 @@ describe("ComponentDetailsPanel", () => {
       expect(screen.getByRole("link", { name: "View Button source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc123/src/Button.tsx#L12");
     }],
     ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], neverSet: null }, history: [{ t: "2026-11-13T00:00:00.000Z", value: 40 }] }, () => {
-      expect(screen.getByText("New in this scan")).toBeInTheDocument();
-      expect(screen.getByText("New in this scan, so there's no history yet.")).toBeInTheDocument();
-      expect(screen.getByText((_, el) => el?.tagName === "SPAN" && el.textContent === "40 uses")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
+      expect(paragraph("40 uses in this scan")).toBeInTheDocument();
+      expectOneDotAtTheEnd("Uses of Button: 40 on 13 Nov.", "13 Nov");
+      expect(paragraph("New in this scan, so its history starts here.")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Fill in past scans" })).toBeNull();
       expect(screen.getByRole("heading", { name: "Top props" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Top packages" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Next component" })).toBeNull();
@@ -99,10 +110,10 @@ describe("ComponentDetailsPanel", () => {
   });
 
   it.each<[ComponentProps<typeof ComponentDetailsPanel>["mode"], boolean]>([["sheet", true], ["column", false]])(
-    "in the %s, says the row's change and repeats its uses and files: %s",
+    "in the %s, says the row's change after its uses story's summary and repeats its uses and files: %s",
     (mode, repeated) => {
-      panel({ mode, mark: { kind: "changed", delta: -3 }, showChange: true });
-      expect(screen.getByText("−3 since previous scan")).toBeInTheDocument();
+      panel({ mode, mark: { kind: "changed", delta: -3 }, showChange: true }, { history: [{ t: "2026-10-30T00:00:00.000Z", value: 43 }, { t: "2026-11-13T00:00:00.000Z", value: 40 }] });
+      expect(paragraph("43 to 40 uses in 3 months · −3 since previous scan")).toBeInTheDocument();
       expect(screen.queryByText((_, el) => el?.tagName === "SPAN" && el.textContent === "40 uses") !== null).toBe(repeated);
     },
   );
@@ -140,8 +151,9 @@ describe("ComponentDetailsPanel", () => {
     expect(onNext).toHaveBeenCalledTimes(1);
   });
 
-  it("tells a replaced component's migration over three months, as its chart reads it, and opens that chart", () => {
-    panel({ entry: entry("g-button") });
+  it("tells a replaced component's migration over three months, as its chart reads it, opens that chart, and says the row's change on its own line", () => {
+    panel({ entry: entry("g-button"), mark: { kind: "changed", delta: -3 }, showChange: true });
+    expect(screen.getByText("−3 since previous scan")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Migration · 3 months" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open chart" })).toBeInTheDocument();
     expect(paragraph("10.8% migrated · 370 left · 10 fewer in the last 30 days")).toBeInTheDocument();
@@ -171,19 +183,35 @@ describe("ComponentDetailsPanel", () => {
     expect(screen.queryByText(/migrated/)).toBeNull();
   });
 
-  it("tells an ungoverned component's uses in this repo, with no chart to open", () => {
-    panel({}, { history: [["2026-07-01", 30], ["2026-08-01", 32], ["2026-09-01", 35], ["2026-11-13", 40]].map(([d, value]) => ({ t: `${d}T00:00:00.000Z`, value: Number(value) })) });
+  it("tells an ungoverned component's uses in this repo, with no chart to open, and no change since the previous scan anywhere", () => {
+    panel({ showChange: true }, { history: [["2026-07-01", 30], ["2026-08-01", 32], ["2026-09-01", 35], ["2026-11-13", 40]].map(([d, value]) => ({ t: `${d}T00:00:00.000Z`, value: Number(value) })) });
     expect(screen.getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
-    expect(paragraph("32 to 40 uses")).toBeInTheDocument();
+    expect(paragraph("32 to 40 uses in 3 months")).toBeInTheDocument();
+    expect(screen.queryByText(/since previous scan/)).toBeNull();
     expect(screen.getByRole("img")).toHaveAccessibleName("Uses of Button: 32 on 13 Aug, 40 on 13 Nov.");
     expect(screen.queryByRole("link", { name: "Open chart" })).toBeNull();
     expect(screen.queryByRole("button", { name: "How this is counted" })).toBeNull();
+  });
+
+  it("starts a repo's first scan's story at its one point, saying one use, with a link to fill in past scans", () => {
+    panel({ row: { ...row, occurrenceCount: 1 } }, { history: [{ t: "2026-11-13T00:00:00.000Z", value: 1 }] });
+    expect(screen.getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
+    expect(paragraph("1 use in this scan")).toBeInTheDocument();
+    expectOneDotAtTheEnd("Uses of Button: 1 on 13 Nov.", "13 Nov");
+    expect(paragraph("History starts with the next scan. Fill in past scans")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Fill in past scans" })).toHaveAttribute("href", "https://scoutui.dev/docs/guides/fill-in-a-repos-history");
   });
 
   it("says the story counts the whole repo while a Used in package is picked, when its info button gets keyboard focus", async () => {
     panel({ usedIn: "@example/web" }, { history: [{ t: "2026-10-01T00:00:00.000Z", value: 3 }, { t: "2026-11-01T00:00:00.000Z", value: 4 }] });
     act(() => screen.getByRole("button", { name: "How this is counted" }).focus());
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Counts the whole repo, not just @example/web.");
+  });
+
+  it("fades the last one-point story without its note while the next component's facts load", () => {
+    panel({ facts: { state: "loading", previous: { state: "ready", facts: { ...facts, history: [{ t: "2026-11-13T00:00:00.000Z", value: 9 }] } }, slow: false } });
+    expect(paragraph("9 uses in this scan").closest('[aria-busy="true"]')).toHaveClass("opacity-60");
+    expect(screen.queryByText(/History starts/)).toBeNull();
   });
 
   it("holds the props' place while they load, and says when they couldn't", () => {

@@ -91,6 +91,8 @@ export function ComponentDetailsPanel({
   const usage = componentHref(repoId, row.componentId, packageArea(row.usedIn, usedIn));
   const ready = facts.state === "ready" ? facts.facts : null;
   const sourceHref = ready?.source && source ? sourceFileUrl(source.remote, source.commit, ready.source.filePath, ready.source.line ?? undefined) : null;
+  // A uses story, or its place while the facts load, says the row's change after its summary, so the facts don't.
+  const usesStory = entry === null && facts.state !== "error";
   const factItems = [
     ...(mode !== "column"
       ? [
@@ -98,7 +100,7 @@ export function ComponentDetailsPanel({
           <span key="files"><span className="font-medium tabular-nums text-foreground">{row.fileCount.toLocaleString()}</span> {row.fileCount === 1 ? "file" : "files"}</span>,
         ]
       : []),
-    ...(showChange ? [<span key="change" className="text-foreground">{changeText(mark, row.occurrenceCount)}</span>] : []),
+    ...(showChange && !usesStory ? [<span key="change" className="text-foreground">{changeText(mark, row.occurrenceCount)}</span>] : []),
     ...(otherRepos !== null && otherRepos > 0
       ? [
           <span key="repos">
@@ -183,7 +185,7 @@ export function ComponentDetailsPanel({
           </div>
         </div>
 
-        <ComponentStory repoId={repoId} row={row} mark={mark} entry={entry} facts={facts} olderScanAt={olderScanAt} usedIn={usedIn} />
+        <ComponentStory repoId={repoId} row={row} mark={mark} showChange={showChange} entry={entry} facts={facts} olderScanAt={olderScanAt} usedIn={usedIn} />
 
         <TopProps repoId={repoId} row={row} linked={linked} facts={facts} />
         <TopPackages repoId={repoId} row={row} linked={linked} />

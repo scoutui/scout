@@ -12,7 +12,7 @@ export type StoryRange = "3m" | "all";
  * that charts the component's governing record, as the Adoption tab lists it and `href` opens it; `wholePackages`
  * names the packages it counts whole, and `components` is how many components it counts when its records name more
  * than one and no whole package. Otherwise it's the component's uses in each scan. `series` is what the panel
- * draws, and `empty` says why there's nothing to draw when the series have fewer than two points.
+ * draws, and `empty` says why the series have fewer than two points.
  */
 export type ComponentStory = {
   kind: "migration" | "retirement" | "uses";

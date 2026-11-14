@@ -404,14 +404,19 @@ describe("ComponentsExplorer details", () => {
     expect(screen.getByText("Same. 4 uses in 1 file. No change since previous scan.")).toHaveAttribute("aria-live", "polite");
   });
 
-  it("says the selected row's change beside the table, except in the changed view, whose Change column says it", () => {
+  it("says the selected row's change beside the table, except in the changed view, whose Change column says it", async () => {
     viewport(1024);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
+      ? {}
+      : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null }, history: [{ t: "2026-09-01T00:00:00.000Z", value: 6 }, { t: "2026-11-01T00:00:00.000Z", value: 9 }] }))));
     const details = () => screen.getByRole("complementary", { name: /^Details for/ });
+    const summary = (text: string) => within(details()).findByText((_, el) => el?.tagName === "P" && el.textContent === text);
     const { unmount } = explorer();
-    expect(within(details()).getByText("+3 since previous scan")).toBeInTheDocument();
+    expect(await summary("6 to 9 uses in 3 months · +3 since previous scan")).toBeInTheDocument();
     unmount();
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
     explorer();
+    expect(await summary("6 to 9 uses in 3 months")).toBeInTheDocument();
     expect(within(details()).queryByText(/since previous scan|in this scan/)).toBeNull();
   });
 
@@ -498,11 +503,12 @@ describe("ComponentsExplorer details", () => {
     };
   }
   const topProp = (name: string, label: string, count: number): ComponentPanelFacts => ({
-    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null }, history: [],
+    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null },
+    history: [{ t: "2026-09-01T00:00:00.000Z", value: count - 1 }, { t: "2026-11-01T00:00:00.000Z", value: count }],
   });
   const aside = () => screen.getByRole("complementary", { name: /^Details for/ });
 
-  it("keeps the last details, faded, busy and unlinked, until the next component's land", async () => {
+  it("keeps the last details and story, faded, busy and unlinked, until the next component's land", async () => {
     vi.useFakeTimers();
     viewport(1440);
     const land = heldReads();
@@ -513,28 +519,37 @@ describe("ComponentsExplorer details", () => {
     expect(screen.getByRole("link", { name: "View Grew source" })).toBeInTheDocument();
     fireEvent.keyDown(within(screen.getByRole("table")).getByRole("link", { name: "Grew" }), { key: "ArrowDown" });
     expect(within(aside()).getByRole("heading", { level: 2, name: "Same" })).toBeInTheDocument();
-    const busy = () => aside().querySelector('[aria-busy="true"]');
-    expect(busy()).toHaveClass("opacity-60");
-    expect(within(busy() as HTMLElement).getByLabelText("variant primary, 9 uses").tagName).toBe("SPAN");
+    const busy = () => [...aside().querySelectorAll<HTMLElement>('[aria-busy="true"]')];
+    const [story, props] = busy();
+    expect(busy().map((el) => el.className)).toEqual(["opacity-60", "opacity-60"]);
+    expect(within(story as HTMLElement).getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
+    expect(story).toHaveTextContent("8 to 9 uses in 3 months");
+    expect(within(props as HTMLElement).getByLabelText("variant primary, 9 uses").tagName).toBe("SPAN");
     expect(screen.queryByRole("link", { name: /source/ })).toBeNull();
     await act(() => vi.advanceTimersByTimeAsync(200));
-    expect(busy()).toHaveTextContent("variant");
+    expect(busy()[1]).toHaveTextContent("variant");
     await land("same", topProp("size", "small", 4));
-    expect(busy()).toBeNull();
+    expect(busy()).toEqual([]);
+    expect(within(aside()).getByText((_, el) => el?.tagName === "P" && el.textContent === "3 to 4 uses in 3 months")).toBeInTheDocument();
     expect(screen.queryByLabelText("variant primary, 9 uses")).toBeNull();
     expect(screen.getByRole("link", { name: "size small, 4 uses" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View Same source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc/src/size.tsx#L1");
   });
 
-  it("holds the props' space while the first details load, and shows their skeleton only once the read is slow", async () => {
+  it("holds the story's and props' space while the first details load, and shows their skeletons only once the read is slow", async () => {
     vi.useFakeTimers();
     viewport(1440);
     heldReads();
     explorer();
     const skeleton = () => within(aside()).getByRole("list", { hidden: true }).parentElement;
+    // The story's placeholder sits just above the props'.
+    const story = () => skeleton()?.previousElementSibling;
     await act(() => vi.advanceTimersByTimeAsync(150 + 399));
+    expect(story()).toHaveAttribute("aria-hidden", "true");
+    expect(story()).toHaveClass("invisible");
     expect(skeleton()).toHaveClass("invisible");
     await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(story()).not.toHaveClass("invisible");
     expect(skeleton()).not.toHaveClass("invisible");
   });
 
@@ -584,6 +599,6 @@ describe("ComponentsExplorer details", () => {
     viewport(1440);
     const fresh: ComponentRow = { ...base, componentId: "fresh", displayName: "Fresh", usedIn: { "@example/web": { occurrenceCount: 1, fileCount: 1 } } };
     render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[fresh]} deprecatedTotal={0} diff={diff} packages={[{ name: "@example/web", folder: "apps/web" }]} canEdit />);
-    expect(await screen.findByText("New in this scan, so there's no history yet.")).toBeInTheDocument();
+    expect(await screen.findByText("New in this scan, so its history starts here.")).toBeInTheDocument();
   });
 });
