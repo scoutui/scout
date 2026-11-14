@@ -1,5 +1,5 @@
 "use client";
-import { type KeyboardEvent, type MouseEvent, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { type KeyboardEvent, type MouseEvent, type RefCallback, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentRow, DiffMark } from "@scoutui/web-shared";
@@ -7,6 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { SlashBreaks } from "@/components/dashboards/cohort-label";
 import { DeprecatedMark } from "@/components/deprecated-mark";
 import { PackageName } from "@/components/package-name";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
@@ -108,6 +109,7 @@ export function ComponentsTable({
   onSelect,
   packageChars = longestPackageName(sort.sorted),
   nameChars = typicalNameLength(sort.sorted),
+  shortPaths,
 }: {
   repoId: string;
   /** The rows in sort order and the sort state, from `useSortedRows`. */
@@ -127,10 +129,13 @@ export function ComponentsTable({
   packageChars?: number | undefined;
   /** The name length the Component column makes room for, in characters; the shown rows' typical length when not given. */
   nameChars?: number | undefined;
+  /** componentId → the part of the row's path that tells it from rows sharing its package and name. A row with a path and no entry shows its full path. */
+  shortPaths?: ReadonlyMap<string, string> | undefined;
 }) {
   const { sorted, sortKey, sortDir, toggleSort } = sort;
   const columnCount = marks ? 6 : 5;
   const selectable = (row: ComponentRow) => marks?.[row.componentId]?.kind !== "removed";
+  const nameRef = useTruncatedClass();
 
   // Only the visible window renders: at ~1,900 rows the full render dominates
   // first load. initialRect lets the server render a first window, so the table
@@ -235,7 +240,7 @@ export function ComponentsTable({
           if (!row) return null;
           const mark = marks?.[row.componentId];
           if (mark?.kind === "removed") {
-            return <GhostRow key={row.componentId} r={row} index={vr.index} measure={virtualizer.measureElement} />;
+            return <GhostRow key={row.componentId} r={row} index={vr.index} measure={virtualizer.measureElement} nameRef={nameRef} />;
           }
           const linked = !notInLatest?.has(row.componentId);
           const selected = row.componentId === selectedId;
@@ -249,6 +254,8 @@ export function ComponentsTable({
             >
               <RowCells
                 r={row}
+                nameRef={nameRef}
+                shortPath={shortPaths?.get(row.componentId)}
                 href={linked ? componentHref(repoId, row.componentId, packageArea(row.usedIn, usedIn)) : undefined}
                 selected={selected}
                 tabStop={row.componentId === tabStop}
@@ -281,8 +288,21 @@ export function typicalNameLength(rows: readonly ComponentRow[]): number {
   return lengths[Math.ceil(lengths.length * 0.95) - 1] ?? 0;
 }
 
+/** A ref for elements holding one line of text: each has the `truncated` class while its text overflows it, and is watched until it unmounts. */
+function useTruncatedClass(): RefCallback<HTMLElement> {
+  const observer = useRef<ResizeObserver | null>(null);
+  return useCallback((element: HTMLElement | null) => {
+    if (element === null) return;
+    observer.current ??= new ResizeObserver((entries) => {
+      for (const { target } of entries) target.classList.toggle("truncated", target.scrollWidth > target.clientWidth);
+    });
+    observer.current.observe(element);
+    return () => observer.current?.unobserve(element);
+  }, []);
+}
+
 /** The cells of one component: its button, name and detail link, package, version, files, uses and, given, its change. */
-function RowCells({ r, href, selected, tabStop, onButtonClick, mark, showChange, writtenAs }: { r: ComponentRow; href: string | undefined; selected: boolean; tabStop: boolean; onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined }) {
+function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClick, mark, showChange, writtenAs }: { r: ComponentRow; nameRef: RefCallback<HTMLElement>; shortPath: string | undefined; href: string | undefined; selected: boolean; tabStop: boolean; onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined }) {
   const deprecated = r.deprecated;
   const delta = deltaOf(mark, r.occurrenceCount);
   const title = deprecated ? `${r.displayName} (deprecated)` : r.displayName;
@@ -303,18 +323,25 @@ function RowCells({ r, href, selected, tabStop, onButtonClick, mark, showChange,
         </button>
         <div className={NAME_ROW}>
           {href === undefined ? (
-            <span title={title} className="truncate font-mono font-medium">{r.displayName}</span>
+            <span ref={nameRef} title={title} className="truncate-reveal font-mono font-medium"><span>{r.displayName}</span></span>
           ) : (
-            <Link href={href} prefetch={false} tabIndex={tabStop ? 0 : -1} title={title} className="relative z-1 truncate font-mono font-medium underline-offset-3 hover:underline">
-              {r.displayName}
+            <Link ref={nameRef} href={href} prefetch={false} tabIndex={tabStop ? 0 : -1} title={title} className="relative z-1 truncate-reveal font-mono font-medium underline-offset-3 hover:underline">
+              <span>{r.displayName}</span>
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
         {r.disambiguator ? (
-          <div className="truncate text-code text-muted-foreground" title={r.disambiguator}>
-            {shortenPath(r.disambiguator)}
+          <div className="whitespace-normal wrap-anywhere text-code text-muted-foreground">
+            {shortPath === undefined || shortPath === r.disambiguator ? (
+              <SlashBreaks text={r.disambiguator} />
+            ) : (
+              <>
+                <span aria-hidden className="select-none" title={r.disambiguator}><SlashBreaks text={shortPath} /></span>
+                <span className="sr-only">{r.disambiguator}</span>
+              </>
+            )}
           </div>
         ) : null}
         {writtenAs ? (
@@ -375,12 +402,12 @@ function RowCells({ r, href, selected, tabStop, onButtonClick, mark, showChange,
  * version and files a dash, uses a muted zero, and its change the negated
  * previous count.
  */
-function GhostRow({ r, index, measure }: { r: ComponentRow; index: number; measure: (el: HTMLTableRowElement | null) => void }) {
+function GhostRow({ r, index, measure, nameRef }: { r: ComponentRow; index: number; measure: (el: HTMLTableRowElement | null) => void; nameRef: RefCallback<HTMLElement> }) {
   return (
     <TableRow data-index={index} ref={measure}>
       <TableCell className={NAME_CELL}>
         <div className={NAME_ROW}>
-          <span className="truncate font-mono font-medium text-muted-foreground" title={r.deprecated ? `${r.displayName} (deprecated)` : r.displayName}>{r.displayName}</span>
+          <span ref={nameRef} className="truncate-reveal font-mono font-medium text-muted-foreground" title={r.deprecated ? `${r.displayName} (deprecated)` : r.displayName}><span>{r.displayName}</span></span>
           {r.deprecated ? <DeprecatedMark /> : null}
           <Badge variant="outline" className={MARK_BADGE}>Removed</Badge>
         </div>

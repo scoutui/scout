@@ -221,6 +221,41 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
   });
 });
 
+describe("ComponentsExplorer same-named rows", () => {
+  beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
+  const named = (componentId: string, packageName: string, displayName: string, disambiguator: string): ComponentRow =>
+    ({ ...base, componentId, packageName, displayName, disambiguator });
+  const explorer = (given: ComponentRow[]) =>
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={given} deprecatedTotal={0} diff={null} packages={[]} canEdit />);
+
+  it("shows the part of the path that tells rows of one package and name apart, with the full path kept for screen readers and copy", () => {
+    explorer([
+      named("aa", "@x/a", "Card", "src/a/Card.tsx"),
+      named("ab", "@x/a", "Card", "src/b/Card.tsx"),
+      named("ba", "@x/b", "Card", "lib/a/Card.tsx"),
+      named("bc", "@x/b", "Card", "lib/c/Card.tsx"),
+    ]);
+    for (const [path, shown] of [["src/a/Card.tsx", "a"], ["src/b/Card.tsx", "b"], ["lib/a/Card.tsx", "a"], ["lib/c/Card.tsx", "c"]] as const) {
+      const full = screen.getByText(path);
+      expect(full).toHaveClass("sr-only");
+      const short = full.previousElementSibling as HTMLElement;
+      expect(short.textContent).toBe(shown);
+      expect(short).toHaveAttribute("aria-hidden", "true");
+      expect(short).toHaveClass("select-none");
+    }
+  });
+
+  it("shows the full path, wrapping at slashes, when nothing in it tells the rows apart", () => {
+    explorer([named("p1", "@x/a", "Panel", "src/panel/Panel.tsx"), named("p2", "@x/a", "Panel", "src/panel/Panel.tsx")]);
+    const lines = screen.getAllByText("src/panel/Panel.tsx");
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      expect(line.querySelectorAll("wbr")).toHaveLength(2);
+      expect(line.querySelector(".sr-only, [aria-hidden]")).toBeNull();
+    }
+  });
+});
+
 describe("ComponentsExplorer ?used-in", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
 

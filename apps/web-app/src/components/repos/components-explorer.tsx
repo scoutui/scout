@@ -5,6 +5,7 @@ import { PanelRight } from "lucide-react";
 import type { ComponentRow, CrossRepoComponentDetail, ScanDiff } from "@scoutui/web-shared";
 import { plural, scanDiffRowCount } from "@scoutui/web-shared/client";
 import { changeText, ghostRow } from "@/lib/scan-diff-view";
+import { distinctPaths } from "@/lib/dashboard-format";
 import { ComponentsTable, longestPackageName, type SelectHow, typicalNameLength, useSortedRows } from "@/components/repos/components-table";
 import { ComponentDetailsPanel, type PanelFactsState, type PanelMode } from "@/components/repos/component-details-panel";
 import { FilterBar } from "@/components/repos/filter-bar";
@@ -152,6 +153,15 @@ export function ComponentsExplorer({
   const everyRow = useMemo(() => [...rows, ...(diff?.removedRows.map(ghostRow) ?? [])], [rows, diff]);
   const packageChars = useMemo(() => longestPackageName(everyRow), [everyRow]);
   const nameChars = useMemo(() => typicalNameLength(everyRow), [everyRow]);
+  // The part of its path that tells each row from the others sharing its package and name, over the same rows.
+  const shortPaths = useMemo(
+    () =>
+      distinctPaths(
+        everyRow.map((r) => ({ cohortKey: r.componentId, label: JSON.stringify([r.packageName, r.displayName]) })),
+        Object.fromEntries(everyRow.flatMap((r) => (r.disambiguator ? [[r.componentId, r.disambiguator]] : []))),
+      ),
+    [everyRow],
+  );
   const packageFolders = useMemo(() => new Map(packages.map((p) => [p.name, p.folder])), [packages]);
   // The changed view's toolbar breakdown, `12 of 29 changes · 2 removed ·
   // 10 changed`, counted from the shown rows' marks.
@@ -284,6 +294,7 @@ export function ComponentsExplorer({
           onSelect={select}
           packageChars={packageChars}
           nameChars={nameChars}
+          shortPaths={shortPaths}
         />
       )}
     </div>

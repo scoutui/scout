@@ -93,6 +93,41 @@ describe("ComponentsTable", () => {
     expect(typicalNameLength(Array.from({ length: 20 }, (_, i) => ({ ...row, displayName: "x".repeat(i + 1) })))).toBe(19);
   });
 
+  it("gives a name the truncated class while its text overflows its box, and stops watching it once the row unmounts", () => {
+    const observers: Array<{ watched: Set<Element>; fire: () => void }> = [];
+    vi.stubGlobal("ResizeObserver", class {
+      watched = new Set<Element>();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ watched: this.watched, fire: () => callback([...this.watched].map((target) => ({ target }) as ResizeObserverEntry), this as unknown as ResizeObserver) });
+      }
+      observe(element: Element) { this.watched.add(element); }
+      unobserve(element: Element) { this.watched.delete(element); }
+      disconnect() { this.watched.clear(); }
+    });
+    try {
+      const { unmount } = render(<ComponentsTable repoId="r1" rows={[{ ...row, displayName: "SegmentedControlGroup" }, { ...row, componentId: "c2", displayName: "Tab" }]} />);
+      const long = screen.getByRole("link", { name: "SegmentedControlGroup" });
+      const short = screen.getByRole("link", { name: "Tab" });
+      const textWidth = (element: Element, scrollWidth: number) => {
+        Object.defineProperty(element, "scrollWidth", { configurable: true, value: scrollWidth });
+        Object.defineProperty(element, "clientWidth", { configurable: true, value: 100 });
+      };
+      textWidth(long, 180);
+      textWidth(short, 40);
+      const observer = observers.find((o) => o.watched.has(long));
+      observer?.fire();
+      expect(long).toHaveClass("truncated");
+      expect(short).not.toHaveClass("truncated");
+      textWidth(long, 100);
+      observer?.fire();
+      expect(long).not.toHaveClass("truncated");
+      unmount();
+      expect(observer?.watched.size).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   // The empty and no-match states belong to the page's ComponentsSection: the
   // table renders only when there are rows.
 
@@ -229,7 +264,7 @@ describe("ComponentsTable", () => {
     it("renders a removed row as an unlinked, unfocusable ghost reading `0` uses and `−5`", () => {
       const marks: Record<string, DiffMark> = { gone: { kind: "removed" } };
       render(<ComponentsTable repoId="r1" rows={[removed]} marks={marks} />);
-      const name = screen.getByText("OldModal");
+      const name = screen.getByTitle("OldModal");
       const tr = rowOf(name);
       // Full opacity, for contrast: muted ink says "not live" instead.
       expect(tr.className).not.toMatch(/opacity-/);
