@@ -13,16 +13,9 @@ export function MigrationLine({ status, replacementHref }: { status: MigrationSt
 
   const { packageName, exportName } = status.by;
   const full = exportName ? `${packageName}/${exportName}` : packageName;
-  const className = "flex min-w-0 font-mono text-foreground";
+  const className = "grid min-w-0 font-mono text-foreground";
   const width = { flex: `0 1 calc(${full.length}ch + 1px)` };
-  const name = (
-    <>
-      <span className="grid min-w-0" style={{ flex: `0 1 calc(${packageName.length}ch + 1px)` }}>
-        <PackageName name={packageName} mutedScope={false} />
-      </span>
-      {exportName ? <span className="shrink-0">/{exportName}</span> : null}
-    </>
-  );
+  const name = <PackageName name={full} mutedScope={false} />;
 
   return (
     <p className="flex items-baseline gap-x-1.5 text-sm text-muted-foreground">
