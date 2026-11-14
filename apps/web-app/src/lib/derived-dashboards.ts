@@ -1,4 +1,4 @@
-import type { DashboardScope } from "@scoutui/web-shared";
+import type { ChartRange, DashboardScope } from "@scoutui/web-shared";
 import { hrefWithQuery } from "@/lib/query-string";
 
 /** Derived, non-editable chart ids: governance-derived detail pages
@@ -8,7 +8,10 @@ export function isDerivedId(id: string): boolean {
   return id.startsWith("migration:") || id.startsWith("retirement:");
 }
 
-/** A derived chart's page, across every repo or in the one repo `scope` names. */
-export function derivedChartHref(id: string, scope: DashboardScope): string {
-  return hrefWithQuery(`/charts/${encodeURIComponent(id)}`, scope.kind === "repo" ? [["repo", scope.repoId]] : []);
+/** A derived chart's page, across every repo or in the one repo `scope` names, opening at `range` when given. */
+export function derivedChartHref(id: string, scope: DashboardScope, range?: ChartRange): string {
+  return hrefWithQuery(`/charts/${encodeURIComponent(id)}`, [
+    ...(scope.kind === "repo" ? [["repo", scope.repoId] as const] : []),
+    ...(range ? [["range", range] as const] : []),
+  ]);
 }

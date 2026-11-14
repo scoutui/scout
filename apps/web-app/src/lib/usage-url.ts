@@ -74,6 +74,16 @@ export function useUsageFilters() {
   return { filters, setFind, setArea, setPicks, setSort, clearFilters };
 }
 
+/** A component's page for one repo, which opens on its Usage tab, with `params` (such as `area` or `sel`) set. */
+export function componentHref(repoId: string, componentId: string, params: Array<[string, string]> = []): string {
+  return hrefWithQuery(`/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}`, params);
+}
+
+/** `area` set to `pkg`, when the component's uses span more than one package: only then does its Usage tab read an area as a package. */
+export function packageArea(usedIn: Record<string, unknown> | undefined, pkg: string | null | undefined): Array<[string, string]> {
+  return pkg && Object.keys(usedIn ?? {}).length > 1 ? [["area", pkg]] : [];
+}
+
 /** `pathname` + `search` with `params` set (null deletes one). */
 export function hrefFrom(pathname: string, search: string, params: Record<string, string | null>): string {
   const query = new URLSearchParams(search);

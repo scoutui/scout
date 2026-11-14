@@ -1,19 +1,20 @@
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Settings } from "lucide-react";
+import { AlertTriangle, CheckCircle2, History, Settings } from "lucide-react";
 import type { RepoDetail, ScanSummary } from "@scoutui/web-shared";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonVariants } from "@/components/ui/button";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
+import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import { commitUrl } from "@/lib/git-remote";
+import { relativeTime } from "@/lib/relative-time";
 import { deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { cn } from "@/lib/utils";
 import { ScanDiffLine } from "./scan-diff-line";
 import { ScanFindingRows } from "./scan-findings";
 import { StatusLine } from "./scan-gaps";
 import { ScanSwitcher } from "./scan-switcher";
-import { ViewingOlderScanBanner } from "./viewing-older-scan-banner";
 
-/** The repo page's header. Every count in it comes from the shown scan, which an older-scan strip names when it isn't the latest. */
+/** The repo page's header. Every count in it comes from the shown scan. On an older scan, a notice for screen readers names it and Back to latest sits before the scan control. */
 export function RepoDetailHeader({
   detail,
   recentScans,
@@ -33,10 +34,15 @@ export function RepoDetailHeader({
   return (
     <header className="space-y-3">
       <BackLink href="/repos">Repos</BackLink>
-      {olderScan ? <ViewingOlderScanBanner repoId={detail.repoId} arrivedAt={detail.arrivedAt} /> : null}
+      {olderScan ? (
+        <aside aria-label="Older scan notice" className="sr-only">
+          Viewing the scan from <span title={formatAbsoluteUtc(arrivedAt)}>{relativeTime(arrivedAt)}</span>. Counts are from that scan.
+        </aside>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="min-w-0 font-mono text-2xl font-semibold [overflow-wrap:anywhere]">{detail.repoId}</h1>
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {olderScan ? <BackToLatest repoId={repoId} className="max-sm:hidden" /> : null}
           <ScanSwitcher detail={{ repoId, scanId, gitRemote, arrivedAt, scanCount, packageCount, frameworkCounts, scannerVersion }} recentScans={recentScans} />
           {canOpenSettings ? (
             <Link
@@ -49,6 +55,7 @@ export function RepoDetailHeader({
           ) : null}
         </div>
       </div>
+      {olderScan ? <BackToLatest repoId={repoId} className="sm:hidden" /> : null}
       <StatusLine gapCount={detail.findings.length} gaps={<ScanFindingRows findings={detail.findings} />}>
         <span className="inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-4">
           {remote ? (
@@ -75,6 +82,16 @@ export function RepoDetailHeader({
         <ScanDiffLine delta={detail.delta} />
       </StatusLine>
     </header>
+  );
+}
+
+/** The link from an older scan to the repo's latest. */
+function BackToLatest({ repoId, className }: { repoId: string; className: string }) {
+  return (
+    <Link href={`/repos/${encodeURIComponent(repoId)}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-fit", className)}>
+      <History aria-hidden />
+      Back to latest
+    </Link>
   );
 }
 

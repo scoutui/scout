@@ -112,6 +112,18 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
     });
   });
 
+  it("serves a component head at the latest scan's id, and none at an older scan, whose details aren't kept, or an unknown one", async () => {
+    await withReadModelDatabase(async pool => {
+      const button = component(packageExport("@example/ui", "Button"));
+      await publishScan(pool, scanOf("kept", "2026-06-01T00:00:00.000Z", [[button, 1]], "scan-old"), { uploadedByUserId: null });
+      await publishScan(pool, scanOf("kept", "2026-06-02T00:00:00.000Z", [[button, 2]], "scan-new"), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      expect((await driver.getComponentDetailHead("kept", button.id, "scan-new"))?.summary.footprint.callCount).toBe(2);
+      expect(await driver.getComponentDetailHead("kept", button.id, "scan-old")).toBeNull();
+      expect(await driver.getComponentDetailHead("kept", button.id, "scan-missing")).toBeNull();
+    });
+  });
+
   const conflict = (candidates: Extract<TagAttribution, { status: "conflict" }>["candidates"]): TagAttribution => ({ status: "conflict", strongestClass: "declared", candidates, evidence: [] });
   const inRepo = (filePath: string) => ({ kind: "repository" as const, repoId: "claims", filePath, exportName: "Badge" });
   it.each([
@@ -368,6 +380,24 @@ describe.skipIf(!process.env.DATABASE_URL)("PostgresDriver published scans", () 
         ],
       });
       expect(await driver.getCrossRepoComponent(panel.id)).toMatchObject({ repoCount: 1, distinctVersionCount: 0, usages: [{ repoId: "repo-a", version: null }] });
+    });
+  });
+
+  it("counts, for each component of a repo's scan, the other repos whose latest scan holds it", async () => {
+    await withReadModelDatabase(async pool => {
+      const [button, card, panel] = ["Button", "Card", "Panel"].map(name => component(packageExport("@example/ui", name))) as [Component, Component, Component];
+      for (const [repoId, scanId, scannedAt, held] of [
+        ["repo-a", "a-old", "2026-06-01T00:00:00.000Z", [button, card]],
+        ["repo-a", "a-new", "2026-06-02T00:00:00.000Z", [button, panel]],
+        ["repo-b", "b-new", "2026-06-01T00:00:00.000Z", [button, card]],
+        ["repo-c", "c-old", "2026-06-01T00:00:00.000Z", [card, panel]],
+        ["repo-c", "c-new", "2026-06-02T00:00:00.000Z", [button]],
+      ] as const) await publishScan(pool, scanOf(repoId, scannedAt, held.map(c => [c, 1]), scanId), { uploadedByUserId: null });
+      const driver = new PostgresDriver(pool);
+      expect(await driver.getOtherRepoCounts("repo-a", "a-new")).toEqual({ [button.id]: 2 });
+      expect(await driver.getOtherRepoCounts("repo-a", "a-old")).toEqual({ [button.id]: 2, [card.id]: 1 });
+      expect(await driver.getOtherRepoCounts("repo-a", "b-new")).toBeNull();
+      expect(await driver.getOtherRepoCounts("repo-a", "missing")).toBeNull();
     });
   });
 

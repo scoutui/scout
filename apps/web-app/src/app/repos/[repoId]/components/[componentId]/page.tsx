@@ -6,8 +6,6 @@ import { ReadModelState, SkippedScansNotice } from "@/components/read-model-stat
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
 import { ComponentDetailHeader } from "@/components/component-detail/component-detail-header";
 import { DetailTabs } from "@/components/component-detail/detail-tabs";
-import { can } from "@/lib/access";
-import { identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +47,6 @@ export default async function ComponentDetailPage({
   if (!page.value) notFound();
   const { detail, repo, graph } = page.value;
   if (!detail) notFound();
-  const canEdit = can(await identify({ browser: true }), "edit");
 
   // Repo remote + commit let occurrences deep-link to the exact source line.
   // Null when the repo has no browseable remote, and the path renders as text.
@@ -59,7 +56,7 @@ export default async function ComponentDetailPage({
 
   return (
     <div className="space-y-6">
-      <ComponentDetailHeader detail={detail} canEdit={canEdit} />
+      <ComponentDetailHeader detail={detail} />
       <SkippedScansNotice fallbacks={page.fallbacks} ownPage />
       <DetailTabs detail={detail} graph={graph ?? { nodes: [], edges: [] }} source={source} />
     </div>

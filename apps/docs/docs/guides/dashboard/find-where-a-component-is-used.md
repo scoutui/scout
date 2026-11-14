@@ -32,7 +32,7 @@ A component [defined in the repo](/docs/reference/glossary#local) is listed unde
 ## Open a component in one repo
 
 1. Select **repos** in the top navigation and open the repo.
-2. On the **Components** tab, search for `Button` and select its row. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
+2. On the **Components** tab, search for `Button` and select its name. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
 
 Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. **From** names its package, followed by the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version and, for a component defined in the repo, the file and line after **defined at**.
 

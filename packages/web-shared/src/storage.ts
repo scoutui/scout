@@ -102,12 +102,22 @@ export interface StorageDriver {
     scanId?: string,
   ): Promise<ComponentRow[]>;
 
-  getComponentDetailHead(repoId: string, componentId: string): Promise<ComponentDetailHead | null>;
+  /**
+   * One component's detail at the repo's latest scan, or at `scanId`. Null when the scan doesn't hold it, or when
+   * `scanId` is unknown or a scan whose details aren't kept (only the latest scan keeps them).
+   */
+  getComponentDetailHead(repoId: string, componentId: string, scanId?: string): Promise<ComponentDetailHead | null>;
   getComponentUsage(repoId: string, componentId: string): Promise<OccurrenceRow[]>;
   getCompositionGraph(repoId: string): Promise<CompositionGraph | null>;
 
   /** Per-component detail aggregated across all scanned repos (latest scan each). Null when the id is absent. */
   getCrossRepoComponent(componentId: string): Promise<CrossRepoComponentDetail | null>;
+
+  /**
+   * For each component the repo's scan `scanId` holds, how many other repos' latest scans hold it, keyed by component
+   * id; a component no other repo holds is left out. Null when the repo has no scan `scanId`.
+   */
+  getOtherRepoCounts(repoId: string, scanId: string): Promise<Record<string, number> | null>;
 
   /** Aggregated package list, optionally scoped to one repo's latest scan. */
   listPackages(repoId?: string): Promise<PackageSummary[]>;

@@ -191,9 +191,11 @@ export class PostgresDriver implements StorageDriver {
     });
   }
 
-  async getComponentDetailHead(repoId: string, componentId: string) {
+  async getComponentDetailHead(repoId: string, componentId: string, scanId?: string) {
     return this.read(async (reader, snapshot) => {
-      const scans = await reader.select(repoId, { latestOnly: true });
+      const scans = await reader.select(repoId, scanId ? { scanId } : { latestOnly: true });
+      const [scan] = scans;
+      if (scanId && (!scan || !scanModelReady(scan, true))) return null;
       const row = await reader.detail(scans, componentId);
       if (!row) return null;
       const fact = (await reader.facts(scans, ["attribution"], { componentId }))[0]?.components[0];
@@ -250,6 +252,15 @@ export class PostgresDriver implements StorageDriver {
     return this.read(async (reader, snapshot) => {
       const facts = await reader.facts(await reader.select(undefined, { latestOnly: true }), ["id", ...identityFields, "stats", "displayName", "version"], { componentId });
       return reduceCrossRepoComponent(facts, componentId, await snapshot.listGovernance());
+    });
+  }
+
+  async getOtherRepoCounts(repoId: string, scanId: string) {
+    return this.read(async reader => {
+      const [shown] = await reader.select(repoId, { scanId });
+      if (!shown) return null;
+      const others = (await reader.select(undefined, { latestOnly: true, record: false })).filter(scan => scan.repo_id !== repoId);
+      return reader.countHolders(shown, others);
     });
   }
 

@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { deriveGovernanceTracking, type ComponentRow, type DigestScan, type GovernanceRecord, type ScanDiff } from "@scoutui/web-shared";
+import { component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
+import type { ComponentPanelFacts } from "@/lib/component-panel";
+import { packageFilterHref } from "@/lib/component-facets";
+import type { SourceRef } from "@/lib/source-link";
 
 vi.mock("next/navigation", async () =>
   (await import("../helpers/search-params-mock")).searchParamsNavigationMock(),
@@ -28,37 +32,39 @@ const diff: ScanDiff = {
 };
 // The toolbar count <span> holds the whole sentence; its child spans hold the numbers.
 const sentence = (t: string) => (_: string, el: Element | null) => el?.tagName === "SPAN" && el.textContent === t;
-// A row's desktop Uses cell: the last cell of the row the name sits in.
-const occurrencesOf = (name: string) =>
-  within(screen.getByText(name).closest("tr") as HTMLElement).getAllByRole("cell").at(-1)?.textContent;
-// Anchored: in the changed view the Uses header's name also ends in "since previous scan".
+const cellOf = (name: string, index: number) =>
+  within(screen.getByText(name).closest("tr") as HTMLElement).getAllByRole("cell").at(index)?.textContent;
+// A row's desktop Uses cell, and its Change cell when the table has one.
+const occurrencesOf = (name: string) => cellOf(name, 4);
+const changeOf = (name: string) => cellOf(name, 5);
+// Anchored: the Change header's name also ends in "since previous scan".
 const sinceChip = () => screen.getByRole("button", { name: /^since previous scan/ });
-const DELTA_SORT_NAME = "Uses, sorts by change since previous scan";
 
 describe("ComponentsExplorer ?changed=true", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
 
-  it("shows every row and no Δ by default", () => {
-    render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
+  it("shows every row by default, most used first, with no Change column and no Added badge", () => {
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
     expect(screen.getByText("Same")).toBeInTheDocument();
     expect(screen.queryByText("Gone")).toBeNull();
     expect(sinceChip()).toHaveAttribute("aria-pressed", "false");
     expect(occurrencesOf("Grew")).toBe("9");
+    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    expect(screen.queryByText("Added")).toBeNull();
     expect(screen.getByRole("columnheader", { name: "Uses" })).toHaveAttribute("aria-sort", "descending");
   });
 
   it("narrows to marked rows plus the removed ghosts, with the Δ beside each count, the pressed chip and an honest count", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
-    render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
     expect(screen.queryByText("Same")).toBeNull();
     expect(screen.getByText("Grew")).toBeInTheDocument();
     expect(screen.getByText("Fresh")).toBeInTheDocument();
     expect(screen.getByText("Gone")).toBeInTheDocument();
-    expect(occurrencesOf("Grew")).toBe("9 (+3)");
-    expect(occurrencesOf("Gone")).toBe("0 (−6)");
-    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
-    expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "ascending");
-    expect(screen.getByRole("button", { name: DELTA_SORT_NAME })).toBeInTheDocument();
+    expect([occurrencesOf("Grew"), changeOf("Grew")]).toEqual(["9", "+3"]);
+    expect([occurrencesOf("Gone"), changeOf("Gone")]).toEqual(["0", "−6"]);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
+    expect(screen.getByRole("columnheader", { name: /^Change/ })).toHaveAttribute("aria-sort", "ascending");
     // The chip counts every row the view shows: 1 added + 1 changed + 1 removed.
     const chip = sinceChip();
     expect(chip).toHaveAttribute("aria-pressed", "true");
@@ -74,10 +80,11 @@ describe("ComponentsExplorer ?changed=true", () => {
 
   it("ignores ?changed=true when there is no diff (first scan)", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
-    render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={null} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={null} packages={[]} canEdit />);
     expect(screen.getByText("Same")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
     expect(occurrencesOf("Grew")).toBe("9");
+    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     // Inert, so the toolbar does not read as filtering: the plain total, not "3 of 3".
     expect(screen.queryByText(sentence("3 of 3 components"))).toBeNull();
     expect(screen.getByText(sentence("3 components"))).toBeInTheDocument();
@@ -86,7 +93,7 @@ describe("ComponentsExplorer ?changed=true", () => {
   it("ignores ?changed=true when only the deprecated count moved: every row, no chip, no Δ", () => {
     const deprecatedOnly: ScanDiff = { ...diff, marks: {}, added: 0, removed: 0, changed: 0, removedRows: [], deprecatedPrev: 1, deprecatedNow: 0 };
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
-    render(<ComponentsExplorer repoId="r1" rows={rows} deprecatedTotal={0} diff={deprecatedOnly} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={deprecatedOnly} packages={[]} canEdit />);
     for (const name of ["Same", "Grew", "Fresh"]) expect(screen.getByText(name)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
     expect(occurrencesOf("Grew")).toBe("9");
@@ -121,7 +128,7 @@ describe("ComponentsExplorer ?changed=true", () => {
       deprecatedPrev: 0, deprecatedNow: 0,
     };
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true&tag=forms");
-    render(<ComponentsExplorer repoId="r1" rows={tagged} deprecatedTotal={0} diff={taggedDiff} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={tagged} deprecatedTotal={0} diff={taggedDiff} packages={[]} canEdit />);
     expect(screen.getByText("FormsGhost")).toBeInTheDocument();
     expect(screen.getByText("FormsNew")).toBeInTheDocument();
     expect(screen.queryByText("OtherGhost")).toBeNull();
@@ -136,7 +143,7 @@ describe("ComponentsExplorer ?changed=true", () => {
     const deprecatedGhost: ScanDiff = { ...diff, removedRows: diff.removedRows.map((r) => ({ ...r, deprecated: true })) };
     // origin=external keeps every row and is another filter, so only the changed view keeps `of 1` off.
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true&origin=external");
-    render(<ComponentsExplorer repoId="r1" rows={withDeprecated} deprecatedTotal={1} diff={deprecatedGhost} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={withDeprecated} deprecatedTotal={1} diff={deprecatedGhost} packages={[]} canEdit />);
     // Grew and the removed Gone.
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated2");
   });
@@ -169,7 +176,7 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
 
   it("under ?deprecated=true and external, Packages offers only packages with deprecated external components, and both chips count under the same filters", async () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?origin=external&deprecated=true");
-    render(<ComponentsExplorer repoId="r1" rows={faceted} deprecatedTotal={2} diff={facetedDiff} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={faceted} deprecatedTotal={2} diff={facetedDiff} packages={[]} canEdit />);
     // Deprecated ignores its own filter but keeps external: Alpha (Beta is local), of the repo's 2.
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated1 of 2");
     // Moved rows under both filters: Alpha; the ghost Omega is not deprecated.
@@ -182,7 +189,7 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
 
   it("in the changed view the base is the view's rows, ghosts included, so a package only a ghost had is offered", async () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
-    render(<ComponentsExplorer repoId="r1" rows={faceted} deprecatedTotal={2} diff={facetedDiff} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={faceted} deprecatedTotal={2} diff={facetedDiff} packages={[]} canEdit />);
     // Deprecated counts the view's rows: Alpha.
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe("deprecated1");
     await openPackages();
@@ -193,7 +200,7 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
 
   it("a selected package the other filters leave at 0 stays listed, and a pressed chip they empty stays pressed at 0", async () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?package=@y/ui&deprecated=true");
-    render(<ComponentsExplorer repoId="r1" rows={faceted} deprecatedTotal={2} diff={facetedDiff} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={faceted} deprecatedTotal={2} diff={facetedDiff} packages={[]} canEdit />);
     expect(screen.getByText("No components match these filters.")).toBeInTheDocument();
     const deprecated = screen.getByRole("button", { name: /^deprecated/ });
     expect(deprecated.textContent).toBe("deprecated0 of 2");
@@ -206,15 +213,50 @@ describe("ComponentsExplorer facet counts follow the other filters", () => {
   });
 
   it("leaves a row the latest scan doesn't have unlinked in both views", () => {
-    render(<ComponentsExplorer repoId="r1" rows={rows} notInLatest={["fresh"]} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} notInLatest={["fresh"]} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
     const expectUnlinked = () => {
       const tr = screen.getByText("Fresh").closest("tr") as HTMLElement;
-      expect(tr.querySelector("a, button, [tabindex]")).toBeNull();
+      expect(tr.querySelector("a")).toBeNull();
       expect(screen.getByRole("link", { name: "Grew" })).toHaveAttribute("href", "/repos/r1/components/grew");
     };
     expectUnlinked();
     fireEvent.click(sinceChip());
     expectUnlinked();
+  });
+});
+
+describe("ComponentsExplorer same-named rows", () => {
+  beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
+  const named = (componentId: string, packageName: string, displayName: string, disambiguator: string): ComponentRow =>
+    ({ ...base, componentId, packageName, displayName, disambiguator });
+  const explorer = (given: ComponentRow[]) =>
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={given} deprecatedTotal={0} diff={null} packages={[]} canEdit />);
+
+  it("shows the part of the path that tells rows of one package and name apart, with the full path kept for screen readers and copy", () => {
+    explorer([
+      named("aa", "@x/a", "Card", "src/a/Card.tsx"),
+      named("ab", "@x/a", "Card", "src/b/Card.tsx"),
+      named("ba", "@x/b", "Card", "lib/a/Card.tsx"),
+      named("bc", "@x/b", "Card", "lib/c/Card.tsx"),
+    ]);
+    for (const [path, shown] of [["src/a/Card.tsx", "a"], ["src/b/Card.tsx", "b"], ["lib/a/Card.tsx", "a"], ["lib/c/Card.tsx", "c"]] as const) {
+      const full = screen.getByText(path);
+      expect(full).toHaveClass("sr-only");
+      const short = full.previousElementSibling as HTMLElement;
+      expect(short.textContent).toBe(shown);
+      expect(short).toHaveAttribute("aria-hidden", "true");
+      expect(short).toHaveClass("select-none");
+    }
+  });
+
+  it("shows the full path, wrapping at slashes, when nothing in it tells the rows apart", () => {
+    explorer([named("p1", "@x/a", "Panel", "src/panel/Panel.tsx"), named("p2", "@x/a", "Panel", "src/panel/Panel.tsx")]);
+    const lines = screen.getAllByText("src/panel/Panel.tsx");
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      expect(line.querySelectorAll("wbr")).toHaveLength(2);
+      expect(line.querySelector(".sr-only, [aria-hidden]")).toBeNull();
+    }
   });
 });
 
@@ -244,7 +286,7 @@ describe("ComponentsExplorer ?used-in", () => {
     { name: "@example/shared-ui", folder: "packages/shared-ui" },
   ];
   const renderExplorer = () =>
-    render(<ComponentsExplorer repoId="r1" rows={usedInRows} deprecatedTotal={0} diff={usedInDiff} packages={packages} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={usedInRows} deprecatedTotal={0} diff={usedInDiff} packages={packages} canEdit />);
 
   it("narrows to the components used in the package, shows that package's uses, and counts its components as the total", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?used-in=@example/web");
@@ -260,7 +302,7 @@ describe("ComponentsExplorer ?used-in", () => {
   it("links a component used in more than one package to its Usage tab with the package picked", () => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1?used-in=@example/web");
     const onlyWeb: ComponentRow = { ...base, componentId: "d", displayName: "Card", occurrenceCount: 3, fileCount: 2, usedIn: { "@example/web": counts(3, 2) } };
-    render(<ComponentsExplorer repoId="r1" rows={[...usedInRows, onlyWeb]} deprecatedTotal={0} diff={usedInDiff} packages={packages} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[...usedInRows, onlyWeb]} deprecatedTotal={0} diff={usedInDiff} packages={packages} canEdit />);
     expect(screen.getByRole("link", { name: "Button" })).toHaveAttribute("href", "/repos/r1/components/b?area=@example/web");
     expect(screen.getByRole("link", { name: "Card" })).toHaveAttribute("href", "/repos/r1/components/d");
   });
@@ -273,7 +315,7 @@ describe("ComponentsExplorer ?used-in", () => {
   ])("with $when, the deprecated chip reads $text", ({ query, text }) => {
     window.history.replaceState(null, "", `http://localhost:3000/repos/r1?${query}`);
     const deprecatedRows = usedInRows.map((r) => ({ ...r, deprecated: true }));
-    render(<ComponentsExplorer repoId="r1" rows={deprecatedRows} deprecatedTotal={3} diff={usedInDiff} packages={packages} canEdit />);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={deprecatedRows} deprecatedTotal={3} diff={usedInDiff} packages={packages} canEdit />);
     expect(screen.getByRole("button", { name: /^deprecated/ }).textContent).toBe(text);
   });
 
@@ -292,5 +334,291 @@ describe("ComponentsExplorer ?used-in", () => {
     expect(occurrencesOf("Button")).toBe("1");
     expect(screen.queryByText("Gone")).toBeNull();
     expect(screen.queryByRole("button", { name: /since previous scan/ })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: /^Change/ })).toBeNull();
+  });
+});
+
+describe("ComponentsExplorer details", () => {
+  /** Media queries match as they would at `width` pixels. */
+  function viewport(width: number) {
+    vi.spyOn(window, "matchMedia").mockImplementation((query: string) => ({
+      matches: Number(/([\d.]+)rem/.exec(query)?.[1]) * 16 <= width, media: query, onchange: null,
+      addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
+    }) as MediaQueryList);
+  }
+  const reads = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
+    ? { grew: 1 }
+    : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null }, history: [] })));
+  const otherRepos = "/api/repos/r1/components/other-repos?scan=S2";
+  beforeEach(() => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1");
+    reads.mockClear();
+    vi.stubGlobal("fetch", reads);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+  const explorer = (source: SourceRef | null = null) => render(<ComponentsExplorer repoId="r1" scanId="S2" source={source} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
+  const toggle = () => screen.getByRole("button", { name: "Details" });
+  const rowButton = (name: string) => screen.getByRole("button", { name: `Details for ${name}` });
+
+  it("from 1024px opens beside the table on the first row, and closes and opens again from the toggle and the close button", () => {
+    viewport(1024);
+    explorer();
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("complementary", { name: "Details for Grew" })).toBeInTheDocument();
+    const spoken = () => document.querySelector('[aria-live="polite"].sr-only')?.textContent;
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("complementary", { name: /^Details for/ })).toBeNull();
+    expect(spoken()).toBe("Details hidden");
+    fireEvent.click(toggle());
+    expect(spoken()).toBe("Details shown for Grew");
+    fireEvent.click(screen.getByRole("button", { name: "Close details" }));
+    expect(screen.queryByRole("complementary", { name: /^Details for/ })).toBeNull();
+    fireEvent.click(rowButton("Same"));
+    expect(screen.getByRole("complementary", { name: "Details for Same" })).toBeInTheDocument();
+  });
+
+  it("opens the details from the selected row's button and never closes them from it, leaving Enter and Space to the browser's click", () => {
+    viewport(1024);
+    explorer();
+    const details = () => screen.queryByRole("complementary", { name: "Details for Grew" });
+    expect(fireEvent.keyDown(rowButton("Grew"), { key: "Enter" })).toBe(true);
+    expect(fireEvent.keyDown(rowButton("Grew"), { key: " " })).toBe(true);
+    expect(details()).toBeInTheDocument();
+    fireEvent.click(toggle());
+    fireEvent.click(rowButton("Grew"));
+    expect(details()).toBeInTheDocument();
+    fireEvent.click(rowButton("Grew"));
+    expect(details()).toBeInTheDocument();
+  });
+
+  it("shows a clicked row's details and says its facts to screen readers", () => {
+    viewport(1440);
+    explorer();
+    fireEvent.click(rowButton("Same"));
+    expect(screen.getByRole("complementary", { name: "Details for Same" })).toBeInTheDocument();
+    expect(screen.getByText("Same. 4 uses in 1 file.")).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("says the selected row's change beside the table, except in the changed view, whose Change column says it", async () => {
+    viewport(1024);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
+      ? {}
+      : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null }, history: [{ t: "2026-09-01T00:00:00.000Z", value: 6 }, { t: "2026-11-01T00:00:00.000Z", value: 9 }] }))));
+    const details = () => screen.getByRole("complementary", { name: /^Details for/ });
+    const summary = (text: string) => within(details()).findByText((_, el) => el?.tagName === "P" && el.textContent === text);
+    const { unmount } = explorer();
+    expect(await summary("6 to 9 uses in 3 months · +3 since previous scan")).toBeInTheDocument();
+    unmount();
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
+    explorer();
+    expect(await summary("6 to 9 uses in 3 months")).toBeInTheDocument();
+    expect(within(details()).queryByText(/since previous scan|in this scan/)).toBeNull();
+  });
+
+  it("below 1024px opens a bottom sheet from a row click, starting closed and reading no details while closed", async () => {
+    vi.useFakeTimers();
+    viewport(1023);
+    explorer();
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    expect(reads.mock.calls.map(([url]) => url)).toEqual([otherRepos]);
+    fireEvent.click(rowButton("Same"));
+    expect(within(screen.getByRole("dialog", { name: "Details for Same" })).queryByRole("button", { name: "Next component" })).toBeNull();
+  });
+
+  it("reads every row's other repos once, and a row's details once the selection rests, again only for a row it hasn't read", async () => {
+    vi.useFakeTimers();
+    viewport(1440);
+    explorer();
+    const requested = () => reads.mock.calls.map(([url]) => url);
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    expect(requested()).toEqual([otherRepos, "/api/repos/r1/components/grew?scan=S2"]);
+    const link = (name: string) => within(screen.getByRole("table")).getByRole("link", { name });
+    fireEvent.keyDown(link("Grew"), { key: "ArrowDown" });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+    fireEvent.keyDown(link("Same"), { key: "ArrowDown" });
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    fireEvent.keyDown(link("Fresh"), { key: "ArrowUp" });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+    fireEvent.keyDown(link("Same"), { key: "ArrowUp" });
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    expect(requested().slice(2)).toEqual(["/api/repos/r1/components/fresh?scan=S2"]);
+    expect(screen.getByRole("link", { name: "1 other repo" })).toHaveAttribute("href", "/components/grew");
+  });
+
+  const used = { occurrenceCount: 1, fileCount: 1 };
+  const replacementUsedIn = (...packages: string[]): ComponentRow[] =>
+    [{ ...base, componentId: "new", displayName: "New", usedIn: Object.fromEntries(packages.map((p) => [p, used])) }];
+  it.each<[string, string, ComponentRow[], string[], string, string | null]>([
+    ["links the replacement to its page when the repo has it", "Same", [], [], "", "/repos/r1/components/same"],
+    ["names the replacement as plain text when the repo doesn't have it", "Missing", [], [], "", null],
+    ["names the replacement as plain text when only an older scan has it", "Same", [], ["same"], "", null],
+    ["keeps the Used in package in the replacement's link when the replacement is used there", "New", replacementUsedIn("@x/web", "@x/admin"), [], "?used-in=@x/web", "/repos/r1/components/new?area=@x/web"],
+    ["leaves the Used in package out of the replacement's link when the replacement isn't used there", "New", replacementUsedIn("@x/admin", "@x/docs"), [], "?used-in=@x/web", "/repos/r1/components/new"],
+  ])("%s", (_title, exportName, more, notInLatest, search, href) => {
+    window.history.replaceState(null, "", `http://localhost:3000/repos/r1${search}`);
+    viewport(1024);
+    const replaced: ComponentRow = {
+      ...base, componentId: "old", displayName: "OldButton", occurrenceCount: 20, deprecated: true, usedIn: { "@x/web": { occurrenceCount: 20, fileCount: 2 } },
+      migration: { status: { status: "superseded", by: { packageName: "@x/lib", exportName } }, recordId: "g1" },
+    };
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[replaced, ...more, ...rows]} notInLatest={notInLatest} deprecatedTotal={1} diff={null} packages={[]} canEdit />);
+    const details = within(screen.getByRole("complementary", { name: "Details for OldButton" }));
+    const name = `@x/lib/${exportName}`;
+    if (href) expect(details.getByRole("link", { name })).toHaveAttribute("href", href);
+    else expect(details.getByTitle(name).closest("a")).toBeNull();
+  });
+
+  it.each<[string, string, boolean]>([
+    ["links a whole replacement package to the table filtered to it when the repo uses it", "@x/lib", true],
+    ["names a whole replacement package as plain text when the repo doesn't use it", "@x/none", false],
+  ])("%s", (_title, packageName, linked) => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1");
+    viewport(1024);
+    const replaced: ComponentRow = {
+      ...base, componentId: "old", packageName: "@x/old", displayName: "OldButton", occurrenceCount: 20, deprecated: true,
+      migration: { status: { status: "superseded", by: { packageName } }, recordId: "g1" },
+    };
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[replaced, ...rows]} deprecatedTotal={1} diff={null} packages={[]} canEdit />);
+    const details = within(screen.getByRole("complementary", { name: "Details for OldButton" }));
+    if (linked) expect(details.getByRole("link", { name: packageName })).toHaveAttribute("href", packageFilterHref("r1", packageName));
+    else expect(details.getByTitle(packageName).closest("a")).toBeNull();
+  });
+
+  /** Holds each details read until `land` answers it; the other repos read answers at once. */
+  function heldReads() {
+    const held = new Map<string, (facts: ComponentPanelFacts) => void>();
+    vi.stubGlobal("fetch", vi.fn((url: string) => url === otherRepos
+      ? Promise.resolve(new Response("{}"))
+      : new Promise<Response>((resolve) => held.set(url, (facts) => resolve(new Response(JSON.stringify(facts)))))));
+    return async (id: string, facts: ComponentPanelFacts) => {
+      held.get(`/api/repos/r1/components/${id}?scan=S2`)?.(facts);
+      await act(() => vi.advanceTimersByTimeAsync(0));
+    };
+  }
+  const topProp = (name: string, label: string, count: number): ComponentPanelFacts => ({
+    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null },
+    history: [{ t: "2026-09-01T00:00:00.000Z", value: count - 1 }, { t: "2026-11-01T00:00:00.000Z", value: count }],
+  });
+  const aside = () => screen.getByRole("complementary", { name: /^Details for/ });
+
+  it("keeps the last details and story, faded, busy and unlinked, until the next component's land", async () => {
+    vi.useFakeTimers();
+    viewport(1440);
+    const land = heldReads();
+    explorer({ remote: { host: "github.com", href: "https://github.com/example/app" } as never, commit: "abc" });
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    await land("grew", topProp("variant", "primary", 9));
+    expect(screen.getByRole("link", { name: "variant primary, 9 uses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Grew source" })).toBeInTheDocument();
+    fireEvent.keyDown(within(screen.getByRole("table")).getByRole("link", { name: "Grew" }), { key: "ArrowDown" });
+    expect(within(aside()).getByRole("heading", { level: 2, name: "Same" })).toBeInTheDocument();
+    const busy = () => [...aside().querySelectorAll<HTMLElement>('[aria-busy="true"]')];
+    const [story, props] = busy();
+    expect(busy().map((el) => el.className)).toEqual(["opacity-60", "opacity-60"]);
+    expect(within(story as HTMLElement).getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
+    expect(story).toHaveTextContent("8 to 9 uses in 3 months");
+    expect(within(props as HTMLElement).getByLabelText("variant primary, 9 uses").tagName).toBe("SPAN");
+    expect(screen.queryByRole("link", { name: /source/ })).toBeNull();
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    expect(busy()[1]).toHaveTextContent("variant");
+    await land("same", topProp("size", "small", 4));
+    expect(busy()).toEqual([]);
+    expect(within(aside()).getByText((_, el) => el?.tagName === "P" && el.textContent === "3 to 4 uses in 3 months")).toBeInTheDocument();
+    expect(screen.queryByLabelText("variant primary, 9 uses")).toBeNull();
+    expect(screen.getByRole("link", { name: "size small, 4 uses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Same source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc/src/size.tsx#L1");
+  });
+
+  it("holds the story's and props' space while the first details load, and shows their skeletons only once the read is slow", async () => {
+    vi.useFakeTimers();
+    viewport(1440);
+    heldReads();
+    explorer();
+    const skeleton = () => within(aside()).getByRole("list", { hidden: true }).parentElement;
+    // The story's placeholder sits just above the props'.
+    const story = () => skeleton()?.previousElementSibling;
+    await act(() => vi.advanceTimersByTimeAsync(150 + 399));
+    expect(story()).toHaveAttribute("aria-hidden", "true");
+    expect(story()).toHaveClass("invisible");
+    expect(skeleton()).toHaveClass("invisible");
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(story()).not.toHaveClass("invisible");
+    expect(skeleton()).not.toHaveClass("invisible");
+  });
+
+  /** Renders a deprecated Card at `width` pixels, whose record shares its replacement with Button's and Badge's, with any `more` rows. */
+  function mergedMigration(width: number, more: ComponentRow[] = []) {
+    const used = (exportName: string, occurrenceCount: number, packageName = "@acme/old") =>
+      component(packageExport(packageName, exportName), { stats: { occurrenceCount, fileCount: 1 }, usage: "direct" });
+    const scans: DigestScan[] = ["2026-10-02", "2026-10-16", "2026-10-30", "2026-11-13"].map((d, i) => ({
+      meta: { scanId: `s${i}`, committedAt: `${d}T00:00:00.000Z`, arrivedAt: `${d}T00:00:00.000Z`, repo: { id: "r1" } },
+      components: [used("Button", 40 - i), used("Card", 30 - i), used("Badge", 20 - i), used("Button", 5 * i, "@acme/new")],
+    }));
+    const replaced = (id: string, targetExport: string): GovernanceRecord => ({
+      id, grain: "component", targetPackage: "@acme/old", targetExport,
+      disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+    });
+    const tracking = deriveGovernanceTracking([replaced("g-badge", "Badge"), replaced("g-button", "Button"), replaced("g-card", "Card")], scans, { kind: "repo", repoId: "r1" }, "2026-11-14T00:00:00.000Z");
+    const card: ComponentRow = {
+      ...base, componentId: "card", packageName: "@acme/old", displayName: "Card", occurrenceCount: 27, deprecated: true,
+      migration: { status: { status: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, recordId: "g-card" },
+    };
+    viewport(width);
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[card, ...more]} deprecatedTotal={1} diff={null} packages={[]} canEdit tracking={tracking} />);
+  }
+
+  it("holds the story's place, keeping only the props faded, while an ordinary component's details load after a migration's", async () => {
+    vi.useFakeTimers();
+    const land = heldReads();
+    mergedMigration(1440, rows);
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    await land("card", topProp("variant", "primary", 27));
+    expect(within(aside()).getByRole("heading", { name: "Migration · 3 months" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "variant primary, 27 uses" })).toBeInTheDocument();
+    fireEvent.keyDown(within(screen.getByRole("table")).getByRole("link", { name: "Card" }), { key: "ArrowDown" });
+    expect(within(aside()).getByRole("heading", { level: 2, name: "Grew" })).toBeInTheDocument();
+    const busy = [...aside().querySelectorAll<HTMLElement>('[aria-busy="true"]')];
+    expect(busy).toHaveLength(1);
+    const props = busy[0] as HTMLElement;
+    expect(within(props).getByLabelText("variant primary, 27 uses").tagName).toBe("SPAN");
+    expect(within(aside()).queryByRole("img")).toBeNull();
+    // The story's placeholder sits just above the props'.
+    expect(props.previousElementSibling).toHaveAttribute("aria-hidden", "true");
+    expect(props.previousElementSibling).toHaveClass("invisible");
+  });
+
+  it("tells the selected row the migration its record is merged into, named by how many components it moves", async () => {
+    mergedMigration(1440);
+    expect(screen.getAllByRole("listitem")[0]?.textContent).toMatch(/^3 components@acme\/old/);
+    fireEvent.click(screen.getByRole("button", { name: "How this is counted" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Counts the 3 components that share this replacement.");
+  });
+
+  it("in the sheet, closes only the info note on Esc, with focus elsewhere in the sheet", async () => {
+    mergedMigration(1023);
+    fireEvent.click(rowButton("Card"));
+    const sheet = await screen.findByRole("dialog", { name: "Details for Card" });
+    const info = within(sheet).getByRole("button", { name: "How this is counted" });
+    fireEvent.click(info);
+    await screen.findByRole("tooltip");
+    fireEvent.keyDown(sheet, { key: "Escape" });
+    await act(async () => {});
+    expect(info).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("dialog", { name: "Details for Card" })).toBeInTheDocument();
+  });
+
+  it("still tells a component new in this scan while a Used in package is picked", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?used-in=@example/web");
+    viewport(1440);
+    const fresh: ComponentRow = { ...base, componentId: "fresh", displayName: "Fresh", usedIn: { "@example/web": { occurrenceCount: 1, fileCount: 1 } } };
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[fresh]} deprecatedTotal={0} diff={diff} packages={[{ name: "@example/web", folder: "apps/web" }]} canEdit />);
+    expect(await screen.findByText("New in this scan, so its history starts here.")).toBeInTheDocument();
   });
 });

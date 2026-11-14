@@ -186,6 +186,8 @@ export function reduceComponentRows(
     if (ast && !matchesQuery(ast, c, governance, tags)) continue;
 
     const { kind, scope, packageName } = presentIdentity(c);
+    const lookup = governanceKey(c);
+    const status = resolveGovernance(lookup, governance);
     rows.push({
       componentId: c.id,
       kind,
@@ -199,6 +201,7 @@ export function reduceComponentRows(
       fileCount: c.stats.fileCount,
       ...(c.usedIn != null ? { usedIn: c.usedIn } : {}),
       deprecated: componentDeprecated(c, governance),
+      ...(isDeprecated(status) ? { migration: { status, recordId: governingRecord(lookup, governance)?.id ?? null } } : {}),
       tags: resolveTags(packageName, tags),
     });
   }

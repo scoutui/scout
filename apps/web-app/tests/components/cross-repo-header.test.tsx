@@ -13,12 +13,12 @@ const detail: CrossRepoComponentDetail = {
 
 describe("CrossRepoHeader", () => {
   it("counts a single use as `1 use`", () => {
-    render(<CrossRepoHeader detail={detail} canEdit={false} />);
+    render(<CrossRepoHeader detail={detail} />);
     expect(screen.getByText("1 use")).toBeInTheDocument();
   });
 
   it("shows the oldest to the newest version in the meta line", () => {
-    render(<CrossRepoHeader detail={{ ...detail, distinctVersionCount: 3, versionRange: { oldest: "1.0.0", newest: "2.4.1" } }} canEdit={false} />);
+    render(<CrossRepoHeader detail={{ ...detail, distinctVersionCount: 3, versionRange: { oldest: "1.0.0", newest: "2.4.1" } }} />);
     expect(screen.getByTitle("3 versions")).toHaveTextContent("1.0.0 – 2.4.1");
   });
 });

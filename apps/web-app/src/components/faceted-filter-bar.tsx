@@ -62,6 +62,7 @@ export function FacetedFilterBar({
   count,
   pills,
   onClearAll,
+  actions,
 }: {
   search: { value: string; onChange: (text: string) => void; label: string; placeholder: string };
   chips: React.ReactNode;
@@ -69,37 +70,46 @@ export function FacetedFilterBar({
   count: React.ReactNode;
   pills: FilterPill[];
   onClearAll: () => void;
+  /** Controls after the Filter menu that act on the view rather than filter it. */
+  actions?: React.ReactNode;
 }) {
   const allPills: FilterPill[] = search.value.trim()
     ? [{ key: "text", field: "name", value: search.value.trim(), mono: true, onRemove: () => search.onChange("") }, ...pills]
     : pills;
+
+  // Below sm the count takes its own line; from sm up it sits at the end of its
+  // row, so its width only changes the free gap. It ends the pills row while
+  // pills show, and the controls row otherwise.
+  const countLine = (
+    <span className="shrink-0 basis-full text-xs text-muted-foreground tabular-nums sm:ms-auto sm:basis-auto">{count}</span>
+  );
 
   return (
     <div className="flex flex-col gap-2 border-b px-3 py-2.5">
       {/* Wraps below sm: search, both status chips and Filter don't fit a
           390px line, so search takes its own line. From sm up the search is
           capped, so a change in the count's width goes to the count's
-          `ml-auto` gap instead of sliding the chips sideways. The cap is
+          `ms-auto` gap instead of sliding the chips sideways. The cap is
           max-w-xs below xl because at 1024 only ~328px is left beside the
           controls and the changed view's count. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-0 grow basis-full sm:basis-0 sm:max-w-xs xl:max-w-md">
-          <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          {/* pr-8 keeps the value clear of the absolutely-positioned clear
+        <div className="relative min-w-0 grow basis-full sm:min-w-48 sm:basis-0 sm:max-w-xs xl:max-w-md">
+          <Search aria-hidden className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          {/* pe-8 keeps the value clear of the absolutely-positioned clear
               button; without it a long term runs underneath the ×. */}
           <Input
             aria-label={search.label}
             value={search.value}
             onChange={(e) => search.onChange(e.target.value)}
             placeholder={search.placeholder}
-            className="h-8 pl-8 pr-8 font-mono text-base placeholder:font-sans sm:text-xs"
+            className="h-8 ps-8 pe-8 font-mono text-base placeholder:font-sans sm:text-xs"
           />
           {search.value ? (
             <button
               type="button"
               aria-label="Clear search"
               onClick={() => search.onChange("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+              className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
@@ -110,9 +120,9 @@ export function FacetedFilterBar({
 
         <FilterMenu facets={facets} />
 
-        {/* Below sm the count takes its own line; from sm up it sits at the
-            right edge, so its width only changes the free gap. */}
-        <span className="shrink-0 basis-full text-xs text-muted-foreground tabular-nums sm:ml-auto sm:basis-auto">{count}</span>
+        {actions}
+
+        {allPills.length === 0 ? countLine : null}
       </div>
 
       {allPills.length > 0 ? (
@@ -127,10 +137,11 @@ export function FacetedFilterBar({
           <button
             type="button"
             onClick={onClearAll}
-            className="ml-1 inline-flex h-6 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="ms-1 inline-flex h-6 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             Clear all
           </button>
+          {countLine}
         </div>
       ) : null}
     </div>
@@ -208,7 +219,7 @@ function FilterMenu({ facets }: { facets: Facet[] }) {
             <ListFilter aria-hidden />
             Filter
             {count > 0 ? (
-              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-xs font-semibold tabular-nums text-foreground">
+              <span className="ms-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-xs font-semibold tabular-nums text-foreground">
                 {count.toLocaleString()}
               </span>
             ) : null}
@@ -225,7 +236,7 @@ function FilterMenu({ facets }: { facets: Facet[] }) {
                   <button
                     type="button"
                     onClick={() => setView(f.key)}
-                    className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted"
+                    className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-start text-sm transition-colors hover:bg-muted"
                   >
                     <span>{f.label}</span>
                     <span className="flex items-center gap-1 text-muted-foreground">
@@ -339,7 +350,7 @@ function CheckRow({
         type="button"
         aria-pressed={checked}
         onClick={onToggle}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-start text-sm transition-colors hover:bg-muted"
       >
         <Checkbox checked={checked} tabIndex={-1} aria-hidden className="pointer-events-none" />
         {dot ? <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: paletteToken(dot) }} /> : null}
@@ -355,7 +366,7 @@ function CheckRow({
 
 function Pill({ children, label, onRemove }: { children: React.ReactNode; label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex h-6 items-center gap-1 rounded-md border border-border bg-background pl-2 pr-1 text-xs">
+    <span className="inline-flex h-6 items-center gap-1 rounded-md border border-border bg-background ps-2 pe-1 text-xs">
       <span className="inline-flex items-center gap-1.5">{children}</span>
       <button
         type="button"

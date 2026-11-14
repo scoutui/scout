@@ -2,9 +2,9 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-/** Whether the page matches a media query. False until mounted. */
-export function useMedia(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+/** Whether the page matches a media query; `initial` until mounted. */
+export function useMedia(query: string, initial = false): boolean {
+  const [matches, setMatches] = useState(initial);
   useLayoutEffect(() => {
     const media = window.matchMedia(query);
     const update = () => setMatches(media.matches);

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { FilterBar } from "@/components/repos/filter-bar";
 import { PackageFilterBar } from "@/components/packages/package-filter-bar";
 import { emptyFacets, isFiltering, type FacetOptions, type FacetState } from "@/lib/component-facets";
@@ -297,6 +297,23 @@ describe("FilterBar pills", () => {
   });
 });
 
+describe("FilterBar count placement", () => {
+  it("ends the row with the search box when no pills show, and the pills row, after Clear all, when pills show", () => {
+    renderBar();
+    const alone = screen.getByText(sentence("4 components"));
+    const controls = alone.parentElement as HTMLElement;
+    expect(within(controls).getByRole("textbox", { name: "Search components by name" })).toBeInTheDocument();
+    expect(controls.lastElementChild).toBe(alone);
+    cleanup();
+
+    renderBar(options, { ...emptyFacets(), tags: ["icons"] });
+    const count = screen.getByText(sentence("4 of 4 components"));
+    const pills = count.parentElement as HTMLElement;
+    expect(within(pills).getByRole("button", { name: "Clear all" }).nextElementSibling).toBe(count);
+    expect(within(pills).queryByRole("textbox")).toBeNull();
+  });
+});
+
 describe("FilterBar Used in facet", () => {
   const usedIn = [{ value: "@example/web", count: 2 }, { value: "whole-repo-scope", count: 1 }];
   const packageFolders = new Map([["@example/web", "apps/web"], ["whole-repo-scope", ""]]);
@@ -457,10 +474,10 @@ describe("FilterBar result count in the changed view", () => {
     expect(count.className).toMatch(/sm:basis-auto/);
   });
 
-  it("from sm up the search is capped and the count takes the free gap, so a count change cannot move the controls", () => {
+  it("from sm up the search is capped and the count is pushed to the end of its row", () => {
     renderCount(filtered, { filtering: true, resultCount: 12 });
     const search = screen.getByRole("textbox", { name: "Search components by name" }).parentElement as HTMLElement;
-    expect(search.className).toBe("relative min-w-0 grow basis-full sm:basis-0 sm:max-w-xs xl:max-w-md");
-    expect(screen.getByText(sentence("12 of 29 changes · 2 removed · 10 changed")).className).toMatch(/(^|\s)sm:ml-auto(\s|$)/);
+    expect(search.className).toBe("relative min-w-0 grow basis-full sm:min-w-48 sm:basis-0 sm:max-w-xs xl:max-w-md");
+    expect(screen.getByText(sentence("12 of 29 changes · 2 removed · 10 changed")).className).toMatch(/(^|\s)sm:ms-auto(\s|$)/);
   });
 });

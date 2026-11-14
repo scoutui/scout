@@ -174,7 +174,7 @@
   outline-offset: -2px;
 }
 
-/* Keyboard focus for a link stretched over its table row with ::after. */
+/* Keyboard focus for a link or button stretched over its table row with ::after. */
 @utility focus-row {
   &:focus-visible {
     outline: none;
@@ -210,6 +210,62 @@
   overflow: hidden;
   white-space: nowrap;
   max-width: clamp(0px, (var(--chars) * 1ch - 100cqw - 0.5px) * 1000, 100%);
+}
+
+/* 1 while a truncate-reveal element's text overflows it. */
+@property --truncated {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@keyframes truncated {
+  from,
+  to {
+    --truncated: 1;
+  }
+}
+
+/* One line of text cut off with an ellipsis. While its table row is hovered or
+   holds keyboard focus, the text, wrapped in a child span, scrolls inside the
+   box to show its end, and snaps back after. Only text that overflows moves:
+   a scroll timeline sets --truncated while it does, and script sets the
+   `truncated` class. Nothing moves under reduced motion. */
+@utility truncate-reveal {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  @supports (animation-timeline: scroll()) {
+    animation: truncated linear both;
+    animation-timeline: scroll(self inline);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    tr:is(:hover, :has(:focus-visible)) & {
+      text-overflow: clip;
+    }
+    @container style(--truncated: 1) {
+      tr:is(:hover, :has(:focus-visible)) & > span {
+        display: inline-block;
+        margin-inline-start: 100%;
+        translate: calc(1px - 100%);
+        text-decoration: inherit;
+        transition: margin-inline-start 2s ease-in, translate 2s ease-in;
+      }
+      tr:is(:hover, :has(:focus-visible)) &:dir(rtl) > span {
+        translate: calc(100% - 1px);
+      }
+    }
+    tr:is(:hover, :has(:focus-visible)) &.truncated > span {
+      display: inline-block;
+      margin-inline-start: 100%;
+      translate: calc(1px - 100%);
+      text-decoration: inherit;
+      transition: margin-inline-start 2s ease-in, translate 2s ease-in;
+    }
+    tr:is(:hover, :has(:focus-visible)) &.truncated:dir(rtl) > span {
+      translate: calc(100% - 1px);
+    }
+  }
 }
 
 /* Label role for column headers and tag keys. */

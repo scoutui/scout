@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { deltaOf, deltaTone, ghostRow, movementParts, signedCount } from "@/lib/scan-diff-view";
+import type { DiffMark } from "@scoutui/web-shared";
+import { changeText, deltaOf, deltaTone, ghostRow, movementParts, signedCount } from "@/lib/scan-diff-view";
 
 describe("movementParts", () => {
   it("orders added · removed · changed and omits zero parts", () => {
@@ -31,6 +32,16 @@ describe("deltaOf", () => {
     expect(deltaOf({ kind: "removed" }, 7)).toBe(-7);
     expect(deltaOf({ kind: "changed", delta: -2 }, 7)).toBe(-2);
     expect(deltaOf(undefined, 7)).toBe(0);
+  });
+});
+
+describe("changeText", () => {
+  it.each<[string, DiffMark | undefined, number, string | null]>([
+    ["a drop", { kind: "changed", delta: -4 }, 10, "−4 since previous scan"],
+    ["no change, as nothing", undefined, 10, null],
+    ["a new component", { kind: "added" }, 3, "New in this scan"],
+  ])("words %s", (_title, mark, occurrenceCount, text) => {
+    expect(changeText(mark, occurrenceCount)).toBe(text);
   });
 });
 
