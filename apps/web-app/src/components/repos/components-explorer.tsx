@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PanelRight } from "lucide-react";
-import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
+import type { ComponentRow, GovernanceTracking, ScanDiff } from "@scoutui/web-shared";
 import { plural, scanDiffRowCount } from "@scoutui/web-shared/client";
 import { changeText, ghostRow } from "@/lib/scan-diff-view";
 import { distinctPaths } from "@/lib/dashboard-format";
@@ -119,6 +119,8 @@ export function ComponentsExplorer({
   packages,
   source,
   canEdit,
+  tracking = null,
+  olderScanAt = null,
 }: {
   repoId: string;
   /** The shown scan. */
@@ -134,6 +136,10 @@ export function ComponentsExplorer({
   /** The shown scan's remote and commit, for source links. */
   source: SourceRef | null;
   canEdit: boolean;
+  /** The repo's stored migration and retirement tracking, as the Adoption tab shows it; null until it's derived. */
+  tracking?: GovernanceTracking[] | null | undefined;
+  /** Where the shown scan sits in the repo's history when it isn't the latest; null on the latest. */
+  olderScanAt?: string | null | undefined;
 }) {
   const notInLatestIds = useMemo(() => new Set(notInLatest), [notInLatest]);
   const [facets, setFacets] = useQueryParamsState<FacetState>(FACET_PARAMS, paramsToFacets, facetsToParams);
@@ -219,6 +225,8 @@ export function ComponentsExplorer({
   const setShown = mode === "column" ? setInlineOpen : setSheetOpen;
   const facts = usePanelFacts(repoId, scanId, selected?.componentId ?? null, open);
   const otherRepoCounts = useOtherRepoCounts(repoId, scanId);
+  const recordId = selected?.migration?.recordId;
+  const entry = (recordId ? tracking?.find((e) => e.recordIds.includes(recordId)) : undefined) ?? null;
   // Before mount the column is assumed and CSS hides it below 64rem; once the
   // width is known it leaves the page there.
   const column = mode === "column" && inlineOpen && selected !== null;
@@ -249,9 +257,11 @@ export function ComponentsExplorer({
         row={selected}
         linked={!notInLatestIds.has(selected.componentId)}
         usedIn={facets.usedIn}
-        mark={diffMarks?.[selected.componentId]}
+        mark={diff?.marks[selected.componentId]}
         showChange={diffMarks !== undefined && (inMode === "sheet" || marks === undefined)}
         facts={facts}
+        entry={entry}
+        olderScanAt={olderScanAt}
         otherRepos={otherRepoCounts === null ? null : (otherRepoCounts[selected.componentId] ?? 0)}
         source={source}
         mode={inMode}

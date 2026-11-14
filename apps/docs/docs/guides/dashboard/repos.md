@@ -63,6 +63,10 @@ Select anywhere on a row except the name to see that component's details beside 
 - Its package and framework, and if it's deprecated, its replacement or why it was retired. When the repo uses the replacement, select it: a replacement component opens its usage, and a whole replacement package filters the table to it.
 - **Used in N other repos**, which opens the component across every repo.
 - **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host at the scanned commit.
+- A chart of the last 3 months, or of every scan when fewer than two fall in that time. It counts the whole repo, even while a **Used in** package is picked:
+  - A component with a replacement: its uses and the replacement's, with the same numbers as the **Adoption** tab, for example **16.1% migrated · 374 left**. A retired component: its uses left. Records that name the same replacement share one chart, which says how many components it counts, and a record that covers a whole package counts the whole package and says so. **Open chart** opens the chart for this repo. See [Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress).
+  - Any other component: its uses in each scan of this repo. A component that's renamed or moved to another file counts as a new component, so its line starts at that scan.
+  - A component new in this scan, or any component on a repo's first scan, has no history yet.
 - **Top props**: the three props set most often, how many uses set each, and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression. **N props never set** counts props the component declares that no use sets.
 - **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
 
@@ -110,7 +114,7 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 Press **‹** and **›** beside the scan button to step to the previous or next scan. To jump further, press the scan button and pick a scan from the list. **All N scans** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-On an older scan, the scan button names it, for example **Scanned 7d ago**, and **Back to latest** appears beside it. The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. Prop values are kept for the latest scan only, so the details show **Top props are kept for the latest scan only.** instead of **Top props**. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
+On an older scan, the scan button names it, for example **Scanned 7d ago**, and **Back to latest** appears beside it. The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. Prop values are kept for the latest scan only, so the details show **Top props are kept for the latest scan only.** instead of **Top props**. The details' chart ends at the scan you picked, with the counts from that scan, and leaves out a migration's or retirement's summary, which describes the latest scan. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
 
 A link copied while you look at an older scan opens the same scan.
 

@@ -64,7 +64,7 @@ function recordQueries(allowUsage = false) {
   };
 }
 
-type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown; authors?: Record<string, unknown> };
+type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; olderScanAt?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown; authors?: Record<string, unknown> };
 
 /** A read of every component fact in a scan, not one component's. */
 const readsEveryComponent = (query: string) => /\bscan_component_facts\b/.test(query) && !/\bcomponent_id = \$2\b/.test(query);
@@ -254,8 +254,10 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const { default: page } = await import("@/app/repos/[repoId]/page");
       const older = await page({ ...repoParams, searchParams: Promise.resolve({ scan: "scan-current" }) });
       expect(propsFor(older, "ComponentsExplorer")?.notInLatest).toEqual([field]);
+      expect(propsFor(older, "ComponentsExplorer")?.olderScanAt).toBe("2026-06-02T00:00:00.000Z");
       const latest = await page({ ...repoParams, searchParams });
       expect(propsFor(latest, "ComponentsExplorer")?.notInLatest).toEqual([]);
+      expect(propsFor(latest, "ComponentsExplorer")?.olderScanAt).toBeNull();
     });
   });
 
@@ -530,9 +532,12 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(await served(detailsOf(button, "scan-current"))).toEqual({
         source: null,
         props: { kept: true, uses: 1, top: [{ name: "size", set: 1, values: [{ kind: "value", label: "small", count: 1 }] }], neverSet: null },
+        history: [{ t: "2026-06-01T00:00:00.000Z", value: 1 }, { t: "2026-06-02T00:00:00.000Z", value: 1 }],
       });
       expect(await served(detailsOf(panel, "scan-current"))).toMatchObject({ source: { filePath: "src/panel.tsx", line: 3 }, props: { kept: true, neverSet: 1 } });
-      expect(await served(detailsOf(panel, "scan-previous"))).toEqual({ source: { filePath: "src/panel.tsx", line: null }, props: { kept: false } });
+      expect(await served(detailsOf(panel, "scan-previous"))).toEqual({
+        source: { filePath: "src/panel.tsx", line: null }, props: { kept: false }, history: [{ t: "2026-06-01T00:00:00.000Z", value: 1 }],
+      });
       const member = componentKey(packageExport("@sample/core", "Button.Icon"));
       const counts: Record<string, number> = await served(() => otherRepos.GET(request("?scan=scan-current"), repoParams));
       expect(counts[member]).toBe(1);

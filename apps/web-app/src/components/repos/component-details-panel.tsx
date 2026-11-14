@@ -2,7 +2,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Code, X } from "lucide-react";
-import type { ComponentRow, DiffMark, TopProp, TopPropValue } from "@scoutui/web-shared";
+import type { ComponentRow, DiffMark, GovernanceTracking, TopProp, TopPropValue } from "@scoutui/web-shared";
 import { friendlyKind, plural, valueLabel, valueSpeech } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { MigrationLine } from "@/components/governance/migration-line";
 import { Track } from "@/components/component-detail/usage/usage-column";
 import { PackageName } from "@/components/package-name";
+import { ComponentStory } from "@/components/repos/component-story";
 import type { ComponentPanelFacts } from "@/lib/component-panel";
 import { kindLabel, NO_PACKAGE_TITLE } from "@/lib/component-facets";
 import { changeText } from "@/lib/scan-diff-view";
@@ -40,8 +41,8 @@ const STICKY: Record<PanelMode, string> = { column: "-top-5 -mx-5 -mt-5 px-5 pt-
 
 /**
  * The selected component's details: name and status, where else it's used,
- * its replacement or retirement, the way to its usage and source, then its
- * most set props and the packages that use it most.
+ * its replacement or retirement, the way to its usage and source, its story
+ * over time, then its most set props and the packages that use it most.
  */
 export function ComponentDetailsPanel({
   repoId,
@@ -51,6 +52,8 @@ export function ComponentDetailsPanel({
   mark,
   showChange,
   facts,
+  entry,
+  olderScanAt,
   otherRepos,
   source,
   mode,
@@ -69,6 +72,10 @@ export function ComponentDetailsPanel({
   /** Says the row's change since the previous scan, from `mark`. */
   showChange: boolean;
   facts: PanelFactsState;
+  /** The stored tracking entry that charts the row's governing record in this repo, if any. */
+  entry: GovernanceTracking | null;
+  /** Where the shown scan sits in the repo's history when it isn't the latest; null on the latest. */
+  olderScanAt: string | null;
   /** Other repos whose latest scan holds the component; null until it's known. */
   otherRepos: number | null;
   source: SourceRef | null;
@@ -175,6 +182,8 @@ export function ComponentDetailsPanel({
             ) : null}
           </div>
         </div>
+
+        <ComponentStory repoId={repoId} row={row} mark={mark} entry={entry} facts={facts} olderScanAt={olderScanAt} usedIn={usedIn} />
 
         <TopProps repoId={repoId} row={row} linked={linked} facts={facts} />
         <TopPackages repoId={repoId} row={row} linked={linked} />

@@ -2,7 +2,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import type { ComponentRow } from "@scoutui/web-shared";
+import { deriveGovernanceTracking, type ComponentRow, type DigestScan, type GovernanceRecord } from "@scoutui/web-shared";
+import { component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { ComponentDetailsPanel } from "@/components/repos/component-details-panel";
 import type { ComponentPanelFacts } from "@/lib/component-panel";
 
@@ -10,19 +11,39 @@ const row: ComponentRow = {
   componentId: "c1", kind: "react-component", scope: "external", packageName: "@example/ui",
   displayName: "Button", disambiguator: null, version: "1.0.0", occurrenceCount: 40, fileCount: 12, deprecated: false,
 };
-const facts: ComponentPanelFacts = { source: null, props: { kept: true, uses: 40, top: [], neverSet: null } };
+const facts: ComponentPanelFacts = { source: null, props: { kept: true, uses: 40, top: [], neverSet: null }, history: [] };
 const variant = { name: "variant", set: 30, values: [{ kind: "value" as const, label: "primary", count: 20 }, { kind: "dynamic" as const, label: "", count: 10 }] };
 
 function panel(over: Partial<ComponentProps<typeof ComponentDetailsPanel>> = {}, given: Partial<ComponentPanelFacts> = {}) {
   return render(
     <ComponentDetailsPanel
       repoId="r1" row={row} linked usedIn={null} mark={undefined} showChange={false}
-      facts={{ state: "ready", facts: { ...facts, ...given } }} otherRepos={0} source={null} mode="column" onClose={() => {}}
+      facts={{ state: "ready", facts: { ...facts, ...given } }} entry={null} olderScanAt={null} otherRepos={0} source={null} mode="column" onClose={() => {}}
       {...over}
     />,
   );
 }
 const counts = (occurrenceCount: number) => ({ occurrenceCount, fileCount: 1 });
+
+const used = (packageName: string, exportName: string, occurrenceCount: number) =>
+  component(packageExport(packageName, exportName), { stats: { occurrenceCount, fileCount: 1 }, usage: "direct" });
+// 16 weekly scans to 13 Nov 2026: Button falls by 2 a week and its replacement, from the fifth scan, rises by 3.
+const scans: DigestScan[] = Array.from({ length: 16 }, (_, i) => {
+  const t = new Date(Date.UTC(2026, 10, 13) - (15 - i) * 7 * 86_400_000).toISOString();
+  return { meta: { scanId: `s${i}`, committedAt: t, arrivedAt: t, repo: { id: "r1" } }, components: [
+    used("@acme/old", "Button", 400 - 2 * i), used("@acme/old", "Card", 50), ...(i >= 4 ? [used("@acme/new", "Button", 3 * i)] : []),
+  ] };
+});
+const record = (id: string, over: Partial<GovernanceRecord>): GovernanceRecord => ({
+  id, grain: "component", targetPackage: "@acme/old", targetExport: "Button",
+  disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", ...over,
+});
+const tracking = deriveGovernanceTracking(
+  [record("g-button", {}), record("g-old", { grain: "package", targetExport: null, disposition: { kind: "retired", reason: "Use @acme/new" } })],
+  scans, { kind: "repo", repoId: "r1" }, "2026-11-14T00:00:00.000Z",
+);
+const entry = (recordId: string) => tracking.find((e) => e.recordIds.includes(recordId)) ?? null;
+const paragraph = (text: string) => screen.getByText((_, el) => el?.tagName === "P" && el.textContent === text);
 
 describe("ComponentDetailsPanel", () => {
   it.each<[string, Partial<ComponentProps<typeof ComponentDetailsPanel>>, Partial<ComponentPanelFacts>, () => void]>([
@@ -46,8 +67,9 @@ describe("ComponentDetailsPanel", () => {
     ["a component defined in the repo", { source: { remote: { host: "github.com", href: "https://github.com/example/app" } as never, commit: "abc123" } }, { source: { filePath: "src/Button.tsx", line: 12 } }, () => {
       expect(screen.getByRole("link", { name: "View Button source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc123/src/Button.tsx#L12");
     }],
-    ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], neverSet: null } }, () => {
+    ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], neverSet: null }, history: [{ t: "2026-11-13T00:00:00.000Z", value: 40 }] }, () => {
       expect(screen.getByText("New in this scan")).toBeInTheDocument();
+      expect(screen.getByText("New in this scan, so there's no history yet.")).toBeInTheDocument();
       expect(screen.getByText((_, el) => el?.tagName === "SPAN" && el.textContent === "40 uses")).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Top props" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Top packages" })).toBeInTheDocument();
@@ -116,6 +138,43 @@ describe("ComponentDetailsPanel", () => {
     expect(screen.getByRole("button", { name: "Previous component" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Next component" }));
     expect(onNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("tells a replaced component's migration over three months, as its chart reads it, and opens that chart", () => {
+    panel({ entry: entry("g-button") });
+    expect(screen.getByRole("heading", { name: "Migration · 3 months" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open chart" })).toBeInTheDocument();
+    expect(paragraph("10.8% migrated · 370 left · 10 fewer in the last 30 days")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Button@acme/old370", "Button@acme/new45"]);
+    expect(screen.getByRole("img")).toHaveAccessibleName("Button · @acme/old: 398 on 13 Aug, 370 on 13 Nov. Button · @acme/new: 0 on 13 Aug, 45 on 13 Nov.");
+    expect(screen.queryByText("Counts the whole", { exact: false })).toBeNull();
+  });
+
+  it("names a record that covers a whole package", () => {
+    panel({ row: { ...row, displayName: "Card" }, entry: entry("g-old") });
+    expect(screen.getByRole("heading", { name: "Retirement · 3 months" })).toBeInTheDocument();
+    expect(paragraph("420 left · 10 fewer in the last 30 days")).toBeInTheDocument();
+    expect(paragraph("Counts the whole @acme/old package.")).toBeInTheDocument();
+  });
+
+  it("ends a migration at an older scan, with that scan's counts and without the latest scan's summary", () => {
+    panel({ entry: entry("g-button"), olderScanAt: scans[11]?.meta.committedAt ?? null });
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Button@acme/old378", "Button@acme/new33"]);
+    expect(screen.queryByText(/migrated/)).toBeNull();
+  });
+
+  it("tells an ungoverned component's uses in this repo, with no chart to open", () => {
+    panel({}, { history: [["2026-07-01", 30], ["2026-08-01", 32], ["2026-09-01", 35], ["2026-11-13", 40]].map(([d, value]) => ({ t: `${d}T00:00:00.000Z`, value: Number(value) })) });
+    expect(screen.getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
+    expect(paragraph("32 to 40 uses")).toBeInTheDocument();
+    expect(screen.getByRole("img")).toHaveAccessibleName("Uses of Button: 32 on 13 Aug, 40 on 13 Nov.");
+    expect(screen.queryByRole("link", { name: "Open chart" })).toBeNull();
+    expect(screen.queryByText(/Counts the whole repo/)).toBeNull();
+  });
+
+  it("says the story counts the whole repo while a Used in package is picked", () => {
+    panel({ usedIn: "@example/web" }, { history: [{ t: "2026-10-01T00:00:00.000Z", value: 3 }, { t: "2026-11-01T00:00:00.000Z", value: 4 }] });
+    expect(paragraph("Counts the whole repo, not just @example/web.")).toBeInTheDocument();
   });
 
   it("holds the props' place while they load, and says when they couldn't", () => {

@@ -509,7 +509,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     });
   });
 
-  it("passes the repo's stored tracking to the adoption panel, and the preparing state before it is stored", async () => {
+  it("passes the repo's stored tracking to the adoption panel and the components' details, and the preparing state before it is stored", async () => {
     await withReadModelDatabase(async pool => {
       const { retired } = await seed(pool);
       const { default: page } = await import("@/app/repos/[repoId]/page");
@@ -518,7 +518,9 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await storeResults(pool);
       const stored = await driver.getStoredTracking({ kind: "repo", repoId: "repo-a" });
       expect(stored?.map(entry => entry.id)).toEqual([`retirement:${retired.id}`]);
-      expect(allPropsFor(await page(params), "RepoAdoptionPanel")).toEqual([expect.objectContaining({ tracking: stored, notice: null })]);
+      const tree = await page(params);
+      expect(allPropsFor(tree, "RepoAdoptionPanel")).toEqual([expect.objectContaining({ tracking: stored, notice: null })]);
+      expect(allPropsFor(tree, "ComponentsExplorer")).toEqual([expect.objectContaining({ tracking: stored })]);
     });
   });
 });

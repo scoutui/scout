@@ -12,6 +12,7 @@ import { RepoAdoptionPanel } from "@/components/repos/repo-adoption-panel";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { parseGitRemote } from "@scoutui/scan-format/git-remote";
+import { scanOrderTime } from "@scoutui/web-shared";
 import { can } from "@/lib/access";
 import { identify } from "@/lib/identity";
 
@@ -83,7 +84,7 @@ export default async function RepoDetailPage({
                 title="No components found"
                 description={'This scan found no components. Check "include" and "exclude" in scout.config.json, then scan again.'}
               />
-            ) : <ComponentsExplorer repoId={repoId} scanId={detail.scanId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} packages={detail.scope?.packages ?? []} source={{ remote: parseGitRemote(detail.gitRemote), commit: detail.commit }} canEdit={canEdit} />}
+            ) : <ComponentsExplorer repoId={repoId} scanId={detail.scanId} rows={rows} notInLatest={notInLatest} deprecatedTotal={detail.deprecatedCount} diff={detail.diff} packages={detail.scope?.packages ?? []} source={{ remote: parseGitRemote(detail.gitRemote), commit: detail.commit }} canEdit={canEdit} tracking={tracking} olderScanAt={olderScan ? scanOrderTime(detail) : null} />}
           </div>
         }
         adoption={

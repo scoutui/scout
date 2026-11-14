@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import type { ComponentRow, ScanDiff } from "@scoutui/web-shared";
+import { deriveGovernanceTracking, type ComponentRow, type DigestScan, type GovernanceRecord, type ScanDiff } from "@scoutui/web-shared";
+import { component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
 import { ComponentsExplorer } from "@/components/repos/components-explorer";
 import type { ComponentPanelFacts } from "@/lib/component-panel";
 import { packageFilterHref } from "@/lib/component-facets";
@@ -347,7 +348,7 @@ describe("ComponentsExplorer details", () => {
   }
   const reads = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
     ? { grew: 1 }
-    : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null } })));
+    : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null }, history: [] })));
   const otherRepos = "/api/repos/r1/components/other-repos?scan=S2";
   beforeEach(() => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1");
@@ -497,7 +498,7 @@ describe("ComponentsExplorer details", () => {
     };
   }
   const topProp = (name: string, label: string, count: number): ComponentPanelFacts => ({
-    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null },
+    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null }, history: [],
   });
   const aside = () => screen.getByRole("complementary", { name: /^Details for/ });
 
@@ -535,5 +536,35 @@ describe("ComponentsExplorer details", () => {
     expect(skeleton()).toHaveClass("invisible");
     await act(() => vi.advanceTimersByTimeAsync(1));
     expect(skeleton()).not.toHaveClass("invisible");
+  });
+
+  it("tells the selected row the migration its record is merged into, named by how many components it moves", () => {
+    const used = (exportName: string, occurrenceCount: number, packageName = "@acme/old") =>
+      component(packageExport(packageName, exportName), { stats: { occurrenceCount, fileCount: 1 }, usage: "direct" });
+    const scans: DigestScan[] = ["2026-10-02", "2026-10-16", "2026-10-30", "2026-11-13"].map((d, i) => ({
+      meta: { scanId: `s${i}`, committedAt: `${d}T00:00:00.000Z`, arrivedAt: `${d}T00:00:00.000Z`, repo: { id: "r1" } },
+      components: [used("Button", 40 - i), used("Card", 30 - i), used("Badge", 20 - i), used("Button", 5 * i, "@acme/new")],
+    }));
+    const replaced = (id: string, targetExport: string): GovernanceRecord => ({
+      id, grain: "component", targetPackage: "@acme/old", targetExport,
+      disposition: { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+    });
+    const tracking = deriveGovernanceTracking([replaced("g-badge", "Badge"), replaced("g-button", "Button"), replaced("g-card", "Card")], scans, { kind: "repo", repoId: "r1" }, "2026-11-14T00:00:00.000Z");
+    const card: ComponentRow = {
+      ...base, componentId: "card", packageName: "@acme/old", displayName: "Card", occurrenceCount: 27, deprecated: true,
+      migration: { status: { status: "superseded", by: { packageName: "@acme/new", exportName: "Button" } }, recordId: "g-card" },
+    };
+    viewport(1440);
+    render(<ComponentsExplorer repoId="r1" scanId="s3" source={null} rows={[card]} deprecatedTotal={1} diff={null} packages={[]} canEdit tracking={tracking} />);
+    expect(screen.getAllByRole("listitem")[0]?.textContent).toMatch(/^3 components@acme\/old/);
+    expect(screen.getByText("Counts the 3 components that share this replacement.")).toBeInTheDocument();
+  });
+
+  it("still tells a component new in this scan while a Used in package is picked", async () => {
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?used-in=@example/web");
+    viewport(1440);
+    const fresh: ComponentRow = { ...base, componentId: "fresh", displayName: "Fresh", usedIn: { "@example/web": { occurrenceCount: 1, fileCount: 1 } } };
+    render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={[fresh]} deprecatedTotal={0} diff={diff} packages={[{ name: "@example/web", folder: "apps/web" }]} canEdit />);
+    expect(await screen.findByText("New in this scan, so there's no history yet.")).toBeInTheDocument();
   });
 });
