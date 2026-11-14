@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within, fireEvent } from "@testing-library/react";
 import { type ComponentProps, useState } from "react";
-import { ComponentsTable as Table, useSortedRows } from "@/components/repos/components-table";
+import { ComponentsTable as Table, typicalNameLength, useSortedRows } from "@/components/repos/components-table";
 import { ghostRow } from "@/lib/scan-diff-view";
 
 import type { ComponentRow, DiffMark } from "@scoutui/web-shared";
@@ -22,8 +22,8 @@ describe("ComponentsTable", () => {
   it("renders one row per component with the displayed fields", () => {
     render(<ComponentsTable repoId="r1" rows={[row]} />);
     expect(screen.getByText("Button")).toBeInTheDocument();
-    // Package / version / counts each render twice: the desktop cell and the
-    // sm:hidden stacked mobile tier.
+    // Package / version / counts each render twice: the column cell and the
+    // stacked rows' tier.
     expect(screen.getAllByText("@x/lib").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1.0.0").length).toBeGreaterThan(0);
     expect(screen.getAllByText("7").length).toBeGreaterThan(0);
@@ -77,6 +77,20 @@ describe("ComponentsTable", () => {
     expect(name).toHaveAttribute("title", "Button (deprecated)");
     expect(name.className).not.toMatch(/status-err|status-warn|destructive/);
     expect(name.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it.each<[string, number, boolean, number]>([
+    ["a short typical name keeps 14rem", 10, false, 16.5 + 14],
+    ["a 29-character typical name, beside a Change column", 29, true, 22.5 + 29 * 0.5425 + 1.5],
+    ["a long typical name stops at 22rem", 47, false, 16.5 + 22],
+  ])("leaves Package the table's width less the fixed columns and Component's room: %s", (_title, nameChars, change, reserved) => {
+    render(<ComponentsTable repoId="r1" rows={[row]} nameChars={nameChars} marks={change ? { c1: { kind: "changed", delta: 2 } } : undefined} />);
+    const width = screen.getByRole("columnheader", { name: "Package" }).style.width;
+    expect(Number(/calc\(100cqw - ([\d.]+)rem\)/.exec(width)?.[1])).toBeCloseTo(reserved);
+  });
+
+  it("makes Component's room for the 95th percentile of name lengths, not the longest", () => {
+    expect(typicalNameLength(Array.from({ length: 20 }, (_, i) => ({ ...row, displayName: "x".repeat(i + 1) })))).toBe(19);
   });
 
   // The empty and no-match states belong to the page's ComponentsSection: the
@@ -203,17 +217,17 @@ describe("ComponentsTable", () => {
     });
 
     it.each<[string, DiffMark | undefined, number, string, string]>([
-      ["an added component", { kind: "added" }, 4, "New", "font-medium text-foreground"],
-      ["an added component with no uses, never ±0", { kind: "added" }, 0, "New", "font-medium text-foreground"],
+      ["an added component, as a gain of its uses", { kind: "added" }, 4, "+4", "font-medium text-foreground"],
+      ["an added component with no uses, never ±0", { kind: "added" }, 0, "—", "text-faint"],
       ["a gain", { kind: "changed", delta: 1234 }, 1300, "+1,234", "font-medium text-foreground"],
       ["a drop", { kind: "changed", delta: -3 }, 9, "−3", "font-medium text-foreground"],
       ["no change", undefined, 9, "—", "text-faint"],
-    ])("reads %s in the Change cell", (_title, mark, occurrenceCount, text, className) => {
+    ])("reads %s in the Change cell, with an Added badge only when added", (_title, mark, occurrenceCount, text, className) => {
       render(<ComponentsTable repoId="r1" rows={[{ ...row, occurrenceCount }]} marks={mark ? { c1: mark } : { other: { kind: "added" } }} />);
       const cell = changeCell(rowOf(screen.getByText("Button")));
       expect(cell.textContent).toBe(text);
       expect(within(cell).getByText(text).className).toBe(className);
-      expect(within(rowOf(screen.getByText("Button"))).queryByText(/^(Added|added)$/)).toBeNull();
+      expect(within(rowOf(screen.getByText("Button"))).queryByText("Added") !== null).toBe(mark?.kind === "added");
     });
 
     it("renders a removed row as an unlinked, unfocusable ghost reading `0` uses and `−5`", () => {
@@ -231,7 +245,7 @@ describe("ComponentsTable", () => {
       expect(marker.className).toMatch(/border-muted-foreground\/70/);
       expect(marker.className).not.toMatch(/border-border/);
       expect(marker.className).toMatch(/text-muted-foreground/);
-      // Below sm the tier reads the same in words: `0 uses (−5)`, no trailing segment.
+      // Stacked, the tier reads the same in words: `0 uses (−5)`, no trailing segment.
       const tier = within(tr).getByText(/^uses/).parentElement as HTMLElement;
       expect(tier.textContent).toBe("0 uses (−5)");
       // No link and no tab stop: there is no detail page to reach.
@@ -268,7 +282,7 @@ describe("ComponentsTable", () => {
       expect(classesOf("PlainGrew", "+3")).toEqual(["font-medium tabular-nums text-foreground", "font-medium text-foreground"]);
     });
 
-    it("below sm, a changed row's Δ attaches to uses, and an added row says New after its uses", () => {
+    it("in stacked rows, a changed or added row's Δ attaches to uses, and an added row's badge sits on its name line", () => {
       const moved = { ...row, componentId: "m", displayName: "Moved", occurrenceCount: 36, fileCount: 30 };
       const fresh = { ...row, componentId: "f", displayName: "Fresh", occurrenceCount: 5, fileCount: 2 };
       render(<ComponentsTable repoId="r1" rows={[moved, fresh]} marks={{ m: { kind: "changed", delta: -23 }, f: { kind: "added" } }} />);
@@ -276,34 +290,40 @@ describe("ComponentsTable", () => {
       // The flex tier's dot has no surrounding text, so the tier reads `36 uses (−23)·30 files`.
       expect(tier.textContent).toBe("36 uses (−23)·30 files");
       expect(within(tier).getByText("−23").className).toMatch(/font-medium/);
-      expect((within(rowOf(screen.getByText("Fresh"))).getByText("2 files").parentElement as HTMLElement).textContent).toBe("5 uses·New·2 files");
+      expect((within(rowOf(screen.getByText("Fresh"))).getByText("2 files").parentElement as HTMLElement).textContent).toBe("5 uses (+5)·2 files");
+      const badge = screen.getByText("Added");
+      expect(badge.parentElement).toBe(screen.getByRole("link", { name: "Fresh" }).parentElement);
+      expect(badge.className).toMatch(/border-muted-foreground\/70/);
     });
 
-    it("opens the changed view on the signed change, biggest drop first, and keeps live rows linked", () => {
+    it("opens the changed view on the signed change, biggest drop first, no change last both ways, and keeps live rows linked", () => {
       const a = { ...row, componentId: "a", displayName: "Small", occurrenceCount: 9 };
       const b = { ...row, componentId: "b", displayName: "Big", occurrenceCount: 10 };
       const c = { ...row, componentId: "c", displayName: "Shrunk", occurrenceCount: 20 };
+      const z = { ...row, componentId: "z", displayName: "Unused", occurrenceCount: 0 };
       const marks: Record<string, DiffMark> = {
         a: { kind: "changed", delta: 2 },
         b: { kind: "added" },
         c: { kind: "changed", delta: -3 },
+        z: { kind: "added" },
         gone: { kind: "removed" },
       };
-      render(<ComponentsTable repoId="r1" rows={[a, removed, b, c]} marks={marks} />);
+      render(<ComponentsTable repoId="r1" rows={[a, z, removed, b, c]} marks={marks} />);
       const names = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "");
-      // Signed, not magnitude: −5, −3, +2, +10. A |Δ| sort would put Big (+10) first.
+      // Signed, not magnitude: −5, −3, +2, +10, then the 0. A |Δ| sort would put Big (+10) first.
       const opened = names();
       expect(opened[0]).toContain("OldModal"); // −5
       expect(opened[1]).toContain("Shrunk");   // −3
       expect(opened[2]).toContain("Small");    // +2
       expect(opened[3]).toContain("Big");      // +10
+      expect(opened[4]).toContain("Unused");   // 0
       expect(screen.getByRole("columnheader", { name: /^Change/ })).toHaveAttribute("aria-sort", "ascending");
       expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "none");
       expect(within(rowOf(screen.getByText("Big"))).getAllByRole("link")).toHaveLength(1);
       // Re-clicking flips to biggest gain first.
       fireEvent.click(screen.getByRole("button", { name: "Change since previous scan" }));
       const flipped = names();
-      expect(flipped.map((t) => ["OldModal", "Shrunk", "Small", "Big"].find((n) => t.includes(n)))).toEqual(["Big", "Small", "Shrunk", "OldModal"]);
+      expect(flipped.map((t) => ["OldModal", "Shrunk", "Small", "Big", "Unused"].find((n) => t.includes(n)))).toEqual(["Big", "Small", "Shrunk", "OldModal", "Unused"]);
       expect(screen.getByRole("columnheader", { name: /^Change/ })).toHaveAttribute("aria-sort", "descending");
     });
 
@@ -326,9 +346,9 @@ describe("ComponentsTable", () => {
       expect(screen.getAllByRole("row").slice(1).map((r) => (r.textContent ?? "").includes("Drop"))).toEqual([true, false]);
     });
 
-    it("below sm a long name's badges wrap under it instead of widening the table; from sm up the name row is one line", () => {
+    it("a long name's badges wrap under it at every width instead of widening the table", () => {
       render(<ComponentsTable repoId="r1" rows={[{ ...removed, displayName: "PharmacyLicenseLogoExample" }]} marks={{ gone: { kind: "removed" } }} />);
-      const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
+      const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5";
       expect(screen.getByText("Removed").parentElement?.className).toBe(NAME_ROW);
     });
 

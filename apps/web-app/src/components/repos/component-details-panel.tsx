@@ -19,10 +19,10 @@ import { cn } from "@/lib/utils";
 export type PanelFactsState = { state: "loading" } | { state: "ready"; facts: ComponentPanelFacts } | { state: "error" };
 
 /**
- * Where the panel sits: beside the table, in a drawer over it, or in a bottom sheet on tablets and phones, which has
- * no previous and next buttons. The drawer and the sheet cover the row's numbers, so they repeat them.
+ * Where the panel sits: beside the table, or in a bottom sheet on tablets and phones, which has no previous and next
+ * buttons. The sheet covers the row's numbers, so it repeats them.
  */
-export type PanelMode = "column" | "drawer" | "sheet";
+export type PanelMode = "column" | "sheet";
 
 const TOP = 3;
 const LINK = "rounded-sm underline decoration-border underline-offset-3 hover:decoration-current";
@@ -56,7 +56,7 @@ export function ComponentDetailsPanel({
   /** The Used in package the table is scoped to, if any. */
   usedIn: string | null;
   mark: DiffMark | undefined;
-  /** The scan has a previous scan to compare with, so the row's change is known. */
+  /** Says the row's change since the previous scan, from `mark`. */
   showChange: boolean;
   facts: PanelFactsState;
   /** Other repos whose latest scan holds the component; null until it's known. */
@@ -78,9 +78,9 @@ export function ComponentDetailsPanel({
       ? [
           <span key="uses"><span className="font-medium tabular-nums text-foreground">{row.occurrenceCount.toLocaleString()}</span> {row.occurrenceCount === 1 ? "use" : "uses"}</span>,
           <span key="files"><span className="font-medium tabular-nums text-foreground">{row.fileCount.toLocaleString()}</span> {row.fileCount === 1 ? "file" : "files"}</span>,
-          ...(showChange ? [<span key="change" className="text-foreground">{changeText(mark, row.occurrenceCount)}</span>] : []),
         ]
       : []),
+    ...(showChange ? [<span key="change" className="text-foreground">{changeText(mark, row.occurrenceCount)}</span>] : []),
     ...(otherRepos !== null && otherRepos > 0
       ? [
           <span key="repos">

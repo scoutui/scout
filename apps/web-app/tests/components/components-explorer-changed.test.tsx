@@ -39,13 +39,14 @@ const sinceChip = () => screen.getByRole("button", { name: /^since previous scan
 describe("ComponentsExplorer ?changed=true", () => {
   beforeEach(() => window.history.replaceState(null, "", "http://localhost:3000/repos/r1"));
 
-  it("shows every row by default, most used first, each with its change in the Change column", () => {
+  it("shows every row by default, most used first, with no Change column and no Added badge", () => {
     render(<ComponentsExplorer repoId="r1" scanId="S2" source={null} rows={rows} deprecatedTotal={0} diff={diff} packages={[]} canEdit />);
     expect(screen.getByText("Same")).toBeInTheDocument();
     expect(screen.queryByText("Gone")).toBeNull();
     expect(sinceChip()).toHaveAttribute("aria-pressed", "false");
     expect(occurrencesOf("Grew")).toBe("9");
-    expect([changeOf("Grew"), changeOf("Fresh"), changeOf("Same")]).toEqual(["+3", "New", "—"]);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    expect(screen.queryByText("Added")).toBeNull();
     expect(screen.getByRole("columnheader", { name: "Uses" })).toHaveAttribute("aria-sort", "descending");
   });
 
@@ -323,8 +324,8 @@ describe("ComponentsExplorer details", () => {
   const toggle = () => screen.getByRole("button", { name: "Details" });
   const rowCell = (name: string) => within(screen.getByRole("table")).getByText(name).closest("tr")?.querySelectorAll("td")[1] as HTMLElement;
 
-  it("opens beside the table on the first row, and closes and opens again from the toggle and the close button", () => {
-    viewport(1440);
+  it("from 1024px opens beside the table on the first row, and closes and opens again from the toggle and the close button", () => {
+    viewport(1024);
     explorer();
     expect(toggle()).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("complementary", { name: "Details for Grew" })).toBeInTheDocument();
@@ -349,25 +350,25 @@ describe("ComponentsExplorer details", () => {
     expect(screen.getByText("Same. 4 uses in 1 file. No change since previous scan.")).toHaveAttribute("aria-live", "polite");
   });
 
-  it("below laptop widths opens a drawer from the toggle that starts closed, keeps it open as rows are clicked, and reads nothing while closed", async () => {
-    vi.useFakeTimers();
+  it("says the selected row's change beside the table, except in the changed view, whose Change column says it", () => {
     viewport(1024);
+    const details = () => screen.getByRole("complementary", { name: /^Details for/ });
+    const { unmount } = explorer();
+    expect(within(details()).getByText("+3 since previous scan")).toBeInTheDocument();
+    unmount();
+    window.history.replaceState(null, "", "http://localhost:3000/repos/r1?changed=true");
+    explorer();
+    expect(within(details()).queryByText(/since previous scan|in this scan/)).toBeNull();
+  });
+
+  it("below 1024px opens a bottom sheet from a row click, starting closed and reading nothing while closed", async () => {
+    vi.useFakeTimers();
+    viewport(1023);
     explorer();
     expect(toggle()).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("dialog")).toBeNull();
     await act(() => vi.advanceTimersByTimeAsync(200));
     expect(reads).not.toHaveBeenCalled();
-    fireEvent.click(toggle());
-    expect(screen.getByRole("dialog", { name: "Details for Grew" })).toBeInTheDocument();
-    fireEvent.pointerDown(rowCell("Same"));
-    fireEvent.mouseDown(rowCell("Same"));
-    fireEvent.click(rowCell("Same"));
-    expect(within(screen.getByRole("dialog", { name: "Details for Same" })).getByRole("button", { name: "Next component" })).toBeInTheDocument();
-  });
-
-  it("below 1024px opens a bottom sheet from a row click", () => {
-    viewport(1023);
-    explorer();
     fireEvent.click(rowCell("Same"));
     expect(within(screen.getByRole("dialog", { name: "Details for Same" })).queryByRole("button", { name: "Next component" })).toBeNull();
   });

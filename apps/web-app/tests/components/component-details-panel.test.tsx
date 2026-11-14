@@ -71,11 +71,11 @@ describe("ComponentDetailsPanel", () => {
     check();
   });
 
-  it.each<[ComponentProps<typeof ComponentDetailsPanel>["mode"], boolean]>([["drawer", true], ["sheet", true], ["column", false]])(
-    "in the %s, repeats the row's uses, files and change: %s",
+  it.each<[ComponentProps<typeof ComponentDetailsPanel>["mode"], boolean]>([["sheet", true], ["column", false]])(
+    "in the %s, says the row's change and repeats its uses and files: %s",
     (mode, repeated) => {
       panel({ mode, mark: { kind: "changed", delta: -3 }, showChange: true });
-      expect(screen.queryByText("−3 since previous scan") !== null).toBe(repeated);
+      expect(screen.getByText("−3 since previous scan")).toBeInTheDocument();
       expect(screen.queryByText((_, el) => el?.tagName === "SPAN" && el.textContent === "40 uses") !== null).toBe(repeated);
     },
   );

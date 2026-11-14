@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DeprecatedMark } from "@/components/deprecated-mark";
+import { PackageName } from "@/components/package-name";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
 import { componentHref, packageArea } from "@/lib/usage-url";
@@ -15,25 +16,26 @@ import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { sortByVersion } from "@/lib/version-order";
 import { cn } from "@/lib/utils";
 
-/** The outline badge for `removed` rows. Its border clears the 3:1
+/** The outline badge for `added` and `removed` rows. Its border clears the 3:1
  *  non-text minimum on the panel (3.3:1 light, 3.8:1 dark); the default
  *  `--hairline` outline measured 1.21:1 on dark, and `/35` 1.4:1 on light. */
 const MARK_BADGE = "shrink-0 border-muted-foreground/70 text-muted-foreground";
 
-/** A row's name cell. Below sm it is the row's one visible cell and fills
- *  the table without growing past it, so a long name truncates. */
-const NAME_CELL = "overflow-hidden align-middle max-sm:w-full max-sm:max-w-0";
+/** A row's name cell. In stacked rows it is the row's one visible cell and
+ *  fills the table without growing past it, so a long name truncates. */
+const NAME_CELL = "overflow-hidden align-middle @max-[43rem]:w-full @max-[43rem]:max-w-0";
 
-/** A row's name line: wraps below sm (a badge beside a long name pushed the
- *  390px table 44px past its scroller), one truncating line from sm up. */
-const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
+/** A row's name line: a badge that doesn't fit beside the name wraps under it. */
+const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5";
 
 /** Column widths in rem. Version, Files, Uses and Change fit their headers and
  *  `1,234,567` or `−12,345`. */
 const WIDTH = { version: 6, files: 4.5, uses: 6, change: 6 };
-/** The width Component keeps before Package gives way. */
-const COMPONENT_MIN = 10;
-/** One character of a package name (Monaspace Neon at text-xs), and the cell's padding. */
+/** The width Component needs, in rem: room for a typical name, at least `COMPONENT_MIN` and at most `COMPONENT_MAX`. */
+const COMPONENT_MIN = 14;
+const COMPONENT_MAX = 22;
+/** One character of a component name (Monaspace Neon at text-sm) and of a package name (at text-xs), and the cell's padding. */
+const NAME_CHAR = 0.5425;
 const PACKAGE_CHAR = 0.465;
 const CELL_PADDING = 1.5;
 /** At least the Package header's width. */
@@ -41,13 +43,15 @@ const PACKAGE_MIN = 6.5;
 
 /**
  * The Package column's width: enough for the longest package name, while
- * Component keeps `COMPONENT_MIN`. Component takes what's left, so it
- * truncates first. `100cqw` is the table's width.
+ * Component keeps the width a name of `nameChars` needs. Package gives way
+ * first, down to `PACKAGE_MIN`, and Component takes what's left. `100cqw` is
+ * the table's width.
  */
-function packageWidth(chars: number, change: boolean): string {
+function packageWidth(packageChars: number, nameChars: number, change: boolean): string {
   const fixed = WIDTH.version + WIDTH.files + WIDTH.uses + (change ? WIDTH.change : 0);
-  const content = Math.max(chars * PACKAGE_CHAR + CELL_PADDING, PACKAGE_MIN);
-  return `max(${PACKAGE_MIN}rem, min(${content}rem, calc(100cqw - ${fixed + COMPONENT_MIN}rem)))`;
+  const component = Math.min(Math.max(nameChars * NAME_CHAR + CELL_PADDING, COMPONENT_MIN), COMPONENT_MAX);
+  const content = Math.max(packageChars * PACKAGE_CHAR + CELL_PADDING, PACKAGE_MIN);
+  return `max(${PACKAGE_MIN}rem, min(${content}rem, calc(100cqw - ${fixed + component}rem)))`;
 }
 
 type SortKey = "displayName" | "packageName" | "version" | "fileCount" | "occurrenceCount" | "delta";
@@ -71,9 +75,12 @@ export function useSortedRows(rows: ComponentRow[], marks: Record<string, DiffMa
     () =>
       sortKey === "version"
         ? sortByVersion(rows, sortDir)
-        : sortRows(rows, sortKey, sortDir, (r, k) =>
-            k === "delta" ? deltaOf(marks?.[r.componentId], r.occurrenceCount) : r[k],
-          ),
+        : sortRows(rows, sortKey, sortDir, (r, k) => {
+            if (k !== "delta") return r[k];
+            // No change shows a dash, nothing to report, so it sorts last in both directions.
+            const delta = deltaOf(marks?.[r.componentId], r.occurrenceCount);
+            return delta === 0 ? null : delta;
+          }),
     [rows, sortKey, sortDir, marks],
   );
   return { sorted, sortKey, sortDir, toggleSort };
@@ -87,8 +94,8 @@ export type SelectHow = "click" | "key";
 /**
  * One row per component, keyed and linked by its component id. The table is
  * one tab stop, the selected row's name: ↑↓ move the selection, Enter follows
- * the name's link, Space toggles details and Esc closes them. A click on a row
- * outside its name selects it.
+ * the name's link and Space toggles details. A click on a row outside its name
+ * selects it.
  */
 export function ComponentsTable({
   repoId,
@@ -100,14 +107,14 @@ export function ComponentsTable({
   selectedId,
   onSelect,
   onToggleDetails,
-  onEscape,
   packageChars = longestPackageName(sort.sorted),
+  nameChars = typicalNameLength(sort.sorted),
 }: {
   repoId: string;
   /** The rows in sort order and the sort state, from `useSortedRows`. */
   sort: SortedRows;
-  /** componentId → scan-diff mark. Given, the table shows the Change column, and
-   *  renders a row marked `removed` as a ghost. */
+  /** componentId → scan-diff mark. Given, the table shows the Change column,
+   *  badges a row marked `added`, and renders a row marked `removed` as a ghost. */
   marks?: Record<string, DiffMark> | undefined;
   /** Components the latest scan doesn't have. They have no detail page, so their rows have no link. */
   notInLatest?: ReadonlySet<string> | undefined;
@@ -118,9 +125,10 @@ export function ComponentsTable({
   selectedId?: string | null | undefined;
   onSelect?: ((componentId: string, how: SelectHow) => void) | undefined;
   onToggleDetails?: (() => void) | undefined;
-  onEscape?: (() => void) | undefined;
   /** The longest package name the Package column fits, in characters; the shown rows' longest when not given. */
   packageChars?: number | undefined;
+  /** The name length the Component column makes room for, in characters; the shown rows' typical length when not given. */
+  nameChars?: number | undefined;
 }) {
   const { sorted, sortKey, sortDir, toggleSort } = sort;
   const columnCount = marks ? 6 : 5;
@@ -129,7 +137,7 @@ export function ComponentsTable({
   // Only the visible window renders: at ~1,900 rows the full render dominates
   // first load. initialRect lets the server render a first window, so the table
   // doesn't flash empty. estimateSize is the measured desktop row height;
-  // measureElement corrects the taller stacked rows below `sm`.
+  // measureElement corrects taller rows, such as stacked ones.
   const scrollRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: sorted.length,
@@ -184,8 +192,6 @@ export function ComponentsTable({
       e.preventDefault();
       if (id !== selectedId) onSelect?.(id, "key");
       onToggleDetails?.();
-    } else if (e.key === "Escape") {
-      onEscape?.();
     }
   }
 
@@ -195,17 +201,18 @@ export function ComponentsTable({
     onSelect?.(row.componentId, "click");
   }
 
-  // table-fixed only where the column grid exists (sm+); on mobile the single
-  // visible stacked cell must take the full width under auto layout.
+  // table-fixed only where the column grid exists (a table 43rem wide and up);
+  // in stacked rows the single visible cell must take the full width under
+  // auto layout.
   return (
-    <Table containerRef={scrollRef} containerClassName="@container max-h-[70vh] overflow-y-auto" className="sm:table-fixed">
-      {/* Below sm the rows stack, so there are no headers and no sorting. */}
-      <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
+    <Table containerRef={scrollRef} containerClassName="@container max-h-[70vh] overflow-y-auto" className="@min-[43rem]:table-fixed">
+      {/* In a table narrower than 43rem the rows stack, so there are no headers and no sorting. */}
+      <TableHeader className="sticky top-0 z-10 hidden @min-[43rem]:table-header-group">
         <TableRow>
           <TableHead aria-sort={ariaSort("displayName", sortKey, sortDir)}>
             <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead style={{ width: packageWidth(packageChars, marks !== undefined) }} aria-sort={ariaSort("packageName", sortKey, sortDir)}>
+          <TableHead style={{ width: packageWidth(packageChars, nameChars, marks !== undefined) }} aria-sort={ariaSort("packageName", sortKey, sortDir)}>
             <SortButton label="Package" sortKey="packageName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           <TableHead style={{ width: `${WIDTH.version}rem` }} aria-sort={ariaSort("version", sortKey, sortDir)}>
@@ -274,9 +281,16 @@ export function longestPackageName(rows: readonly ComponentRow[]): number {
   return rows.reduce((longest, r) => Math.max(longest, r.packageName?.length ?? 0), 0);
 }
 
+/** The 95th percentile of the name lengths among `rows`, in characters: 0 for no rows. */
+export function typicalNameLength(rows: readonly ComponentRow[]): number {
+  const lengths = rows.map((r) => r.displayName.length).sort((a, b) => a - b);
+  return lengths[Math.ceil(lengths.length * 0.95) - 1] ?? 0;
+}
+
 /** The cells of one component: name and detail link, package, version, files, uses and, given, its change. */
 function RowCells({ r, href, selected, tabStop, mark, showChange, writtenAs }: { r: ComponentRow; href: string | undefined; selected: boolean; tabStop: boolean; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined }) {
   const deprecated = r.deprecated;
+  const delta = deltaOf(mark, r.occurrenceCount);
   // The name's ::after only draws the focus ring around the whole row: it
   // takes no clicks, so a click beside the name selects the row.
   const name = {
@@ -299,6 +313,7 @@ function RowCells({ r, href, selected, tabStop, mark, showChange, writtenAs }: {
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
+          {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
         {r.disambiguator ? (
           <div className="truncate text-code text-muted-foreground" title={r.disambiguator}>
@@ -310,8 +325,8 @@ function RowCells({ r, href, selected, tabStop, mark, showChange, writtenAs }: {
             written as <span className="font-mono">{writtenAs}</span>
           </div>
         ) : null}
-        {/* Stacked summary tiers below sm. */}
-        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+        {/* Stacked rows' summary tiers. */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
           {r.packageName ? (
             <span className="min-w-0 max-w-full truncate font-mono" title={r.packageName}>{r.packageName}</span>
           ) : null}
@@ -320,14 +335,13 @@ function RowCells({ r, href, selected, tabStop, mark, showChange, writtenAs }: {
             <span className="font-mono tabular-nums">{r.version}</span>
           ) : null}
         </div>
-        {/* The change belongs to uses: `36 uses (−23)` or `5 uses · New`. */}
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+        {/* The change belongs to uses: `36 uses (−23)` or `5 uses (+5)`. */}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
           <span>
             <span className="font-medium tabular-nums text-foreground">{r.occurrenceCount.toLocaleString()}</span>
             {r.occurrenceCount === 1 ? " use" : " uses"}
-            {showChange && mark?.kind === "changed" ? <OccurrenceDelta delta={mark.delta} deprecated={deprecated} /> : null}
+            {showChange && delta !== 0 ? <OccurrenceDelta delta={delta} deprecated={deprecated} /> : null}
           </span>
-          {showChange && mark?.kind === "added" ? (<><Dot /><span className="font-medium text-foreground">New</span></>) : null}
           <Dot />
           <span className="tabular-nums">
             {r.fileCount.toLocaleString()} {r.fileCount === 1 ? "file" : "files"}
@@ -335,21 +349,21 @@ function RowCells({ r, href, selected, tabStop, mark, showChange, writtenAs }: {
         </div>
       </TableCell>
       <TableCell
-        className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground sm:table-cell"
+        className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground @min-[43rem]:table-cell"
         title={r.packageName ?? NO_PACKAGE_TITLE}
       >
-        {r.packageName ?? "—"}
+        {r.packageName === null ? "—" : <PackageName name={r.packageName} />}
       </TableCell>
       <TableCell
-        className="hidden overflow-hidden truncate font-mono text-xs tabular-nums text-muted-foreground sm:table-cell"
+        className="hidden overflow-hidden truncate font-mono text-xs tabular-nums text-muted-foreground @min-[43rem]:table-cell"
         title={r.version ?? undefined}
       >
         {r.version ?? "—"}
       </TableCell>
-      <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">
+      <TableCell className="hidden text-end tabular-nums text-muted-foreground @min-[43rem]:table-cell">
         {r.fileCount.toLocaleString()}
       </TableCell>
-      <TableCell className={cn("hidden text-right font-medium tabular-nums sm:table-cell", !showChange && "pr-3")}>
+      <TableCell className={cn("hidden text-end font-medium tabular-nums @min-[43rem]:table-cell", !showChange && "pe-3")}>
         {r.occurrenceCount.toLocaleString()}
       </TableCell>
       {showChange ? <ChangeCell mark={mark} occurrenceCount={r.occurrenceCount} deprecated={deprecated} /> : null}
@@ -373,13 +387,13 @@ function GhostRow({ r, index, measure }: { r: ComponentRow; index: number; measu
           {r.deprecated ? <DeprecatedMark /> : null}
           <Badge variant="outline" className={MARK_BADGE}>Removed</Badge>
         </div>
-        {/* Stacked tiers below sm: the package, then `0 uses (−5)`. */}
+        {/* Stacked rows' tiers: the package, then `0 uses (−5)`. */}
         {r.packageName ? (
-          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
             <span className="min-w-0 max-w-full truncate font-mono" title={r.packageName}>{r.packageName}</span>
           </div>
         ) : null}
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
           <span>
             <span className="tabular-nums">0</span>
             {" uses"}
@@ -390,25 +404,23 @@ function GhostRow({ r, index, measure }: { r: ComponentRow; index: number; measu
           </span>
         </div>
       </TableCell>
-      <TableCell className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground sm:table-cell" title={r.packageName ?? NO_PACKAGE_TITLE}>
-        {r.packageName ?? "—"}
+      <TableCell className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground @min-[43rem]:table-cell" title={r.packageName ?? NO_PACKAGE_TITLE}>
+        {r.packageName === null ? "—" : <PackageName name={r.packageName} />}
       </TableCell>
-      <TableCell className="hidden text-faint sm:table-cell">—</TableCell>
-      <TableCell className="hidden text-right text-faint sm:table-cell">—</TableCell>
-      <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">0</TableCell>
+      <TableCell className="hidden text-faint @min-[43rem]:table-cell">—</TableCell>
+      <TableCell className="hidden text-end text-faint @min-[43rem]:table-cell">—</TableCell>
+      <TableCell className="hidden text-end tabular-nums text-muted-foreground @min-[43rem]:table-cell">0</TableCell>
       <ChangeCell mark={{ kind: "removed" }} occurrenceCount={r.occurrenceCount} deprecated={r.deprecated} />
     </TableRow>
   );
 }
 
-/** The Change cell: `New`, a signed Δ coloured by `deltaTone`, or a faint dash for no change. */
+/** The Change cell: a signed Δ coloured by `deltaTone`, or a faint dash for no change. */
 function ChangeCell({ mark, occurrenceCount, deprecated }: { mark: DiffMark | undefined; occurrenceCount: number; deprecated: boolean }) {
   const delta = deltaOf(mark, occurrenceCount);
   return (
-    <TableCell className="hidden pr-3 text-right tabular-nums sm:table-cell">
-      {mark?.kind === "added" ? (
-        <span className="font-medium text-foreground">New</span>
-      ) : delta !== 0 ? (
+    <TableCell className="hidden pe-3 text-end tabular-nums @min-[43rem]:table-cell">
+      {delta !== 0 ? (
         <span className={`font-medium ${deltaTone(delta, deprecated)}`}>{signedCount(delta)}</span>
       ) : (
         <span className="text-faint">—</span>
@@ -439,7 +451,7 @@ export function shortenPath(path: string, segments = 2): string {
 
 /**
  * Separator for flex-gap layouts. `text-border` measured 1.03:1 against the
- * panel in dark mode, and below `sm` this dot is the only thing separating
+ * panel in dark mode, and in stacked rows this dot is the only thing separating
  * package from version.
  */
 function Dot() {

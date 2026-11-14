@@ -5,7 +5,7 @@ import { PanelRight } from "lucide-react";
 import type { ComponentRow, CrossRepoComponentDetail, ScanDiff } from "@scoutui/web-shared";
 import { plural, scanDiffRowCount } from "@scoutui/web-shared/client";
 import { changeText, ghostRow } from "@/lib/scan-diff-view";
-import { ComponentsTable, longestPackageName, type SelectHow, useSortedRows } from "@/components/repos/components-table";
+import { ComponentsTable, longestPackageName, type SelectHow, typicalNameLength, useSortedRows } from "@/components/repos/components-table";
 import { ComponentDetailsPanel, type PanelFactsState, type PanelMode } from "@/components/repos/component-details-panel";
 import { FilterBar } from "@/components/repos/filter-bar";
 import { useMedia } from "@/components/component-detail/usage/usage-layout-hooks";
@@ -29,10 +29,8 @@ import {
   type FacetState,
 } from "@/lib/component-facets";
 
-/** Laptop widths and up: the details sit beside the table. */
-const WIDE = "(min-width: 80rem)";
-/** From here to laptop widths the details open in a drawer from the right; below it, in a bottom sheet. */
-const DRAWER = "(min-width: 64rem)";
+/** From here up the details sit beside the table; below it, they open in a bottom sheet. */
+const WIDE = "(min-width: 64rem)";
 /** How long the selection rests before the panel reads its details, so holding ↓ doesn't read every row. */
 const SETTLE_MS = 150;
 
@@ -97,8 +95,7 @@ function announcement(row: ComponentRow, change: string | null): string {
  * ships every row once and filtering runs here. Facet state lives in the URL
  * (via useQueryParamsState) and writes back with history.replaceState, so a
  * URL stays shareable. The selected row's details sit beside the table from
- * laptop widths, open on every visit; below that they open in a drawer, and
- * on tablets and phones in a bottom sheet.
+ * 64rem, open on every visit; below that they open in a bottom sheet.
  */
 export function ComponentsExplorer({
   repoId,
@@ -149,8 +146,10 @@ export function ComponentsExplorer({
   const options = useMemo(() => facetOptions(scoped, changedRows, facets), [scoped, changedRows, facets]);
   const usedIn = useMemo(() => usedInOptions(rows, facets), [rows, facets]);
   const filtered = useMemo(() => filterRows(candidates, facets), [candidates, facets]);
-  // The longest package name over every row the table can show, whatever the filters.
-  const packageChars = useMemo(() => longestPackageName([...rows, ...(diff?.removedRows.map(ghostRow) ?? [])]), [rows, diff]);
+  // The longest package name and the typical name length over every row the table can show, whatever the filters.
+  const everyRow = useMemo(() => [...rows, ...(diff?.removedRows.map(ghostRow) ?? [])], [rows, diff]);
+  const packageChars = useMemo(() => longestPackageName(everyRow), [everyRow]);
+  const nameChars = useMemo(() => typicalNameLength(everyRow), [everyRow]);
   const packageFolders = useMemo(() => new Map(packages.map((p) => [p.name, p.folder])), [packages]);
   // The changed view's toolbar breakdown, `12 of 29 changes · 2 removed ·
   // 10 changed`, counted from the shown rows' marks.
@@ -163,10 +162,12 @@ export function ComponentsExplorer({
     }
     return counts;
   }, [filtered, changedActive, diff]);
-  // The change since the previous scan is whole-scan, so it has no column
-  // while a Used in package scopes the counts, and none when there's nothing
-  // to compare.
-  const marks = facets.usedIn || diff === null || scanDiffRowCount(diff) === 0 ? undefined : diff.marks;
+  // Each row's change since the previous scan, which the details and the
+  // announcement say in both views: none on a first scan or under a Used in
+  // package. The table gets it, for its Change column and ghost rows, only in
+  // the changed view.
+  const diffMarks = facets.usedIn || diff === null ? undefined : diff.marks;
+  const marks = changedActive ? diffMarks : undefined;
   const sort = useSortedRows(filtered, marks, changedActive);
 
   // The selection is a component id, so it survives sorting, filtering and
@@ -178,16 +179,14 @@ export function ComponentsExplorer({
   const selected = selectable[selectedIndex] ?? null;
 
   const wide = useMedia(WIDE, true);
-  const sheet = !useMedia(DRAWER, true);
   const [inlineOpen, setInlineOpen] = useState(true);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const mode: PanelMode = wide ? "column" : sheet ? "sheet" : "drawer";
-  const open = mode === "column" ? inlineOpen : mode === "drawer" ? drawerOpen : sheetOpen;
-  const setShown = mode === "column" ? setInlineOpen : mode === "drawer" ? setDrawerOpen : setSheetOpen;
+  const mode: PanelMode = wide ? "column" : "sheet";
+  const open = mode === "column" ? inlineOpen : sheetOpen;
+  const setShown = mode === "column" ? setInlineOpen : setSheetOpen;
   const reads = usePanelReads(repoId, scanId, selected?.componentId ?? null, open);
-  // Before mount the column is assumed and CSS hides it below laptop widths;
-  // once the width is known it leaves the page there.
+  // Before mount the column is assumed and CSS hides it below 64rem; once the
+  // width is known it leaves the page there.
   const column = mode === "column" && inlineOpen && selected !== null;
   const [spoken, setSpoken] = useState("");
 
@@ -196,7 +195,7 @@ export function ComponentsExplorer({
     if (!row) return;
     setChosenId(id);
     if (how === "click") setShown(true);
-    setSpoken(announcement(row, marks ? changeText(marks[id], row.occurrenceCount) : null));
+    setSpoken(announcement(row, diffMarks ? changeText(diffMarks[id], row.occurrenceCount) : null));
   }
   /** Shows or hides the details and says so, since focus often stays in the table. */
   function setOpen(next: boolean) {
@@ -216,8 +215,8 @@ export function ComponentsExplorer({
         row={selected}
         linked={!notInLatestIds.has(selected.componentId)}
         usedIn={facets.usedIn}
-        mark={marks?.[selected.componentId]}
-        showChange={marks !== undefined}
+        mark={diffMarks?.[selected.componentId]}
+        showChange={diffMarks !== undefined && (inMode === "sheet" || marks === undefined)}
         facts={reads.facts}
         otherRepos={reads.otherRepos}
         source={source}
@@ -245,7 +244,7 @@ export function ComponentsExplorer({
   );
 
   return (
-    <div className={cn(column && "xl:grid xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start xl:gap-6")}>
+    <div className={cn(column && "lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(22.5rem,32vw,27.5rem)] lg:items-start lg:gap-6")}>
     <div className="panel min-w-0 overflow-hidden">
       <FilterBar
         facets={facets}
@@ -283,29 +282,22 @@ export function ComponentsExplorer({
           selectedId={selected?.componentId ?? null}
           onSelect={select}
           onToggleDetails={() => setOpen(!open)}
-          onEscape={mode === "drawer" ? () => setOpen(false) : undefined}
           packageChars={packageChars}
+          nameChars={nameChars}
         />
       )}
     </div>
       {column && selected ? (
         <aside
           aria-label={`Details for ${selected.displayName}`}
-          className="panel pin-under-top-bar hidden max-h-[calc(100dvh-var(--top-bar-height)-2rem)] overflow-y-auto p-5 [--pin-below:1rem] xl:block"
+          className="panel pin-under-top-bar hidden max-h-[calc(100dvh-var(--top-bar-height)-2rem)] overflow-y-auto p-5 [--pin-below:1rem] lg:block"
         >
           {panel("column")}
         </aside>
       ) : null}
-      {mode === "drawer" ? (
-        <Drawer open={drawerOpen} onOpenChange={setOpen} modal={false} disablePointerDismissal>
-          <DrawerContent side="right" initialFocus={false} finalFocus={false} aria-label={selected ? `Details for ${selected.displayName}` : "Details"} className="p-5">
-            {panel("drawer")}
-          </DrawerContent>
-        </Drawer>
-      ) : null}
       {mode === "sheet" ? (
         <Drawer open={sheetOpen} onOpenChange={setOpen} swipeDirection="down">
-          <DrawerContent side="bottom" aria-label={selected ? `Details for ${selected.displayName}` : "Details"} className="px-4 pt-3 pb-6">
+          <DrawerContent aria-label={selected ? `Details for ${selected.displayName}` : "Details"} className="px-4 pt-3 pb-6">
             {panel("sheet")}
           </DrawerContent>
         </Drawer>
