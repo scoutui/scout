@@ -117,6 +117,8 @@ export const RepoSummarySchema = z.object({
   branch: z.string().nullable(),
   commit: z.string(),
   committedAt: z.string(),              // ISO commit date of the latest scan
+  // When the dashboard received the latest scan; on RepoDetail, the shown scan.
+  arrivedAt: z.string(),
   scanCount: z.number().int().positive(),
   componentCount: z.number().int().nonnegative(),
   externalComponentCount: z.number().int().nonnegative(),
@@ -150,8 +152,6 @@ export type ScanFinding = z.infer<typeof ScanFindingSchema>;
 export const RepoDetailSchema = RepoSummarySchema.extend({
   initialCommit: z.string().nullable(),
   scanId: z.string(),
-  // When the dashboard received the shown scan.
-  arrivedAt: z.string(),
   scannerVersion: z.string(),
   // The shown scan vs the scan immediately before it; null on a first scan.
   diff: ScanDiffSchema.nullable(),
@@ -284,6 +284,16 @@ export const CohortSeriesSchema = z.object({
 });
 export type CohortSeries = z.infer<typeof CohortSeriesSchema>;
 
+export const MigrationStatusSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("active") }),
+  z.object({
+    status: z.literal("superseded"),
+    by: z.object({ packageName: z.string(), exportName: z.string().optional() }),
+  }),
+  z.object({ status: z.literal("retired"), reason: z.string() }),
+]);
+export type MigrationStatus = z.infer<typeof MigrationStatusSchema>;
+
 // ---- Component row (repo detail table) ----
 export const PackageCountsSchema = z.object({ occurrenceCount: z.number().int().nonnegative(), fileCount: z.number().int().nonnegative() });
 export type PackageCounts = z.infer<typeof PackageCountsSchema>;
@@ -311,6 +321,8 @@ export const ComponentRowSchema = z.object({
   fileCount: z.number().int().nonnegative(),
   usedIn: z.record(z.string(), PackageCountsSchema).optional(), // uses and files per package; absent when the scan records none
   deprecated: z.boolean(),
+  // The governing record's replacement or retirement, and the record's id; absent while the component is active.
+  migration: z.object({ status: MigrationStatusSchema, recordId: z.string().nullable() }).optional(),
   tags: z.array(TagRefSchema).optional(),
   apiUsage: ComponentApiUsageSchema.optional(), // absent when the component has no declared API
 });
@@ -412,16 +424,6 @@ export const GovernanceInputSchema = z.object({
   disposition: DispositionSchema,
 });
 export type GovernanceInput = z.infer<typeof GovernanceInputSchema>;
-
-export const MigrationStatusSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("active") }),
-  z.object({
-    status: z.literal("superseded"),
-    by: z.object({ packageName: z.string(), exportName: z.string().optional() }),
-  }),
-  z.object({ status: z.literal("retired"), reason: z.string() }),
-]);
-export type MigrationStatus = z.infer<typeof MigrationStatusSchema>;
 
 // ---- Component detail (per-repo drilldown page) ----
 export const WrittenValueSchema = z.object({

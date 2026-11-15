@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { GitCompareArrows, ListX } from "lucide-react";
-import { plural } from "@scoutui/web-shared/client";
 import { Input } from "@/components/ui/input";
 import { movementParts } from "@/lib/scan-diff-view";
 import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
@@ -34,6 +33,7 @@ export function FilterBar({
   diffShown,
   filtering,
   canEdit,
+  actions,
 }: {
   facets: FacetState;
   onChange: (next: FacetState) => void;
@@ -56,6 +56,8 @@ export function FilterBar({
    *  `onChange`, keep the real state. */
   filtering: boolean;
   canEdit: boolean;
+  /** Controls after the Filter menu, such as the Details toggle. */
+  actions?: ReactNode;
 }) {
   const diffParts = diffShown === null ? [] : movementParts(diffShown);
   const inkCount = (n: number) => <span className="font-medium text-foreground">{n.toLocaleString()}</span>;
@@ -169,7 +171,7 @@ export function FilterBar({
         value: facets.text,
         onChange: (text) => onChange({ ...facets, text }),
         label: "Search components by name",
-        placeholder: `Search ${plural(total, "component")} by name…`,
+        placeholder: "Search components…",
       }}
       chips={
         <>
@@ -234,6 +236,7 @@ export function FilterBar({
       }
       pills={pills}
       onClearAll={() => onChange(emptyFacets())}
+      actions={actions}
     />
   );
 }

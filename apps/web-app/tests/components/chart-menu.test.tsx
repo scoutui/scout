@@ -15,15 +15,16 @@ import { LinkedDashboardChart } from "@/components/dashboards/dashboard-chart";
 import { chartExportTable, toCsv, toTsv } from "@/lib/chart-export";
 import { visibleView } from "@/lib/dashboard-chart-data";
 
-const open = () => fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+const more = () => fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+const open = () => fireEvent.click(screen.getByRole("button", { name: "Export" }));
 
 describe("ChartMenu", () => {
   it.each([
     { visibility: "private" as const, item: "Share with everyone", absent: "Make private", next: "everyone" },
     { visibility: "everyone" as const, item: "Make private", absent: "Share with everyone", next: "private" },
   ])("offers $item on a $visibility chart and saves it as $next", async ({ visibility, item, absent, next }) => {
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={visibility} exportSubmenu />);
-    open();
+    render(<ChartMenu id="chart 1" canDuplicate={false} visibility={visibility} />);
+    more();
     const offered = await screen.findByRole("menuitem", { name: item });
     expect(screen.queryByRole("menuitem", { name: absent })).toBeNull();
     fireEvent.click(offered);
@@ -31,20 +32,20 @@ describe("ChartMenu", () => {
   });
 
   it("offers no sharing to someone who can't change the chart", async () => {
-    render(<ChartMenu id="chart 1" canDuplicate visibility={null} exportSubmenu />);
-    open();
+    render(<ChartMenu id="chart 1" canDuplicate visibility={null} />);
+    more();
     expect(await screen.findByRole("menuitem", { name: "Duplicate" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Share with everyone" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "Make private" })).toBeNull();
   });
 
   it("offers Duplicate only to someone who can make charts", async () => {
-    const { unmount } = render(<ChartMenu id="chart 1" canDuplicate visibility={null} exportSubmenu />);
-    open();
+    const { unmount } = render(<ChartMenu id="chart 1" canDuplicate visibility={null} />);
+    more();
     expect(await screen.findByRole("menuitem", { name: "Duplicate" })).toHaveAttribute("href", "/charts/new?from=chart%201");
     unmount();
-    render(<ChartMenu id="chart 1" canDuplicate={false} visibility="private" exportSubmenu />);
-    open();
+    render(<ChartMenu id="chart 1" canDuplicate={false} visibility="private" />);
+    more();
     await screen.findByRole("menuitem", { name: "Share with everyone" });
     expect(screen.queryByRole("menuitem", { name: "Duplicate" })).toBeNull();
   });
@@ -84,9 +85,9 @@ const views: Record<DashboardConfig["chartType"], DashboardView> = {
 
 const TITLE = "Button: adoption";
 
-type Menu = { canDuplicate: boolean; visibility: ChartVisibility | null; exportSubmenu: boolean };
+type Menu = { canDuplicate: boolean; visibility: ChartVisibility | null };
 
-function renderChart(chartType: DashboardConfig["chartType"], range: ChartRange = "3m", menu: Menu = { canDuplicate: false, visibility: null, exportSubmenu: false }) {
+function renderChart(chartType: DashboardConfig["chartType"], range: ChartRange = "3m", menu: Menu = { canDuplicate: false, visibility: null }) {
   const config: DashboardConfig = { scope: { kind: "all" }, cohorts, chartType, metric: "count" };
   render(
     <ChartExportProvider title={TITLE}>
@@ -100,14 +101,6 @@ function renderChart(chartType: DashboardConfig["chartType"], range: ChartRange 
 async function menuItems(): Promise<string[]> {
   open();
   return (await screen.findAllByRole("menuitem")).map((item) => item.textContent ?? "");
-}
-
-async function exportItems(): Promise<string[]> {
-  fireEvent.click(screen.getByRole("menuitem", { name: "Export" }));
-  await waitFor(() => expect(screen.getAllByRole("menu")).toHaveLength(2));
-  return within(screen.getAllByRole("menu")[1] as HTMLElement)
-    .getAllByRole("menuitem")
-    .map((item) => item.textContent ?? "");
 }
 
 function readBlob(blob: Blob): Promise<string> {
@@ -161,7 +154,7 @@ describe("ChartMenu export", () => {
     ["stacked-share", ALL_ITEMS],
     ["bars", ALL_ITEMS],
     ["table", ["Download CSV", "Copy table"]],
-  ] as const)("lists a %s chart's export items in the menu itself without a submenu", async (chartType, items) => {
+  ] as const)("lists a %s chart's export items under Export", async (chartType, items) => {
     renderChart(chartType);
     expect(await menuItems()).toEqual(items);
   });
@@ -178,27 +171,24 @@ describe("ChartMenu export", () => {
     expect(await menuItems()).toEqual(["Download PNG", "Download CSV"]);
   });
 
-  it.each([
-    ["trend", ALL_ITEMS],
-    ["table", ["Download CSV", "Copy table"]],
-  ] as const)("puts a %s chart's export items in an Export submenu, before sharing and Duplicate", async (chartType, items) => {
-    renderChart(chartType, "3m", { canDuplicate: true, visibility: "private", exportSubmenu: true });
-    expect(await menuItems()).toEqual(["Export", "Share with everyone", "Duplicate"]);
-    expect(await exportItems()).toEqual(items);
+  it("keeps sharing and Duplicate in its own menu, apart from Export", async () => {
+    renderChart("trend", "3m", { canDuplicate: true, visibility: "private" });
+    expect(await menuItems()).toEqual(ALL_ITEMS);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    more();
+    expect((await screen.findAllByRole("menuitem")).map((item) => item.textContent)).toEqual(["Share with everyone", "Duplicate"]);
   });
 
-  it("downloads from the Export submenu", async () => {
-    renderChart("trend", "3m", { canDuplicate: false, visibility: null, exportSubmenu: true });
-    expect(await menuItems()).toEqual(["Export"]);
-    await exportItems();
-    fireEvent.click(screen.getByRole("menuitem", { name: "Download CSV" }));
-    expect(saved).toEqual([{ download: "Button adoption.csv", href: "blob:export", onPage: true }]);
+  it("shows Export and no More actions to someone who can't share or duplicate the chart", () => {
+    renderChart("trend");
+    expect(screen.getByRole("button", { name: "Export" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "More actions" })).toBeNull();
   });
 
   it("renders nothing when it has no items", () => {
     const { container } = render(
       <ChartExportProvider title={TITLE}>
-        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu />
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} />
       </ChartExportProvider>,
     );
     expect(container).toBeEmptyDOMElement();
@@ -265,7 +255,7 @@ describe("ChartMenu export", () => {
     const paths = { "component:btn": "src/forms/Button.tsx" };
     render(
       <ChartExportProvider title={TITLE}>
-        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} />
         <LinkedDashboardChart config={config} view={views.trend} range="all" paths={paths} />
       </ChartExportProvider>,
     );
@@ -291,7 +281,7 @@ describe("ChartMenu export", () => {
     const whole: DashboardView = { kind: "series", series: [...series, ...kits], coverage };
     render(
       <ChartExportProvider title={TITLE}>
-        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} />
         <LinkedDashboardChart config={config} view={whole} range="all" />
       </ChartExportProvider>,
     );
@@ -325,7 +315,7 @@ describe("ChartMenu export", () => {
     const whole: DashboardView = { kind: "series", series: [...series, ...kits], coverage };
     render(
       <ChartExportProvider title={TITLE}>
-        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} />
         <LinkedDashboardChart config={config} view={whole} range="all" />
       </ChartExportProvider>,
     );
@@ -362,7 +352,7 @@ describe("ChartMenu export", () => {
     };
     render(
       <ChartExportProvider title={TITLE}>
-        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} exportSubmenu={false} />
+        <ChartMenu id="chart 1" canDuplicate={false} visibility={null} />
         <LinkedDashboardChart config={config} view={{ kind: "series", series: [...series, ...kits], coverage }} range="all" />
       </ChartExportProvider>,
     );

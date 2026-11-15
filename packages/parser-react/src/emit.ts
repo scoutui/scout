@@ -26,7 +26,7 @@ import type {
 import { findEnclosingComponentBinding } from "./find-owner.js";
 import { positionAt } from "./position.js";
 import type { FileBuilder, InferredType, OccurrenceVia, Reference, ScopeId } from "@scoutui/reference-graph";
-import { MODULE_SCOPE, isHostElementName } from "@scoutui/reference-graph";
+import { MODULE_SCOPE, isHostElementName, isRuntimeImport } from "@scoutui/reference-graph";
 import { ScopeTracker, walk } from "oxc-walker";
 import {
   inferValue,
@@ -189,6 +189,7 @@ export function emitReact(opts: EmitOptions): void {
 function emitImport(node: ImportDeclaration, fb: FileBuilder, source: string): void {
   const specifier = node.source.value;
   const loc = positionAt(source, node.start);
+  if (isRuntimeImport(node)) fb.addImportedModule(specifier);
 
   // Side-effect import: no binding to emit.
   if (!node.specifiers || node.specifiers.length === 0) return;

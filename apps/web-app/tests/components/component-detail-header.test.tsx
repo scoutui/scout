@@ -24,12 +24,12 @@ function identityLine(): string {
 
 describe("ComponentDetailHeader", () => {
   it("shows a package export's package and public entry", () => {
-    render(<ComponentDetailHeader detail={makeDetail()} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail()} />);
     expect(identityLine()).toBe("From @example/ui·dist/button");
   });
 
   it("shows no entry for a package export at the package root", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ publicEntry: "" })} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail({ publicEntry: "" })} />);
     expect(identityLine()).toBe("From @example/ui");
   });
 
@@ -40,7 +40,7 @@ describe("ComponentDetailHeader", () => {
       entryPackages: [{ package: "@example/wrapper", version: "1.0.0" }],
       realizations: [{ componentId: "w", displayName: "XButton", kind: "react-component", packageName: "@example/react", version: null, occurrenceCount: 1, fileCount: 1, fileTypes: [] }],
     } as unknown as ComponentDetail;
-    render(<ComponentDetailHeader detail={detail} canEdit />);
+    render(<ComponentDetailHeader detail={detail} />);
     // The header still renders its real content from the same detail.
     expect(screen.getByRole("heading", { level: 1, name: "Button" })).toBeInTheDocument();
     expect(identityLine()).toBe("From @example/ui·dist/button");
@@ -57,51 +57,47 @@ describe("ComponentDetailHeader", () => {
           publicEntry: null,
           definedAt: { filePath: "src/components/Button.tsx", line: 4, column: 16 },
         })}
-        canEdit
       />,
     );
     expect(identityLine()).toBe("From @example/ui·defined at src/components/Button.tsx:4:16");
   });
 
   it("names each claimant of a tag that several definitions claim", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "custom-element", claimedBy: ["@example/ui", "src/badge.ts"] })} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "custom-element", claimedBy: ["@example/ui", "src/badge.ts"] })} />);
     expect(screen.getByText("@example/ui").closest("div")?.textContent).toBe("From @example/ui or src/badge.ts");
     expect(screen.getByText("src/badge.ts")).toHaveClass("font-mono");
     expect(screen.queryByText("—")).toBeNull();
   });
 
   it("shows a dash for a component with no package, as the components table does", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "tag" })} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail({ packageName: null, publicEntry: null, kind: "tag" })} />);
     expect(screen.getByText("—")).toHaveAttribute("title", "no import links this component to a package");
     expect(screen.queryByText(/no package/)).toBeNull();
   });
 
   it("badges an unknown framework by its own name, never as React", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ kind: "svelte-component" })} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail({ kind: "svelte-component" })} />);
     expect(screen.getByText("Svelte")).toBeInTheDocument();
     expect(screen.queryByText("React")).toBeNull();
   });
 
   it("names the origin in its badge, with what it means as the badge's title", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ scope: "local" })} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail({ scope: "local" })} />);
     expect(screen.getByText("Local")).toHaveAttribute("title", "Defined in this repo");
   });
 
-  it("links the migration line to its Governance record for someone who can edit", () => {
+  it("names the replacement as plain text in one colour, linking neither to it nor to its Governance record", () => {
     const superseded = makeDetail({ migrationStatus: { status: "superseded", by: { packageName: "@example/new-ui", exportName: "Button" } }, governedByRecordId: "g1" });
-    render(<ComponentDetailHeader detail={superseded} canEdit />);
-    expect(screen.getByRole("link", { name: "Replaced by → @example/new-ui/Button" })).toHaveAttribute("href", "/governance#record-g1");
-  });
-
-  it("shows the migration line as plain text, with the same words, to someone who can't edit", () => {
-    const superseded = makeDetail({ migrationStatus: { status: "superseded", by: { packageName: "@example/new-ui", exportName: "Button" } }, governedByRecordId: "g1" });
-    render(<ComponentDetailHeader detail={superseded} canEdit={false} />);
-    expect(screen.queryByRole("link", { name: /Replaced by/ })).toBeNull();
-    expect(screen.getByText("@example/new-ui/Button").closest("p")?.textContent).toBe("Replaced by → @example/new-ui/Button");
+    render(<ComponentDetailHeader detail={superseded} />);
+    expect(screen.getByText("Replaced by")).toBeInTheDocument();
+    expect(screen.getByText("@example")).not.toHaveClass("text-muted-foreground");
+    expect(screen.getByTitle("@example/new-ui/Button").closest("a")).toBeNull();
+    expect(screen.queryByRole("link", { name: /Replaced by|@example\/new-ui/ })).toBeNull();
+    expect(document.querySelector("a[href^='/governance']")).toBeNull();
   });
 
   it("puts the warning triangle in the deprecated pill", () => {
-    render(<ComponentDetailHeader detail={makeDetail({ deprecated: true })} canEdit />);
+    render(<ComponentDetailHeader detail={makeDetail({ deprecated: true })} />);
     const pill = screen.getByText("Deprecated").closest("[data-slot=badge]");
     expect(pill?.querySelector("svg")).toBeInstanceOf(SVGElement);
   });

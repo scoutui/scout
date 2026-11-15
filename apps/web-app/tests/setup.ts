@@ -12,8 +12,17 @@ if (typeof globalThis.MouseEvent !== "undefined" && typeof globalThis.PointerEve
 // jsdom lacks ResizeObserver, which @tanstack/react-virtual uses to observe the
 // scroll element for size changes. A no-op is enough; the size comes from the
 // offset* stub below.
+// jsdom lacks scrollIntoView, which the components table calls on the row the arrow keys move to.
+if (typeof Element !== "undefined" && typeof Element.prototype.scrollIntoView !== "function") {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
+    callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
     observe() {}
     unobserve() {}
     disconnect() {}

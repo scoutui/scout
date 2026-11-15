@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Ellipsis } from "lucide-react";
+import { Download, Ellipsis } from "lucide-react";
 import type { ChartVisibility, DashboardView } from "@scoutui/web-shared";
 import { setDashboardVisibility } from "@/app/charts/dashboard-actions";
 import { actionErrorMessage } from "@/lib/action-error";
@@ -16,9 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLinkItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type ShownChart, useChartExport } from "./chart-export-context";
@@ -33,20 +30,18 @@ const DOWNLOAD_URL_MS = 60_000;
 type ExportedChart = ShownChart & { title: string; drawn: DashboardView };
 
 /**
- * A chart's "⋯" menu: its image and table for the chart on screen, in an Export submenu when `exportSubmenu` is set,
- * Duplicate for people who can make charts, and sharing for people who can change the chart, given its `visibility`.
- * It renders nothing when it has no items.
+ * A chart's actions: an Export menu with its image and table for the chart on screen, and a "⋯" menu with Duplicate
+ * for people who can make charts and sharing for people who can change the chart, given its `visibility`. Each menu
+ * renders only when it has items.
  */
 export function ChartMenu({
   id,
   canDuplicate,
   visibility,
-  exportSubmenu,
 }: {
   id: string;
   canDuplicate: boolean;
   visibility: ChartVisibility | null;
-  exportSubmenu: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -126,31 +121,36 @@ export function ChartMenu({
       <output className={error ? "text-xs text-destructive" : "text-xs text-muted-foreground empty:hidden"}>
         {error ?? copied}
       </output>
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="More actions" />}>
-          <Ellipsis aria-hidden />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          {exportItems && exportSubmenu ? (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Export</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>{exportItems}</DropdownMenuSubContent>
-            </DropdownMenuSub>
-          ) : (
-            exportItems
-          )}
-          {visibility === "private" ? (
-            <DropdownMenuItem disabled={pending} onClick={() => share("everyone")}>Share with everyone</DropdownMenuItem>
-          ) : visibility === "everyone" ? (
-            <DropdownMenuItem disabled={pending} onClick={() => share("private")}>Make private</DropdownMenuItem>
-          ) : null}
-          {canDuplicate ? (
-            <DropdownMenuLinkItem closeOnClick render={<Link href={`/charts/new?from=${encodeURIComponent(id)}`} />}>
-              Duplicate
-            </DropdownMenuLinkItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {exportItems ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+            <Download aria-hidden data-icon="inline-start" />
+            Export
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {exportItems}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+      {sharing || canDuplicate ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="More actions" />}>
+            <Ellipsis aria-hidden />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {visibility === "private" ? (
+              <DropdownMenuItem disabled={pending} onClick={() => share("everyone")}>Share with everyone</DropdownMenuItem>
+            ) : visibility === "everyone" ? (
+              <DropdownMenuItem disabled={pending} onClick={() => share("private")}>Make private</DropdownMenuItem>
+            ) : null}
+            {canDuplicate ? (
+              <DropdownMenuLinkItem closeOnClick render={<Link href={`/charts/new?from=${encodeURIComponent(id)}`} />}>
+                Duplicate
+              </DropdownMenuLinkItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </span>
   );
 }

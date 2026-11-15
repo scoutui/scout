@@ -8,12 +8,13 @@
  * Components with zero occurrences still emit identity + zeroed stats.
  */
 
-import type {
-  Component,
-  PropDistribution,
-  PropValueEntry,
-  PropValueState,
-  ResolvedOccurrence,
+import {
+  canonicalValueSet,
+  type Component,
+  type PropDistribution,
+  type PropValueEntry,
+  type PropValueState,
+  type ResolvedOccurrence,
 } from "@scoutui/scan-format";
 import { isHandlerName } from "@scoutui/reference-graph";
 import { isFrameworkRootPath } from "./scan/framework-root.js";
@@ -42,15 +43,9 @@ export type RolledComponent = Omit<Component, "composition">;
 
 const CARDINALITY_CAP = 100;
 
-const stringifyLiteral = (v: string | number | boolean | null): string =>
-  v === null ? "null" : String(v);
-
-const canonicalSet = (vs: (string | number | boolean)[]): (string | number | boolean)[] =>
-  [...new Set(vs)].sort((a, b) => stringifyLiteral(a).localeCompare(stringifyLiteral(b)));
-
 function bucketKey(v: Exclude<PropValueState, { tier: "dynamic" }>): string {
   if (v.tier === "reference") return `r:${v.ref}`;
-  if ("valueSet" in v) return `ws:${JSON.stringify(canonicalSet(v.valueSet))}`;
+  if ("valueSet" in v) return `ws:${JSON.stringify(canonicalValueSet(v.valueSet))}`;
   // written scalar
   const val = v.value;
   return `w:${val === null ? "null" : `${typeof val}:${String(val)}`}`;
@@ -59,7 +54,7 @@ function bucketKey(v: Exclude<PropValueState, { tier: "dynamic" }>): string {
 function newEntry(v: Exclude<PropValueState, { tier: "dynamic" }>): PropValueEntry {
   if (v.tier === "reference") return { provenance: "reference", ref: v.ref, count: 0 };
   return "valueSet" in v
-    ? { provenance: "written", valueSet: canonicalSet(v.valueSet), count: 0 }
+    ? { provenance: "written", valueSet: canonicalValueSet(v.valueSet), count: 0 }
     : { provenance: "written", value: v.value, count: 0 };
 }
 

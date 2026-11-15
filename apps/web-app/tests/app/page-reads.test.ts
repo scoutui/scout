@@ -64,7 +64,7 @@ function recordQueries(allowUsage = false) {
   };
 }
 
-type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown; authors?: Record<string, unknown> };
+type PageProps = { children?: ReactNode; fallbacks?: unknown; ownPage?: boolean; detail?: unknown; graph?: unknown; source?: unknown; rows?: unknown; notInLatest?: unknown; olderScanAt?: unknown; packages?: unknown; tracking?: unknown; notice?: unknown; allTags?: unknown; records?: unknown; stats?: unknown; authors?: Record<string, unknown> };
 
 /** A read of every component fact in a scan, not one component's. */
 const readsEveryComponent = (query: string) => /\bscan_component_facts\b/.test(query) && !/\bcomponent_id = \$2\b/.test(query);
@@ -84,8 +84,8 @@ function propsFor(node: ReactNode, name: string): PageProps | undefined {
   }
 }
 
-async function seed(pool: Pool) {
-  for (const artifact of genericArtifacts()) await publishScan(pool, artifact, { uploadedByUserId: null });
+async function seed(pool: Pool, artifacts = genericArtifacts()) {
+  for (const artifact of artifacts) await publishScan(pool, artifact, { uploadedByUserId: null });
   await pool.query("UPDATE scans SET artifact = '{}'::json");
   driver = new PostgresDriver(pool);
   database = pool;
@@ -254,8 +254,10 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const { default: page } = await import("@/app/repos/[repoId]/page");
       const older = await page({ ...repoParams, searchParams: Promise.resolve({ scan: "scan-current" }) });
       expect(propsFor(older, "ComponentsExplorer")?.notInLatest).toEqual([field]);
+      expect(propsFor(older, "ComponentsExplorer")?.olderScanAt).toBe("2026-06-02T00:00:00.000Z");
       const latest = await page({ ...repoParams, searchParams });
       expect(propsFor(latest, "ComponentsExplorer")?.notInLatest).toEqual([]);
+      expect(propsFor(latest, "ComponentsExplorer")?.olderScanAt).toBeNull();
     });
   });
 
@@ -470,17 +472,21 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
         ["2026-06-01 00:00 UTC", "2026-06-05 09:00 UTC"],
         ["2026-05-01 00:00 UTC", "2026-05-01 00:05 UTC"],
       ]);
-      expect(rows.map(row => [...row.matchAll(/>(latest|couldn(?:'|&#x27;)t be prepared|can(?:'|&#x27;)t be read)</g)].map(match => match[1]?.replace("&#x27;", "'")))).toEqual([
-        ["latest", "couldn't be prepared"],
+      expect(rows.map(row => [...row.matchAll(/>(Latest|Couldn(?:'|&#x27;)t be prepared|Can(?:'|&#x27;)t be read)</g)].map(match => match[1]?.replace("&#x27;", "'")))).toEqual([
+        ["Latest", "Couldn't be prepared"],
         [],
-        ["can't be read"],
+        ["Can't be read"],
       ]);
     });
   });
 
   it("serves API data after closing each snapshot", async () => {
     await withReadModelDatabase(async pool => {
-      await seed(pool);
+      const artifacts = genericArtifacts();
+      const declared = artifacts[0]?.components.find(c => c.id === panel);
+      if (!declared) throw new Error("Missing Panel");
+      declared.definition = { line: 3, column: 1 };
+      await seed(pool, artifacts);
       const repos = await import("@/app/api/repos/route");
       const repo = await import("@/app/api/repos/[repoId]/route");
       const components = await import("@/app/api/components/route");
@@ -488,6 +494,8 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const history = await import("@/app/api/repos/[repoId]/scans/route");
       const packages = await import("@/app/api/packages/route");
       const pkg = await import("@/app/api/packages/[packageName]/route");
+      const details = await import("@/app/api/repos/[repoId]/components/[componentId]/route");
+      const otherRepos = await import("@/app/api/repos/[repoId]/components/other-repos/route");
       const request = (query = "") => new Request(`http://localhost/api${query}`);
       const recorder = recordQueries();
       const served = async (read: () => Promise<Response>) => {
@@ -525,6 +533,21 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(packageDetail.packageName).toBe("@sample/core");
       expect(packageDetail.cells.map(cell => cell.repoId)).toContain("repo-a");
       expect(packageDetail.components.map(row => row.componentId)).toContain(button);
+      const detailsOf = (componentId: string, scan: string) => () => details.GET(request(`?scan=${scan}`), { params: Promise.resolve({ repoId: "repo-a", componentId: encodeURIComponent(componentId) }) });
+      expect(await served(detailsOf(button, "scan-current"))).toEqual({
+        source: null,
+        props: { kept: true, uses: 1, top: [{ name: "size", set: 1, values: [{ kind: "value", label: "small", count: 1 }] }], neverSet: null },
+        history: [{ t: "2026-06-01T00:00:00.000Z", value: 1 }, { t: "2026-06-02T00:00:00.000Z", value: 1 }],
+      });
+      expect(await served(detailsOf(panel, "scan-current"))).toMatchObject({ source: { filePath: "src/panel.tsx", line: 3 }, props: { kept: true, neverSet: 1 } });
+      expect(await served(detailsOf(panel, "scan-previous"))).toEqual({
+        source: { filePath: "src/panel.tsx", line: null }, props: { kept: false }, history: [{ t: "2026-06-01T00:00:00.000Z", value: 1 }],
+      });
+      const member = componentKey(packageExport("@sample/core", "Button.Icon"));
+      const counts: Record<string, number> = await served(() => otherRepos.GET(request("?scan=scan-current"), repoParams));
+      expect(counts[member]).toBe(1);
+      expect((await details.GET(request("?scan=scan-missing"), componentParams)).status).toBe(404);
+      expect((await details.GET(request("?scan=scan-current"), { params: Promise.resolve({ repoId: "repo-a", componentId: "missing" }) })).status).toBe(404);
       expect(recorder.forbiddenRawQueries).toEqual([]);
       expect(recorder.componentHeadOccurrenceQueries).toEqual([]);
     });

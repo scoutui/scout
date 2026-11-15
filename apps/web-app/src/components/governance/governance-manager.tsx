@@ -365,7 +365,7 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
         )}
         {notice}
         <p className="max-w-prose text-sm text-muted-foreground">
-          Each record marks a package or component as replaced or retired. Its uses show as deprecated in every repo, and the record counts how many are left.
+          Replaced and retired packages and components. Their uses show as deprecated in every repo.
         </p>
       </header>
 
@@ -1044,7 +1044,7 @@ function RecordForm({
   );
 
   return (
-    <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 space-y-4", !isEdit && "panel p-4")}>
+    <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 max-w-3xl space-y-4", !isEdit && "panel p-4")}>
       <div>
         <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
         {byline ? <p className="mt-1 text-xs text-muted-foreground">{byline}</p> : null}

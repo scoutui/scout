@@ -1,4 +1,4 @@
-import { displayNameOf, type Component, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
+import { canonicalValueSet, displayNameOf, type Component, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
 import type { ComponentApiUsage, ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, ScanFinding, WrittenValue } from "./dto.js";
 import { type ComponentDigest, toComponentDigest } from "./digest.js";
 import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-graph.js";
@@ -12,7 +12,7 @@ import { usedComponentKey, isUsed } from "./usage.js";
 // PROJECTION_VERSION alone, bumped for an additive change (a new optional field
 // a reader can treat as absent), reprojects every scan without making its
 // current rows unreadable in the meantime.
-export const PROJECTION_VERSION: number = 10;
+export const PROJECTION_VERSION: number = 11;
 export const READ_MODEL_FORMAT_VERSION: number = 6;
 
 export type ImmutableDetailHead = Omit<ComponentDetailHead, "claimedBy" | "deprecated" | "migrationStatus" | "governedByRecordId">;
@@ -120,7 +120,7 @@ export function deriveOccurrenceRow(occurrence: ResolvedOccurrence, names: Reado
   const props: OccurrencePropChip[] = Object.entries(occurrence.props).map(([name, state]) => {
     if (state.tier === "dynamic") return { kind: "dynamic", name };
     if (state.tier === "reference") return { kind: "reference", name, ref: state.ref };
-    return { kind: "literal", name, value: "valueSet" in state ? state.valueSet.map(String).join(" | ") : String(state.value) };
+    return { kind: "literal", name, value: "valueSet" in state ? canonicalValueSet(state.valueSet).map(String).join(" | ") : String(state.value) };
   });
   const writtenName = shownWrittenName(occurrence.writtenName, names.get(occurrence.resolution.componentId) ?? "");
   const ownerId = occurrence.ownerComponentId;
@@ -208,7 +208,7 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
       if (e.provenance === "reference") {
         references.push({ ref: e.ref, count: e.count });
       } else {
-        const value = "valueSet" in e ? e.valueSet.map(String).join(" | ") : String(e.value);
+        const value = "valueSet" in e ? canonicalValueSet(e.valueSet).map(String).join(" | ") : String(e.value);
         written.push({ value, count: e.count });
       }
     }

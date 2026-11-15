@@ -102,6 +102,35 @@ describe("DashboardChart deprecated-only series", () => {
   });
 });
 
+describe("DashboardChart bar labels", () => {
+  it("leaves room in the label column for a package under a bar's name", () => {
+    const button = { cohortKey: "component:btn", label: "Button · @example-ds/pie-button-group", color: "" };
+    const config: DashboardConfig = { scope: { kind: "all" }, cohorts: [{ kind: "component", componentId: "btn" }], chartType: "bars", metric: "count" };
+    const { container } = render(<DashboardChart config={config} view={{ kind: "snapshot", points: [{ ...button, value: 90, componentCount: 1 }] }} />);
+    const tick = container.querySelector(".recharts-yAxis-tick-labels text") as SVGTextElement;
+    expect([...tick.children].map((line) => line.textContent)).toEqual(["Button", "@example-ds/pie-button-group"]);
+    expect(Number(tick.getAttribute("x"))).toBeGreaterThanOrEqual("@example-ds/pie-button-group".length * 6.6);
+  });
+
+  it("breaks a long package under a bar's name after its scope, and keeps a short one on one line", () => {
+    const long = { cohortKey: "component:long", label: "PieButton · @example-design-system/pie-button-group-extended", color: "" };
+    const short = { cohortKey: "component:short", label: "Button · @example/ui", color: "" };
+    const config: DashboardConfig = {
+      scope: { kind: "all" },
+      cohorts: [{ kind: "component", componentId: "long" }, { kind: "component", componentId: "short" }],
+      chartType: "bars",
+      metric: "count",
+    };
+    const view: DashboardView = { kind: "snapshot", points: [{ ...long, value: 90, componentCount: 1 }, { ...short, value: 22, componentCount: 1 }] };
+    const { container } = render(<DashboardChart config={config} view={view} />);
+    const ticks = [...container.querySelectorAll(".recharts-yAxis-tick-labels text")].map((t) => [...t.children].map((line) => line.textContent));
+    expect(ticks).toEqual([
+      ["PieButton", "@example-design-system/", "pie-button-group-extended"],
+      ["Button", "@example/ui"],
+    ]);
+  });
+});
+
 const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(2025, 9 + i, 1)).toISOString());
 const monthly = (name: string, value: (i: number) => number): CohortSeries => ({
   cohortKey: `package:${name}`,

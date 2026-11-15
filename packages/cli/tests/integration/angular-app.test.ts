@@ -262,6 +262,20 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("tag-map", () => {
+    it("attributes a tag the typings of a component file's side-effect import declare to their package", () => {
+      const ngUi = { kind: "package", packageName: "@example/ng-ui" };
+      expect(componentOf(tag("ex-widget"))?.attribution).toEqual({
+        status: "resolved",
+        target: ngUi,
+        confidence: "declared",
+        evidence: [
+          { source: "tag-map", strength: "declared", locator: { packageName: "@example/ng-ui", version: "0.0.0-test" }, target: ngUi, disposition: "supports" },
+        ],
+      });
+    });
+  });
+
   describe("selector-conflict", () => {
     const S = "selector-conflict";
 
@@ -338,6 +352,19 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     });
   });
 
+  describe("library-const-array", () => {
+    const S = "library-const-array";
+    const page = local(S, "page.component.ts", "LibraryConstArrayPageComponent");
+
+    // The library modules are listed only in a decorator-free file's const
+    // array, which the component spreads into `imports`.
+    it("resolves a library component reached only through a const array in a file with no Angular decorator", () => {
+      expect(rendersIn(S)).toEqual([
+        row("page.component.ts:7:14", pkg("@example/ng-ui", "badge", "ExBadge"), page, [imported("@example/ng-ui/badge", "ExBadge")]),
+      ]);
+    });
+  });
+
   describe("const-array-scope", () => {
     const S = "const-array-scope";
     const widget = local(S, "widget.component.ts", "ConstWidgetComponent");
@@ -352,6 +379,10 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
         row("bare-page.component.ts:7:14", widget, local(S, "bare-page.component.ts", "ConstBarePageComponent"), [widgetImport]),
         row("partial-page.component.ts:12:14", widget, local(S, "partial-page.component.ts", "ConstPartialPageComponent"), [widgetImport]),
         row("spread-page.component.ts:7:14", widget, local(S, "spread-page.component.ts", "ConstSpreadPageComponent"), [widgetImport]),
+        // `appHighlight` on the same element: a directive the spread array brings in, its own use.
+        row("spread-page.component.ts:7:14", local(S, "highlight.directive.ts", "HighlightDirective"), local(S, "spread-page.component.ts", "ConstSpreadPageComponent"), [
+          imported("./highlight.directive", "HighlightDirective"),
+        ]),
       ]);
     });
 
@@ -380,6 +411,68 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
     it("reports no <ex-badge> as out of scope", () => {
       const outOfScope = (out.diagnostics ?? []).filter((d) => (d as { code?: string }).code === "angular-not-in-scope");
       expect(outOfScope.filter((d) => (d as { tagName?: string }).tagName === "ex-badge")).toEqual([]);
+    });
+  });
+
+  describe("directives", () => {
+    const S = "directives";
+    const page = local(S, "page.component.ts", "DirectivesPageComponent");
+    const partialPage = local(S, "partial-page.component.ts", "DirectivesPartialPageComponent");
+    const field = local(S, "field.directive.ts", "FieldDirective");
+    const tip = local(S, "tip.directive.ts", "TipDirective");
+    const track = local(S, "track.directive.ts", "TrackDirective");
+    const button = local(S, "dir-button.component.ts", "DirButtonComponent");
+    const exTooltip = pkg("@example/ng-ui", "tooltip", "ExTooltip");
+    const exForm = pkg("@example/ng-ui", "tooltip", "ExForm");
+    const ngModel = pkg("@angular/forms", "", "NgModel");
+    const written = (value: string) => ({ tier: "written", value });
+    const label = (c: unknown) => (c as { exportName?: string }).exportName ?? "";
+    /** Uses at one element come in the order the matcher finds them; sort them by name so the test doesn't depend on it. */
+    const sorted = (rows: ReturnType<typeof rendersIn>) => [...rows].sort((a, b) => (a.at === b.at ? label(a.component).localeCompare(label(b.component)) : 0));
+
+    // One template writes each kind of directive use: an element directive and its attribute form, an attribute
+    // directive whose selector attribute is also an input, a component with two directives on it, a structural
+    // directive, a library directive, `NgForm`-style selectors on a bare and a marked `<form>`, and Angular's own
+    // `NgModel` with `NgControlStatus` riding along on it.
+    it("counts each directive written on an element as its own use, with its inputs as props", () => {
+      expect(sorted(rendersIn(S).filter((r) => r.at.startsWith("page.component.html")))).toEqual([
+        row("page.component.html:1:1", field, page, [imported("./field.directive", "FieldDirective")], { label: written("Name") }),
+        row("page.component.html:2:1", field, page, [imported("./field.directive", "FieldDirective")]),
+        row("page.component.html:3:1", tip, page, [imported("./tip.directive", "TipDirective")], {
+          appTip: { tier: "reference", ref: "message" },
+          tipPosition: written("above"),
+        }),
+        row("page.component.html:4:1", tip, page, [imported("./tip.directive", "TipDirective")]),
+        row("page.component.html:5:1", button, page, [imported("./dir-button.component", "DirButtonComponent")]),
+        row("page.component.html:5:1", tip, page, [imported("./tip.directive", "TipDirective")], { appTip: written("Save") }),
+        row("page.component.html:5:1", track, page, [imported("./track.directive", "TrackDirective")], {}, ["tracked"]),
+        row("page.component.html:7:1", exTooltip, page, [imported("@example/ng-ui/tooltip", "ExTooltip")], {
+          exTooltip: written("Hi"),
+          exTooltipPosition: written("left"),
+        }),
+        row("page.component.html:9:1", exForm, page, [imported("@example/ng-ui/tooltip", "ExForm")]),
+        row("page.component.html:10:1", ngModel, page, [imported("@angular/forms", "NgModel")], { ngModel: { tier: "reference", ref: "value" } }),
+      ]);
+    });
+
+    it("counts no directive a library exports only under a private ɵ name", () => {
+      // `ExTooltipModule` brings `ɵExTooltipPatch` into scope, and its `[exTooltip]` selector matches line 7.
+      expect(out.components.filter((c) => (c.identity as { exportName?: string }).exportName?.startsWith("ɵ"))).toEqual([]);
+    });
+
+    it("counts no structural directive, no bare <form>, and no directive that only rides along on another's input", () => {
+      const lines = rendersIn(S).map((r) => r.at);
+      expect(lines).not.toContain("page.component.html:6:1"); // <p *appIf>
+      expect(lines).not.toContain("page.component.html:8:1"); // <form>
+      expect(out.components.filter((c) => (c.identity as { exportName?: string }).exportName === "NgControlStatus")).toEqual([]);
+    });
+
+    it("with a partly read scope, counts a directive one class answers to, and neither of two that share a selector", () => {
+      expect(rendersIn(S).filter((r) => r.at.startsWith("partial-page"))).toEqual([
+        row("partial-page.component.ts:10:14", tip, partialPage, [imported("./tip.directive", "TipDirective")]),
+      ]);
+      const ambiguous = (out.diagnostics ?? []).filter((d) => (d as { code?: string }).code === "angular-selector-ambiguous");
+      expect(ambiguous.filter((d) => (d as { filePath?: string }).filePath === `src/${S}/partial-page.component.ts`)).toHaveLength(1);
     });
   });
 
@@ -486,13 +579,21 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/control-flow/item.component.ts",
           "src/decorator-io/decorator-io-page.component.ts",
           "src/decorator-io/toggle.component.ts",
+          "src/directives/dir-button.component.ts",
+          "src/directives/field.directive.ts",
+          "src/directives/page.component.ts",
+          "src/directives/partial-page.component.ts",
+          "src/directives/tip.directive.ts",
+          "src/directives/track.directive.ts",
           "src/alias-import/alias-page.component.ts",
           "src/const-array-scope/bare-page.component.ts",
+          "src/const-array-scope/highlight.directive.ts",
           "src/const-array-scope/partial-page.component.ts",
           "src/const-array-scope/spread-page.component.ts",
           "src/const-array-scope/widget.component.ts",
           "src/alias-import/shared/components/alias-badge.component.ts",
           "src/library-components/app.component.ts",
+          "src/library-const-array/page.component.ts",
           "src/imports-spread/card.component.ts",
           "src/imports-spread/imports-spread-page.component.ts",
           "src/imports-spread/spread-button.component.ts",
@@ -513,6 +614,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
           "src/signal-io/signal-io-page.component.ts",
           "src/standalone-import/app.component.ts",
           "src/standalone-import/button.component.ts",
+          "src/tag-map/tag-map-page.component.ts",
           "src/unimported-tag/unimported-tag-page.component.ts",
         ].sort(),
       );

@@ -113,9 +113,11 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
   // anything: the engine looks up imports by local name to resolve template tags.
   let importSpecs: ImportSpec[] = [];
   if (parts.scriptSource && opts.wrapper.scriptProgram) {
-    importSpecs = [opts.wrapper.scriptProgram, opts.wrapper.plainScriptProgram].flatMap((program) =>
-      program === undefined ? [] : extractScriptImports({ file: opts.file, program }).importSpecs,
+    const extracted = [opts.wrapper.scriptProgram, opts.wrapper.plainScriptProgram].flatMap((program) =>
+      program === undefined ? [] : [extractScriptImports({ file: opts.file, program })],
     );
+    importSpecs = extracted.flatMap((e) => e.importSpecs);
+    for (const specifier of extracted.flatMap((e) => e.importedModules)) opts.fileBuilder.addImportedModule(specifier);
     for (const spec of importSpecs) {
       opts.fileBuilder.addImport({
         specifier: spec.source,

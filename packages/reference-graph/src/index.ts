@@ -68,5 +68,6 @@ export { externalSubpath, packageNameFromSpecifier } from "./engine/specifier.js
 
 export { posixPath } from "./posix.js";
 export { canonicalTagName, isValidCustomElementName } from "./tag-name.js";
+export { isRuntimeImport } from "./runtime-import.js";
 export type { DiagnosticCollector, EngineDiagnostic } from "./diagnostics.js";
 export { createDiagnosticCollector, engineDiagnosticKey } from "./diagnostics.js";

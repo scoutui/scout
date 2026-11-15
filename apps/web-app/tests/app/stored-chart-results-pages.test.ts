@@ -280,7 +280,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       expect(allPropsFor(tree, "LinkedDashboardChart")).toEqual([expect.objectContaining({ view: { kind: "series", series: stored?.series, coverage: stored?.coverage }, change: undefined, migration: false })]);
       expect(allPropsFor(tree, "TrackingReadout")).toEqual([{ entry: stored }]);
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Retirement: @sample/core", children: expect.anything() }]);
-      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `retirement:${retired.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
+      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `retirement:${retired.id}`, canDuplicate: false, visibility: null }]);
       expect(allPropsFor(tree, "ChartVisibilityLabel")).toEqual([]);
       expect(hrefsIn(tree)).toContain(`/governance#record-${retired.id}`);
       expect(textOf(tree)).toContain("Created from a Governance record. Manage records in Governance.");
@@ -350,7 +350,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       const { default: page } = await import("@/app/charts/[dashboardId]/page");
       const tree = await page(trackingParams(`migration:${record.id}`));
       expect(allPropsFor(tree, "ChartExportProvider")).toEqual([{ title: "Migration: Button · @sample/core → Field · @sample/mixed", children: expect.anything() }]);
-      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null, exportSubmenu: false }]);
+      expect(allPropsFor(tree, "ChartMenu")).toEqual([{ id: `migration:${record.id}`, canDuplicate: false, visibility: null }]);
     });
   });
 
@@ -509,7 +509,7 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
     });
   });
 
-  it("passes the repo's stored tracking to the adoption panel, and the preparing state before it is stored", async () => {
+  it("passes the repo's stored tracking to the adoption panel and the components' details, and the preparing state before it is stored", async () => {
     await withReadModelDatabase(async pool => {
       const { retired } = await seed(pool);
       const { default: page } = await import("@/app/repos/[repoId]/page");
@@ -518,7 +518,9 @@ describe.skipIf(!databaseUrl)("pages serving stored chart results", { timeout: 3
       await storeResults(pool);
       const stored = await driver.getStoredTracking({ kind: "repo", repoId: "repo-a" });
       expect(stored?.map(entry => entry.id)).toEqual([`retirement:${retired.id}`]);
-      expect(allPropsFor(await page(params), "RepoAdoptionPanel")).toEqual([expect.objectContaining({ tracking: stored, notice: null })]);
+      const tree = await page(params);
+      expect(allPropsFor(tree, "RepoAdoptionPanel")).toEqual([expect.objectContaining({ tracking: stored, notice: null })]);
+      expect(allPropsFor(tree, "ComponentsExplorer")).toEqual([expect.objectContaining({ tracking: stored })]);
     });
   });
 });

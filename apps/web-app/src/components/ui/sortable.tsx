@@ -7,29 +7,31 @@ export type SortDir = "asc" | "desc";
 /**
  * Shared sort state for a table. A newly picked numeric column sorts `desc`
  * (biggest counts on top), a text column `asc` (A to Z). Clicking the active
- * column again flips direction.
+ * column again flips direction. A new `resetKey` starts again from the
+ * initial key and direction.
  */
 export function useSort<K extends string>(
   initialKey: K,
   initialDir: SortDir,
   numericKeys?: ReadonlySet<K>,
+  resetKey?: string,
 ) {
-  const [sortKey, setSortKey] = useState<K>(initialKey);
-  const [sortDir, setSortDir] = useState<SortDir>(initialDir);
+  const [sort, setSort] = useState({ sortKey: initialKey, sortDir: initialDir, resetKey });
+  const current = sort.resetKey === resetKey ? sort : { sortKey: initialKey, sortDir: initialDir, resetKey };
+  if (current !== sort) setSort(current);
 
   const toggleSort = useCallback(
     (key: K) => {
-      if (key === sortKey) {
-        setSortDir(d => (d === "asc" ? "desc" : "asc"));
-        return;
-      }
-      setSortKey(key);
-      setSortDir(numericKeys?.has(key) ? "desc" : "asc");
+      setSort(s =>
+        key === s.sortKey
+          ? { ...s, sortDir: s.sortDir === "asc" ? "desc" : "asc" }
+          : { ...s, sortKey: key, sortDir: numericKeys?.has(key) ? "desc" : "asc" },
+      );
     },
-    [sortKey, numericKeys],
+    [numericKeys],
   );
 
-  return { sortKey, sortDir, toggleSort };
+  return { sortKey: current.sortKey, sortDir: current.sortDir, toggleSort };
 }
 
 /**

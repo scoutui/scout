@@ -30,6 +30,8 @@ export type AngularInput = { name: string; alias?: string; required: boolean };
 export type AngularOutput = { name: string; alias?: string };
 
 export type AngularComponentDecl = {
+  /** A `@Directive` renders nothing of its own and has no template; it's counted wherever its selector is written, like a component. */
+  kind: "component" | "directive";
   className: string;
   isExported: boolean;
   isDefault: boolean;
@@ -70,6 +72,42 @@ export function detectAngularComponents(program: Program, source: string): Angul
   for (const site of collectClassSites(program)) {
     const decl = toAngularComponentDecl(site, source);
     if (decl) out.push(decl);
+  }
+  return out;
+}
+
+/**
+ * Detect `@Directive({ selector: "..." })` classes, same top-level shapes as
+ * `detectAngularComponents`, as the same record with `kind: "directive"` and
+ * no template: a directive is a component without one, as Angular has it. A
+ * directive whose selector isn't a string literal, or that has none (a base
+ * class, or one only used as a host directive), is left out: nothing in a
+ * template can name it.
+ */
+export function detectAngularDirectives(program: Program, source: string): AngularComponentDecl[] {
+  const out: AngularComponentDecl[] = [];
+  for (const site of collectClassSites(program)) {
+    const { node } = site;
+    const call = findDecoratorCall(node.decorators, "Directive");
+    if (!call) continue;
+    const options = readComponentOptions(firstObjectArg(call), source);
+    if (options.selector === undefined) continue;
+    const { inputs, outputs } = readMembers(node);
+    const pos = positionAt(source, node.start);
+    out.push({
+      kind: "directive",
+      className: node.id?.name ?? "",
+      isExported: site.isExported,
+      isDefault: site.isDefault,
+      selector: options.selector,
+      standalone: options.standalone,
+      imports: [],
+      importsComplete: true,
+      template: undefined,
+      inputs,
+      outputs,
+      loc: { line: pos.line, column: pos.column },
+    });
   }
   return out;
 }
@@ -365,6 +403,7 @@ function toAngularComponentDecl(site: ClassSite, source: string): AngularCompone
   const pos = positionAt(source, node.start);
 
   return {
+    kind: "component",
     className: node.id?.name ?? "",
     isExported: site.isExported,
     isDefault: site.isDefault,

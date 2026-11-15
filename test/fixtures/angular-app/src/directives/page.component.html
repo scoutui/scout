@@ -1,0 +1,10 @@
+<app-field label="Name"></app-field>
+<span appField></span>
+<span [appTip]="message" tipPosition="above">x</span>
+<span appTip>y</span>
+<app-dir-button appTip="Save" appTrack (tracked)="log()"></app-dir-button>
+<p *appIf="show">z</p>
+<span exTooltip="Hi" exTooltipPosition="left">t</span>
+<form></form>
+<form exForm></form>
+<input [ngModel]="value" />

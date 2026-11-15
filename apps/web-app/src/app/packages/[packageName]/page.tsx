@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { governingRecord, resolveGovernance, resolveTags } from "@scoutui/web-shared";
+import { resolveGovernance, resolveTags } from "@scoutui/web-shared";
 import { getStorage } from "@/lib/storage";
 import { readModelPage } from "@/lib/read-model-page";
 import { ReadModelState, SkippedScansNotice } from "@/components/read-model-state";
@@ -44,17 +44,13 @@ export default async function PackageDetailPage({
   if (!detail) notFound();
 
   const decodedName = decodeURIComponent(packageName);
-  const packageRecord = governingRecord({ packageName: decodedName, name: null }, governance);
   const canEdit = can(await identify({ browser: true }), "edit");
 
   return (
     <div className="space-y-6">
       <PackageDetailHeader detail={detail} allTags={tags} canEdit={canEdit} />
       <SkippedScansNotice fallbacks={page.fallbacks} />
-      <MigrationLine
-        status={resolveGovernance({ packageName: decodedName, name: null }, governance)}
-        recordId={canEdit ? packageRecord?.id ?? null : null}
-      />
+      <MigrationLine status={resolveGovernance({ packageName: decodedName, name: null }, governance)} />
       <Section title="Used in">
         <PackageConsumersTable cells={detail.cells} packageName={detail.packageName} />
       </Section>

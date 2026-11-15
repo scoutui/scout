@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef } from "react";
+import { type KeyboardEvent, type MouseEvent, type RefCallback, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentRow, DiffMark } from "@scoutui/web-shared";
@@ -7,46 +7,118 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { SlashBreaks } from "@/components/dashboards/cohort-label";
 import { DeprecatedMark } from "@/components/deprecated-mark";
+import { PackageName } from "@/components/package-name";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
-import { hrefWithQuery } from "@/lib/query-string";
+import { componentHref, packageArea } from "@/lib/usage-url";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { sortByVersion } from "@/lib/version-order";
-
-const COLUMN_COUNT = 5;
+import { cn } from "@/lib/utils";
 
 /** The outline badge for `added` and `removed` rows. Its border clears the 3:1
  *  non-text minimum on the panel (3.3:1 light, 3.8:1 dark); the default
  *  `--hairline` outline measured 1.21:1 on dark, and `/35` 1.4:1 on light. */
 const MARK_BADGE = "shrink-0 border-muted-foreground/70 text-muted-foreground";
 
-/** A row's name line: wraps below sm (a badge beside a long name pushed the
- *  390px table 44px past its scroller), one truncating line from sm up. */
-const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 sm:flex-nowrap";
+/** A row's name cell. In stacked rows it is the row's one visible cell and
+ *  fills the table without growing past it, so a long name truncates. */
+const NAME_CELL = "overflow-hidden align-middle @max-[43rem]:w-full @max-[43rem]:max-w-0";
+
+/** A row's name line: a badge that doesn't fit beside the name wraps under it. */
+const NAME_ROW = "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5";
+
+/** Column widths in rem. Version, Files, Uses and Change fit their headers and
+ *  `1,234,567` or `−12,345`. */
+const WIDTH = { version: 6, files: 4.5, uses: 6, change: 6 };
+/** The width Component needs, in rem: room for a typical name, at least `COMPONENT_MIN` and at most `COMPONENT_MAX`. */
+const COMPONENT_MIN = 14;
+/** The sticky header row's height in px (`h-9`), which covers the top of the scroller. */
+const HEAD_HEIGHT = 36;
+const COMPONENT_MAX = 22;
+/** One character of a component name (Monaspace Neon at text-sm) and of a package name (at text-xs), and the cell's padding. */
+const NAME_CHAR = 0.5425;
+const PACKAGE_CHAR = 0.465;
+const CELL_PADDING = 1.5;
+/** At least the Package header's width. */
+const PACKAGE_MIN = 6.5;
+
+/**
+ * The Package column's width: enough for the longest package name, while
+ * Component keeps the width a name of `nameChars` needs. Package gives way
+ * first, down to `PACKAGE_MIN`, and Component takes what's left. `100cqw` is
+ * the table's width.
+ */
+function packageWidth(packageChars: number, nameChars: number, change: boolean): string {
+  const fixed = WIDTH.version + WIDTH.files + WIDTH.uses + (change ? WIDTH.change : 0);
+  const component = Math.min(Math.max(nameChars * NAME_CHAR + CELL_PADDING, COMPONENT_MIN), COMPONENT_MAX);
+  const content = Math.max(packageChars * PACKAGE_CHAR + CELL_PADDING, PACKAGE_MIN);
+  return `max(${PACKAGE_MIN}rem, min(${content}rem, calc(100cqw - ${fixed + component}rem)))`;
+}
 
 type SortKey = "displayName" | "packageName" | "version" | "fileCount" | "occurrenceCount" | "delta";
-// `delta` is not here: the changed view's Occurrences header opens ascending
-// (biggest drop first) every time, including on coming back to it from
-// another column.
+// `delta` is not here: the Change header opens ascending (biggest drop first)
+// every time, including on coming back to it from another column.
 const DESC_KEYS: ReadonlySet<SortKey> = new Set(["fileCount", "occurrenceCount"]);
 
-/** One row per component, keyed and linked by its component id. */
+/**
+ * The table's rows in sort order, with the sort state. Most used first; the
+ * changed view opens on the change since the previous scan (`marks`), biggest
+ * drop first, each time it's entered.
+ */
+export function useSortedRows(rows: ComponentRow[], marks: Record<string, DiffMark> | undefined, changedView: boolean) {
+  const { sortKey, sortDir, toggleSort } = useSort<SortKey>(
+    changedView ? "delta" : "occurrenceCount",
+    changedView ? "asc" : "desc",
+    DESC_KEYS,
+    changedView ? "changed" : "all",
+  );
+  const sorted = useMemo(
+    () =>
+      sortKey === "version"
+        ? sortByVersion(rows, sortDir)
+        : sortRows(rows, sortKey, sortDir, (r, k) => {
+            if (k !== "delta") return r[k];
+            // No change shows a dash, nothing to report, so it sorts last in both directions.
+            const delta = deltaOf(marks?.[r.componentId], r.occurrenceCount);
+            return delta === 0 ? null : delta;
+          }),
+    [rows, sortKey, sortDir, marks],
+  );
+  return { sorted, sortKey, sortDir, toggleSort };
+}
+
+export type SortedRows = ReturnType<typeof useSortedRows>;
+
+/** How a row came to be selected: its button, by a click, Enter or Space, or ↑↓ from the row before. */
+export type SelectHow = "click" | "key";
+
+/**
+ * One row per component, keyed and linked by its component id. Each row has a
+ * button stretched over it, which selects the row, and a link on its name.
+ * The selected row's button and name are the table's tab stops, and ↑↓ move
+ * the selection and focus between rows' buttons.
+ */
 export function ComponentsTable({
   repoId,
-  rows,
+  sort,
   marks,
   notInLatest,
   search,
   usedIn,
   showUnusedProps = false,
+  selectedId,
+  onSelect,
+  packageChars = longestPackageName(sort.sorted),
+  nameChars = typicalNameLength(sort.sorted),
+  shortPaths,
 }: {
   repoId: string;
-  rows: ComponentRow[];
-  /** componentId → scan-diff mark. Defined only in the changed view: it puts each
-   *  row's signed Δ beside its occurrence count (`49 (+2)`), renders `removed`
-   *  marks as ghosts, and points the Occurrences header at the Δ, opening
-   *  ascending. */
+  /** The rows in sort order and the sort state, from `useSortedRows`. */
+  sort: SortedRows;
+  /** componentId → scan-diff mark. Given, the table shows the Change column,
+   *  badges a row marked `added`, and renders a row marked `removed` as a ghost. */
   marks?: Record<string, DiffMark> | undefined;
   /** Components the latest scan doesn't have. They have no detail page, so their rows have no link. */
   notInLatest?: ReadonlySet<string> | undefined;
@@ -56,49 +128,31 @@ export function ComponentsTable({
   usedIn?: string | null;
   /** The unused props filter is on: each row says how many of its declared props were never passed (`2 of 5 unused`). */
   showUnusedProps?: boolean;
+  selectedId?: string | null | undefined;
+  onSelect?: ((componentId: string, how: SelectHow) => void) | undefined;
+  /** The longest package name the Package column fits, in characters; the shown rows' longest when not given. */
+  packageChars?: number | undefined;
+  /** The name length the Component column makes room for, in characters; the shown rows' typical length when not given. */
+  nameChars?: number | undefined;
+  /** componentId → the part of the row's path that tells it from rows sharing its package and name. A row with a path and no entry shows its full path. */
+  shortPaths?: ReadonlyMap<string, string> | undefined;
 }) {
-  // Default: most-used first. The changed view's Occurrences header sorts by
-  // the signed Δ instead, biggest drop first.
-  const occurrencesKey: SortKey = marks ? "delta" : "occurrenceCount";
-  const { sortKey, sortDir, toggleSort } = useSort<SortKey>(
-    occurrencesKey,
-    marks ? "asc" : "desc",
-    DESC_KEYS,
-  );
-
-  const sorted = useMemo(
-    () =>
-      sortKey === "version"
-        ? sortByVersion(rows, sortDir)
-        : sortRows(rows, sortKey, sortDir, (r, k) =>
-            k === "delta" ? deltaOf(marks?.[r.componentId], r.occurrenceCount) : r[k],
-          ),
-    [rows, sortKey, sortDir, marks],
-  );
-  // One Δ slot width for the whole table, from its widest Δ, so the slots
-  // share a left edge but a short Δ doesn't reserve room for a long one: at
-  // 1024 the Occurrences column has 80px of content.
-  const slotCh = useMemo(
-    () =>
-      marks
-        ? rows.reduce((w, r) => {
-            const d = deltaOf(marks[r.componentId], r.occurrenceCount);
-            return d === 0 ? w : Math.max(w, slotWidthCh(d));
-          }, 0)
-        : 0,
-    [rows, marks],
-  );
+  const { sorted, sortKey, sortDir, toggleSort } = sort;
+  const columnCount = marks ? 6 : 5;
+  const selectable = (row: ComponentRow) => marks?.[row.componentId]?.kind !== "removed";
+  const nameRef = useTruncatedClass();
 
   // Only the visible window renders: at ~1,900 rows the full render dominates
   // first load. initialRect lets the server render a first window, so the table
   // doesn't flash empty. estimateSize is the measured desktop row height;
-  // measureElement corrects the taller stacked rows below `sm`.
+  // measureElement corrects taller rows, such as stacked ones.
   const scrollRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 37,
     overscan: 12,
+    scrollPaddingEnd: HEAD_HEIGHT,
     initialRect: { width: 1200, height: 600 },
   });
 
@@ -109,49 +163,83 @@ export function ComponentsTable({
   const paddingTop = first ? first.start : 0;
   const paddingBottom = last ? totalSize - last.end : 0;
 
-  // table-fixed only where the column grid exists (sm+); on mobile the single
-  // visible stacked cell must take the full width under auto layout.
+  // The selected row's button and name are the tab stops; while it isn't
+  // rendered, the first rendered row's are.
+  const rendered = virtualRows.map((vr) => sorted[vr.index]).filter((row): row is ComponentRow => row !== undefined && selectable(row));
+  const tabStop = rendered.some((row) => row.componentId === selectedId) ? selectedId : rendered[0]?.componentId;
+
+  // The selected row scrolls into view when it changes, so a step from the
+  // keyboard or the details panel keeps it on screen.
+  const selectedIndex = sorted.findIndex((row) => row.componentId === selectedId);
+  useEffect(() => {
+    if (selectedIndex >= 0) virtualizer.scrollToIndex(selectedIndex, { align: "auto" });
+  }, [selectedIndex, virtualizer]);
+
+  // The button of the row ↑↓ moved to takes focus once it renders.
+  const focusNext = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    if (focusNext.current === null) return;
+    const button = scrollRef.current?.querySelector<HTMLElement>(`[data-row-name="${CSS.escape(focusNext.current)}"]`);
+    if (!button) return;
+    focusNext.current = null;
+    button.focus({ preventScroll: true });
+    button.closest("tr")?.scrollIntoView({ block: "nearest" });
+  });
+
+  // ↑↓ from a row's button or name.
+  function onKeyDown(e: KeyboardEvent<HTMLTableSectionElement>) {
+    const id = (e.target as HTMLElement).closest("tr[data-row-id]")?.getAttribute("data-row-id");
+    if (id == null || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    e.preventDefault();
+    const step = e.key === "ArrowDown" ? 1 : -1;
+    let index = sorted.findIndex((row) => row.componentId === id) + step;
+    while (sorted[index] && !selectable(sorted[index] as ComponentRow)) index += step;
+    const next = sorted[index];
+    if (!next) return;
+    focusNext.current = next.componentId;
+    onSelect?.(next.componentId, "key");
+  }
+
+  // A click, Enter or Space on a row's button focuses it and selects the row.
+  function onRowButtonClick(e: MouseEvent<HTMLButtonElement>, row: ComponentRow) {
+    e.currentTarget.focus({ preventScroll: true });
+    onSelect?.(row.componentId, "click");
+  }
+
+  // table-fixed only where the column grid exists (a table 43rem wide and up);
+  // in stacked rows the single visible cell must take the full width under
+  // auto layout.
   return (
-    <Table containerRef={scrollRef} containerClassName="max-h-[70vh] overflow-y-auto" className="sm:table-fixed">
-      {/* Below sm the rows stack, so there are no headers and no sorting. */}
-      <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
+    <Table containerRef={scrollRef} containerClassName="@container max-h-[70vh] overflow-y-auto @min-[43rem]:scroll-pt-9" className="@min-[43rem]:table-fixed">
+      {/* In a table narrower than 43rem the rows stack, so there are no headers and no sorting. */}
+      <TableHeader className="sticky top-0 z-10 hidden @min-[43rem]:table-header-group">
         <TableRow>
-          <TableHead className="w-[40%]" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
+          <TableHead aria-sort={ariaSort("displayName", sortKey, sortDir)}>
             <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          {/* Below xl, Uses takes 5 points from Package: at 11% the
-              changed view's `475 (−9)` overflowed at 640 and the header
-              truncated at 1024. Both views share the widths, so toggling
-              reflows nothing. */}
-          <TableHead className="w-[23%] xl:w-[28%]" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
+          <TableHead style={{ width: packageWidth(packageChars, nameChars, marks !== undefined) }} aria-sort={ariaSort("packageName", sortKey, sortDir)}>
             <SortButton label="Package" sortKey="packageName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="w-[11%]" aria-sort={ariaSort("version", sortKey, sortDir)}>
+          <TableHead style={{ width: `${WIDTH.version}rem` }} aria-sort={ariaSort("version", sortKey, sortDir)}>
             <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="w-[9%] text-right" aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
+          <TableHead className="text-end" style={{ width: `${WIDTH.files}rem` }} aria-sort={ariaSort("fileCount", sortKey, sortDir)}>
             <SortButton label="Files" sortKey="fileCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="w-[17%] text-right pr-3 xl:w-[12%]" aria-sort={ariaSort(occurrencesKey, sortKey, sortDir)}>
-            {/* The visible label stays `Uses`; in the changed view the
-                title and accessible name say the sort key is the Δ, so
-                "ascending" is never announced over counts that aren't. */}
-            <SortButton
-              label="Uses"
-              title={marks ? "Uses, sorts by change since previous scan" : undefined}
-              sortKey={occurrencesKey}
-              current={sortKey}
-              dir={sortDir}
-              onClick={toggleSort}
-              align="right"
-            />
+          <TableHead className={cn("text-end", !marks && "pe-3")} style={{ width: `${WIDTH.uses}rem` }} aria-sort={ariaSort("occurrenceCount", sortKey, sortDir)}>
+            <SortButton label="Uses" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
+          {marks ? (
+            <TableHead className="pe-3 text-end" style={{ width: `${WIDTH.change}rem` }} aria-sort={ariaSort("delta", sortKey, sortDir)}>
+              <SortButton label="Change" title="Change since previous scan" sortKey="delta" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
+            </TableHead>
+          ) : null}
         </TableRow>
       </TableHeader>
-      <TableBody>
+      <TableBody onKeyDown={onKeyDown}>
         {paddingTop > 0 ? (
           <tr key="pad-top" aria-hidden>
-            <td colSpan={COLUMN_COUNT} style={{ height: paddingTop }} />
+            <td colSpan={columnCount} style={{ height: paddingTop }} />
           </tr>
         ) : null}
         {virtualRows.map(vr => {
@@ -159,22 +247,28 @@ export function ComponentsTable({
           if (!row) return null;
           const mark = marks?.[row.componentId];
           if (mark?.kind === "removed") {
-            return <GhostRow key={row.componentId} r={row} index={vr.index} measure={virtualizer.measureElement} slotCh={slotCh} />;
+            return <GhostRow key={row.componentId} r={row} index={vr.index} measure={virtualizer.measureElement} nameRef={nameRef} />;
           }
           const linked = !notInLatest?.has(row.componentId);
+          const selected = row.componentId === selectedId;
           return (
             <TableRow
               key={row.componentId}
               data-index={vr.index}
+              data-row-id={row.componentId}
               ref={virtualizer.measureElement}
-              className={linked ? "relative cursor-pointer hover:bg-muted/50" : undefined}
+              className={cn("relative scroll-mt-(--top-bar-height)", selected ? "selected" : "hover:bg-muted/50")}
             >
               <RowCells
                 r={row}
-                href={linked ? hrefFor(repoId, row.componentId, usedIn && Object.keys(row.usedIn ?? {}).length > 1 ? usedIn : null) : undefined}
+                nameRef={nameRef}
+                shortPath={shortPaths?.get(row.componentId)}
+                href={linked ? componentHref(repoId, row.componentId, packageArea(row.usedIn, usedIn)) : undefined}
+                selected={selected}
+                tabStop={row.componentId === tabStop}
+                onButtonClick={(e) => onRowButtonClick(e, row)}
                 mark={mark}
-                delta={marks ? deltaOf(mark, row.occurrenceCount) : undefined}
-                slotCh={slotCh}
+                showChange={marks !== undefined}
                 writtenAs={search ? writtenNameMatch(row, search) : undefined}
                 showUnusedProps={showUnusedProps}
               />
@@ -183,7 +277,7 @@ export function ComponentsTable({
         })}
         {paddingBottom > 0 ? (
           <tr key="pad-bottom" aria-hidden>
-            <td colSpan={COLUMN_COUNT} style={{ height: paddingBottom }} />
+            <td colSpan={columnCount} style={{ height: paddingBottom }} />
           </tr>
         ) : null}
       </TableBody>
@@ -191,34 +285,56 @@ export function ComponentsTable({
   );
 }
 
-/** A component's page, with `area` picked on its Usage tab when given. */
-function hrefFor(repoId: string, componentId: string, area: string | null): string {
-  return hrefWithQuery(`/repos/${encodeURIComponent(repoId)}/components/${encodeURIComponent(componentId)}`, area ? [["area", area]] : []);
+/** The longest package name among `rows`, in characters. */
+export function longestPackageName(rows: readonly ComponentRow[]): number {
+  return rows.reduce((longest, r) => Math.max(longest, r.packageName?.length ?? 0), 0);
 }
 
-/** The cells of one component: name and detail link, package, version, files and occurrences. */
-function RowCells({ r, href, mark, delta, slotCh, writtenAs, showUnusedProps }: { r: ComponentRow; href: string | undefined; mark?: DiffMark | undefined; delta?: number | undefined; slotCh: number; writtenAs?: string | undefined; showUnusedProps: boolean }) {
+/** The 95th percentile of the name lengths among `rows`, in characters: 0 for no rows. */
+export function typicalNameLength(rows: readonly ComponentRow[]): number {
+  const lengths = rows.map((r) => r.displayName.length).sort((a, b) => a - b);
+  return lengths[Math.ceil(lengths.length * 0.95) - 1] ?? 0;
+}
+
+/** A ref for elements holding one line of text: each has the `truncated` class while its text overflows it, and is watched until it unmounts. */
+function useTruncatedClass(): RefCallback<HTMLElement> {
+  const observer = useRef<ResizeObserver | null>(null);
+  return useCallback((element: HTMLElement | null) => {
+    if (element === null) return;
+    observer.current ??= new ResizeObserver((entries) => {
+      for (const { target } of entries) target.classList.toggle("truncated", target.scrollWidth > target.clientWidth);
+    });
+    observer.current.observe(element);
+    return () => observer.current?.unobserve(element);
+  }, []);
+}
+
+/** The cells of one component: its button, name and detail link, package, version, files, uses and, given, its change. */
+function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClick, mark, showChange, writtenAs, showUnusedProps }: { r: ComponentRow; nameRef: RefCallback<HTMLElement>; shortPath: string | undefined; href: string | undefined; selected: boolean; tabStop: boolean; onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined; showUnusedProps: boolean }) {
   const deprecated = r.deprecated;
+  const delta = deltaOf(mark, r.occurrenceCount);
+  const title = deprecated ? `${r.displayName} (deprecated)` : r.displayName;
 
   return (
     <>
-      <TableCell className="overflow-hidden align-middle">
+      <TableCell className={NAME_CELL}>
+        {/* The row's button takes no space; its ::after covers the row, under the name's link. */}
+        <button
+          type="button"
+          data-row-name={r.componentId}
+          tabIndex={tabStop ? 0 : -1}
+          aria-current={selected ? "true" : undefined}
+          onClick={onButtonClick}
+          className="block size-0 focus-row after:absolute after:inset-0 after:content-['']"
+        >
+          <span className="sr-only">Details for {r.displayName}</span>
+        </button>
         <div className={NAME_ROW}>
-          {/* The row's one link: its ::after fills the positioned <tr>, so the
-              whole row is the pointer target and keyboard users get one stop
-              per row. */}
           {href === undefined ? (
-            <span className="truncate font-mono font-medium" title={deprecated ? `${r.displayName} (deprecated)` : r.displayName}>
-              {r.displayName}
-            </span>
+            <span ref={nameRef} title={title} className="truncate-reveal font-mono font-medium"><span>{r.displayName}</span></span>
           ) : (
-            <Link
-              href={href}
-              prefetch={false}
-              title={deprecated ? `${r.displayName} (deprecated)` : r.displayName}
-              className="truncate font-mono font-medium focus-row after:absolute after:inset-0 after:content-['']"
-            >
-              {r.displayName}
+            <Link ref={nameRef} href={href} prefetch={false} tabIndex={tabStop ? 0 : -1} title={title} className="relative z-1 truncate-reveal font-mono font-medium underline-offset-3 hover:underline">
+              <span>{r.displayName}</span>
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
@@ -233,12 +349,18 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs, showUnusedProps }: 
               {r.apiUsage.neverUsedCount.toLocaleString()} of {r.apiUsage.declaredCount.toLocaleString()} unused
             </Badge>
           ) : null}
-          {/* Changed rows carry no badge: the Δ beside their count marks them. */}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
         {r.disambiguator ? (
-          <div className="truncate text-code text-muted-foreground" title={r.disambiguator}>
-            {shortenPath(r.disambiguator)}
+          <div className="whitespace-normal wrap-anywhere text-code text-muted-foreground">
+            {shortPath === undefined || shortPath === r.disambiguator ? (
+              <SlashBreaks text={r.disambiguator} />
+            ) : (
+              <>
+                <span aria-hidden className="select-none" title={r.disambiguator}><SlashBreaks text={shortPath} /></span>
+                <span className="sr-only">{r.disambiguator}</span>
+              </>
+            )}
           </div>
         ) : null}
         {writtenAs ? (
@@ -246,23 +368,22 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs, showUnusedProps }: 
             written as <span className="font-mono">{writtenAs}</span>
           </div>
         ) : null}
-        {/* Stacked summary tiers below sm. */}
-        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+        {/* Stacked rows' summary tiers. */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
           {r.packageName ? (
-            <span className="font-mono">{r.packageName}</span>
+            <span className="min-w-0 max-w-full truncate font-mono" title={r.packageName}>{r.packageName}</span>
           ) : null}
           {r.packageName && r.version ? <Dot /> : null}
           {r.version ? (
             <span className="font-mono tabular-nums">{r.version}</span>
           ) : null}
         </div>
-        {/* The Δ is an occurrence Δ, so it attaches to occurrences:
-            `36 uses (−23) · 30 files`. */}
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+        {/* The change belongs to uses: `36 uses (−23)` or `5 uses (+5)`. */}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
           <span>
             <span className="font-medium tabular-nums text-foreground">{r.occurrenceCount.toLocaleString()}</span>
             {r.occurrenceCount === 1 ? " use" : " uses"}
-            {delta !== undefined && delta !== 0 ? <OccurrenceDelta delta={delta} deprecated={deprecated} /> : null}
+            {showChange && delta !== 0 ? <OccurrenceDelta delta={delta} deprecated={deprecated} /> : null}
           </span>
           <Dot />
           <span className="tabular-nums">
@@ -271,32 +392,24 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs, showUnusedProps }: 
         </div>
       </TableCell>
       <TableCell
-        className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground sm:table-cell"
+        className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground @min-[43rem]:table-cell"
         title={r.packageName ?? NO_PACKAGE_TITLE}
       >
-        {r.packageName ?? "—"}
+        {r.packageName === null ? "—" : <PackageName name={r.packageName} />}
       </TableCell>
       <TableCell
-        className="hidden overflow-hidden truncate font-mono text-xs tabular-nums text-muted-foreground sm:table-cell"
+        className="hidden overflow-hidden truncate font-mono text-xs tabular-nums text-muted-foreground @min-[43rem]:table-cell"
         title={r.version ?? undefined}
       >
         {r.version ?? "—"}
       </TableCell>
-      <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">
+      <TableCell className="hidden text-end tabular-nums text-muted-foreground @min-[43rem]:table-cell">
         {r.fileCount.toLocaleString()}
       </TableCell>
-      {delta !== undefined ? (
-        // Changed view: the count is muted so the signed Δ stands out.
-        <TableCell className="hidden pr-3 text-right tabular-nums text-muted-foreground sm:table-cell">
-          {r.occurrenceCount.toLocaleString()}
-          {" "}
-          <DeltaSlot delta={delta} deprecated={deprecated} slotCh={slotCh} />
-        </TableCell>
-      ) : (
-        <TableCell className="hidden pr-3 text-right font-medium tabular-nums sm:table-cell">
-          {r.occurrenceCount.toLocaleString()}
-        </TableCell>
-      )}
+      <TableCell className={cn("hidden text-end font-medium tabular-nums @min-[43rem]:table-cell", !showChange && "pe-3")}>
+        {r.occurrenceCount.toLocaleString()}
+      </TableCell>
+      {showChange ? <ChangeCell mark={mark} occurrenceCount={r.occurrenceCount} deprecated={deprecated} /> : null}
     </>
   );
 }
@@ -305,27 +418,27 @@ function RowCells({ r, href, mark, delta, slotCh, writtenAs, showUnusedProps }: 
  * A row removed since the previous scan. It stays visible because a finished
  * retirement looks like a row disappearing. Muted ink at full opacity (half
  * opacity failed contrast), no link or focus stop (there is no detail page),
- * version and files a dash, and occurrences `0 (−5)`: a faint zero beside the
- * negated previous count.
+ * version and files a dash, uses a muted zero, and its change the negated
+ * previous count.
  */
-function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: number; measure: (el: HTMLTableRowElement | null) => void; slotCh: number }) {
+function GhostRow({ r, index, measure, nameRef }: { r: ComponentRow; index: number; measure: (el: HTMLTableRowElement | null) => void; nameRef: RefCallback<HTMLElement> }) {
   return (
     <TableRow data-index={index} ref={measure}>
-      <TableCell className="overflow-hidden align-middle">
+      <TableCell className={NAME_CELL}>
         <div className={NAME_ROW}>
-          <span className="truncate font-mono font-medium text-muted-foreground" title={r.deprecated ? `${r.displayName} (deprecated)` : r.displayName}>{r.displayName}</span>
+          <span ref={nameRef} className="truncate-reveal font-mono font-medium text-muted-foreground" title={r.deprecated ? `${r.displayName} (deprecated)` : r.displayName}><span>{r.displayName}</span></span>
           {r.deprecated ? <DeprecatedMark /> : null}
           <Badge variant="outline" className={MARK_BADGE}>Removed</Badge>
         </div>
-        {/* Stacked tiers below sm: the package, then `0 uses (−5)`. */}
+        {/* Stacked rows' tiers: the package, then `0 uses (−5)`. */}
         {r.packageName ? (
-          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
-            <span className="font-mono">{r.packageName}</span>
+          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
+            <span className="min-w-0 max-w-full truncate font-mono" title={r.packageName}>{r.packageName}</span>
           </div>
         ) : null}
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground sm:hidden">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 whitespace-normal text-xs text-muted-foreground @min-[43rem]:hidden">
           <span>
-            <span className="tabular-nums text-faint">0</span>
+            <span className="tabular-nums">0</span>
             {" uses"}
             {/* A held reference with no occurrences lost none, so it shows no Δ. */}
             {r.occurrenceCount > 0 ? (
@@ -334,47 +447,29 @@ function GhostRow({ r, index, measure, slotCh }: { r: ComponentRow; index: numbe
           </span>
         </div>
       </TableCell>
-      <TableCell className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground sm:table-cell" title={r.packageName ?? NO_PACKAGE_TITLE}>
-        {r.packageName ?? "—"}
+      <TableCell className="hidden overflow-hidden truncate font-mono text-xs text-muted-foreground @min-[43rem]:table-cell" title={r.packageName ?? NO_PACKAGE_TITLE}>
+        {r.packageName === null ? "—" : <PackageName name={r.packageName} />}
       </TableCell>
-      <TableCell className="hidden text-faint sm:table-cell">—</TableCell>
-      <TableCell className="hidden text-right text-faint sm:table-cell">—</TableCell>
-      <TableCell className="hidden pr-3 text-right tabular-nums text-muted-foreground sm:table-cell">
-        <span className="text-faint">0</span>
-        {" "}
-        <DeltaSlot delta={deltaOf({ kind: "removed" }, r.occurrenceCount)} deprecated={r.deprecated} slotCh={slotCh} />
-      </TableCell>
+      <TableCell className="hidden text-faint @min-[43rem]:table-cell">—</TableCell>
+      <TableCell className="hidden text-end text-faint @min-[43rem]:table-cell">—</TableCell>
+      <TableCell className="hidden text-end tabular-nums text-muted-foreground @min-[43rem]:table-cell">0</TableCell>
+      <ChangeCell mark={{ kind: "removed" }} occurrenceCount={r.occurrenceCount} deprecated={r.deprecated} />
     </TableRow>
   );
 }
 
-/**
- * The changed view's Δ beside an occurrence count, `(+2)`, coloured by
- * `deltaTone`. The slot is `slotCh` wide and left-aligned, so down the column
- * the counts share a right edge and the brackets a left edge. A zero Δ leaves
- * the slot empty but keeps its width.
- */
-function DeltaSlot({ delta, deprecated, slotCh }: { delta: number; deprecated: boolean; slotCh: number }) {
+/** The Change cell: a signed Δ coloured by `deltaTone`, or a faint dash for no change. */
+function ChangeCell({ mark, occurrenceCount, deprecated }: { mark: DiffMark | undefined; occurrenceCount: number; deprecated: boolean }) {
+  const delta = deltaOf(mark, occurrenceCount);
   return (
-    <span className="inline-block text-left" style={{ width: `${slotCh}ch` }}>
+    <TableCell className="hidden pe-3 text-end tabular-nums @min-[43rem]:table-cell">
       {delta !== 0 ? (
-        <>
-          {"("}
-          <span className={`font-medium ${deltaTone(delta, deprecated)}`}>{signedCount(delta)}</span>
-          {")"}
-        </>
-      ) : null}
-    </span>
+        <span className={`font-medium ${deltaTone(delta, deprecated)}`}>{signedCount(delta)}</span>
+      ) : (
+        <span className="text-faint">—</span>
+      )}
+    </TableCell>
   );
-}
-
-/** How wide `(−1,234)` sets in the cell's tabular sans, in ch: digits and signs
- *  are about 1ch, brackets and thousands commas about half (measured 8.4px vs
- *  ~4.3px at 14px, 1ch = 8.6px), plus half a ch of slack for the medium weight. */
-function slotWidthCh(delta: number): number {
-  const label = `(${signedCount(delta)})`;
-  const narrow = label.replace(/[^(),]/g, "").length;
-  return label.length - narrow / 2 + 0.5;
 }
 
 /** The mobile tier's occurrence Δ, ` (−23)`, coloured by `deltaTone` like the
@@ -399,12 +494,12 @@ export function shortenPath(path: string, segments = 2): string {
 
 /**
  * Separator for flex-gap layouts. `text-border` measured 1.03:1 against the
- * panel in dark mode, and below `sm` this dot is the only thing separating
+ * panel in dark mode, and in stacked rows this dot is the only thing separating
  * package from version.
  */
 function Dot() {
   return (
-    <span aria-hidden className="text-muted-foreground/70">
+    <span aria-hidden className="text-faint">
       ·
     </span>
   );

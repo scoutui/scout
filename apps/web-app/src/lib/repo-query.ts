@@ -1,6 +1,6 @@
 import type { QueryParams } from "@/lib/query-string";
 
-/** The repos list's search text and its `since previous scan` chip. */
+/** The repos list's search text and its `Changed since previous scan` chip. */
 export type RepoQuery = { text: string; changed: boolean };
 
 export const REPO_QUERY_PARAMS = ["q", "changed"];

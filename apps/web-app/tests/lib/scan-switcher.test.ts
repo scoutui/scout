@@ -4,6 +4,7 @@ import {
   recentScanWindow,
   scanCountLabel,
   isOlderScan,
+  adjacentScans,
 } from "@/lib/scan-switcher";
 
 describe("scanHref", () => {
@@ -76,5 +77,28 @@ describe("isOlderScan", () => {
 
   it("is true only when an explicitly requested scan resolves to a non-latest scan", () => {
     expect(isOlderScan("01B", "01A", "01B")).toBe(true);
+  });
+});
+
+describe("adjacentScans", () => {
+  const scans = (...ids: string[]) => ids.map((id) => ({ scanId: id.replace("!", ""), ready: !id.endsWith("!") }));
+  const ids = (r: { older?: { scanId: string } | undefined; newer?: { scanId: string } | undefined }) => [r.newer?.scanId, r.older?.scanId];
+
+  it("returns the scans either side of the shown one, newest first", () => {
+    expect(ids(adjacentScans(scans("a", "b", "c"), "b"))).toEqual(["a", "c"]);
+  });
+
+  it("has no newer scan at the latest and no older scan at the first", () => {
+    expect(ids(adjacentScans(scans("a", "b"), "a"))).toEqual([undefined, "b"]);
+    expect(ids(adjacentScans(scans("a", "b"), "b"))).toEqual(["a", undefined]);
+  });
+
+  it("skips scans that aren't ready on either side", () => {
+    expect(ids(adjacentScans(scans("a", "b!", "c", "d!", "e"), "c"))).toEqual(["a", "e"]);
+    expect(ids(adjacentScans(scans("a!", "b"), "b"))).toEqual([undefined, undefined]);
+  });
+
+  it("has neither for a scan that isn't in the list", () => {
+    expect(ids(adjacentScans(scans("a", "b"), "missing"))).toEqual([undefined, undefined]);
   });
 });

@@ -1,4 +1,4 @@
-/** Display logic for the scan switcher and the older-scan banner. */
+/** Display logic for the scan switcher and the older-scan notice. */
 
 /**
  * Href for a scan row. The latest scan links to the bare repo URL (canonical,
@@ -40,9 +40,9 @@ export function scanCountLabel(totalScanCount: number): string {
 
 /**
  * Whether the page is showing an explicitly requested scan that isn't the latest
- * (and should render the older-scan banner). `resolvedScanId` is the scan the
+ * (and should render the older-scan notice and Back to latest). `resolvedScanId` is the scan the
  * storage layer served; comparing the latest against it, not the raw query
- * param, keeps the banner off when the requested id is the latest.
+ * param, keeps them off when the requested id is the latest.
  */
 export function isOlderScan(
   requestedScanId: string | undefined,
@@ -54,4 +54,21 @@ export function isOlderScan(
     latestScanId !== undefined &&
     latestScanId !== resolvedScanId
   );
+}
+
+/**
+ * The ready scans either side of the shown one, in `listScans` order (newest
+ * first): `older` for the previous-scan step, `newer` for the next, skipping
+ * scans that aren't ready.
+ */
+export function adjacentScans<T extends { scanId: string; ready: boolean }>(
+  scans: T[],
+  currentScanId: string,
+): { older: T | undefined; newer: T | undefined } {
+  const i = scans.findIndex((s) => s.scanId === currentScanId);
+  if (i === -1) return { older: undefined, newer: undefined };
+  return {
+    older: scans.slice(i + 1).find((s) => s.ready),
+    newer: scans.slice(0, i).reverse().find((s) => s.ready),
+  };
 }

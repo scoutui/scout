@@ -8,7 +8,7 @@ import { MigrationLine } from "@/components/governance/migration-line";
 import { kindLabel, NO_PACKAGE_TITLE, ORIGIN_DESCRIPTION, ORIGIN_LABEL } from "@/lib/component-facets";
 import { cn } from "@/lib/utils";
 
-export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDetail; canEdit: boolean }) {
+export function ComponentDetailHeader({ detail }: { detail: ComponentDetail }) {
   return (
     <header className="space-y-2">
       <div className="text-xs text-muted-foreground">
@@ -56,13 +56,13 @@ export function ComponentDetailHeader({ detail, canEdit }: { detail: ComponentDe
           </>
         ) : null}
       </div>
-      <MigrationLine status={detail.migrationStatus} recordId={canEdit ? detail.governedByRecordId : null} />
+      <MigrationLine status={detail.migrationStatus} />
     </header>
   );
 }
 
 // Not `text-border`: it measured 1.15:1 against the panel, which is invisible.
 function Sep({ className }: { className?: string }) {
-  return <span aria-hidden className={cn("text-muted-foreground/60", className)}>·</span>;
+  return <span aria-hidden className={cn("text-faint", className)}>·</span>;
 }
 

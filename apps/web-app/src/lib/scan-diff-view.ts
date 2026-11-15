@@ -1,4 +1,4 @@
-import type { ComponentRow, DiffMark, RemovedComponent, RepoDelta } from "@scoutui/web-shared";
+import type { ComponentRow, DiffMark, RemovedComponent } from "@scoutui/web-shared";
 import { deltaDirection } from "@/lib/dashboard-format";
 
 /** `+3`, `−16` (U+2212), or a faint-dash `—` for zero. Never `±0`. */
@@ -14,12 +14,6 @@ export function movementParts(counts: { added: number; removed: number; changed:
   return (["added", "removed", "changed"] as const).map((word) => ({ word, n: counts[word] })).filter((p) => p.n > 0);
 }
 
-/** `+3 −16`, zero parts omitted; null when neither count moved. */
-export function sinceLastScan(delta: RepoDelta): string | null {
-  const parts = [delta.added, -delta.removed].filter((n) => n !== 0).map((n) => signedCount(n));
-  return parts.length === 0 ? null : parts.join(" ");
-}
-
 /** A row's signed occurrence Δ under its mark: added rows gained everything
  *  they have, removed rows lost everything they had. */
 export function deltaOf(mark: DiffMark | undefined, occurrenceCount: number): number {
@@ -32,6 +26,13 @@ export function deltaOf(mark: DiffMark | undefined, occurrenceCount: number): nu
     case "changed":
       return mark.delta;
   }
+}
+
+/** A component's change since the previous scan in words, `−4 since previous scan` or `New in this scan`; null when its uses didn't change. */
+export function changeText(mark: DiffMark | undefined, occurrenceCount: number): string | null {
+  if (mark?.kind === "added") return "New in this scan";
+  const delta = deltaOf(mark, occurrenceCount);
+  return delta === 0 ? null : `${signedCount(delta)} since previous scan`;
 }
 
 /** Ink for a signed occurrence Δ. A deprecated component (retired or superseded)

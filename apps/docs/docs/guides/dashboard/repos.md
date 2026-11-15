@@ -9,32 +9,33 @@ The repos area shows every repo the dashboard has a [scan](/docs/reference/gloss
 
 ## Find a repo
 
-Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, with **Committed** (the date of the commit its numbers come from), how many **Components** its latest scan found, how many are **Deprecated**, and **Changes**: what was added, removed or changed since its previous scan.
+Select **repos** in the top navigation. The dashboard opens here. Each row is one repo, most recently scanned first. Under the repo's name are the branch and commit its latest scan ran on. The columns give **Last scan** (when the dashboard received that scan), **Committed** (the date of the commit its numbers come from), how many **Components** it found, how many are **Deprecated**, and **Changes**: what was added, removed or changed since its previous scan.
 
-![The repos list with four repos, the search box and the since previous scan chip](/img/dashboard/repos-list.png)
+![The repos list with four repos, the search box and the Changed since previous scan button](/img/dashboard/repos-list.png)
 
-Type in the search box to match a repo's id, git remote or branch. Press the **since previous scan** chip to list only repos whose latest scan differs from the one before. Select a row to open the repo page.
+Type in the search box to match a repo's id, git remote or branch. Press **Changed since previous scan** to list only repos whose latest scan differs from the one before. Select a row to open the repo page.
 
 If the list reads **No repos scanned yet.**, no scan has been uploaded. Upload a repo's first scan while signed in ([Authenticate the CLI for uploads](/docs/guides/authenticate-uploads)), then [Run in CI](/docs/guides/run-in-ci) to upload from CI.
 
 ## Read a repo page
 
-The header line gives the repo's git remote, the **commit** and **branch** the scan ran on, the date of that commit (after **committed**), and how many packages its components come from. When the remote is on GitHub or GitLab, the commit links to it there.
+Under the repo's name, a status line tells you what the scan saw and what needs attention:
 
-Below it, a status line tells you what needs attention:
+- **The repo's git remote**, such as `github.com/acme/storefront`, which opens the repo on its git host, then **the commit and branch** the scan ran on, such as `ef7954d` on `main`. When the remote is on GitHub or GitLab, the commit links to it there.
+- **Deprecated count.** For example **5 deprecated in use (−2)**: 5 deprecated components are in use, 2 fewer than in the previous scan. To list just those components, press the **deprecated** chip above the table.
+- **What changed since the previous scan.** For example **+3 added · −1 removed · 4 changed since previous scan**: 3 components are new in this scan, 1 from the previous scan is gone, and 4 have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table.
 
-- **Deprecated warning.** For example **2 deprecated components in use · 3 fewer than the previous scan**. To list just those components, press the **deprecated** chip above the table.
-- **What changed since the previous scan.** For example **3 added · 8 removed · 18 changed since previous scan (3d earlier)**. *Added* components are new in this scan, *removed* ones were in the previous scan but not this one, and *changed* ones have a different number of [uses](/docs/reference/glossary#use). To list just those components, press the **since previous scan** chip above the table.
+Beside the name, the scan button shows when the dashboard received the shown scan, such as **Scanned 6h ago**. Press it to see the scan's ID, how many packages its components come from, which frameworks it found and the scanner version.
 
 ### Fix what the scan couldn't see
 
-When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, the repo page says **This scan couldn't see everything**. When some of those problems are yours to fix, it also says how many there are, such as **16 things to fix**. The repo's numbers leave those uses out, or count them without a package.
+When the scan skipped a file, couldn't match some uses to a component, or couldn't tell where a web component comes from, the status line ends with **Some uses may be missing**. The repo's numbers leave those uses out, or count them without a package.
 
-Open **This scan couldn't see everything** to see each kind of problem: how many there are, the names or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A problem whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
+Press **See N gaps** to see each kind of problem: how many there are, the names or files that come up most, what to change, and **Learn more** for the details. For example, **3 uses of components that aren't imported**, with `AppMenu 2 · PromoBanner 1`, says to import each component where it's used. Make the change and scan again. A problem whose fix reads **Nothing to change**, such as components passed in as a prop, needs nothing from you.
 
 ## Find components in a repo
 
-The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it and its total **Uses**. Select a row to open the component's page for this repo.
+The **Components** tab lists every component in the scan, most-used first. Each row shows the component's **Package**, **Version**, how many **Files** use it and its total **Uses**. Select a component's name to open its page for this repo.
 
 ![The Components tab of vue-vben-admin filtered to the vue-ui-kits tag, with the deprecated chip and the Filter menu open on Package](/img/dashboard/repo-components-tab.png)
 
@@ -43,10 +44,10 @@ To narrow the table:
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components in use. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
 - Press the **unused props** chip to show only components with a declared prop this scan never saw passed. Each row then says how many, for example `2 of 5 unused`. It only counts components whose declared props the scan could read, such as your repo's own; a component from a package without readable source never shows here.
-- Press the **since previous scan** chip to show what was added, removed or changed. Added and removed rows carry a badge, and **Uses** shows the change, for example `49 (+2)`.
+- Press the **since previous scan** chip to show what was added, removed or changed, with a **Change** column of each component's change in uses, biggest drop first. New components carry an **Added** badge and removed ones a **Removed** badge.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
-**Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a manifest or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
+**Type** offers **React**, **Vue**, **Web component** and **Undefined element**. **Web component** and **Undefined element** both pick out [web components](/docs/reference/glossary#web-component): **Web component** the ones a package or your code defines, [**Undefined element**](/docs/reference/glossary#undefined-element) the ones nothing defines.
 
 In a monorepo, **Used in** lists the repo's packages. **Package** is where a component comes from, and **Used in** is where it's used: **Package** `@acme/ui` with **Used in** `@acme/web` lists the `@acme/ui` components that the `@acme/web` app uses.
 
@@ -55,6 +56,21 @@ Picking a package keeps only the components used in it. **Files** and **Uses** t
 Each active filter shows as a pill you can remove, and **Clear all** removes them all.
 
 The same name can appear on two rows when the repo imports a component through two entry points, such as `@acme/ui` and `@acme/ui/button`. They are two components, and the subpath row shows `button` under the name.
+
+### See a component's details
+
+Select anywhere on a row except the name to see that component's details beside the table:
+
+- If it's deprecated, its replacement or why it was retired. Select a replacement the repo uses to go to it.
+- **Used in N other repos**, which opens the component across every repo.
+- **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host.
+- A chart of its uses over the last 3 months. For a deprecated component, it shows its migration or retirement with the **Adoption** tab's numbers, and **Open chart** opens the full chart ([Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress)). When the chart's title has **ⓘ**, press it to see what it counts.
+- **Top props**: the props set most often and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression.
+- **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
+
+**↑** and **↓** move between components, and so do the arrow buttons in the details. **Enter** or **Space** opens the details, and **×** or **Details** above the table hides them. To open a component's page from the keyboard, press **Tab** to reach its name, then **Enter**.
+
+In a narrower window or on a phone, the details open in a sheet from the bottom of the screen. Swipe it down or press **×** to close it.
 
 ### Share a filtered view
 
@@ -93,9 +109,9 @@ If the tab reads **No migrations or retirements tracked yet.**, no [lifecycle re
 
 ## Look at an older scan
 
-Press the **scan** button in the header to open **Recent scans**, and pick one. **View all N scans →** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
+Press **‹** and **›** beside the scan button to step to the previous or next scan. To jump further, press the scan button and pick a scan from the list. **All N scans** opens the repo's **Scan history**, where **View scan** opens the repo page on any scan. The dashboard can't show a scan marked **couldn't be prepared** or **can't be read**. For **couldn't be prepared**, ask your dashboard administrator to retry it. For **can't be read**, scan that commit again to replace it.
 
-On an older scan, the header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **View latest scan** to go back.
+On an older scan, the scan button names it, for example **Scanned 7d ago**, and **Back to latest** appears beside it. The header, status line and **Components** tab describe the older scan, and what changed is compared with the scan before it. A component's page opened from the table still shows the latest scan. A component the latest scan doesn't have has no page, so its row has no link. The **Adoption** tab doesn't change with the scan you pick. Press **Back to latest** to go back.
 
 A link copied while you look at an older scan opens the same scan.
 
@@ -112,7 +128,7 @@ If a page shows **Preparing scan data** instead of its content, the dashboard is
 [Admins](/docs/guides/manage-people-and-roles) can remove a scan that shouldn't count, such as a test run or a scan of the wrong branch, and delete a repo.
 
 - **Remove a scan.** On the repo's **Scan history**, press **⋯** at the end of the scan's row, select **Remove scan**, then press **Remove**. If it was the latest scan, the scan before it becomes the latest. This can't be undone. On a repo's only scan the menu offers **Delete repo…** instead.
-- **Delete a repo.** On the repo page, press **⋯**, then **Settings**, then **Delete repo…**. Type the repo's id, then press **Delete repo**. The repo and all its scans are deleted, and the repos list opens. The repo comes back the next time someone uploads a scan of it. Its CI upload token is deleted too. To upload from CI again, upload a scan of it while signed in, then [create a new token](/docs/guides/run-in-ci).
+- **Delete a repo.** On the repo page, press **Settings**, then **Delete repo…**. Type the repo's id, then press **Delete repo**. The repo and all its scans are deleted, and the repos list opens. The repo comes back the next time someone uploads a scan of it. Its CI upload token is deleted too. To upload from CI again, upload a scan of it while signed in, then [create a new token](/docs/guides/run-in-ci).
 
 Charts leave out what you removed, earlier points included. A saved chart about a deleted repo stays, and its scope reads **storefront · missing**. [**History** on the dashboard's **Settings** page](/docs/guides/manage-people-and-roles#see-who-changed-what) records who removed or deleted what.
 

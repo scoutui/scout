@@ -20,11 +20,12 @@ import {
   emitAngularFile,
   type AngularBootstrapCall,
   type AngularScripts,
+  importedModulesOf,
   importsOf,
   loadAngularCompiler,
   type PendingAngularFile,
 } from "../emit-angular-file.js";
-import { detectAngularBootstrap, detectAngularComponents, detectAngularModules, readConstArrays, readTopLevelNames } from "../local-index/detect-angular.js";
+import { detectAngularBootstrap, detectAngularComponents, detectAngularDirectives, detectAngularModules, readConstArrays, readTopLevelNames } from "../local-index/detect-angular.js";
 import { buildAngularLibraryIndex } from "../scan/angular-library-index.js";
 import { createProgress, startPhase } from "../util/progress.js";
 import { DEFAULT_INCLUDE, excludeEntriesMatchingNothing, nestedRepositoriesMatched, walkFiles, type WalkOptions } from "../walker/files.js";
@@ -38,6 +39,7 @@ import { readCheckout, readCliPackage, stampMeta, type StampedMeta } from "../sc
 import { checkGitState, uncommittedRefusal, type TrackedBranch } from "../upload-policy/git-state.js";
 import { installedVersionReader } from "../scan/stamp-version.js";
 import { buildCemIndex } from "../scan/cem-index.js";
+import { buildTagMapIndex } from "../scan/tag-map.js";
 import { buildScanScope } from "../scan/scope.js";
 import { isPnpProject } from "../util/pnp-check.js";
 import { readGitToplevel, shortCommit } from "../util/git.js";
@@ -558,15 +560,26 @@ export async function scanRepository(input: {
       }
     }
     const angular =
-      parsed.kind === "babel" && /@(Component|NgModule)\s*\(/.test(source) && importsAngularCore(parsed.ast)
-        ? { components: detectAngularComponents(parsed.ast, source), modules: detectAngularModules(parsed.ast, source) }
+      parsed.kind === "babel" && /@(Component|NgModule|Directive)\s*\(/.test(source) && importsAngularCore(parsed.ast)
+        ? {
+            // A directive is counted like a component wherever its selector is written, so it's held with them.
+            components: [...detectAngularComponents(parsed.ast, source), ...detectAngularDirectives(parsed.ast, source)],
+            modules: detectAngularModules(parsed.ast, source),
+          }
         : undefined;
     if (parsed.kind === "babel" && /\b(bootstrapApplication|bootstrapModule)\s*\(/.test(source)) {
       const imports = importsOf(parsed.ast);
       for (const call of detectAngularBootstrap(parsed.ast)) angularBootstraps.push({ graphKey: relPath, ...call, imports });
     }
     if (parsed.kind === "babel" && angular !== undefined && (angular.components.length > 0 || angular.modules.length > 0)) {
-      pendingAngular.push({ graphKey: relPath, definitionPath: outRel, absPath: file, ...angular, imports: importsOf(parsed.ast) });
+      pendingAngular.push({
+        graphKey: relPath,
+        definitionPath: outRel,
+        absPath: file,
+        ...angular,
+        imports: importsOf(parsed.ast),
+        importedModules: importedModulesOf(parsed.ast),
+      });
     } else if (parsed.kind === "babel") {
       declaredByFile.set(outRel, extractReactDeclaredProps(parsed.ast));
       localDefs.push(...detectWebComponents(parsed.ast, source, outRel));
@@ -665,6 +678,17 @@ export async function scanRepository(input: {
     const librarySpecifiers = new Set(
       pendingAngular.flatMap((p) => p.imports.filter((i) => angularRefResolver(p.graphKey, i.specifier, i.imported) === null).map((i) => i.specifier)),
     );
+    // A library can also be reached only through a const array that an `imports` list names, declared in a file with
+    // no decorator (`export const SHARED = [NzButtonModule]`). Follow each list the way template scopes will, and index
+    // every package it reaches: only arrays a component or module actually lists, never one elsewhere in the repo.
+    if (compiler !== null) {
+      const reach = buildModuleScopes(pendingAngular, angularRefResolver, undefined, scripts satisfies AngularScripts);
+      for (const p of pendingAngular) {
+        for (const name of [...p.components.flatMap((c) => c.imports), ...p.modules.flatMap((m) => m.imports)]) {
+          for (const specifier of reach.resolveImports(p, name).packages) librarySpecifiers.add(specifier);
+        }
+      }
+    }
     const library = compiler === null ? undefined : buildAngularLibraryIndex({ configDir: cfg.configDir, specifiers: librarySpecifiers });
     for (const u of library?.unreadable ?? []) scanWarning(`Couldn't read the Angular components ${u.specifier} declares (${u.reason}), so its components aren't counted.`);
     const index =
@@ -852,6 +876,18 @@ export async function scanRepository(input: {
     },
   };
 
+  // The tags installed packages declare in the typings of the modules the repo
+  // imports, read only when the scan has a tag component.
+  const hasTag = [...seedsById.values()].some((seed) => seed.identity.kind === "tag");
+  const tagMapIndex = buildTagMapIndex(
+    hasTag
+      ? [...graph.files.values()].flatMap((file) => {
+          const fromDir = dirname(resolve(cfg.configDir, file.filePath));
+          return file.importedModules.map((specifier) => ({ fromDir, specifier }));
+        })
+      : [],
+  );
+
   const scope = buildScanScope({ cfg, outputRoot, workspaceGraph, files });
   const artifact = await emitArtifact({
     meta: { ...meta, scope },
@@ -863,6 +899,7 @@ export async function scanRepository(input: {
       localIndex,
       cemIndex,
       globalComponents: autoImports,
+      tagMapIndex,
       resolveTarget,
       outputRoot,
     }),

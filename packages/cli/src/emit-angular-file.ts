@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, posix } from "node:path";
 import type { FileBuilder, GraphBuilder, OccurrenceVia } from "@scoutui/reference-graph";
-import { MODULE_SCOPE } from "@scoutui/reference-graph";
+import { MODULE_SCOPE, isRuntimeImport } from "@scoutui/reference-graph";
 import {
   createSelectorIndex,
   emitAngularTemplate,
   type AngularCompiler,
+  type DirectiveSelector,
   type ElementMatch,
   type SelectorEntry,
   type SelectorIndex,
@@ -49,6 +50,8 @@ export type PendingAngularFile = {
   components: AngularComponentDecl[];
   modules: AngularModuleDecl[];
   imports: AngularImport[];
+  /** The specifier of every runtime import, side-effect imports included. */
+  importedModules: string[];
 };
 
 /** Loads `@angular/compiler` the way the scanned repo would, or null when it isn't installed there. */
@@ -178,6 +181,20 @@ export function buildAngularSelectorIndex(
   onSelectorUnreadable?: (filePath: string, className: string, selector: string, message: string) => void,
 ): SelectorIndex {
   const components: { selector: string; entry: SelectorEntry }[] = [];
+  const directives: DirectiveSelector[] = [];
+  for (const d of library?.directives ?? []) {
+    // A name starting with `ɵ` is a library's private API by Angular's convention (NG-ZORRO's
+    // `ɵNzTransitionPatchDirective`, which its public modules bring along): it still claims the elements it names, but
+    // isn't counted.
+    if (d.exportName.startsWith("ɵ")) {
+      directives.push(d.selector);
+      continue;
+    }
+    directives.push({
+      selector: d.selector,
+      entry: { source: { type: "package", specifier: d.specifier }, exportName: d.exportName, declaredAs: d.declaredAs, inputs: d.inputs, outputs: d.outputs },
+    });
+  }
   for (const c of library?.components ?? []) {
     components.push({
       selector: c.selector,
@@ -193,13 +210,12 @@ export function buildAngularSelectorIndex(
         onSelectorUnreadable?.(file.graphKey, c.className, c.selector, errorMessage(err));
         continue;
       }
-      components.push({
-        selector: c.selector,
-        entry: { source: { type: "file", graphKey: file.graphKey }, exportName: c.className, inputs: writtenNames(c.inputs), outputs: writtenNames(c.outputs) },
-      });
+      const entry: SelectorEntry = { source: { type: "file", graphKey: file.graphKey }, exportName: c.className, inputs: writtenNames(c.inputs), outputs: writtenNames(c.outputs) };
+      if (c.kind === "directive") directives.push({ selector: c.selector, entry });
+      else components.push({ selector: c.selector, entry });
     }
   }
-  return createSelectorIndex(compiler, components, (library?.directives ?? []).map((d) => d.selector));
+  return createSelectorIndex(compiler, components, directives);
 }
 
 /**
@@ -223,9 +239,10 @@ export type AngularModuleScopes = {
   /**
    * The keys an `imports` entry written in `fromFile` stands for: `resolveRef`'s key for a class or module, every member of a const array
    * (followed through spreads, nested arrays and other files), nothing for a repo class that is neither component nor module (a directive or pipe).
-   * `complete` is false when part of it can't be read.
+   * `complete` is false when part of it can't be read. `packages` holds the specifier of every installed-package import it reached,
+   * however deep in a const array, so the scan can index those libraries before it matches templates.
    */
-  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean };
+  resolveImports(fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean; packages: string[] };
 };
 
 export function buildModuleScopes(
@@ -250,8 +267,9 @@ export function buildModuleScopes(
     return target?.file === undefined ? undefined : `${target.file.graphKey}#${target.name}`;
   };
 
-  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean } => {
+  const resolveImports = (fromFile: PendingAngularFile, identifier: string): { keys: string[]; complete: boolean; packages: string[] } => {
     const keys: string[] = [];
+    const packages: string[] = [];
     let complete = true;
     const seen = new Set<string>();
     // True once `name` in `graphKey` is accounted for: a key it adds, a const array it expands, or a class that isn't a component or module.
@@ -264,6 +282,7 @@ export function buildModuleScopes(
         // as a class the package exports: anything else (a `const` array of imports in its typings, or a package the
         // index didn't reach) may stand for components the scope can't see.
         if (target === null) {
+          packages.push(spec.specifier);
           if (libraryClasses !== undefined && !libraryClasses.has(`${spec.specifier}#${spec.imported}`)) return false;
           keys.push(spec.imported);
           return true;
@@ -294,7 +313,7 @@ export function buildModuleScopes(
       return false;
     };
     if (!follow(fromFile.graphKey, fromFile.imports, identifier)) complete = false;
-    return { keys, complete };
+    return { keys, complete, packages };
   };
 
   type ModuleEntry = { module: AngularModuleDecl; file: PendingAngularFile };
@@ -475,6 +494,7 @@ export function emitAngularFile(opts: {
   for (const spec of file.imports) {
     fileBuilder.addImport({ specifier: spec.specifier, imported: spec.imported, local: spec.local, loc: { line: 1, column: 1 } });
   }
+  for (const specifier of file.importedModules) fileBuilder.addImportedModule(specifier);
   for (const c of file.components) {
     fileBuilder.addDeclaration({ symbol: c.className, value: { kind: "Function", returns: [{ kind: "JSX" }] }, loc: c.loc, isExported: c.isExported });
     if (!c.isExported) continue;
@@ -563,6 +583,12 @@ function readTemplate(
     onTemplateMissing?.(file.graphKey, c.template.url);
     return undefined;
   }
+}
+
+/** The specifier of every runtime import an oxc program declares, side-effect imports included. */
+export function importedModulesOf(program: { body: readonly unknown[] }): string[] {
+  type Statement = { type: string; importKind?: string; source: { value: string }; specifiers: { type: string; importKind?: string }[] };
+  return (program.body as Statement[]).filter((stmt) => stmt.type === "ImportDeclaration" && isRuntimeImport(stmt)).map((stmt) => stmt.source.value);
 }
 
 /** The value imports an oxc program declares. Type-only imports are left out: they never reach a template. */

@@ -11,6 +11,18 @@
     "./card": {
       "types": "./types/card.d.ts",
       "default": "./card.mjs"
+    },
+    "./tooltip": {
+      "types": "./types/tooltip.d.ts",
+      "default": "./tooltip.mjs"
+    },
+    "./badge": {
+      "types": "./types/badge.d.ts",
+      "default": "./badge.mjs"
+    },
+    "./widget": {
+      "types": "./types/widget.d.ts",
+      "default": "./widget.mjs"
     }
   }
 }

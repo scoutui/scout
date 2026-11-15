@@ -40,6 +40,16 @@ describe("detail tabs", () => {
     expect(screen.queryByText(/1↓ \/ 1↑/)).not.toBeInTheDocument();
   });
 
+  it("Composition counts the components connected to this one, and shows no count when the component isn't in the graph", () => {
+    const node = (id: string) => ({ id, displayName: id, packageName: null, filePath: null, scope: "local" as const, deprecated: false, occurrenceCount: 1 });
+    const graph = { nodes: [node("owner"), node("F"), node("kid")], edges: [{ source: "owner", target: "F", count: 2 }, { source: "F", target: "kid", count: 3 }] };
+    const { unmount } = render(<DetailTabs detail={detail} graph={graph} source={null} />);
+    expect(screen.getByRole("tab", { name: /Composition/ })).toHaveTextContent("Composition2");
+    unmount();
+    render(tabs());
+    expect(screen.getByRole("tab", { name: /Composition/ }).textContent).toBe("Composition");
+  });
+
   it("is a tablist with roving tabindex and arrow-key activation", () => {
     render(tabs());
     const tablist = screen.getByRole("tablist", { name: "Component detail sections" });

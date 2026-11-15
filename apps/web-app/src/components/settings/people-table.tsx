@@ -45,7 +45,7 @@ export function PeopleTable({ people }: { people: PersonListing[] }) {
 
   return (
     <div className="space-y-2">
-      <div className="panel overflow-hidden">
+      <div className="panel max-w-4xl overflow-hidden">
         <Table className="max-md:block">
           <TableHeader className="hidden md:table-header-group">
             <TableRow>

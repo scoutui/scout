@@ -5,6 +5,7 @@ import type { AttributionTarget, KnownEvidenceRecord } from "@scoutui/scan-forma
 import { registeredClassName } from "../local-index/detect-wc.js";
 import type { CemIndex } from "../scan/cem-index.js";
 import type { GlobalComponentsRegistry } from "../scan/global-components.js";
+import type { TagMapClaim, TagMapIndex } from "../scan/tag-map.js";
 
 /** A first-party `customElements.define` / `@customElement` registration, with the target its constructor resolves to. */
 export type Registration = { filePath: string; line: number; target: AttributionTarget | null };
@@ -18,6 +19,7 @@ export type TagEvidenceSources = {
   registrations: ReadonlyMap<string, readonly Registration[]>;
   cem: ReadonlyMap<string, readonly CemClaim[]>;
   globalDeclarations: ReadonlyMap<string, readonly GlobalDeclaration[]>;
+  tagMaps: ReadonlyMap<string, readonly TagMapClaim[]>;
 };
 
 /**
@@ -33,7 +35,8 @@ export type TargetResolver = {
 
 /**
  * Every evidence record for one tag, not yet weighed: a registration is
- * `observed`; a CEM claim and a global declaration are `declared`. A record
+ * `observed`; a CEM claim, a global declaration and a tag map claim are
+ * `declared`. A record
  * without a target is `unresolved`; every other record is a `candidate` until
  * `resolveTagAttribution` weighs the records and assigns its final
  * disposition.
@@ -42,6 +45,7 @@ export function collectTagEvidence(inputs: {
   registrations: readonly Registration[];
   cem: readonly CemClaim[];
   globalDeclarations: readonly GlobalDeclaration[];
+  tagMaps: readonly TagMapClaim[];
 }): KnownEvidenceRecord[] {
   const record = (
     source: KnownEvidenceRecord["source"],
@@ -63,13 +67,17 @@ export function collectTagEvidence(inputs: {
     ...inputs.globalDeclarations.map(({ target, filePath, line }) =>
       record("global-declaration", "declared", { filePath, line }, target),
     ),
+    ...inputs.tagMaps.map(({ packageName, version }) =>
+      record("tag-map", "declared", { packageName, version }, { kind: "package", packageName }),
+    ),
   ];
 }
 
 /**
  * Gathers this scan's tag evidence: first-party registrations from the local
- * index, CEM claims from the CEM index, and `GlobalComponents` members keyed
- * by a valid custom element name. Registration constructors and member
+ * index, CEM claims from the CEM index, `GlobalComponents` members keyed by a
+ * valid custom element name, and the packages whose imported typings put the
+ * tag into `HTMLElementTagNameMap`. Registration constructors and member
  * imports are resolved through `resolveTarget`; a registration that names no
  * class, and a member whose in-repo file is missing, get no target.
  */
@@ -77,6 +85,7 @@ export function tagEvidenceSources(input: {
   localIndex: LocalDefinitionIndex;
   cemIndex: CemIndex;
   globalComponents: GlobalComponentsRegistry | null;
+  tagMapIndex: TagMapIndex;
   resolveTarget: TargetResolver;
   outputRoot: string;
 }): TagEvidenceSources {
@@ -117,5 +126,5 @@ export function tagEvidenceSources(input: {
     }
   }
 
-  return { registrations, cem, globalDeclarations };
+  return { registrations, cem, globalDeclarations, tagMaps: input.tagMapIndex.byTag };
 }

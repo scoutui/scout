@@ -36,7 +36,7 @@ Select a row to open the package's page.
 
 The line under the package name gives its framework, how many repos use it, the range of versions they're on, and how many components and uses it has. [Versions](/docs/explanation/dashboard/reading-the-numbers#versions) explains where the versions come from.
 
-When deprecated components are in use, a **deprecated components in use** line counts them. When a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the whole package, a line reads **Replaced by →** with its replacement, or **Retired ·** with the reason, and links to the record on the **governance** page.
+When deprecated components are in use, a **deprecated components in use** line counts them. When a [lifecycle record](/docs/reference/glossary#lifecycle-record) covers the whole package, a line reads **Replaced by** with its replacement, or **Retired:** with the reason.
 
 ### See who uses it
 

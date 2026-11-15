@@ -32,7 +32,7 @@ A component [defined in the repo](/docs/reference/glossary#local) is listed unde
 ## Open a component in one repo
 
 1. Select **repos** in the top navigation and open the repo.
-2. On the **Components** tab, search for `Button` and select its row. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
+2. On the **Components** tab, search for `Button` and select its name. See [Find components in a repo](/docs/guides/dashboard/repos#find-components-in-a-repo) for the filters.
 
 Badges beside the name show its origin (**External** or **Local**), its type (**React**, **Vue**, **Web component** or **Undefined element**), and **Deprecated** when a lifecycle record covers it. **From** names its package, followed by the entry point when it was imported from a subpath (`button` for `@acme/ui/button`), the installed version and, for a component defined in the repo, the file and line after **defined at**.
 
@@ -44,11 +44,11 @@ It has two tabs: **Usage** (the default) and **Composition**. The tab you pick, 
 
 ![The Usage tab for Button in payloadcms/payload, with secondary picked under buttonStyle, its pill above the file list, and one file open to its uses with Rendered by](/img/dashboard/component-usage-tab.png)
 
-The **Usage** tab lists the files that use the component, with filters beside them. On a narrow window, press **Filter**, or **Where it’s used and prop values** (**Where it’s used** for a component with no props), to show the filters.
+The **Usage** tab lists the files that use the component, with filters beside them. On a narrow window, press **Filter**, or **Used in and prop values** (**Used in** for a component with no props), to show the filters.
 
 ### Filter by package or folder
 
-**Where it’s used** lists the folders the uses are in, with how many uses each holds. When the uses sit in more than one of the repo's packages, as in a monorepo, it reads **Used in** and lists those packages instead, such as `@acme/web` and `@acme/admin`.
+**Used in** lists the folders the uses are in, with how many uses each holds. When the uses sit in more than one of the repo's packages, as in a monorepo, it lists those packages instead, such as `@acme/web` and `@acme/admin`.
 
 Press a folder or package to keep only its uses, and press it again to remove the filter.
 

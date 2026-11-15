@@ -7,7 +7,7 @@ import { kindLabel, ORIGIN_LABEL } from "@/lib/component-facets";
 import { MigrationLine } from "@/components/governance/migration-line";
 import { versionRangeLabel } from "@/lib/version-order";
 
-export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponentDetail; canEdit: boolean }) {
+export function CrossRepoHeader({ detail }: { detail: CrossRepoComponentDetail }) {
   const versions = versionRangeLabel(detail.versionRange);
   const deprecatedRepoCount = detail.usages.filter(u => u.deprecated).length;
   const repoNoun = detail.repoCount === 1 ? "repo" : "repos";
@@ -43,11 +43,11 @@ export function CrossRepoHeader({ detail, canEdit }: { detail: CrossRepoComponen
         </div>
       ) : null}
 
-      <MigrationLine status={detail.migrationStatus} recordId={canEdit ? detail.governedByRecordId : null} />
+      <MigrationLine status={detail.migrationStatus} />
     </header>
   );
 }
 
 function Sep() {
-  return <span aria-hidden className="text-muted-foreground/60">·</span>;
+  return <span aria-hidden className="text-faint">·</span>;
 }
