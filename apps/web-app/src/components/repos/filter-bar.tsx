@@ -184,18 +184,6 @@ export function FilterBar({
               onToggle={() => onChange({ ...facets, deprecated: facets.deprecated === true ? null : true })}
             />
           ) : null}
-          {/* There is no "only without unused props" control either: see DeprecatedFilterChip. */}
-          {options.hasUnusedPropsMax > 0 || facets.hasUnusedProps === true ? (
-            <StatusFilterChip
-              icon={ListX}
-              tone="warn"
-              label="unused props"
-              count={options.hasUnusedPropsCount}
-              maxCount={options.hasUnusedPropsMax}
-              active={facets.hasUnusedProps === true}
-              onToggle={() => onChange({ ...facets, hasUnusedProps: facets.hasUnusedProps === true ? null : true })}
-            />
-          ) : null}
           {/* Labelled "since previous scan", not "changed": its count is every
               row the changed view shows, while the masthead's "N changed" counts
               only occurrence moves. */}
@@ -236,7 +224,25 @@ export function FilterBar({
       }
       pills={pills}
       onClearAll={() => onChange(emptyFacets())}
-      actions={actions}
+      actions={
+        <>
+          {actions}
+          {/* After Filter and Details: a finder for one kind of cleanup, not a
+              status like deprecated, so it sits with the view controls (#179).
+              There is no "only without unused props" control either: see DeprecatedFilterChip. */}
+          {options.hasUnusedPropsMax > 0 || facets.hasUnusedProps === true ? (
+            <StatusFilterChip
+              icon={ListX}
+              tone="warn"
+              label="Unused props"
+              count={options.hasUnusedPropsCount}
+              maxCount={options.hasUnusedPropsMax}
+              active={facets.hasUnusedProps === true}
+              onToggle={() => onChange({ ...facets, hasUnusedProps: facets.hasUnusedProps === true ? null : true })}
+            />
+          ) : null}
+        </>
+      }
     />
   );
 }
