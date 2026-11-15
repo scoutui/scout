@@ -19,6 +19,7 @@ describe("security headers", () => {
     expect(got["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
     expect(got["Permissions-Policy"]).toContain("camera=()");
     expect(got["Strict-Transport-Security"]).toContain("max-age=");
+    expect(got["X-Robots-Tag"]).toBe("noindex, nofollow");
   });
 
   it("leaves out the X-Powered-By header", () => {
