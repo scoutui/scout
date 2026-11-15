@@ -40,6 +40,14 @@ const config: Config = {
 
   i18n: { defaultLocale: "en", locales: ["en"] },
 
+  scripts: [
+    {
+      src: "https://static.cloudflareinsights.com/beacon.min.js",
+      type: "module",
+      "data-cf-beacon": JSON.stringify({ token: "abd28f271c85405b8093455d92eac8f2" }),
+    },
+  ],
+
   plugins: [
     [
       "docusaurus-plugin-llms",
