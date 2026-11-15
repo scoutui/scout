@@ -286,6 +286,8 @@ Guest view makes every repo on the dashboard public. Anyone who can reach its ad
 
 A visitor who isn't signed in sees **Guest** at the right of the top bar. They can't make or change charts, change governance or tags, or see charts that aren't shared with everyone. The dashboard shows them no sign-in link: people sign in at `/login`, such as `https://scout.example.com/login`.
 
+The dashboard asks search engines not to list its pages, so a guest view dashboard stays out of search results. That doesn't hide it: anyone with its address can still open it.
+
 ### Check client addresses behind a proxy
 
 CLI sign-in is rate limited per client address. The dashboard reads that address from the `X-Forwarded-For` header, which proxies in front of it add to. If it reads the wrong entry, every caller may share one limit, or a caller can choose their own address to get around it.
