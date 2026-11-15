@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { GitCompareArrows, ListX } from "lucide-react";
+import { GitCompareArrows } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { movementParts } from "@/lib/scan-diff-view";
 import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
@@ -113,6 +113,20 @@ export function FilterBar({
       dropsWithOneValue: true,
     },
     tagFacet(options.tags, facets.tags, setTags, canEdit),
+    // Only offered while some component has an unused declared prop, or the
+    // filter is already on, so it can be turned off (#179).
+    ...(options.hasUnusedPropsMax > 0 || facets.hasUnusedProps === true
+      ? [
+          {
+            key: "props",
+            label: "Props",
+            values: [{ value: "unused", label: "Has unused props", description: "A declared prop no use passes", count: options.hasUnusedPropsCount }],
+            selected: facets.hasUnusedProps === true ? ["unused"] : [],
+            onSelect: ([v]: string[]) => onChange({ ...facets, hasUnusedProps: v === "unused" ? true : null }),
+            single: true,
+          },
+        ]
+      : []),
     {
       key: "occurrences",
       label: "Uses",
@@ -149,9 +163,9 @@ export function FilterBar({
     ...(facets.deprecated === false
       ? [{ key: "deprecated", field: "deprecated", value: "no", onRemove: () => onChange({ ...facets, deprecated: null }) }]
       : []),
-    // Only `hasUnusedProps: false` gets a pill: see the comment on `deprecated` above.
-    ...(facets.hasUnusedProps === false
-      ? [{ key: "unused-props", field: "unused props", value: "no", onRemove: () => onChange({ ...facets, hasUnusedProps: null }) }]
+    // `false` arrives only from a pasted URL, like `deprecated: false` above.
+    ...(facets.hasUnusedProps !== null && facets.hasUnusedProps !== undefined
+      ? [{ key: "props", field: "props", value: facets.hasUnusedProps ? "unused" : "all used", onRemove: () => onChange({ ...facets, hasUnusedProps: null }) }]
       : []),
     ...(facets.occurrences
       ? [
@@ -224,25 +238,7 @@ export function FilterBar({
       }
       pills={pills}
       onClearAll={() => onChange(emptyFacets())}
-      actions={
-        <>
-          {actions}
-          {/* After Filter and Details: a finder for one kind of cleanup, not a
-              status like deprecated, so it sits with the view controls (#179).
-              There is no "only without unused props" control either: see DeprecatedFilterChip. */}
-          {options.hasUnusedPropsMax > 0 || facets.hasUnusedProps === true ? (
-            <StatusFilterChip
-              icon={ListX}
-              tone="warn"
-              label="Unused props"
-              count={options.hasUnusedPropsCount}
-              maxCount={options.hasUnusedPropsMax}
-              active={facets.hasUnusedProps === true}
-              onToggle={() => onChange({ ...facets, hasUnusedProps: facets.hasUnusedProps === true ? null : true })}
-            />
-          ) : null}
-        </>
-      }
+      actions={actions}
     />
   );
 }

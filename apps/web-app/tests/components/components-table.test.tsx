@@ -176,9 +176,9 @@ describe("ComponentsTable", () => {
       expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     });
 
-    it("reads `N/M unused` beside the name while the filter is on, after the deprecated mark", () => {
+    it("reads `N unused props` beside the name while the filter is on, after the deprecated mark", () => {
       render(<ComponentsTable repoId="r1" rows={[panel]} showUnusedProps />);
-      const pill = within(trOf("Panel")).getByText("2/5 unused");
+      const pill = within(trOf("Panel")).getByText("2 unused props");
       expect(pill).toHaveAttribute("title", "2 of 5 declared props never passed");
       // In the name line, so it shows on the stacked mobile row too.
       const nameLine = screen.getByRole("link", { name: "Panel" }).parentElement as HTMLElement;

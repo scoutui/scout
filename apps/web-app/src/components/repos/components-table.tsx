@@ -126,7 +126,7 @@ export function ComponentsTable({
   search?: string;
   /** The Used in package: a row used in more than one package links to its Usage tab with this package picked. */
   usedIn?: string | null;
-  /** The unused props filter is on: each row says how many of its declared props were never passed (`2/5 unused`). */
+  /** The unused props filter is on: each row says how many of its declared props were never passed (`3 unused props`). */
   showUnusedProps?: boolean;
   selectedId?: string | null | undefined;
   onSelect?: ((componentId: string, how: SelectHow) => void) | undefined;
@@ -346,7 +346,7 @@ function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClic
               className={MARK_BADGE}
               title={`${r.apiUsage.neverUsedCount} of ${r.apiUsage.declaredCount} declared props never passed`}
             >
-              {r.apiUsage.neverUsedCount.toLocaleString()}/{r.apiUsage.declaredCount.toLocaleString()} unused
+              {r.apiUsage.neverUsedCount.toLocaleString()} unused {r.apiUsage.neverUsedCount === 1 ? "prop" : "props"}
             </Badge>
           ) : null}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}

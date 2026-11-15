@@ -253,31 +253,35 @@ describe("FilterBar status chips", () => {
   );
 });
 
-describe("FilterBar unused props chip", () => {
-  it("is absent when no component in the table has an unused declared prop", () => {
+describe("FilterBar Props facet", () => {
+  it("leaves Props out of the Filter menu when no component in the table has an unused declared prop", async () => {
     renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 });
-    expect(screen.queryByRole("button", { name: /^Unused props/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^filter/i }));
+    await screen.findByRole("button", { name: /^package/i });
+    expect(screen.queryByRole("button", { name: /^props/i })).toBeNull();
   });
 
-  it("toggles hasUnusedProps:true and back, like the deprecated chip", () => {
+  it("offers Has unused props under Filter > Props, with its description and count, and ticks hasUnusedProps:true", async () => {
     const onChange = renderBar({ ...options, hasUnusedPropsMax: 3, hasUnusedPropsCount: 3 });
-    const chip = screen.getByRole("button", { name: /^Unused props/ });
-    expect(chip).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(chip);
+    expect(screen.queryByRole("button", { name: /unused props/i })).toBeNull();
+    await openFacet(/^props/i);
+    const option = await screen.findByRole("button", { name: /^Has unused props/ });
+    expect(option).toHaveTextContent("A declared prop no use passes");
+    expect(option).toHaveTextContent("3");
+    fireEvent.click(option);
     expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), hasUnusedProps: true });
   });
 
-  it("renders pressed and enabled under a pasted ?unused-props=true, even with no matching components, so it can be unpressed", () => {
-    renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 }, { ...emptyFacets(), hasUnusedProps: true });
-    const chip = screen.getByRole("button", { name: /^Unused props/ });
-    expect(chip).toHaveAttribute("aria-pressed", "true");
-    expect(chip).not.toBeDisabled();
+  it("shows hasUnusedProps:true as a removable props: unused pill and counts it on Filter, even with no matching components", () => {
+    const onChange = renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 }, { ...emptyFacets(), hasUnusedProps: true });
+    expect(screen.getByRole("button", { name: /^filter/i })).toHaveTextContent("1");
+    fireEvent.click(screen.getByRole("button", { name: "Remove props unused" }));
+    expect(onChange).toHaveBeenCalledWith(emptyFacets());
   });
 
-  it("a pasted ?unused-props=false has no chip of its own but shows as a removable pill", () => {
+  it("shows a pasted ?unused-props=false as a removable props: all used pill", () => {
     const onChange = renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 }, { ...emptyFacets(), hasUnusedProps: false });
-    expect(screen.queryByRole("button", { name: /^Unused props/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Remove unused props no" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove props all used" }));
     expect(onChange).toHaveBeenCalledWith(emptyFacets());
   });
 });
