@@ -1270,7 +1270,7 @@ function RecordDialog({
                 {DISPOSITION_KINDS.map((kind) => {
                   const checked = form.dispositionKind === kind;
                   return (
-                    <div key={kind} className={cn(checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
+                    <div key={kind} className={cn("first:rounded-t-[calc(var(--radius)-1px)] last:rounded-b-[calc(var(--radius)-1px)]", checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
                       <label className="relative flex cursor-pointer items-start gap-3 p-3.5">
                         <input
                           type="radio"
