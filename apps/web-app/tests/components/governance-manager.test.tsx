@@ -481,6 +481,7 @@ describe("GovernanceManager", () => {
     await addRecord();
     let source = screen.getByRole("combobox", { name: "Package or component" });
     fireEvent.change(source, { target: { value: "old-icons" } });
+    expect(screen.getByRole("dialog")).toContainElement(screen.getByRole("listbox"));
     fireEvent.keyDown(source, { key: "ArrowUp" });
     fireEvent.keyDown(source, { key: "Enter" });
     fireEvent.keyDown(source, { key: "Enter" });
