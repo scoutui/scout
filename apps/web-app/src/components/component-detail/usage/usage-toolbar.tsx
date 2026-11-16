@@ -1,6 +1,6 @@
 "use client";
 import { AlertTriangle, Check, CircleX, Copy, ListFilter, Search, X } from "lucide-react";
-import { type ReactNode, type RefObject, useState } from "react";
+import { type ReactNode, type RefObject, useState, useSyncExternalStore } from "react";
 import { countText, filterText, pickGroups, plural, type UsageDue, type UsagePick, type UsageView, valueLabel, valueSpeech } from "@scoutui/web-shared/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,10 @@ const WIDE_PX = 560;
 
 /** What the last copy from a Copy button did. */
 export type CopyOutcome = "copied" | "failed";
+
+const noSubscribe = () => () => {};
+/** Whether the browser lets the page write to the clipboard. */
+const canWriteClipboard = () => typeof navigator.clipboard?.writeText === "function";
 
 /** A text link, or a button that reads as one. */
 export const LINK =
@@ -172,10 +176,13 @@ function CountText({ view, due }: { view: UsageView; due: UsageDue | null }) {
 
 /**
  * Copies a list of files: the toolbar's copies every file in view, a folder or package heading's (`folder` is its
- * label) only that folder's or package's. It reads "Copied" or "Copy failed" while `outcome` says so.
+ * label) only that folder's or package's. It reads "Copied" or "Couldn't copy" while `outcome` says so, and doesn't
+ * show where the browser can't write to the clipboard.
  */
 export function CopyListButton({ files, folder, disabled = false, outcome, onCopy }: { files: number; folder: string | null; disabled?: boolean; outcome: CopyOutcome | null; onCopy: () => void }) {
+  const supported = useSyncExternalStore(noSubscribe, canWriteClipboard, () => true);
   const label = folder === null ? `Copy the list of ${plural(files, "file")}` : `Copy the list of ${plural(files, "file")} in ${folder}`;
+  if (!supported) return null;
   return (
     <Button
       variant={folder === null ? "outline" : "ghost"}
@@ -184,11 +191,11 @@ export function CopyListButton({ files, folder, disabled = false, outcome, onCop
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={cn("cursor-pointer motion-reduce:transition-none", folder !== null && "text-muted-foreground")}
+      className={cn("cursor-pointer motion-reduce:transition-none", folder !== null && "text-muted-foreground", outcome === "failed" && "text-status-err hover:text-status-err")}
     >
       <SwapIcon shown={outcome ?? "ready"} icons={{ ready: <Copy className="size-3.5" />, copied: <Check className="size-3.5" />, failed: <CircleX className="size-3.5" /> }} />
       <span className={folder === null ? "max-sm:sr-only" : "max-md:sr-only"}>
-        {outcome === "copied" ? "Copied" : outcome === "failed" ? "Copy failed" : folder === null ? "Copy list" : "Copy"}
+        {outcome === "copied" ? "Copied" : outcome === "failed" ? "Couldn't copy" : folder === null ? "Copy list" : "Copy"}
       </span>
     </Button>
   );

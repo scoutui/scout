@@ -32,7 +32,7 @@ const WIDE = "(min-width: 64rem)";
 const TAKEN_PX = 40 + 80 + 256;
 /** The Copy button that last copied, `folder` null for the toolbar's, how many files it copied and whether it worked. */
 type Copied = { folder: string | null; files: number; outcome: CopyOutcome };
-/** How long a Copy button reads "Copied" or "Copy failed". */
+/** How long a Copy button reads "Copied" or "Couldn't copy". */
 const COPIED_MS = 1800;
 
 /** The column row in `root` whose `data-filter` is `key`. */

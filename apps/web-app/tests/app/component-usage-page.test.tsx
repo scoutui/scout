@@ -228,8 +228,15 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     const copy = screen.getByRole("button", { name: "Copy the list of 2 files" });
     fireEvent.click(copy);
     expect(await screen.findByText("Couldn't copy the list. Try again.")).toBeInTheDocument();
-    expect(copy).toHaveTextContent("Copy failed");
+    expect(copy).toHaveTextContent("Couldn't copy");
     expect(screen.queryByText("Copied")).toBeNull();
+  });
+
+  it("leaves out the Copy buttons where the browser can't write to the clipboard", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    await show(card.id);
+    expect(screen.getByRole("textbox", { name: "Search files and props" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Copy the list/ })).toBeNull();
   });
 
   it("copies one folder's calls from its heading, and only that button reads Copied", async () => {

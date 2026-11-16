@@ -26,7 +26,7 @@ type HrefWith = ReturnType<typeof useHrefWith>;
  * open while few calls are in view; a row the reader opens or closes stays that way. From md each of `columns` shows a
  * prop's values; below md a line of JSX under each file name shows them. The File, value and Calls headings sort the
  * files by `view.sort` and report a click through `onSort`. Each package's or folder's heading copies its files through
- * `onCopyFolder`; the one whose key is `copied.folder` reads "Copied" or "Copy failed". The headings pin under the file toolbar, except
+ * `onCopyFolder`; the one whose key is `copied.folder` reads "Copied" or "Couldn't copy". The headings pin under the file toolbar, except
  * when the component has `few` calls.
  */
 export function FileTable({
