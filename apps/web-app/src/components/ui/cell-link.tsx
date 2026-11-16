@@ -15,7 +15,7 @@ export function CellLink({
 }) {
   return (
     <TableCell className={`p-0 ${cellClassName ?? ""}`}>
-      <Link href={href} title={title} tabIndex={tabIndex} className={`focus-inset block px-3 py-2 ${className ?? ""}`}>
+      <Link href={href} title={title} tabIndex={tabIndex} className={`focus-panel-row block px-3 py-2 ${className ?? ""}`}>
         {children}
       </Link>
     </TableCell>

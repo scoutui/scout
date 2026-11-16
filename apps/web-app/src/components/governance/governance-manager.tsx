@@ -553,7 +553,7 @@ function RecordTable({
                     type="button"
                     aria-expanded={completeShown}
                     onClick={onToggleComplete}
-                    className="group/toggle focus-inset flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left"
+                    className="group/toggle focus-panel-row flex size-full min-h-10 cursor-pointer items-center gap-1.5 px-3 text-left"
                   >
                     {completeLabel}
                   </button>
@@ -666,7 +666,7 @@ function RecordRow({
       aria-current={highlighted ? "true" : undefined}
       className={cn(
         ROW,
-        "group/row focus-inset min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out motion-reduce:transition-none max-md:gap-y-1 max-md:py-2",
+        "group/row focus-panel-row min-h-9 scroll-mt-24 py-1.5 transition-colors duration-150 ease-out motion-reduce:transition-none max-md:gap-y-1 max-md:py-2",
         standalone && "py-[0.6875rem] max-md:py-3",
         highlighted
           ? "selected shadow-[inset_0_1px_0_var(--selected-edge),inset_0_-1px_0_var(--selected-edge)]"

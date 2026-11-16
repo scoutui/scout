@@ -277,7 +277,7 @@ const ListNode = memo(function ListNode({ id, data }: NodeProps) {
               }}
               onFocus={revealOnKeyboard}
               aria-label={`${m.node.displayName}, ${pathValueOf(m.node)}, ${usesWord(m.uses)}. Show it in the diagram.`}
-              className="flex w-full cursor-pointer flex-col gap-0.5 px-2.5 py-1.5 text-left hover:bg-muted/60 focus-inset"
+              className="flex w-full cursor-pointer flex-col gap-0.5 px-2.5 py-1.5 text-left hover:bg-muted/60 focus-panel-row"
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <ScopeGlyph scope={m.node.scope} />

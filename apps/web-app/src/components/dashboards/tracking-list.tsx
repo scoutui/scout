@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const SEARCH_PAST = 10;
 const GRID =
   "sm:grid sm:grid-cols-[minmax(0,1fr)_5rem_5rem_7.5rem] sm:items-center sm:gap-x-4 xl:grid-cols-[minmax(0,1fr)_5rem_5rem_7.5rem_112px]";
-const ROW = "focus-inset block px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent";
+const ROW = "focus-panel-row block px-4 py-2.5 transition-colors hover:bg-secondary dark:hover:bg-accent";
 
 type Side = "progress" | "complete";
 type Group = {
