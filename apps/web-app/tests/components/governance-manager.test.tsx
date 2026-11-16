@@ -388,6 +388,34 @@ describe("GovernanceManager", () => {
     expect(screen.getByRole("button", { name: "Edit Button" })).toHaveFocus();
   });
 
+  it("asks before closing with unsaved changes, from Esc, Cancel or the close button, and Keep editing or Discard answers", async () => {
+    render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
+    const dialog = await addRecord();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    await addRecord();
+    pick("Package or component", "star");
+    for (const close of [
+      () => fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" }),
+      () => fireEvent.click(screen.getByRole("button", { name: "Cancel" })),
+      () => fireEvent.click(screen.getByRole("button", { name: "Close" })),
+    ]) {
+      close();
+      const keep = await screen.findByRole("button", { name: "Keep editing" });
+      expect(keep).toHaveAccessibleDescription("Discard this record?");
+      expect(screen.queryByRole("button", { name: "Create record" })).toBeNull();
+      fireEvent.click(keep);
+      expect(screen.queryByText("Discard this record?")).toBeNull();
+      expect(screen.getByRole("dialog", { name: "New record" })).toHaveTextContent("Star");
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const { saveGovernance } = await import("@/app/governance/governance-actions");
+    expect(saveGovernance).not.toHaveBeenCalled();
+  });
+
   it("says who added and changed a record in its edit form, and nothing in a new record's", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-05T12:00:00Z"));
@@ -503,6 +531,17 @@ describe("GovernanceManager", () => {
     await vi.waitFor(() => expect(statuses()).toContain("2 added · last Heart"));
     expect(screen.getByRole("radio", { name: "Retire it" })).toBeChecked();
     expect(screen.getByLabelText("Reason")).toHaveValue("");
+
+    const show = screen.getByRole("button", { name: "Show" });
+    expect(show).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(show);
+    expect(screen.getByRole("button", { name: "Hide" })).toHaveAttribute("aria-expanded", "true");
+    const added = screen.getByRole("list", { name: "Added in this session" });
+    expect(show).toHaveAttribute("aria-controls", added.id);
+    expect(within(added).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Star old-icons → Button @acme/new",
+      "Heart old-icons · Retired",
+    ]);
   });
 
   it("renders the jump link to the existing record on a target_governed conflict", async () => {

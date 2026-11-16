@@ -2,7 +2,9 @@
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   CircleCheck,
   ComponentIcon,
   Eye,
@@ -24,7 +26,7 @@ import type {
 } from "@scoutui/web-shared";
 import { type GovernanceField, invalidGovernanceFields } from "@scoutui/web-shared/client";
 import { deleteGovernance, saveGovernance } from "@/app/governance/governance-actions";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/components/governance/grouped-identity-picker";
@@ -830,7 +832,7 @@ function reachLine(packageName: string, components: number): string {
   return `Marks all ${components.toLocaleString()} components in ${packageName} as deprecated.`;
 }
 
-/** A record Create added. `n` counts from 1. */
+/** A record Create added, as the list of this dialog's records shows it. `n` counts from 1. */
 type Added = { n: number; name: string; packageName: string | null; by: { name: string; packageName: string | null } | null };
 
 function addedOf(f: FormState, n: number): Added {
@@ -844,6 +846,33 @@ function addedOf(f: FormState, n: number): Added {
         ? successorLabel({ packageName: f.supersededByPackage, exportName: f.supersededByExport || undefined })
         : null,
   };
+}
+
+/** The fields someone fills in. A new record's choice of what teams do isn't worth asking about on its own; an edited record's is. */
+const FILLED_FIELDS = ["targetPackage", "targetExport", "supersededByPackage", "supersededByExport", "retiredReason"] as const;
+
+function unsaved(form: FormState, baseline: FormState): boolean {
+  return (
+    FILLED_FIELDS.some((field) => form[field] !== baseline[field]) ||
+    (form.id !== undefined && form.dispositionKind !== baseline.dispositionKind)
+  );
+}
+
+const KEEP_EDITING = "Keep editing";
+const DISCARD = "Discard";
+
+/** Holds a footer button's place at the width of the widest label it shows, so the discard prompt moves nothing under the pointer. */
+function ButtonSlot({ labels, children }: { labels: string[]; children: React.ReactNode }) {
+  return (
+    <span className="grid *:col-start-1 *:row-start-1">
+      {labels.map((label) => (
+        <span key={label} aria-hidden className={cn(buttonVariants({ size: "sm" }), "invisible")}>
+          {label}
+        </span>
+      ))}
+      {children}
+    </span>
+  );
 }
 
 /** The picked package or component, with Change to search again. */
@@ -924,11 +953,15 @@ function RecordDialog({
 }) {
   const isEdit = record !== undefined;
   const [form, setForm] = useState<FormState>(() => (record ? recordToForm(record) : emptyForm()));
+  /** The form as it opened, or as Create last cleared it. Closing asks first when the form differs. */
+  const [baseline, setBaseline] = useState(form);
   const [error, setError] = useState<string | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [added, setAdded] = useState<Added[]>([]);
+  const [addedShown, setAddedShown] = useState(false);
   /** Change was pressed: the source shows its search box instead of the card. */
   const [changingSource, setChangingSource] = useState(false);
   const [sourceScope, setSourceScope] = useState<string | null>(null);
@@ -938,8 +971,16 @@ function RecordDialog({
   const [pending, startTransition] = useTransition();
   /** The element to focus once it's on the page. */
   const focusNext = useRef<(() => HTMLElement | null) | null>(null);
+  /** What had focus when the discard prompt opened, for Keep editing to return to. */
+  const focusBeforePrompt = useRef<HTMLElement | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const keepEditingRef = useRef<HTMLButtonElement>(null);
   const changeRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
+  const addedListRef = useRef<HTMLUListElement>(null);
+  const addedId = useId();
+  const promptId = useId();
+  const dirty = unsaved(form, baseline);
   const counts = useMemo(() => componentCounts(sources), [sources]);
   const last = added.at(-1);
 
@@ -949,6 +990,12 @@ function RecordDialog({
     focusNext.current = null;
     element.focus();
   });
+
+  // The newest record is at the bottom of the list, next to the line that names it.
+  useEffect(() => {
+    const list = addedListRef.current;
+    if (addedShown && list) list.scrollTop = list.scrollHeight;
+  }, [addedShown]);
 
   function patch(update: Partial<FormState>) {
     setForm((prev) => ({ ...prev, ...update }));
@@ -972,10 +1019,36 @@ function RecordDialog({
     focusNext.current = () => document.getElementById("gov-source");
   }
 
-  /** Closes, unless a field used the Esc press or a save is under way. */
+  function askToDiscard() {
+    focusBeforePrompt.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setConfirmingDiscard(true);
+    setConfirmingDelete(false);
+    setAddedShown(false);
+    focusNext.current = () => keepEditingRef.current;
+  }
+
+  function keepEditing() {
+    const back = focusBeforePrompt.current;
+    focusBeforePrompt.current = null;
+    setConfirmingDiscard(false);
+    focusNext.current = () => (back?.isConnected && back !== document.body ? back : cancelRef.current);
+  }
+
+  /** Closes, unless a field used the Esc press or the form has unsaved changes, which asks first. */
   function requestClose(details?: DialogPrimitive.Root.ChangeEventDetails) {
-    if ((details?.reason === "escape-key" && details.event.defaultPrevented) || pending) {
+    const escPress = details?.reason === "escape-key";
+    if (escPress && details.event.defaultPrevented) {
+      details.cancel();
+      return;
+    }
+    if (escPress && confirmingDiscard) {
+      details.cancel();
+      keepEditing();
+      return;
+    }
+    if (pending || dirty) {
       details?.cancel();
+      if (!pending) askToDiscard();
       return;
     }
     onClose();
@@ -983,7 +1056,7 @@ function RecordDialog({
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (pending) return;
+    if (pending || confirmingDiscard) return;
     const errors = validateForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -999,6 +1072,7 @@ function RecordDialog({
         const next = { ...emptyForm(), dispositionKind: form.dispositionKind };
         setAdded((prev) => [...prev, addedOf(form, prev.length + 1)]);
         setForm(next);
+        setBaseline(next);
         setChangingSource(false);
         setSourceScope(null);
         setByScope(null);
@@ -1255,9 +1329,42 @@ function RecordDialog({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-t px-6 py-3">
+          <div className="relative flex flex-wrap items-center gap-3 border-t px-6 py-3">
+            {added.length > 0 ? (
+              <ul
+                ref={addedListRef}
+                id={addedId}
+                aria-label="Added in this session"
+                hidden={!addedShown || confirmingDiscard}
+                className="absolute inset-x-0 bottom-full max-h-34 space-y-0.5 overflow-y-auto border-t bg-popover px-6 py-2"
+              >
+                {added.map((a) => (
+                  <li key={a.n} className="flex min-h-7 items-center gap-2 text-xs text-muted-foreground">
+                    <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0 text-status-ok" />
+                    <span className="min-w-0 truncate">
+                      <span className="font-mono text-foreground">{a.name}</span>
+                      {a.packageName ? <span className="font-mono">{` ${a.packageName}`}</span> : null}
+                      {a.by ? (
+                        <>
+                          {" → "}
+                          <span className="font-mono text-foreground">{a.by.name}</span>
+                          {a.by.packageName ? <span className="font-mono">{` ${a.by.packageName}`}</span> : null}
+                        </>
+                      ) : (
+                        " · Retired"
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
             <div className="flex min-h-7 min-w-0 flex-1 items-center gap-2">
-              {isEdit ? (
+              {confirmingDiscard ? (
+                <p id={promptId} className="text-xs font-medium">
+                  {isEdit ? "Discard changes?" : "Discard this record?"}
+                </p>
+              ) : isEdit ? (
                 <>
                   {confirmingDelete ? (
                     <span id="gov-delete-prompt" className="text-xs">
@@ -1304,17 +1411,52 @@ function RecordDialog({
                       </>
                     ) : null}
                   </output>
+                  {added.length > 0 ? (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      aria-expanded={addedShown}
+                      aria-controls={addedId}
+                      onClick={() => setAddedShown((shown) => !shown)}
+                    >
+                      {addedShown ? "Hide" : "Show"}
+                      {addedShown ? <ChevronDown aria-hidden /> : <ChevronUp aria-hidden />}
+                    </Button>
+                  ) : null}
                 </>
               )}
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => requestClose()} disabled={pending}>
-                {added.length > 0 ? "Done" : "Cancel"}
-              </Button>
-              <Button type="submit" size="sm" disabled={pending}>
-                {isEdit ? "Save" : "Create record"}
-              </Button>
+              <ButtonSlot labels={[KEEP_EDITING]}>
+                {confirmingDiscard ? (
+                  <Button ref={keepEditingRef} variant="ghost" size="sm" onClick={keepEditing} aria-describedby={promptId}>
+                    {KEEP_EDITING}
+                  </Button>
+                ) : (
+                  <Button
+                    ref={cancelRef}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => requestClose()}
+                    disabled={pending}
+                    className="justify-self-end"
+                  >
+                    {added.length > 0 ? "Done" : "Cancel"}
+                  </Button>
+                )}
+              </ButtonSlot>
+              <ButtonSlot labels={[isEdit ? "Save" : "Create record", DISCARD]}>
+                {confirmingDiscard ? (
+                  <Button variant="destructive" size="sm" onClick={onClose}>
+                    {DISCARD}
+                  </Button>
+                ) : (
+                  <Button type="submit" size="sm" disabled={pending}>
+                    {isEdit ? "Save" : "Create record"}
+                  </Button>
+                )}
+              </ButtonSlot>
             </div>
           </div>
         </form>
