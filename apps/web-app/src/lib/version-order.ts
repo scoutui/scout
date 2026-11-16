@@ -9,7 +9,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 /** Rows sorted by `version` in SemVer order: `sortRows` compares strings as
- *  text, which puts `1.14.11` before `1.5.0`. Nulls last in both directions,
+ *  text, which puts `5.0.0` before `5.0.0-rc.1`. Nulls last in both directions,
  *  as in `sortRows`. */
 export function sortByVersion<T extends { version: string | null }>(rows: readonly T[], dir: SortDir): T[] {
   const sign = dir === "asc" ? 1 : -1;

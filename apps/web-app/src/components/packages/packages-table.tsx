@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { CellLink } from "@/components/ui/cell-link";
 import { deprecatedComponentsHref } from "@/lib/package-facets";
-import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
+import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { TagChips } from "@/components/tags/tag-chip";
 import { versionRangeLabel } from "@/lib/version-order";
 
@@ -45,22 +45,22 @@ export function PackagesTable({
       {/* Below sm the rows stack, so there are no headers and no sorting. */}
       <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
         <TableRow>
-          <TableHead className="w-full">
+          <TableHead className="w-full" aria-sort={ariaSort("packageName", sortKey, sortDir)}>
             <SortButton label="Package" sortKey="packageName" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
-          <TableHead className="whitespace-nowrap text-right">
+          <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("consumerCount", sortKey, sortDir)}>
             <SortButton label="Repos" sortKey="consumerCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="whitespace-nowrap text-right">
+          <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("componentCount", sortKey, sortDir)}>
             <SortButton label="Components" sortKey="componentCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="whitespace-nowrap text-right">
+          <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("distinctVersionCount", sortKey, sortDir)}>
             <SortButton label="Version" sortKey="distinctVersionCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="whitespace-nowrap text-right">
+          <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("totalOccurrences", sortKey, sortDir)}>
             <SortButton label="Uses" sortKey="totalOccurrences" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
-          <TableHead className="whitespace-nowrap text-right">
+          <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("deprecatedCount", sortKey, sortDir)}>
             <SortButton label="Deprecated" sortKey="deprecatedCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
           </TableHead>
         </TableRow>

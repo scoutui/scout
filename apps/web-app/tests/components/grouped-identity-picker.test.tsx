@@ -130,6 +130,17 @@ describe("GroupedIdentityPicker", () => {
     expect(onSelect).toHaveBeenCalledWith({ packageName: "@example/old-ui", exportName: "Button" });
   });
 
+  it.each([
+    ["while composing", { isComposing: true }],
+    ["in Safari, which ends composing before the key", { keyCode: 229 }],
+  ] as const)("picks nothing on an Enter that confirms input-method text %s", (_, init) => {
+    const onSelect = vi.fn();
+    render(<Field scope="@example/old-ui" onSelect={onSelect} />);
+    fireEvent.click(input());
+    fireEvent.keyDown(input(), { key: "Enter", ...init });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it("keeps the value when closed without a pick, selected so the next key starts a new search", () => {
     const onSelect = vi.fn();
     render(<Field value={{ packageName: "@example/old-ui", exportName: "Card" }} onSelect={onSelect} />);

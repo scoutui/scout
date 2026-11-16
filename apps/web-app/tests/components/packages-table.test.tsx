@@ -70,6 +70,7 @@ describe("PackagesTable", () => {
     render(<PackagesTable rows={rows} />);
     const pkgHeader = screen.getByRole("button", { name: /^package/i });
     fireEvent.click(pkgHeader); // first click → asc
+    expect(screen.getByRole("columnheader", { name: /^package/i })).toHaveAttribute("aria-sort", "ascending");
     const namesAsc = screen.getAllByRole("row").slice(1).map(r => r.textContent ?? "");
     expect(namesAsc[0]).toContain("@x/lib");
     expect(namesAsc[1]).toContain("@x/wc");

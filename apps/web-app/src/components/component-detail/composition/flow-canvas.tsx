@@ -800,6 +800,7 @@ function FindBox({
               move(Math.max(active - 1, 0));
             } else if (e.key === "Enter" && open && rows[active]) {
               e.preventDefault();
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return;
               pick(rows[active] as FindRow);
             } else if (e.key === "Escape" && isOpen && !inline) {
               e.stopPropagation();
