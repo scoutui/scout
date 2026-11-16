@@ -22,7 +22,7 @@ import { FileTable } from "./file-table";
 import { NoCalls } from "./no-calls";
 import { areaFilterKey, propFilterKey, UsageColumn, valueFilterKey } from "./usage-column";
 import { pinLine, showColumn, typing, useCharWidth, useElementWidth, useMedia, usePinTop, useSteadyStrip, useStickyColumn } from "./usage-layout-hooks";
-import { FilterPills, LINK, UsageToolbar } from "./usage-toolbar";
+import { type CopyOutcome, FilterPills, LINK, UsageToolbar } from "./usage-toolbar";
 
 /** md: from here the file list has its header and value columns. */
 const MEDIUM = "(min-width: 48rem)";
@@ -30,9 +30,9 @@ const MEDIUM = "(min-width: 48rem)";
 const WIDE = "(min-width: 64rem)";
 /** What the chevron (40px), Calls (80px) and the narrowest File column (256px) take from the file list's width. */
 const TAKEN_PX = 40 + 80 + 256;
-/** The Copy button that last copied, `folder` null for the toolbar's, and how many files it copied. */
-type Copied = { folder: string | null; files: number };
-/** How long a Copy button reads "Copied", or a failed copy's message stays. */
+/** The Copy button that last copied, `folder` null for the toolbar's, how many files it copied and whether it worked. */
+type Copied = { folder: string | null; files: number; outcome: CopyOutcome };
+/** How long a Copy button reads "Copied" or "Copy failed". */
 const COPIED_MS = 1800;
 
 /** The column row in `root` whose `data-filter` is `key`. */
@@ -179,7 +179,6 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
   };
 
   const [copied, setCopied] = useState<Copied | null>(null);
-  const [copyFailed, setCopyFailed] = useState(false);
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
   /** Copies `sections`: every section in view from the toolbar, or one folder's or package's from its heading. */
@@ -197,20 +196,12 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
       urlFor: (path, line) => (source ? sourceFileUrl(source.remote, source.commit, path, line) : null),
     });
     const files = sections.reduce((n, section) => n + section.files.length, 0);
-    void navigator.clipboard.writeText(text).then(
-      () => {
-        clearTimeout(copiedTimer.current);
-        setCopyFailed(false);
-        setCopied({ folder, files });
-        copiedTimer.current = setTimeout(() => setCopied(null), COPIED_MS);
-      },
-      () => {
-        clearTimeout(copiedTimer.current);
-        setCopied(null);
-        setCopyFailed(true);
-        copiedTimer.current = setTimeout(() => setCopyFailed(false), COPIED_MS);
-      },
-    );
+    const show = (outcome: CopyOutcome) => {
+      clearTimeout(copiedTimer.current);
+      setCopied({ folder, files, outcome });
+      copiedTimer.current = setTimeout(() => setCopied(null), COPIED_MS);
+    };
+    void navigator.clipboard.writeText(text).then(() => show("copied"), () => show("failed"));
   };
   const empty = emptyText(view);
 
@@ -255,7 +246,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
             onFilter={() => showColumn(columnRef.current, () => setColumnOpen(true))}
             onClearFilters={clearAll}
             onCopy={() => copyList(view.sections, null)}
-            copied={copied?.folder === null}
+            copyOutcome={copied?.folder === null ? copied.outcome : null}
           />
           {/* The filter pills sit at the top of the list and scroll away with it. */}
           <div ref={stripRef}>
@@ -293,14 +284,14 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
               source={source}
               columns={columns}
               onSort={(key) => setSort(nextUsageSort(view.sort, key))}
-              copiedFolder={copied?.folder ?? null}
+              copied={copied}
               onCopyFolder={(section) => copyList([section], section.key)}
             />
           )}
         </div>
       </div>
       <span aria-live="polite" className="sr-only">
-        {copied !== null ? `Copied the list of ${plural(copied.files, "file")}` : copyFailed ? "Couldn't copy the list. Try again." : ""}
+        {copied === null ? "" : copied.outcome === "failed" ? "Couldn't copy the list. Try again." : `Copied the list of ${plural(copied.files, "file")}`}
       </span>
     </div>
   );

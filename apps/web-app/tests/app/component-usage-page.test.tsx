@@ -221,12 +221,14 @@ describe.skipIf(!databaseUrl)("component page Usage tab", { timeout: 60_000 }, (
     expect(text).toContain("View in Scout: http://");
   });
 
-  it("says so when the browser refuses to copy, and no button reads Copied", async () => {
+  it("says so on the button and to screen readers when the browser refuses to copy", async () => {
     const writeText = vi.fn(async (_text: string) => Promise.reject(new DOMException("Denied", "NotAllowedError")));
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     await show(button.id, "?sel=size~value~large");
-    fireEvent.click(screen.getByRole("button", { name: "Copy the list of 2 files" }));
+    const copy = screen.getByRole("button", { name: "Copy the list of 2 files" });
+    fireEvent.click(copy);
     expect(await screen.findByText("Couldn't copy the list. Try again.")).toBeInTheDocument();
+    expect(copy).toHaveTextContent("Copy failed");
     expect(screen.queryByText("Copied")).toBeNull();
   });
 

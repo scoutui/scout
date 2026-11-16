@@ -8,7 +8,7 @@ import { TableHead } from "@/components/ui/table";
 import { type SourceRef, sourceFileUrl } from "@/lib/source-link";
 import { pushQuery, useHrefWith, useKeepPlace, useKept } from "@/lib/usage-url";
 import { cn } from "@/lib/utils";
-import { CopyListButton } from "./usage-toolbar";
+import { CopyListButton, type CopyOutcome } from "./usage-toolbar";
 
 /** The most of a prop's JSX a call line shows before cutting its value short. */
 const PROP_MAX = 40;
@@ -26,7 +26,7 @@ type HrefWith = ReturnType<typeof useHrefWith>;
  * open while few calls are in view; a row the reader opens or closes stays that way. From md each of `columns` shows a
  * prop's values; below md a line of JSX under each file name shows them. The File, value and Calls headings sort the
  * files by `view.sort` and report a click through `onSort`. Each package's or folder's heading copies its files through
- * `onCopyFolder`; the one whose key is `copiedFolder` reads "Copied". The headings pin under the file toolbar, except
+ * `onCopyFolder`; the one whose key is `copied.folder` reads "Copied" or "Copy failed". The headings pin under the file toolbar, except
  * when the component has `few` calls.
  */
 export function FileTable({
@@ -35,7 +35,7 @@ export function FileTable({
   source,
   columns,
   onSort,
-  copiedFolder,
+  copied,
   onCopyFolder,
 }: {
   view: UsageView;
@@ -43,7 +43,7 @@ export function FileTable({
   source: SourceRef | null;
   columns: readonly UsageValueColumn[];
   onSort: (key: UsageSortKey) => void;
-  copiedFolder: string | null;
+  copied: { folder: string | null; outcome: CopyOutcome } | null;
   onCopyFolder: (section: UsageSection) => void;
 }) {
   const hrefWith = useHrefWith();
@@ -114,7 +114,7 @@ export function FileTable({
       </thead>
       {view.sections.map((section, i) => (
         <tbody key={section.key ?? "all"}>
-          <SectionHeading section={section} byPackage={view.byPackage} cols={cols} first={i === 0} pinned={!few} copied={section.key !== null && section.key === copiedFolder} onCopy={() => onCopyFolder(section)} />
+          <SectionHeading section={section} byPackage={view.byPackage} cols={cols} first={i === 0} pinned={!few} outcome={section.key !== null && section.key === copied?.folder ? copied.outcome : null} onCopy={() => onCopyFolder(section)} />
           {section.files.map((file, j) => (
             <FileRow
               key={file.path}
@@ -144,7 +144,7 @@ function headingTitle(section: UsageSection, byPackage: boolean): string | undef
  * A package's or a folder's label, the folders its files share and its own Copy, shown on hover or focus and always on
  * touch; or for a flat list only the folders every file shares. `byPackage` when the section is a package's.
  */
-function SectionHeading({ section, byPackage, cols, first, pinned, copied, onCopy }: { section: UsageSection; byPackage: boolean; cols: number; first: boolean; pinned: boolean; copied: boolean; onCopy: () => void }) {
+function SectionHeading({ section, byPackage, cols, first, pinned, outcome, onCopy }: { section: UsageSection; byPackage: boolean; cols: number; first: boolean; pinned: boolean; outcome: CopyOutcome | null; onCopy: () => void }) {
   if (section.label === null && section.shared === null) return null;
   return (
     <tr className="group/g">
@@ -166,10 +166,10 @@ function SectionHeading({ section, byPackage, cols, first, pinned, copied, onCop
             <span
               className={cn(
                 "ml-auto opacity-0 transition-opacity duration-150 ease-out group-focus-within/g:opacity-100 group-hover/g:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100",
-                copied && "opacity-100",
+                outcome !== null && "opacity-100",
               )}
             >
-              <CopyListButton files={section.files.length} folder={section.label} copied={copied} onCopy={onCopy} />
+              <CopyListButton files={section.files.length} folder={section.label} outcome={outcome} onCopy={onCopy} />
             </span>
           ) : null}
         </div>
