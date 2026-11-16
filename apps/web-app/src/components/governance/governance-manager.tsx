@@ -1,9 +1,19 @@
 "use client";
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, CircleCheck, Eye, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
-import { RadioGroup } from "@base-ui/react/radio-group";
-import { Radio } from "@base-ui/react/radio";
+import {
+  ChevronRight,
+  CircleCheck,
+  ComponentIcon,
+  Eye,
+  PackageIcon,
+  Pencil,
+  Plus,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import type { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type {
   Disposition,
   GovernanceInput,
@@ -15,8 +25,8 @@ import type {
 import { type GovernanceField, invalidGovernanceFields } from "@scoutui/web-shared/client";
 import { deleteGovernance, saveGovernance } from "@/app/governance/governance-actions";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { toggleVariants } from "@/components/ui/toggle";
 import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/components/governance/grouped-identity-picker";
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
@@ -61,14 +71,9 @@ export function matchesRecordQuery(record: GovernanceRecord, query: string): boo
 const DISPOSITION_KINDS = ["superseded", "retired"] as const;
 type DispositionKind = (typeof DISPOSITION_KINDS)[number];
 
-const KIND_LABEL: Record<DispositionKind, string> = {
-  superseded: "Replaced",
-  retired: "Retired",
-};
-
-const KIND_HINT: Record<DispositionKind, string> = {
-  superseded: "Replaced: teams move to a replacement.",
-  retired: "Retired: teams stop using it.",
+const KIND_CHOICE: Record<DispositionKind, { label: string; description: string }> = {
+  superseded: { label: "Move to a replacement", description: "Each use points to what to use instead." },
+  retired: { label: "Retire it", description: "There's no replacement. Say why, so teams know what to do." },
 };
 
 // ---------------------------------------------------------------------------
@@ -193,11 +198,12 @@ interface GovernanceManagerProps {
 }
 
 export function GovernanceManager({ canEdit, records, sources, stats, repoCount, summary, authors, notice, sourcesUnavailable }: GovernanceManagerProps) {
-  // With no records, the form opens straight away.
-  const [formOpen, setFormOpen] = useState(canEdit && records.length === 0);
-  const [form, setForm] = useState<FormState>(emptyForm());
-  // Only a form the user opens takes focus, not the one that opens on its own.
-  const [focusForm, setFocusForm] = useState(false);
+  /** The record dialog: whether it's open, the record it edits (none for a new record), and a key that starts each opening afresh. */
+  const [dialog, setDialog] = useState<{ open: boolean; record: GovernanceRecord | undefined; key: number }>({
+    open: false,
+    record: undefined,
+    key: 0,
+  });
   const [query, setQuery] = useState("");
   /**
    * Packages the user opened (true) or folded (false). The rest start folded, or open under Show N complete.
@@ -210,15 +216,14 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
   const revealId = useRef<string | null>(null);
   const recordsRef = useRef(records);
   const addRecordRef = useRef<HTMLButtonElement>(null);
-  /** Set when Cancel or Delete closes the form: the record whose Edit button takes focus, or undefined for Add record. */
-  const [focusAfterClose, setFocusAfterClose] = useState<{ recordId: string | undefined } | null>(null);
+  /** Where focus goes once the dialog closes: the button that opened it, Add record, or nowhere when a revealed record takes it. */
+  const focusOnClose = useRef<"opener" | "add" | null>("opener");
+  /** The record to reveal once the dialog has closed. */
+  const revealOnClose = useRef<string | null>(null);
 
-  const editingId = formOpen ? form.id : undefined;
-  const editing = editingId ? records.find((r) => r.id === editingId) : undefined;
   const searching = query.trim() !== "";
   const matches = records.filter((r) => matchesRecordQuery(r, query));
-  const visible = records.filter((r) => r.id === editingId || matchesRecordQuery(r, query));
-  const map = groupRecords({ visible, all: records, stats, sources });
+  const map = groupRecords({ visible: matches, all: records, stats, sources });
 
   // Opens what hides the highlighted or revealed record, its package or the complete section, once it's in the list.
   useEffect(() => {
@@ -261,13 +266,6 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
   }, []);
 
   useEffect(() => {
-    if (!focusAfterClose) return;
-    setFocusAfterClose(null);
-    const edit = focusAfterClose.recordId ? document.getElementById(editButtonId(focusAfterClose.recordId)) : null;
-    (edit ?? addRecordRef.current)?.focus();
-  }, [focusAfterClose]);
-
-  useEffect(() => {
     if (!highlightId) return;
     const clear = () => setHighlightId(null);
     document.addEventListener("pointerdown", clear);
@@ -278,35 +276,31 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
     };
   }, [highlightId]);
 
-  function openNew() {
-    setForm(emptyForm());
-    setFormOpen(true);
-    setFocusForm(true);
+  function openDialog(record?: GovernanceRecord) {
+    setDialog((d) => ({ open: true, record, key: d.key + 1 }));
   }
 
-  function openEdit(r: GovernanceRecord) {
-    setForm(recordToForm(r));
-    setFormOpen(true);
-    setFocusForm(true);
+  function closeDialog(focus: "opener" | "add" | null, reveal: string | null = null) {
+    focusOnClose.current = focus;
+    revealOnClose.current = reveal;
+    setDialog((d) => ({ ...d, open: false }));
   }
 
-  function closeForm() {
-    setFormOpen(false);
+  /** Reveals the saved or conflicting record once the dialog has gone, so its scroll lock can't undo the scroll. */
+  function dialogClosed() {
+    const id = revealOnClose.current;
+    revealOnClose.current = null;
+    if (id) showRecord(id);
   }
 
-  function cancelForm() {
-    setFocusAfterClose({ recordId: form.id });
-    closeForm();
-  }
-
-  function onDeleted() {
-    setFocusAfterClose({ recordId: undefined });
-    closeForm();
+  function focusAfterDialog() {
+    if (focusOnClose.current === null) return false;
+    const edit = focusOnClose.current === "opener" && dialog.record ? document.getElementById(editButtonId(dialog.record.id)) : null;
+    return edit ?? addRecordRef.current ?? true;
   }
 
   function showRecord(id: string) {
     setQuery("");
-    closeForm();
     revealId.current = id;
     setHighlightId(id);
   }
@@ -321,24 +315,6 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
     setOpened((prev) => new Map(prev).set(packageName, open));
   }
 
-  const recordForm = formOpen ? (
-    <RecordForm
-      key={form.id ?? "new"}
-      form={form}
-      setForm={setForm}
-      sources={sources}
-      emptyText={sourcesUnavailable ? readModelTitle(sourcesUnavailable) : "Nothing scanned yet"}
-      records={records}
-      byline={editing ? authorLine(editing, authors[editing.id]) : null}
-      takeFocus={focusForm}
-      onCancel={cancelForm}
-      onDeleted={onDeleted}
-      onSaved={showRecord}
-      onCreated={setHighlightId}
-      onJumpToRecord={showRecord}
-    />
-  ) : null;
-
   return (
     <div className="space-y-8">
       <header className="space-y-3">
@@ -346,7 +322,7 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-3xl font-semibold tracking-display">Governance</h1>
             {canEdit ? (
-              <Button ref={addRecordRef} size="sm" onClick={openNew} disabled={formOpen && !form.id}>
+              <Button ref={addRecordRef} size="sm" onClick={() => openDialog()}>
                 <Plus />
                 Add record
               </Button>
@@ -369,13 +345,11 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
         </p>
       </header>
 
-      {form.id ? null : recordForm}
-
       {records.length > 1 || query !== "" ? (
         <RecordSearch value={query} onChange={search} count={matches.length} />
       ) : null}
 
-      {records.length === 0 && !formOpen ? (
+      {records.length === 0 ? (
         <div className="space-y-1 py-4">
           <p className="text-sm text-muted-foreground">
             No records yet.
@@ -394,19 +368,35 @@ export function GovernanceManager({ canEdit, records, sources, stats, repoCount,
               map={map}
               recordCount={records.length}
               repoCount={repoCount}
-              editingId={editingId}
-              editForm={recordForm}
               highlightId={highlightId}
               searching={searching}
               opened={opened}
               completeOpen={completeOpen}
               onFold={setPackageOpen}
               onToggleComplete={() => setCompleteOpen((open) => !open)}
-              onEdit={canEdit ? openEdit : null}
+              onEdit={canEdit ? openDialog : null}
             />
           ) : null}
         </div>
       )}
+
+      {canEdit ? (
+        <RecordDialog
+          key={dialog.key}
+          open={dialog.open}
+          record={dialog.record}
+          byline={dialog.record ? authorLine(dialog.record, authors[dialog.record.id]) : null}
+          sources={sources}
+          emptyText={sourcesUnavailable ? readModelTitle(sourcesUnavailable) : "Nothing scanned yet"}
+          records={records}
+          finalFocus={focusAfterDialog}
+          onClose={() => closeDialog("opener")}
+          onDeleted={() => closeDialog("add")}
+          onSaved={(id) => closeDialog(null, id)}
+          onJumpToRecord={(id) => closeDialog(null, id)}
+          onClosed={dialogClosed}
+        />
+      ) : null}
     </div>
   );
 }
@@ -431,8 +421,6 @@ function RecordTable({
   map,
   recordCount,
   repoCount,
-  editingId,
-  editForm,
   highlightId,
   searching,
   opened,
@@ -444,9 +432,6 @@ function RecordTable({
   map: RecordMap;
   recordCount: number;
   repoCount: number;
-  editingId: string | undefined;
-  /** Shown in place of the row being edited. */
-  editForm: React.ReactNode;
   highlightId: string | null;
   /** While a search runs, every group shows open and nothing folds. */
   searching: boolean;
@@ -459,24 +444,19 @@ function RecordTable({
   const titleId = useId();
   const completeShown = searching || completeOpen;
 
-  const recordRow = (row: MapRow, standalone: boolean) =>
-    row.record.id === editingId ? (
-      <tr key={row.record.id} id={`record-${row.record.id}`} className={ROW}>
-        <td className="col-span-full bg-muted/40 p-4">{editForm}</td>
-      </tr>
-    ) : (
-      <RecordRow
-        key={row.record.id}
-        row={row}
-        standalone={standalone}
-        repoCount={repoCount}
-        highlighted={row.record.id === highlightId}
-        onEdit={onEdit ? () => onEdit(row.record) : null}
-      />
-    );
+  const recordRow = (row: MapRow, standalone: boolean) => (
+    <RecordRow
+      key={row.record.id}
+      row={row}
+      standalone={standalone}
+      repoCount={repoCount}
+      highlighted={row.record.id === highlightId}
+      onEdit={onEdit ? () => onEdit(row.record) : null}
+    />
+  );
 
-  /** With `shown` false, only the row being edited shows, in its usual place. A complete package starts open. */
-  const groupBody = (group: PackageGroup, shown = true, complete = false) => {
+  /** A complete package starts open. */
+  const groupBody = (group: PackageGroup, complete = false) => {
     if (group.kind === "whole") {
       return (
         <tbody key={group.packageName} className="block">
@@ -484,16 +464,16 @@ function RecordTable({
         </tbody>
       );
     }
-    const open = shown && (searching || (opened.get(group.packageName) ?? complete));
+    const open = searching || (opened.get(group.packageName) ?? complete);
     return (
       <tbody key={group.packageName} className="block pt-1 pb-1.5">
         <GroupHeader
           group={group}
           open={open}
           repoCount={repoCount}
-          onFold={searching || !shown ? null : () => onFold(group.packageName, !open)}
+          onFold={searching ? null : () => onFold(group.packageName, !open)}
         />
-        {group.rows.filter((row) => open || row.record.id === editingId).map((row) => recordRow(row, false))}
+        {open ? group.rows.map((row) => recordRow(row, false)) : null}
       </tbody>
     );
   };
@@ -562,9 +542,7 @@ function RecordTable({
             </tr>
           </tbody>
         ) : null}
-        {map.complete
-          .filter((group) => completeShown || rowsOf(group).some((row) => row.record.id === editingId))
-          .map((group) => groupBody(group, completeShown, true))}
+        {completeShown ? map.complete.map((group) => groupBody(group, true)) : null}
       </table>
     </section>
   );
@@ -842,47 +820,7 @@ function Occurrences({
 }
 
 // ---------------------------------------------------------------------------
-// Disposition radio group (arrow keys select)
-// ---------------------------------------------------------------------------
-
-function DispositionRadioGroup({
-  value,
-  onChange,
-  labelledBy,
-  describedBy,
-}: {
-  value: DispositionKind;
-  onChange: (kind: DispositionKind) => void;
-  labelledBy: string;
-  describedBy: string;
-}) {
-  return (
-    <RadioGroup
-      value={value}
-      onValueChange={(v) => onChange(v as DispositionKind)}
-      aria-labelledby={labelledBy}
-      aria-describedby={describedBy}
-      className="flex w-fit flex-row items-center"
-    >
-      {DISPOSITION_KINDS.map((k) => (
-        <Radio.Root
-          key={k}
-          value={k}
-          className={cn(
-            toggleVariants({ variant: "outline", size: "sm" }),
-            "h-8 rounded-none px-3 text-sm first-of-type:rounded-l-lg last-of-type:rounded-r-lg [&:not(:first-child)]:border-l-0",
-            "data-[checked]:selected",
-          )}
-        >
-          {KIND_LABEL[k]}
-        </Radio.Root>
-      ))}
-    </RadioGroup>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Add / Edit form
+// Add / Edit dialog
 // ---------------------------------------------------------------------------
 
 /** What the reach line under Source says for a whole-package record. */
@@ -892,67 +830,125 @@ function reachLine(packageName: string, components: number): string {
   return `Marks all ${components.toLocaleString()} components in ${packageName} as deprecated.`;
 }
 
-/** The record Create last added, and the number of Creates so far, which keys the success line. */
-type Created = { name: string; by: string | null; n: number };
+/** A record Create added. `n` counts from 1. */
+type Added = { n: number; name: string; packageName: string | null; by: { name: string; packageName: string | null } | null };
 
-function createdOf(f: FormState, n: number): Created {
+function addedOf(f: FormState, n: number): Added {
+  const component = f.grain === "component" && f.targetExport !== "";
   return {
     n,
-    name: (f.grain === "component" && f.targetExport) || f.targetPackage,
-    by: f.dispositionKind === "superseded" ? f.supersededByExport || f.supersededByPackage : null,
+    name: component ? f.targetExport : f.targetPackage,
+    packageName: component ? f.targetPackage : null,
+    by:
+      f.dispositionKind === "superseded"
+        ? successorLabel({ packageName: f.supersededByPackage, exportName: f.supersededByExport || undefined })
+        : null,
   };
 }
 
-function RecordForm({
-  form,
-  setForm,
+/** The picked package or component, with Change to search again. */
+function SourceCard({
+  pick,
+  components,
+  changeRef,
+  onChange,
+}: {
+  pick: IdentityPick;
+  /** For a whole package, how many of its components were scanned. */
+  components: number | null;
+  changeRef: React.Ref<HTMLButtonElement>;
+  onChange: () => void;
+}) {
+  const name = pick.exportName ?? pick.packageName;
+  const Icon = pick.exportName ? ComponentIcon : PackageIcon;
+  return (
+    <fieldset aria-labelledby="gov-source-label" className="flex min-w-0 items-center gap-3 rounded-lg border bg-muted py-2.5 pr-2.5 pl-3">
+      <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground">
+        <Icon strokeWidth={1.5} className="size-4" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span title={name} className="truncate font-mono text-sm">
+          {name}
+        </span>
+        {pick.exportName ? (
+          <span className="flex min-w-0 text-xs text-muted-foreground">
+            <span title={pick.packageName} className="truncate font-mono">
+              {pick.packageName}
+            </span>
+            <span className="shrink-0 whitespace-pre"> · Component</span>
+          </span>
+        ) : (
+          <span className="truncate text-xs text-muted-foreground">{wholePackageLabel(components)}</span>
+        )}
+      </span>
+      <Button ref={changeRef} variant="outline" size="sm" onClick={onChange}>
+        Change
+      </Button>
+    </fieldset>
+  );
+}
+
+function RecordDialog({
+  open,
+  record,
+  byline,
   sources,
   emptyText,
   records,
-  byline,
-  takeFocus,
-  onCancel,
+  finalFocus,
+  onClose,
   onDeleted,
   onSaved,
-  onCreated,
   onJumpToRecord,
+  onClosed,
 }: {
-  form: FormState;
-  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  open: boolean;
+  /** The record to edit, or none for a new record. */
+  record: GovernanceRecord | undefined;
+  /** Who added and last changed the record being edited. */
+  byline: string | null;
   sources: GovernanceTarget[];
   /** What the pickers say when `sources` is empty. */
   emptyText: string;
   records: GovernanceRecord[];
-  /** Who added and last changed the record being edited. */
-  byline: string | null;
-  /** Scroll the form into view and focus its first field when it opens. */
-  takeFocus: boolean;
-  onCancel: () => void;
+  /** Where focus goes once the dialog has closed. */
+  finalFocus: () => HTMLElement | boolean;
+  /** Closes without saving anything more. */
+  onClose: () => void;
   onDeleted: () => void;
-  /** An edit was saved; the form closes. */
+  /** An edit was saved; the dialog closes. */
   onSaved: (id: string) => void;
-  /** A new record was created; the form stays open for the next one. */
-  onCreated: (id: string) => void;
   onJumpToRecord: (id: string) => void;
+  /** The dialog has finished closing. */
+  onClosed: () => void;
 }) {
+  const isEdit = record !== undefined;
+  const [form, setForm] = useState<FormState>(() => (record ? recordToForm(record) : emptyForm()));
   const [error, setError] = useState<string | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [created, setCreated] = useState<Created | null>(null);
+  const [added, setAdded] = useState<Added[]>([]);
+  /** Change was pressed: the source shows its search box instead of the card. */
+  const [changingSource, setChangingSource] = useState(false);
   const [sourceScope, setSourceScope] = useState<string | null>(null);
   const [byScope, setByScope] = useState<string | null>(null);
+  /** The dialog's popup, where the pickers mount their lists so they stay inside the dialog. */
+  const [popup, setPopup] = useState<HTMLElement | null>(null);
   const [pending, startTransition] = useTransition();
-  const rootRef = useRef<HTMLDivElement>(null);
+  /** The element to focus once it's on the page. */
+  const focusNext = useRef<(() => HTMLElement | null) | null>(null);
+  const changeRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
-  const isEdit = Boolean(form.id);
-  const Heading = isEdit ? "h3" : "h2";
+  const counts = useMemo(() => componentCounts(sources), [sources]);
+  const last = added.at(-1);
 
   useEffect(() => {
-    if (!takeFocus) return;
-    rootRef.current?.scrollIntoView({ block: "nearest" });
-    document.getElementById("gov-source")?.focus({ preventScroll: true });
-  }, [takeFocus]);
+    const element = focusNext.current?.();
+    if (!element) return;
+    focusNext.current = null;
+    element.focus();
+  });
 
   function patch(update: Partial<FormState>) {
     setForm((prev) => ({ ...prev, ...update }));
@@ -967,9 +963,27 @@ function RecordForm({
       targetExport: pick.exportName ?? "",
     });
     setFieldErrors((e) => ({ ...e, source: undefined }));
+    setChangingSource(false);
+    focusNext.current = () => changeRef.current;
   }
 
-  function submit() {
+  function changeSource() {
+    setChangingSource(true);
+    focusNext.current = () => document.getElementById("gov-source");
+  }
+
+  /** Closes, unless a field used the Esc press or a save is under way. */
+  function requestClose(details?: DialogPrimitive.Root.ChangeEventDetails) {
+    if ((details?.reason === "escape-key" && details.event.defaultPrevented) || pending) {
+      details?.cancel();
+      return;
+    }
+    onClose();
+  }
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (pending) return;
     const errors = validateForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -982,12 +996,13 @@ function RecordForm({
           onSaved(res.id);
           return;
         }
-        setCreated((prev) => createdOf(form, (prev?.n ?? 0) + 1));
-        setForm({ ...emptyForm(), dispositionKind: form.dispositionKind });
+        const next = { ...emptyForm(), dispositionKind: form.dispositionKind };
+        setAdded((prev) => [...prev, addedOf(form, prev.length + 1)]);
+        setForm(next);
+        setChangingSource(false);
         setSourceScope(null);
         setByScope(null);
-        onCreated(res.id);
-        document.getElementById("gov-source")?.focus();
+        focusNext.current = () => document.getElementById("gov-source");
         return;
       }
       setError(actionErrorMessage(res.error, "save this record", "Couldn't save the record. Try again."));
@@ -1043,189 +1058,267 @@ function RecordForm({
     [sources, records, sourcePick, similarTo],
   );
 
-  return (
-    <div ref={rootRef} className={cn("scroll-mt-24 scroll-mb-4 max-w-3xl space-y-4", !isEdit && "panel p-4")}>
-      <div>
-        <Heading className="text-sm font-medium">{isEdit ? "Edit record" : "New record"}</Heading>
-        {byline ? <p className="mt-1 text-xs text-muted-foreground">{byline}</p> : null}
-        {isEdit ? null : (
-          <output className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground empty:mt-0">
-            {created ? (
-              <Fragment key={created.n}>
-                <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0 text-status-ok" />
-                <span className="min-w-0 truncate">
-                  <span className="font-mono text-foreground">{created.name}</span>
-                  {created.by === null ? (
-                    " retired"
-                  ) : (
-                    <>
-                      {" replaced by "}
-                      <span className="font-mono text-foreground">{created.by}</span>
-                    </>
-                  )}
-                </span>
-              </Fragment>
-            ) : null}
-          </output>
-        )}
-      </div>
+  // A new record starts at its source; an edit at the field of what teams do instead.
+  const firstField = !isEdit ? "gov-source" : form.dispositionKind === "superseded" ? "gov-by" : "gov-reason";
 
-      {/* Source picker: the pick decides the grain */}
-      <div className="flex flex-col gap-1.5">
-        <label id="gov-source-label" htmlFor="gov-source" className="text-label text-muted-foreground">
-          Package or component
-        </label>
-        <GroupedIdentityPicker
-          id="gov-source"
-          labelId="gov-source-label"
-          search={searchSources}
-          value={sourcePick}
-          onSelect={handleSourcePick}
-          scope={sourceScope}
-          onScopeChange={setSourceScope}
-          placeholder="Search packages and components"
-          emptyText={emptyText}
-          ariaDescribedBy={fieldErrors.source ? "gov-source-error" : undefined}
-          invalid={Boolean(fieldErrors.source)}
-        />
-        <FieldError id="gov-source-error" message={fieldErrors.source} />
-        {form.grain === "package" && form.targetPackage ? (
-          <p className="text-xs text-muted-foreground">
-            {reachLine(form.targetPackage, componentCounts(sources).get(form.targetPackage) ?? 0)}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="space-y-4 sm:grid sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-6 sm:space-y-0">
-        <div className="space-y-1.5 sm:w-min">
-          <span id="gov-type-label" className="block text-label text-muted-foreground">
-            Type
-          </span>
-          <DispositionRadioGroup
-            value={form.dispositionKind}
-            onChange={(k) => patch({ dispositionKind: k })}
-            labelledBy="gov-type-label"
-            describedBy="gov-type-hint"
-          />
-          <p id="gov-type-hint" className="text-xs text-muted-foreground">
-            {KIND_HINT[form.dispositionKind]}
-          </p>
-        </div>
-
-        {form.dispositionKind === "superseded" ? (
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <label id="gov-by-label" htmlFor="gov-by" className="text-label text-muted-foreground">
-              Replaced by
-            </label>
-            <GroupedIdentityPicker
-              id="gov-by"
-              labelId="gov-by-label"
-              search={searchReplacements}
-              value={supersededByPick}
-              onSelect={(pick) => {
-                patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
-                setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
-              }}
-              scope={byScope}
-              onScopeChange={setByScope}
-              placeholder="Search for a replacement"
-              emptyText={emptyText}
-              ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
-              invalid={Boolean(fieldErrors.supersededBy)}
-            />
-            <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
-            {form.supersededByPackage && !form.supersededByExport ? (
-              <p className="text-xs text-muted-foreground">
-                The whole package is the replacement.
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <label htmlFor="gov-reason" className="text-label text-muted-foreground">
-              Reason
-            </label>
-            <Input
-              id="gov-reason"
-              value={form.retiredReason}
-              onChange={(e) => {
-                patch({ retiredReason: e.target.value });
-                setFieldErrors((err) => ({ ...err, reason: undefined }));
-              }}
-              aria-describedby={fieldErrors.reason ? "gov-reason-error gov-reason-hint" : "gov-reason-hint"}
-              aria-invalid={fieldErrors.reason ? true : undefined}
-            />
-            <FieldError id="gov-reason-error" message={fieldErrors.reason} />
-            <p id="gov-reason-hint" className="text-xs text-muted-foreground">
-              Shown on the record, for example why there's no replacement.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Server errors only; field errors render next to their fields. */}
-      {error && (
-        <div role="alert" className="space-y-1 text-xs text-destructive">
-          <p>{error}</p>
-          {conflictId ? (
-            <a
-              href={`#record-${conflictId}`}
-              onClick={(e) => {
-                e.preventDefault();
-                onJumpToRecord(conflictId);
-              }}
-              className="inline-block rounded-sm underline underline-offset-4"
-            >
-              Go to the existing record
-            </a>
-          ) : null}
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {isEdit ? (
-          <div className="flex items-center gap-2">
-            {confirmingDelete ? (
-              <span id="gov-delete-prompt" className="text-xs">
-                Delete this record?
-              </span>
-            ) : null}
-            <Button
-              ref={deleteRef}
-              variant={confirmingDelete ? "destructive" : "ghost"}
-              size="sm"
-              onClick={confirmingDelete ? remove : () => setConfirmingDelete(true)}
-              disabled={pending}
-              aria-describedby={confirmingDelete ? "gov-delete-prompt" : undefined}
-              className={confirmingDelete ? undefined : "text-muted-foreground hover:text-destructive"}
-            >
-              {confirmingDelete ? null : <Trash2 />}
-              Delete
-            </Button>
-            {confirmingDelete ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setConfirmingDelete(false);
-                  deleteRef.current?.focus();
-                }}
-                disabled={pending}
-              >
-                Cancel
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={pending}>
-            {created ? "Close" : "Cancel"}
-          </Button>
-          <Button size="sm" onClick={submit} disabled={pending}>
-            {isEdit ? "Save" : "Create"}
-          </Button>
-        </div>
-      </div>
+  const replacementField = (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label id="gov-by-label" htmlFor="gov-by" className="text-xs text-muted-foreground">
+        Replacement
+      </label>
+      <GroupedIdentityPicker
+        id="gov-by"
+        labelId="gov-by-label"
+        search={searchReplacements}
+        value={supersededByPick}
+        onSelect={(pick) => {
+          patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
+          setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
+        }}
+        scope={byScope}
+        onScopeChange={setByScope}
+        placeholder="Search for a replacement"
+        emptyText={emptyText}
+        ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
+        invalid={Boolean(fieldErrors.supersededBy)}
+        container={popup}
+      />
+      <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
+      {form.supersededByPackage && !form.supersededByExport ? (
+        <p className="text-xs text-muted-foreground">
+          The whole package is the replacement.
+        </p>
+      ) : null}
     </div>
+  );
+
+  const reasonField = (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label htmlFor="gov-reason" className="text-xs text-muted-foreground">
+        Reason
+      </label>
+      <Input
+        id="gov-reason"
+        value={form.retiredReason}
+        onChange={(e) => {
+          patch({ retiredReason: e.target.value });
+          setFieldErrors((err) => ({ ...err, reason: undefined }));
+        }}
+        aria-describedby={fieldErrors.reason ? "gov-reason-error gov-reason-hint" : "gov-reason-hint"}
+        aria-invalid={fieldErrors.reason ? true : undefined}
+      />
+      <FieldError id="gov-reason-error" message={fieldErrors.reason} />
+      <p id="gov-reason-hint" className="text-xs text-muted-foreground">
+        Shown on the record.
+      </p>
+    </div>
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next, details) => {
+        if (!next) requestClose(details);
+      }}
+      onOpenChangeComplete={(next) => {
+        if (!next) onClosed();
+      }}
+      disablePointerDismissal
+    >
+      <DialogContent
+        ref={setPopup}
+        initialFocus={() => document.getElementById(firstField)}
+        finalFocus={finalFocus}
+        className="top-(--dialog-top) flex max-h-[calc(100dvh-2*var(--dialog-top))] max-w-160 translate-y-0 flex-col p-0 [--dialog-top:clamp(1rem,8dvh,4.5rem)]"
+      >
+        <div className="flex items-start justify-between gap-4 px-6 pt-6">
+          <div className="min-w-0 space-y-1.5">
+            <DialogTitle>{isEdit ? "Edit record" : "New record"}</DialogTitle>
+            <DialogDescription>{isEdit ? byline : "Its uses show as deprecated in every repo."}</DialogDescription>
+          </div>
+          <DialogClose
+            render={
+              <Button variant="ghost" size="icon-sm" aria-label="Close" className="-mt-1 -mr-2 text-muted-foreground hover:text-foreground" />
+            }
+          >
+            <X strokeWidth={1.5} />
+          </DialogClose>
+        </div>
+
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-5 pb-6">
+            {/* Source: the pick decides the grain */}
+            <div className="flex flex-col gap-2">
+              {sourcePick && !changingSource ? (
+                <>
+                  <span id="gov-source-label" className="text-label text-muted-foreground">
+                    Package or component
+                  </span>
+                  <SourceCard
+                    pick={sourcePick}
+                    components={counts.get(sourcePick.packageName) ?? null}
+                    changeRef={changeRef}
+                    onChange={changeSource}
+                  />
+                </>
+              ) : (
+                <>
+                  <label id="gov-source-label" htmlFor="gov-source" className="text-label text-muted-foreground">
+                    Package or component
+                  </label>
+                  <GroupedIdentityPicker
+                    id="gov-source"
+                    labelId="gov-source-label"
+                    search={searchSources}
+                    value={sourcePick}
+                    onSelect={handleSourcePick}
+                    scope={sourceScope}
+                    onScopeChange={setSourceScope}
+                    placeholder="Search packages and components"
+                    emptyText={emptyText}
+                    ariaDescribedBy={fieldErrors.source ? "gov-source-error" : undefined}
+                    invalid={Boolean(fieldErrors.source)}
+                    container={popup}
+                  />
+                </>
+              )}
+              <FieldError id="gov-source-error" message={fieldErrors.source} />
+              {form.grain === "package" && form.targetPackage ? (
+                <p className="text-xs text-muted-foreground">
+                  {reachLine(form.targetPackage, counts.get(form.targetPackage) ?? 0)}
+                </p>
+              ) : null}
+            </div>
+
+            <fieldset className="min-w-0">
+              <legend className="mb-2 text-label text-muted-foreground">What should teams do instead?</legend>
+              <div className="divide-y overflow-hidden rounded-lg border">
+                {DISPOSITION_KINDS.map((kind) => {
+                  const checked = form.dispositionKind === kind;
+                  return (
+                    <div key={kind} className={cn(checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
+                      <label className="relative flex cursor-pointer items-start gap-3 p-3.5">
+                        <input
+                          type="radio"
+                          name="gov-disposition"
+                          value={kind}
+                          checked={checked}
+                          onChange={() => patch({ dispositionKind: kind })}
+                          aria-labelledby={`gov-kind-${kind}`}
+                          aria-describedby={`gov-kind-${kind}-hint`}
+                          className="peer sr-only"
+                        />
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-[1.5px] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring",
+                            checked ? "border-foreground" : "border-control",
+                          )}
+                        >
+                          {checked ? <span className="size-2 rounded-full bg-foreground" /> : null}
+                        </span>
+                        <span className="flex min-w-0 flex-col gap-0.5">
+                          <span id={`gov-kind-${kind}`} className="text-sm font-medium">
+                            {KIND_CHOICE[kind].label}
+                          </span>
+                          <span id={`gov-kind-${kind}-hint`} className="text-xs text-muted-foreground">
+                            {KIND_CHOICE[kind].description}
+                          </span>
+                        </span>
+                      </label>
+                      {checked ? (
+                        <div className="pr-3.5 pb-4 pl-10.5">{kind === "superseded" ? replacementField : reasonField}</div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {/* Server errors only; field errors render next to their fields. */}
+            {error && (
+              <div role="alert" className="space-y-1 text-xs text-destructive">
+                <p>{error}</p>
+                {conflictId ? (
+                  <a
+                    href={`#record-${conflictId}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onJumpToRecord(conflictId);
+                    }}
+                    className="inline-block rounded-sm underline underline-offset-4"
+                  >
+                    Go to the existing record
+                  </a>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 border-t px-6 py-3">
+            <div className="flex min-h-7 min-w-0 flex-1 items-center gap-2">
+              {isEdit ? (
+                <>
+                  {confirmingDelete ? (
+                    <span id="gov-delete-prompt" className="text-xs">
+                      Delete this record?
+                    </span>
+                  ) : null}
+                  <Button
+                    ref={deleteRef}
+                    variant={confirmingDelete ? "destructive" : "ghost"}
+                    size="sm"
+                    onClick={confirmingDelete ? remove : () => setConfirmingDelete(true)}
+                    disabled={pending}
+                    aria-describedby={confirmingDelete ? "gov-delete-prompt" : undefined}
+                    className={confirmingDelete ? undefined : "-ml-2.5 text-muted-foreground hover:text-destructive"}
+                  >
+                    {confirmingDelete ? null : <Trash2 />}
+                    Delete
+                  </Button>
+                  {confirmingDelete ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setConfirmingDelete(false);
+                        deleteRef.current?.focus();
+                      }}
+                      disabled={pending}
+                    >
+                      Cancel
+                    </Button>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <output className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                    {last ? (
+                      <>
+                        <CircleCheck aria-hidden strokeWidth={1.5} className="size-3.5 shrink-0 text-status-ok" />
+                        <span className="min-w-0 truncate">
+                          <span className="text-foreground">{`${added.length} added`}</span>
+                          {" · last "}
+                          <span className="font-mono text-foreground">{last.name}</span>
+                        </span>
+                      </>
+                    ) : null}
+                  </output>
+                </>
+              )}
+            </div>
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => requestClose()} disabled={pending}>
+                {added.length > 0 ? "Done" : "Cancel"}
+              </Button>
+              <Button type="submit" size="sm" disabled={pending}>
+                {isEdit ? "Save" : "Create record"}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
