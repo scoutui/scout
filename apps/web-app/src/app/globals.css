@@ -160,10 +160,20 @@
   scroll-margin-block-start: calc(var(--top-bar-height) + var(--pin-below, 0px));
 }
 
-/* Keyboard focus inside a container that clips: list rows and menu items. */
+/* Keyboard focus inside a container that clips, on an element with its own
+   rounded corners, such as a menu item. */
 @utility focus-inset {
   &:focus-visible {
     outline-offset: -2px;
+  }
+}
+
+/* Keyboard focus for a full-width row in a rounded panel or list: the ring sits
+   inside the row, with corners that follow the panel's inner corners. */
+@utility focus-panel-row {
+  &:focus-visible {
+    outline-offset: -2px;
+    border-radius: calc(var(--radius) - 1px);
   }
 }
 
@@ -172,6 +182,7 @@
 @utility focus-current {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
+  border-radius: calc(var(--radius) - 1px);
 }
 
 /* Keyboard focus for a link or button stretched over its table row with ::after. */
@@ -182,6 +193,7 @@
   &:focus-visible::after {
     outline: 2px solid var(--ring);
     outline-offset: -2px;
+    border-radius: calc(var(--radius) - 1px);
   }
 }
 
