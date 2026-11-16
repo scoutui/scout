@@ -258,6 +258,7 @@ export function GroupedIdentityPicker<T>({
       setHighlight((from + step + rows.length) % rows.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
       if (active) choose(active);
     } else if (e.key === "Escape") {
       e.preventDefault();

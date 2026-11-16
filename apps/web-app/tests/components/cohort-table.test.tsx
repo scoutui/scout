@@ -22,6 +22,13 @@ describe("CohortTable share change", () => {
   });
 });
 
+describe("CohortTable sort", () => {
+  it("marks the column it sorts by, the value by default", () => {
+    shareTable(0.142);
+    expect(screen.getByRole("columnheader", { name: "% of uses" })).toHaveAttribute("aria-sort", "descending");
+  });
+});
+
 describe("CohortTable change title", () => {
   it("names the 30 days the change covers", () => {
     shareTable(0.142);

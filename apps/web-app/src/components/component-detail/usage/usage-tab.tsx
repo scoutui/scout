@@ -32,7 +32,7 @@ const WIDE = "(min-width: 64rem)";
 const TAKEN_PX = 40 + 80 + 256;
 /** The Copy button that last copied, `folder` null for the toolbar's, and how many files it copied. */
 type Copied = { folder: string | null; files: number };
-/** How long a Copy button reads "Copied". */
+/** How long a Copy button reads "Copied", or a failed copy's message stays. */
 const COPIED_MS = 1800;
 
 /** The column row in `root` whose `data-filter` is `key`. */
@@ -179,6 +179,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
   };
 
   const [copied, setCopied] = useState<Copied | null>(null);
+  const [copyFailed, setCopyFailed] = useState(false);
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
   /** Copies `sections`: every section in view from the toolbar, or one folder's or package's from its heading. */
@@ -196,11 +197,20 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
       urlFor: (path, line) => (source ? sourceFileUrl(source.remote, source.commit, path, line) : null),
     });
     const files = sections.reduce((n, section) => n + section.files.length, 0);
-    void navigator.clipboard.writeText(text).then(() => {
-      clearTimeout(copiedTimer.current);
-      setCopied({ folder, files });
-      copiedTimer.current = setTimeout(() => setCopied(null), COPIED_MS);
-    });
+    void navigator.clipboard.writeText(text).then(
+      () => {
+        clearTimeout(copiedTimer.current);
+        setCopyFailed(false);
+        setCopied({ folder, files });
+        copiedTimer.current = setTimeout(() => setCopied(null), COPIED_MS);
+      },
+      () => {
+        clearTimeout(copiedTimer.current);
+        setCopied(null);
+        setCopyFailed(true);
+        copiedTimer.current = setTimeout(() => setCopyFailed(false), COPIED_MS);
+      },
+    );
   };
   const empty = emptyText(view);
 
@@ -290,7 +300,7 @@ function Usage({ detail, source }: { detail: ComponentDetail; source: SourceRef 
         </div>
       </div>
       <span aria-live="polite" className="sr-only">
-        {copied !== null ? `Copied the list of ${plural(copied.files, "file")}` : ""}
+        {copied !== null ? `Copied the list of ${plural(copied.files, "file")}` : copyFailed ? "Couldn't copy the list. Try again." : ""}
       </span>
     </div>
   );

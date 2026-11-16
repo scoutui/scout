@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { CellLink } from "@/components/ui/cell-link";
 import { SlashBreaks } from "@/components/dashboards/cohort-label";
-import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
+import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { sortByVersion } from "@/lib/version-order";
 import { packageFilterHref } from "@/lib/component-facets";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
@@ -44,16 +44,16 @@ export function PackageConsumersTable({
       <Table containerClassName="max-h-[70vh] overflow-y-auto">
         <TableHeader className="sticky top-0 z-10 hidden sm:table-header-group">
           <TableRow>
-            <TableHead className="w-full">
+            <TableHead className="w-full" aria-sort={ariaSort("repoId", sortKey, sortDir)}>
               <SortButton label="Repo" sortKey="repoId" current={sortKey} dir={sortDir} onClick={toggleSort} />
             </TableHead>
-            <TableHead className="whitespace-nowrap">
+            <TableHead className="whitespace-nowrap" aria-sort={ariaSort("version", sortKey, sortDir)}>
               <SortButton label="Version" sortKey="version" current={sortKey} dir={sortDir} onClick={toggleSort} />
             </TableHead>
-            <TableHead className="whitespace-nowrap text-right">
+            <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("occurrenceCount", sortKey, sortDir)}>
               <SortButton label="Uses" sortKey="occurrenceCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
             </TableHead>
-            <TableHead className="whitespace-nowrap text-right pr-3">
+            <TableHead className="whitespace-nowrap text-right pr-3" aria-sort={ariaSort("committedAt", sortKey, sortDir)}>
               <SortButton label="Committed" sortKey="committedAt" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
             </TableHead>
           </TableRow>

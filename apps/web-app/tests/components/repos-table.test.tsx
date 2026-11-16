@@ -96,7 +96,7 @@ describe("ReposTable", () => {
     render(<ReposTable rows={rows} />);
     const lastScan = screen.getByRole("columnheader", { name: /last scan/i });
     expect(lastScan).toHaveAttribute("aria-sort", "descending");
-    expect(screen.getByRole("columnheader", { name: /committed/i })).toHaveAttribute("aria-sort", "none");
+    expect(screen.getByRole("columnheader", { name: /committed/i })).not.toHaveAttribute("aria-sort");
     expect(screen.getByRole("button", { name: /last scan/i })).not.toHaveAttribute("aria-sort");
   });
 

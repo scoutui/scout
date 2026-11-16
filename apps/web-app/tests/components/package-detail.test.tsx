@@ -145,6 +145,7 @@ describe("PackageConsumersTable", () => {
     ];
     render(<PackageConsumersTable packageName="@x/lib" cells={cells} />);
     fireEvent.click(screen.getByRole("button", { name: /^version/i }));
+    expect(screen.getByRole("columnheader", { name: /^version/i })).toHaveAttribute("aria-sort", "ascending");
     expect(screen.getAllByRole("row").slice(1).map(r => r.querySelector("a")?.title)).toEqual(["b", "a", "n"]);
   });
 
@@ -175,6 +176,11 @@ describe("PackageComponentsTable", () => {
     expect(screen.getByText("Button")).toBeInTheDocument();
     expect(screen.getByText("8")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
+  });
+
+  it("marks the column it sorts by, Uses by default", () => {
+    render(<PackageComponentsTable components={baseDetail.components} />);
+    expect(screen.getByRole("columnheader", { name: /^uses/i })).toHaveAttribute("aria-sort", "descending");
   });
 
   it("shows the entry point under components that share a name", () => {

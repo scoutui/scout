@@ -1,7 +1,7 @@
 "use client";
 import type { CohortPoint } from "@scoutui/web-shared";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
+import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { formatDelta, formatMetric } from "@/lib/dashboard-format";
 import { NO_KEYS } from "@/lib/dashboard-chart-data";
 import { CohortLabelText } from "@/components/dashboards/cohort-label";
@@ -40,11 +40,11 @@ export function CohortTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>
+          <TableHead aria-sort={ariaSort("label", sortKey, sortDir)}>
             <SortButton label="Name" sortKey="label" current={sortKey} dir={sortDir} onClick={toggleSort} />
           </TableHead>
           <TableHead aria-hidden className="w-[22%]" />
-          <TableHead className="text-right">
+          <TableHead className="text-right" aria-sort={ariaSort("value", sortKey, sortDir)}>
             <SortButton
               label={metric === "share" ? "% of uses" : "Uses"}
               sortKey="value"
@@ -55,7 +55,7 @@ export function CohortTable({
             />
           </TableHead>
           {hasDelta ? (
-            <TableHead className="text-right">
+            <TableHead className="text-right" aria-sort={ariaSort("delta", sortKey, sortDir)}>
               <SortButton
                 label="Change"
                 title="Change over the last 30 days"
@@ -67,7 +67,7 @@ export function CohortTable({
               />
             </TableHead>
           ) : null}
-          <TableHead className="text-right">
+          <TableHead className="text-right" aria-sort={ariaSort("componentCount", sortKey, sortDir)}>
             <SortButton
               label="Components"
               sortKey="componentCount"
