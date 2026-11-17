@@ -113,6 +113,7 @@ export function SeriesPicker({
   }, [search, browsing, toggled, all]);
   const packageId = `${useId()}-package-`;
   const colors = useMemo(() => new Map(series.map((s) => [cohortKey(s.selector), s.color])), [series]);
+  const roles = useMemo(() => new Map(series.map((s) => [cohortKey(s.selector), s.role])), [series]);
   const byId = useMemo(() => new Map(components.map((c) => [c.componentId, c])), [components]);
   const tagColors = useMemo(() => new Map(libraryTags.map((t) => [t.id, paletteToken(t.color) ?? ""])), [libraryTags]);
   const isAdded = (sel: CohortSelector) => colors.has(cohortKey(sel));
@@ -240,7 +241,7 @@ export function SeriesPicker({
         <CheckRow
           checked={added}
           onToggle={(input) => toggle(input, row.pick)}
-          icon={added ? <CohortSwatch cohortKey={cohortKey(row.pick)} color={colors.get(cohortKey(row.pick)) ?? ""} /> : null}
+          icon={added ? <CohortSwatch cohortKey={cohortKey(row.pick)} color={colors.get(cohortKey(row.pick)) ?? ""} role={roles.get(cohortKey(row.pick))} /> : null}
           className={cn("font-mono", underPackage && UNDER_PACKAGE)}
         >
           {picked?.local && !underPackage ? (
@@ -318,7 +319,7 @@ export function SeriesPicker({
                     <CheckRow
                       checked={isAdded(row.pick)}
                       onToggle={(input) => toggle(input, row.pick)}
-                      icon={<CohortSwatch cohortKey={cohortKey(row.pick)} color={colors.get(cohortKey(row.pick)) ?? tagColors.get(row.tagId) ?? ""} />}
+                      icon={<CohortSwatch cohortKey={cohortKey(row.pick)} color={colors.get(cohortKey(row.pick)) ?? tagColors.get(row.tagId) ?? ""} role={roles.get(cohortKey(row.pick))} />}
                     >
                       <span className="min-w-0 flex-1 truncate font-medium">{marked(row.label, row.matched)}</span>
                       <span className="shrink-0 text-muted-foreground">{count(row.packages, "package")}</span>

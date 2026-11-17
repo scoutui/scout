@@ -549,6 +549,11 @@ describe("series options", () => {
     })));
   });
 
+  it("marks a deprecated series in the checklist as it does in the table", () => {
+    render(<DashboardBuilder deprecatedPackages={[]} libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    expect(screen.getByRole("checkbox", { name: /react-ui-kits/ }).closest("label")?.querySelector("svg")?.getAttribute("style")).toContain("var(--viz-deprecated)");
+  });
+
   it("offers no menu for a library with nothing deprecated", () => {
     render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null }]} packages={[]} deprecatedPackages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
     expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
