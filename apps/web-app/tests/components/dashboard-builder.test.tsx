@@ -370,7 +370,7 @@ describe("series search", () => {
     expect(sections()).toEqual(["Tags", "Packages"]);
     fireEvent.change(seriesBox(), { target: { value: "button" } });
     expect(sections()).toEqual(["Packages"]);
-    expect(screen.getByRole("checkbox", { name: /^Submit\s*Button/ })).toHaveAccessibleName(/^Submit\s*Button\s*Local · react-app$/);
+    expect(screen.getByRole("checkbox", { name: /^Submit\s*Button/ })).toHaveAccessibleName(/^Submit\s*Button\s*@example\/app\s*Local · react-app$/);
 
     const disclosure = () => screen.getByRole("button", { name: "Show 1 of 2 components in ant-design-vue" });
     expect(disclosure()).toHaveAttribute("aria-expanded", "true");

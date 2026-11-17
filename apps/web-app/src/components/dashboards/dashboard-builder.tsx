@@ -609,7 +609,6 @@ export function DashboardBuilder({
                   )
                 }
                 series={legend}
-                components={pickable}
                 libraryTags={libraryTags}
                 onToggle={toggleSeries}
               />

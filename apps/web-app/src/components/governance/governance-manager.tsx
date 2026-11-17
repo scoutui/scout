@@ -1,5 +1,6 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import {
   ChevronDown,
@@ -29,10 +30,10 @@ import { deleteGovernance, saveGovernance } from "@/app/governance/governance-ac
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { GroupedIdentityPicker, type IdentityPick, pickLabel } from "@/components/governance/grouped-identity-picker";
+import { GroupedSearch, type RowSlot } from "@/components/grouped-search";
 import { RecordSearch } from "@/components/governance/record-search";
 import { actionErrorMessage } from "@/lib/action-error";
-import { componentCounts, searchTargets } from "@/lib/identity-search";
+import { componentCounts, type GroupedResult, type IdentityPick, searchTargets } from "@/lib/identity-search";
 import { readModelTitle, type SkippedState } from "@/lib/read-model-state";
 import {
   authorLine,
@@ -56,6 +57,10 @@ import { cn } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function pickLabel(pick: { packageName: string; exportName?: string | undefined }): string {
+  return pick.exportName ? `${pick.exportName} · ${pick.packageName}` : pick.packageName;
+}
 
 /** Client-side record filter: identity, successor, and reason are the fields a user searches by. */
 export function matchesRecordQuery(record: GovernanceRecord, query: string): boolean {
@@ -875,23 +880,94 @@ function ButtonSlot({ labels, children }: { labels: string[]; children: React.Re
   );
 }
 
+/** A row in a search for a record's source or replacement: picks it, or with a refusal, shows why it can't and does nothing. */
+function PickRow({ refusal, onPick, slot }: { refusal: string | null; onPick: () => void; slot: RowSlot }) {
+  return (
+    <button
+      type="button"
+      aria-disabled={refusal !== null || undefined}
+      onClick={refusal === null ? onPick : undefined}
+      className={cn(
+        "focus-panel-row flex min-h-8 min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-start text-xs",
+        refusal === null ? "cursor-pointer" : "cursor-default text-muted-foreground",
+        slot.className,
+      )}
+    >
+      <span aria-hidden className="flex w-3.5 shrink-0 justify-center">
+        {slot.icon}
+      </span>
+      {refusal === null ? (
+        slot.children
+      ) : (
+        <span className="grid min-w-0 flex-1 gap-px">
+          {slot.children}
+          <span className="font-sans">{refusal}</span>
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** A search for a record's source or replacement, listed in the dialog under its field. */
+function TargetSearch({
+  id,
+  search,
+  placeholder,
+  emptyText,
+  listBeforeTyping,
+  pinnedClassName,
+  error,
+  onPick,
+}: {
+  id: string;
+  search: (query: string, packageName: string | null) => GroupedResult<IdentityPick>;
+  placeholder: string;
+  emptyText: string;
+  /** False hides the list until something is typed. */
+  listBeforeTyping?: boolean;
+  /** The background the search box keeps while it stays at the top of the dialog's scrolling body. */
+  pinnedClassName: string;
+  /** The id of the field's error, while it shows one. */
+  error: string | undefined;
+  onPick: (pick: IdentityPick) => void;
+}) {
+  return (
+    <GroupedSearch
+      inputId={id}
+      placeholder={placeholder}
+      describedBy={error}
+      invalid={error !== undefined}
+      search={search}
+      emptyText={emptyText}
+      listBeforeTyping={listBeforeTyping}
+      listClassName="overflow-y-visible"
+      searchClassName={cn("sticky -top-5 z-10 -mb-3 pb-3", pinnedClassName)}
+      renderPackage={(group, slot) => <PickRow refusal={group.refusal} onPick={() => onPick({ packageName: group.packageName })} slot={slot} />}
+      renderComponent={(row, slot) => <PickRow refusal={row.refusal} onPick={() => onPick(row.pick)} slot={slot} />}
+    />
+  );
+}
+
 /** The picked package or component, with Change to search again. */
-function SourceCard({
+function PickCard({
+  labelId,
+  changeId,
   pick,
   components,
-  changeRef,
   onChange,
 }: {
+  /** The id of the field's label, which names the card. */
+  labelId: string;
+  changeId?: string | undefined;
   pick: IdentityPick;
   /** For a whole package, how many of its components were scanned. */
   components: number | null;
-  changeRef: React.Ref<HTMLButtonElement>;
   onChange: () => void;
 }) {
   const name = pick.exportName ?? pick.packageName;
   const Icon = pick.exportName ? ComponentIcon : PackageIcon;
   return (
-    <fieldset aria-labelledby="gov-source-label" className="flex min-w-0 items-center gap-3 rounded-lg border bg-muted py-2.5 pr-2.5 pl-3">
+    <fieldset aria-labelledby={labelId} className="flex min-w-0 items-center gap-3 rounded-lg border bg-muted py-2.5 pr-2.5 pl-3">
       <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground">
         <Icon strokeWidth={1.5} className="size-4" />
       </span>
@@ -910,7 +986,7 @@ function SourceCard({
           <span className="truncate text-xs text-muted-foreground">{wholePackageLabel(components)}</span>
         )}
       </span>
-      <Button ref={changeRef} variant="outline" size="sm" onClick={onChange}>
+      <Button id={changeId} variant="outline" size="sm" onClick={onChange}>
         Change
       </Button>
     </fieldset>
@@ -962,12 +1038,6 @@ function RecordDialog({
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [added, setAdded] = useState<Added[]>([]);
   const [addedShown, setAddedShown] = useState(false);
-  /** Change was pressed: the source shows its search box instead of the card. */
-  const [changingSource, setChangingSource] = useState(false);
-  const [sourceScope, setSourceScope] = useState<string | null>(null);
-  const [byScope, setByScope] = useState<string | null>(null);
-  /** The dialog's popup, where the pickers mount their lists so they stay inside the dialog. */
-  const [popup, setPopup] = useState<HTMLElement | null>(null);
   const [pending, startTransition] = useTransition();
   /** The element to focus once it's on the page. */
   const focusNext = useRef<(() => HTMLElement | null) | null>(null);
@@ -975,7 +1045,6 @@ function RecordDialog({
   const focusBeforePrompt = useRef<HTMLElement | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const keepEditingRef = useRef<HTMLButtonElement>(null);
-  const changeRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
   const addedListRef = useRef<HTMLUListElement>(null);
   const addedId = useId();
@@ -1010,13 +1079,25 @@ function RecordDialog({
       targetExport: pick.exportName ?? "",
     });
     setFieldErrors((e) => ({ ...e, source: undefined }));
-    setChangingSource(false);
-    focusNext.current = () => changeRef.current;
+    focusNext.current = () => document.querySelector<HTMLInputElement>('input[name="gov-disposition"]:checked');
   }
 
+  /** Clears the source and goes back to its search, keeping the other answers. */
   function changeSource() {
-    setChangingSource(true);
+    patch({ targetPackage: "", targetExport: "" });
     focusNext.current = () => document.getElementById("gov-source");
+  }
+
+  function handleReplacementPick(pick: IdentityPick) {
+    patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
+    setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
+    focusNext.current = () => document.getElementById("gov-by-change");
+  }
+
+  /** Clears the replacement and goes back to its search, keeping the other answers. */
+  function changeReplacement() {
+    patch({ supersededByPackage: "", supersededByExport: "" });
+    focusNext.current = () => document.getElementById("gov-by");
   }
 
   function askToDiscard() {
@@ -1058,8 +1139,11 @@ function RecordDialog({
     e.preventDefault();
     if (pending || confirmingDiscard) return;
     const errors = validateForm(form);
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    flushSync(() => setFieldErrors(errors));
+    if (Object.keys(errors).length > 0) {
+      e.currentTarget.querySelector('[role="alert"]')?.scrollIntoView({ block: "nearest", behavior: "instant" });
+      return;
+    }
     setError(null);
     setConflictId(null);
     startTransition(async () => {
@@ -1073,9 +1157,6 @@ function RecordDialog({
         setAdded((prev) => [...prev, addedOf(form, prev.length + 1)]);
         setForm(next);
         setBaseline(next);
-        setChangingSource(false);
-        setSourceScope(null);
-        setByScope(null);
         focusNext.current = () => document.getElementById("gov-source");
         return;
       }
@@ -1121,11 +1202,11 @@ function RecordDialog({
     [form.supersededByPackage, form.supersededByExport],
   );
 
-  const similarTo = form.grain === "component" ? form.targetExport || null : null;
   const searchSources = useCallback(
     (query: string, scope: string | null) => searchTargets({ mode: "source", sources, query, scope, records, editingId: form.id }),
     [sources, records, form.id],
   );
+  const similarTo = form.grain === "component" ? form.targetExport || null : null;
   const searchReplacements = useCallback(
     (query: string, scope: string | null) =>
       searchTargets({ mode: "successor", sources, query, scope, records, exclude: sourcePick, similarTo }),
@@ -1133,36 +1214,47 @@ function RecordDialog({
   );
 
   // A new record starts at its source; an edit at the field of what teams do instead.
-  const firstField = !isEdit ? "gov-source" : form.dispositionKind === "superseded" ? "gov-by" : "gov-reason";
+  const firstField = !isEdit
+    ? "gov-source"
+    : form.dispositionKind === "retired"
+      ? "gov-reason"
+      : supersededByPick
+        ? "gov-by-change"
+        : "gov-by";
 
   const replacementField = (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label id="gov-by-label" htmlFor="gov-by" className="text-xs text-muted-foreground">
-        Replacement
-      </label>
-      <GroupedIdentityPicker
-        id="gov-by"
-        labelId="gov-by-label"
-        search={searchReplacements}
-        value={supersededByPick}
-        onSelect={(pick) => {
-          patch({ supersededByPackage: pick.packageName, supersededByExport: pick.exportName ?? "" });
-          setFieldErrors((e) => ({ ...e, supersededBy: undefined }));
-        }}
-        scope={byScope}
-        onScopeChange={setByScope}
-        placeholder="Search for a replacement"
-        emptyText={emptyText}
-        ariaDescribedBy={fieldErrors.supersededBy ? "gov-by-error" : undefined}
-        invalid={Boolean(fieldErrors.supersededBy)}
-        container={popup}
-      />
-      <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
-      {form.supersededByPackage && !form.supersededByExport ? (
-        <p className="text-xs text-muted-foreground">
-          The whole package is the replacement.
-        </p>
-      ) : null}
+      {supersededByPick ? (
+        <>
+          <span id="gov-by-label" className="text-xs text-muted-foreground">
+            Replacement
+          </span>
+          <PickCard
+            labelId="gov-by-label"
+            changeId="gov-by-change"
+            pick={supersededByPick}
+            components={counts.get(supersededByPick.packageName) ?? null}
+            onChange={changeReplacement}
+          />
+        </>
+      ) : (
+        <>
+          <label id="gov-by-label" htmlFor="gov-by" className="text-xs text-muted-foreground">
+            Replacement
+          </label>
+          <FieldError id="gov-by-error" message={fieldErrors.supersededBy} />
+          <TargetSearch
+            id="gov-by"
+            search={searchReplacements}
+            placeholder="Search for a replacement"
+            emptyText={emptyText}
+            listBeforeTyping={false}
+            pinnedClassName="bg-(--selected)"
+            error={fieldErrors.supersededBy ? "gov-by-error" : undefined}
+            onPick={handleReplacementPick}
+          />
+        </>
+      )}
     </div>
   );
 
@@ -1200,7 +1292,6 @@ function RecordDialog({
       disablePointerDismissal
     >
       <DialogContent
-        ref={setPopup}
         initialFocus={() => document.getElementById(firstField)}
         finalFocus={finalFocus}
         className="top-(--dialog-top) flex max-h-[calc(100dvh-2*var(--dialog-top))] max-w-160 translate-y-0 flex-col p-0 [--dialog-top:clamp(1rem,8dvh,4.5rem)]"
@@ -1220,18 +1311,18 @@ function RecordDialog({
         </div>
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-5 pb-6">
+          <div className="min-h-0 flex-1 scroll-pt-16 space-y-5 overflow-y-auto overscroll-contain px-6 pt-5 pb-6">
             {/* Source: the pick decides the grain */}
             <div className="flex flex-col gap-2">
-              {sourcePick && !changingSource ? (
+              {sourcePick ? (
                 <>
                   <span id="gov-source-label" className="text-label text-muted-foreground">
                     Package or component
                   </span>
-                  <SourceCard
+                  <PickCard
+                    labelId="gov-source-label"
                     pick={sourcePick}
                     components={counts.get(sourcePick.packageName) ?? null}
-                    changeRef={changeRef}
                     onChange={changeSource}
                   />
                 </>
@@ -1240,23 +1331,18 @@ function RecordDialog({
                   <label id="gov-source-label" htmlFor="gov-source" className="text-label text-muted-foreground">
                     Package or component
                   </label>
-                  <GroupedIdentityPicker
+                  <FieldError id="gov-source-error" message={fieldErrors.source} />
+                  <TargetSearch
                     id="gov-source"
-                    labelId="gov-source-label"
                     search={searchSources}
-                    value={sourcePick}
-                    onSelect={handleSourcePick}
-                    scope={sourceScope}
-                    onScopeChange={setSourceScope}
                     placeholder="Search packages and components"
                     emptyText={emptyText}
-                    ariaDescribedBy={fieldErrors.source ? "gov-source-error" : undefined}
-                    invalid={Boolean(fieldErrors.source)}
-                    container={popup}
+                    pinnedClassName="bg-popover"
+                    error={fieldErrors.source ? "gov-source-error" : undefined}
+                    onPick={handleSourcePick}
                   />
                 </>
               )}
-              <FieldError id="gov-source-error" message={fieldErrors.source} />
               {form.grain === "package" && form.targetPackage ? (
                 <p className="text-xs text-muted-foreground">
                   {reachLine(form.targetPackage, counts.get(form.targetPackage) ?? 0)}
@@ -1264,50 +1350,52 @@ function RecordDialog({
               ) : null}
             </div>
 
-            <fieldset className="min-w-0">
-              <legend className="mb-2 text-label text-muted-foreground">What should teams do instead?</legend>
-              <div className="divide-y overflow-hidden rounded-lg border">
-                {DISPOSITION_KINDS.map((kind) => {
-                  const checked = form.dispositionKind === kind;
-                  return (
-                    <div key={kind} className={cn("first:rounded-t-[calc(var(--radius)-1px)] last:rounded-b-[calc(var(--radius)-1px)]", checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
-                      <label className="relative flex cursor-pointer items-start gap-3 p-3.5">
-                        <input
-                          type="radio"
-                          name="gov-disposition"
-                          value={kind}
-                          checked={checked}
-                          onChange={() => patch({ dispositionKind: kind })}
-                          aria-labelledby={`gov-kind-${kind}`}
-                          aria-describedby={`gov-kind-${kind}-hint`}
-                          className="peer sr-only"
-                        />
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-[1.5px] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring",
-                            checked ? "border-foreground" : "border-control",
-                          )}
-                        >
-                          {checked ? <span className="size-2 rounded-full bg-foreground" /> : null}
-                        </span>
-                        <span className="flex min-w-0 flex-col gap-0.5">
-                          <span id={`gov-kind-${kind}`} className="text-sm font-medium">
-                            {KIND_CHOICE[kind].label}
+            {sourcePick ? (
+              <fieldset className="min-w-0">
+                <legend className="mb-2 text-label text-muted-foreground">What should teams do instead?</legend>
+                <div className="divide-y overflow-clip rounded-lg border">
+                  {DISPOSITION_KINDS.map((kind) => {
+                    const checked = form.dispositionKind === kind;
+                    return (
+                      <div key={kind} className={cn("first:rounded-t-[calc(var(--radius)-1px)] last:rounded-b-[calc(var(--radius)-1px)]", checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
+                        <label className="relative flex cursor-pointer items-start gap-3 p-3.5">
+                          <input
+                            type="radio"
+                            name="gov-disposition"
+                            value={kind}
+                            checked={checked}
+                            onChange={() => patch({ dispositionKind: kind })}
+                            aria-labelledby={`gov-kind-${kind}`}
+                            aria-describedby={`gov-kind-${kind}-hint`}
+                            className="peer sr-only"
+                          />
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-[1.5px] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring",
+                              checked ? "border-foreground" : "border-control",
+                            )}
+                          >
+                            {checked ? <span className="size-2 rounded-full bg-foreground" /> : null}
                           </span>
-                          <span id={`gov-kind-${kind}-hint`} className="text-xs text-muted-foreground">
-                            {KIND_CHOICE[kind].description}
+                          <span className="flex min-w-0 flex-col gap-0.5">
+                            <span id={`gov-kind-${kind}`} className="text-sm font-medium">
+                              {KIND_CHOICE[kind].label}
+                            </span>
+                            <span id={`gov-kind-${kind}-hint`} className="text-xs text-muted-foreground">
+                              {KIND_CHOICE[kind].description}
+                            </span>
                           </span>
-                        </span>
-                      </label>
-                      {checked ? (
-                        <div className="pr-3.5 pb-4 pl-10.5">{kind === "superseded" ? replacementField : reasonField}</div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </fieldset>
+                        </label>
+                        {checked ? (
+                          <div className="pr-3.5 pb-4 pl-10.5">{kind === "superseded" ? replacementField : reasonField}</div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ) : null}
 
             {/* Server errors only; field errors render next to their fields. */}
             {error && (

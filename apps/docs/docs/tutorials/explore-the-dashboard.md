@@ -130,9 +130,9 @@ We want everyone to move from `LegacyButton` to `Button`. A [lifecycle record](/
 
 We select **governance** again and press **Add record**. In the **New record** dialog:
 
-1. We click **Package or component**, type `legacy button`, and pick `LegacyButton` from `@acme/ui-legacy`. It now shows in a card, with `@acme/ui-legacy · Component` under its name.
+1. We type `legacy button` in **Package or component**. The list under it shows `LegacyButton` under `@acme/ui-legacy`, and we pick it. It now shows in a card, with `@acme/ui-legacy · Component` under its name.
 2. Under **What should teams do instead?**, we leave **Move to a replacement** chosen.
-3. We click **Replacement**, type `button`, and pick `Button` from `@acme/ui`.
+3. We type `button` in **Replacement** and pick `Button` under `@acme/ui`. It shows in a card too.
 4. We press **Create record**. The dialog stays open for another record, and its foot reads `1 added · last LegacyButton`, so we press **Done**.
 
 Under **Records**, `LegacyButton` now reads **Replaced by** `Button · @acme/ui`. Its count takes a moment, so we reload the page. The line under the **Governance** title now reads `1 in progress`. Records are listed by package, and each package starts folded to one line, so `LegacyButton` sits under `@acme/ui-legacy`. That line's **Uses left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
