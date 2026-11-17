@@ -63,7 +63,7 @@ function governance() {
 
 describe("forms after the session has ended", () => {
   it("tells the chart builder to sign in again to save", async () => {
-    render(<DashboardBuilder libraryTags={[]} repos={["repo-a"]} components={[]} packages={[]} />);
+    render(<DashboardBuilder libraryTags={[]} repos={["repo-a"]} components={[]} packages={[]} deprecatedPackages={[]} />);
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Adoption" } });
     fireEvent.click(screen.getByRole("combobox", { name: "Add a series" }));
     fireEvent.click(screen.getByRole("option", { name: /^Local components/ }));
