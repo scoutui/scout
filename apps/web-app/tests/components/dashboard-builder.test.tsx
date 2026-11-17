@@ -351,7 +351,7 @@ const firstCells = (table: HTMLElement) => within(table).getAllByRole("row").sli
 
 describe("series search", () => {
   it("shows the entry point beside components that share a name", () => {
-    render(<DashboardBuilder deprecatedPackages={[]} libraryTags={[]} repos={[]} components={[
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[
       { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false, occurrences: 2, local: false, lastSeenAt: null },
       { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false, occurrences: 1, local: false, lastSeenAt: null },
     ]} packages={[]} deprecatedPackages={[]} />);
