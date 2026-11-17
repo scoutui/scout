@@ -30,6 +30,7 @@ const storage = {
         versionRange: { oldest: "1.0.0", newest: "1.0.0" },
       }))
     : [],
+  listGovernance: async () => [],
 };
 
 describe("pickableForRepo", () => {
@@ -42,7 +43,7 @@ describe("pickableForRepo", () => {
   });
 
   it("returns no options when the repo has no scan", async () => {
-    expect(await pickableForRepo("missing")).toEqual({ state: "ready", value: { components: [], packages: [] }, fallbacks: [], gaps: [] });
+    expect(await pickableForRepo("missing")).toEqual({ state: "ready", value: { components: [], packages: [], deprecatedPackages: [] }, fallbacks: [], gaps: [] });
   });
 });
 

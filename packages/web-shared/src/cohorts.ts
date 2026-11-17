@@ -2,7 +2,7 @@ import type { CohortPoint, CohortRole, CohortSeries, CohortSelector, GovernanceR
 import type { ComponentDigest, DigestScan } from "./digest.js";
 import { displayNameOf } from "@scoutui/scan-format";
 import { resolveTags } from "./tags.js";
-import { componentDeprecated } from "./governance.js";
+import { componentDeprecated, deprecatedPackageNames } from "./governance.js";
 import { disambiguatorOf, presentIdentity } from "./present-identity.js";
 import { representativeUsage } from "./representative.js";
 import { latestScanPerRepo, newestScanFirst, scanOrderTime } from "./scan-order.js";
@@ -131,7 +131,7 @@ function cohortRole(selector: CohortSelector, artifacts: DigestScan[], governanc
       return selector.deprecatedOnly ? "deprecated" : undefined;
     case "package": {
       if (selector.deprecatedOnly) return "deprecated";
-      if (governance.some((r) => r.grain === "package" && r.targetPackage === selector.packageName)) return "deprecated";
+      if (deprecatedPackageNames(governance).includes(selector.packageName)) return "deprecated";
       return selector.role;
     }
     case "component": {

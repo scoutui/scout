@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CircleX } from "lucide-react";
-import type { ChartRange, ChartType, ChartVisibility, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
+import type { ChartRange, ChartType, ChartVisibility, CohortRole, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
 import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { type LibraryTag, type PickableComponent, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
@@ -98,8 +98,22 @@ function cohortLabel(
   }
 }
 
+/** A selector's role from the picker lists, mirroring the engine's cohortRole. */
+function predictedRole(sel: CohortSelector, components: PickableComponent[], deprecatedPackages: string[]): CohortRole | undefined {
+  switch (sel.kind) {
+    case "local":
+      return undefined;
+    case "tag":
+      return sel.deprecatedOnly ? "deprecated" : undefined;
+    case "package":
+      return sel.deprecatedOnly || deprecatedPackages.includes(sel.packageName) ? "deprecated" : sel.role;
+    case "component":
+      return components.some((c) => c.componentId === sel.componentId && c.deprecated) ? "deprecated" : sel.role;
+  }
+}
+
 /** The view's `nth` drawn cohort with a key: it carries the server-stamped label, role
- *  and colour the client can't derive (it has no governance). */
+ *  and colour, which win over what the client derives from the picker lists. */
 function previewCohort(view: DashboardView, key: string, nth: number): (ChartCohort & { label: string }) | undefined {
   let seen = 0;
   for (const cohort of drawnChartCohorts(view)) {
@@ -120,6 +134,7 @@ export function DashboardBuilder({
   repos,
   components,
   packages,
+  deprecatedPackages,
   saved,
   duplicate = false,
 }: {
@@ -127,6 +142,8 @@ export function DashboardBuilder({
   repos: string[];
   components: PickableComponent[];
   packages: string[];
+  /** The packages deprecated whole. */
+  deprecatedPackages: string[];
   /** A saved chart to edit: the builder opens with it and saves back to it, or with `duplicate`, saves a new chart. */
   saved?: Pick<Dashboard, "id" | "name" | "description" | "config" | "visibility">;
   duplicate?: boolean;
@@ -154,7 +171,7 @@ export function DashboardBuilder({
 
   // A repo scope narrows the picker to what that repo's latest scan contains. The
   // estate-wide lists still supply labels, and come back when the scope clears.
-  const [scopedPickable, setScopedPickable] = useState<{ components: PickableComponent[]; packages: string[] } | null>(null);
+  const [scopedPickable, setScopedPickable] = useState<{ components: PickableComponent[]; packages: string[]; deprecatedPackages: string[] } | null>(null);
   const [pickerUnavailable, setPickerUnavailable] = useState<ReadModelUnavailable | null>(null);
   const [pickerError, setPickerError] = useState(false);
   const [pickerRetry, setPickerRetry] = useState(0);
@@ -188,6 +205,7 @@ export function DashboardBuilder({
     [libraryTags, scopedPickable],
   );
   const pickerPackages = scopedPickable?.packages ?? packages;
+  const pickerDeprecatedPackages = scopedPickable?.deprecatedPackages ?? deprecatedPackages;
   const selectedKeys = useMemo(() => new Set(cohorts.map(selectorKey)), [cohorts]);
   const [seriesScope, setSeriesScope] = useState<string | null>(null);
   const searchSeriesRows = useCallback(
@@ -230,7 +248,8 @@ export function DashboardBuilder({
   const savedNarrowed = useMemo(() => deprecatedOnlyKeys(saved?.config.cohorts ?? []), [saved]);
 
   // A series in the last landed view takes its label, colour and role from there; any
-  // other tag series brings its tag's colour. They take colours as the chart gives them:
+  // other tag series brings its tag's colour, and any other series but an unknown one takes
+  // the role `predictedRole` gives it. They take colours as the chart gives them:
   // `lineColors` for a chart over time, `chartColors` for any other. An unknown series reads by
   // any name the lists or the saved chart hold, and shows no colour.
   const legend = useMemo<LegendSeries[]>(() => {
@@ -240,18 +259,21 @@ export function DashboardBuilder({
       const nth = seen.get(key) ?? 0;
       seen.set(key, nth + 1);
       const drawn = landed ? previewCohort(landed.view, key, nth) : undefined;
+      const unknown = landed?.unknown.has(key) ?? false;
+      const role = drawn ? drawn.role : unknown ? undefined : predictedRole(sel, pickable, pickerDeprecatedPackages);
       const cohort: ChartCohort = drawn ?? {
         cohortKey: key,
         color: sel.kind === "tag" ? (libraryTags.find((t) => t.id === sel.tagId)?.color ?? "") : "",
+        role,
       };
-      return { sel, key, drawn, cohort, unknown: landed?.unknown.has(key) ?? false };
+      return { sel, key, drawn, cohort, role, unknown };
     });
     const view = landed?.view;
     const colors =
       (chartType === "trend" || chartType === "stacked-share") && view?.kind === "series"
         ? lineColors(rows.map((r) => r.cohort))
         : chartColors(rows.map((r) => r.cohort));
-    return rows.map(({ sel, key, drawn, unknown }) => {
+    return rows.map(({ sel, key, drawn, role, unknown }) => {
       const saved = unknown && sel.kind === "component" ? sel.label : undefined;
       const label = drawn?.label ?? cohortLabel(sel, components, libraryTags) ?? saved ?? "";
       let deprecatedOnly: LegendSeries["deprecatedOnly"] = null;
@@ -266,13 +288,13 @@ export function DashboardBuilder({
         selector: sel,
         label,
         color: unknown ? "" : (colors.get(key) ?? ""),
-        role: drawn?.role,
+        role,
         unknown,
         missingFrom: unknown && elsewhere ? (landed?.repoId ?? null) : null,
         deprecatedOnly,
       };
     });
-  }, [cohorts, components, libraryTags, landed, pickable, savedNarrowed, chartType]);
+  }, [cohorts, components, libraryTags, landed, pickable, pickerDeprecatedPackages, savedNarrowed, chartType]);
 
   useEffect(() => {
     const request = { config, retry: previewRetry };

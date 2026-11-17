@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CohortSelector } from "@scoutui/web-shared";
+import { cohortKey } from "@scoutui/web-shared/client";
 import { DashboardBuilder } from "@/components/dashboards/dashboard-builder";
 import { pickOption } from "../helpers/select";
 
@@ -14,7 +15,7 @@ const readyPreview = { state: "ready", value: { kind: "series", series: [] } };
 const readyPicker = { state: "ready", value: { components: [], packages: ["@sample/scoped"] } };
 
 function builder() {
-  return render(<DashboardBuilder libraryTags={[]} repos={["repo-a", "repo-b"]} components={[]} packages={["@sample/estate"]} />);
+  return render(<DashboardBuilder libraryTags={[]} repos={["repo-a", "repo-b"]} components={[]} packages={["@sample/estate"]} deprecatedPackages={[]} />);
 }
 
 function selectRepo(repoId: string) {
@@ -136,7 +137,7 @@ describe("editing a saved chart", () => {
         libraryTags={[]}
         repos={["repo-a"]}
         components={[]}
-        packages={[]}
+        packages={[]} deprecatedPackages={[]}
         saved={{ id: "chart-1", name: "Button rollout", description: "Kept as it was", config, visibility: "private" }}
       />,
     );
@@ -153,7 +154,7 @@ describe("editing a saved chart", () => {
         libraryTags={[]}
         repos={["repo-a"]}
         components={[]}
-        packages={[]}
+        packages={[]} deprecatedPackages={[]}
         saved={{ id: "chart-1", name: "Copy of Button rollout", description: null, config, visibility: "private" }}
         duplicate
       />,
@@ -167,7 +168,7 @@ describe("editing a saved chart", () => {
     const series = [{ cohortKey: "local", label: "Local components", color: "", points: months.map((t, i) => ({ t, value: i })) }];
     actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series, coverage: { total: 1, repoIds: ["checkout"], points: months.map((t) => ({ t, repos: 1 })) } } });
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const, range: "6m" as const };
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Local", description: null, config, visibility: "private" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Local", description: null, config, visibility: "private" }} />);
     expect(await screen.findByRole("button", { name: "6 months" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "3 months" }));
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
@@ -183,7 +184,7 @@ describe("editing a saved chart", () => {
     const componentId = "3f1c9a0b7d2e4c65";
     const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "component" as const, componentId }], chartType: "trend" as const, metric: "count" as const };
     const { container } = render(
-      <DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config, visibility: "private" }} />,
+      <DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config, visibility: "private" }} />,
     );
     expect(container.innerHTML).not.toContain(componentId);
     expect(screen.queryByText("Unknown component")).toBeNull();
@@ -198,7 +199,7 @@ describe("editing a saved chart", () => {
   ])("says which repo a left-out series isn't in only when it is %s", async (_, lastSeenAt, line) => {
     const app = { componentId: "app-admin", displayName: "App", packageName: "admin", disambiguator: null, deprecated: false, occurrences: 1, local: true, lastSeenAt };
     const config = { scope: { kind: "repo" as const, repoId: "checkout" }, cohorts: [{ kind: "component" as const, componentId: app.componentId }], chartType: "trend" as const, metric: "count" as const };
-    render(<DashboardBuilder libraryTags={[]} repos={["admin", "checkout"]} components={[app]} packages={[]} saved={{ id: "chart-1", name: "App", description: null, config, visibility: "private" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={["admin", "checkout"]} components={[app]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "App", description: null, config, visibility: "private" }} />);
     await waitFor(() => expect(actions.preview).toHaveBeenCalled());
     await act(async () => {});
     const notIn = (text: string | RegExp) => (_: string, el: Element | null) =>
@@ -219,9 +220,34 @@ describe("editing a saved chart", () => {
       { cohortKey: "component:old", label: "OldButton", color: "", role: "deprecated", points },
       { cohortKey: "component:new", label: "NewButton", color: "", points },
     ] } });
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config, visibility: "private" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Button rollout", description: null, config, visibility: "private" }} />);
     expect((await screen.findByText("deprecated")).closest("li")).toHaveTextContent("OldButton");
     expect(screen.getAllByText("deprecated")).toHaveLength(1);
+  });
+
+  const oldButton = { componentId: "old", displayName: "OldButton", packageName: "@example/legacy", disambiguator: null, deprecated: true, occurrences: 1, local: false, lastSeenAt: null };
+  const newButton = { componentId: "new", displayName: "NewButton", packageName: "@example/ui", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null };
+  it.each([
+    { kind: "component", selector: { kind: "component", componentId: "old" }, label: "OldButton", components: [oldButton, newButton], deprecatedPackages: [] },
+    { kind: "package", selector: { kind: "package", packageName: "@example/legacy" }, label: "@example/legacy", components: [newButton], deprecatedPackages: ["@example/legacy"] },
+  ] as const)("marks a deprecated $kind series in its colour, and colours the series after it, before the preview lands and after", async ({ selector, label, components, deprecatedPackages }) => {
+    let finish: ((result: unknown) => void) | undefined;
+    actions.preview.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[...components]} packages={[]} deprecatedPackages={[...deprecatedPackages]} saved={savedWith([selector, { kind: "component", componentId: "new" }])} />);
+    const row = (text: string) => screen.getAllByText(text).find((el) => el.closest("li"))?.closest("li") as HTMLElement;
+    const expectKeyed = () => {
+      expect(within(row(label)).getByText("deprecated")).toBeInTheDocument();
+      expect(row(label).querySelector("svg")?.getAttribute("style")).toContain("var(--viz-deprecated)");
+      expect(row("NewButton").querySelector("span[aria-hidden]")?.getAttribute("style")).toContain("var(--viz-primary)");
+    };
+    expectKeyed();
+    const points = [{ t: "2026-09-01T00:00:00Z", value: 1 }];
+    await act(async () => { finish?.({ state: "ready", value: { kind: "series", series: [
+      { cohortKey: cohortKey(selector), label, color: "", role: "deprecated", points },
+      { cohortKey: "component:new", label: "NewButton · @example/ui", color: "", points },
+    ] } }); });
+    await waitFor(() => expect(screen.queryByText("Updating…")).toBeNull());
+    expectKeyed();
   });
 
   it("keys the series list as the chart colours it: in turn in saved order, starting again at the sixth", async () => {
@@ -233,7 +259,7 @@ describe("editing a saved chart", () => {
       color: "",
       points: [{ t: "2026-09-01T00:00:00Z", value: 1 }, { t: "2026-09-02T00:00:00Z", value: 10 + n }],
     })) } });
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "private" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "private" }} />);
     const swatch = async (label: string) => (await screen.findAllByText(label)).find((el) => el.closest("li"))?.closest("li")?.querySelector("span[aria-hidden]")?.getAttribute("style");
     expect(await swatch("KitA")).toContain("var(--viz-primary)");
     expect(await swatch("KitF")).toContain("var(--viz-primary)");
@@ -245,7 +271,7 @@ describe("chart details and saving", () => {
   const config = { scope: { kind: "all" as const }, cohorts: [{ kind: "local" as const }], chartType: "trend" as const, metric: "count" as const };
 
   it("saves the description, and no description when it is blank", async () => {
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: "Old text", config, visibility: "private" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Kits", description: "Old text", config, visibility: "private" }} />);
     expect(screen.getByLabelText("Description")).toHaveValue("Old text");
     fireEvent.change(screen.getByLabelText("Description"), { target: { value: "  Deprecated parts of our kits.  " } });
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
@@ -256,7 +282,7 @@ describe("chart details and saving", () => {
   });
 
   it("cancels back to the chart being edited, or to the charts list for a new one", () => {
-    const { unmount } = render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart 1", name: "Kits", description: null, config, visibility: "private" }} />);
+    const { unmount } = render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart 1", name: "Kits", description: null, config, visibility: "private" }} />);
     expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", "/charts/chart%201");
     unmount();
     builder();
@@ -267,7 +293,7 @@ describe("chart details and saving", () => {
     const { unmount } = builder();
     expect(screen.getByRole("button", { name: "Private" })).toHaveAttribute("aria-pressed", "true");
     unmount();
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "everyone" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "everyone" }} />);
     expect(screen.getByRole("button", { name: "Shared" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Save chart" }));
     await waitFor(() => expect(actions.save).toHaveBeenLastCalledWith(expect.objectContaining({ visibility: "everyone" })));
@@ -289,7 +315,7 @@ describe("chart details and saving", () => {
   });
 
   it("can't save without a name, and says so", () => {
-    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "private" }} />);
+    render(<DashboardBuilder libraryTags={[]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={{ id: "chart-1", name: "Kits", description: null, config, visibility: "private" }} />);
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "   " } });
     expect(screen.getByRole("button", { name: "Save chart" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Save chart" })).toHaveAccessibleDescription("Name the chart to save it.");
@@ -318,7 +344,7 @@ describe("series search", () => {
     render(<DashboardBuilder libraryTags={[]} repos={[]} components={[
       { componentId: "b1", displayName: "Button", packageName: "@example/ui", disambiguator: "", deprecated: false, occurrences: 2, local: false, lastSeenAt: null },
       { componentId: "b2", displayName: "Button", packageName: "@example/ui", disambiguator: "dist/react/button/index", deprecated: false, occurrences: 1, local: false, lastSeenAt: null },
-    ]} packages={[]} />);
+    ]} packages={[]} deprecatedPackages={[]} />);
     fireEvent.change(seriesBox(), { target: { value: "button" } });
     expect(screen.getByRole("option", { name: /^Button\s*@example\s*\/ui$/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /^Button\s*@example\s*\/ui\s*…\/button\/index$/ })).toBeInTheDocument();
@@ -327,7 +353,7 @@ describe("series search", () => {
 
 describe("series options", () => {
   it("narrows a library to its deprecated components from the row menu", async () => {
-    render(<DashboardBuilder libraryTags={[vueKits]} repos={[]} components={kitComponents} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-vue" }])} />);
+    render(<DashboardBuilder libraryTags={[vueKits]} repos={[]} components={kitComponents} packages={[]} deprecatedPackages={[]} saved={savedWith([{ kind: "tag", tagId: "t-vue" }])} />);
     fireEvent.click(screen.getByRole("button", { name: "Options for vue-ui-kits" }));
     const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
     expect(item).toHaveTextContent("1 of 3 components in vue-ui-kits is deprecated");
@@ -341,12 +367,12 @@ describe("series options", () => {
   });
 
   it("offers no menu for a library with nothing deprecated", () => {
-    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null }]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[{ componentId: "m", displayName: "MButton", packageName: "@mui/material", disambiguator: null, deprecated: false, occurrences: 1, local: false, lastSeenAt: null }]} packages={[]} deprecatedPackages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react" }])} />);
     expect(screen.queryByRole("button", { name: "Options for react-ui-kits" })).toBeNull();
   });
 
   it("switches deprecated only off on a saved series and keeps the option to turn it back on", async () => {
-    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
     fireEvent.click(screen.getByRole("button", { name: "Options for react-ui-kits" }));
     const item = await screen.findByRole("menuitemcheckbox", { name: /Only deprecated components/ });
     expect(item).toHaveAttribute("aria-checked", "true");
@@ -363,14 +389,14 @@ describe("series options", () => {
     actions.preview.mockResolvedValue({ state: "ready", value: { kind: "series", series: [
       { cohortKey: "tag:t-react", label: "react-ui-kits", color: "", role: "deprecated", points: [{ t: "2026-09-01T00:00:00Z", value: 4 }] },
     ] } });
-    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
+    render(<DashboardBuilder libraryTags={[reactKits]} repos={[]} components={[]} packages={[]} deprecatedPackages={[]} saved={savedWith([{ kind: "tag", tagId: "t-react", deprecatedOnly: true }])} />);
     await waitFor(() => expect(screen.getAllByText("deprecated")).toHaveLength(2));
     expect(spokenDeprecated()).toHaveLength(1);
   });
 
   it("offers only the libraries the chosen repo uses, and all of them again for All repos", async () => {
     actions.picker.mockResolvedValue({ state: "ready", value: { components: [kitComponents[2]], packages: ["naive-ui"] } });
-    render(<DashboardBuilder libraryTags={[reactKits, vueKits]} repos={["repo-a"]} components={kitComponents} packages={[]} />);
+    render(<DashboardBuilder libraryTags={[reactKits, vueKits]} repos={["repo-a"]} components={kitComponents} packages={[]} deprecatedPackages={[]} />);
     fireEvent.click(seriesBox());
     expect(screen.getByRole("option", { name: /^react-ui-kits/ })).toBeInTheDocument();
     selectRepo("repo-a");

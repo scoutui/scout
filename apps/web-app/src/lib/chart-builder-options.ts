@@ -1,4 +1,4 @@
-import { libraryTags, type StorageDriver } from "@scoutui/web-shared";
+import { deprecatedPackageNames, libraryTags, type StorageDriver } from "@scoutui/web-shared";
 import type { LibraryTag, PickableComponent } from "@/lib/chart-builder-series";
 
 export type ChartBuilderOptions = {
@@ -6,9 +6,10 @@ export type ChartBuilderOptions = {
   repos: string[];
   components: PickableComponent[];
   packages: string[];
+  deprecatedPackages: string[];
 };
 
-export type PickableSeries = { components: PickableComponent[]; packages: string[] };
+export type PickableSeries = { components: PickableComponent[]; packages: string[]; deprecatedPackages: string[] };
 
 /** The chart builder's scope and series lists, read from one snapshot. */
 export async function chartBuilderOptions(snapshot: StorageDriver): Promise<ChartBuilderOptions> {
@@ -21,10 +22,14 @@ export async function chartBuilderOptions(snapshot: StorageDriver): Promise<Char
   };
 }
 
-/** The components and packages one repo's scans, or every repo's, hold, including the packages only older scans hold. */
+/**
+ * The components and packages one repo's scans, or every repo's, hold, including the packages only older scans hold,
+ * and every package deprecated whole.
+ */
 export async function pickableSeries(snapshot: StorageDriver, repoId?: string): Promise<PickableSeries> {
   const componentList = await snapshot.listScannedComponents(repoId);
   const packageList = await snapshot.listPackages(repoId);
+  const governance = await snapshot.listGovernance();
   const packages = new Set(packageList.map((p) => p.packageName));
   for (const c of componentList) if (c.lastSeenAt !== null && c.packageName !== null) packages.add(c.packageName);
   return {
@@ -39,5 +44,6 @@ export async function pickableSeries(snapshot: StorageDriver, repoId?: string): 
       lastSeenAt: c.lastSeenAt,
     })),
     packages: [...packages].sort((a, b) => a.localeCompare(b)),
+    deprecatedPackages: deprecatedPackageNames(governance).sort((a, b) => a.localeCompare(b)),
   };
 }
