@@ -111,7 +111,7 @@ We press the × on the pill to remove the filter, and both files are back. A com
 
 A [tag](/docs/reference/glossary#tag) groups packages under one name, so the dashboard can count a library as one thing. We'll make two: `acme-ui` for the current library and `acme-ui-legacy` for the old one.
 
-We select **governance** in the top navigation. A **New record** form is already open at the top; we'll use it in step 6. For now we scroll down to the **Tags** section.
+We select **governance** in the top navigation and scroll down to the **Tags** section.
 
 1. We press **Add tag**.
 2. We type `acme-ui` into **Name** and keep the colour it offers.
@@ -128,12 +128,12 @@ To see the tags at work, we select **packages** in the top navigation. `@acme/ui
 
 We want everyone to move from `LegacyButton` to `Button`. A [lifecycle record](/docs/reference/glossary#lifecycle-record) tells the dashboard that. The dashboard then marks `LegacyButton` [deprecated](/docs/reference/glossary#deprecated) in every repo, including scans already uploaded.
 
-We select **governance** again. In the **New record** form:
+We select **governance** again and press **Add record**. In the **New record** dialog:
 
-1. We click **Package or component**, type `legacy button`, and pick `LegacyButton` from `@acme/ui-legacy`.
-2. We leave **Type** on **Replaced**.
-3. We click **Replaced by**, type `button`, and pick `Button` from `@acme/ui`.
-4. We press **Create**. The form says `LegacyButton replaced by Button` and stays open for another record, so we press **Close**.
+1. We click **Package or component**, type `legacy button`, and pick `LegacyButton` from `@acme/ui-legacy`. It now shows in a card, with `@acme/ui-legacy · Component` under its name.
+2. Under **What should teams do instead?**, we leave **Move to a replacement** chosen.
+3. We click **Replacement**, type `button`, and pick `Button` from `@acme/ui`.
+4. We press **Create record**. The dialog stays open for another record, and its foot reads `1 added · last LegacyButton`, so we press **Done**.
 
 Under **Records**, `LegacyButton` now reads **Replaced by** `Button · @acme/ui`. Its count takes a moment, so we reload the page. The line under the **Governance** title now reads `1 in progress`. Records are listed by package, and each package starts folded to one line, so `LegacyButton` sits under `@acme/ui-legacy`. That line's **Uses left** reads `1`, because `acme/storefront` still uses `LegacyButton` once. If it reads **No data**, we wait a moment and reload again.
 

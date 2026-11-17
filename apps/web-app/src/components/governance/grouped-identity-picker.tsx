@@ -136,6 +136,7 @@ export function GroupedIdentityPicker<T>({
   ariaDescribedBy,
   invalid,
   disabled,
+  container,
 }: {
   /** The input's id; the field's `<label htmlFor>` names it. */
   id: string;
@@ -157,6 +158,8 @@ export function GroupedIdentityPicker<T>({
   ariaDescribedBy?: string | undefined;
   invalid?: boolean | undefined;
   disabled?: boolean | undefined;
+  /** The element the list is mounted in, such as a dialog's popup so the list stays inside the dialog. Defaults to the page body. */
+  container?: HTMLElement | null | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -401,7 +404,7 @@ export function GroupedIdentityPicker<T>({
                 </p>
               ) : null}
             </div>,
-            document.body,
+            container ?? document.body,
           )
         : null}
     </div>
