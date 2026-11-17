@@ -1,5 +1,5 @@
 "use client";
-import { type ReactNode, type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { ChevronRight, Package, Search, X } from "lucide-react";
 import { PackageName } from "@/components/package-name";
@@ -38,6 +38,9 @@ const packageIcon = <Package className="size-3.5 text-muted-foreground" strokeWi
 
 // A component under its open package starts where the package row's icon does.
 const UNDER_PACKAGE = "ps-8.5";
+
+/** How long typing pauses before the result count is read out. */
+export const ANNOUNCE_AFTER_MS = 500;
 
 const localLabel = (row: { repoId?: string | undefined }) => (row.repoId ? `Local · ${row.repoId}` : "Local");
 
@@ -103,7 +106,9 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
     const names = browsing ? [...all] : [...toggled].flatMap(([name, open]) => (open ? [name] : []));
     return new Map(names.map((name) => [name, search("", name).rows.filter(isComponent<T, R>)]));
   }, [search, browsing, toggled, all]);
-  const packageId = `${useId()}-package-`;
+  const id = useId();
+  const packageId = `${id}-package-`;
+  const resultsId = `${id}-results`;
   const ownInput = useRef<HTMLInputElement>(null);
   const input = inputRef ?? ownInput;
   const ownScroller = useRef<HTMLDivElement>(null);
@@ -125,6 +130,15 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   const unpackaged = result.unpackaged;
   const empty = rows.length === 0 && groups.length === 0 && unpackaged.length === 0;
   const message = empty ? (browsing ? "No matches" : emptyText) : result.total != null ? "Keep typing to see more" : null;
+  const listed = rows.length + unpackaged.length + groups.reduce((n, g) => n + 1 + g.rows.length, 0);
+  const status = !browsing ? "" : empty ? "No matches" : [count(listed, "result"), result.total != null ? "Keep typing to see more" : null].filter(Boolean).join(". ");
+  const [announced, setAnnounced] = useState("");
+
+  // Says how many results the search lists once typing pauses.
+  useEffect(() => {
+    const timer = setTimeout(() => setAnnounced(status), ANNOUNCE_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   function changeQuery(next: string) {
     setQuery(next);
@@ -259,6 +273,7 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
             onKeyDown={onKeyDown}
             placeholder={placeholder}
             aria-describedby={describedBy}
+            aria-controls={resultsId}
             aria-invalid={invalid || undefined}
             autoComplete="off"
             autoCorrect="off"
@@ -280,10 +295,10 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
             </button>
           ) : null}
         </search>
-        <output className="sr-only">{browsing ? message : null}</output>
+        <output className="sr-only">{announced}</output>
       </div>
 
-      <div ref={scroller} className={cn("min-h-0 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]", listClassName)}>
+      <div ref={scroller} id={resultsId} className={cn("min-h-0 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]", listClassName)}>
         {!empty ? (
           <div className="overflow-clip rounded-lg border">
             {rows.length > 0 ? sections?.(rows) : null}
@@ -296,7 +311,7 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
             ) : null}
           </div>
         ) : (
-          <p aria-hidden className="px-1 py-2 text-xs text-muted-foreground">
+          <p aria-hidden={browsing || undefined} className="px-1 py-2 text-xs text-muted-foreground">
             {message}
           </p>
         )}

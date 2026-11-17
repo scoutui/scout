@@ -4,7 +4,7 @@ import type { GovernanceTarget } from "@scoutui/web-shared";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { cohortKey } from "@scoutui/web-shared/client";
 import type { PickableComponent } from "@/lib/chart-builder-series";
-import { MAX_COMPONENT_ROWS, type SearchInput, type SearchRow, type SeriesSearchInput, groupSeries, searchSeries, searchTargets } from "@/lib/identity-search";
+import { MAX_COMPONENT_ROWS, type SearchGroup, type SearchInput, type SearchRow, type SeriesSearchInput, groupSeries, searchSeries, searchTargets } from "@/lib/identity-search";
 
 const target = (packageName: string, exportName: string, occurrences: number): GovernanceTarget => ({ packageName, exportName, occurrences });
 const pkg = (packageName: string, occurrences: number): GovernanceTarget => ({ packageName, occurrences });
@@ -18,12 +18,14 @@ const search = (over: Partial<SearchInput>) =>
   searchTargets({ mode: "source", sources: [], query: "", scope: null, records: [], ...over });
 
 const label = (row: SearchRow<unknown>) =>
-  row.kind === "package" ? `package ${row.packageName}`
-    : row.kind === "whole" ? `all ${row.packageName}${row.refusal ? ` (${row.refusal})` : ""}`
-      : row.kind === "tag" ? `tag ${row.label}`
-        : row.kind === "local" ? row.label
-          : `${row.exportName} ${row.packageName}${row.refusal ? ` (${row.refusal})` : ""}`;
-const labels = (over: Partial<SearchInput>) => search(over).rows.map(label);
+  row.kind === "tag" ? `tag ${row.label}`
+    : row.kind === "local" ? row.label
+      : `${row.exportName} ${row.packageName}${row.refusal ? ` (${row.refusal})` : ""}`;
+// Each package as "name matched/components (why it can't be picked whole): its rows", with "+" when it offers the rest.
+const groupLabel = (g: SearchGroup<unknown>) =>
+  `${g.packageName} ${g.matched ?? "-"}/${g.components}${g.more ? "+" : ""}${g.refusal ? ` (${g.refusal})` : ""}: ${g.rows.map((r) => `${r.exportName}${r.refusal ? ` (${r.refusal})` : ""}`).join(", ")}`;
+const grouped = (over: Partial<SearchInput>) => search(over).groups.map(groupLabel);
+const listed = (over: Partial<SearchInput>) => search(over).rows.map(label);
 
 const tiers = [
   pkg("@example/kit", 271), pkg("@example/tabs", 80),
@@ -47,132 +49,68 @@ const estate = [
 ];
 
 describe("searchTargets: ranking", () => {
-  it("ranks by where the term matches before how often a component is used", () => {
-    expect(labels({ sources: tiers, query: "tab" })).toEqual([
-      "package @example/tabs",
-      "Tab @example/kit", "Table @example/kit", "DataTable @example/kit",
-      "TextAreaBox @example/kit", "Panel @example/tabs", "Stable @example/kit",
+  it("ranks by where the term matches before how often a component is used, and lists a package by its best match", () => {
+    expect(grouped({ sources: tiers, query: "tab" })).toEqual([
+      "@example/kit 5/5: Tab, Table, DataTable, TextAreaBox, Stable",
+      "@example/tabs -/1: Panel",
     ]);
   });
 
-  it("breaks ties by occurrences, then name, then package", () => {
+  it("lists packages that match as well by use, then by name", () => {
     const sources = [target("@example/b", "Button", 9), target("@example/a", "Button", 5), target("@example/c", "Button", 9)];
-    expect(labels({ sources, query: "button" })).toEqual(["Button @example/b", "Button @example/c", "Button @example/a"]);
+    expect(search({ sources, query: "button" }).groups.map((g) => g.packageName)).toEqual(["@example/b", "@example/c", "@example/a"]);
   });
 
   it("needs every term to match and ranks by the weakest one", () => {
-    expect(labels({ sources: tiers, query: "kit tab" })).toEqual([
-      "TextAreaBox @example/kit", "DataTable @example/kit", "Table @example/kit", "Tab @example/kit", "Stable @example/kit",
-    ]);
+    expect(grouped({ sources: tiers, query: "kit tab" })).toEqual(["@example/kit 5/5: TextAreaBox, DataTable, Table, Tab, Stable"]);
   });
 
   it("marks the matched parts of the name", () => {
-    const rows = search({ sources: estate, query: "dp", scope: "@example/new-ui" }).rows;
-    expect(rows.find((r) => r.kind === "component" && r.exportName === "DialogPopup")).toMatchObject({ matched: [[0, 1], [6, 7]] });
-    const overlapping = search({ sources: estate, query: "dia dialog", scope: "@example/new-ui" }).rows;
-    expect(overlapping.find((r) => r.kind === "component" && r.exportName === "DialogPanel")).toMatchObject({ matched: [[0, 6]] });
+    const rows = (query: string) => search({ sources: estate, query }).groups.flatMap((g) => g.rows);
+    expect(rows("dp").find((r) => r.exportName === "DialogPopup")).toMatchObject({ matched: [[0, 1], [6, 7]] });
+    expect(rows("dia dialog").find((r) => r.exportName === "DialogPanel")).toMatchObject({ matched: [[0, 6]] });
   });
 
   it("offers a target only older scans have, after the used ones", () => {
-    expect(labels({ sources: estate }).at(-1)).toBe("package @example/unused");
-    expect(labels({ sources: estate, query: "gone" })).toEqual(["Gone @example/unused"]);
+    expect(search({ sources: estate }).groups.at(-1)?.packageName).toBe("@example/unused");
+    expect(grouped({ sources: estate, query: "gone" })).toEqual(["@example/unused 1/1: Gone"]);
   });
 });
 
 describe("searchTargets: packages", () => {
-  it("lists every package by occurrences when nothing is typed, the first one active", () => {
-    const result = search({ sources: estate });
-    expect(result.rows.map(label)).toEqual([
-      "package @example/old-ui", "package @example/new-ui", "package @example/legacy-kit", "package @example/unused",
-    ]);
-    expect(result.rows[0]).toMatchObject({ components: 5 });
-    expect(result.defaultIndex).toBe(0);
-  });
-
-  it("puts packages whose name matches before the components, at most three", () => {
-    expect(labels({ sources: estate, query: "new" }).slice(0, 2)).toEqual(["package @example/new-ui", "Button @example/new-ui"]);
-    expect(labels({ sources: estate, query: "old-ui" }).slice(0, 2)).toEqual(["package @example/old-ui", "Button @example/old-ui"]);
-    expect(labels({ sources: estate, query: "example/new-ui" }).slice(0, 2)).toEqual(["package @example/new-ui", "Button @example/new-ui"]);
-    expect(labels({ sources: [...estate].reverse(), query: "example" }).filter((l) => l.startsWith("package"))).toEqual([
-      "package @example/old-ui", "package @example/new-ui", "package @example/legacy-kit",
-    ]);
-    expect(labels({ sources: estate, query: "button" })[0]).toBe("Button @example/old-ui");
-  });
-
-  it("shows at most 50 components across every package, and all of them in one package", () => {
-    const sources = [pkg("@example/glyphs", 60), ...Array.from({ length: 60 }, (_, i) => target("@example/glyphs", `Icon${i}`, 1))];
-    expect(search({ sources, query: "icon" }).rows).toHaveLength(MAX_COMPONENT_ROWS);
-    expect(search({ sources, query: "icon", scope: "@example/glyphs" }).rows).toHaveLength(60);
-  });
-});
-
-describe("searchTargets: packages defined in a scanned repo", () => {
-  const local = (t: GovernanceTarget): GovernanceTarget => ({ ...t, local: true });
-  const monorepo = [
-    pkg("@example/legacy-kit", 20), target("@example/legacy-kit", "Button", 20),
-    local(pkg("@example/app", 500)), local(target("@example/app", "Page", 300)), local(target("@example/app", "Header", 200)),
-    local(pkg("@example/ui", 90)), local(target("@example/ui", "Button", 60)), local(target("@example/ui", "ButtonGroup", 30)),
-    local(pkg("@example/next-ui", 10)), local(target("@example/next-ui", "Button", 10)),
-  ];
-
-  it("lists them after the installed packages when nothing is typed", () => {
-    expect(labels({ sources: monorepo })).toEqual([
-      "package @example/legacy-kit", "package @example/app", "package @example/ui", "package @example/next-ui",
+  it("lists every package by use when nothing is typed, closed", () => {
+    expect(grouped({ sources: estate })).toEqual([
+      "@example/old-ui -/5: ", "@example/new-ui -/7: ", "@example/legacy-kit -/1: ", "@example/unused -/1: ",
     ]);
   });
 
-  it("leaves their components out of a search with no package chosen and offers their packages after the results", () => {
-    const { rows } = search({ sources: monorepo, query: "button" });
-    expect(rows.map(label)).toEqual(["Button @example/legacy-kit", "package @example/ui", "package @example/next-ui"]);
-    expect(rows.slice(1)).toMatchObject([{ matches: 2, narrowedQuery: "button" }, { matches: 1, narrowedQuery: "button" }]);
-  });
-
-  it("makes the first package active when no installed component matches", () => {
-    const result = search({ sources: monorepo, query: "header" });
-    expect(result.rows.map(label)).toEqual(["package @example/app"]);
-    expect(result.defaultIndex).toBe(0);
-  });
-
-  it("keeps only the words that didn't match the package's name for the narrowed search", () => {
-    expect(search({ sources: monorepo, query: "next button" }).rows).toMatchObject([
-      { kind: "package", packageName: "@example/next-ui", matches: 1, narrowedQuery: "button" },
-    ]);
-  });
-
-  it("offers a package once when its name matches too, and at most five for the names they hold", () => {
-    expect(search({ sources: monorepo, query: "ui" }).rows).toMatchObject([
-      { packageName: "@example/ui", matches: null, narrowedQuery: "" }, { packageName: "@example/next-ui", matches: null, narrowedQuery: "" },
-    ]);
-    const many = ["a", "b", "c", "d", "e", "f"].flatMap((p) => [local(pkg(`@example/${p}`, 1)), local(target(`@example/${p}`, "Button", 1))]);
-    expect(labels({ sources: many, query: "button" })).toHaveLength(5);
-  });
-
-  it("lists their components once the search is narrowed to them", () => {
-    expect(labels({ sources: monorepo, query: "button", scope: "@example/ui" })).toEqual(["Button @example/ui", "ButtonGroup @example/ui"]);
-  });
-});
-
-describe("searchTargets: narrowed to a package", () => {
-  it("offers the whole package first, then its components by occurrences, with the first component active", () => {
-    const result = search({ sources: estate, scope: "@example/new-ui" });
-    expect(result.rows.map(label)).toEqual([
-      "all @example/new-ui", "Button @example/new-ui", "Skeleton @example/new-ui", "Avatar @example/new-ui", "CardPanel @example/new-ui",
+  it("opens a package its name matches on its five most used components, and lists one package's components in full", () => {
+    expect(grouped({ sources: estate, query: "new" })).toEqual(["@example/new-ui -/7+: Button, Skeleton, Avatar, CardPanel, DialogPanel"]);
+    expect(listed({ sources: estate, scope: "@example/new-ui" })).toEqual([
+      "Button @example/new-ui", "Skeleton @example/new-ui", "Avatar @example/new-ui", "CardPanel @example/new-ui",
       "DialogPanel @example/new-ui", "DialogPopup @example/new-ui", "AlertDialogPopup @example/new-ui",
     ]);
-    expect(result.rows[0]).toMatchObject({ components: 7 });
-    expect(result.defaultIndex).toBe(1);
   });
 
-  it("matches names only, and offers the whole package only when the search matches its name", () => {
-    expect(labels({ sources: estate, scope: "@example/new-ui", query: "dp" })).toEqual([
-      "DialogPanel @example/new-ui", "DialogPopup @example/new-ui", "AlertDialogPopup @example/new-ui", "CardPanel @example/new-ui",
-    ]);
-    expect(labels({ sources: estate, scope: "@example/new-ui", query: "ui" })).toEqual(["all @example/new-ui"]);
+  it("shows at most 50 components across every package, and all of them in one package's list", () => {
+    const sources = [pkg("@example/glyphs", 60), ...Array.from({ length: 60 }, (_, i) => target("@example/glyphs", `Icon${i}`, 1))];
+    const result = search({ sources, query: "icon" });
+    expect(result.groups.flatMap((g) => g.rows)).toHaveLength(MAX_COMPONENT_ROWS);
+    expect(result.total).toBe(60);
+    expect(search({ sources, scope: "@example/glyphs" }).rows).toHaveLength(60);
   });
 
-  it("puts names that share a word with the source first when choosing a replacement", () => {
-    expect(labels({ mode: "successor", sources: estate, scope: "@example/new-ui", similarTo: "SkeletonText" }).slice(0, 3))
-      .toEqual(["all @example/new-ui", "Skeleton @example/new-ui", "Button @example/new-ui"]);
+  it("lists packages defined in a scanned repo by use among the others, with their matching components under them", () => {
+    const local = (t: GovernanceTarget): GovernanceTarget => ({ ...t, local: true });
+    const monorepo = [
+      pkg("@example/legacy-kit", 20), target("@example/legacy-kit", "Button", 20),
+      local(pkg("@example/app", 500)), local(target("@example/app", "Page", 300)), local(target("@example/app", "Header", 200)),
+      local(pkg("@example/ui", 90)), local(target("@example/ui", "Button", 60)), local(target("@example/ui", "ButtonGroup", 30)),
+    ];
+    expect(search({ sources: monorepo }).groups.map((g) => g.packageName)).toEqual(["@example/app", "@example/ui", "@example/legacy-kit"]);
+    const result = search({ sources: monorepo, query: "button" });
+    expect(result.groups.map(groupLabel)).toEqual(["@example/ui 2/2: Button, ButtonGroup", "@example/legacy-kit 1/1: Button"]);
+    expect(result.groups.map((g) => g.rows.map((r) => r.local))).toEqual([[true, true], [false]]);
   });
 });
 
@@ -184,49 +122,44 @@ describe("searchTargets: refusals", () => {
   ];
 
   it.each([
-    ["the same component", { query: "button" }, "Button @example/old-ui (Already recorded)"],
-    ["a component of a package with a record", { query: "button" }, "Button @example/legacy-kit (Whole package recorded)"],
-    ["a package with a record", { scope: "@example/legacy-kit" }, "all @example/legacy-kit (Already recorded)"],
-    ["a package with component records", { scope: "@example/old-ui" }, "all @example/old-ui (2 components already recorded)"],
-  ])("refuses %s", (_, over, expected) => {
-    expect(labels({ sources: estate, records, ...over })).toContain(expected);
+    ["the same component", "button", "@example/old-ui 2/5 (2 components already recorded): Button (Already recorded), ButtonGroup"],
+    ["a component of a package with a record", "button", "@example/legacy-kit 1/1 (Already recorded): Button (Whole package recorded)"],
+    ["a package with a record", "", "@example/legacy-kit -/1 (Already recorded): "],
+    ["a package with component records", "", "@example/old-ui -/5 (2 components already recorded): "],
+  ])("refuses %s", (_, query, expected) => {
+    expect(grouped({ sources: estate, records, query })).toContain(expected);
   });
 
   it("says one component when one is recorded", () => {
-    expect(labels({ sources: estate, records: [records[0] as GovernanceRecord], scope: "@example/old-ui" })[0])
-      .toBe("all @example/old-ui (1 component already recorded)");
+    expect(search({ sources: estate, records: [records[0] as GovernanceRecord] }).groups[0]?.refusal).toBe("1 component already recorded");
   });
 
-  it("puts refused rows last among rows that match as well, and never makes one active", () => {
-    const result = search({ sources: estate, records, query: "button" });
-    expect(result.rows.map(label)).toEqual([
-      "Button @example/new-ui", "Button @example/old-ui (Already recorded)", "Button @example/legacy-kit (Whole package recorded)",
-      "ButtonGroup @example/old-ui",
-    ]);
-    expect(result.defaultIndex).toBe(0);
-  });
-
-  it("puts refused rows last in a narrowed list and leaves nothing active when every component is refused", () => {
-    expect(labels({ sources: estate, records, scope: "@example/old-ui" })).toEqual([
-      "all @example/old-ui (2 components already recorded)",
+  it("puts refused rows after the others that match as well", () => {
+    expect(listed({ sources: estate, records, scope: "@example/old-ui" })).toEqual([
       "SkeletonText @example/old-ui", "Table.Cell @example/old-ui", "ButtonGroup @example/old-ui",
       "Button @example/old-ui (Already recorded)", "DialogContent @example/old-ui (Already recorded)",
     ]);
-    expect(search({ sources: estate, records: [record("kit", "@example/legacy-kit", null)], scope: "@example/legacy-kit" }).defaultIndex).toBeNull();
   });
 
   it("keeps the edited record's own target pickable", () => {
-    expect(labels({ sources: estate, records, editingId: "button", query: "button" })).toContain("Button @example/old-ui");
+    expect(grouped({ sources: estate, records, editingId: "button", query: "button" })).toContain("@example/old-ui 2/5 (1 component already recorded): Button, ButtonGroup");
   });
 
-  it("refuses nothing in a replacement, and leaves out the record's own source", () => {
-    const rows = labels({ mode: "successor", sources: estate, records, scope: "@example/old-ui", exclude: { packageName: "@example/old-ui", exportName: "SkeletonText" } });
-    expect(rows).toContain("Button @example/old-ui");
-    expect(rows).toContain("all @example/old-ui");
-    expect(rows).not.toContain("SkeletonText @example/old-ui");
-    const wholeExcluded = labels({ mode: "successor", sources: estate, records, scope: "@example/old-ui", exclude: { packageName: "@example/old-ui" } });
-    expect(wholeExcluded).toContain("SkeletonText @example/old-ui");
-    expect(wholeExcluded).not.toContain("all @example/old-ui");
+  it("refuses nothing in a replacement, leaves out the record's own component, and can't pick its own whole package", () => {
+    const successor = (exclude: { packageName: string; exportName?: string }) => ({ mode: "successor" as const, sources: estate, records, exclude });
+    const component = successor({ packageName: "@example/old-ui", exportName: "SkeletonText" });
+    expect(search(component).groups.map((g) => g.refusal)).toEqual([null, null, null, null]);
+    expect(listed({ ...component, scope: "@example/old-ui" })).toEqual([
+      "Button @example/old-ui", "DialogContent @example/old-ui", "Table.Cell @example/old-ui", "ButtonGroup @example/old-ui",
+    ]);
+    const whole = successor({ packageName: "@example/old-ui" });
+    expect(grouped(whole)[0]).toBe("@example/old-ui -/5 (Being replaced): ");
+    expect(listed({ ...whole, scope: "@example/old-ui" })).toContain("SkeletonText @example/old-ui");
+  });
+
+  it("lists a package's names that share a word with the source first when choosing a replacement", () => {
+    expect(listed({ mode: "successor", sources: estate, scope: "@example/new-ui", similarTo: "SkeletonText" }).slice(0, 2))
+      .toEqual(["Skeleton @example/new-ui", "Button @example/new-ui"]);
   });
 });
 
@@ -255,9 +188,10 @@ describe("searchSeries", () => {
       `${g.packageName} ${g.matched ?? "-"}/${g.components}${g.more ? "+" : ""}: ${g.rows.map((r) => r.exportName).join(", ")}`);
 
   it("lists the tags, Local components, then packages by use when nothing is typed, each tag with the packages it matches", () => {
-    const { rows } = series({});
-    expect(rows.map(label)).toEqual(["tag old-ui", "tag new-ui", "Local components", "package @example/old-ui", "package @example/new-ui"]);
-    expect(rows.slice(0, 3)).toMatchObject([{ packages: 1 }, { packages: 2 }, { components: 1 }]);
+    const { rows, groups } = series({});
+    expect(rows.map(label)).toEqual(["tag old-ui", "tag new-ui", "Local components"]);
+    expect(rows).toMatchObject([{ packages: 1 }, { packages: 2 }, { components: 1 }]);
+    expect(groups.map((g) => [g.packageName, g.components, g.rows.length])).toEqual([["@example/old-ui", 3, 0], ["@example/new-ui", 2, 0]]);
   });
 
   it("lists the tags and Local components a search matches, and its components only grouped by package", () => {
@@ -289,15 +223,15 @@ describe("searchSeries", () => {
     expect(seriesLabels({ components, packages: all, scope: "@example/old-ui" })).toEqual([
       "Button @example/old-ui", "Card @example/old-ui", "ButtonGroup @example/old-ui", "Badge @example/old-ui", "Alert @example/old-ui",
     ]);
-    expect(seriesLabels({ components, packages: all }).filter((l) => l.startsWith("package"))).toEqual([
-      "package @example/old-ui", "package @example/new-ui", "package @example/empty", "package @example/older-kit", "package @example/legacy-kit",
+    expect(series({ components, packages: all }).groups.map((g) => g.packageName)).toEqual([
+      "@example/old-ui", "@example/new-ui", "@example/empty", "@example/older-kit", "@example/legacy-kit",
     ]);
   });
 
   it("marks the rows whose series are already added", () => {
     const added = keys({ kind: "tag", tagId: "t-new" }, { kind: "component", componentId: "c4" });
     const result = series({ query: "new", added });
-    expect(result.rows.map((r) => (r.kind === "package" ? null : r.added))).toEqual([true]);
+    expect(result.rows.map((r) => r.added)).toEqual([true]);
     expect(result.groups[0]?.rows.map((r) => r.added)).toEqual([true, false]);
   });
 

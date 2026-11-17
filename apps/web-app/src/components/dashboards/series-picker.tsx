@@ -1,5 +1,5 @@
 "use client";
-import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useMemo, useRef } from "react";
+import { type ReactNode, type RefObject, useLayoutEffect, useMemo, useRef } from "react";
 import { Folder } from "lucide-react";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { cohortKey } from "@scoutui/web-shared/client";
@@ -8,11 +8,8 @@ import type { LegendSeries } from "@/components/dashboards/series-legend";
 import { count, GroupedSearch, marked, rowHover, Section } from "@/components/grouped-search";
 import type { LibraryTag } from "@/lib/chart-builder-series";
 import { paletteToken } from "@/lib/chart-palette";
-import type { GroupedResult, SearchRow, SeriesSearchResult } from "@/lib/identity-search";
+import type { SeriesSearchResult } from "@/lib/identity-search";
 import { cn } from "@/lib/utils";
-
-type Row = SearchRow<CohortSelector>;
-type BeforePackages = Extract<Row, { kind: "tag" | "local" }>;
 
 /** A checkable row: the checkbox, an icon slot and the row's text. */
 function CheckRow({ checked, onToggle, icon, children, className }: { checked: boolean; onToggle: (input: HTMLInputElement) => void; icon: ReactNode; children: ReactNode; className?: string }) {
@@ -67,23 +64,6 @@ export function SeriesPicker({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const held = useRef<{ input: HTMLInputElement; top: number } | null>(null);
 
-  // With nothing typed, the packages come as rows; the list takes them as closed groups.
-  const grouped = useCallback(
-    (query: string, packageName: string | null): GroupedResult<CohortSelector, BeforePackages> => {
-      const result = search ? search(query, packageName) : { rows: [], groups: [], unpackaged: [], total: null };
-      if (packageName !== null) return { ...result, rows: result.rows.flatMap((r) => (r.kind === "component" ? [r] : [])) };
-      const closed = result.rows.flatMap((r) =>
-        r.kind === "package" ? [{ packageName: r.packageName, components: r.components, matched: null, rows: [], more: false, refusal: null }] : [],
-      );
-      return {
-        ...result,
-        groups: query === "" ? closed : result.groups,
-        rows: result.rows.flatMap((r) => (r.kind === "tag" || r.kind === "local" ? [r] : [])),
-      };
-    },
-    [search],
-  );
-
   /** Adds or removes a row's series, keeping the row where it was on screen when anything above it moves. */
   function toggle(input: HTMLInputElement, sel: CohortSelector) {
     held.current = { input, top: input.getBoundingClientRect().top };
@@ -117,7 +97,7 @@ export function SeriesPicker({
       label="Add a series"
       placeholder="Add a series"
       describedBy={describedBy}
-      search={grouped}
+      search={search}
       emptyText="Nothing scanned yet"
       className="flex-1"
       listClassName="flex-1"
