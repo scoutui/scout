@@ -22,7 +22,7 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 5. In **Replacement**, type `button` and pick `Button` from `@acme/ui`. To make the whole of `@acme/ui` the replacement, search for `@acme/ui` instead, pick it, then pick **All of @acme/ui**.
 6. Press **Create record**. The dialog stays open with an empty form for the next record, and the line at its foot counts the records you've added: press **Show** to list them. Press **Done** when you've finished.
 
-![The New record form, filled in to record VxeButton from vxe-pc-ui as replaced by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
+![The New record dialog, filled in to record VxeButton from vxe-pc-ui as replaced by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
 The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
 
