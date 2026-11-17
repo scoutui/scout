@@ -48,7 +48,7 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 7. In the **Series** column beside the preview, check `acme-ui` and `acme-ui-legacy` under **Tags**.
 8. Press **Save chart** at the top of the page, or press Enter in **Name**. The chart opens on its own page and appears under **Private** or **Shared charts** on the charts page. If the chart has no name or no series yet, the builder says what's missing beside it instead.
 
-![The new chart builder with the vben and payload-ui tags as series and the live preview, and the Add a series list open on the tags, the two added ones checked](/img/dashboard/chart-builder.png)
+![The new chart builder searching for button: @calcom/ui and @payloadcms/ui open on their matching components, with Button from each added, drawn in the preview and listed in the table under it](/img/dashboard/chart-builder.png)
 
 If the preview reads **Trends appear once these repos have been scanned more than once.**, the repos in scope have only been scanned once. Save the chart anyway: it fills in as new scans arrive.
 
