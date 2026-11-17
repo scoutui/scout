@@ -44,9 +44,9 @@ To compare libraries you need a [tag](/docs/reference/glossary#tag) for each. [T
 3. Under **Repos**, keep **All repos**, or pick one repo such as `storefront`.
 4. Under **Chart type**, pick **Trend**.
 5. Under **Metric**, keep **Uses** to chart uses, or pick **% of uses** for each series' share of the chart's total. **Stacked** always shows share, so **Metric** stays on **% of uses** when you pick it.
-6. In the **Series** panel, press **Add a series** and pick `acme-ui`, then `acme-ui-legacy`; tags come first in the list.
-7. Under **Visibility**, keep **Private** so only you and Admins can open the chart, or pick **Shared** so everyone signed in can.
-8. Press **Save chart**. The chart opens on its own page and appears under **Private** or **Shared charts** on the charts page.
+6. Under **Visibility**, keep **Private** so only you and Admins can open the chart, or pick **Shared** so everyone signed in can.
+7. In the **Series** column beside the preview, check `acme-ui` and `acme-ui-legacy` under **Tags**.
+8. Press **Save chart** at the top of the page, or press Enter in **Name**. The chart opens on its own page and appears under **Private** or **Shared charts** on the charts page. If the chart has no name or no series yet, the builder says what's missing beside it instead.
 
 ![The new chart builder with the vben and payload-ui tags as series and the live preview, and the Add a series list open on the tags, the two added ones checked](/img/dashboard/chart-builder.png)
 
@@ -54,17 +54,23 @@ If the preview reads **Trends appear once these repos have been scanned more tha
 
 ### Add other kinds of series
 
-**Add a series** charts more than tags. With nothing typed, it lists your tags, **Local components** and packages. Type to search components too, including ones your repos no longer use.
+The **Series** column charts more than tags. With nothing typed, it lists your tags under **Tags**, **Local components** under **Your code**, and packages under **Packages**. Type in **Add a series** to search components too, including ones your repos no longer use.
 
 - **Local components** counts every component [defined in the repo](/docs/reference/glossary#local) rather than imported from a package.
-- A package narrows the search to itself. Its first row, **All of** and the package's name, adds the whole package, such as `@acme/icons`, as one series. Press **×** beside the package in the box to search everything again.
-- A component adds just that component, such as `Button` from `@acme/ui`. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
+- A package, such as `@acme/icons`, adds the whole package as one series. To pick from its components instead, press its component count, such as **52 components**: its five most used components open under it, and **Show all 52** lists the rest. Press the count again to close the package.
+- A component adds just that component, such as `Button` from `@acme/ui`. A component defined in your own code reads **Local** and its repo, such as **Local · storefront**, in place of a package. When two components in a package share a name, each shows the entry point or file that tells them apart, such as `button`.
 
-With one repo picked under **Repos**, the list holds only what that repo uses or has used. A component series you added before picking the repo greys out if that repo doesn't have the component, and reads, for example, **Not in checkout**: pick **All repos** or a repo that has it to chart it again. A search shows at most 50 components; pick a package to see all of its components. To remove a series, press its **×** in the list at the top of the **Series** panel, or pick it in **Add a series** again.
+While you type, each matching component shows under its package, whose count says how many of its components match, such as **4 of 126**. A package whose name matches shows its five most used components instead, with **Show all** for the rest. A component with no package shows under **No package**.
+
+To find a component in one package, type a word from the package's name, then the start of the component's, such as `icons arrow` for the arrow icons in `@acme/icons`. A search shows at most 50 components: keep typing to narrow it, or clear the search and open a package to see all of its components.
+
+The series you've added are listed in a table under the preview, in the order you added them, with each one's latest uses or share. On a **Table** chart, that table is the preview. Past about ten series, the table scrolls. Press a column heading to sort it. To remove a series, uncheck it in the **Series** column, or press its **×** in the table.
+
+With one repo picked under **Repos**, the list holds only what that repo uses or has used. A component series you added before picking the repo greys out in the table if that repo doesn't have the component, and reads, for example, **Not in checkout**: pick **All repos** or a repo that has it to chart it again.
 
 ### Count only deprecated components
 
-To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, open the options of a tag or package series in the list at the top of the **Series** panel and choose **Only deprecated components**. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as replaced or retired. If no record covers any of them, the series drops to zero.
+To see how much [deprecated](/docs/reference/glossary#deprecated) code a library still has, press **⋯** in a tag or package series' row of the table under the preview, and choose **Only deprecated components**. The series then counts only the components a [lifecycle record](/docs/reference/glossary#lifecycle-record) marks as replaced or retired. If no record covers any of them, the series drops to zero.
 
 A series has this option only when some, but not all, of its components are deprecated.
 
@@ -112,7 +118,7 @@ A chart leaves off any series it has no data for, and its row on the charts list
 1. Open the chart. Above it, a notice such as **2 series are left out · not in checkout** says how many and why. Open it to see which series.
 2. Press **Edit**. Only the chart's creator or an Admin can; anyone else, ask one of them.
 3. For a series that isn't in the chart's repo, pick **All repos** or a repo that has it under **Repos**, or remove the series.
-4. To remove a series, press its **×** in the list at the top of the **Series** panel. It reads **Unknown component**, or **Deleted tag** for a tag, when the dashboard has no name left for it. To keep charting that component, add it again with **Add a series**. A chart needs at least one series before you can save it.
+4. To remove a series, press its **×** in the table of series under the preview. It reads **Unknown component**, or **Deleted tag** for a tag, when the dashboard has no name left for it. To keep charting that component, add it again with **Add a series**. A chart needs at least one series before you can save it.
 5. Press **Save chart**.
 
 ## Migration and retirement charts

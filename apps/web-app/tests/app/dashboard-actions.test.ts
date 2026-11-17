@@ -15,10 +15,11 @@ const row: ScannedComponent = {
   componentId: "77b809260ecd27fe", kind: "react-component", scope: "external", packageName: "@x/lib", displayName: "Address",
   disambiguator: null, totalOccurrences: 3, repoCount: 1, repoId: "known", deprecated: true, usage: "direct", lastSeenAt: null,
 };
+const localRow: ScannedComponent = { ...row, componentId: "5a1c0e2b9d7f4a36", scope: "local", packageName: "@x/app", displayName: "Header", deprecated: false };
 const storage = {
   async withReadSnapshot<T>(read: (snapshot: StorageDriver) => Promise<T>) { return read(this as unknown as StorageDriver); },
   skippedScans: () => ({ fallbacks: [], gaps: [] }),
-  listScannedComponents: async (repoId?: string) => repoId === "known" ? [row] : [],
+  listScannedComponents: async (repoId?: string) => repoId === "known" ? [row, localRow] : [],
   listPackages: async (repoId?: string) => repoId === "known"
     ? ["@x/lib", "@x/aggregate"].map((packageName) => ({
         packageName,
@@ -34,12 +35,15 @@ const storage = {
 };
 
 describe("pickableForRepo", () => {
-  it("sorts the repo-scoped package list for the chart picker", async () => {
+  it("sorts the repo-scoped package list for the chart picker, and names the repo a local component comes from", async () => {
     const result = await pickableForRepo("known");
     expect(result.state).toBe("ready");
     if (result.state !== "ready") throw new Error("Expected ready picker");
     expect(result.value.packages).toEqual(["@x/aggregate", "@x/lib"]);
-    expect(result.value.components).toEqual([{ componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", disambiguator: null, deprecated: true, occurrences: 3, local: false, lastSeenAt: null }]);
+    expect(result.value.components).toEqual([
+      { componentId: "77b809260ecd27fe", displayName: "Address", packageName: "@x/lib", disambiguator: null, deprecated: true, occurrences: 3, local: false, lastSeenAt: null },
+      { componentId: "5a1c0e2b9d7f4a36", displayName: "Header", packageName: "@x/app", disambiguator: null, deprecated: false, occurrences: 3, local: true, repoId: "known", lastSeenAt: null },
+    ]);
   });
 
   it("returns no options when the repo has no scan", async () => {

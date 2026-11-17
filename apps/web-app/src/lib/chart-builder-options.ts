@@ -41,6 +41,7 @@ export async function pickableSeries(snapshot: StorageDriver, repoId?: string): 
       deprecated: c.deprecated,
       occurrences: c.totalOccurrences,
       local: c.scope === "local",
+      ...(c.scope === "local" && c.repoId !== null ? { repoId: c.repoId } : {}),
       lastSeenAt: c.lastSeenAt,
     })),
     packages: [...packages].sort((a, b) => a.localeCompare(b)),

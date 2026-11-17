@@ -43,7 +43,6 @@ export default async function NewDashboardPage({
       <div className="mb-2">
         <BackLink href="/charts">Charts</BackLink>
       </div>
-      <h1 className="mb-6 text-2xl font-semibold tracking-headline">New chart</h1>
       {source ? (
         <DashboardBuilder
           {...options}

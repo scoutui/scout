@@ -194,8 +194,11 @@ function SeriesField({ onSelect }: { onSelect: (sel: CohortSelector) => void }) 
   const [scope, setScope] = useState<string | null>(null);
   const [added, setAdded] = useState<CohortSelector[]>([]);
   const search = useCallback(
-    (query: string, scope: string | null) =>
-      searchSeries({ tags: [], components: charted, packages: ["@example/old-ui", "@example/new-ui"], query, scope, added: new Set(added.map(cohortKey)) }),
+    (query: string, scope: string | null) => {
+      const { rows, groups } = searchSeries({ tags: [], components: charted, packages: ["@example/old-ui", "@example/new-ui"], query, scope, added: new Set(added.map(cohortKey)) });
+      const listed = [...rows, ...groups.flatMap((g) => g.rows)];
+      return { rows: listed, defaultIndex: listed.findIndex((r) => r.kind === "component"), total: null };
+    },
     [added],
   );
   return (

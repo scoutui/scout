@@ -8,15 +8,15 @@ export type SortDir = "asc" | "desc";
  * Shared sort state for a table. A newly picked numeric column sorts `desc`
  * (biggest counts on top), a text column `asc` (A to Z). Clicking the active
  * column again flips direction. A new `resetKey` starts again from the
- * initial key and direction.
+ * initial key and direction. A null `initialKey` starts with no column sorted.
  */
-export function useSort<K extends string>(
-  initialKey: K,
+export function useSort<K extends string, Start extends K | null = K>(
+  initialKey: Start,
   initialDir: SortDir,
   numericKeys?: ReadonlySet<K>,
   resetKey?: string,
 ) {
-  const [sort, setSort] = useState({ sortKey: initialKey, sortDir: initialDir, resetKey });
+  const [sort, setSort] = useState<{ sortKey: K | Start; sortDir: SortDir; resetKey: string | undefined }>({ sortKey: initialKey, sortDir: initialDir, resetKey });
   const current = sort.resetKey === resetKey ? sort : { sortKey: initialKey, sortDir: initialDir, resetKey };
   if (current !== sort) setSort(current);
 
@@ -69,7 +69,7 @@ export function sortRows<T, K extends string>(
  */
 export function ariaSort<K extends string>(
   key: K,
-  current: K,
+  current: K | null,
   dir: SortDir,
 ): "ascending" | "descending" | undefined {
   if (key !== current) return undefined;
@@ -91,7 +91,7 @@ export function SortButton<K extends string>({
 }: {
   label: string;
   sortKey: K;
-  current: K;
+  current: K | null;
   dir: SortDir;
   onClick: (key: K) => void;
   align?: "right";
