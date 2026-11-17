@@ -907,6 +907,7 @@ function TargetSearch({
   search,
   placeholder,
   emptyText,
+  listBeforeTyping,
   error,
   onPick,
 }: {
@@ -914,6 +915,8 @@ function TargetSearch({
   search: (query: string, packageName: string | null) => GroupedResult<IdentityPick>;
   placeholder: string;
   emptyText: string;
+  /** False hides the list until something is typed. */
+  listBeforeTyping?: boolean;
   /** The id of the field's error, while it shows one. */
   error: string | undefined;
   onPick: (pick: IdentityPick) => void;
@@ -926,6 +929,7 @@ function TargetSearch({
       invalid={error !== undefined}
       search={search}
       emptyText={emptyText}
+      listBeforeTyping={listBeforeTyping}
       listClassName="max-h-[min(18rem,40dvh)]"
       renderPackage={(group, slot) => <PickRow refusal={group.refusal} onPick={() => onPick({ packageName: group.packageName })} slot={slot} />}
       renderComponent={(row, slot) => <PickRow refusal={row.refusal} onPick={() => onPick(row.pick)} slot={slot} />}
@@ -1230,6 +1234,7 @@ function RecordDialog({
             search={searchReplacements}
             placeholder="Search for a replacement"
             emptyText={emptyText}
+            listBeforeTyping={false}
             error={fieldErrors.supersededBy ? "gov-by-error" : undefined}
             onPick={handleReplacementPick}
           />
@@ -1329,50 +1334,52 @@ function RecordDialog({
               ) : null}
             </div>
 
-            <fieldset className="min-w-0">
-              <legend className="mb-2 text-label text-muted-foreground">What should teams do instead?</legend>
-              <div className="divide-y overflow-hidden rounded-lg border">
-                {DISPOSITION_KINDS.map((kind) => {
-                  const checked = form.dispositionKind === kind;
-                  return (
-                    <div key={kind} className={cn("first:rounded-t-[calc(var(--radius)-1px)] last:rounded-b-[calc(var(--radius)-1px)]", checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
-                      <label className="relative flex cursor-pointer items-start gap-3 p-3.5">
-                        <input
-                          type="radio"
-                          name="gov-disposition"
-                          value={kind}
-                          checked={checked}
-                          onChange={() => patch({ dispositionKind: kind })}
-                          aria-labelledby={`gov-kind-${kind}`}
-                          aria-describedby={`gov-kind-${kind}-hint`}
-                          className="peer sr-only"
-                        />
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-[1.5px] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring",
-                            checked ? "border-foreground" : "border-control",
-                          )}
-                        >
-                          {checked ? <span className="size-2 rounded-full bg-foreground" /> : null}
-                        </span>
-                        <span className="flex min-w-0 flex-col gap-0.5">
-                          <span id={`gov-kind-${kind}`} className="text-sm font-medium">
-                            {KIND_CHOICE[kind].label}
+            {sourcePick ? (
+              <fieldset className="min-w-0">
+                <legend className="mb-2 text-label text-muted-foreground">What should teams do instead?</legend>
+                <div className="divide-y overflow-hidden rounded-lg border">
+                  {DISPOSITION_KINDS.map((kind) => {
+                    const checked = form.dispositionKind === kind;
+                    return (
+                      <div key={kind} className={cn("first:rounded-t-[calc(var(--radius)-1px)] last:rounded-b-[calc(var(--radius)-1px)]", checked && "selected shadow-[inset_0_0_0_1px_var(--selected-edge)]")}>
+                        <label className="relative flex cursor-pointer items-start gap-3 p-3.5">
+                          <input
+                            type="radio"
+                            name="gov-disposition"
+                            value={kind}
+                            checked={checked}
+                            onChange={() => patch({ dispositionKind: kind })}
+                            aria-labelledby={`gov-kind-${kind}`}
+                            aria-describedby={`gov-kind-${kind}-hint`}
+                            className="peer sr-only"
+                          />
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-[1.5px] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring",
+                              checked ? "border-foreground" : "border-control",
+                            )}
+                          >
+                            {checked ? <span className="size-2 rounded-full bg-foreground" /> : null}
                           </span>
-                          <span id={`gov-kind-${kind}-hint`} className="text-xs text-muted-foreground">
-                            {KIND_CHOICE[kind].description}
+                          <span className="flex min-w-0 flex-col gap-0.5">
+                            <span id={`gov-kind-${kind}`} className="text-sm font-medium">
+                              {KIND_CHOICE[kind].label}
+                            </span>
+                            <span id={`gov-kind-${kind}-hint`} className="text-xs text-muted-foreground">
+                              {KIND_CHOICE[kind].description}
+                            </span>
                           </span>
-                        </span>
-                      </label>
-                      {checked ? (
-                        <div className="pr-3.5 pb-4 pl-10.5">{kind === "superseded" ? replacementField : reasonField}</div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </fieldset>
+                        </label>
+                        {checked ? (
+                          <div className="pr-3.5 pb-4 pl-10.5">{kind === "superseded" ? replacementField : reasonField}</div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ) : null}
 
             {/* Server errors only; field errors render next to their fields. */}
             {error && (

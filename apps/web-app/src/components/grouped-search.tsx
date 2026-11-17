@@ -67,6 +67,7 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   invalid,
   search,
   emptyText,
+  listBeforeTyping = true,
   sections,
   renderPackage,
   renderComponent,
@@ -86,6 +87,8 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   search: (query: string, packageName: string | null) => GroupedResult<T, R>;
   /** What the list says when there is nothing to list before anything is typed. */
   emptyText: string;
+  /** False hides the list until something is typed. */
+  listBeforeTyping?: boolean | undefined;
   /** Draws the rows a search lists before the packages. */
   sections?: ((rows: R[]) => ReactNode) | undefined;
   renderPackage: (group: SearchGroup<T>, slot: RowSlot) => ReactNode;
@@ -298,7 +301,7 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
         <output className="sr-only">{announced}</output>
       </div>
 
-      <div ref={scroller} id={resultsId} className={cn("min-h-0 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]", listClassName)}>
+      <div ref={scroller} id={resultsId} hidden={!browsing && !listBeforeTyping} className={cn("min-h-0 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]", listClassName)}>
         {!empty ? (
           <div className="overflow-clip rounded-lg border">
             {rows.length > 0 ? sections?.(rows) : null}

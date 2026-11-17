@@ -298,10 +298,9 @@ describe("GovernanceManager", () => {
     render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     await addRecord();
     fireEvent.click(screen.getByRole("button", { name: "Create record" }));
-    const alerts = await screen.findAllByRole("alert");
-    const text = alerts.map((a) => a.textContent).join(" | ");
-    expect(text).toMatch(/choose a package or component/i);
-    expect(text).toMatch(/choose a replacement/i);
+    expect((await screen.findByRole("alert")).textContent).toMatch(/choose a package or component/i);
+    pick("Package or component", "star", /^Star/);
+    expect(screen.getByRole("alert").textContent).toMatch(/choose a replacement/i);
     const { saveGovernance } = await import("@/app/governance/governance-actions");
     expect(saveGovernance).not.toHaveBeenCalled();
   });
@@ -319,7 +318,12 @@ describe("GovernanceManager", () => {
     render(<GovernanceManager canEdit records={[]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     expect(await addRecord()).toHaveAccessibleDescription("Its uses show as deprecated in every repo.");
     expect(screen.getByText("Package or component")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "What should teams do instead?" })).toBeNull();
+    pick("Package or component", "star", /^Star/);
     expect(screen.getByRole("group", { name: "What should teams do instead?" })).toBeInTheDocument();
+    expect(results("Replacement")).not.toBeVisible();
+    fireEvent.change(searchBox("Replacement"), { target: { value: "button" } });
+    expect(results("Replacement")).toBeVisible();
     expect(screen.getByRole("radio", { name: "Move to a replacement" })).toHaveAccessibleDescription("Each use points to what to use instead.");
     const retire = screen.getByRole("radio", { name: "Retire it" });
     expect(retire).toHaveAccessibleDescription("There's no replacement. Say why, so teams know what to do.");
@@ -335,6 +339,7 @@ describe("GovernanceManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create record" }));
     await screen.findAllByRole("alert");
     expect(searchBox("Package or component")).toHaveAttribute("aria-invalid", "true");
+    pick("Package or component", "star", /^Star/);
     expect(searchBox("Replacement")).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -359,10 +364,10 @@ describe("GovernanceManager", () => {
     const source = searchBox("Package or component");
     expect(source).toHaveFocus();
     expect(source).toHaveValue("");
-    expect(screen.getByRole("radio", { name: "Retire it" })).toBeChecked();
-    expect(screen.getByLabelText("Reason")).toHaveValue("Gone");
 
     pickAcmeOldPackage();
+    expect(screen.getByRole("radio", { name: "Retire it" })).toBeChecked();
+    expect(screen.getByLabelText("Reason")).toHaveValue("Gone");
     expect(screen.getByRole("group", { name: "Package or component" })).toHaveTextContent("@acme/oldWhole package · 1 component");
     expect(screen.getByText("Marks the only component in @acme/old as deprecated.")).toBeInTheDocument();
   });
@@ -559,18 +564,18 @@ describe("GovernanceManager", () => {
     expect(source).toHaveValue("");
     await vi.waitFor(() => expect(source).toHaveFocus());
     expect(source).toHaveAttribute("placeholder", "Search packages and components");
-    expect(searchBox("Replacement")).toHaveValue("");
-    expect(searchBox("Replacement")).toHaveAttribute("placeholder", "Search for a replacement");
+    expect(screen.queryByRole("group", { name: "What should teams do instead?" })).toBeNull();
 
     const created = rec("new", "old-icons", "Star", { kind: "superseded", by: { packageName: "@acme/new", exportName: "Button" } });
     rerender(<GovernanceManager canEdit records={[created]} sources={sources} stats={{}} repoCount={0} summary={null} authors={{}} notice={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Create record" }));
     expect(await screen.findByText("Choose a package or component.")).toBeInTheDocument();
-    expect(screen.getByText("Choose a replacement.")).toBeInTheDocument();
     expect(saveGovernance).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("radio", { name: "Retire it" }));
     pickAcmeOldPackage();
+    expect(screen.getByRole("radio", { name: "Move to a replacement" })).toBeChecked();
+    expect(searchBox("Replacement")).toHaveValue("");
+    fireEvent.click(screen.getByRole("radio", { name: "Retire it" }));
     fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Gone" } });
     fireEvent.click(screen.getByRole("button", { name: "Create record" }));
     await vi.waitFor(() => expect(statuses()).toContain("2 added · last @acme/old"));
@@ -580,6 +585,7 @@ describe("GovernanceManager", () => {
       targetExport: null,
       disposition: { kind: "retired", reason: "Gone" },
     });
+    pick("Package or component", "heart", /^Heart/);
     expect(screen.getByRole("radio", { name: "Retire it" })).toBeChecked();
     expect(screen.getByLabelText("Reason")).toHaveValue("");
 
