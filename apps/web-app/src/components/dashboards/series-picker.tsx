@@ -181,12 +181,14 @@ export function SeriesPicker({
     const open = toggled.get(name) ?? browsing;
     const listed = all.has(name) ? [...group.rows, ...(listings.get(name) ?? []).filter((r) => !group.rows.some((g) => g.componentId === r.componentId))] : group.rows;
     const components = count(group.components, "component");
+    const local = group.rows.map((r) => (r.componentId === undefined ? undefined : byId.get(r.componentId))).find((c) => c?.local);
     return (
       <div key={`package:${name}`}>
         <div className={cn("flex min-w-0 items-center pe-1", rowHover)}>
           <CheckRow checked={isAdded(sel)} onToggle={(input) => toggle(input, sel)} icon={packageIcon} className="font-mono">
-            <span title={name} className="grid min-w-0 flex-1">
+            <span title={name} className="grid min-w-0 flex-1 gap-px">
               <PackageName name={name} />
+              {local ? <span className="truncate font-sans text-muted-foreground">{local.repoId ? `Local · ${local.repoId}` : "Local"}</span> : null}
             </span>
           </CheckRow>
           {group.components > 0 ? (
@@ -241,7 +243,7 @@ export function SeriesPicker({
           icon={added ? <CohortSwatch cohortKey={cohortKey(row.pick)} color={colors.get(cohortKey(row.pick)) ?? ""} /> : null}
           className={cn("font-mono", underPackage && UNDER_PACKAGE)}
         >
-          {picked?.local ? (
+          {picked?.local && !underPackage ? (
             <span className="flex min-w-0 flex-1 flex-col gap-px">
               <span className="truncate">{marked(row.exportName, row.matched)}{path}</span>
               <span className="truncate font-sans text-muted-foreground">{picked.repoId ? `Local · ${picked.repoId}` : "Local"}</span>
@@ -249,7 +251,11 @@ export function SeriesPicker({
           ) : (
             <span className="min-w-0 flex-1 truncate">
               {marked(row.exportName, row.matched)}
-              {row.packageName !== null ? <span className={underPackage ? "sr-only" : "text-muted-foreground"}> {row.packageName}</span> : null}
+              {picked?.local ? (
+                <span className="sr-only"> {picked.repoId ? `Local · ${picked.repoId}` : "Local"}</span>
+              ) : row.packageName !== null ? (
+                <span className={underPackage ? "sr-only" : "text-muted-foreground"}> {row.packageName}</span>
+              ) : null}
               {path}
             </span>
           )}
