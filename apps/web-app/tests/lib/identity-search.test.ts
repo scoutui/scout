@@ -4,7 +4,7 @@ import type { GovernanceTarget } from "@scoutui/web-shared";
 import type { CohortSelector } from "@scoutui/web-shared";
 import { cohortKey } from "@scoutui/web-shared/client";
 import type { PickableComponent } from "@/lib/chart-builder-series";
-import { MAX_COMPONENT_ROWS, type SearchInput, type SearchRow, type SeriesSearchInput, searchSeries, searchTargets } from "@/lib/identity-search";
+import { MAX_COMPONENT_ROWS, type SearchInput, type SearchRow, type SeriesSearchInput, groupSeries, searchSeries, searchTargets } from "@/lib/identity-search";
 
 const target = (packageName: string, exportName: string, occurrences: number): GovernanceTarget => ({ packageName, exportName, occurrences });
 const pkg = (packageName: string, occurrences: number): GovernanceTarget => ({ packageName, occurrences });
@@ -240,14 +240,19 @@ describe("searchSeries", () => {
     comp("c4", "Button", "@example/new-ui", 8, "src/button/index.ts"), comp("c5", "Button", "@example/new-ui", 3, "src/legacy/button.ts"),
     comp("c6", "Header", null, 4, "src/Header.tsx"),
   ];
+  const packages = ["@example/new-ui", "@example/old-ui"];
   const tags = [
     { id: "t-old", label: "old-ui", rule: { glob: [], exact: ["@example/old-ui"] } },
     { id: "t-new", label: "new-ui", rule: { glob: ["@example/*"], exact: [] } },
   ];
   const series = (over: Partial<SeriesSearchInput>) =>
-    searchSeries({ tags, components: charted, packages: ["@example/new-ui", "@example/old-ui"], query: "", scope: null, added: new Set(), ...over });
+    searchSeries({ tags, components: charted, packages, query: "", scope: null, added: new Set(), ...over });
   const seriesLabels = (over: Partial<SeriesSearchInput>) => series(over).rows.map(label);
   const keys = (...sels: CohortSelector[]) => new Set(sels.map(cohortKey));
+  // Each package as "name matched/components: its rows", with "+" when it offers the rest.
+  const grouped = (over: Partial<SeriesSearchInput>) =>
+    groupSeries({ components: charted, packages, query: "", added: new Set(), ...over }).groups.map((g) =>
+      `${g.packageName} ${g.matched ?? "-"}/${g.components}${g.more ? "+" : ""}: ${g.rows.map((r) => r.exportName).join(", ")}`);
 
   it("lists the tags, Local components, then packages by use when nothing is typed, each tag with the packages it matches", () => {
     const { rows } = series({});
@@ -255,30 +260,20 @@ describe("searchSeries", () => {
     expect(rows.slice(0, 3)).toMatchObject([{ packages: 1 }, { packages: 2 }, { components: 1 }]);
   });
 
-  it("puts the tags and packages a search matches before the components it ranks, the first row active", () => {
-    const result = series({ query: "new" });
-    expect(result.rows.map(label)).toEqual(["tag new-ui", "package @example/new-ui", "Button @example/new-ui", "Button @example/new-ui"]);
-    expect(result.defaultIndex).toBe(0);
-    expect(seriesLabels({ query: "button" })).toEqual(["Button @example/old-ui", "Button @example/new-ui", "Button @example/new-ui", "ButtonGroup @example/old-ui"]);
+  it("lists the tags and Local components a search matches, and its components only grouped by package", () => {
+    expect(seriesLabels({ query: "new" })).toEqual(["tag new-ui"]);
     expect(seriesLabels({ query: "local" })).toEqual(["Local components"]);
-    expect(seriesLabels({ query: "header" })).toEqual(["Header null"]);
+    expect(series({ query: "button" })).toMatchObject({ rows: [], groups: [{ packageName: "@example/old-ui" }, { packageName: "@example/new-ui" }] });
   });
 
-  it("shows at most 50 components across every package, and all of them in one package", () => {
-    const icons = Array.from({ length: 60 }, (_, i) => comp(`i${i}`, `Icon${i}`, "@example/glyphs", 1));
-    expect(series({ components: icons, packages: ["@example/glyphs"], query: "icon" })).toMatchObject({ total: 60, rows: { length: MAX_COMPONENT_ROWS } });
-    expect(series({ components: icons, packages: ["@example/glyphs"], query: "icon", scope: "@example/glyphs" }).rows).toHaveLength(60);
-  });
-
-  it("narrowed to a package, offers the whole package as a series, then each component by its id with its path", () => {
+  it("narrowed to a package, lists each component by its id with its path", () => {
     expect(series({ scope: "@example/new-ui" }).rows).toMatchObject([
-      { kind: "whole", components: 2, pick: { kind: "package", packageName: "@example/new-ui" } },
       { kind: "component", exportName: "Button", disambiguator: "src/button/index.ts", pick: { kind: "component", componentId: "c4" } },
       { kind: "component", exportName: "Button", disambiguator: "src/legacy/button.ts", pick: { kind: "component", componentId: "c5" } },
     ]);
   });
 
-  it("lists components and packages only older scans hold after every one in use, the most recently held first", () => {
+  it("lists packages and components only older scans hold after every one in use that matches as well, the most recently held first", () => {
     const components = [
       ...charted,
       gone("g1", "Button", "@example/legacy-kit", "2026-08-01T00:00:00.000Z"),
@@ -286,23 +281,54 @@ describe("searchSeries", () => {
       gone("g3", "Badge", "@example/old-ui", "2026-09-04T00:00:00.000Z"),
       gone("g4", "Card", "@example/older-kit", "2026-09-10T00:00:00.000Z"),
     ];
-    const packages = ["@example/empty", "@example/legacy-kit", "@example/new-ui", "@example/old-ui", "@example/older-kit"];
-    const ordered = (over: Partial<SeriesSearchInput>) => seriesLabels({ components, packages, ...over });
+    const all = ["@example/empty", "@example/legacy-kit", "@example/new-ui", "@example/old-ui", "@example/older-kit"];
 
-    expect(ordered({ query: "button" })).toEqual([
-      "Button @example/old-ui", "Button @example/new-ui", "Button @example/new-ui", "ButtonGroup @example/old-ui", "Button @example/legacy-kit",
+    expect(grouped({ components, packages: all, query: "button" })).toEqual([
+      "@example/old-ui 2/5: Button, ButtonGroup", "@example/new-ui 2/2: Button, Button", "@example/legacy-kit 1/1: Button",
     ]);
-    expect(ordered({ scope: "@example/old-ui" })).toEqual([
-      "all @example/old-ui", "Button @example/old-ui", "Card @example/old-ui", "ButtonGroup @example/old-ui", "Badge @example/old-ui", "Alert @example/old-ui",
+    expect(seriesLabels({ components, packages: all, scope: "@example/old-ui" })).toEqual([
+      "Button @example/old-ui", "Card @example/old-ui", "ButtonGroup @example/old-ui", "Badge @example/old-ui", "Alert @example/old-ui",
     ]);
-    expect(ordered({}).filter((l) => l.startsWith("package"))).toEqual([
+    expect(seriesLabels({ components, packages: all }).filter((l) => l.startsWith("package"))).toEqual([
       "package @example/old-ui", "package @example/new-ui", "package @example/empty", "package @example/older-kit", "package @example/legacy-kit",
     ]);
   });
 
   it("marks the rows whose series are already added", () => {
-    const added = keys({ kind: "tag", tagId: "t-new" }, { kind: "package", packageName: "@example/new-ui" }, { kind: "component", componentId: "c4" });
-    expect(series({ query: "new", added }).rows.map((r) => (r.kind === "package" ? null : r.added))).toEqual([true, null, true, false]);
-    expect(series({ scope: "@example/new-ui", added }).rows[0]).toMatchObject({ kind: "whole", added: true });
+    const added = keys({ kind: "tag", tagId: "t-new" }, { kind: "component", componentId: "c4" });
+    const result = series({ query: "new", added });
+    expect(result.rows.map((r) => (r.kind === "package" ? null : r.added))).toEqual([true]);
+    expect(result.groups[0]?.rows.map((r) => r.added)).toEqual([true, false]);
+  });
+
+  describe("groupSeries", () => {
+    it("lists each matching component once, under its package, the packages by their best match and then by use", () => {
+      expect(grouped({ query: "button" })).toEqual(["@example/old-ui 2/3: Button, ButtonGroup", "@example/new-ui 2/2: Button, Button"]);
+      expect(grouped({ components: [...charted, comp("n1", "NewBadge", "@example/tiny", 1)], query: "new" })).toEqual([
+        "@example/tiny 1/1: NewBadge", "@example/new-ui -/2: Button, Button",
+      ]);
+    });
+
+    it("lists only the components of the package a second word names", () => {
+      expect(grouped({ query: "new butt" })).toEqual(["@example/new-ui 2/2: Button, Button"]);
+      expect(grouped({ query: "old butt" })).toEqual(["@example/old-ui 2/3: Button, ButtonGroup"]);
+    });
+
+    it("opens a package its name matches on its five most used components and offers the rest, after any of its components that match", () => {
+      const kit = Array.from({ length: 7 }, (_, i) => comp(`k${i}`, i === 0 ? "KitButton" : `Kit${i}`, "@example/button-kit", i + 1));
+      expect(grouped({ components: kit, packages: ["@example/button-kit"], query: "example" })).toEqual(["@example/button-kit -/7+: Kit6, Kit5, Kit4, Kit3, Kit2"]);
+      expect(grouped({ components: kit, packages: ["@example/button-kit"], query: "button" })).toEqual(["@example/button-kit 1/7+: KitButton"]);
+    });
+
+    it("lists components no package holds apart from the packages", () => {
+      expect(groupSeries({ components: charted, packages, query: "header", added: new Set() })).toMatchObject({ groups: [], unpackaged: [{ exportName: "Header" }] });
+    });
+
+    it("stops at 50 components across every package and says how many there are", () => {
+      const icons = Array.from({ length: 60 }, (_, i) => comp(`i${i}`, `Icon${i}`, "@example/glyphs", 1));
+      const result = groupSeries({ components: [...icons, comp("x", "IconX", "@example/more", 0)], packages: [], query: "icon", added: new Set() });
+      expect(result.groups.map((g) => [g.packageName, g.rows.length])).toEqual([["@example/glyphs", MAX_COMPONENT_ROWS]]);
+      expect(result.total).toBe(61);
+    });
   });
 });
