@@ -73,6 +73,7 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   renderComponent,
   className,
   listClassName,
+  searchClassName,
   scrollerRef,
 }: {
   inputId: string;
@@ -96,6 +97,8 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   className?: string | undefined;
   /** Classes for the area the list scrolls in. */
   listClassName?: string | undefined;
+  /** Classes for the search box's row, such as pinning it while its results scroll past. */
+  searchClassName?: string | undefined;
   scrollerRef?: RefObject<HTMLDivElement | null> | undefined;
 }) {
   const [query, setQuery] = useState("");
@@ -254,7 +257,7 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", className)}>
-      <div className="flex flex-none flex-col gap-2">
+      <div className={cn("flex flex-none flex-col gap-2", searchClassName)}>
         <search
           className={cn(
             "focus-field flex h-9 min-w-0 items-center gap-2 rounded-lg border ps-2.5 pe-1 dark:bg-input/30",

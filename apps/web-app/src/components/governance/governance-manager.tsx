@@ -908,6 +908,7 @@ function TargetSearch({
   placeholder,
   emptyText,
   listBeforeTyping,
+  pinnedClassName,
   error,
   onPick,
 }: {
@@ -917,6 +918,8 @@ function TargetSearch({
   emptyText: string;
   /** False hides the list until something is typed. */
   listBeforeTyping?: boolean;
+  /** The background the search box keeps while it stays at the top of the dialog's scrolling body. */
+  pinnedClassName: string;
   /** The id of the field's error, while it shows one. */
   error: string | undefined;
   onPick: (pick: IdentityPick) => void;
@@ -930,7 +933,8 @@ function TargetSearch({
       search={search}
       emptyText={emptyText}
       listBeforeTyping={listBeforeTyping}
-      listClassName="max-h-[min(18rem,40dvh)]"
+      listClassName="overflow-y-visible"
+      searchClassName={cn("sticky -top-5 z-10 -mb-3 pb-3", pinnedClassName)}
       renderPackage={(group, slot) => <PickRow refusal={group.refusal} onPick={() => onPick({ packageName: group.packageName })} slot={slot} />}
       renderComponent={(row, slot) => <PickRow refusal={row.refusal} onPick={() => onPick(row.pick)} slot={slot} />}
     />
@@ -1235,6 +1239,7 @@ function RecordDialog({
             placeholder="Search for a replacement"
             emptyText={emptyText}
             listBeforeTyping={false}
+            pinnedClassName="bg-(--selected)"
             error={fieldErrors.supersededBy ? "gov-by-error" : undefined}
             onPick={handleReplacementPick}
           />
@@ -1296,7 +1301,7 @@ function RecordDialog({
         </div>
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-5 pb-6">
+          <div className="min-h-0 flex-1 scroll-pt-16 space-y-5 overflow-y-auto overscroll-contain px-6 pt-5 pb-6">
             {/* Source: the pick decides the grain */}
             <div className="flex flex-col gap-2">
               {sourcePick ? (
@@ -1322,6 +1327,7 @@ function RecordDialog({
                     search={searchSources}
                     placeholder="Search packages and components"
                     emptyText={emptyText}
+                    pinnedClassName="bg-popover"
                     error={fieldErrors.source ? "gov-source-error" : undefined}
                     onPick={handleSourcePick}
                   />
@@ -1337,7 +1343,7 @@ function RecordDialog({
             {sourcePick ? (
               <fieldset className="min-w-0">
                 <legend className="mb-2 text-label text-muted-foreground">What should teams do instead?</legend>
-                <div className="divide-y overflow-hidden rounded-lg border">
+                <div className="divide-y overflow-clip rounded-lg border">
                   {DISPOSITION_KINDS.map((kind) => {
                     const checked = form.dispositionKind === kind;
                     return (
