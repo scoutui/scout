@@ -119,10 +119,17 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   const input = inputRef ?? ownInput;
   const ownScroller = useRef<HTMLDivElement>(null);
   const scroller = scrollerRef ?? ownScroller;
+  const root = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLElement>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new search starts at the top of its results
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new search starts at the top of its results, under the search box when the box is pinned over them
   useLayoutEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = 0;
+    const list = scroller.current;
+    if (!list) return;
+    list.scrollTop = 0;
+    if (!list.hidden && box.current && list.getBoundingClientRect().top < box.current.getBoundingClientRect().bottom) {
+      root.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    }
   }, [query]);
 
   const rows = result.rows.filter((r): r is R => !isComponent(r));
@@ -242,11 +249,10 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
             ) : (
               <span className="min-w-0 flex-1 truncate">
                 {marked(row.exportName, row.matched)}
-                {row.local ? (
-                  <span className="sr-only"> {localLabel(row)}</span>
-                ) : row.packageName !== null ? (
+                {row.packageName !== null ? (
                   <span className={underPackage ? "sr-only" : "text-muted-foreground"}> {row.packageName}</span>
                 ) : null}
+                {row.local ? <span className="sr-only"> {localLabel(row)}</span> : null}
                 {path}
               </span>
             ),
@@ -256,9 +262,10 @@ export function GroupedSearch<T, R extends { kind: string } = never>({
   };
 
   return (
-    <div className={cn("flex min-h-0 flex-col gap-3", className)}>
+    <div ref={root} className={cn("flex min-h-0 flex-col gap-3", className)}>
       <div className={cn("flex flex-none flex-col gap-2", searchClassName)}>
         <search
+          ref={box}
           className={cn(
             "focus-field flex h-9 min-w-0 items-center gap-2 rounded-lg border ps-2.5 pe-1 dark:bg-input/30",
             invalid ? "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40" : "border-control",

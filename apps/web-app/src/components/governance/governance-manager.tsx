@@ -1,5 +1,6 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import {
   ChevronDown,
@@ -895,8 +896,14 @@ function PickRow({ refusal, onPick, slot }: { refusal: string | null; onPick: ()
       <span aria-hidden className="flex w-3.5 shrink-0 justify-center">
         {slot.icon}
       </span>
-      {slot.children}
-      {refusal !== null ? <span className="shrink-0 font-sans">{refusal}</span> : null}
+      {refusal === null ? (
+        slot.children
+      ) : (
+        <span className="grid min-w-0 flex-1 gap-px">
+          {slot.children}
+          <span className="font-sans">{refusal}</span>
+        </span>
+      )}
     </button>
   );
 }
@@ -1132,8 +1139,11 @@ function RecordDialog({
     e.preventDefault();
     if (pending || confirmingDiscard) return;
     const errors = validateForm(form);
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    flushSync(() => setFieldErrors(errors));
+    if (Object.keys(errors).length > 0) {
+      e.currentTarget.querySelector('[role="alert"]')?.scrollIntoView({ block: "nearest", behavior: "instant" });
+      return;
+    }
     setError(null);
     setConflictId(null);
     startTransition(async () => {
