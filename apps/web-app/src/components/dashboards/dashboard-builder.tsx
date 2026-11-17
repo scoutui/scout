@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CircleX } from "lucide-react";
-import type { ChartRange, ChartType, ChartVisibility, CohortRole, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
-import { cohortKey, unknownCohortKeys } from "@scoutui/web-shared/client";
+import type { ChartRange, ChartType, ChartVisibility, CohortSelector, Dashboard, DashboardConfig, DashboardMetric, DashboardView } from "@scoutui/web-shared";
+import { cohortKey, selectorRole, unknownCohortKeys } from "@scoutui/web-shared/client";
 import { actionErrorMessage } from "@/lib/action-error";
 import { type LibraryTag, type PickableComponent, deprecatedShare, deprecatedShareText, offersDeprecatedOnly, tagsInUse } from "@/lib/chart-builder-series";
 import { searchSeries } from "@/lib/identity-search";
@@ -95,20 +95,6 @@ function cohortLabel(
     }
     case "tag":
       return libraryTags.find((t) => t.id === sel.tagId)?.label;
-  }
-}
-
-/** A selector's role from the picker lists, mirroring the engine's cohortRole. */
-function predictedRole(sel: CohortSelector, components: PickableComponent[], deprecatedPackages: string[]): CohortRole | undefined {
-  switch (sel.kind) {
-    case "local":
-      return undefined;
-    case "tag":
-      return sel.deprecatedOnly ? "deprecated" : undefined;
-    case "package":
-      return sel.deprecatedOnly || deprecatedPackages.includes(sel.packageName) ? "deprecated" : sel.role;
-    case "component":
-      return components.some((c) => c.componentId === sel.componentId && c.deprecated) ? "deprecated" : sel.role;
   }
 }
 
@@ -249,7 +235,7 @@ export function DashboardBuilder({
 
   // A series in the last landed view takes its label, colour and role from there; any
   // other tag series brings its tag's colour, and any other series but an unknown one takes
-  // the role `predictedRole` gives it. They take colours as the chart gives them:
+  // the role `selectorRole` gives it from the picker lists. They take colours as the chart gives them:
   // `lineColors` for a chart over time, `chartColors` for any other. An unknown series reads by
   // any name the lists or the saved chart hold, and shows no colour.
   const legend = useMemo<LegendSeries[]>(() => {
@@ -260,7 +246,14 @@ export function DashboardBuilder({
       seen.set(key, nth + 1);
       const drawn = landed ? previewCohort(landed.view, key, nth) : undefined;
       const unknown = landed?.unknown.has(key) ?? false;
-      const role = drawn ? drawn.role : unknown ? undefined : predictedRole(sel, pickable, pickerDeprecatedPackages);
+      const role = drawn
+        ? drawn.role
+        : unknown
+          ? undefined
+          : selectorRole(sel, {
+              isPackageDeprecated: (packageName) => pickerDeprecatedPackages.includes(packageName),
+              isComponentDeprecated: (componentId) => pickable.some((c) => c.componentId === componentId && c.deprecated),
+            });
       const cohort: ChartCohort = drawn ?? {
         cohortKey: key,
         color: sel.kind === "tag" ? (libraryTags.find((t) => t.id === sel.tagId)?.color ?? "") : "",

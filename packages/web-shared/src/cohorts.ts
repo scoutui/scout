@@ -123,26 +123,35 @@ export function componentDisambiguators(cohorts: CohortSelector[], artifacts: Di
  * deprecated wins over a config-carried successor role, so a successor that
  * becomes deprecated itself (a chained migration) goes red.
  */
-function cohortRole(selector: CohortSelector, artifacts: DigestScan[], governance: GovernanceRecord[]): CohortRole | undefined {
+export function selectorRole(
+  selector: CohortSelector,
+  deprecated: { isPackageDeprecated: (packageName: string) => boolean; isComponentDeprecated: (componentId: string) => boolean },
+): CohortRole | undefined {
   switch (selector.kind) {
     case "local":
       return undefined;
     case "tag":
       return selector.deprecatedOnly ? "deprecated" : undefined;
-    case "package": {
-      if (selector.deprecatedOnly) return "deprecated";
-      if (deprecatedPackageNames(governance).includes(selector.packageName)) return "deprecated";
-      return selector.role;
-    }
-    case "component": {
-      const c = representativeMember(selector.componentId, artifacts);
-      return c !== null && componentDeprecated(c, governance) ? "deprecated" : selector.role;
-    }
+    case "package":
+      return selector.deprecatedOnly || deprecated.isPackageDeprecated(selector.packageName) ? "deprecated" : selector.role;
+    case "component":
+      return deprecated.isComponentDeprecated(selector.componentId) ? "deprecated" : selector.role;
     default: {
       const _exhaustive: never = selector;
       return _exhaustive;
     }
   }
+}
+
+/** `selectorRole` with what the scans and governance records say is deprecated. */
+function cohortRole(selector: CohortSelector, artifacts: DigestScan[], governance: GovernanceRecord[]): CohortRole | undefined {
+  return selectorRole(selector, {
+    isPackageDeprecated: (packageName) => deprecatedPackageNames(governance).includes(packageName),
+    isComponentDeprecated: (componentId) => {
+      const c = representativeMember(componentId, artifacts);
+      return c !== null && componentDeprecated(c, governance);
+    },
+  });
 }
 
 type CohortMeta = { selector: CohortSelector; key: string; label: string; color: string; role?: CohortRole };
