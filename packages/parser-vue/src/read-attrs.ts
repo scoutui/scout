@@ -16,7 +16,19 @@ function attrOf(prop: AttributeNode | DirectiveNode): { name: string; value: str
   };
 }
 
-export function readAttrs(el: ElementNode): { props: PropUsage[]; events: string[] } {
+/** Vue's `camelize`, the name a component receives a hyphenated prop under: `is-preview` → `isPreview`. */
+export const camelize = (name: string): string => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
+
+/** `v-model`, `v-model:title` and either with modifiers (`v-model.trim`); a dynamic argument (`v-model:[name]`) doesn't match. */
+const V_MODEL_RE = /^v-model(?::([^.[\]]+))?(?:\..*)?$/;
+
+/**
+ * The props and events an element writes. On a component, `v-model` binds the
+ * `modelValue` prop and `v-model:title` binds `title`, as Vue compiles them; a
+ * custom element's `v-model` depends on the app's compiler options, so it's
+ * skipped there.
+ */
+export function readAttrs(el: ElementNode, target: "component" | "custom-element"): { props: PropUsage[]; events: string[] } {
   const props: PropUsage[] = [];
   const events: string[] = [];
   for (const attr of el.props.map(attrOf)) {
@@ -28,11 +40,16 @@ export function readAttrs(el: ElementNode): { props: PropUsage[]; events: string
       if (!props.some((p) => p.name === "...rest")) props.push({ name: "...rest", tier: "dynamic" });
       continue;
     }
+    const model = V_MODEL_RE.exec(attr.name);
+    if (model && target === "component") {
+      props.push(classifyBindExpr(model[1] ?? "modelValue", attr.value.trim()));
+      continue;
+    }
     if (/^v-/.test(attr.name) && !/^v-bind:/.test(attr.name)) continue;
     if (/^[:.]|^v-bind:/.test(attr.name)) {
       const name = attr.name.replace(/^[:.]|^v-bind:/, "");
       const usage = classifyBindExpr(name, attr.value.trim());
-      props.push(isHandlerName(name) && usage.tier !== "written" ? { name, tier: "dynamic" } : usage);
+      props.push(isHandlerName(camelize(name)) && usage.tier !== "written" ? { name, tier: "dynamic" } : usage);
       continue;
     }
     props.push({ name: attr.name, tier: "written", value: attr.value === "" ? true : attr.value });

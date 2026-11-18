@@ -73,6 +73,24 @@ export function typeLiteralToDeclared(typeLit: TSTypeLiteral, scriptSource: stri
   return { props, hasRest };
 }
 
+/** A Vue prop options object (`{ type, required, default }`) → what it states. */
+export function propOptionsToDeclared(options: ObjectExpression): DeclaredProp {
+  const decl: DeclaredProp = {};
+  for (const d of options.properties) {
+    if (d.type !== "Property" || d.key.type !== "Identifier") continue;
+    if (d.key.name === "type" && d.value.type === "Identifier") {
+      decl.type = d.value.name;
+    } else if (d.key.name === "required") {
+      const r = readLiteralValue(d.value);
+      if (typeof r === "boolean") decl.required = r;
+    } else if (d.key.name === "default") {
+      const lit = readLiteralValue(d.value);
+      if (lit !== undefined) decl.default = lit;
+    }
+  }
+  return decl;
+}
+
 /** Vue object-runtime `defineProps({ ... })` → declared API. Reads each key's
  *  descriptor (`{ type, required, default }`) or shorthand constructor. */
 export function objectRuntimeToDeclared(obj: ObjectExpression): DeclaredPropApi {
@@ -80,25 +98,13 @@ export function objectRuntimeToDeclared(obj: ObjectExpression): DeclaredPropApi 
   for (const p of obj.properties) {
     if (p.type !== "Property") continue;
     if (p.key.type !== "Identifier") continue;
-    const decl: DeclaredProp = {};
     const val = p.value;
-    if (val.type === "ObjectExpression") {
-      for (const d of val.properties) {
-        if (d.type !== "Property" || d.key.type !== "Identifier") continue;
-        if (d.key.name === "type" && d.value.type === "Identifier") {
-          decl.type = d.value.name;
-        } else if (d.key.name === "required") {
-          const r = readLiteralValue(d.value);
-          if (typeof r === "boolean") decl.required = r;
-        } else if (d.key.name === "default") {
-          const lit = readLiteralValue(d.value);
-          if (lit !== undefined) decl.default = lit;
-        }
-      }
-    } else if (val.type === "Identifier") {
-      decl.type = val.name; // shorthand: `variant: String`
-    }
-    props[p.key.name] = decl;
+    props[p.key.name] =
+      val.type === "ObjectExpression"
+        ? propOptionsToDeclared(val)
+        : val.type === "Identifier"
+          ? { type: val.name } // shorthand: `variant: String`
+          : {};
   }
   return { props, hasRest: false };
 }

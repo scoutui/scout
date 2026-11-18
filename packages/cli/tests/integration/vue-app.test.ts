@@ -187,6 +187,46 @@ describe("integration: vue-app fixture", () => {
     });
   });
 
+  // `<Card is-preview data-test :on-select>` writes declared props in kebab
+  // case beside an undeclared attribute; `<Field>` declares its props with
+  // `defineModel()` and is bound with `v-model`, `v-model:open` and a
+  // modifier; `<x-toggle>` is a custom element bound with `v-model`.
+  describe("prop-names", () => {
+    const S = "prop-names";
+    const page = local(S, "pages/index.vue", "Index");
+    const card = local(S, "components/Card.vue", "Card");
+    const field = local(S, "components/Field.vue", "Field");
+
+    it("records a kebab-case attribute under the declared prop it sets, and `v-model` under the prop it binds", () => {
+      expect(rendersIn(S)).toEqual([
+        row("pages/index.vue:2:3", card, page, [imported("../components/Card.vue", "default")], {
+          isPreview: { tier: "written", value: true },
+          "data-test": { tier: "written", value: "card" },
+          onSelect: { tier: "dynamic" },
+        }),
+        row("pages/index.vue:3:3", field, page, [imported("../components/Field.vue", "default")], {
+          modelValue: { tier: "reference", ref: "name" },
+          open: { tier: "reference", ref: "isOpen" },
+        }),
+        row("pages/index.vue:4:3", field, page, [imported("../components/Field.vue", "default")], {
+          modelValue: { tier: "reference", ref: "name" },
+        }),
+        row("pages/index.vue:5:3", tag("x-toggle"), page, []),
+      ]);
+      expect(componentOf(card)?.events).toEqual({ onSelect: { boundCount: 1 } });
+    });
+
+    it("reads each `defineModel()` as a declared prop", () => {
+      expect(componentOf(field)?.declared).toEqual({
+        props: {
+          modelValue: { type: "string" },
+          open: { type: "boolean", required: false, default: false },
+        },
+        hasRest: false,
+      });
+    });
+  });
+
   // `script-only/composable.vue` has a `<script>` and no `<template>`: it
   // renders nothing and nothing renders it.
   describe("script-only", () => {
@@ -202,6 +242,9 @@ describe("integration: vue-app fixture", () => {
         "src/mixed-page/pages/index.vue",
         "src/on-props/components/Toggle.vue",
         "src/on-props/pages/index.vue",
+        "src/prop-names/components/Card.vue",
+        "src/prop-names/components/Field.vue",
+        "src/prop-names/pages/index.vue",
         "src/sfc-wraps-tag/components/WebAction.vue",
         "src/sfc-wraps-tag/pages/index.vue",
         "src/slot-content/components/Field.vue",

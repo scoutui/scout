@@ -11,11 +11,12 @@ import type {
 } from "@oxc-project/types";
 import { basename, extname } from "node:path";
 import type { LocalDefinition } from "./types.js";
-import type { DeclaredPropApi } from "@scoutui/scan-format";
+import type { DeclaredProp, DeclaredPropApi } from "@scoutui/scan-format";
 import {
   objectPatternToDeclared,
   typeLiteralToDeclared,
   objectRuntimeToDeclared,
+  propOptionsToDeclared,
   readLiteralValue,
 } from "./declared-props.js";
 
@@ -53,7 +54,11 @@ function detectSfc(wrapper: VueParseWrapper, filePath: string): LocalDefinition 
   if (wrapper.scriptProgram) {
     const scriptSource = wrapper.descriptor.scriptSetup?.content ?? wrapper.descriptor.script?.content ?? "";
     const site = findDefinePropsSite(wrapper.scriptProgram);
-    const declared = site ? siteToDeclared(site, scriptSource) : undefined;
+    const declared = withModels(
+      site ? siteToDeclared(site, scriptSource) : undefined,
+      defineModelCalls(wrapper.scriptProgram),
+      scriptSource,
+    );
     if (declared) def.declared = declared;
   }
   return def;
@@ -323,4 +328,54 @@ function siteToDeclared(site: DefinePropsSite, scriptSource: string): DeclaredPr
   }
   if (!base || Object.keys(base.props).length === 0) return undefined;
   return base;
+}
+
+// ---------------------------------------------------------------------------
+// defineModel: each call declares a prop
+// ---------------------------------------------------------------------------
+
+type CallNode = Extract<Node, { type: "CallExpression" }>;
+
+/** Every top-level `defineModel(...)` call, in source order. */
+function defineModelCalls(program: Program): CallNode[] {
+  const calls: CallNode[] = [];
+  const visit = (init: Node | null | undefined): void => {
+    if (!init) return;
+    const expr = unwrapParens(init);
+    if (expr.type === "CallExpression" && expr.callee.type === "Identifier" && expr.callee.name === "defineModel") {
+      calls.push(expr as CallNode);
+    }
+  };
+  for (const stmt of program.body) {
+    if (stmt.type === "VariableDeclaration") for (const d of stmt.declarations) visit(d.init);
+    else if (stmt.type === "ExpressionStatement") visit(stmt.expression as Node);
+  }
+  return calls;
+}
+
+/**
+ * The prop a `defineModel()` call declares: `modelValue`, or the name its first
+ * argument gives (`defineModel("open")`), with the options object's type,
+ * `required` and literal default, and the type argument's text.
+ */
+function modelToDeclared(call: CallNode, scriptSource: string): [string, DeclaredProp] {
+  const [first, second] = call.arguments;
+  const name = first?.type === "Literal" && typeof first.value === "string" ? first.value : undefined;
+  const options = name === undefined ? first : second;
+  const decl: DeclaredProp = options?.type === "ObjectExpression" ? propOptionsToDeclared(options) : {};
+  const typeArg = call.typeArguments?.params[0];
+  if (typeArg) decl.type = scriptSource.slice(typeArg.start, typeArg.end);
+  if (decl.default !== undefined && decl.required === undefined) decl.required = false;
+  return [name ?? "modelValue", decl];
+}
+
+/** `base` with each `defineModel()` call's prop added; undefined when neither declares a prop. */
+function withModels(base: DeclaredPropApi | undefined, calls: CallNode[], scriptSource: string): DeclaredPropApi | undefined {
+  if (calls.length === 0) return base;
+  const api = base ?? { props: {}, hasRest: false };
+  for (const call of calls) {
+    const [name, decl] = modelToDeclared(call, scriptSource);
+    api.props[name] = decl;
+  }
+  return api;
 }
