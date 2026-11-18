@@ -120,7 +120,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
     });
   });
 
-  it("offers in the builder every component and package the scans in scope have held, with when the latest scans stopped holding each", async () => {
+  it("offers in the builder every component and package the scans in scope have held, with when the latest scans stopped holding each, and every package deprecated whole", async () => {
     await withReadModelDatabase(async pool => {
       await seed(pool);
       const retired = component(packageExport("@sample/core", "RetiredBadge"));
@@ -134,12 +134,14 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
       await older("repo-a", "scan-oldest", "2026-05-01T00:00:00Z", [retired, oldCard]);
       await older("repo-a", "scan-middle", "2026-05-20T00:00:00Z", [retired]);
       await older("repo-b", "scan-b-older", "2026-05-10T00:00:00Z", [elsewhere]);
+      await driver.createGovernance({ grain: "package", targetPackage: "@sample/elsewhere", targetExport: null, disposition: { kind: "retired", reason: "Retired" } });
+      await driver.createGovernance({ grain: "component", targetPackage: "@sample/legacy", targetExport: "OldCard", disposition: { kind: "retired", reason: "Retired" } });
       const { default: newPage } = await import("@/app/charts/new/page");
       const { pickableForRepo } = await import("@/app/charts/dashboard-actions");
       const seen = (list: PickableComponent[], ...names: string[]) => Object.fromEntries(names.map(name => [name,
         list.filter(c => c.displayName === name).map(({ packageName, occurrences, lastSeenAt }) => ({ packageName, occurrences, lastSeenAt }))]));
 
-      const estate = propsOf(await newPage({ searchParams: Promise.resolve({}) }), "DashboardBuilder") as { components: PickableComponent[]; packages: string[] };
+      const estate = propsOf(await newPage({ searchParams: Promise.resolve({}) }), "DashboardBuilder") as { components: PickableComponent[]; packages: string[]; deprecatedPackages: string[] };
       expect(seen(estate.components, "ActionButton", "RetiredBadge", "OldCard", "GoneElsewhere")).toEqual({
         ActionButton: [{ packageName: "@sample/core", occurrences: 1, lastSeenAt: null }],
         RetiredBadge: [{ packageName: "@sample/core", occurrences: 0, lastSeenAt: "2026-05-20T00:00:00.000Z" }],
@@ -147,6 +149,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
         GoneElsewhere: [{ packageName: "@sample/elsewhere", occurrences: 0, lastSeenAt: "2026-05-10T00:00:00.000Z" }],
       });
       expect(estate.packages).toEqual(["@example/app-kit", "@sample/core", "@sample/elsewhere", "@sample/legacy", "@sample/mixed"]);
+      expect(estate.deprecatedPackages).toEqual(["@sample/elsewhere"]);
 
       const repo = await pickableForRepo("repo-a");
       if (repo.state !== "ready") throw new Error("Expected the repo's picker lists");
@@ -157,6 +160,7 @@ describe.skipIf(!databaseUrl)("saved chart page", { timeout: 30_000 }, () => {
         GoneElsewhere: [],
       });
       expect(repo.value.packages).toEqual(["@sample/core", "@sample/legacy", "@sample/mixed"]);
+      expect(repo.value.deprecatedPackages).toEqual(["@sample/elsewhere"]);
     });
   });
 

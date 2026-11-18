@@ -11,6 +11,8 @@ export type PickableComponent = {
   occurrences: number;
   /** Defined in a scanned repo rather than imported from a package. */
   local: boolean;
+  /** For a local component one repo's scans hold, that repo. */
+  repoId?: string;
   /** Null while a latest scan holds it, otherwise when the newest scan holding it was made. */
   lastSeenAt: string | null;
 };

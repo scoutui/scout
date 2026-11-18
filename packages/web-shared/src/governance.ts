@@ -65,6 +65,11 @@ export function componentDeprecated(component: PresentableComponent, records: Go
   return isDeprecated(resolveGovernance(governanceKey(component), records));
 }
 
+/** The packages deprecated whole: those a package-grain record targets. */
+export function deprecatedPackageNames(records: GovernanceRule[]): string[] {
+  return records.flatMap((r) => (r.grain === "package" ? [r.targetPackage] : []));
+}
+
 /**
  * The ids of the components one rule governs in one scan. A package-grain rule
  * takes everything in its package. A component-grain rule takes the components

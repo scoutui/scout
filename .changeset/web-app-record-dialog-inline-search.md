@@ -1,0 +1,7 @@
+---
+"@scoutui/web-app": minor
+---
+
+In the governance record dialog, **Package or component** and **Replacement** now list their results inside the dialog, grouped by package as in the chart builder's **Series** column, instead of in a list that opened over the dialog. The dialog scrolls as one, and the search box you're typing in stays at its top. A new record starts with just **Package or component**, which lists the packages before you type, the most used first; the rest of the form appears once you've picked one. **Replacement** lists results once you type. Press a package's name to record the whole package, or press its component count, such as **129 components**, to open it and pick one component. While you type, each match shows under its package, whose count reads, for example, **4 of 126**. Packages written in your own repos are listed with the others by how much they're used, and their matching components show under them. A package or component that already has a record stays in the list, greyed out, with the reason, such as **Already recorded**. The search no longer narrows to a package, the **All of** row is gone, and pressing Enter in either search box no longer picks anything. Once picked, the replacement shows as a card with **Change**, like the package or component. **Change** clears the pick and opens the search again, keeping your other answers.
+
+Screen readers now hear how many results a search lists once you stop typing, in the record dialog and in the chart builder's **Add a series**.

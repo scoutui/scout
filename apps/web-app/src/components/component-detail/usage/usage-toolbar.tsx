@@ -1,12 +1,19 @@
 "use client";
-import { AlertTriangle, Check, Copy, ListFilter, Search, X } from "lucide-react";
-import { type ReactNode, type RefObject, useState } from "react";
+import { AlertTriangle, Check, CircleX, Copy, ListFilter, Search, X } from "lucide-react";
+import { type ReactNode, type RefObject, useState, useSyncExternalStore } from "react";
 import { countText, filterText, pickGroups, plural, type UsageDue, type UsagePick, type UsageView, valueLabel, valueSpeech } from "@scoutui/web-shared/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** From this file list width the search box's placeholder says what it searches. */
 const WIDE_PX = 560;
+
+/** What the last copy from a Copy button did. */
+export type CopyOutcome = "copied" | "failed";
+
+const noSubscribe = () => () => {};
+/** Whether the browser lets the page write to the clipboard. */
+const canWriteClipboard = () => typeof navigator.clipboard?.writeText === "function";
 
 /** A text link, or a button that reads as one. */
 export const LINK =
@@ -29,7 +36,7 @@ export function UsageToolbar({
   onFilter,
   onClearFilters,
   onCopy,
-  copied,
+  copyOutcome,
 }: {
   view: UsageView;
   few: boolean;
@@ -44,7 +51,7 @@ export function UsageToolbar({
   onFilter: () => void;
   onClearFilters: () => void;
   onCopy: () => void;
-  copied: boolean;
+  copyOutcome: CopyOutcome | null;
 }) {
   return (
     <div ref={barRef} className={cn("flex items-center gap-2 border-b bg-card px-3 py-2 sm:px-4", !few && "sticky z-20")} style={{ top: "var(--pin-top, 3.5rem)" }}>
@@ -80,7 +87,7 @@ export function UsageToolbar({
       ) : null}
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
         <CountText view={view} due={due} />
-        <CopyListButton files={view.files} folder={null} disabled={view.shown === 0} copied={copied} onCopy={onCopy} />
+        <CopyListButton files={view.files} folder={null} disabled={view.shown === 0} outcome={copyOutcome} onCopy={onCopy} />
       </div>
     </div>
   );
@@ -169,10 +176,13 @@ function CountText({ view, due }: { view: UsageView; due: UsageDue | null }) {
 
 /**
  * Copies a list of files: the toolbar's copies every file in view, a folder or package heading's (`folder` is its
- * label) only that folder's or package's. It reads "Copied" while `copied`.
+ * label) only that folder's or package's. It reads "Copied" or "Couldn't copy" while `outcome` says so, and doesn't
+ * show where the browser can't write to the clipboard.
  */
-export function CopyListButton({ files, folder, disabled = false, copied, onCopy }: { files: number; folder: string | null; disabled?: boolean; copied: boolean; onCopy: () => void }) {
+export function CopyListButton({ files, folder, disabled = false, outcome, onCopy }: { files: number; folder: string | null; disabled?: boolean; outcome: CopyOutcome | null; onCopy: () => void }) {
+  const supported = useSyncExternalStore(noSubscribe, canWriteClipboard, () => true);
   const label = folder === null ? `Copy the list of ${plural(files, "file")}` : `Copy the list of ${plural(files, "file")} in ${folder}`;
+  if (!supported) return null;
   return (
     <Button
       variant={folder === null ? "outline" : "ghost"}
@@ -181,10 +191,12 @@ export function CopyListButton({ files, folder, disabled = false, copied, onCopy
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={cn("cursor-pointer motion-reduce:transition-none", folder !== null && "text-muted-foreground")}
+      className={cn("cursor-pointer motion-reduce:transition-none", folder !== null && "text-muted-foreground", outcome === "failed" && "text-status-err hover:text-status-err")}
     >
-      <SwapIcon on={copied} from={<Copy className="size-3.5" />} to={<Check className="size-3.5" />} />
-      <span className={folder === null ? "max-sm:sr-only" : "max-md:sr-only"}>{copied ? "Copied" : folder === null ? "Copy list" : "Copy"}</span>
+      <SwapIcon shown={outcome ?? "ready"} icons={{ ready: <Copy className="size-3.5" />, copied: <Check className="size-3.5" />, failed: <CircleX className="size-3.5" /> }} />
+      <span className={folder === null ? "max-sm:sr-only" : "max-md:sr-only"}>
+        {outcome === "copied" ? "Copied" : outcome === "failed" ? "Couldn't copy" : folder === null ? "Copy list" : "Copy"}
+      </span>
     </Button>
   );
 }
@@ -193,12 +205,15 @@ export const SWAP = "col-start-1 row-start-1 flex items-center justify-center tr
 export const SWAP_ON = "scale-100 opacity-100";
 export const SWAP_OFF = "scale-[0.25] opacity-0";
 
-/** Two icons in one slot that cross-fade on a state change, so neither pops in or out. */
-function SwapIcon({ on, from, to }: { on: boolean; from: ReactNode; to: ReactNode }) {
+/** Icons in one slot that cross-fade when `shown` changes, so none pops in or out. */
+function SwapIcon<K extends string>({ shown, icons }: { shown: K; icons: Record<K, ReactNode> }) {
   return (
     <span aria-hidden data-icon="inline-start" className="inline-grid">
-      <span className={cn(SWAP, on ? SWAP_OFF : SWAP_ON)}>{from}</span>
-      <span className={cn(SWAP, on ? SWAP_ON : SWAP_OFF)}>{to}</span>
+      {(Object.keys(icons) as K[]).map((key) => (
+        <span key={key} className={cn(SWAP, key === shown ? SWAP_ON : SWAP_OFF)}>
+          {icons[key]}
+        </span>
+      ))}
     </span>
   );
 }

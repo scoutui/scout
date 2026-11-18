@@ -11,36 +11,38 @@ What you add is a [lifecycle record](/docs/reference/glossary#lifecycle-record).
 
 ## Record a migration
 
-1. Select **governance** in the top navigation and press **Add record**. With no records yet, the form is already open.
-2. In **Package or component**, type a few words, such as `legacy button`. Every word must match the package name or the component name.
+1. Select **governance** in the top navigation and press **Add record**.
+2. Under **Package or component**, the dialog lists your scanned packages, the most used first. Type a few words, such as `legacy button`, to list the components that match under their packages. Every word must match the package name or the component name.
 3. Pick what the record covers:
-   - `LegacyButton` from `@acme/ui-legacy`, for that component, or
-   - every component in `@acme/ui-legacy`: search for `legacy` instead, pick `@acme/ui-legacy`, then pick **All of @acme/ui-legacy**.
-4. Leave **Type** on **Replaced**.
-5. In **Replaced by**, type `button` and pick `Button` from `@acme/ui`. To make the whole of `@acme/ui` the replacement, search for `@acme/ui` instead, pick it, then pick **All of @acme/ui**.
-6. Press **Create**.
+   - `LegacyButton` under `@acme/ui-legacy`, for that component, or
+   - `@acme/ui-legacy` itself, for every component in it.
 
-![The New record form, filled in to record VxeButton from vxe-pc-ui as replaced by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
+   To see a package's components without typing, press its component count, such as **12 components**. To pick something else, press **Change**.
+4. Under **What should teams do instead?**, leave **Move to a replacement** chosen.
+5. In **Replacement**, type `button` and pick `Button` under `@acme/ui`. To make the whole of `@acme/ui` the replacement, pick `@acme/ui` itself.
+6. Press **Create record**. The dialog stays open with an empty form for the next record, and the line at its foot counts the records you've added: press **Show** to list them. Press **Done** when you've finished.
 
-The pickers only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
+![The New record dialog, filled in to record VxeButton from vxe-pc-ui as replaced by Button from tdesign-vue-next](/img/dashboard/governance-record-form.png)
 
-If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the pickers offer it too: pick the package to search its components.
+The lists only offer packages and components that appear in uploaded scans. If `LegacyButton` is missing, upload a scan of a repo that uses it first.
+
+If `@acme/ui-legacy` is written in the same monorepo as the apps that use it, the lists offer it too, like any installed package.
 
 A component [defined in the repo](/docs/reference/glossary#local) outside every workspace package is offered under the repo's [root package](/docs/reference/artifact#root-package): the name in the root `package.json`, or the repo id when it has none. In a repo that isn't a monorepo, that's every component the repo defines. Scans uploaded by older CLI versions record no package for these components, so if one is missing, scan the repo with the latest CLI. If the dashboard already has a scan of the commit you're on, run `npx scout scan --rescan` to replace it.
 
 A [web component](/docs/reference/glossary#web-component) such as `<acme-button>` is offered under a package only when a scan links the tag to that package, and a record covers it only in the scans that make that link. [Link web components to your package](/docs/guides/link-web-components-to-your-package) shows how.
 
-Each package or component can have one record, and a package has either one whole-package record or records on single components, not both. If saving is refused, a message in the form says why, and for an existing record usually offers **Go to the existing record** so you can edit that one instead.
+Each package or component can have one record, and a package has either one whole-package record or records on single components, not both. A package or component that can't take a record stays in the list, greyed out, with the reason, such as **Already recorded**. If saving is refused, a message in the dialog says why, and for an existing record usually offers **Go to the existing record** so you can edit that one instead.
 
 ## Record a retirement
 
 Retire a component when it is being removed with no replacement, for example `Modal` from `@acme/ui-legacy`.
 
 1. On the **governance** page, press **Add record**.
-2. In **Package or component**, pick `Modal` from `@acme/ui-legacy`, or **All of @acme/ui-legacy**.
-3. Set **Type** to **Retired**.
+2. In **Package or component**, pick `Modal` under `@acme/ui-legacy`, or `@acme/ui-legacy` itself for the whole package.
+3. Under **What should teams do instead?**, choose **Retire it**.
 4. In **Reason**, say why it is going, for example `Removed in @acme/ui-legacy 4.0; no replacement.`
-5. Press **Create**.
+5. Press **Create record**.
 
 ## What changes, and when
 
@@ -80,13 +82,13 @@ Once every record in a package reads **None left**, the **governance** page move
 
 ## Not in any scan
 
-A record reads **Not in any scan**, and has no chart, when none of the scans in the dashboard contain the package or component it names. The pickers only offer what scans contain, so this happens when the scans that used it have since been removed from the dashboard. Upload a scan of a repo that still uses it and the count comes back, with no edit needed. If no repo uses it any more, it keeps reading **Not in any scan**, and the record still marks any new use as deprecated.
+A record reads **Not in any scan**, and has no chart, when none of the scans in the dashboard contain the package or component it names. The lists only offer what scans contain, so this happens when the scans that used it have since been removed from the dashboard. Upload a scan of a repo that still uses it and the count comes back, with no edit needed. If no repo uses it any more, it keeps reading **Not in any scan**, and the record still marks any new use as deprecated.
 
 ## Edit or delete a record
 
-To change a record, press its **Edit** button, change the form and press **Save**.
+To change a record, press its **Edit** button, make your changes and press **Save**.
 
-To delete a record, press **Delete** in the same form, then **Delete** again to confirm.
+To delete a record, press **Delete** in the same dialog, then **Delete** again to confirm.
 
 :::warning
 Deleting a record removes its deprecated mark straight away, so a new use of `LegacyButton` shows as an ordinary component. Its chart and its rows on the **charts** page and on each repo's **Adoption** tab go too, once the dashboard has recalculated.

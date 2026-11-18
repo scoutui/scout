@@ -48,7 +48,7 @@ describe("ComponentsTable", () => {
   it("puts aria-sort on the active column header, not the button", () => {
     render(<ComponentsTable repoId="r1" rows={[row]} />);
     expect(screen.getByRole("columnheader", { name: /uses/i })).toHaveAttribute("aria-sort", "descending");
-    expect(screen.getByRole("columnheader", { name: /^component/i })).toHaveAttribute("aria-sort", "none");
+    expect(screen.getByRole("columnheader", { name: /^component/i })).not.toHaveAttribute("aria-sort");
     expect(screen.getByRole("button", { name: /uses/i })).not.toHaveAttribute("aria-sort");
   });
 
@@ -192,6 +192,13 @@ describe("ComponentsTable", () => {
       expect(within(trOf("Card")).queryByText(/unused/)).toBeNull();
       expect(within(trOf("Tag")).queryByText(/unused/)).toBeNull();
     });
+  });
+
+  it("sorts names by the numbers in them, Button2 before Button10", () => {
+    const named = (name: string): ComponentRow => ({ ...row, componentId: name, displayName: name });
+    render(<ComponentsTable repoId="r1" rows={[named("Button10"), named("Button2"), named("Button1")]} />);
+    fireEvent.click(screen.getByRole("button", { name: /^component/i }));
+    expect(screen.getAllByRole("link").map((l) => l.textContent)).toEqual(["Button1", "Button2", "Button10"]);
   });
 
   describe("selection", () => {
@@ -390,7 +397,7 @@ describe("ComponentsTable", () => {
       expect(opened[3]).toContain("Big");      // +10
       expect(opened[4]).toContain("Unused");   // 0
       expect(screen.getByRole("columnheader", { name: /^Change/ })).toHaveAttribute("aria-sort", "ascending");
-      expect(screen.getByRole("columnheader", { name: /^Uses/ })).toHaveAttribute("aria-sort", "none");
+      expect(screen.getByRole("columnheader", { name: /^Uses/ })).not.toHaveAttribute("aria-sort");
       expect(within(rowOf(screen.getByText("Big"))).getAllByRole("link")).toHaveLength(1);
       // Re-clicking flips to biggest gain first.
       fireEvent.click(screen.getByRole("button", { name: "Change since previous scan" }));

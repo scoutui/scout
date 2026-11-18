@@ -98,7 +98,7 @@ export function UsageColumn({
           onClick={() => onOpenChange(!open)}
           aria-expanded={open}
           aria-controls="usage-column-body"
-          className="focus-inset flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted/50 hover:text-foreground motion-reduce:transition-none lg:hidden"
+          className="focus-panel-row flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-xs text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted/50 hover:text-foreground motion-reduce:transition-none lg:hidden"
         >
           <ChevronRight aria-hidden className={cn(CHEVRON, open && "rotate-90")} />
           {title}

@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { SortButton, sortRows, useSort } from "@/components/ui/sortable";
+import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
 import { DeprecatedFilterChip } from "@/components/deprecated-filter-chip";
 import { DeprecatedMark } from "@/components/deprecated-mark";
 import { useQueryParamsState } from "@/lib/use-query-synced-state";
@@ -110,13 +110,13 @@ export function PackageComponentsTable({
         <Table containerClassName="max-h-[70vh] overflow-y-auto">
           <TableHeader className="sticky top-0 z-10">
             <TableRow>
-              <TableHead className="w-full">
+              <TableHead className="w-full" aria-sort={ariaSort("displayName", sortKey, sortDir)}>
                 <SortButton label="Component" sortKey="displayName" current={sortKey} dir={sortDir} onClick={toggleSort} />
               </TableHead>
-              <TableHead className="whitespace-nowrap text-right">
+              <TableHead className="whitespace-nowrap text-right" aria-sort={ariaSort("consumerCount", sortKey, sortDir)}>
                 <SortButton label="Repos" sortKey="consumerCount" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
               </TableHead>
-              <TableHead className="whitespace-nowrap text-right pr-3">
+              <TableHead className="whitespace-nowrap text-right pr-3" aria-sort={ariaSort("totalOccurrences", sortKey, sortDir)}>
                 <SortButton label="Uses" sortKey="totalOccurrences" current={sortKey} dir={sortDir} onClick={toggleSort} align="right" />
               </TableHead>
             </TableRow>

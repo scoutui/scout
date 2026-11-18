@@ -8,15 +8,15 @@ export type SortDir = "asc" | "desc";
  * Shared sort state for a table. A newly picked numeric column sorts `desc`
  * (biggest counts on top), a text column `asc` (A to Z). Clicking the active
  * column again flips direction. A new `resetKey` starts again from the
- * initial key and direction.
+ * initial key and direction. A null `initialKey` starts with no column sorted.
  */
-export function useSort<K extends string>(
-  initialKey: K,
+export function useSort<K extends string, Start extends K | null = K>(
+  initialKey: Start,
   initialDir: SortDir,
   numericKeys?: ReadonlySet<K>,
   resetKey?: string,
 ) {
-  const [sort, setSort] = useState({ sortKey: initialKey, sortDir: initialDir, resetKey });
+  const [sort, setSort] = useState<{ sortKey: K | Start; sortDir: SortDir; resetKey: string | undefined }>({ sortKey: initialKey, sortDir: initialDir, resetKey });
   const current = sort.resetKey === resetKey ? sort : { sortKey: initialKey, sortDir: initialDir, resetKey };
   if (current !== sort) setSort(current);
 
@@ -34,8 +34,11 @@ export function useSort<K extends string>(
   return { sortKey: current.sortKey, sortDir: current.sortDir, toggleSort };
 }
 
+/** Compares numbers inside strings by value (`Button2` before `Button10`), ignoring case and accents. */
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
 /**
- * Stable sort by an accessor. Strings compare with `localeCompare`, numbers
+ * Stable sort by an accessor. Strings compare with `collator`, numbers
  * subtract; `null`/`undefined` always sort last regardless of direction (an
  * absent version or count is "no value", not "lowest value").
  */
@@ -53,7 +56,7 @@ export function sortRows<T, K extends string>(
     if (av == null) return 1;
     if (bv == null) return -1;
     if (typeof av === "string" && typeof bv === "string") {
-      return av.localeCompare(bv) * sign;
+      return collator.compare(av, bv) * sign;
     }
     return ((av as number) - (bv as number)) * sign;
   });
@@ -61,14 +64,15 @@ export function sortRows<T, K extends string>(
 
 /**
  * `aria-sort` belongs on the column header cell, not the button inside it:
- * put this on the `<TableHead>` that wraps a `SortButton`.
+ * put this on the `<TableHead>` that wraps a `SortButton`. Only the sorted
+ * column carries the attribute.
  */
 export function ariaSort<K extends string>(
   key: K,
-  current: K,
+  current: K | null,
   dir: SortDir,
-): "ascending" | "descending" | "none" {
-  if (key !== current) return "none";
+): "ascending" | "descending" | undefined {
+  if (key !== current) return undefined;
   return dir === "asc" ? "ascending" : "descending";
 }
 
@@ -87,7 +91,7 @@ export function SortButton<K extends string>({
 }: {
   label: string;
   sortKey: K;
-  current: K;
+  current: K | null;
   dir: SortDir;
   onClick: (key: K) => void;
   align?: "right";

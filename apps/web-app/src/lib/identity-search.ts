@@ -5,16 +5,10 @@ import type { PickableComponent } from "@/lib/chart-builder-series";
 export type IdentityPick = { packageName: string; exportName?: string };
 
 /**
- * A row the picker lists. Every row but a package to narrow to carries `pick`, what choosing it gives the
- * caller, and `added` when the search is for a list that adds several and that row is already added.
+ * A row a search lists. Each carries `pick`, what choosing it gives the caller, and `added` when the search is for
+ * a list that adds several and that row is already added.
  */
 export type SearchRow<T = IdentityPick> =
-  /**
-   * A package to narrow the search to. `matches` counts the names in it the search matches when the
-   * package is offered for them, otherwise null; `narrowedQuery` is the search kept once narrowed.
-   */
-  | { kind: "package"; packageName: string; components: number; matches: number | null; narrowedQuery: string }
-  | { kind: "whole"; packageName: string; components: number; refusal: string | null; pick: T; added?: boolean }
   | {
       kind: "component";
       packageName: string | null;
@@ -22,6 +16,9 @@ export type SearchRow<T = IdentityPick> =
       /** Set when two components can share a package and name, with the path that tells them apart. */
       componentId?: string;
       disambiguator?: string | null;
+      /** Defined in a scanned repo rather than imported from a package, with the repo when one repo's scans hold it. */
+      local?: boolean;
+      repoId?: string | undefined;
       refusal: string | null;
       matched: Array<[number, number]>;
       pick: T;
@@ -31,25 +28,24 @@ export type SearchRow<T = IdentityPick> =
   | { kind: "tag"; tagId: string; label: string; packages: number; matched: Array<[number, number]>; pick: T; added?: boolean }
   | { kind: "local"; label: string; components: number; matched: Array<[number, number]>; pick: T; added?: boolean };
 
-export type SearchResult<T> = { rows: SearchRow<T>[]; defaultIndex: number | null; total: number | null };
+/** A component row a search lists. */
+export type ComponentRow<T> = Extract<SearchRow<T>, { kind: "component" }>;
 
 export type SearchInput = {
   mode: "source" | "successor";
   sources: GovernanceTarget[];
   query: string;
-  /** The package the search is narrowed to. */
+  /** The package whose components to list. */
   scope: string | null;
   records: GovernanceRecord[];
   /** The record being edited: its own target stays pickable. */
   editingId?: string | undefined;
-  /** A target left out of the list. */
+  /** In successor mode, the record's source: a component is left out of the list, a whole package can't be picked. */
   exclude?: IdentityPick | null | undefined;
-  /** In successor mode, narrowed to a package and with no search, names that share a word with this come first. */
+  /** In successor mode, a package's components that share a word with this list first. */
   similarTo?: string | null | undefined;
 };
 
-export const MAX_PACKAGE_ROWS = 3;
-export const MAX_LOCAL_PACKAGE_ROWS = 5;
 export const MAX_COMPONENT_ROWS = 50;
 export const LOCAL_COMPONENTS = "Local components";
 
@@ -159,29 +155,33 @@ function refusal(pick: IdentityPick, records: GovernanceRecord[], editingId: str
   return null;
 }
 
-type Ranked<T> = { row: Extract<SearchRow<T>, { kind: "component" }>; tier: number; occurrences: number };
+/**
+ * A component a search can list: its row, its uses in each repo's latest scan, and when the newest scan holding it
+ * was made, or null while a latest scan holds it.
+ */
+export type Candidate<T> = { row: ComponentRow<T>; occurrences: number; lastSeenAt: string | null };
 
+type Ranked<T> = Candidate<T> & { tier: number };
+
+/**
+ * Components in use first, then by match, refused ones after the rest that match as well. Then those only older
+ * scans hold, the most recently held first, then the most used, then by name and by package.
+ */
 const byRank = <T>(a: Ranked<T>, b: Ranked<T>) =>
-  a.tier - b.tier
+  Number(a.lastSeenAt !== null) - Number(b.lastSeenAt !== null)
+  || a.tier - b.tier
+  || Number(a.row.refusal !== null) - Number(b.row.refusal !== null)
+  || (b.lastSeenAt ?? "").localeCompare(a.lastSeenAt ?? "")
   || b.occurrences - a.occurrences
   || a.row.exportName.localeCompare(b.row.exportName)
   || (a.row.packageName ?? "").localeCompare(b.row.packageName ?? "");
 
-/** Refused rows go last within each run of rows with the same tier. */
-function refusedLast<T>(ranked: Ranked<T>[]): Ranked<T>[] {
-  const out: Ranked<T>[] = [];
-  for (let start = 0, i = 1; i <= ranked.length; i++) {
-    if (i < ranked.length && ranked[i]?.tier === ranked[start]?.tier) continue;
-    const run = ranked.slice(start, i);
-    out.push(...run.filter((r) => r.row.refusal === null), ...run.filter((r) => r.row.refusal !== null));
-    start = i;
-  }
-  return out;
-}
-
-function sharesWord(a: string, b: string): boolean {
-  const other = new Set(words(b).map((w) => w.text));
-  return words(a).some((w) => other.has(w.text));
+/** The candidates `match` matches, best first, each row with the parts of its name that matched. */
+function rank<T>(candidates: Candidate<T>[], match: (row: ComponentRow<T>) => Match | null): Ranked<T>[] {
+  return candidates.flatMap((c): Ranked<T>[] => {
+    const m = match(c.row);
+    return m ? [{ ...c, row: { ...c.row, matched: m.matched }, tier: m.tier }] : [];
+  }).sort(byRank);
 }
 
 /** How many components each package has among the targets. */
@@ -193,150 +193,56 @@ export function componentCounts(sources: { packageName: string; exportName?: str
   return counts;
 }
 
-const sameTarget = (a: IdentityPick, b: IdentityPick) =>
-  a.packageName === b.packageName && (a.exportName ?? null) === (b.exportName ?? null);
+/** An open package lists this many of its most used components until Show all. */
+export const FIRST_COMPONENTS = 5;
 
-/**
- * The rows the picker shows for a search, and the row Enter takes by default: the
- * first component that can be picked or, when no row is a component, the first
- * package row; otherwise none. Never a whole package. `total` is how many components
- * match when the list stops at `MAX_COMPONENT_ROWS`, otherwise null.
- *
- * A package only scanned repos define (`local`) lists after the installed ones. Until
- * the search is narrowed to it, its components stay out of the list: up to
- * `MAX_LOCAL_PACKAGE_ROWS` such packages follow the results instead, with how many of their
- * names match, keeping the words that didn't match the package's name.
- */
-export function searchTargets(input: SearchInput): SearchResult<IdentityPick> {
-  const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const refuse = (pick: IdentityPick) => (input.mode === "source" ? refusal(pick, input.records, input.editingId) : null);
-  const offered = (pick: IdentityPick) => !(input.mode === "successor" && input.exclude && sameTarget(pick, input.exclude));
-
-  const components = componentCounts(input.sources);
-  const local = new Set(input.sources.flatMap((s) => (s.local ? [s.packageName] : [])));
-  const packages = new Map<string, number>();
-  for (const s of input.sources) {
-    if (s.exportName === undefined) packages.set(s.packageName, s.occurrences);
-    else if (!packages.has(s.packageName)) packages.set(s.packageName, 0);
-  }
-  const packageRow = (packageName: string, matches: number | null = null, narrowedQuery = ""): SearchRow => ({
-    kind: "package", packageName, components: components.get(packageName) ?? 0, matches, narrowedQuery,
-  });
-  const packageOrder = (a: string, b: string) =>
-    Number(local.has(a)) - Number(local.has(b)) || (packages.get(b) ?? 0) - (packages.get(a) ?? 0) || a.localeCompare(b);
-
-  const rank = (packageName: string | null, scoped: boolean): Ranked<IdentityPick>[] =>
-    input.sources.flatMap((s): Ranked<IdentityPick>[] => {
-      if (s.exportName === undefined || (packageName !== null && s.packageName !== packageName)) return [];
-      const pick = { packageName: s.packageName, exportName: s.exportName };
-      if (!offered(pick)) return [];
-      const m = terms.length === 0 ? { tier: 0, matched: [] } : matchAll(terms, s.exportName, scoped ? null : s.packageName);
-      if (!m) return [];
-      return [{ row: { kind: "component", ...pick, refusal: refuse(pick), matched: m.matched, pick }, tier: m.tier, occurrences: s.occurrences }];
-    }).sort(byRank);
-
-  const rows: SearchRow[] = [];
-  let total: number | null = null;
-  if (input.scope === null) {
-    if (terms.length === 0) {
-      rows.push(...[...packages.keys()].sort(packageOrder).map((p) => packageRow(p)));
-    } else {
-      const matching = [...packages.keys()].flatMap((name) => {
-        const tiers = terms.map((t) => matchPackageTerm(t, name));
-        return tiers.every((t) => t !== null) ? [{ name, tier: Math.max(...tiers) }] : [];
-      });
-      matching.sort((a, b) => a.tier - b.tier || packageOrder(a.name, b.name));
-      const named = matching.slice(0, MAX_PACKAGE_ROWS).map((p) => p.name);
-      rows.push(...named.map((p) => packageRow(p)));
-      const found = rank(null, false);
-      const ranked = refusedLast(found.filter((r) => !local.has(r.row.pick.packageName)));
-      if (ranked.length > MAX_COMPONENT_ROWS) total = ranked.length;
-      rows.push(...ranked.slice(0, MAX_COMPONENT_ROWS).map((r) => r.row));
-      const matchesIn = new Map<string, number>();
-      for (const { row: { pick } } of found) {
-        if (local.has(pick.packageName) && !named.includes(pick.packageName)) matchesIn.set(pick.packageName, (matchesIn.get(pick.packageName) ?? 0) + 1);
-      }
-      rows.push(...[...matchesIn].slice(0, MAX_LOCAL_PACKAGE_ROWS).map(([packageName, matches]) =>
-        packageRow(packageName, matches, terms.filter((t) => !packageName.toLowerCase().includes(t)).join(" "))));
-    }
-  } else {
-    const scope = input.scope;
-    const whole = { packageName: scope };
-    if (packages.has(scope) && offered(whole) && terms.every((t) => scope.toLowerCase().includes(t))) {
-      rows.push({ kind: "whole", packageName: scope, components: components.get(scope) ?? 0, refusal: refuse(whole), pick: whole });
-    }
-    const ranked = rank(scope, true);
-    const similarTo = input.mode === "successor" && terms.length === 0 ? input.similarTo : null;
-    if (similarTo) {
-      const similar = ranked.filter((r) => sharesWord(r.row.exportName, similarTo));
-      const rest = ranked.filter((r) => !similar.includes(r));
-      rows.push(...refusedLast(similar).map((r) => r.row), ...refusedLast(rest).map((r) => r.row));
-    } else {
-      rows.push(...refusedLast(ranked).map((r) => r.row));
-    }
-  }
-
-  return { rows, defaultIndex: defaultIndex(rows), total };
-}
-
-const takesOne = <T>(row: SearchRow<T>) => row.kind === "component" || row.kind === "tag" || row.kind === "local";
-
-/**
- * The row Enter takes by default: the first component, tag or Local components row that isn't
- * refused or, when there's no such row, the first row if it's a package; otherwise none. Never a
- * whole package.
- */
-function defaultIndex<T>(rows: SearchRow<T>[]): number | null {
-  const first = rows.findIndex((r) => takesOne(r) && !(r.kind === "component" && r.refusal !== null));
-  if (first >= 0) return first;
-  return !rows.some(takesOne) && rows[0]?.kind === "package" ? 0 : null;
-}
-
-type SeriesRanked = Ranked<CohortSelector> & { lastSeenAt: string | null };
-
-/** Components in use first, as `byRank` ranks them, then those only older scans hold: by match, then the most recently held first. */
-const bySeriesRank = (a: SeriesRanked, b: SeriesRanked) =>
-  Number(a.lastSeenAt !== null) - Number(b.lastSeenAt !== null)
-  || a.tier - b.tier
-  || (b.lastSeenAt ?? "").localeCompare(a.lastSeenAt ?? "")
-  || byRank(a, b);
-
-export type SeriesSearchInput = {
-  tags: Array<{ id: string; label: string; rule: TagRule }>;
-  components: PickableComponent[];
-  packages: string[];
-  query: string;
-  /** The package the search is narrowed to. */
-  scope: string | null;
-  /** The `cohortKey` of each series the chart has. */
-  added: ReadonlySet<string>;
+/** A package a search lists, with the components it lists under it. */
+export type SearchGroup<T> = {
+  packageName: string;
+  /** How many components the package holds. */
+  components: number;
+  /** How many of its components the search matches by their own names, or null when only the package's name matches. */
+  matched: number | null;
+  /** The components it lists while open: those matches, or else its FIRST_COMPONENTS most used. */
+  rows: ComponentRow<T>[];
+  /** Whether it offers the rest of its components: when the search matches its name and it holds more than `rows`. */
+  more: boolean;
+  /** Why the whole package can't be picked, or null when it can. */
+  refusal: string | null;
 };
 
 /**
- * The chart builder's rows for a search, each picking a series, with the matchers and
- * ranking `searchTargets` uses. With nothing typed, it lists every tag, Local components,
- * then the packages by use. A search lists the tags and the Local components row it
- * matches, then up to `MAX_PACKAGE_ROWS` packages and `MAX_COMPONENT_ROWS` components;
- * `total` counts the components when the list stops there. Narrowed to a package, it
- * lists the whole package, then every component in it. Components and packages only older
- * scans hold follow every one in use, the most recently held first.
+ * A search's components grouped by package, and those no package holds. `total` counts the components the search
+ * lists when the list stops at `MAX_COMPONENT_ROWS`, otherwise null.
  */
-export function searchSeries(input: SeriesSearchInput): SearchResult<CohortSelector> {
-  const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const isAdded = (sel: CohortSelector) => input.added.has(cohortKey(sel));
-  const match = (name: string, packageName: string | null) =>
-    terms.length === 0 ? { tier: 0, matched: [] } : matchAll(terms, name, packageName);
+export type GroupedRows<T> = { groups: SearchGroup<T>[]; unpackaged: ComponentRow<T>[]; total: number | null };
 
-  const components = new Map<string, number>();
+/**
+ * A grouped search's result. With a package, `rows` are that package's components, the most used first; otherwise
+ * they are the rows listed before the packages, of the kinds `R` names.
+ */
+export type GroupedResult<T, R = never> = GroupedRows<T> & { rows: Array<ComponentRow<T> | R> };
+
+const queryTerms = (query: string) => query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+/**
+ * Each package's candidates, how many it holds, and the order packages list in by use: those a latest scan holds
+ * first, the most used first, then those only older scans hold, the most recently held first.
+ */
+function packageUse<T>(candidates: Candidate<T>[]) {
+  const byPackage = new Map<string | null, Candidate<T>[]>();
   const uses = new Map<string, number>();
   // When the newest scan holding a package's components was made; "" once a latest scan holds one.
   const lastSeen = new Map<string, string>();
-  for (const c of input.components) {
-    if (c.packageName === null) continue;
-    components.set(c.packageName, (components.get(c.packageName) ?? 0) + 1);
-    uses.set(c.packageName, (uses.get(c.packageName) ?? 0) + c.occurrences);
-    const seen = lastSeen.get(c.packageName);
-    lastSeen.set(c.packageName, seen === "" || c.lastSeenAt === null ? "" : seen === undefined || c.lastSeenAt > seen ? c.lastSeenAt : seen);
+  for (const c of candidates) {
+    const packageName = c.row.packageName;
+    const own = byPackage.get(packageName);
+    if (own) own.push(c);
+    else byPackage.set(packageName, [c]);
+    if (packageName === null) continue;
+    uses.set(packageName, (uses.get(packageName) ?? 0) + c.occurrences);
+    const seen = lastSeen.get(packageName);
+    lastSeen.set(packageName, seen === "" || c.lastSeenAt === null ? "" : seen === undefined || c.lastSeenAt > seen ? c.lastSeenAt : seen);
   }
   const goneSince = (packageName: string) => lastSeen.get(packageName) ?? "";
   const byUse = (a: string, b: string) =>
@@ -344,59 +250,177 @@ export function searchSeries(input: SeriesSearchInput): SearchResult<CohortSelec
     || (uses.get(b) ?? 0) - (uses.get(a) ?? 0)
     || goneSince(b).localeCompare(goneSince(a))
     || a.localeCompare(b);
-  const packageRow = (packageName: string): SearchRow<CohortSelector> => ({
-    kind: "package", packageName, components: components.get(packageName) ?? 0, matches: null, narrowedQuery: "",
-  });
+  return { byPackage, count: (packageName: string) => byPackage.get(packageName)?.length ?? 0, byUse };
+}
 
-  const rank = (scope: string | null): SeriesRanked[] =>
-    input.components.flatMap((c): SeriesRanked[] => {
-      if (scope !== null && c.packageName !== scope) return [];
-      const m = match(c.displayName, scope === null ? c.packageName : null);
-      if (!m) return [];
-      const pick: CohortSelector = { kind: "component", componentId: c.componentId };
-      const row = {
-        kind: "component" as const, packageName: c.packageName, exportName: c.displayName, componentId: c.componentId,
-        disambiguator: c.disambiguator, refusal: null, matched: m.matched, pick, added: isAdded(pick),
-      };
-      return [{ row, tier: m.tier, occurrences: c.occurrences, lastSeenAt: c.lastSeenAt }];
-    }).sort(bySeriesRank);
+const everyOne = (): Match => ({ tier: 0, matched: [] });
 
-  const rows: SearchRow<CohortSelector>[] = [];
-  let total: number | null = null;
-  if (input.scope === null) {
-    for (const tag of input.tags) {
-      const m = match(tag.label, null);
-      if (!m) continue;
-      const pick: CohortSelector = { kind: "tag", tagId: tag.id };
-      const packages = input.packages.filter((p) => tagMatchesPackage(tag, p)).length;
-      rows.push({ kind: "tag", tagId: tag.id, label: tag.label, packages, matched: m.matched, pick, added: isAdded(pick) });
-    }
-    const local = match(LOCAL_COMPONENTS, null);
-    if (local) {
-      const pick: CohortSelector = { kind: "local" };
-      const count = input.components.filter((c) => c.local).length;
-      rows.push({ kind: "local", label: LOCAL_COMPONENTS, components: count, matched: local.matched, pick, added: isAdded(pick) });
-    }
-    if (terms.length === 0) {
-      rows.push(...[...input.packages].sort(byUse).map(packageRow));
-    } else {
-      const matching = input.packages.flatMap((name) => {
-        const tiers = terms.map((t) => matchPackageTerm(t, name));
-        return tiers.every((t) => t !== null) ? [{ name, tier: Math.max(...tiers) }] : [];
-      });
-      matching.sort((a, b) => a.tier - b.tier || byUse(a.name, b.name));
-      rows.push(...matching.slice(0, MAX_PACKAGE_ROWS).map((p) => packageRow(p.name)));
-      const ranked = rank(null);
-      if (ranked.length > MAX_COMPONENT_ROWS) total = ranked.length;
-      rows.push(...ranked.slice(0, MAX_COMPONENT_ROWS).map((r) => r.row));
-    }
-  } else {
-    const scope = input.scope;
-    if (input.packages.includes(scope) && terms.every((t) => scope.toLowerCase().includes(t))) {
-      const pick: CohortSelector = { kind: "package", packageName: scope };
-      rows.push({ kind: "whole", packageName: scope, components: components.get(scope) ?? 0, refusal: null, pick, added: isAdded(pick) });
-    }
-    rows.push(...rank(scope).map((r) => r.row));
+/** Every component a package holds, the most used first. */
+export function listPackage<T>(candidates: Candidate<T>[], packageName: string): ComponentRow<T>[] {
+  return rank(candidates.filter((c) => c.row.packageName === packageName), everyOne).map((r) => r.row);
+}
+
+/**
+ * A search over components, grouped by package. With nothing typed, it lists every package in `packages` by use,
+ * closed: with no components under it. Otherwise a package is listed when every word matches its name, or when it
+ * holds components the search matches: every word matches the component's name or its package's, and at least one
+ * matches the component's own name. A package listed for its components lists those, best first; one listed only for
+ * its name lists its FIRST_COMPONENTS most used. Packages list by their best match across their name and their
+ * components, then by use. Components no package holds follow. Past `MAX_COMPONENT_ROWS` components across the list,
+ * it stops. `refuseWhole` says why a package can't be picked whole.
+ */
+export function groupByPackage<T>(input: {
+  candidates: Candidate<T>[];
+  packages: Iterable<string>;
+  query: string;
+  refuseWhole?: ((packageName: string) => string | null) | undefined;
+}): GroupedRows<T> {
+  const terms = queryTerms(input.query);
+  const { byPackage, count, byUse } = packageUse(input.candidates);
+  const refusedWhole = (packageName: string) => input.refuseWhole?.(packageName) ?? null;
+  if (terms.length === 0) {
+    const groups = [...new Set(input.packages)].sort(byUse).map((packageName): SearchGroup<T> => ({
+      packageName, components: count(packageName), matched: null, rows: [], more: false, refusal: refusedWhole(packageName),
+    }));
+    return { groups, unpackaged: [], total: null };
   }
-  return { rows, defaultIndex: defaultIndex(rows), total };
+
+  const found = new Map<string | null, Ranked<T>[]>();
+  for (const r of rank(input.candidates, (row) => {
+    const m = matchAll(terms, row.exportName, row.packageName);
+    return m && m.matched.length > 0 ? m : null;
+  })) {
+    const own = found.get(r.row.packageName);
+    if (own) own.push(r);
+    else found.set(r.row.packageName, [r]);
+  }
+  const named = new Map<string, number>();
+  for (const name of new Set([...input.packages, ...byPackage.keys()])) {
+    if (name === null) continue;
+    const tiers = terms.map((t) => matchPackageTerm(t, name));
+    if (tiers.every((t) => t !== null)) named.set(name, Math.max(...tiers));
+  }
+
+  const best = (name: string) => Math.min(named.get(name) ?? Number.POSITIVE_INFINITY, ...(found.get(name) ?? []).map((r) => r.tier));
+  const listed = [...new Set([...named.keys(), ...[...found.keys()].filter((name) => name !== null)])]
+    .sort((a, b) => best(a) - best(b) || byUse(a, b))
+    .map((name) => {
+      const matches = found.get(name);
+      const rows = (matches ?? rank(byPackage.get(name) ?? [], everyOne).slice(0, FIRST_COMPONENTS)).map((r) => r.row);
+      return { packageName: name, components: count(name), matched: matches?.length ?? null, rows, named: named.has(name) };
+    });
+  const loose = (found.get(null) ?? []).map((r) => r.row);
+
+  const all = listed.reduce((n, g) => n + g.rows.length, loose.length);
+  let room = MAX_COMPONENT_ROWS;
+  const take = (rows: ComponentRow<T>[]) => {
+    const kept = rows.slice(0, room);
+    room -= kept.length;
+    return kept;
+  };
+  const groups: SearchGroup<T>[] = [];
+  for (const { named: byName, ...group } of listed) {
+    if (room === 0 && group.rows.length > 0) break;
+    const rows = take(group.rows);
+    groups.push({ ...group, rows, more: byName && group.components > rows.length, refusal: refusedWhole(group.packageName) });
+  }
+  const unpackaged = take(loose);
+  return { groups, unpackaged, total: all > MAX_COMPONENT_ROWS ? all : null };
+}
+
+const sameTarget = (a: IdentityPick, b: IdentityPick) =>
+  a.packageName === b.packageName && (a.exportName ?? null) === (b.exportName ?? null);
+
+function sharesWord(a: string, b: string): boolean {
+  const other = new Set(words(b).map((w) => w.text));
+  return words(a).some((w) => other.has(w.text));
+}
+
+/**
+ * Governance's search over packages and components, grouped by package as `groupByPackage` groups them, or with
+ * `scope`, that package's components. In source mode, a target that can't take a new record, whole package or
+ * component, carries why. In successor mode, the record's source is left out, or when it's a whole package, can't be
+ * picked whole, and a package's components that share a word with `similarTo` list first.
+ */
+export function searchTargets(input: SearchInput): GroupedResult<IdentityPick> {
+  const refuse = (pick: IdentityPick) =>
+    input.mode === "source" ? refusal(pick, input.records, input.editingId) : input.exclude && sameTarget(pick, input.exclude) ? "Being replaced" : null;
+  const candidates = input.sources.flatMap((s): Candidate<IdentityPick>[] => {
+    if (s.exportName === undefined) return [];
+    const pick = { packageName: s.packageName, exportName: s.exportName };
+    if (input.mode === "successor" && input.exclude && sameTarget(pick, input.exclude)) return [];
+    const row: ComponentRow<IdentityPick> = {
+      kind: "component", packageName: s.packageName, exportName: s.exportName, local: s.local === true, refusal: refuse(pick), matched: [], pick,
+    };
+    return [{ row, occurrences: s.occurrences, lastSeenAt: null }];
+  });
+  if (input.scope !== null) {
+    const listed = listPackage(candidates, input.scope);
+    const similarTo = input.mode === "successor" ? input.similarTo : null;
+    const similar = similarTo ? listed.filter((r) => sharesWord(r.exportName, similarTo)) : [];
+    return { rows: [...similar, ...listed.filter((r) => !similar.includes(r))], groups: [], unpackaged: [], total: null };
+  }
+  const packages = input.sources.map((s) => s.packageName);
+  return { rows: [], ...groupByPackage({ candidates, packages, query: input.query, refuseWhole: (packageName) => refuse({ packageName }) }) };
+}
+
+export type SeriesSearchInput = {
+  tags: Array<{ id: string; label: string; rule: TagRule }>;
+  components: PickableComponent[];
+  packages: string[];
+  query: string;
+  /** The package whose components to list. */
+  scope: string | null;
+  /** The `cohortKey` of each series the chart has. */
+  added: ReadonlySet<string>;
+};
+
+export type SeriesSearchResult = GroupedResult<CohortSelector, Extract<SearchRow<CohortSelector>, { kind: "tag" | "local" }>>;
+
+/** Each component as a row that picks it as a series. */
+function seriesCandidates(components: PickableComponent[], added: ReadonlySet<string>): Candidate<CohortSelector>[] {
+  return components.map((c) => {
+    const pick: CohortSelector = { kind: "component", componentId: c.componentId };
+    const row: ComponentRow<CohortSelector> = {
+      kind: "component", packageName: c.packageName, exportName: c.displayName, componentId: c.componentId,
+      disambiguator: c.disambiguator, local: c.local, repoId: c.repoId, refusal: null, matched: [], pick, added: added.has(cohortKey(pick)),
+    };
+    return { row, occurrences: c.occurrences, lastSeenAt: c.lastSeenAt };
+  });
+}
+
+/** The chart builder's search over components, grouped by package, as `groupByPackage` groups them. */
+export function groupSeries(input: Pick<SeriesSearchInput, "components" | "packages" | "query" | "added">): GroupedRows<CohortSelector> {
+  return groupByPackage({ candidates: seriesCandidates(input.components, input.added), packages: input.packages, query: input.query });
+}
+
+/**
+ * The chart builder's search, each row picking a series. It lists the tags and the Local components row the search
+ * matches, every one with nothing typed, then its components grouped by package as `groupSeries` gives them. With
+ * `scope`, it lists every component in that package, the most used first. Components only older scans hold follow
+ * every one in use, the most recently held first.
+ */
+export function searchSeries(input: SeriesSearchInput): SeriesSearchResult {
+  if (input.scope !== null) {
+    return { rows: listPackage(seriesCandidates(input.components, input.added), input.scope), groups: [], unpackaged: [], total: null };
+  }
+  const terms = queryTerms(input.query);
+  const isAdded = (sel: CohortSelector) => input.added.has(cohortKey(sel));
+  const match = (name: string) => (terms.length === 0 ? everyOne() : matchAll(terms, name, null));
+
+  const rows: SeriesSearchResult["rows"] = [];
+  for (const tag of input.tags) {
+    const m = match(tag.label);
+    if (!m) continue;
+    const pick: CohortSelector = { kind: "tag", tagId: tag.id };
+    const packages = input.packages.filter((p) => tagMatchesPackage(tag, p)).length;
+    rows.push({ kind: "tag", tagId: tag.id, label: tag.label, packages, matched: m.matched, pick, added: isAdded(pick) });
+  }
+  const local = match(LOCAL_COMPONENTS);
+  if (local) {
+    const pick: CohortSelector = { kind: "local" };
+    const components = input.components.filter((c) => c.local).length;
+    rows.push({ kind: "local", label: LOCAL_COMPONENTS, components, matched: local.matched, pick, added: isAdded(pick) });
+  }
+  return { rows, ...groupSeries(input) };
 }
