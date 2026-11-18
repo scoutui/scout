@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { deriveGovernanceTracking, type ComponentRow, type DigestScan, type GovernanceRecord } from "@scoutui/web-shared";
 import { component, packageExport } from "../../../../packages/web-shared/tests/helpers/builders.ts";
@@ -11,7 +11,7 @@ const row: ComponentRow = {
   componentId: "c1", kind: "react-component", scope: "external", packageName: "@example/ui",
   displayName: "Button", disambiguator: null, version: "1.0.0", occurrenceCount: 40, fileCount: 12, deprecated: false,
 };
-const facts: ComponentPanelFacts = { source: null, props: { kept: true, uses: 40, top: [], neverSet: null }, history: [] };
+const facts: ComponentPanelFacts = { source: null, props: { kept: true, uses: 40, top: [], unused: null }, history: [] };
 const variant = { name: "variant", set: 30, values: [{ kind: "value" as const, label: "primary", count: 20 }, { kind: "dynamic" as const, label: "", count: 10 }] };
 
 function panel(over: Partial<ComponentProps<typeof ComponentDetailsPanel>> = {}, given: Partial<ComponentPanelFacts> = {}) {
@@ -23,6 +23,8 @@ function panel(over: Partial<ComponentProps<typeof ComponentDetailsPanel>> = {},
     />,
   );
 }
+/** `n` declared prop names, `prop01` on, in name order. */
+const names = (n: number) => Array.from({ length: n }, (_, i) => `prop${String(i + 1).padStart(2, "0")}`);
 const counts = (occurrenceCount: number) => ({ occurrenceCount, fileCount: 1 });
 
 const used = (packageName: string, exportName: string, occurrenceCount: number) =>
@@ -69,14 +71,14 @@ describe("ComponentDetailsPanel", () => {
     ["a retired component with a three-sentence reason", {
       row: { ...row, deprecated: true, migration: { status: { status: "retired", reason: "Use Tag instead. Badge duplicated Tag. Migrate before Q3." }, recordId: null } },
     }, {}, () => expect(screen.getByText("Retired: Use Tag instead. Badge duplicated Tag. Migrate before Q3.")).toBeInTheDocument()],
-    ["a component from outside the repo", {}, { props: { kept: true, uses: 40, top: [variant], neverSet: null } }, () => {
+    ["a component from outside the repo", {}, { props: { kept: true, uses: 40, top: [variant], unused: null } }, () => {
       expect(screen.queryByRole("link", { name: /source/ })).toBeNull();
       expect(screen.queryByText(/never set/)).toBeNull();
     }],
     ["a component defined in the repo", { source: { remote: { host: "github.com", href: "https://github.com/example/app" } as never, commit: "abc123" } }, { source: { filePath: "src/Button.tsx", line: 12 } }, () => {
       expect(screen.getByRole("link", { name: "View Button source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc123/src/Button.tsx#L12");
     }],
-    ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], neverSet: null }, history: [{ t: "2026-11-13T00:00:00.000Z", value: 40 }] }, () => {
+    ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], unused: null }, history: [{ t: "2026-11-13T00:00:00.000Z", value: 40 }] }, () => {
       expect(screen.getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
       expect(paragraph("40 uses in this scan")).toBeInTheDocument();
       expectOneDotAtTheEnd("Uses of Button: 40 on 13 Nov.", "13 Nov");
@@ -92,9 +94,24 @@ describe("ComponentDetailsPanel", () => {
       expect(screen.getByRole("link", { name: "@example/web" })).toHaveAttribute("href", "/repos/r1/components/c1?area=@example/web");
       expect(screen.queryByRole("link", { name: "@example/lab" })).toBeNull();
     }],
-    ["a component with twelve declared props never set", {}, { props: { kept: true, uses: 40, top: [], neverSet: 12 } }, () => {
-      expect(screen.getByText("12 props never set")).toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: "12 props never set" })).toBeNull();
+    ["a component with twelve declared props never passed, six named and the rest counted", {}, { props: { kept: true, uses: 40, top: [variant], unused: names(12) } }, () => {
+      const section = screen.getByRole("region", { name: "Unused props · 12" });
+      expect(within(section).getAllByRole("listitem").map(li => li.textContent)).toEqual(["prop01", "prop02", "prop03", "prop04", "prop05", "prop06", "and 6 more"]);
+      expect(within(section).getByText("Declared, but no use passes them.")).toBeInTheDocument();
+      expect(within(section).queryByRole("link")).toBeNull();
+      expect(screen.getByRole("heading", { name: "Top props" })).toBeInTheDocument();
+    }],
+    ["a component with seven declared props never passed, all named rather than hide one", {}, { props: { kept: true, uses: 40, top: [], unused: names(7) } }, () => {
+      const section = screen.getByRole("region", { name: "Unused props · 7" });
+      expect(within(section).getAllByRole("listitem")).toHaveLength(7);
+      expect(screen.queryByRole("heading", { name: "Top props" })).toBeNull();
+    }],
+    ["a component with no uses, listing every declared prop as unused", {}, { props: { kept: true, uses: 0, top: [], unused: ["label"] } }, () => {
+      expect(within(screen.getByRole("region", { name: "Unused props · 1" })).getByText("label")).toBeInTheDocument();
+      expect(screen.getByText("Declared, but no use passes it.")).toBeInTheDocument();
+    }],
+    ["a component whose declared props are all passed", {}, { props: { kept: true, uses: 40, top: [variant], unused: [] } }, () => {
+      expect(screen.queryByRole("heading", { name: /Unused props/ })).toBeNull();
     }],
     ["an older scan, whose prop values aren't kept, with a note in place of the props", {}, { props: { kept: false } }, () => {
       expect(screen.queryByRole("heading", { name: "Top props" })).toBeNull();
@@ -129,7 +146,7 @@ describe("ComponentDetailsPanel", () => {
   });
 
   it("links each prop value to usage filtered to it, reads {…} as an expression, and leaves the prop name plain", () => {
-    panel({}, { props: { kept: true, uses: 40, top: [variant], neverSet: null } });
+    panel({}, { props: { kept: true, uses: 40, top: [variant], unused: null } });
     expect(screen.getByRole("link", { name: "variant primary, 20 uses" })).toHaveAttribute("href", "/repos/r1/components/c1?sel=variant~value~primary");
     expect(screen.getByRole("link", { name: "variant expression, 10 uses" })).toHaveAttribute("href", "/repos/r1/components/c1?sel=variant~dynamic~");
     expect(screen.getByText("{…}")).toBeInTheDocument();

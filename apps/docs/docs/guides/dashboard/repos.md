@@ -66,6 +66,7 @@ Select anywhere on a row except the name to see that component's details beside 
 - **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host.
 - A chart of its uses over the last 3 months. For a deprecated component, it shows its migration or retirement with the **Adoption** tab's numbers, and **Open chart** opens the full chart ([Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress)). When the chart's title has **ⓘ**, press it to see what it counts.
 - **Top props**: the props set most often and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression.
+- **Unused props**: for a component with declared props, the ones no use passes, by name. Past seven, it names six and counts the rest. To find the components that have any, pick **Filter** > **Props** > **Has unused props**.
 - **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
 
 **↑** and **↓** move between components, and so do the arrow buttons in the details. **Enter** or **Space** opens the details, and **×** or **Details** above the table hides them. To open a component's page from the keyboard, press **Tab** to reach its name, then **Enter**.

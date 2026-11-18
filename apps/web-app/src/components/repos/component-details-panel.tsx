@@ -35,6 +35,8 @@ export type PanelFactsState = PanelFactsResult | { state: "loading"; previous: P
 export type PanelMode = "column" | "sheet";
 
 const TOP = 3;
+/** Unused props named before "and N more"; a list one longer shows in full rather than hide a single name. */
+const UNUSED_SHOWN = 6;
 const LINK = "rounded-sm underline decoration-border underline-offset-3 hover:decoration-current";
 const ROW = "grid grid-cols-[minmax(0,1fr)_6rem_3.5rem] items-center gap-x-2.5 gap-y-1.5 text-sm";
 /** The name row sticks to the top of its scroll container and covers the container's padding there. */
@@ -219,28 +221,31 @@ function SlashSegments({ text }: { text: string }) {
   ));
 }
 
-function ListHead({ id, title, more }: { id: string; title: string; more?: string | undefined }) {
+function ListHead({ id, title, more, uses = true }: { id: string; title: string; more?: string | undefined; uses?: boolean }) {
   return (
     <div className="mb-2 flex items-baseline justify-between gap-2 text-label text-muted-foreground">
       <h3 id={id}>
         {title}
         {more ? <span className="font-normal"> · {more}</span> : null}
       </h3>
-      <span aria-hidden>uses</span>
+      {uses ? <span aria-hidden>uses</span> : null}
     </div>
   );
 }
 
 /**
- * The three most set props with their most used values, each value linking to usage filtered to it. While they load,
- * the last ones shown, faded and unlinked, or with none, a skeleton once the read is slow, its space held until then.
+ * The three most set props with their most used values, each value linking to usage filtered to it, then the declared
+ * props no use passes. While they load, the last ones shown, faded and unlinked, or with none, a skeleton once the read
+ * is slow, its space held until then.
  */
 function TopProps({ repoId, row, linked, facts }: { repoId: string; row: ComponentRow; linked: boolean; facts: PanelFactsState }) {
   if (facts.state === "error") return <p className="text-xs text-muted-foreground">Couldn't load some details.</p>;
   if (facts.state === "loading" && facts.previous) {
     return (
       <div aria-busy="true" className="opacity-60">
-        <TopProps repoId={repoId} row={row} linked={false} facts={facts.previous} />
+        <div className="space-y-6">
+          <TopProps repoId={repoId} row={row} linked={false} facts={facts.previous} />
+        </div>
       </div>
     );
   }
@@ -263,11 +268,12 @@ function TopProps({ repoId, row, linked, facts }: { repoId: string; row: Compone
   }
   const { props } = facts.facts;
   if (!props.kept) return <p className="text-xs text-muted-foreground">Top props are kept for the latest scan only.</p>;
-  if (props.uses === 0 || (props.top.length === 0 && !props.neverSet)) return null;
+  // A component with no uses still lists its declared props: none is passed, and the row's pill counts them.
+  if (props.top.length === 0 && !props.unused?.length) return null;
   return (
-    <section aria-labelledby="details-props">
+    <>
       {props.top.length > 0 ? (
-        <>
+        <section aria-labelledby="details-props">
           <ListHead id="details-props" title="Top props" />
           <ul className="space-y-3">
             {props.top.map((p) => (
@@ -288,13 +294,29 @@ function TopProps({ repoId, row, linked, facts }: { repoId: string; row: Compone
               </li>
             ))}
           </ul>
-        </>
+        </section>
       ) : null}
-      {props.neverSet ? (
-        <p className={cn("text-xs text-muted-foreground", props.top.length > 0 && "mt-3")}>
-          {plural(props.neverSet, "prop")} never set
-        </p>
-      ) : null}
+      {props.unused?.length ? <UnusedProps names={props.unused} /> : null}
+    </>
+  );
+}
+
+/** The declared props no use passes, by name: the first few, then how many more. */
+function UnusedProps({ names }: { names: string[] }) {
+  const shown = names.length > UNUSED_SHOWN + 1 ? names.slice(0, UNUSED_SHOWN) : names;
+  const more = names.length - shown.length;
+  return (
+    <section aria-labelledby="details-unused">
+      <ListHead id="details-unused" title="Unused props" more={names.length.toLocaleString()} uses={false} />
+      <ul className="flex flex-wrap gap-1.5" aria-describedby="details-unused-note">
+        {shown.map((name) => (
+          <li key={name}>
+            <Badge variant="outline" className="font-mono font-normal" title={name}>{name}</Badge>
+          </li>
+        ))}
+        {more > 0 ? <li className="self-center text-xs text-muted-foreground">and {more.toLocaleString()} more</li> : null}
+      </ul>
+      <p id="details-unused-note" className="mt-2 text-xs text-muted-foreground">Declared, but no use passes {names.length === 1 ? "it" : "them"}.</p>
     </section>
   );
 }
