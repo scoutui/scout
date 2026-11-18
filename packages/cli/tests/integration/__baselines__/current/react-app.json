@@ -434,6 +434,11 @@
           "values": [],
           "dynamic": 1,
           "omitted": 0
+        },
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
         }
       },
       "version": "1.13.4",
@@ -601,6 +606,9 @@
       ],
       "props": {
         "variant": {
+          "tier": "dynamic"
+        },
+        "children": {
           "tier": "dynamic"
         }
       },

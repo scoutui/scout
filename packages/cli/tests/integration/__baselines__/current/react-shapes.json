@@ -258,7 +258,13 @@
         "fileCount": 1
       },
       "usage": "direct",
-      "props": {},
+      "props": {
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
       "declared": {
         "props": {
           "children": {}
@@ -4085,6 +4091,11 @@
       },
       "usage": "direct",
       "props": {
+        "children": {
+          "values": [],
+          "dynamic": 2,
+          "omitted": 19
+        },
         "...rest": {
           "values": [],
           "dynamic": 1,
@@ -4226,7 +4237,13 @@
         "fileCount": 1
       },
       "usage": "direct",
-      "props": {},
+      "props": {
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
       "version": "0.0.0",
       "composition": {
         "rendersByCount": {},
@@ -4262,6 +4279,11 @@
           ],
           "dynamic": 0,
           "omitted": 0
+        },
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
         }
       },
       "version": "0.0.0",
@@ -4289,6 +4311,11 @@
       },
       "usage": "direct",
       "props": {
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 13
+        },
         "...rest": {
           "values": [],
           "dynamic": 1,
@@ -4428,7 +4455,13 @@
         "fileCount": 1
       },
       "usage": "direct",
-      "props": {},
+      "props": {
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
       "version": "0.0.0",
       "composition": {
         "rendersByCount": {},
@@ -4469,6 +4502,11 @@
           ],
           "dynamic": 0,
           "omitted": 1
+        },
+        "children": {
+          "values": [],
+          "dynamic": 3,
+          "omitted": 0
         }
       },
       "version": "0.0.0",
@@ -4807,7 +4845,11 @@
           "name": "Tabs"
         }
       ],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "4dbf4086291c7cef"
     },
     {
@@ -4833,6 +4875,9 @@
         "value": {
           "tier": "written",
           "value": "a"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "4dbf4086291c7cef"
@@ -4853,7 +4898,11 @@
         "kind": "render"
       },
       "trace": [],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "10f9e9957af1bca0"
     },
     {
@@ -4869,7 +4918,11 @@
         "kind": "render"
       },
       "trace": [],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "7424d7f6d833dde9"
     },
     {
@@ -6356,7 +6409,11 @@
           "name": "Card"
         }
       ],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "8c608a9d9c1244b3"
     },
     {
@@ -6378,7 +6435,11 @@
           "name": "Button"
         }
       ],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "8c608a9d9c1244b3"
     },
     {
@@ -6444,7 +6505,11 @@
           "name": "Card"
         }
       ],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "fa2394095d2836da"
     },
     {
@@ -6470,6 +6535,9 @@
         "variant": {
           "tier": "written",
           "value": "primary"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "fa2394095d2836da"
@@ -6497,6 +6565,9 @@
         "variant": {
           "tier": "written",
           "value": "ghost"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "c7ba00c9bf2bddc7"
@@ -6520,7 +6591,11 @@
           "name": "Button"
         }
       ],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "f5308786ab1f1459"
     },
     {
@@ -7776,7 +7851,11 @@
           "name": "Button"
         }
       ],
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "41d5717d013520c3"
     },
     {

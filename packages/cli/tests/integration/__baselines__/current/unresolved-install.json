@@ -86,6 +86,9 @@
         "kind": {
           "tier": "written",
           "value": "primary"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "7373dea162d47280"

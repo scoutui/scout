@@ -326,7 +326,7 @@ describe("integration: react-shapes fixture", () => {
           key: { tier: "reference", ref: "r" },
         }),
         row("Iteration.tsx:27:19", pkg("Button"), iteration("Alt"), [imported("@example/react-ds", "Button")]),
-        row("Iteration.tsx:39:42", pkg("Button"), iteration("ChildrenWrapper"), [imported("@example/react-ds", "Button")]),
+        row("Iteration.tsx:39:42", pkg("Button"), iteration("ChildrenWrapper"), [imported("@example/react-ds", "Button")], { children: { tier: "dynamic" } }),
         row("Iteration.tsx:46:65", pkg("TextInput"), iteration("ExternalArrayList"), [imported("@example/react-ds", "TextInput")], {
           key: { tier: "reference", ref: "i" },
         }),
@@ -517,7 +517,7 @@ describe("integration: react-shapes fixture", () => {
       const S = "context";
       const theme = (name: string) => local(S, "Theme.tsx", name);
       expect(rendersIn(S)).toEqual([
-        row("Theme.tsx:23:5", theme("ThemeProvider"), theme("ThemedPage"), []),
+        row("Theme.tsx:23:5", theme("ThemeProvider"), theme("ThemedPage"), [], { children: { tier: "dynamic" } }),
         row("Theme.tsx:24:7", pkg("Card"), theme("ThemedPage"), [imported("@example/react-ds", "Card")], {}),
       ]);
       expect(diagnosticsIn(S)).toEqual([
@@ -561,13 +561,14 @@ describe("integration: react-shapes fixture", () => {
       const app = local(S, "App.tsx", "App");
       const tabs = [imported("@example/react-ds", "Tabs")];
       expect(rendersIn(S)).toEqual([
-        row("App.tsx:5:5", pkg("Tabs.Root"), app, tabs),
-        row("App.tsx:6:7", pkg("Tabs.Trigger"), app, tabs, { value: { tier: "written", value: "a" } }),
+        row("App.tsx:5:5", pkg("Tabs.Root"), app, tabs, { children: { tier: "dynamic" } }),
+        row("App.tsx:6:7", pkg("Tabs.Trigger"), app, tabs, { value: { tier: "written", value: "a" }, children: { tier: "dynamic" } }),
         row(
           "App.tsx:15:5",
           { status: "unresolved", reason: { kind: "unbound-name", name: "Disclosure" } },
           local(S, "App.tsx", "Sidebar"),
           [],
+          { children: { tier: "dynamic" } },
         ),
       ]);
       expect(componentOf(pkg("Tabs")), "the compound `Tabs` gets no row of its own").toBeUndefined();
@@ -592,8 +593,8 @@ describe("integration: react-shapes fixture", () => {
       const panel = local(S, "Panel.tsx", "Panel");
       const leaf = (name: string) => [imported("@example/react-ds", name)];
       expect(rendersIn(S)).toEqual([
-        row("Panel.tsx:6:5", pkg("Card"), panel, leaf("Card")),
-        row("Panel.tsx:7:7", pkg("Button"), panel, leaf("Button"), {}),
+        row("Panel.tsx:6:5", pkg("Card"), panel, leaf("Card"), { children: { tier: "dynamic" } }),
+        row("Panel.tsx:7:7", pkg("Button"), panel, leaf("Button"), { children: { tier: "dynamic" } }),
         row("Panel.tsx:8:9", pkg("TextInput"), panel, leaf("TextInput"), {}),
         row("Panel.tsx:10:7", pkg("TextInput"), panel, leaf("TextInput"), {}),
       ]);
@@ -962,10 +963,10 @@ describe("integration: react-shapes fixture", () => {
       const card = pkgOf("@example/owner-edges", "Card");
       const leaf = (name: string) => [imported("@example/owner-edges", name)];
       expect(rendersIn(S)).toEqual([
-        row("Page.tsx:6:5", card, page, leaf("Card")),
-        row("Page.tsx:7:7", button, page, leaf("Button"), { variant: { tier: "written", value: "primary" } }),
-        row("Page.tsx:12:34", button, footer, leaf("Button"), { variant: { tier: "written", value: "ghost" } }),
-        row("Page.tsx:15:10", button, anonymous, leaf("Button")),
+        row("Page.tsx:6:5", card, page, leaf("Card"), { children: { tier: "dynamic" } }),
+        row("Page.tsx:7:7", button, page, leaf("Button"), { variant: { tier: "written", value: "primary" }, children: { tier: "dynamic" } }),
+        row("Page.tsx:12:34", button, footer, leaf("Button"), { variant: { tier: "written", value: "ghost" }, children: { tier: "dynamic" } }),
+        row("Page.tsx:15:10", button, anonymous, leaf("Button"), { children: { tier: "dynamic" } }),
       ]);
       expect(componentOf(page)?.definition).toEqual({ line: 4, column: 8 });
       expect(componentOf(page)?.composition.rendersByCount).toEqual({ [idOf(card)]: 1, [idOf(button)]: 1 });

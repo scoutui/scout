@@ -174,6 +174,11 @@
           ],
           "dynamic": 0,
           "omitted": 1
+        },
+        "children": {
+          "values": [],
+          "dynamic": 2,
+          "omitted": 0
         }
       },
       "version": "1.13.4",
@@ -222,6 +227,11 @@
             }
           ],
           "dynamic": 0,
+          "omitted": 0
+        },
+        "children": {
+          "values": [],
+          "dynamic": 1,
           "omitted": 0
         }
       },
@@ -321,6 +331,9 @@
         "disabled": {
           "tier": "written",
           "value": true
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "807ef2087b018965"
@@ -352,6 +365,9 @@
         "color": {
           "tier": "written",
           "value": "primary"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "4d6d9d59c3b0db27"
@@ -425,6 +441,9 @@
       ],
       "props": {
         "variant": {
+          "tier": "dynamic"
+        },
+        "children": {
           "tier": "dynamic"
         }
       },

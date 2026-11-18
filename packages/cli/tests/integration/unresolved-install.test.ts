@@ -20,7 +20,7 @@ describe("integration: unresolved-install, a declared package that is not instal
       line: 4,
       trace: [{ kind: "import", specifier: "@example/ui", name: "Button" }],
     });
-    expect(Object.keys(scan.occurrences[0]?.props ?? {})).toEqual(["kind"]);
+    expect(Object.keys(scan.occurrences[0]?.props ?? {})).toEqual(["kind", "children"]);
   });
 
   it("names no package component for it", () => {
