@@ -1,5 +1,11 @@
 # @scoutui/cli
 
+## 0.5.1
+
+### Patch Changes
+
+- [#231](https://github.com/scoutui/scout/pull/231) [`9c1daa6`](https://github.com/scoutui/scout/commit/9c1daa6964009aa010c74fc1f8c77fb8d44e98cb) Thanks [@nhunsaker](https://github.com/nhunsaker)! - Content between a React component's tags now counts as passing its `children` prop, so `<Button>Save</Button>` is a use that sets `children`, just as `<Button children="Save" />` is. Before, only attributes counted, and a component that declares `children` showed it as never passed. The content is recorded as a variable or expression, not as a written value. A custom element's content fills its slots, so it still sets no `children`.
+
 ## 0.5.0
 
 ### Minor Changes
