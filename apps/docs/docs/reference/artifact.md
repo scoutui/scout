@@ -188,7 +188,7 @@ For every prop, the counts in `values` plus `dynamic`, `other` and `omitted` add
 
 ### `declared` {#declared}
 
-The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`) and from `defineProps` in Vue. Absent when the props can't be read that way.
+The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`), and from `defineProps` and `defineModel()` in Vue. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -328,6 +328,8 @@ The `column` in `mapLoc` and `constructionSite` counts from 1.
 | `{ "tier": "dynamic" }` | Any other expression. A prop named `on` plus a capital letter is `dynamic` unless its value is written. |
 
 A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a prop named `...rest` with `{ "tier": "dynamic" }`.
+
+In Vue, a prop the component declares is recorded under its declared name, whichever case the template writes it in: `is-preview` is recorded as `isPreview`. An attribute the component doesn't declare keeps its written name. On a component, `v-model` is recorded as `modelValue` and `v-model:open` as `open`.
 
 ## `meta` {#meta}
 

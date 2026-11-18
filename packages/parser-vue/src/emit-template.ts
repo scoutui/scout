@@ -172,7 +172,7 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
         // Vue built-in: not a component reference and not a miss, so emit
         // nothing and diagnose nothing.
       } else if (scriptSpec) {
-        const { props, events } = readAttrs(node);
+        const { props, events } = readAttrs(node, "component");
         opts.fileBuilder.addJsxUsage({
           ref: {
             symbol: scriptSpec.local,
@@ -204,7 +204,7 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
             loc: { line, column },
           });
         }
-        const { props, events } = readAttrs(node);
+        const { props, events } = readAttrs(node, "component");
         opts.fileBuilder.addJsxUsage({
           ref: { symbol: auto.name, scope: MODULE_SCOPE, memberChain: [], loc: { line, column } },
           loc: { line, column },
@@ -223,7 +223,7 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
         // The engine credits it to the tag by name. A reserved name
         // (`<font-face>`) is not one and falls through below, and so does the
         // kebab-case form of a name in `scriptOnly`, which emits nothing.
-        const { props, events } = readAttrs(node);
+        const { props, events } = readAttrs(node, "custom-element");
         opts.fileBuilder.addTagUsage({
           tagName: rawTag,
           loc: { line, column },
@@ -242,7 +242,7 @@ export function emitVueTemplate(opts: EmitVueTemplateOpts): void {
         // binds where the graph cannot see it (`scriptOnlyBindings`) is no usage.
         const [head, ...members] = /^[A-Z][\w$]*(?:\.[\w$]+)*$/.test(node.tag) ? node.tag.split(".") : [];
         if (head !== undefined && !scriptOnly.has(head)) {
-          const { props, events } = readAttrs(node);
+          const { props, events } = readAttrs(node, "component");
           opts.fileBuilder.addJsxUsage({
             ref: { symbol: head, scope: MODULE_SCOPE, memberChain: members, loc: { line, column } },
             loc: { line, column },

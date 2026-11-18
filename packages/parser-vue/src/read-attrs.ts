@@ -16,7 +16,16 @@ function attrOf(prop: AttributeNode | DirectiveNode): { name: string; value: str
   };
 }
 
-export function readAttrs(el: ElementNode): { props: PropUsage[]; events: string[] } {
+/** `v-model`, `v-model:title` and either with modifiers (`v-model.trim`); a dynamic argument (`v-model:[name]`) doesn't match. */
+const V_MODEL_RE = /^v-model(?::([^.[\]]+))?(?:\..*)?$/;
+
+/**
+ * The props and events an element writes. On a component, `v-model` binds the
+ * `modelValue` prop and `v-model:title` binds `title`, as Vue compiles them; a
+ * custom element's `v-model` depends on the app's compiler options, so it's
+ * skipped there.
+ */
+export function readAttrs(el: ElementNode, target: "component" | "custom-element"): { props: PropUsage[]; events: string[] } {
   const props: PropUsage[] = [];
   const events: string[] = [];
   for (const attr of el.props.map(attrOf)) {
@@ -26,6 +35,11 @@ export function readAttrs(el: ElementNode): { props: PropUsage[]; events: string
     }
     if (attr.name === "v-bind") {
       if (!props.some((p) => p.name === "...rest")) props.push({ name: "...rest", tier: "dynamic" });
+      continue;
+    }
+    const model = V_MODEL_RE.exec(attr.name);
+    if (model && target === "component") {
+      props.push(classifyBindExpr(model[1] ?? "modelValue", attr.value.trim()));
       continue;
     }
     if (/^v-/.test(attr.name) && !/^v-bind:/.test(attr.name)) continue;

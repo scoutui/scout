@@ -270,6 +270,153 @@
       }
     },
     {
+      "id": "989dc5ce1c16eda4",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "vue-app",
+        "filePath": "src/prop-names/components/Card.vue",
+        "exportName": "Card"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "isPreview": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": true,
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "data-test": {
+          "values": [
+            {
+              "provenance": "written",
+              "value": "card",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        }
+      },
+      "declared": {
+        "props": {
+          "isPreview": {
+            "required": false,
+            "type": "boolean"
+          }
+        },
+        "hasRest": false
+      },
+      "owningPackage": "vue-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "3894bb5ac33d1c7c": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
+      "id": "6875a13ffe5fda7f",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "vue-app",
+        "filePath": "src/prop-names/components/Field.vue",
+        "exportName": "Field"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 2,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {
+        "modelValue": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "name",
+              "count": 2
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 0
+        },
+        "open": {
+          "values": [
+            {
+              "provenance": "reference",
+              "ref": "isOpen",
+              "count": 1
+            }
+          ],
+          "dynamic": 0,
+          "omitted": 1
+        }
+      },
+      "declared": {
+        "props": {
+          "modelValue": {
+            "type": "string"
+          },
+          "open": {
+            "default": false,
+            "type": "boolean",
+            "required": false
+          }
+        },
+        "hasRest": false
+      },
+      "owningPackage": "vue-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "3894bb5ac33d1c7c": 2
+        },
+        "isRootCount": 0,
+        "isLeafCount": 2
+      }
+    },
+    {
+      "id": "3894bb5ac33d1c7c",
+      "identity": {
+        "kind": "repository-declaration",
+        "repoId": "vue-app",
+        "filePath": "src/prop-names/pages/index.vue",
+        "exportName": "Index"
+      },
+      "framework": "vue",
+      "stats": {
+        "occurrenceCount": 0,
+        "fileCount": 0
+      },
+      "usage": "none",
+      "props": {},
+      "owningPackage": "vue-app",
+      "version": null,
+      "composition": {
+        "rendersByCount": {
+          "989dc5ce1c16eda4": 1,
+          "6875a13ffe5fda7f": 2
+        },
+        "renderedByCount": {},
+        "isRootCount": 0,
+        "isLeafCount": 0
+      }
+    },
+    {
       "id": "ffa6c15e8cd29dc9",
       "identity": {
         "kind": "repository-declaration",
@@ -854,6 +1001,95 @@
         }
       },
       "ownerComponentId": "53bd0edf62eaece1"
+    },
+    {
+      "occurrenceId": "7d3bb2609554a9a4",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "989dc5ce1c16eda4"
+      },
+      "filePath": "src/prop-names/pages/index.vue",
+      "line": 2,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "../components/Card.vue",
+          "name": "default"
+        }
+      ],
+      "props": {
+        "isPreview": {
+          "tier": "written",
+          "value": true
+        },
+        "data-test": {
+          "tier": "written",
+          "value": "card"
+        }
+      },
+      "ownerComponentId": "3894bb5ac33d1c7c"
+    },
+    {
+      "occurrenceId": "17ab62c236bc8287",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "6875a13ffe5fda7f"
+      },
+      "filePath": "src/prop-names/pages/index.vue",
+      "line": 3,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "../components/Field.vue",
+          "name": "default"
+        }
+      ],
+      "props": {
+        "modelValue": {
+          "tier": "reference",
+          "ref": "name"
+        },
+        "open": {
+          "tier": "reference",
+          "ref": "isOpen"
+        }
+      },
+      "ownerComponentId": "3894bb5ac33d1c7c"
+    },
+    {
+      "occurrenceId": "95309111b5a208b0",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "6875a13ffe5fda7f"
+      },
+      "filePath": "src/prop-names/pages/index.vue",
+      "line": 4,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [
+        {
+          "kind": "import",
+          "specifier": "../components/Field.vue",
+          "name": "default"
+        }
+      ],
+      "props": {
+        "modelValue": {
+          "tier": "reference",
+          "ref": "name"
+        }
+      },
+      "ownerComponentId": "3894bb5ac33d1c7c"
     },
     {
       "occurrenceId": "d87b090df4366c22",

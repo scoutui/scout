@@ -21,6 +21,7 @@ import { scanIdOf, toIdentity } from "./identity.js";
 import { collectTagEvidence, type TagEvidenceSources } from "./tag-evidence.js";
 import { toCreditAndTrace } from "./trace.js";
 import { packagesNotInstalled } from "./not-installed.js";
+import { withDeclaredPropNames } from "./declared-prop-names.js";
 import { type PackageVersionReader, withInstalledVersions } from "../scan/stamp-version.js";
 
 export type EmitInput = {
@@ -55,7 +56,7 @@ export async function emitArtifact(input: EmitInput): Promise<ScanArtifact<Diagn
   const rows = input.seeds.map((seed) => toRow(seed, input.tagEvidence));
   const idOf = (raw: ComponentId): string => scanIdOf(raw, repoId);
 
-  const occurrences: Occurrence[] = input.occurrences.map((eo) => {
+  const occurrences: Occurrence[] = withDeclaredPropNames(input.occurrences.map((eo) => {
     const { resolution, idKey } = resolutionOf(eo, idOf);
     const ownerComponentId = eo.rawOwnerComponentId !== undefined ? idOf(eo.rawOwnerComponentId) : undefined;
     const authoredTag = eo.rawComponentId?.kind === "custom-element" ? eo.rawComponentId.tagName : undefined;
@@ -77,7 +78,7 @@ export async function emitArtifact(input: EmitInput): Promise<ScanArtifact<Diagn
       ...(eo.events.length > 0 ? { events: eo.events } : {}),
       ...(ownerComponentId !== undefined ? { ownerComponentId } : {}),
     };
-  });
+  }), rows);
 
   const resolved = resolvedOccurrences(occurrences);
   const components = await withInstalledVersions(
