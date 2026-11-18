@@ -4787,7 +4787,8 @@
       "trace": [
         {
           "kind": "hoc",
-          "callee": "connect"
+          "callee": "connect",
+          "mayAddProps": true
         },
         {
           "kind": "import",
@@ -5652,7 +5653,8 @@
       "trace": [
         {
           "kind": "hoc",
-          "callee": "connect"
+          "callee": "connect",
+          "mayAddProps": true
         },
         {
           "kind": "import",
@@ -5706,7 +5708,8 @@
       "trace": [
         {
           "kind": "hoc",
-          "callee": "flow"
+          "callee": "flow",
+          "mayAddProps": true
         },
         {
           "kind": "import",
@@ -5733,7 +5736,8 @@
       "trace": [
         {
           "kind": "hoc",
-          "callee": "compose"
+          "callee": "compose",
+          "mayAddProps": true
         },
         {
           "kind": "import",
@@ -5796,7 +5800,8 @@
         },
         {
           "kind": "hoc",
-          "callee": "flow"
+          "callee": "flow",
+          "mayAddProps": true
         },
         {
           "kind": "import",
@@ -5827,7 +5832,8 @@
         },
         {
           "kind": "hoc",
-          "callee": "connect"
+          "callee": "connect",
+          "mayAddProps": true
         },
         {
           "kind": "import",
@@ -6613,7 +6619,8 @@
       "trace": [
         {
           "kind": "hoc",
-          "callee": "withAlias"
+          "callee": "withAlias",
+          "mayAddProps": true
         },
         {
           "kind": "import",

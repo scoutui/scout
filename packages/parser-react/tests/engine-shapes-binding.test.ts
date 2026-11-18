@@ -37,7 +37,7 @@ export function App() {
 `,
     });
     expect(r.ids).toEqual(["local:src/ui.tsx:Fwd@4", "local:src/ui.tsx:Fwd@4", "local:src/ui.tsx:Plain@4", "local:src/ui.tsx:Plain@4"]);
-    const fwdHop = { kind: "hoc-wrapper", hocCallee: "forwardRef" };
+    const fwdHop = { kind: "hoc-wrapper", hocCallee: "forwardRef", mayAddProps: false };
     expect(r.viaChains).toEqual([
       [{ kind: "direct-import", specifier: "./ui.tsx", import: "*" }],
       [{ kind: "direct-import", specifier: "./ui.tsx", import: "*" }, fwdHop],
@@ -60,7 +60,7 @@ export function App() {
       [{ kind: "direct-import", specifier: "@ws/ui", import: "*" }],
       [
         { kind: "direct-import", specifier: "@ws/ui", import: "*" },
-        { kind: "hoc-wrapper", hocCallee: "forwardRef" },
+        { kind: "hoc-wrapper", hocCallee: "forwardRef", mayAddProps: false },
       ],
     ]);
   });
@@ -77,7 +77,7 @@ export function App() { return <><P /><M /></>; }
     expect(r.ids).toEqual(["local:src/ui.tsx:Plain@5", "local:src/ui.tsx:Plain@5"]);
     expect(r.viaChains).toEqual([
       [{ kind: "local-component" }],
-      [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./ui.tsx", import: "*" }],
+      [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./ui.tsx", import: "*", mayAddProps: false }],
     ]);
     expect(r.diagnostics).toEqual([]);
   });
@@ -181,7 +181,7 @@ describe("a parsed barrel re-exporting a package", () => {
         `);
         expect(ids(occs)).toEqual(["external:@ds/react:Button@5"]);
         expect(occs.map((o) => o.viaChain)).toEqual([
-          [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./ds.tsx", import: "Button" }],
+          [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./ds.tsx", import: "Button", mayAddProps: false }],
         ]);
       });
       it("credits a lazy import of Button rendered as a tag as the package's component", () => {
@@ -431,7 +431,7 @@ describe("a React memo reached through the default or namespace import", () => {
     it(`folds ${label}(Button) to Button with a memo hop`, () => {
       const occs = scan({ "src/button.tsx": button, "src/App.tsx": app }, pathResolver(R), R);
       const buttons = occs.filter((o) => ids([o])[0]?.startsWith("local:src/button.tsx:Button@"));
-      expect(buttons.map((o) => o.viaChain)).toEqual([[{ kind: "local-component" }, expect.objectContaining({ kind: "hoc-wrapper", hocCallee: "memo" })]]);
+      expect(buttons.map((o) => o.viaChain)).toEqual([[{ kind: "local-component" }, expect.objectContaining({ kind: "hoc-wrapper", hocCallee: "memo", mayAddProps: false })]]);
     });
   }
 });
@@ -470,7 +470,7 @@ describe("an `export *` branch the re-export chain has already sought", () => {
     );
     expect(ids(occs)).toEqual(["local:src/c.tsx:X@4"]);
     expect(occs.map((o) => o.viaChain)).toEqual([
-      [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./a.tsx", import: "X" }],
+      [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./a.tsx", import: "X", mayAddProps: false }],
     ]);
   });
   it("is skipped where the name is rendered directly", () => {
@@ -676,7 +676,7 @@ export function App() {
       { id: "local:packages/card/src/index.tsx:X@7", viaChain: [{ kind: "direct-import", specifier: "./barrel.tsx", import: "X" }] },
       {
         id: "local:packages/card/src/index.tsx:X@7",
-        viaChain: [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./barrel.tsx", import: "X" }],
+        viaChain: [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", specifier: "./barrel.tsx", import: "X", mayAddProps: false }],
       },
       { id: "local:packages/card/src/index.tsx:X@6", viaChain: [{ kind: "passed-as-argument", callee: "useModal", index: 0, specifier: "./barrel.tsx", import: "X" }] },
     ]);

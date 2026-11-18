@@ -476,7 +476,7 @@ describe("argument-site seeding: through call-valued arguments", () => {
     expect([inM?.line, inM?.column]).toEqual([lineOf(src, "memo(wrap(Base))"), columnOf(src, "memo(wrap(Base))", "Base")]);
     expect(inA?.viaChain).toEqual([
       { kind: "passed-as-argument", callee: "wrap", index: 0, specifier: "pkg", import: "Base" },
-      { kind: "hoc-wrapper", hocCallee: "memo", specifier: "pkg", import: "Base" },
+      { kind: "hoc-wrapper", hocCallee: "memo", specifier: "pkg", import: "Base", mayAddProps: false },
     ]);
   });
 

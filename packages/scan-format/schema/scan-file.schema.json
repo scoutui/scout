@@ -1102,6 +1102,10 @@
                         },
                         "callee": {
                           "type": "string"
+                        },
+                        "mayAddProps": {
+                          "type": "boolean",
+                          "const": true
                         }
                       },
                       "required": [

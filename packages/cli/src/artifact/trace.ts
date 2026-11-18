@@ -14,7 +14,7 @@ function importOf(hop: OccurrenceVia | undefined): ImportStep | undefined {
 function hopStep(hop: OccurrenceVia): Known<TraceStep> | undefined {
   switch (hop.kind) {
     case "hoc-wrapper":
-      return { kind: "hoc", callee: hop.hocCallee };
+      return { kind: "hoc", callee: hop.hocCallee, ...(hop.mayAddProps ? { mayAddProps: true as const } : {}) };
     case "lazy-import":
       return { kind: "lazy", callee: hop.wrapperCallee };
     case "dynamic-map":

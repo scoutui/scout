@@ -586,7 +586,7 @@ describe("walkWithFolding: HOC fallback rule", () => {
     expect(result[0].denotation).toEqual({ kind: "element" });
     expect(result[0].identity).toEqual({ kind: "local", filePath: "a.tsx", export: "Foo", declaration: expect.objectContaining({ symbol: "Foo" }) });
     expect(result[0].viaTrail).toEqual([
-      { kind: "hoc-wrapper", hocCallee: "id" },
+      { kind: "hoc-wrapper", hocCallee: "id", mayAddProps: false },
     ]);
   });
 
@@ -824,7 +824,7 @@ describe("walkWithFolding: structural pass-through", () => {
     expect(result).toEqual([
       {
         denotation: { kind: "foreign" },
-        viaTrail: [{ kind: "hoc-wrapper", hocCallee: "id" }],
+        viaTrail: [{ kind: "hoc-wrapper", hocCallee: "id", mayAddProps: false }],
         identity: { kind: "local", filePath: "a.tsx", export: "Foo", declaration: expect.objectContaining({ symbol: "Foo" }) },
       },
     ]);
@@ -904,7 +904,7 @@ describe("walkWithFolding: structural pass-through over library stubs", () => {
     const result = walkWithFolding(graph, fileGraph, t, createArgumentMap());
     expect(result).toHaveLength(1);
     expect(result[0].identity).toEqual({ kind: "local", filePath: "a.tsx", export: "Foo", declaration: expect.objectContaining({ symbol: "Foo" }) });
-    expect(result[0].viaTrail[0]).toEqual({ kind: "hoc-wrapper", hocCallee: "memo" });
+    expect(result[0].viaTrail[0]).toEqual({ kind: "hoc-wrapper", hocCallee: "memo", mayAddProps: false });
   });
 
   it("memo(Button) over an external import folds to Button with hoc-wrapper(memo)", () => {
@@ -921,7 +921,7 @@ describe("walkWithFolding: structural pass-through over library stubs", () => {
     expect(result[0].denotation).toEqual({ kind: "foreign" });
     expect(result[0].identity).toMatchObject({ kind: "imported", specifier: "ds-lib", imported: "Button" });
     expect(result[0].viaTrail).toEqual([
-      { kind: "hoc-wrapper", hocCallee: "memo", specifier: "ds-lib", import: "Button" },
+      { kind: "hoc-wrapper", hocCallee: "memo", specifier: "ds-lib", import: "Button", mayAddProps: false },
     ]);
   });
 
@@ -944,7 +944,7 @@ describe("walkWithFolding: structural pass-through over library stubs", () => {
     expect(result[0].denotation).toEqual({ kind: "element" });
     expect(result[0].identity).toBeNull();
     expect(result[0].viaTrail).toEqual([
-      { kind: "hoc-wrapper", hocCallee: "forwardRef" },
+      { kind: "hoc-wrapper", hocCallee: "forwardRef", mayAddProps: false },
     ]);
   });
 
@@ -1004,7 +1004,7 @@ describe("walkWithFolding: structural pass-through over library stubs", () => {
     expect(result[0].denotation).toEqual({ kind: "element" });
     expect(result[0].identity).toEqual({ kind: "local", filePath: "a.tsx", export: "Foo", declaration: expect.objectContaining({ symbol: "Foo" }) });
     expect(result[0].viaTrail).toEqual([
-      { kind: "hoc-wrapper", hocCallee: "id" },
+      { kind: "hoc-wrapper", hocCallee: "id", mayAddProps: false },
     ]);
   });
 });
