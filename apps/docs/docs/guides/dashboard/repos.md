@@ -43,6 +43,7 @@ To narrow the table:
 
 - Type part of a component's name into the search box. It also finds a component by a name files render it under, such as `SettingsHeader` after `import SettingsHeader from "./Header"`. A row found that way reads `written as SettingsHeader` under its name.
 - Press the **deprecated** chip to show only deprecated components in use. While other filters are on, it reads, for example, **deprecated 3 of 12**: 3 of the 12 deprecated components in use match the other filters.
+- Under **Filter**, pick **Props** > **Has unused props** to show only components with a declared prop this scan never saw passed. Each row then says how many, for example `3 unused props`. It only counts components whose declared props the scan could read, such as your repo's own; a component from a package without readable source never shows here.
 - Press the **since previous scan** chip to show what was added, removed or changed, with a **Change** column of each component's change in uses, biggest drop first. New components carry an **Added** badge and removed ones a **Removed** badge.
 - Press **Filter** to choose by **Origin** ([**External**](/docs/reference/glossary#external) or [**Local**](/docs/reference/glossary#local)), **Type**, **Package**, **Used in**, [**Tag**](/docs/reference/glossary#tag) or **Uses**. Picking two values in **Type**, **Package** or **Tag** shows components matching either; filters in different facets must all match.
 
@@ -65,6 +66,7 @@ Select anywhere on a row except the name to see that component's details beside 
 - **Open usage**, and for a component defined in the repo, **View source**, which opens its definition on your git host.
 - A chart of its uses over the last 3 months. For a deprecated component, it shows its migration or retirement with the **Adoption** tab's numbers, and **Open chart** opens the full chart ([Track a migration](/docs/guides/dashboard/track-a-migration#follow-progress)). When the chart's title has **ⓘ**, press it to see what it counts.
 - **Top props**: the props set most often and their most common values. Select a value to open usage filtered to it. `{…}` stands for a variable or an expression.
+- **Unused props**: for a component with declared props, the ones no use passes, by name. Past seven, it names six and counts the rest. To find the components that have any, pick **Filter** > **Props** > **Has unused props**.
 - **Top packages**: in a monorepo, the packages that use the component most. Select one to open usage in that package.
 
 **↑** and **↓** move between components, and so do the arrow buttons in the details. **Enter** or **Space** opens the details, and **×** or **Details** above the table hides them. To open a component's page from the keyboard, press **Tab** to reach its name, then **Enter**.
@@ -86,6 +88,7 @@ The tab keeps its search and filters in the page URL, so you can copy the addres
 | `uses` | `uses=gte:10` for 10 or more, `uses=lte:10` for 10 or fewer (also `gt:`, `lt:`, or a number alone for exactly that many) |
 | `used-in` | `used-in=@acme/web`, which keeps the components used in that package |
 | `changed` | `changed=true` |
+| `unused-props` | `unused-props=true` |
 
 Different parameters must all match. Repeating `kind`, `package` or `tag` matches any of the values. Write a space as `+`. For example:
 

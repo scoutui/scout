@@ -93,10 +93,15 @@ describe("topProps", () => {
       prop("variant", { omittedCount: 2 }), prop("size", { omittedCount: 5 }), prop("tone", { omittedCount: 5 }), prop("label", { omittedCount: 8 }),
       prop("className"), prop("onClick"), prop("data-state"), prop("...rest"), prop("hidden", { status: "unused" }),
     ];
-    const { top, neverSet } = topProps({ props, events: [{ name: "onClick", boundCount: 10 }], hasDeclaredApi: false }, 10);
+    const { top, unused } = topProps({ props, events: [{ name: "onClick", boundCount: 10 }], hasDeclaredApi: false }, 10);
     expect(top.map(p => [p.name, p.set])).toEqual([["variant", 8], ["size", 5], ["tone", 5]]);
-    expect(neverSet).toBeNull();
-    expect(topProps({ props: props.map(p => ({ ...p, status: p.status ?? "used" })), events: [], hasDeclaredApi: true }, 10).neverSet).toBe(1);
+    expect(unused).toBeNull();
+    expect(topProps({ props: props.map(p => ({ ...p, status: p.status ?? "used" })), events: [], hasDeclaredApi: true }, 10).unused).toEqual(["hidden"]);
+  });
+
+  it("names the never-passed declared props by name", () => {
+    const props = [prop("tone", { status: "unused" }), prop("align", { status: "unused" }), prop("size", { status: "used" })];
+    expect(topProps({ props, events: [], hasDeclaredApi: true }, 4).unused).toEqual(["align", "tone"]);
   });
 
   it("counts written values that read the same once, and variables with expressions as one {…}, keeping the three most used", () => {

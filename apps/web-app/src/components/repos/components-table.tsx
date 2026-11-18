@@ -107,6 +107,7 @@ export function ComponentsTable({
   notInLatest,
   search,
   usedIn,
+  showUnusedProps = false,
   selectedId,
   onSelect,
   packageChars = longestPackageName(sort.sorted),
@@ -125,6 +126,8 @@ export function ComponentsTable({
   search?: string;
   /** The Used in package: a row used in more than one package links to its Usage tab with this package picked. */
   usedIn?: string | null;
+  /** The unused props filter is on: each row says how many of its declared props were never passed (`3 unused props`). */
+  showUnusedProps?: boolean;
   selectedId?: string | null | undefined;
   onSelect?: ((componentId: string, how: SelectHow) => void) | undefined;
   /** The longest package name the Package column fits, in characters; the shown rows' longest when not given. */
@@ -267,6 +270,7 @@ export function ComponentsTable({
                 mark={mark}
                 showChange={marks !== undefined}
                 writtenAs={search ? writtenNameMatch(row, search) : undefined}
+                showUnusedProps={showUnusedProps}
               />
             </TableRow>
           );
@@ -306,7 +310,7 @@ function useTruncatedClass(): RefCallback<HTMLElement> {
 }
 
 /** The cells of one component: its button, name and detail link, package, version, files, uses and, given, its change. */
-function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClick, mark, showChange, writtenAs }: { r: ComponentRow; nameRef: RefCallback<HTMLElement>; shortPath: string | undefined; href: string | undefined; selected: boolean; tabStop: boolean; onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined }) {
+function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClick, mark, showChange, writtenAs, showUnusedProps }: { r: ComponentRow; nameRef: RefCallback<HTMLElement>; shortPath: string | undefined; href: string | undefined; selected: boolean; tabStop: boolean; onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void; mark?: DiffMark | undefined; showChange: boolean; writtenAs?: string | undefined; showUnusedProps: boolean }) {
   const deprecated = r.deprecated;
   const delta = deltaOf(mark, r.occurrenceCount);
   const title = deprecated ? `${r.displayName} (deprecated)` : r.displayName;
@@ -334,6 +338,17 @@ function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClic
             </Link>
           )}
           {deprecated ? <DeprecatedMark /> : null}
+          {/* Only while the unused props filter is on: most rows have none, so
+              a column for it was mostly blank (#179). */}
+          {showUnusedProps && r.apiUsage && r.apiUsage.neverUsedCount > 0 ? (
+            <Badge
+              variant="outline"
+              className={MARK_BADGE}
+              title={`${r.apiUsage.neverUsedCount} of ${r.apiUsage.declaredCount} declared props never passed`}
+            >
+              {r.apiUsage.neverUsedCount.toLocaleString()} unused {r.apiUsage.neverUsedCount === 1 ? "prop" : "props"}
+            </Badge>
+          ) : null}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>
         {r.disambiguator ? (

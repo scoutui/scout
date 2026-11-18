@@ -348,7 +348,7 @@ describe("ComponentsExplorer details", () => {
   }
   const reads = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
     ? { grew: 1 }
-    : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null }, history: [] })));
+    : { source: null, props: { kept: true, uses: 9, top: [], unused: null }, history: [] })));
   const otherRepos = "/api/repos/r1/components/other-repos?scan=S2";
   beforeEach(() => {
     window.history.replaceState(null, "", "http://localhost:3000/repos/r1");
@@ -408,7 +408,7 @@ describe("ComponentsExplorer details", () => {
     viewport(1024);
     vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/other-repos")
       ? {}
-      : { source: null, props: { kept: true, uses: 9, top: [], neverSet: null }, history: [{ t: "2026-09-01T00:00:00.000Z", value: 6 }, { t: "2026-11-01T00:00:00.000Z", value: 9 }] }))));
+      : { source: null, props: { kept: true, uses: 9, top: [], unused: null }, history: [{ t: "2026-09-01T00:00:00.000Z", value: 6 }, { t: "2026-11-01T00:00:00.000Z", value: 9 }] }))));
     const details = () => screen.getByRole("complementary", { name: /^Details for/ });
     const summary = (text: string) => within(details()).findByText((_, el) => el?.tagName === "P" && el.textContent === text);
     const { unmount } = explorer();
@@ -503,7 +503,7 @@ describe("ComponentsExplorer details", () => {
     };
   }
   const topProp = (name: string, label: string, count: number): ComponentPanelFacts => ({
-    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], neverSet: null },
+    source: { filePath: `src/${name}.tsx`, line: 1 }, props: { kept: true, uses: count, top: [{ name, set: count, values: [{ kind: "value", label, count }] }], unused: null },
     history: [{ t: "2026-09-01T00:00:00.000Z", value: count - 1 }, { t: "2026-11-01T00:00:00.000Z", value: count }],
   });
   const aside = () => screen.getByRole("complementary", { name: /^Details for/ });

@@ -164,6 +164,36 @@ describe("ComponentsTable", () => {
     });
   });
 
+  describe("unused props pill", () => {
+    const panel: ComponentRow = { ...row, componentId: "p", displayName: "Panel", deprecated: true, apiUsage: { declaredCount: 5, neverUsedCount: 2 } };
+    const allUsed: ComponentRow = { ...row, componentId: "a", displayName: "Card", apiUsage: { declaredCount: 3, neverUsedCount: 0 } };
+    const undeclared: ComponentRow = { ...row, componentId: "u", displayName: "Tag" };
+    const trOf = (name: string) => screen.getByText(name).closest("tr") as HTMLElement;
+
+    it("shows nothing about unused props while the filter is off, and adds no column", () => {
+      render(<ComponentsTable repoId="r1" rows={[panel]} />);
+      expect(screen.queryByText(/unused/)).toBeNull();
+      expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    });
+
+    it("reads `N unused props` beside the name while the filter is on, after the deprecated mark", () => {
+      render(<ComponentsTable repoId="r1" rows={[panel]} showUnusedProps />);
+      const pill = within(trOf("Panel")).getByText("2 unused props");
+      expect(pill).toHaveAttribute("title", "2 of 5 declared props never passed");
+      // In the name line, so it shows on the stacked mobile row too.
+      const nameLine = screen.getByRole("link", { name: "Panel" }).parentElement as HTMLElement;
+      expect(nameLine).toContainElement(pill);
+      expect(within(nameLine).getByText("deprecated").compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    });
+
+    it("gives no pill to a component with every declared prop passed, or without a declared API", () => {
+      render(<ComponentsTable repoId="r1" rows={[allUsed, undeclared]} showUnusedProps />);
+      expect(within(trOf("Card")).queryByText(/unused/)).toBeNull();
+      expect(within(trOf("Tag")).queryByText(/unused/)).toBeNull();
+    });
+  });
+
   it("sorts names by the numbers in them, Button2 before Button10", () => {
     const named = (name: string): ComponentRow => ({ ...row, componentId: name, displayName: name });
     render(<ComponentsTable repoId="r1" rows={[named("Button10"), named("Button2"), named("Button1")]} />);

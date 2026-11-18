@@ -113,6 +113,20 @@ export function FilterBar({
       dropsWithOneValue: true,
     },
     tagFacet(options.tags, facets.tags, setTags, canEdit),
+    // Only offered while some component has an unused declared prop, or the
+    // filter is already on, so it can be turned off (#179).
+    ...(options.hasUnusedPropsMax > 0 || facets.hasUnusedProps === true
+      ? [
+          {
+            key: "props",
+            label: "Props",
+            values: [{ value: "unused", label: "Has unused props", description: "A declared prop no use passes", count: options.hasUnusedPropsCount }],
+            selected: facets.hasUnusedProps === true ? ["unused"] : [],
+            onSelect: ([v]: string[]) => onChange({ ...facets, hasUnusedProps: v === "unused" ? true : null }),
+            single: true,
+          },
+        ]
+      : []),
     {
       key: "occurrences",
       label: "Uses",
@@ -148,6 +162,10 @@ export function FilterBar({
     // empty state.
     ...(facets.deprecated === false
       ? [{ key: "deprecated", field: "deprecated", value: "no", onRemove: () => onChange({ ...facets, deprecated: null }) }]
+      : []),
+    // `false` arrives only from a pasted URL, like `deprecated: false` above.
+    ...(facets.hasUnusedProps !== null && facets.hasUnusedProps !== undefined
+      ? [{ key: "props", field: "props", value: facets.hasUnusedProps ? "unused" : "all used", onRemove: () => onChange({ ...facets, hasUnusedProps: null }) }]
       : []),
     ...(facets.occurrences
       ? [

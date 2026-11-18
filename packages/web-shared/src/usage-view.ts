@@ -197,10 +197,10 @@ function topValues(p: PropUsage): TopPropValue[] {
 /**
  * The component's three most set props, from its scan-wide prop counts over `uses` calls: props only (no styling,
  * events, attributes or spreads), most set first, then by name, each with its three most used values. A prop is set on
- * the calls that don't leave it out. `neverSet` counts the declared props no call sets, and is null when the scan
- * knows no declared props.
+ * the calls that don't leave it out. `unused` names the declared props no call passes, by name, and is null when the
+ * scan knows no declared props.
  */
-export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclaredApi">, uses: number): { top: TopProp[]; neverSet: number | null } {
+export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclaredApi">, uses: number): { top: TopProp[]; unused: string[] | null } {
   const events = new Set(input.events.map((e) => e.name));
   const top = input.props
     .filter((p) => p.status !== "unused" && !isSpread(p.name) && groupOf(p.name, p.status, events, input.hasDeclaredApi) === "prop")
@@ -208,7 +208,8 @@ export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclar
     .filter((p) => p.set > 0)
     .sort((a, b) => b.set - a.set || a.name.localeCompare(b.name))
     .slice(0, TOP);
-  return { top, neverSet: input.hasDeclaredApi ? input.props.filter((p) => p.status === "unused").length : null };
+  const unused = input.hasDeclaredApi ? input.props.filter((p) => p.status === "unused").map((p) => p.name).sort((a, b) => a.localeCompare(b)) : null;
+  return { top, unused };
 }
 
 /** The leading directories every path shares. */

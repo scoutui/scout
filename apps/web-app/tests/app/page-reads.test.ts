@@ -520,6 +520,11 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       expect(emptyScan.scanId).toBe("scan-current");
       const repoRows: ComponentRow[] = await served(() => rows.GET(request(), repoParams));
       expect(repoRows.map(row => row.componentId)).toEqual(expect.arrayContaining([button, panel, otherPanel]));
+      // `panel` declares one prop (`label`) and never passes it; `otherPanel` and
+      // `button` have no declared API (no local declaration / a package export).
+      expect(repoRows.find(row => row.componentId === panel)?.apiUsage).toEqual({ declaredCount: 1, neverUsedCount: 1 });
+      expect(repoRows.find(row => row.componentId === otherPanel)?.apiUsage).toBeUndefined();
+      expect(repoRows.find(row => row.componentId === button)?.apiUsage).toBeUndefined();
       const localRows: ComponentRow[] = await served(() => rows.GET(request("?q=scope%3Alocal"), repoParams));
       expect(localRows.map(row => row.componentId).sort()).toEqual([panel, otherPanel].sort());
       const scans: ScanSummary[] = await served(() => history.GET(request(), repoParams));
@@ -531,10 +536,10 @@ describe.skipIf(!databaseUrl)("page read boundaries", () => {
       const detailsOf = (componentId: string, scan: string) => () => details.GET(request(`?scan=${scan}`), { params: Promise.resolve({ repoId: "repo-a", componentId: encodeURIComponent(componentId) }) });
       expect(await served(detailsOf(button, "scan-current"))).toEqual({
         source: null,
-        props: { kept: true, uses: 1, top: [{ name: "size", set: 1, values: [{ kind: "value", label: "small", count: 1 }] }], neverSet: null },
+        props: { kept: true, uses: 1, top: [{ name: "size", set: 1, values: [{ kind: "value", label: "small", count: 1 }] }], unused: null },
         history: [{ t: "2026-06-01T00:00:00.000Z", value: 1 }, { t: "2026-06-02T00:00:00.000Z", value: 1 }],
       });
-      expect(await served(detailsOf(panel, "scan-current"))).toMatchObject({ source: { filePath: "src/panel.tsx", line: 3 }, props: { kept: true, neverSet: 1 } });
+      expect(await served(detailsOf(panel, "scan-current"))).toMatchObject({ source: { filePath: "src/panel.tsx", line: 3 }, props: { kept: true, unused: [expect.any(String)] } });
       expect(await served(detailsOf(panel, "scan-previous"))).toEqual({
         source: { filePath: "src/panel.tsx", line: null }, props: { kept: false }, history: [{ t: "2026-06-01T00:00:00.000Z", value: 1 }],
       });

@@ -11,7 +11,7 @@ export type ComponentPanelFacts = {
   /** Where a component defined in the repo is declared; the line only where the scan keeps it. */
   source: { filePath: string; line: number | null } | null;
   /** The most set props; `kept` is false for a scan that doesn't keep prop values (only a repo's latest scan does). */
-  props: { kept: true; uses: number; top: TopProp[]; neverSet: number | null } | { kept: false };
+  props: { kept: true; uses: number; top: TopProp[]; unused: string[] | null } | { kept: false };
   /** The component's uses in each ready scan from the first holding it to this one, oldest first (`componentHistory`). */
   history: HistoryPoint[];
 };

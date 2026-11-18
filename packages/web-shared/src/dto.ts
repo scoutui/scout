@@ -298,6 +298,16 @@ export type MigrationStatus = z.infer<typeof MigrationStatusSchema>;
 export const PackageCountsSchema = z.object({ occurrenceCount: z.number().int().nonnegative(), fileCount: z.number().int().nonnegative() });
 export type PackageCounts = z.infer<typeof PackageCountsSchema>;
 
+// A component's declared-prop counts, the same two the detail head's `summary.apiUsage`
+// carries (see `deriveApiUsageCounts`). Absent on a row whose component has no
+// readable declared API, never zeroed: "no declared API" and "a declared API with
+// nothing unused" read differently in the list.
+export const ComponentApiUsageSchema = z.object({
+  declaredCount: z.number().int().nonnegative(),
+  neverUsedCount: z.number().int().nonnegative(),
+});
+export type ComponentApiUsage = z.infer<typeof ComponentApiUsageSchema>;
+
 export const ComponentRowSchema = z.object({
   componentId: z.string(),
   kind: ComponentKind,
@@ -314,6 +324,7 @@ export const ComponentRowSchema = z.object({
   // The governing record's replacement or retirement, and the record's id; absent while the component is active.
   migration: z.object({ status: MigrationStatusSchema, recordId: z.string().nullable() }).optional(),
   tags: z.array(TagRefSchema).optional(),
+  apiUsage: ComponentApiUsageSchema.optional(), // absent when the component has no declared API
 });
 export type ComponentRow = z.infer<typeof ComponentRowSchema>;
 
