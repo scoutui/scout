@@ -1,5 +1,15 @@
 # @scoutui/cli
 
+## 0.6.0
+
+### Minor Changes
+
+- [#246](https://github.com/scoutui/scout/pull/246) [`ceac54a`](https://github.com/scoutui/scout/commit/ceac54a1fa99c9f06c1302d1e5d375efa4daa01b) Thanks [@siggerzz](https://github.com/siggerzz)! - A use through a wrapper that may pass the component props the use doesn't write, such as `connect(mapState)(Counter)` or a wrapper the scan can't read, now marks its `hoc` trace step with `mayAddProps: true`. A wrapper that passes props through unchanged, such as `memo` or `forwardRef`, doesn't get the mark. The dashboard doesn't read it yet; it's what will let it say "can't tell" instead of "never passed" for the props such a wrapper supplies.
+
+### Patch Changes
+
+- [#244](https://github.com/scoutui/scout/pull/244) [`1faf6c0`](https://github.com/scoutui/scout/commit/1faf6c0e9bee636df04d3925fbbbd49dea69cc41) Thanks [@siggerzz](https://github.com/siggerzz)! - A Vue prop written in kebab case now counts as the camelCase prop the component declares: `<Card is-preview />` passes `isPreview`, and is recorded under that name. Before, `isPreview` showed as never passed and `is-preview` as undeclared. An attribute the component doesn't declare keeps its written name. `v-model` on a component now counts as passing `modelValue`, and `v-model:open` as passing `open`. Props declared with `defineModel()` are now read as declared props.
+
 ## 0.5.1
 
 ### Patch Changes
