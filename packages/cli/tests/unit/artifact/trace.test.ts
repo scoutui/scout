@@ -12,20 +12,27 @@ describe("toCreditAndTrace", () => {
   });
 
   it("credits a render through a HOC, with the HOC step before its import", () => {
-    expect(toCreditAndTrace([{ kind: "hoc-wrapper", hocCallee: "connect", specifier: "./Foo", import: "Foo" }])).toEqual({
+    expect(toCreditAndTrace([{ kind: "hoc-wrapper", hocCallee: "connect", specifier: "./Foo", import: "Foo", mayAddProps: true }])).toEqual({
       credit: { kind: "render" },
       trace: [
-        { kind: "hoc", callee: "connect" },
+        { kind: "hoc", callee: "connect", mayAddProps: true },
         { kind: "import", specifier: "./Foo", name: "Foo" },
       ],
     });
+  });
+
+  it("writes no mayAddProps for a wrapper that passes props through unchanged", () => {
+    expect(toCreditAndTrace([{ kind: "hoc-wrapper", hocCallee: "memo", specifier: "./Foo", import: "Foo", mayAddProps: false }]).trace).toEqual([
+      { kind: "hoc", callee: "memo" },
+      { kind: "import", specifier: "./Foo", name: "Foo" },
+    ]);
   });
 
   it("leaves an argument's import to the wrapper hop that names the same import", () => {
     expect(
       toCreditAndTrace([
         { kind: "passed-as-argument", callee: "useModal", index: 0, specifier: "./Modal", import: "Modal" },
-        { kind: "hoc-wrapper", hocCallee: "withTheme", specifier: "./Modal", import: "Modal" },
+        { kind: "hoc-wrapper", hocCallee: "withTheme", specifier: "./Modal", import: "Modal", mayAddProps: false },
       ]).trace,
     ).toEqual([
       { kind: "hoc", callee: "withTheme" },

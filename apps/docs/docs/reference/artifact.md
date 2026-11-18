@@ -301,7 +301,7 @@ The steps between the use and the component, outermost first. A plain import has
 | --- | --- | --- |
 | `import` | `specifier`, `name` | An import the use goes through: the import path and the imported name as written (`default` for a default import, `*` for a namespace import). |
 | `tag` | `written` | A web component whose tag is written with capitals, such as `Acme-Badge`. `identity.tagName` holds the lowercased name. |
-| `hoc` | `callee` | A function that wraps the component and returns a new one, such as `memo`, `forwardRef` or `connect`. |
+| `hoc` | `callee`, `mayAddProps` | A function that wraps the component and returns a new one, such as `memo`, `forwardRef` or `connect`. `mayAddProps` is `true` when the wrapper may pass the component props the use doesn't write, such as `connect` or a wrapper the scan can't read. It's absent for one that passes props through unchanged, such as `memo` or `forwardRef`. |
 | `lazy` | `callee` | A lazy-loading wrapper, such as `lazy(() => import("./Checkout"))` or Next.js `dynamic`. |
 | `dynamic-map` | `mapName`, `mapLoc: { file, line, column }` | The component is picked from an object of components, such as `icons[kind]`. Every component in the object gets an entry. `mapLoc` is where the object is defined. |
 | `helper-call` | `callee`, `calleeFile` | The element is inside a function that isn't a component, such as a helper that returns JSX. The element gets one entry per component that calls the helper. |

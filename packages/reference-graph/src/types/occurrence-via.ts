@@ -26,7 +26,10 @@ export type OccurrenceVia =
   // wrapping call's identifier. specifier + import preserved from the wrapped
   // component's original import; absent when the wrapped value is not read
   // through an import (a binding declared in a file, an inline function).
-  | { kind: "hoc-wrapper"; hocCallee: string; specifier?: string; import?: string }
+  // mayAddProps: false only for a wrapper that returns its argument itself
+  // (React's memo/forwardRef through the library stub table, a local
+  // `c => c`); any other wrapper may pass props the use doesn't write.
+  | { kind: "hoc-wrapper"; hocCallee: string; specifier?: string; import?: string; mayAddProps: boolean }
   // Dynamic component map dispatch: const map = { foo: Foo }; const Comp = map[k].
   // mapName is the local name of the object literal. mapLoc points at the literal
   // so consumers can trace which dispatch site this occurrence came from.

@@ -385,15 +385,18 @@ export function argumentProvenance(
  * structural pass-through (step 2b), the pass-through recovery (step 3b) and
  * the opaque HOC fallback (step 4) so all three paths attribute composition
  * identically; the binding is named through `argumentProvenance`.
+ * `mayAddProps` is false only on step 2b, where the wrapper returns its
+ * argument itself; steps 3b and 4 wrap it in something that may pass props.
  */
 function buildHocVia(
   graph: Graph,
   type: Extract<InferredType, { kind: "ReturnTypeOf" }>,
   lastArg: InferredType,
   fileGraph: FileGraph,
+  mayAddProps: boolean,
 ): OccurrenceVia {
   const { callee, ...binding } = argumentProvenance(graph, type, lastArg, fileGraph);
-  return { kind: "hoc-wrapper", hocCallee: callee, ...binding };
+  return { kind: "hoc-wrapper", hocCallee: callee, ...binding, mayAddProps };
 }
 
 /**
@@ -413,10 +416,10 @@ export function foldedArgument(
   jsx: readonly Terminal[],
   argMap: ArgumentMap,
 ): { arg: InferredType; via: OccurrenceVia } | null {
-  const index = passThroughParameterIndex(graph, fileGraph, call, argMap, createCycleGuard()) ?? call.args.length - 1;
-  const arg = call.args[index];
+  const passThrough = passThroughParameterIndex(graph, fileGraph, call, argMap, createCycleGuard());
+  const arg = call.args[passThrough ?? call.args.length - 1];
   if (arg === undefined || jsx.length === 0) return null;
-  const via = buildHocVia(graph, call, arg, fileGraph);
+  const via = buildHocVia(graph, call, arg, fileGraph, passThrough === null);
   return jsx.every((t) => t.viaTrail[0] !== undefined && sameHocVia(t.viaTrail[0], via)) ? { arg, via } : null;
 }
 
@@ -916,7 +919,7 @@ function foldCall(
     const wrapped = type.args[passThroughIndex];
     if (wrapped !== undefined) {
       const inner = walkInner(graph, fileGraph, wrapped, argMap, guard, undefined, position);
-      return foldToWrappedArg(inner, buildHocVia(graph, type, wrapped, fileGraph));
+      return foldToWrappedArg(inner, buildHocVia(graph, type, wrapped, fileGraph, false));
     }
   }
 
@@ -943,7 +946,7 @@ function foldCall(
     if (lastArg !== undefined) {
       const inner = walkInner(graph, fileGraph, lastArg, argMap, guard, undefined, position);
       if (isPassThroughWrapper(algResult, inner)) {
-        const via = buildHocVia(graph, type, lastArg, fileGraph);
+        const via = buildHocVia(graph, type, lastArg, fileGraph, true);
         return inner
           .filter((t) => !cameToNothing(t))
           .map((t) => ({ denotation: t.denotation, viaTrail: [via, ...t.viaTrail], identity: t.identity }));
@@ -976,7 +979,7 @@ function foldCall(
     }
     return [indeterminateTerminal()];
   }
-  return foldToWrappedArg(inner, buildHocVia(graph, type, lastArg, fileGraph));
+  return foldToWrappedArg(inner, buildHocVia(graph, type, lastArg, fileGraph, true));
 }
 
 /**

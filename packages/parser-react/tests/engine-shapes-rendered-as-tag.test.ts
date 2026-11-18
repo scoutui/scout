@@ -386,7 +386,7 @@ describe("a declaration a tag lands on as a function is a member", () => {
     const rows = r.occurrences.filter((o) => exportOf(o) === "Row");
     expect(rows.map((o) => (o.rawComponentId as { source?: { filePath?: string } }).source?.filePath)).toEqual(["src/App.tsx"]);
     expect(rows.map((o) => o.viaChain)).toEqual([
-      [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo" }],
+      [{ kind: "local-component" }, { kind: "hoc-wrapper", hocCallee: "memo", mayAddProps: false }],
     ]);
   });
 

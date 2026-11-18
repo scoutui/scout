@@ -82,7 +82,7 @@ describe("resolve(graph): end-to-end", () => {
     expect(occurrences[0]?.rawComponentId).toEqual({ kind: "react-component", export: "Foo", source: { type: "external", package: "my-lib" } });
     expect(occurrences[0]?.viaChain).toEqual([
       { kind: "local-component" },
-      { kind: "hoc-wrapper", hocCallee: "id", specifier: "my-lib", import: "Foo" },
+      { kind: "hoc-wrapper", hocCallee: "id", specifier: "my-lib", import: "Foo", mayAddProps: false },
     ]);
   });
 

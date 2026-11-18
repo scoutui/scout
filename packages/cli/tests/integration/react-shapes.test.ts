@@ -39,7 +39,8 @@ const local = (shape: string, file: string, exportName: string) => ({
   exportName,
 });
 const imported = (specifier: string, name: string) => ({ kind: "import", specifier, name });
-const hoc = (callee: string) => ({ kind: "hoc", callee });
+/** A `hoc` trace step; `mayAdd` for a wrapper that may pass props the use doesn't write. */
+const hoc = (callee: string, mayAdd = false) => ({ kind: "hoc", callee, ...(mayAdd ? { mayAddProps: true } : {}) });
 const lazy = (callee: string) => ({ kind: "lazy", callee });
 const helperCall = (shape: string, file: string, callee: string) => ({
   kind: "helper-call",
@@ -422,10 +423,10 @@ describe("integration: react-shapes fixture", () => {
     it("traces each HOC pattern to the wrapped component, withA(withB(TextInput)) through both wrappers", () => {
       const app = local("hoc-composition", "App.tsx", "App");
       expect(rendersIn("hoc-composition")).toEqual([
-        row("App.tsx:26:7", pkg("Button"), app, [hoc("connect"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:26:7", pkg("Button"), app, [hoc("connect", true), imported("@example/react-ds", "Button")]),
         row("App.tsx:27:7", pkg("TextInput"), app, [hoc("withRouter"), imported("@example/react-ds", "TextInput")]),
-        row("App.tsx:28:7", pkg("Card"), app, [hoc("flow"), imported("@example/react-ds", "Card")]),
-        row("App.tsx:29:7", pkg("Button"), app, [hoc("compose"), imported("@example/react-ds", "Button")]),
+        row("App.tsx:28:7", pkg("Card"), app, [hoc("flow", true), imported("@example/react-ds", "Card")]),
+        row("App.tsx:29:7", pkg("Button"), app, [hoc("compose", true), imported("@example/react-ds", "Button")]),
         // The in-file withB takes no import step.
         row("App.tsx:30:7", pkg("TextInput"), app, [hoc("withA"), hoc("withB"), imported("@example/react-ds", "TextInput")]),
       ]);
@@ -439,12 +440,12 @@ describe("integration: react-shapes fixture", () => {
       expect(rendersIn(S)).toEqual([
         row("App.tsx:6:7", local(S, "components.tsx", "Foo"), app, [
           imported("./index.js", "Foo"),
-          hoc("flow"),
+          hoc("flow", true),
           imported("./components.tsx", "Foo"),
         ]),
         row("App.tsx:7:7", local(S, "components.tsx", "Bar"), app, [
           imported("./index.js", "Bar"),
-          hoc("connect"),
+          hoc("connect", true),
           imported("./components.tsx", "Bar"),
         ]),
       ]);
@@ -456,7 +457,7 @@ describe("integration: react-shapes fixture", () => {
       const app = local("composition-edge", "App.tsx", "App");
       expect(rendersIn("composition-edge")).toEqual([
         row("App.tsx:13:7", pkg("Button"), app, [hoc("memo"), imported("@example/react-ds", "Button")]),
-        row("App.tsx:14:7", pkg("TextInput"), app, [hoc("connect"), imported("@example/react-ds", "TextInput")]),
+        row("App.tsx:14:7", pkg("TextInput"), app, [hoc("connect", true), imported("@example/react-ds", "TextInput")]),
         row("App.tsx:15:7", pkg("Button"), app, [hoc("memo"), imported("@example/react-ds", "Button")]),
       ]);
     });
@@ -667,7 +668,7 @@ describe("integration: react-shapes fixture", () => {
       const S = "pass-through";
       expect(rendersIn(S)).toEqual([
         row("Wrapped.tsx:14:10", pkg("Card"), local(S, "Wrapped.tsx", "Wrapped"), [
-          hoc("withAlias"),
+          hoc("withAlias", true),
           imported("@example/react-ds", "Card"),
         ]),
       ]);

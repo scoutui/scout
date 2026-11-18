@@ -170,7 +170,7 @@ describe("a wrapped argument's hoc-wrapper provenance", () => {
         export function App() { return <W />; }
       `,
     });
-    expect(alone).toEqual({ kind: "hoc-wrapper", hocCallee: "memo" });
+    expect(alone).toEqual({ kind: "hoc-wrapper", hocCallee: "memo", mayAddProps: false });
     expect(collides).toEqual(alone);
   });
 
@@ -187,7 +187,7 @@ describe("a wrapped argument's hoc-wrapper provenance", () => {
         export function App() { return <W />; }
       `,
     });
-    expect(hop).toEqual({ kind: "hoc-wrapper", hocCallee: "memo", specifier: "./x", import: "X" });
+    expect(hop).toEqual({ kind: "hoc-wrapper", hocCallee: "memo", specifier: "./x", import: "X", mayAddProps: false });
   });
 
   it("names no import for an argument declared in a file", () => {
@@ -202,6 +202,42 @@ describe("a wrapped argument's hoc-wrapper provenance", () => {
         export function App() { return <Field />; }
       `,
     });
-    expect(hop).toEqual({ kind: "hoc-wrapper", hocCallee: "forwardRef" });
+    expect(hop).toEqual({ kind: "hoc-wrapper", hocCallee: "forwardRef", mayAddProps: false });
+  });
+});
+
+describe("whether a wrapper may pass props the use doesn't write", () => {
+  const hopsOf = (wrap: string) =>
+    scan({
+      "src/App.tsx": `
+        import { Card } from "@example/ui";
+        ${wrap}
+        export function App() { return <Wrapped />; }
+      `,
+    })
+      .find((o) => o.rawComponentId?.kind === "react-component" && o.rawComponentId.export === "Card")
+      ?.viaChain.flatMap((v) => (v.kind === "hoc-wrapper" ? [[v.hocCallee, v.mayAddProps]] : []));
+
+  it.each([
+    ["an installed HOC", `import { withTheme } from "@example/theme"; const Wrapped = withTheme(Card);`, [["withTheme", true]]],
+    ["connect()(X)", `import { connect } from "react-redux"; const Wrapped = connect((s) => ({ count: s.count }))(Card);`, [["connect", true]]],
+    [
+      "flow(a, b)(X)",
+      `import flow from "lodash/flow"; import { connect } from "react-redux"; import { withTheme } from "@example/theme";
+       const Wrapped = flow(connect(), withTheme)(Card);`,
+      [["flow", true]],
+    ],
+    // A local HOC that renders its argument is no wrapper hop: `<Wrapped />` is
+    // `Wrapped`'s own use, and `Card` is credited where it's passed in.
+    ["a local HOC that renders its argument", 'const withTone = (W) => (props) => <W {...props} tone="calm" />; const Wrapped = withTone(Card);', []],
+    ["a local wrapper that returns its argument", "const same = (c) => c; const Wrapped = same(Card);", [["same", false]]],
+    ["memo", `import { memo } from "react"; const Wrapped = memo(Card);`, [["memo", false]]],
+    [
+      "memo over connect",
+      `import { memo } from "react"; import { connect } from "react-redux"; const Wrapped = memo(connect()(Card));`,
+      [["memo", false], ["connect", true]],
+    ],
+  ])("%s", (_, wrap, hops) => {
+    expect(hopsOf(wrap)).toEqual(hops);
   });
 });

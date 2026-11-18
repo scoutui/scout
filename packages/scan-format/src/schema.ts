@@ -88,7 +88,8 @@ export type SourceLoc = z.infer<typeof sourceLocSchema>;
 const traceStepSchema = openKinds(
   z.object({ kind: z.literal("import"), specifier: z.string(), name: z.string() }),
   z.object({ kind: z.literal("tag"), written: z.string() }),
-  z.object({ kind: z.literal("hoc"), callee: z.string() }),
+  /** `mayAddProps`: the wrapper may pass the component props the use doesn't write. Absent for one that passes them through unchanged (`memo`, `forwardRef`). */
+  z.object({ kind: z.literal("hoc"), callee: z.string(), mayAddProps: z.literal(true).optional() }),
   z.object({ kind: z.literal("lazy"), callee: z.string() }),
   z.object({ kind: z.literal("dynamic-map"), mapName: z.string(), mapLoc: sourceLocSchema }),
   z.object({ kind: z.literal("helper-call"), callee: z.string(), calleeFile: z.string() }),
