@@ -25,7 +25,7 @@ import type {
 } from "@oxc-project/types";
 import { findEnclosingComponentBinding } from "./find-owner.js";
 import { positionAt } from "./position.js";
-import type { FileBuilder, InferredType, OccurrenceVia, Reference, ScopeId } from "@scoutui/reference-graph";
+import type { FileBuilder, InferredType, OccurrenceVia, PropUsage, Reference, ScopeId } from "@scoutui/reference-graph";
 import { MODULE_SCOPE, isHostElementName, isRuntimeImport } from "@scoutui/reference-graph";
 import { ScopeTracker, walk } from "oxc-walker";
 import {
@@ -221,6 +221,25 @@ function emitImport(node: ImportDeclaration, fb: FileBuilder, source: string): v
  * `<Foo.Bar.Baz />` → { symbol: "Foo", memberChain: ["Bar", "Baz"] }
  * Returns null for JSXNamespacedName (skip those).
  */
+/** Opening elements whose element has content between its tags: that content is the `children` prop. */
+const openingsWithContent = new WeakSet<object>();
+
+/**
+ * Content between an element's tags that React passes as `children`: an element, a fragment, a non-empty
+ * `{expression}` or spread, or text that isn't only whitespace (JSX drops whitespace-only lines).
+ */
+function isJsxContent(child: OxcNode): boolean {
+  if (child.type === "JSXText") return (child as unknown as { value: string }).value.trim() !== "";
+  if (child.type === "JSXExpressionContainer") return (child as unknown as { expression: OxcNode }).expression.type !== "JSXEmptyExpression";
+  return true;
+}
+
+/** An element's props, plus `children` (as a `dynamic` value) when it has content and doesn't also set the attribute. */
+function withContentAsChildren(props: PropUsage[], hasContent: boolean): PropUsage[] {
+  if (!hasContent || props.some((p) => p.name === "children")) return props;
+  return [...props, { name: "children", tier: "dynamic" }];
+}
+
 function decomposeJsxName(
   node: OxcJSXIdentifier | OxcJSXMemberExpression | OxcNode,
 ): { symbol: string; memberChain: string[] } | null {
@@ -276,6 +295,7 @@ function walkJsxIn(
       closingElement: OxcNode | null;
       children: OxcNode[];
     };
+    if (jsxEl.children.some(isJsxContent)) openingsWithContent.add(jsxEl.openingElement);
     walkJsxIn(jsxEl.openingElement, fb, source, currentOwner);
     for (const child of jsxEl.children) {
       walkJsxIn(child, fb, source, currentOwner, { parent: node, key: "children", inPattern: false });
@@ -306,7 +326,8 @@ function walkJsxIn(
           originFile: fb.filePath,
         },
         loc,
-        props: readJsxAttrs(opening),
+        // A custom element's content fills its slots; it has no `children` prop.
+        props: withContentAsChildren(readJsxAttrs(opening), openingsWithContent.has(opening) && !decomposed.symbol.includes("-")),
       });
       if (currentOwner !== null) {
         fb.setOwner(currentOwner);

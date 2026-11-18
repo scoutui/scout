@@ -77,7 +77,13 @@
         "fileCount": 1
       },
       "usage": "direct",
-      "props": {},
+      "props": {
+        "children": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
       "writtenNames": [
         "FakeCard"
       ],
@@ -172,6 +178,11 @@
           ],
           "dynamic": 0,
           "omitted": 1
+        },
+        "children": {
+          "values": [],
+          "dynamic": 2,
+          "omitted": 0
         }
       },
       "writtenNames": [
@@ -209,7 +220,11 @@
         }
       ],
       "writtenName": "FakeCard",
-      "props": {},
+      "props": {
+        "children": {
+          "tier": "dynamic"
+        }
+      },
       "ownerComponentId": "8d631234fd836946"
     },
     {
@@ -268,6 +283,9 @@
         "size": {
           "tier": "written",
           "value": "medium"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "8d631234fd836946"
@@ -296,6 +314,9 @@
         "variant": {
           "tier": "written",
           "value": "default"
+        },
+        "children": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "8d631234fd836946"

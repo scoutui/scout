@@ -83,6 +83,7 @@ describe("integration: react-app fixture", () => {
         row("app/page.tsx:7:7", button, page, trace, {}),
         row("components/submit-button.tsx:5:10", webButton, button, [imported("@example/web-button/dist/react.js", "WebButton")], {
           variant: { tier: "dynamic" },
+          children: { tier: "dynamic" },
         }),
       ]);
       expect(componentOf(webButton)?.framework).toBe("react");
