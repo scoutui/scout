@@ -16,6 +16,9 @@ function attrOf(prop: AttributeNode | DirectiveNode): { name: string; value: str
   };
 }
 
+/** Vue's `camelize`, the name a component receives a hyphenated prop under: `is-preview` → `isPreview`. */
+export const camelize = (name: string): string => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
+
 /** `v-model`, `v-model:title` and either with modifiers (`v-model.trim`); a dynamic argument (`v-model:[name]`) doesn't match. */
 const V_MODEL_RE = /^v-model(?::([^.[\]]+))?(?:\..*)?$/;
 
@@ -46,7 +49,7 @@ export function readAttrs(el: ElementNode, target: "component" | "custom-element
     if (/^[:.]|^v-bind:/.test(attr.name)) {
       const name = attr.name.replace(/^[:.]|^v-bind:/, "");
       const usage = classifyBindExpr(name, attr.value.trim());
-      props.push(isHandlerName(name) && usage.tier !== "written" ? { name, tier: "dynamic" } : usage);
+      props.push(isHandlerName(camelize(name)) && usage.tier !== "written" ? { name, tier: "dynamic" } : usage);
       continue;
     }
     props.push({ name: attr.name, tier: "written", value: attr.value === "" ? true : attr.value });

@@ -1,8 +1,6 @@
 import type { Occurrence } from "@scoutui/scan-format";
+import { camelize } from "@scoutui/parser-vue";
 import type { ComponentRow } from "../rollup.js";
-
-/** Vue's `camelize`: `is-preview` → `isPreview`. */
-const camelize = (name: string): string => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
 
 /**
  * The occurrences with each written prop named as the component receives it.

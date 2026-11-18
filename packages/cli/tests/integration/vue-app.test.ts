@@ -187,9 +187,10 @@ describe("integration: vue-app fixture", () => {
     });
   });
 
-  // `<Card is-preview data-test>` writes a declared prop in kebab case beside
-  // an undeclared attribute; `<Field>` declares its props with `defineModel()`
-  // and is bound with `v-model`, `v-model:open` and a modifier.
+  // `<Card is-preview data-test :on-select>` writes declared props in kebab
+  // case beside an undeclared attribute; `<Field>` declares its props with
+  // `defineModel()` and is bound with `v-model`, `v-model:open` and a
+  // modifier; `<x-toggle>` is a custom element bound with `v-model`.
   describe("prop-names", () => {
     const S = "prop-names";
     const page = local(S, "pages/index.vue", "Index");
@@ -201,6 +202,7 @@ describe("integration: vue-app fixture", () => {
         row("pages/index.vue:2:3", card, page, [imported("../components/Card.vue", "default")], {
           isPreview: { tier: "written", value: true },
           "data-test": { tier: "written", value: "card" },
+          onSelect: { tier: "dynamic" },
         }),
         row("pages/index.vue:3:3", field, page, [imported("../components/Field.vue", "default")], {
           modelValue: { tier: "reference", ref: "name" },
@@ -209,7 +211,9 @@ describe("integration: vue-app fixture", () => {
         row("pages/index.vue:4:3", field, page, [imported("../components/Field.vue", "default")], {
           modelValue: { tier: "reference", ref: "name" },
         }),
+        row("pages/index.vue:5:3", tag("x-toggle"), page, []),
       ]);
+      expect(componentOf(card)?.events).toEqual({ onSelect: { boundCount: 1 } });
     });
 
     it("reads each `defineModel()` as a declared prop", () => {

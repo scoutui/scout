@@ -305,6 +305,16 @@
           ],
           "dynamic": 0,
           "omitted": 0
+        },
+        "onSelect": {
+          "values": [],
+          "dynamic": 1,
+          "omitted": 0
+        }
+      },
+      "events": {
+        "onSelect": {
+          "boundCount": 1
         }
       },
       "declared": {
@@ -312,6 +322,10 @@
           "isPreview": {
             "required": false,
             "type": "boolean"
+          },
+          "onSelect": {
+            "required": false,
+            "type": "() => void"
           }
         },
         "hasRest": false
@@ -409,7 +423,8 @@
       "composition": {
         "rendersByCount": {
           "989dc5ce1c16eda4": 1,
-          "6875a13ffe5fda7f": 2
+          "6875a13ffe5fda7f": 2,
+          "0877fa88f3ee73d1": 1
         },
         "renderedByCount": {},
         "isRootCount": 0,
@@ -792,6 +807,33 @@
       }
     },
     {
+      "id": "0877fa88f3ee73d1",
+      "identity": {
+        "kind": "tag",
+        "tagName": "x-toggle"
+      },
+      "attribution": {
+        "status": "unknown",
+        "reason": "absent",
+        "evidence": []
+      },
+      "stats": {
+        "occurrenceCount": 1,
+        "fileCount": 1
+      },
+      "usage": "direct",
+      "props": {},
+      "version": null,
+      "composition": {
+        "rendersByCount": {},
+        "renderedByCount": {
+          "3894bb5ac33d1c7c": 1
+        },
+        "isRootCount": 0,
+        "isLeafCount": 1
+      }
+    },
+    {
       "id": "499e5bce2c8cca46",
       "identity": {
         "kind": "tag",
@@ -1029,6 +1071,9 @@
         "data-test": {
           "tier": "written",
           "value": "card"
+        },
+        "onSelect": {
+          "tier": "dynamic"
         }
       },
       "ownerComponentId": "3894bb5ac33d1c7c"
@@ -1089,6 +1134,22 @@
           "ref": "name"
         }
       },
+      "ownerComponentId": "3894bb5ac33d1c7c"
+    },
+    {
+      "occurrenceId": "7fc35d23e157a42b",
+      "resolution": {
+        "status": "resolved",
+        "componentId": "0877fa88f3ee73d1"
+      },
+      "filePath": "src/prop-names/pages/index.vue",
+      "line": 5,
+      "column": 3,
+      "credit": {
+        "kind": "render"
+      },
+      "trace": [],
+      "props": {},
       "ownerComponentId": "3894bb5ac33d1c7c"
     },
     {
