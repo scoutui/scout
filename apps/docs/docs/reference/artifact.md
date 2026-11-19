@@ -188,12 +188,12 @@ For every prop, the counts in `values` plus `dynamic`, `other` and `omitted` add
 
 ### `declared` {#declared}
 
-The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`), and from `defineProps` and `defineModel()` in Vue. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
+The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`) and from its `propTypes` and `defaultProps` (`ProductCard.propTypes = {…}` at module level, or `static propTypes = {…}` in a class), and from `defineProps` and `defineModel()` in Vue. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `props` | object | Prop name to `{ type, required, default }`, in source order. Each field is present only when the code states it. `type`: Vue only, such as `"number"` or `"String"`. `required`: `false` for a destructured React prop with a default; in Vue, from `?` in a type or `required:` in a props object. `default`: set when the default is a literal. |
-| `hasRest` | `boolean` | `true` when the component collects the remaining props (`...rest`) or declares an index signature. |
+| `props` | object | Prop name to `{ type, required, default }`, in source order. Each field is present only when the code states it. `type`: Vue only, such as `"number"` or `"String"`. `required`: in React, `false` for a prop with a default in its destructure or `defaultProps`, else `true` for a `propTypes` value ending `.isRequired` and `false` for another `prop-types` validator; in Vue, from `?` in a type or `required:` in a props object. `default`: set when the default is a literal. In React, a destructured default comes before a `defaultProps` value. |
+| `hasRest` | `boolean` | `true` when the component collects the remaining props (`...rest`), declares an index signature, spreads its whole props object (`{...props}`), or has `propTypes` the scan can't fully read, such as a spread of another component's. |
 
 ```json title="declared for a React ProductCard component"
 { "props": { "title": {}, "size": { "required": false, "default": "md" } }, "hasRest": false }
