@@ -52,9 +52,131 @@ const scopeForFnOf = (fb: FileBuilder): ScopeForFn => (start, parent) =>
 
 /** LocAt backed by the file's source text. See `LocAt` in infer-value.ts. */
 const locAtOf = (source: string): LocAt => (offset) => positionAt(source, offset);
-import { readJsxAttrs } from "./jsx-attrs.js";
+import { isNullishArgument, readJsxAttrs, readPropsArgument } from "./jsx-attrs.js";
 
 const namespaceMembersByFile = new WeakMap<FileBuilder, NamespaceMembers>();
+
+/** A render call's framework: whose children argument is a `children` prop. */
+type RenderCallKind = "react" | "vue";
+
+/** A render call found by `renderCalls`: its framework and the component its
+ *  first argument names. */
+type RenderCall = { kind: RenderCallKind; target: ComponentRef };
+
+const renderCallsByFile = new WeakMap<FileBuilder, ReadonlyMap<object, RenderCall>>();
+
+/** The packages Vue's `h` and built-in components are imported from. */
+const VUE_RUNTIME_PACKAGES = new Set(["vue", "@vue/runtime-core", "@vue/runtime-dom", "vue-demi"]);
+
+/**
+ * Every call that renders a component through a framework's render function:
+ * `createElement(X, …)` or `R.createElement(X, …)` with `createElement`, or
+ * `R`, imported from `react`, and `h(X, …)` with `h` imported from Vue's
+ * runtime (`VUE_RUNTIME_PACKAGES`), each under any local name. The import must
+ * be what the callee reads there: a nearer declaration of the name shadows it.
+ * The first argument must name a component: an identifier or a static member
+ * chain, not a string tag. Only script files reach here: a `.vue` file's
+ * `<script>` isn't walked for uses.
+ */
+function renderCalls(ast: Program, source: string): ReadonlyMap<object, RenderCall> {
+  const calls = new Map<object, RenderCall>();
+  if (!/\b(createElement|h)\b/.test(source)) return calls;
+  const direct = new Map<string, RenderCallKind>();
+  const reactObjects = new Set<string>();
+  // What a file imports from Vue's runtime itself (`Fragment`, `Transition`,
+  // or a namespace holding them) is a built-in, which a template's tags skip too.
+  const vueBuiltins = new Set<string>();
+  for (const node of ast.body) {
+    if (node.type !== "ImportDeclaration" || node.importKind === "type") continue;
+    const from = node.source.value;
+    const fromVue = VUE_RUNTIME_PACKAGES.has(from);
+    for (const spec of node.specifiers ?? []) {
+      if (fromVue) vueBuiltins.add(spec.local.name);
+      if (spec.type === "ImportSpecifier") {
+        if (spec.importKind === "type") continue;
+        const imported = spec.imported.type === "Identifier" ? spec.imported.name : spec.imported.value;
+        if (from === "react" && imported === "createElement") direct.set(spec.local.name, "react");
+        if (fromVue && imported === "h") direct.set(spec.local.name, "vue");
+      } else if (from === "react") {
+        reactObjects.add(spec.local.name);
+      }
+    }
+  }
+  // `R.createElement` needs the member name in the text.
+  if (!/\.\s*createElement\b/.test(source)) reactObjects.clear();
+  if (direct.size === 0 && reactObjects.size === 0) return calls;
+  const scopeTracker = new ScopeTracker({ preserveExitedScopes: true });
+  walk(ast, { scopeTracker });
+  scopeTracker.freeze();
+  const isImport = (name: string): boolean => scopeTracker.getDeclaration(name)?.type === "Import";
+  walk(ast, {
+    scopeTracker,
+    enter(node) {
+      if (node.type !== "CallExpression") return;
+      const first = node.arguments[0];
+      const target = first === undefined || first.type === "SpreadElement" ? null : componentRef(first);
+      if (target === null) return;
+      const callee = unwrapTsNoise(node.callee) as unknown as OxcNode | null;
+      if (callee?.type === "Identifier") {
+        const kind = direct.get(callee.name);
+        if (kind === "vue" && vueBuiltins.has(target.symbol) && isImport(target.symbol)) return;
+        if (kind !== undefined && isImport(callee.name)) calls.set(node, { kind, target });
+      } else if (callee !== null && isStaticMember(callee) && callee.property.name === "createElement") {
+        const object = callee.object;
+        if (object.type === "Identifier" && reactObjects.has(object.name) && isImport(object.name)) calls.set(node, { kind: "react", target });
+      }
+    },
+  });
+  return calls;
+}
+
+type ComponentRef = { symbol: string; memberChain: string[] };
+
+/** The component a render call's first argument names: an identifier, or a
+ *  static member chain on one (`List.Item`, `ui.Button`); null for anything
+ *  else. A lone lowercase name is a variable holding a tag, as in JSX. */
+function componentRef(arg: OxcNode): ComponentRef | null {
+  const memberChain: string[] = [];
+  let current = unwrapTsNoise(arg as unknown as Expression) as unknown as OxcNode | null;
+  while (current !== null && isStaticMember(current)) {
+    memberChain.unshift(current.property.name);
+    current = current.object;
+  }
+  if (current?.type !== "Identifier") return null;
+  if (memberChain.length === 0 && isHostElementName(current.name)) return null;
+  return { symbol: current.name, memberChain };
+}
+
+/** Record a render call (see `renderCalls`) as a usage of the component its
+ *  first argument names, with the props its second argument passes. A React
+ *  call's third and later arguments are its children. A Vue call's second
+ *  argument passes children or slots, not props, when it's an array, a
+ *  function, or a string or number. */
+function emitRenderCall(call: OxcNode, { kind, target }: RenderCall, fb: FileBuilder, source: string, currentOwner: Reference | null): void {
+  const args = (call as unknown as { arguments: Expression[] }).arguments;
+  const loc = positionAt(source, (call as unknown as { start: number }).start);
+  const second = args[1];
+  const props = kind === "vue" && second !== undefined && isVueChildrenArgument(second) ? [] : readPropsArgument(second);
+  const hasChildren = kind === "react" && args.slice(2).some((a) => !isNullishArgument(a));
+  fb.addJsxUsage({
+    ref: { symbol: target.symbol, memberChain: target.memberChain, scope: fb.currentScope(), loc, originFile: fb.filePath },
+    loc,
+    props: withContentAsChildren(props, hasChildren),
+  });
+  if (currentOwner !== null) fb.setOwner(currentOwner);
+}
+
+/** Whether a Vue `h(X, arg)` argument is children or slots, as Vue reads it:
+ *  an array, a function, or a string, number or template literal. */
+function isVueChildrenArgument(arg: Expression): boolean {
+  const expr = unwrapTsNoise(arg);
+  if (!expr) return false;
+  if (expr.type === "ArrayExpression" || expr.type === "ArrowFunctionExpression" || expr.type === "FunctionExpression") return true;
+  if (expr.type === "TemplateLiteral") return true;
+  if (expr.type !== "Literal") return false;
+  const value = (expr as unknown as { value: unknown }).value;
+  return typeof value === "string" || typeof value === "number";
+}
 
 /** The file's namespace member chains. See `NamespaceMembers` in infer-value.ts. */
 const namespaceMembersOf = (fb: FileBuilder): NamespaceMembers | undefined => namespaceMembersByFile.get(fb);
@@ -141,6 +263,7 @@ export type EmitOptions = {
 export function emitReact(opts: EmitOptions): void {
   namespaceMembersByFile.set(opts.fileBuilder, namespaceMemberChains(opts.ast));
   objectAssignCallsByFile.set(opts.fileBuilder, unboundObjectAssignCalls(opts.ast, opts.source));
+  renderCallsByFile.set(opts.fileBuilder, renderCalls(opts.ast, opts.source));
   const emitState: EmitState = {
     fileBuilder: opts.fileBuilder,
     pendingPropForwardBindings: [],
@@ -335,6 +458,8 @@ function walkJsxIn(
     }
   }
   if (node.type === "ExpressionStatement") emitMemberAssignment(node, fb, source);
+  const renderCall = node.type === "CallExpression" ? renderCallsByFile.get(fb)?.get(node) : undefined;
+  if (renderCall !== undefined) emitRenderCall(node, renderCall, fb, source, currentOwner);
   if (node.type === "CallExpression" && objectAssignCallsByFile.get(fb)?.has(node)) {
     const target = (node as unknown as { arguments: OxcNode[] }).arguments[0];
     if (target?.type === "Identifier") {

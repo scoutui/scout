@@ -323,11 +323,13 @@ The `column` in `mapLoc` and `constructionSite` counts from 1.
 | Value | Meaning |
 | --- | --- |
 | `{ "tier": "written", "value": ... }` | A literal string, number, boolean or `null`. A prop written with no value counts as `true`. |
-| `{ "tier": "written", "valueSet": [...] }` | React only. A condition that picks between literals, such as `sale ? "primary" : "secondary"`. |
+| `{ "tier": "written", "valueSet": [...] }` | JSX and render calls only. A condition that picks between literals, such as `sale ? "primary" : "secondary"`. |
 | `{ "tier": "reference", "ref": "..." }` | A variable or dotted path, recorded by name, such as `label` or `theme.icon`. |
 | `{ "tier": "dynamic" }` | Any other expression. A prop named `on` plus a capital letter is `dynamic` unless its value is written. |
 
 A spread such as `{...rest}` in React or `v-bind="obj"` in Vue is recorded as a prop named `...rest` with `{ "tier": "dynamic" }`.
+
+A render call in a `.js` or `.ts` file is a use too: `createElement(Card, { size: "sm" })` with `createElement` from `react`, and `h(Card, { size: "sm" })` with `h` from `vue` (or `@vue/runtime-core`, `@vue/runtime-dom` or `vue-demi`). Each key of the object passed as props is a prop, read the same way as an attribute. A spread in that object, or props passed as anything other than an object literal, such as `h(Card, props)`, is recorded as `...rest`. Content passed after a React call's props is its `children`. A Vue call's second argument passes no props when it's children or slots: an array, a function or text. Vue's own components, such as `h(Transition)`, aren't uses. A render call inside a `.vue` file's `<script>` isn't read yet.
 
 In Vue, a prop the component declares is recorded under its declared name, whichever case the template writes it in: `is-preview` is recorded as `isPreview`. An attribute the component doesn't declare keeps its written name. On a component, `v-model` is recorded as `modelValue` and `v-model:open` as `open`.
 
