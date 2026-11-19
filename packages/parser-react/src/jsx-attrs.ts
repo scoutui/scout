@@ -45,6 +45,12 @@ function readAttrValue(name: string, value: JSXAttribute["value"]): PropUsage | 
 
   const raw = value.expression;
   if (raw.type === "JSXEmptyExpression") return null;
+  return readExprValue(name, raw);
+}
+
+/** One prop's usage from the expression passed for it, or null for one it
+ *  skips. */
+function readExprValue(name: string, raw: Expression): PropUsage | null {
   const expr = unwrapTsNoise(raw);
   if (!expr) return null;
 
@@ -88,4 +94,61 @@ export function readJsxAttrs(opening: JSXOpeningElement): PropUsage[] {
     if (usage) props.push(usage);
   }
   return props;
+}
+
+/**
+ * Per-prop usage from the props argument of a render call
+ * (`createElement(X, { … })`, `h(X, { … })`), read the way `readJsxAttrs`
+ * reads attributes. Each statically named key is a prop. A spread, a computed
+ * key, or a props argument that isn't an object literal (`h(X, props)`)
+ * passes props Scout can't name, recorded once as `...rest`. No argument, or
+ * a literal `null`/`undefined`, passes none.
+ */
+export function readPropsArgument(arg: Expression | undefined): PropUsage[] {
+  const expr = arg === undefined ? undefined : unwrapTsNoise(arg);
+  if (!expr || isNullishArgument(expr)) return [];
+  const rest: PropUsage = { name: "...rest", tier: "dynamic" };
+  if (expr.type !== "ObjectExpression") return [rest];
+  const props: PropUsage[] = [];
+  for (const prop of (expr as unknown as { properties: OxcProperty[] }).properties) {
+    const name = prop.type === "Property" && !prop.computed ? staticKey(prop.key) : null;
+    if (prop.type !== "Property" || name === null) {
+      if (!props.some((p) => p.name === "...rest")) props.push(rest);
+      continue;
+    }
+    const usage = prop.kind !== "init" || prop.method ? null : readExprValue(name, prop.value);
+    if (isHandlerName(name)) {
+      props.push(usage?.tier === "written" ? usage : { name, tier: "dynamic" });
+      continue;
+    }
+    props.push(usage ?? { name, tier: "dynamic" });
+  }
+  return props;
+}
+
+/** A render call argument that passes nothing: `null`, `undefined` or
+ *  `void 0`, through TS casts. */
+export function isNullishArgument(arg: Expression): boolean {
+  const expr = unwrapTsNoise(arg);
+  if (!expr) return false;
+  if (expr.type === "Literal") return (expr as unknown as { value: unknown }).value === null;
+  if (expr.type === "Identifier") return (expr as unknown as { name: string }).name === "undefined";
+  return expr.type === "UnaryExpression" && (expr as unknown as { operator: string }).operator === "void";
+}
+
+type OxcProperty =
+  | { type: "SpreadElement" }
+  | {
+      type: "Property";
+      computed: boolean;
+      kind: "init" | "get" | "set";
+      method: boolean;
+      key: { type: string; name?: string; value?: unknown };
+      value: Expression;
+    };
+
+function staticKey(key: { type: string; name?: string; value?: unknown }): string | null {
+  if (key.type === "Identifier" && typeof key.name === "string") return key.name;
+  if (key.type === "Literal" && (typeof key.value === "string" || typeof key.value === "number")) return String(key.value);
+  return null;
 }
