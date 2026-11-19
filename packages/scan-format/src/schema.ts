@@ -225,7 +225,8 @@ export type DeclaredProp = {
    *  absent for React, where a destructure exposes no reliable type). */
   type?: string;
   /** Optionality when stated. Vue: from the `?` marker. React: `false` when the
-   *  prop has any default (a default makes it optional); otherwise absent. */
+   *  prop has any default (a default makes it optional), else from `propTypes`
+   *  (`true` for `.isRequired`); otherwise absent. */
   required?: boolean;
   /** Literal default value, when the default is a literal. Same union as
    *  `PropValueEntry.value`, so it stringifies identically to observed written
