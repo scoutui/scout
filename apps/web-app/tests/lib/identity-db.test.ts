@@ -192,7 +192,7 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
       recordSignIn({ userId, email: "ana@example.com", provider: "oidc", emailVerified, accessToken: "access-token" });
     const stored = async (id: string) => {
       const { rows } = await pool.query(
-        `SELECT "emailVerified" IS NOT NULL AS verified, last_signed_in_at > now() - interval '1 minute' AS signed_in_now, role, admin_group FROM "user" WHERE id = $1`,
+        `SELECT "emailVerified" IS NOT NULL AS verified, last_signed_in_at > now() - interval '1 minute' AS signed_in_now, role, admin_group, editor_group FROM "user" WHERE id = $1`,
         [id],
       );
       return rows[0];
@@ -220,29 +220,46 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
       expect(await stored(editor)).toMatchObject({ role: "editor" });
     });
 
-    it("stores the admin group when the provider lists it, and clears it without failing the sign-in when the lookup fails", async () => {
+    it("stores both groups from one lookup when the provider lists them, and clears them without failing the sign-in when the lookup fails", async () => {
       vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+      vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
       const id = await insertPerson(pool, { email: "ana@example.com" });
       const input = { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" };
-      await recordSignIn(input, async () => ["scout-users", "scout-admins"]);
-      expect(await stored(id)).toMatchObject({ admin_group: "scout-admins" });
+      const lookup = vi.fn(async () => ["scout-users", "scout-admins", "scout-editors"]);
+      await recordSignIn(input, lookup);
+      expect(lookup).toHaveBeenCalledOnce();
+      expect(await stored(id)).toMatchObject({ admin_group: "scout-admins", editor_group: "scout-editors" });
       await expect(recordSignIn(input, async () => {
         throw new Error("userinfo 503");
       })).resolves.toBeUndefined();
-      expect(await stored(id)).toMatchObject({ admin_group: null, signed_in_now: true });
+      expect(await stored(id)).toMatchObject({ admin_group: null, editor_group: null, signed_in_now: true });
       expect(warn).toHaveBeenCalledExactlyOnceWith(
-        "[auth] Couldn't check whether ana@example.com is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: userinfo 503",
+        "[auth] Couldn't read ana@example.com's groups, so they get no role from SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP until they sign in again: userinfo 503",
       );
     });
 
-    it("clears the admin group when the provider lists other groups, so the person isn't an Admin", async () => {
+    it("reads groups when only SCOUTUI_EDITOR_GROUP is set, and stores the editor group", async () => {
+      vi.stubEnv("SCOUTUI_ADMINS", "lee@example.com");
+      vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+      const id = await insertPerson(pool, { email: "ana@example.com" });
+      await recordSignIn(
+        { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
+        async () => ["scout-editors"],
+      );
+      expect(await stored(id)).toMatchObject({ admin_group: null, editor_group: "scout-editors" });
+      signInAs(id);
+      expect(await browser()).toMatchObject({ role: "editor", roleSource: "group" });
+    });
+
+    it("clears both groups when the provider lists other groups, so the person gets no role from them", async () => {
       vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
-      const id = await insertPerson(pool, { email: "ana@example.com", adminGroup: "scout-admins" });
+      vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+      const id = await insertPerson(pool, { email: "ana@example.com", adminGroup: "scout-admins", editorGroup: "scout-editors" });
       await recordSignIn(
         { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
         async () => ["engineering"],
       );
-      expect(await stored(id)).toMatchObject({ admin_group: null, signed_in_now: true });
+      expect(await stored(id)).toMatchObject({ admin_group: null, editor_group: null, signed_in_now: true });
       signInAs(id);
       expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
       expect(warn).not.toHaveBeenCalled();

@@ -29,7 +29,7 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     session.current = { user: { id: userId } };
   };
   const stored = async (id: string) =>
-    (await pool.query(`SELECT role, admin_group FROM "user" WHERE id = $1`, [id])).rows[0];
+    (await pool.query(`SELECT role, admin_group, editor_group FROM "user" WHERE id = $1`, [id])).rows[0];
   const history = async () =>
     (await pool.query("SELECT actor_email, subject_email, from_role, to_role FROM role_changes")).rows;
   const addBrowserSession = (userId: string) =>
@@ -63,6 +63,8 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     vi.stubEnv("DATABASE_URL", pool.options.connectionString);
     vi.stubEnv("SCOUTUI_ADMINS", undefined);
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", undefined);
     admin = await insertPerson(pool, { email: "ana@example.com", role: "admin" });
     signInAs(admin);
   });
@@ -164,21 +166,22 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     signInAs(editor);
     expect(await removeFromPeople(sam)).toEqual(ADMIN_REFUSAL);
     expect(await signIns(sam)).toEqual({ browser: 1, cli: 1, device_codes: 2 });
-    expect(await stored(sam)).toEqual({ role: "editor", admin_group: "old-admins" });
+    expect(await stored(sam)).toEqual({ role: "editor", admin_group: "old-admins", editor_group: null });
 
     signInAs(admin);
     expect(await removeFromPeople(sam)).toEqual({ ok: true });
     expect(await signIns(sam)).toEqual({ browser: 0, cli: 0, device_codes: 0 });
-    expect(await stored(sam)).toEqual({ role: null, admin_group: null });
+    expect(await stored(sam)).toEqual({ role: null, admin_group: null, editor_group: null });
     expect((await pool.query(`SELECT count(*)::int AS n FROM "account" WHERE "userId" = $1`, [sam])).rows[0].n).toBe(1);
     expect(await history()).toEqual([
       { actor_email: "ana@example.com", subject_email: "sam@example.com", from_role: "editor", to_role: null },
     ]);
   });
 
-  it("removes a member of SCOUTUI_ADMIN_GROUP, ending every browser and CLI sign-in and clearing their role and group", async () => {
+  it("removes a member of SCOUTUI_ADMIN_GROUP, ending every browser and CLI sign-in and clearing their role and groups", async () => {
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
-    const mo = await insertPerson(pool, { email: "mo@example.com", adminGroup: "scout-admins" });
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+    const mo = await insertPerson(pool, { email: "mo@example.com", adminGroup: "scout-admins", editorGroup: "scout-editors" });
     await addBrowserSession(mo);
     expect(await consumeApprovedDeviceCode(await addApprovedDeviceCode(mo), mo)).not.toBeNull();
     await addApprovedDeviceCode(mo);
@@ -186,7 +189,7 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
 
     expect(await removeFromPeople(mo)).toEqual({ ok: true });
     expect(await signIns(mo)).toEqual({ browser: 0, cli: 0, device_codes: 0 });
-    expect(await stored(mo)).toEqual({ role: null, admin_group: null });
+    expect(await stored(mo)).toEqual({ role: null, admin_group: null, editor_group: null });
     expect(await history()).toEqual([
       { actor_email: "ana@example.com", subject_email: "mo@example.com", from_role: "admin", to_role: null },
     ]);
@@ -220,6 +223,31 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
     expect(await consumeApprovedDeviceCode(keptCode, kept)).toMatchObject({ email: "bo@example.com" });
   });
 
+  it("brings a removed person who is still in SCOUTUI_EDITOR_GROUP back as an Editor from the group when they sign in again", async () => {
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+    const sam = await insertPerson(pool, { email: "sam@example.com", editorGroup: "scout-editors" });
+    expect(await removeFromPeople(sam)).toEqual({ ok: true });
+
+    signInAs(sam);
+    expect(await identify({ browser: true })).toBeNull();
+    await recordSignIn(
+      { userId: sam, email: "sam@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
+      async () => ["scout-editors"],
+    );
+    expect(await identify({ browser: true })).toMatchObject({ kind: "person", userId: sam, role: "editor", roleSource: "group" });
+  });
+
+  it("refuses a role change while roles come from groups only, and keeps the stored role", async () => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    await pool.query(`UPDATE "user" SET admin_group = 'scout-admins' WHERE id = $1`, [admin]);
+    const bo = await insertPerson(pool, { email: "bo@example.com", role: "editor" });
+
+    expect(await changeRole(bo, "admin")).toEqual(CHANGED_SINCE_LOADED);
+    expect(await stored(bo)).toMatchObject({ role: "editor" });
+    expect(await history()).toEqual([]);
+  });
+
   it("lets a removed person back in as a Viewer when they sign in again", async () => {
     const sam = await insertPerson(pool, { email: "sam@example.com", role: "editor" });
     expect(await removeFromPeople(sam)).toEqual({ ok: true });
@@ -244,6 +272,26 @@ describe.skipIf(!RUN_DB)("People actions against PostgreSQL", () => {
       { userId: bo, name: null, email: "bo@example.com", lastSignedInAt: null, role: "editor", roleSource: "people", canChangeRole: true, canRemove: true },
       { userId: lee, name: "Lee", email: "lee@example.com", lastSignedInAt: "2026-10-01T09:30:00.000Z", role: "admin", roleSource: "install", canChangeRole: false, canRemove: false },
       { userId: mo, name: null, email: "mo@example.com", lastSignedInAt: null, role: "admin", roleSource: "group", canChangeRole: false, canRemove: true },
+    ]);
+  });
+
+  it("lists a member of SCOUTUI_EDITOR_GROUP as an Editor from the group, and with roles from groups only lets nobody's role be changed", async () => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+    await pool.query(`UPDATE "user" SET admin_group = 'scout-admins' WHERE id = $1`, [admin]);
+    const kai = await insertPerson(pool, { email: "kai@example.com", editorGroup: "scout-editors" });
+    const bo = await insertPerson(pool, { email: "bo@example.com", role: "editor" });
+
+    expect(await listPeople(admin)).toEqual([
+      { userId: admin, name: null, email: "ana@example.com", lastSignedInAt: null, role: "admin", roleSource: "group", canChangeRole: false, canRemove: false },
+      { userId: bo, name: null, email: "bo@example.com", lastSignedInAt: null, role: "editor", roleSource: "people", canChangeRole: true, canRemove: true },
+      { userId: kai, name: null, email: "kai@example.com", lastSignedInAt: null, role: "editor", roleSource: "group", canChangeRole: false, canRemove: true },
+    ]);
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    expect(await listPeople(admin)).toMatchObject([
+      { userId: admin, role: "admin", roleSource: "group", canChangeRole: false },
+      { userId: bo, role: "viewer", roleSource: "no-group", canChangeRole: false, canRemove: true },
+      { userId: kai, role: "editor", roleSource: "group", canChangeRole: false, canRemove: true },
     ]);
   });
 
