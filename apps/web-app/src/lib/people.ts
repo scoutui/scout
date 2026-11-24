@@ -1,7 +1,7 @@
 import { asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { ulid } from "ulid";
 import { getDb, schema } from "@/db/client";
-import { adminSettings, type Person, personIdentity, ROLES, type Role, type RoleSource } from "@/lib/access";
+import { type Person, personIdentity, ROLES, type Role, type RoleSource, roleSettings } from "@/lib/access";
 import { fetchUserGroups } from "@/lib/idp-refresh";
 
 const { cliDeviceCodes, cliSessions, roleChanges, sessions, users } = schema;
@@ -17,15 +17,15 @@ export async function recordSignIn(input: {
   emailVerified: boolean;
   accessToken: string | undefined;
 }, fetchGroups: (accessToken: string) => Promise<string[]> = fetchUserGroups): Promise<void> {
-  const settings = adminSettings();
-  if (settings.emails.has(input.email.toLowerCase()) && !input.emailVerified) {
+  const settings = roleSettings();
+  if (settings.adminEmails.has(input.email.toLowerCase()) && !input.emailVerified) {
     console.warn(`[auth] ${input.email} is in SCOUTUI_ADMINS, but the sign-in provider didn't mark the email verified, so they aren't an Admin.`);
   }
   let adminGroup: string | null = null;
-  if (settings.group !== null && input.provider !== "dev") {
+  if (settings.adminGroup !== null && input.provider !== "dev") {
     try {
       if (!input.accessToken) throw new Error("the sign-in provider sent no access token");
-      if ((await fetchGroups(input.accessToken)).includes(settings.group)) adminGroup = settings.group;
+      if ((await fetchGroups(input.accessToken)).includes(settings.adminGroup)) adminGroup = settings.adminGroup;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       console.warn(`[auth] Couldn't check whether ${input.email} is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: ${reason}`);
@@ -46,6 +46,7 @@ const PERSON_COLUMNS = {
   emailVerified: users.emailVerified,
   role: users.role,
   adminGroup: users.adminGroup,
+  editorGroup: users.editorGroup,
 };
 
 /** What an Admin may do to someone on the People page. */
@@ -66,7 +67,7 @@ export type PersonListing = PeopleChanges & {
 
 /** Everyone who hasn't been removed, by email, with their role as it stands now and what the Admin `actorId` may do to them. */
 export async function listPeople(actorId: string): Promise<PersonListing[]> {
-  const settings = adminSettings();
+  const settings = roleSettings();
   const rows = await getDb()
     .select({ ...PERSON_COLUMNS, lastSignedInAt: users.lastSignedInAt })
     .from(users)
@@ -118,7 +119,7 @@ async function changePerson(
 ): Promise<PeopleResult> {
   return getDb().transaction(async (tx): Promise<PeopleResult> => {
     const [row] = await tx.select(PERSON_COLUMNS).from(users).where(eq(users.id, userId)).for("update");
-    const target = row ? personIdentity(row, adminSettings()) : null;
+    const target = row ? personIdentity(row, roleSettings()) : null;
     if (target === null || !peopleChanges(actor.userId, target)[allowed]) return CHANGED_SINCE_LOADED;
     await change(tx, target);
     return { ok: true };

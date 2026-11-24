@@ -35,6 +35,8 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     vi.stubEnv("DATABASE_URL", pool.options.connectionString);
     vi.stubEnv("SCOUTUI_ADMINS", undefined);
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", undefined);
     vi.stubEnv("SCOUTUI_GUEST_VIEW", undefined);
     session.current = null;
     warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -92,6 +94,45 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", "other");
     expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
+  });
+
+  it.each([
+    { case: "makes a Viewer in SCOUTUI_EDITOR_GROUP an Editor from the group", stored: "viewer", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
+    { case: "names the group as the source of an Editor who is also in SCOUTUI_EDITOR_GROUP", stored: "editor", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
+    { case: "keeps a People-page Admin in SCOUTUI_EDITOR_GROUP an Admin from People", stored: "admin", editorGroup: "scout-editors", expected: { role: "admin", roleSource: "people" } },
+    { case: "gives no Editor role for a stored editor group that isn't the current setting", stored: "viewer", editorGroup: "old-editors", expected: { role: "viewer", roleSource: "people" } },
+    { case: "makes someone in both groups an Admin from the group", stored: "viewer", editorGroup: "scout-editors", adminGroup: "scout-admins", expected: { role: "admin", roleSource: "group" } },
+    { case: "with roles from groups only, makes a People-page Editor in no group a Viewer", groupsOnly: true, stored: "editor", expected: { role: "viewer", roleSource: "no-group" } },
+    { case: "with roles from groups only, makes a People-page Admin in no group a Viewer", groupsOnly: true, stored: "admin", expected: { role: "viewer", roleSource: "no-group" } },
+    { case: "with roles from groups only, makes a Viewer in SCOUTUI_EDITOR_GROUP an Editor", groupsOnly: true, stored: "viewer", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
+    { case: "with roles from groups only, makes a Viewer in SCOUTUI_ADMIN_GROUP an Admin", groupsOnly: true, stored: "viewer", adminGroup: "scout-admins", expected: { role: "admin", roleSource: "group" } },
+    { case: "with roles from groups only, keeps a verified email in SCOUTUI_ADMINS an Admin", groupsOnly: true, stored: "viewer", adminEmail: true, expected: { role: "admin", roleSource: "install" } },
+    { case: "with roles from groups only, keeps a removed person in SCOUTUI_EDITOR_GROUP removed", groupsOnly: true, stored: null, editorGroup: "scout-editors", expected: null },
+  ] as const)("$case", async (row) => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+    if ("adminEmail" in row) vi.stubEnv("SCOUTUI_ADMINS", "ana@example.com");
+    if ("groupsOnly" in row) vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    const id = await insertPerson(pool, {
+      email: "ana@example.com",
+      role: row.stored,
+      verified: "adminEmail" in row,
+      adminGroup: "adminGroup" in row ? row.adminGroup : null,
+      editorGroup: "editorGroup" in row ? row.editorGroup : null,
+    });
+    signInAs(id);
+    if (row.expected === null) expect(await browser()).toBeNull();
+    else expect(await browser()).toMatchObject(row.expected);
+  });
+
+  it("brings back a People-page role when roles from groups only is turned off", async () => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    const id = await insertPerson(pool, { email: "ana@example.com", role: "editor" });
+    signInAs(id);
+    expect(await browser()).toMatchObject({ role: "viewer", roleSource: "no-group" });
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", undefined);
+    expect(await browser()).toMatchObject({ role: "editor", roleSource: "people" });
   });
 
   it("returns nobody for a removed person, and the person for one who wasn't removed", async () => {

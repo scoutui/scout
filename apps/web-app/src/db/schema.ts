@@ -131,6 +131,7 @@ export const users = pgTable("user", {
   role: text("role", { enum: ["viewer", "editor", "admin"] }).default("viewer"),
   lastSignedInAt: timestamp("last_signed_in_at", { withTimezone: true }),
   adminGroup: text("admin_group"),
+  editorGroup: text("editor_group"),
 }, (t) => ({
   role: check("user_role", sql`${t.role} IN ('viewer', 'editor', 'admin')`),
 }));

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { auth } from "@/auth";
 import { getDb, getPool, schema } from "@/db/client";
-import { adminSettings, can, EDIT_REFUSAL, guestViewEnabled, type Identity, type Person, personIdentity } from "@/lib/access";
+import { can, EDIT_REFUSAL, guestViewEnabled, type Identity, type Person, personIdentity, roleSettings } from "@/lib/access";
 import { withCredentialStoreError } from "@/lib/cli-credential-store-errors";
 import { resolveCliSession } from "@/lib/cli-session-store";
 import { isRepoUploadToken, uploadTokenRepo } from "@/lib/repo-upload-tokens";
@@ -13,9 +13,9 @@ export type Caller = { browser: true } | { bearer: string | null };
 async function loadPerson(userId: string): Promise<Person | null> {
   const row = await getDb().query.users.findFirst({
     where: eq(schema.users.id, userId),
-    columns: { id: true, email: true, name: true, emailVerified: true, role: true, adminGroup: true },
+    columns: { id: true, email: true, name: true, emailVerified: true, role: true, adminGroup: true, editorGroup: true },
   });
-  return row ? personIdentity(row, adminSettings()) : null;
+  return row ? personIdentity(row, roleSettings()) : null;
 }
 
 const browserIdentity = cache(async (): Promise<Identity | null> => {

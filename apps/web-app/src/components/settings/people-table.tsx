@@ -10,7 +10,7 @@ import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import type { PeopleResult, PersonListing } from "@/lib/people";
 import { relativeTime } from "@/lib/relative-time";
 
-const FIXED_ROLE = { install: "Admin (set at install)", group: "Admin (from SSO group)" } as const;
+const FIXED_ROLE = { install: "Admin (set at install)", group: "Admin (from SSO group)", "no-group": "Viewer" } as const;
 
 const STACKED_CELL = "max-md:block max-md:p-0";
 
