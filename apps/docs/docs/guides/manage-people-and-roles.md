@@ -60,7 +60,7 @@ auth:
 
 With your own chart, also set `OIDC_EXTRA_SCOPES` on the web server to `groups`. Add it only if your provider needs it: some providers, such as Google, turn sign-in away when the dashboard asks for a scope they don't know.
 
-In Okta, also add a groups claim to the dashboard's application. On its **Sign On** tab, edit **OpenID Connect ID Token**, set **Groups claim type** to **Filter**, keep the claim name `groups`, and choose a filter that matches the admin group, such as **Equals** `scout-admins`.
+In Okta, also add a groups claim to the dashboard's application. On its **Sign On** tab, edit **OpenID Connect ID Token**, set **Groups claim type** to **Filter**, keep the claim name `groups`, and choose a filter that matches the groups you name, such as **Starts with** `scout-` for `scout-admins` and `scout-editors`.
 
 The dashboard checks the group each time someone signs in to it in a browser. Someone you add to the group becomes an Admin at their next browser sign-in. Someone you take out of it stops being one at their next browser sign-in, or straight away if an Admin also [removes them](#remove-someone) on **People**.
 
@@ -73,10 +73,48 @@ kubectl logs deploy/scout | grep '\[auth\]'
 ```
 
 - `[auth] ana@example.com is in SCOUTUI_ADMINS, but the sign-in provider didn't mark the email verified, so they aren't an Admin.` Set your provider up to mark emails verified, or name a group instead.
-- `[auth] Couldn't check whether ana@example.com is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: <reason>` Fix what the reason names.
+- `[auth] Couldn't read ana@example.com's groups, so they get no role from SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP until they sign in again: <reason>` Fix what the reason names.
 - **No `[auth]` line.** The setting doesn't match what the provider sends. For a group, check that the provider sends the `groups` field ([By group](#by-group)), and set `auth.adminGroup` or `SCOUTUI_ADMIN_GROUP` to the group exactly as it appears there, letter case included: some providers send a path or an ID instead of the name. For an email, check that the address is the one the provider sends.
 
 Then have the person sign out of the dashboard and sign in again.
+
+## Give Editors by group
+
+Name a group in your sign-in provider whose members are Editors:
+
+```yaml title="values.yaml"
+auth:
+  adminGroup: scout-admins
+  editorGroup: scout-editors
+```
+
+With your own chart, set `SCOUTUI_EDITOR_GROUP` on the web server to the group's name: `scout-editors`.
+
+The dashboard reads it from the same `groups` field as the admin group, at each browser sign-in, so set your provider up the same way ([By group](#by-group)). Members show on **People** as **Editor (from SSO group)**, and you can't change their role there: change the group instead. Someone in both groups is an Admin, and so is someone you made an Admin on **People**.
+
+The editor group doesn't count as an admin setting: you still need `auth.admins` or `auth.adminGroup`.
+
+## Take roles from groups only
+
+If people ask your sign-in provider for access, you can make its groups the only place roles come from, so nobody gets a role without going through it:
+
+```yaml title="values.yaml"
+auth:
+  adminGroup: scout-admins
+  editorGroup: scout-editors
+  rolesFromGroupsOnly: true
+```
+
+With your own chart, set `SCOUTUI_ROLES_FROM_GROUPS_ONLY` on the web server to `true`.
+
+Then:
+
+- Members of the admin group are Admins, members of the editor group are Editors, and everyone else who signs in is a Viewer.
+- Admins named by email in `auth.admins` or `SCOUTUI_ADMINS` are still Admins, so you can keep one to fall back on if the groups stop arriving.
+- Nobody's role can be changed on **People**. You can still [remove people](#remove-someone).
+- Roles you set on **People** before don't count, but they're kept: turn the setting off and they're back.
+
+It needs `auth.adminGroup` or `auth.editorGroup`, or the upgrade fails with `auth.rolesFromGroupsOnly is on, so set auth.adminGroup or auth.editorGroup to a group in your sign-in provider.` With your own chart, the web server won't start and logs `[startup] failed: SCOUTUI_ROLES_FROM_GROUPS_ONLY is on, so set SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP to a group in your sign-in provider.`
 
 ## Change someone's role
 
@@ -85,13 +123,13 @@ Then have the person sign out of the dashboard and sign in again.
 
 The new role counts from their next click in the dashboard or their next upload, without signing in again.
 
-People appear on the list once they have signed in. You can't change or remove yourself.
+People appear on the list once they have signed in. You can't change or remove yourself, change a role that comes from `auth.admins` or a group, or change any role when [roles come from groups only](#take-roles-from-groups-only).
 
 ## Remove someone
 
-Press **Remove** on the person's row and confirm. Removing someone signs them out everywhere, in the browser and the CLI, and takes them off the list. You can remove group Admins too, but not Admins named by email.
+Press **Remove** on the person's row and confirm. Removing someone signs them out everywhere, in the browser and the CLI, and takes them off the list. You can remove people whose role comes from a group too, but not Admins named by email.
 
-If your sign-in provider still lets them in, they come back the next time they sign in: as a Viewer, or as an Admin if they're still in the admin group. To keep someone out, first stop your provider letting them in, or [restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), then remove them.
+If your sign-in provider still lets them in, they come back the next time they sign in: as a Viewer, or with the role their group gives them. To keep someone out, first stop your provider letting them in, or [restrict who can sign in](/docs/guides/deploy-the-dashboard#restrict-who-can-sign-in), then remove them.
 
 ## When someone leaves
 
@@ -101,4 +139,4 @@ If your sign-in provider still lets them in, they come back the next time they s
 
 ## See who changed what
 
-Once there's been a change or a removal, **History** on the **Settings** page lists the most recent role changes, people removed, scans removed and repos deleted, newest first, each with who made it and when. Changes to the admin settings aren't in it.
+Once there's been a change or a removal, **History** on the **Settings** page lists the most recent role changes, people removed, scans removed and repos deleted, newest first, each with who made it and when. Changes to the role settings and to people's groups aren't in it.

@@ -77,6 +77,8 @@ Optional settings on the web server:
 | `OIDC_EXTRA_SCOPES` | Scopes to ask your provider for on top of `openid profile email`, separated by spaces, such as `groups`. See [By group](/docs/guides/manage-people-and-roles#by-group). |
 | `SCOUTUI_TRUSTED_PROXY_HOPS` | The number of proxies in front of the dashboard. See [step 6](#6-configure-the-ingress-or-proxy). |
 | `SCOUTUI_GUEST_VIEW` | `true` lets anyone view the dashboard without signing in, read-only. It makes every repo on the dashboard public. See [Let people view the dashboard without signing in](/docs/guides/deploy-the-dashboard#let-people-view-the-dashboard-without-signing-in), where it appears as `auth.guestView`. |
+| `SCOUTUI_EDITOR_GROUP` | A group in your sign-in provider whose members are Editors. See [Give Editors by group](/docs/guides/manage-people-and-roles#give-editors-by-group). |
+| `SCOUTUI_ROLES_FROM_GROUPS_ONLY` | `true` takes roles only from your groups and `SCOUTUI_ADMINS`, so they can't be changed on **People**. Needs `SCOUTUI_ADMIN_GROUP` or `SCOUTUI_EDITOR_GROUP`. See [Take roles from groups only](/docs/guides/manage-people-and-roles#take-roles-from-groups-only). |
 | `DATABASE_POOL_MAX` | Database connections per web server pod. Default 10. |
 
 On the worker, `WORKER_DATABASE_POOL_MAX` sets its database connections per pod. It defaults to 3, which is also the minimum.
