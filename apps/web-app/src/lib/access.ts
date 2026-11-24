@@ -79,10 +79,16 @@ export function guestViewEnabled(env: Record<string, string | undefined> = proce
 }
 
 /**
- * Throws unless `SCOUTUI_ADMINS` or `SCOUTUI_ADMIN_GROUP` is set, and, with `SCOUTUI_ROLES_FROM_GROUPS_ONLY` on, unless
- * `SCOUTUI_ADMIN_GROUP` or `SCOUTUI_EDITOR_GROUP` is set.
+ * Throws when `SCOUTUI_ROLES_FROM_GROUPS_ONLY` is set to anything but `true` or `false`, unless `SCOUTUI_ADMINS` or
+ * `SCOUTUI_ADMIN_GROUP` is set, and, with `SCOUTUI_ROLES_FROM_GROUPS_ONLY` on, unless `SCOUTUI_ADMIN_GROUP` or
+ * `SCOUTUI_EDITOR_GROUP` is set.
  */
 export function requireRoleSettings(env: Record<string, string | undefined>): void {
+  // biome-ignore lint/complexity/useLiteralKeys: env access
+  const groupsOnlyValue = env["SCOUTUI_ROLES_FROM_GROUPS_ONLY"];
+  if (groupsOnlyValue !== undefined && groupsOnlyValue !== "" && groupsOnlyValue !== "true" && groupsOnlyValue !== "false") {
+    throw new Error(`Set SCOUTUI_ROLES_FROM_GROUPS_ONLY to true or false, not "${groupsOnlyValue}".`);
+  }
   const { adminEmails, adminGroup, editorGroup, groupsOnly } = roleSettings(env);
   if (adminEmails.size === 0 && adminGroup === null) {
     throw new Error("Set SCOUTUI_ADMINS to your admins' email addresses, or SCOUTUI_ADMIN_GROUP to a group in your sign-in provider.");

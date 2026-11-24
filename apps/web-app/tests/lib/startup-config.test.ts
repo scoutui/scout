@@ -60,6 +60,8 @@ describe("runStartup", () => {
     { case: "fails with roles from groups only and no role group", env: { SCOUTUI_ADMINS: "ana@example.com", SCOUTUI_ROLES_FROM_GROUPS_ONLY: "true" }, error: "SCOUTUI_ROLES_FROM_GROUPS_ONLY is on, so set SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP to a group in your sign-in provider." },
     { case: "starts with roles from groups only and SCOUTUI_EDITOR_GROUP", env: { SCOUTUI_ADMINS: "ana@example.com", SCOUTUI_EDITOR_GROUP: "scout-editors", SCOUTUI_ROLES_FROM_GROUPS_ONLY: "true" }, error: null },
     { case: "starts with roles from groups only and SCOUTUI_ADMIN_GROUP", env: { SCOUTUI_ADMIN_GROUP: "scout-admins", SCOUTUI_ROLES_FROM_GROUPS_ONLY: "true" }, error: null },
+    { case: "fails with a roles-from-groups-only value that isn't true or false", env: { SCOUTUI_ADMIN_GROUP: "scout-admins", SCOUTUI_ROLES_FROM_GROUPS_ONLY: "TRUE" }, error: 'Set SCOUTUI_ROLES_FROM_GROUPS_ONLY to true or false, not "TRUE".' },
+    { case: "starts with roles from groups only set to false", env: { SCOUTUI_ADMINS: "ana@example.com", SCOUTUI_ROLES_FROM_GROUPS_ONLY: "false" }, error: null },
   ])("$case", async ({ env, error }) => {
     const started = runStartup({ MIGRATE_ON_START: "false", ...env });
     if (error === null) await expect(started).resolves.toBeUndefined();

@@ -2,8 +2,8 @@
 
 ## 0.16.0
 
-- New `auth.editorGroup`: members of this group in your sign-in provider are Editors, checked at each browser sign-in.
-- New `auth.rolesFromGroupsOnly`: takes roles only from `auth.adminGroup`, `auth.editorGroup` and `auth.admins`, so they can't be changed on the People page, and anyone in neither group is a Viewer. It needs `auth.adminGroup` or `auth.editorGroup`.
+- New `auth.editorGroup`: members of this group in your sign-in provider are Editors, checked at each browser sign-in. It takes effect from web app 0.12.0.
+- New `auth.rolesFromGroupsOnly`: takes roles only from `auth.adminGroup`, `auth.editorGroup` and `auth.admins`, so they can't be changed on the People page, and anyone in neither group is a Viewer. It needs `auth.adminGroup` or `auth.editorGroup`, and takes effect from web app 0.12.0.
 
 ## 0.15.0
 
