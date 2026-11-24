@@ -1,5 +1,9 @@
 # scout chart
 
+## 0.17.0
+
+- Run web app 0.12.0 by default.
+
 ## 0.16.0
 
 - New `auth.editorGroup`: members of this group in your sign-in provider are Editors, checked at each browser sign-in. It takes effect from web app 0.12.0.
