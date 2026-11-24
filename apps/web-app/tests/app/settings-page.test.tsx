@@ -32,4 +32,20 @@ describe("SettingsPage", () => {
       "ana@example.com removed a scan of web-app (1a2b3c4)",
     ]);
   });
+
+  it("says roles come from the sign-in provider's groups only when roles from groups only is on", async () => {
+    const groupsOnlyNote = "Roles come from groups in your sign-in provider. To change someone's role, change their groups there.";
+    const removalNote = "Removing someone signs them out everywhere. If your sign-in provider still lets them in, they come back as a Viewer, or with the role their group gives them.";
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    const { unmount } = render(await SettingsPage());
+    expect(screen.getByText(groupsOnlyNote)).toBeInTheDocument();
+    expect(screen.getByText(removalNote)).toBeInTheDocument();
+    unmount();
+
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", undefined);
+    render(await SettingsPage());
+    expect(screen.queryByText(groupsOnlyNote)).toBeNull();
+    expect(screen.getByText(removalNote)).toBeInTheDocument();
+    vi.unstubAllEnvs();
+  });
 });

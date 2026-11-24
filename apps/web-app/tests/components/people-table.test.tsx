@@ -19,6 +19,8 @@ const people = [
   person("ana", "ana@example.com", { name: "Ana Ruiz", role: "admin", canChangeRole: false, canRemove: false }),
   person("lee", "lee@example.com", { role: "admin", roleSource: "install", canChangeRole: false, canRemove: false }),
   person("mo", "mo@example.com", { role: "admin", roleSource: "group", canChangeRole: false }),
+  person("kai", "kai@example.com", { role: "editor", roleSource: "group", canChangeRole: false }),
+  person("noa", "noa@example.com", { role: "viewer", roleSource: "no-group", canChangeRole: false }),
   person("sam", "sam@example.com"),
 ];
 const rowOf = (email: string) => screen.getByRole("row", { name: new RegExp(email) });
@@ -42,12 +44,18 @@ describe("PeopleTable", () => {
     expect(within(sam).getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
-  it("shows a row that can only be removed as text with Remove", () => {
+  it("shows a row that can only be removed as text with Remove, naming the role a group gives", () => {
     render(<PeopleTable people={people} />);
-    const mo = rowOf("mo@example.com");
-    expect(within(mo).getByText("Admin (from SSO group)")).toBeInTheDocument();
-    expect(within(mo).queryByRole("combobox")).toBeNull();
-    expect(within(mo).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+    for (const [email, role] of [
+      ["mo@example.com", "Admin (from SSO group)"],
+      ["kai@example.com", "Editor (from SSO group)"],
+      ["noa@example.com", "Viewer"],
+    ] as const) {
+      const row = rowOf(email);
+      expect(within(row).getByText(role)).toBeInTheDocument();
+      expect(within(row).queryByRole("combobox")).toBeNull();
+      expect(within(row).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+    }
   });
 
   it("changes the role to the one picked", () => {

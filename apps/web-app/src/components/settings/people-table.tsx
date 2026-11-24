@@ -10,7 +10,12 @@ import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import type { PeopleResult, PersonListing } from "@/lib/people";
 import { relativeTime } from "@/lib/relative-time";
 
-const FIXED_ROLE = { install: "Admin (set at install)", group: "Admin (from SSO group)", "no-group": "Viewer" } as const;
+/** The role a row shows as text, naming where an Admin set at install or a role from a group comes from. */
+function roleLabel({ role, roleSource }: Pick<PersonListing, "role" | "roleSource">): string {
+  if (roleSource === "install") return "Admin (set at install)";
+  if (roleSource === "group") return `${ROLE_NAMES[role]} (from SSO group)`;
+  return ROLE_NAMES[role];
+}
 
 const STACKED_CELL = "max-md:block max-md:p-0";
 
@@ -92,7 +97,7 @@ export function PeopleTable({ people }: { people: PersonListing[] }) {
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : person.roleSource === "people" ? ROLE_NAMES[person.role] : FIXED_ROLE[person.roleSource]}
+                    ) : roleLabel(person)}
                   </TableCell>
                   <TableCell className={`${STACKED_CELL} max-md:pt-1 whitespace-normal max-md:empty:hidden`}>
                     {person.canRemove ? (
