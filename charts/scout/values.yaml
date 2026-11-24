@@ -151,6 +151,13 @@ auth:
   # A group in your sign-in provider whose members are Admins, checked at each
   # browser sign-in.
   adminGroup: ""
+  # A group in your sign-in provider whose members are Editors, checked at each
+  # browser sign-in. Doesn't count as an admin setting.
+  editorGroup: ""
+  # Take roles only from adminGroup, editorGroup and admins: roles can't be
+  # changed on the People page, and anyone in neither group is a Viewer.
+  # Needs adminGroup or editorGroup.
+  rolesFromGroupsOnly: false
   # Lets anyone view the dashboard without signing in, read-only. Every repo on
   # the dashboard becomes public. People can still sign in at /login.
   guestView: false

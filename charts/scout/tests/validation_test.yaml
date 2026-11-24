@@ -56,3 +56,20 @@ tests:
     asserts:
       - isKind: { of: Deployment }
         template: deployment.yaml
+
+  - it: asks for a role group when roles come from groups only
+    set:
+      postgresql.enabled: true
+      auth.rolesFromGroupsOnly: true
+    asserts:
+      - failedTemplate:
+          errorMessage: auth.rolesFromGroupsOnly is on, so set auth.adminGroup or auth.editorGroup to a group in your sign-in provider.
+
+  - it: accepts roles from groups only with an editor group
+    set:
+      postgresql.enabled: true
+      auth.rolesFromGroupsOnly: true
+      auth.editorGroup: scout-editors
+    asserts:
+      - isKind: { of: Deployment }
+        template: deployment.yaml

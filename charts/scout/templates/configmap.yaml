@@ -22,6 +22,12 @@ data:
   {{- with .Values.auth.adminGroup }}
   SCOUTUI_ADMIN_GROUP: {{ . | quote }}
   {{- end }}
+  {{- with .Values.auth.editorGroup }}
+  SCOUTUI_EDITOR_GROUP: {{ . | quote }}
+  {{- end }}
+  {{- if .Values.auth.rolesFromGroupsOnly }}
+  SCOUTUI_ROLES_FROM_GROUPS_ONLY: "true"
+  {{- end }}
   {{- if .Values.auth.guestView }}
   SCOUTUI_GUEST_VIEW: "true"
   {{- end }}

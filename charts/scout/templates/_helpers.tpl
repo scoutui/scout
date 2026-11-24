@@ -158,6 +158,9 @@ app.kubernetes.io/component: postgresql
 {{- if and (not .Values.auth.admins) (not .Values.auth.adminGroup) -}}
 {{- fail "Set auth.admins to your admins' email addresses, or auth.adminGroup to a group in your sign-in provider." -}}
 {{- end -}}
+{{- if and .Values.auth.rolesFromGroupsOnly (not .Values.auth.adminGroup) (not .Values.auth.editorGroup) -}}
+{{- fail "auth.rolesFromGroupsOnly is on, so set auth.adminGroup or auth.editorGroup to a group in your sign-in provider." -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "scout.databasePasswordSecretName" -}}
