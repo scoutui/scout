@@ -3,8 +3,11 @@ import type { Dashboard } from "@scoutui/web-shared";
 export const ROLES = ["viewer", "editor", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 export const ROLE_NAMES: Record<Role, string> = { viewer: "Viewer", editor: "Editor", admin: "Admin" };
-/** Where a person's role comes from: the People page, `SCOUTUI_ADMINS`, or `SCOUTUI_ADMIN_GROUP`. */
-export type RoleSource = "people" | "install" | "group";
+/**
+ * Where a person's role comes from: the People page, `SCOUTUI_ADMINS`, `SCOUTUI_ADMIN_GROUP` or `SCOUTUI_EDITOR_GROUP`,
+ * or, with `SCOUTUI_ROLES_FROM_GROUPS_ONLY` on, being in neither group, which makes them a Viewer.
+ */
+export type RoleSource = "people" | "install" | "group" | "no-group";
 export type Person = { kind: "person"; userId: string; email: string; name: string | null; role: Role; roleSource: RoleSource };
 /**
  * Who is asking, with their role as it stands for this request. `repo-token` is a repo's CI upload token, which uploads
@@ -44,15 +47,29 @@ export function can(identity: Identity | null, action: Action, target?: Target):
   return action !== "edit" || ownsOrAdmin;
 }
 
-export type AdminSettings = { emails: ReadonlySet<string>; group: string | null };
+export type RoleSettings = { adminEmails: ReadonlySet<string>; adminGroup: string | null; editorGroup: string | null; groupsOnly: boolean };
 
-/** `SCOUTUI_ADMINS` (comma-separated emails, compared case-insensitively) and `SCOUTUI_ADMIN_GROUP`. */
-export function adminSettings(env: Record<string, string | undefined> = process.env): AdminSettings {
+function groupSetting(value: string | undefined): string | null {
+  const group = value?.trim() ?? "";
+  return group === "" ? null : group;
+}
+
+/**
+ * `SCOUTUI_ADMINS` (comma-separated emails, compared case-insensitively), `SCOUTUI_ADMIN_GROUP`, `SCOUTUI_EDITOR_GROUP`,
+ * and whether `SCOUTUI_ROLES_FROM_GROUPS_ONLY` is `true`.
+ */
+export function roleSettings(env: Record<string, string | undefined> = process.env): RoleSettings {
   // biome-ignore lint/complexity/useLiteralKeys: env access
   const emails = (env["SCOUTUI_ADMINS"] ?? "").split(",").map(e => e.trim().toLowerCase()).filter(e => e !== "");
-  // biome-ignore lint/complexity/useLiteralKeys: env access
-  const group = env["SCOUTUI_ADMIN_GROUP"]?.trim() ?? "";
-  return { emails: new Set(emails), group: group === "" ? null : group };
+  return {
+    adminEmails: new Set(emails),
+    // biome-ignore lint/complexity/useLiteralKeys: env access
+    adminGroup: groupSetting(env["SCOUTUI_ADMIN_GROUP"]),
+    // biome-ignore lint/complexity/useLiteralKeys: env access
+    editorGroup: groupSetting(env["SCOUTUI_EDITOR_GROUP"]),
+    // biome-ignore lint/complexity/useLiteralKeys: env access
+    groupsOnly: env["SCOUTUI_ROLES_FROM_GROUPS_ONLY"] === "true",
+  };
 }
 
 /** Whether `SCOUTUI_GUEST_VIEW` is `true`, letting browsers without a session view the dashboard. */
@@ -61,21 +78,43 @@ export function guestViewEnabled(env: Record<string, string | undefined> = proce
   return env["SCOUTUI_GUEST_VIEW"] === "true";
 }
 
-/** Throws unless `SCOUTUI_ADMINS` or `SCOUTUI_ADMIN_GROUP` is set. */
-export function requireAdminSettings(env: Record<string, string | undefined>): void {
-  const { emails, group } = adminSettings(env);
-  if (emails.size === 0 && group === null) {
+/**
+ * Throws when `SCOUTUI_ROLES_FROM_GROUPS_ONLY` is set to anything but `true` or `false`, unless `SCOUTUI_ADMINS` or
+ * `SCOUTUI_ADMIN_GROUP` is set, and, with `SCOUTUI_ROLES_FROM_GROUPS_ONLY` on, unless `SCOUTUI_ADMIN_GROUP` or
+ * `SCOUTUI_EDITOR_GROUP` is set.
+ */
+export function requireRoleSettings(env: Record<string, string | undefined>): void {
+  // biome-ignore lint/complexity/useLiteralKeys: env access
+  const groupsOnlyValue = env["SCOUTUI_ROLES_FROM_GROUPS_ONLY"];
+  if (groupsOnlyValue !== undefined && groupsOnlyValue !== "" && groupsOnlyValue !== "true" && groupsOnlyValue !== "false") {
+    throw new Error(`Set SCOUTUI_ROLES_FROM_GROUPS_ONLY to true or false, not "${groupsOnlyValue}".`);
+  }
+  const { adminEmails, adminGroup, editorGroup, groupsOnly } = roleSettings(env);
+  if (adminEmails.size === 0 && adminGroup === null) {
     throw new Error("Set SCOUTUI_ADMINS to your admins' email addresses, or SCOUTUI_ADMIN_GROUP to a group in your sign-in provider.");
+  }
+  if (groupsOnly && adminGroup === null && editorGroup === null) {
+    throw new Error("SCOUTUI_ROLES_FROM_GROUPS_ONLY is on, so set SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP to a group in your sign-in provider.");
   }
 }
 
-export type PersonRow = { id: string; email: string; name: string | null; emailVerified: Date | null; role: Role | null; adminGroup: string | null };
+export type PersonRow = {
+  id: string; email: string; name: string | null; emailVerified: Date | null; role: Role | null; adminGroup: string | null; editorGroup: string | null;
+};
 
-/** The person `row` describes, with their role, or null when they were removed. */
-export function personIdentity(row: PersonRow, settings: AdminSettings): Person | null {
+/**
+ * The person `row` describes, with their role, or null when they were removed. The highest role wins: an Admin named
+ * in `SCOUTUI_ADMINS`, then the admin group, then an Admin set on the People page, then the editor group, then the role
+ * set on the People page. With `SCOUTUI_ROLES_FROM_GROUPS_ONLY` on, roles set on the People page don't count, and
+ * someone in neither group is a Viewer.
+ */
+export function personIdentity(row: PersonRow, settings: RoleSettings): Person | null {
   if (row.role === null) return null;
   const person = { kind: "person" as const, userId: row.id, email: row.email, name: row.name };
-  if (row.emailVerified !== null && settings.emails.has(row.email.toLowerCase())) return { ...person, role: "admin", roleSource: "install" };
-  if (settings.group !== null && row.adminGroup === settings.group) return { ...person, role: "admin", roleSource: "group" };
+  if (row.emailVerified !== null && settings.adminEmails.has(row.email.toLowerCase())) return { ...person, role: "admin", roleSource: "install" };
+  if (settings.adminGroup !== null && row.adminGroup === settings.adminGroup) return { ...person, role: "admin", roleSource: "group" };
+  if (!settings.groupsOnly && row.role === "admin") return { ...person, role: "admin", roleSource: "people" };
+  if (settings.editorGroup !== null && row.editorGroup === settings.editorGroup) return { ...person, role: "editor", roleSource: "group" };
+  if (settings.groupsOnly) return { ...person, role: "viewer", roleSource: "no-group" };
   return { ...person, role: row.role, roleSource: "people" };
 }

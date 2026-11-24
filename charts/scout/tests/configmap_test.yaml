@@ -37,6 +37,10 @@ tests:
       - notExists:
           path: data.SCOUTUI_ADMIN_GROUP
       - notExists:
+          path: data.SCOUTUI_EDITOR_GROUP
+      - notExists:
+          path: data.SCOUTUI_ROLES_FROM_GROUPS_ONLY
+      - notExists:
           path: data.SCOUTUI_GUEST_VIEW
 
   - it: includes allowedDomains when set
@@ -90,6 +94,33 @@ tests:
       - equal:
           path: data.SCOUTUI_ADMIN_GROUP
           value: "scout-admins"
+
+  - it: includes the editor group when set
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+        editorGroup: scout-editors
+    asserts:
+      - equal:
+          path: data.SCOUTUI_EDITOR_GROUP
+          value: "scout-editors"
+
+  - it: turns on roles from groups only when set
+    set:
+      auth:
+        url: "https://scout.example.com"
+        oidc:
+          issuerUrl: "https://auth.example.com/application/o/scout/"
+          clientId: "scout"
+        adminGroup: scout-admins
+        rolesFromGroupsOnly: true
+    asserts:
+      - equal:
+          path: data.SCOUTUI_ROLES_FROM_GROUPS_ONLY
+          value: "true"
 
   - it: turns on guest view when set
     set:

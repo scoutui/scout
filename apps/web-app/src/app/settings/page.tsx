@@ -62,9 +62,7 @@ export default async function SettingsPage() {
           ))}
         </dl>
         <PeopleTable people={people} />
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Removing someone signs them out everywhere. If your sign-in provider still lets them in, they come back as a Viewer.
-        </p>
+        <p className="max-w-prose text-sm text-muted-foreground">Removing someone signs them out everywhere.</p>
       </section>
 
       {history.length > 0 ? (

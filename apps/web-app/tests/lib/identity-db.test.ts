@@ -35,6 +35,8 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     vi.stubEnv("DATABASE_URL", pool.options.connectionString);
     vi.stubEnv("SCOUTUI_ADMINS", undefined);
     vi.stubEnv("SCOUTUI_ADMIN_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", undefined);
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", undefined);
     vi.stubEnv("SCOUTUI_GUEST_VIEW", undefined);
     session.current = null;
     warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -94,6 +96,46 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
   });
 
+  it.each([
+    { case: "makes a Viewer in SCOUTUI_EDITOR_GROUP an Editor from the group", stored: "viewer", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
+    { case: "names the group as the source of an Editor who is also in SCOUTUI_EDITOR_GROUP", stored: "editor", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
+    { case: "keeps a People-page Admin in SCOUTUI_EDITOR_GROUP an Admin from People", stored: "admin", editorGroup: "scout-editors", expected: { role: "admin", roleSource: "people" } },
+    { case: "gives no Editor role for a stored editor group that isn't the current setting", stored: "viewer", editorGroup: "old-editors", expected: { role: "viewer", roleSource: "people" } },
+    { case: "makes someone in both groups an Admin from the group", stored: "viewer", editorGroup: "scout-editors", adminGroup: "scout-admins", expected: { role: "admin", roleSource: "group" } },
+    { case: "with roles from groups only, makes a People-page Editor in no group a Viewer", groupsOnly: true, stored: "editor", expected: { role: "viewer", roleSource: "no-group" } },
+    { case: "with roles from groups only, makes a People-page Admin in no group a Viewer", groupsOnly: true, stored: "admin", expected: { role: "viewer", roleSource: "no-group" } },
+    { case: "with roles from groups only, gives a Viewer for a stored editor group that isn't the current setting", groupsOnly: true, stored: "editor", editorGroup: "old-editors", expected: { role: "viewer", roleSource: "no-group" } },
+    { case: "with roles from groups only, makes a Viewer in SCOUTUI_EDITOR_GROUP an Editor", groupsOnly: true, stored: "viewer", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
+    { case: "with roles from groups only, makes a Viewer in SCOUTUI_ADMIN_GROUP an Admin", groupsOnly: true, stored: "viewer", adminGroup: "scout-admins", expected: { role: "admin", roleSource: "group" } },
+    { case: "with roles from groups only, keeps a verified email in SCOUTUI_ADMINS an Admin", groupsOnly: true, stored: "viewer", adminEmail: true, expected: { role: "admin", roleSource: "install" } },
+    { case: "with roles from groups only, keeps a removed person in SCOUTUI_EDITOR_GROUP removed", groupsOnly: true, stored: null, editorGroup: "scout-editors", expected: null },
+  ] as const)("$case", async (row) => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+    if ("adminEmail" in row) vi.stubEnv("SCOUTUI_ADMINS", "ana@example.com");
+    if ("groupsOnly" in row) vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    const id = await insertPerson(pool, {
+      email: "ana@example.com",
+      role: row.stored,
+      verified: "adminEmail" in row,
+      adminGroup: "adminGroup" in row ? row.adminGroup : null,
+      editorGroup: "editorGroup" in row ? row.editorGroup : null,
+    });
+    signInAs(id);
+    if (row.expected === null) expect(await browser()).toBeNull();
+    else expect(await browser()).toMatchObject(row.expected);
+  });
+
+  it("brings back a People-page role when roles from groups only is turned off", async () => {
+    vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", "true");
+    const id = await insertPerson(pool, { email: "ana@example.com", role: "editor" });
+    signInAs(id);
+    expect(await browser()).toMatchObject({ role: "viewer", roleSource: "no-group" });
+    vi.stubEnv("SCOUTUI_ROLES_FROM_GROUPS_ONLY", undefined);
+    expect(await browser()).toMatchObject({ role: "editor", roleSource: "people" });
+  });
+
   it("returns nobody for a removed person, and the person for one who wasn't removed", async () => {
     const removed = await insertPerson(pool, { email: "ana@example.com", role: null });
     const kept = await insertPerson(pool, { email: "bo@example.com" });
@@ -151,7 +193,7 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
       recordSignIn({ userId, email: "ana@example.com", provider: "oidc", emailVerified, accessToken: "access-token" });
     const stored = async (id: string) => {
       const { rows } = await pool.query(
-        `SELECT "emailVerified" IS NOT NULL AS verified, last_signed_in_at > now() - interval '1 minute' AS signed_in_now, role, admin_group FROM "user" WHERE id = $1`,
+        `SELECT "emailVerified" IS NOT NULL AS verified, last_signed_in_at > now() - interval '1 minute' AS signed_in_now, role, admin_group, editor_group FROM "user" WHERE id = $1`,
         [id],
       );
       return rows[0];
@@ -179,29 +221,46 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
       expect(await stored(editor)).toMatchObject({ role: "editor" });
     });
 
-    it("stores the admin group when the provider lists it, and clears it without failing the sign-in when the lookup fails", async () => {
+    it("stores both groups from one lookup when the provider lists them, and clears them without failing the sign-in when the lookup fails", async () => {
       vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
+      vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
       const id = await insertPerson(pool, { email: "ana@example.com" });
       const input = { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" };
-      await recordSignIn(input, async () => ["scout-users", "scout-admins"]);
-      expect(await stored(id)).toMatchObject({ admin_group: "scout-admins" });
+      const lookup = vi.fn(async () => ["scout-users", "scout-admins", "scout-editors"]);
+      await recordSignIn(input, lookup);
+      expect(lookup).toHaveBeenCalledOnce();
+      expect(await stored(id)).toMatchObject({ admin_group: "scout-admins", editor_group: "scout-editors" });
       await expect(recordSignIn(input, async () => {
         throw new Error("userinfo 503");
       })).resolves.toBeUndefined();
-      expect(await stored(id)).toMatchObject({ admin_group: null, signed_in_now: true });
+      expect(await stored(id)).toMatchObject({ admin_group: null, editor_group: null, signed_in_now: true });
       expect(warn).toHaveBeenCalledExactlyOnceWith(
-        "[auth] Couldn't check whether ana@example.com is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: userinfo 503",
+        "[auth] Couldn't read ana@example.com's groups, so they get no role from SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP until they sign in again: userinfo 503",
       );
     });
 
-    it("clears the admin group when the provider lists other groups, so the person isn't an Admin", async () => {
+    it("reads groups when only SCOUTUI_EDITOR_GROUP is set, and stores the editor group", async () => {
+      vi.stubEnv("SCOUTUI_ADMINS", "lee@example.com");
+      vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+      const id = await insertPerson(pool, { email: "ana@example.com" });
+      await recordSignIn(
+        { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
+        async () => ["scout-editors"],
+      );
+      expect(await stored(id)).toMatchObject({ admin_group: null, editor_group: "scout-editors" });
+      signInAs(id);
+      expect(await browser()).toMatchObject({ role: "editor", roleSource: "group" });
+    });
+
+    it("clears both groups when the provider lists other groups, so the person gets no role from them", async () => {
       vi.stubEnv("SCOUTUI_ADMIN_GROUP", "scout-admins");
-      const id = await insertPerson(pool, { email: "ana@example.com", adminGroup: "scout-admins" });
+      vi.stubEnv("SCOUTUI_EDITOR_GROUP", "scout-editors");
+      const id = await insertPerson(pool, { email: "ana@example.com", adminGroup: "scout-admins", editorGroup: "scout-editors" });
       await recordSignIn(
         { userId: id, email: "ana@example.com", provider: "oidc", emailVerified: true, accessToken: "access-token" },
         async () => ["engineering"],
       );
-      expect(await stored(id)).toMatchObject({ admin_group: null, signed_in_now: true });
+      expect(await stored(id)).toMatchObject({ admin_group: null, editor_group: null, signed_in_now: true });
       signInAs(id);
       expect(await browser()).toMatchObject({ role: "viewer", roleSource: "people" });
       expect(warn).not.toHaveBeenCalled();

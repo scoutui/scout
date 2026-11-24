@@ -192,6 +192,8 @@
         },
         "admins": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "adminGroup": { "type": "string" },
+        "editorGroup": { "type": "string" },
+        "rolesFromGroupsOnly": { "type": "boolean" },
         "guestView": { "type": "boolean" }
       }
     },

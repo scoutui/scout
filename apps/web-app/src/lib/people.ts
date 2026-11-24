@@ -1,14 +1,15 @@
 import { asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { ulid } from "ulid";
 import { getDb, schema } from "@/db/client";
-import { adminSettings, type Person, personIdentity, ROLES, type Role, type RoleSource } from "@/lib/access";
+import { type Person, personIdentity, ROLES, type Role, type RoleSource, roleSettings } from "@/lib/access";
 import { fetchUserGroups } from "@/lib/idp-refresh";
 
 const { cliDeviceCodes, cliSessions, roleChanges, sessions, users } = schema;
 
 /**
  * Records a browser sign-in on the person's row: whether the provider marked the email verified, when they signed in,
- * which admin group they're in, and a Viewer role when they had been removed.
+ * which of the admin and editor groups they're in, and a Viewer role when they had been removed. Groups are read once,
+ * and a failed read leaves the person in neither group.
  */
 export async function recordSignIn(input: {
   userId: string;
@@ -17,24 +18,30 @@ export async function recordSignIn(input: {
   emailVerified: boolean;
   accessToken: string | undefined;
 }, fetchGroups: (accessToken: string) => Promise<string[]> = fetchUserGroups): Promise<void> {
-  const settings = adminSettings();
-  if (settings.emails.has(input.email.toLowerCase()) && !input.emailVerified) {
+  const settings = roleSettings();
+  if (settings.adminEmails.has(input.email.toLowerCase()) && !input.emailVerified) {
     console.warn(`[auth] ${input.email} is in SCOUTUI_ADMINS, but the sign-in provider didn't mark the email verified, so they aren't an Admin.`);
   }
   let adminGroup: string | null = null;
-  if (settings.group !== null && input.provider !== "dev") {
+  let editorGroup: string | null = null;
+  if ((settings.adminGroup !== null || settings.editorGroup !== null) && input.provider !== "dev") {
     try {
       if (!input.accessToken) throw new Error("the sign-in provider sent no access token");
-      if ((await fetchGroups(input.accessToken)).includes(settings.group)) adminGroup = settings.group;
+      const groups = await fetchGroups(input.accessToken);
+      if (settings.adminGroup !== null && groups.includes(settings.adminGroup)) adminGroup = settings.adminGroup;
+      if (settings.editorGroup !== null && groups.includes(settings.editorGroup)) editorGroup = settings.editorGroup;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      console.warn(`[auth] Couldn't check whether ${input.email} is in SCOUTUI_ADMIN_GROUP, so they aren't an Admin until they sign in again: ${reason}`);
+      console.warn(
+        `[auth] Couldn't read ${input.email}'s groups, so they get no role from SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP until they sign in again: ${reason}`,
+      );
     }
   }
   await getDb().update(schema.users).set({
     emailVerified: input.emailVerified ? new Date() : null,
     lastSignedInAt: sql`now()`,
     adminGroup,
+    editorGroup,
     role: sql`COALESCE(${schema.users.role}, 'viewer')`,
   }).where(eq(schema.users.id, input.userId));
 }
@@ -46,6 +53,7 @@ const PERSON_COLUMNS = {
   emailVerified: users.emailVerified,
   role: users.role,
   adminGroup: users.adminGroup,
+  editorGroup: users.editorGroup,
 };
 
 /** What an Admin may do to someone on the People page. */
@@ -66,7 +74,7 @@ export type PersonListing = PeopleChanges & {
 
 /** Everyone who hasn't been removed, by email, with their role as it stands now and what the Admin `actorId` may do to them. */
 export async function listPeople(actorId: string): Promise<PersonListing[]> {
-  const settings = adminSettings();
+  const settings = roleSettings();
   const rows = await getDb()
     .select({ ...PERSON_COLUMNS, lastSignedInAt: users.lastSignedInAt })
     .from(users)
@@ -118,7 +126,7 @@ async function changePerson(
 ): Promise<PeopleResult> {
   return getDb().transaction(async (tx): Promise<PeopleResult> => {
     const [row] = await tx.select(PERSON_COLUMNS).from(users).where(eq(users.id, userId)).for("update");
-    const target = row ? personIdentity(row, adminSettings()) : null;
+    const target = row ? personIdentity(row, roleSettings()) : null;
     if (target === null || !peopleChanges(actor.userId, target)[allowed]) return CHANGED_SINCE_LOADED;
     await change(tx, target);
     return { ok: true };
@@ -136,17 +144,16 @@ export async function setRole(actor: Person, userId: string, role: Role): Promis
 }
 
 /**
- * Removes the person `userId`, whose role is set on the People page or comes from the admin group: ends their browser
- * and CLI sessions, drops the CLI sign-ins they approved but haven't used, clears their role and admin group, and
- * records the removal in the history. Their row stays: signing in again brings them back to it as a Viewer, or as an
- * Admin while they're in the admin group.
+ * Removes the person `userId`, who isn't an Admin named in `SCOUTUI_ADMINS`: ends their browser and CLI sessions, drops
+ * the CLI sign-ins they approved but haven't used, clears their role and groups, and records the removal in the
+ * history. Their row stays: signing in again brings them back to it as a Viewer, or with the role their group gives them.
  */
 export async function removePerson(actor: Person, userId: string): Promise<PeopleResult> {
   return changePerson(actor, userId, "canRemove", async (tx, target) => {
     await tx.delete(sessions).where(eq(sessions.userId, userId));
     await tx.delete(cliSessions).where(eq(cliSessions.userId, userId));
     await tx.delete(cliDeviceCodes).where(eq(cliDeviceCodes.approvedUserId, userId));
-    await tx.update(users).set({ role: null, adminGroup: null }).where(eq(users.id, userId));
+    await tx.update(users).set({ role: null, adminGroup: null, editorGroup: null }).where(eq(users.id, userId));
     await tx.insert(roleChanges).values({ id: ulid(), actorEmail: actor.email, subjectEmail: target.email, fromRole: target.role, toRole: null });
   });
 }
