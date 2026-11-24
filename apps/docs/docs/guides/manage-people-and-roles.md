@@ -74,7 +74,7 @@ kubectl logs deploy/scout | grep '\[auth\]'
 
 - `[auth] ana@example.com is in SCOUTUI_ADMINS, but the sign-in provider didn't mark the email verified, so they aren't an Admin.` Set your provider up to mark emails verified, or name a group instead.
 - `[auth] Couldn't read ana@example.com's groups, so they get no role from SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP until they sign in again: <reason>` Fix what the reason names.
-- **No `[auth]` line.** The setting doesn't match what the provider sends. For a group, check that the provider sends the `groups` field ([By group](#by-group)), and set `auth.adminGroup` or `SCOUTUI_ADMIN_GROUP` to the group exactly as it appears there, letter case included: some providers send a path or an ID instead of the name. For an email, check that the address is the one the provider sends.
+- **No `[auth]` line.** The setting doesn't match what the provider sends. For a group, check that the provider sends the `groups` field ([By group](#by-group)), and set `auth.adminGroup` or `SCOUTUI_ADMIN_GROUP` (or `auth.editorGroup` or `SCOUTUI_EDITOR_GROUP`) to the group exactly as it appears there, letter case included: some providers send a path or an ID instead of the name. For an email, check that the address is the one the provider sends.
 
 Then have the person sign out of the dashboard and sign in again.
 
@@ -91,6 +91,8 @@ auth:
 With your own chart, set `SCOUTUI_EDITOR_GROUP` on the web server to the group's name: `scout-editors`.
 
 The dashboard reads it from the same `groups` field as the admin group, at each browser sign-in, so set your provider up the same way ([By group](#by-group)). Members show on **People** as **Editor (from SSO group)**, and you can't change their role there: change the group instead. Someone in both groups is an Admin, and so is someone you made an Admin on **People**.
+
+The dashboard checks the group each time someone signs in to it in a browser. Someone you add to the group becomes an Editor at their next browser sign-in. Someone you take out of it stops being one at their next browser sign-in, or straight away if an Admin also [removes them](#remove-someone) on **People**, and goes back to the role set for them on **People**: a Viewer, unless an Admin changed it before they joined the group. Until then, a CLI sign-in keeps their Editor role.
 
 The editor group doesn't count as an admin setting: you still need `auth.admins` or `auth.adminGroup`.
 
@@ -113,6 +115,8 @@ Then:
 - Admins named by email in `auth.admins` or `SCOUTUI_ADMINS` are still Admins, so you can keep one to fall back on if the groups stop arriving.
 - Nobody's role can be changed on **People**. You can still [remove people](#remove-someone).
 - Roles you set on **People** before don't count, but they're kept: turn the setting off and they're back.
+
+It applies from each person's next request, but a group you've just named counts only from their next browser sign-in. So after you turn it on, have people sign out of the dashboard and sign in again, or Editors and Admins from a new group are Viewers until they do.
 
 It needs `auth.adminGroup` or `auth.editorGroup`, or the upgrade fails with `auth.rolesFromGroupsOnly is on, so set auth.adminGroup or auth.editorGroup to a group in your sign-in provider.` With your own chart, the web server won't start and logs `[startup] failed: SCOUTUI_ROLES_FROM_GROUPS_ONLY is on, so set SCOUTUI_ADMIN_GROUP or SCOUTUI_EDITOR_GROUP to a group in your sign-in provider.`
 

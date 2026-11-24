@@ -104,6 +104,7 @@ describe.skipIf(!RUN_DB)("identify and recordSignIn against PostgreSQL", () => {
     { case: "makes someone in both groups an Admin from the group", stored: "viewer", editorGroup: "scout-editors", adminGroup: "scout-admins", expected: { role: "admin", roleSource: "group" } },
     { case: "with roles from groups only, makes a People-page Editor in no group a Viewer", groupsOnly: true, stored: "editor", expected: { role: "viewer", roleSource: "no-group" } },
     { case: "with roles from groups only, makes a People-page Admin in no group a Viewer", groupsOnly: true, stored: "admin", expected: { role: "viewer", roleSource: "no-group" } },
+    { case: "with roles from groups only, gives a Viewer for a stored editor group that isn't the current setting", groupsOnly: true, stored: "editor", editorGroup: "old-editors", expected: { role: "viewer", roleSource: "no-group" } },
     { case: "with roles from groups only, makes a Viewer in SCOUTUI_EDITOR_GROUP an Editor", groupsOnly: true, stored: "viewer", editorGroup: "scout-editors", expected: { role: "editor", roleSource: "group" } },
     { case: "with roles from groups only, makes a Viewer in SCOUTUI_ADMIN_GROUP an Admin", groupsOnly: true, stored: "viewer", adminGroup: "scout-admins", expected: { role: "admin", roleSource: "group" } },
     { case: "with roles from groups only, keeps a verified email in SCOUTUI_ADMINS an Admin", groupsOnly: true, stored: "viewer", adminEmail: true, expected: { role: "admin", roleSource: "install" } },
