@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { PeopleTable } from "@/components/settings/people-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getPool } from "@/db/client";
-import { can, ROLE_NAMES, type Role, roleSettings } from "@/lib/access";
+import { can, ROLE_NAMES, type Role } from "@/lib/access";
 import { formatAbsoluteUtc } from "@/lib/format-absolute";
 import { identify } from "@/lib/identity";
 import { listPeople, listRoleChanges, type RoleChange } from "@/lib/people";
@@ -61,16 +61,8 @@ export default async function SettingsPage() {
             </Fragment>
           ))}
         </dl>
-        {roleSettings().groupsOnly ? (
-          <p className="max-w-prose text-sm text-muted-foreground">
-            Roles come from groups in your sign-in provider. To change someone&apos;s role, change their groups there.
-          </p>
-        ) : null}
         <PeopleTable people={people} />
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Removing someone signs them out everywhere. If your sign-in provider still lets them in, they come back as a Viewer, or with the role
-          their group gives them.
-        </p>
+        <p className="max-w-prose text-sm text-muted-foreground">Removing someone signs them out everywhere.</p>
       </section>
 
       {history.length > 0 ? (
