@@ -261,13 +261,12 @@ describe("FilterBar Props facet", () => {
     expect(screen.queryByRole("button", { name: /^props/i })).toBeNull();
   });
 
-  it("offers Has unused props under Filter > Props, with its description and count, and ticks hasUnusedProps:true", async () => {
+  it("offers Has unused props under Filter > Props, with its count and no description, and ticks hasUnusedProps:true", async () => {
     const onChange = renderBar({ ...options, hasUnusedPropsMax: 3, hasUnusedPropsCount: 3 });
     expect(screen.queryByRole("button", { name: /unused props/i })).toBeNull();
     await openFacet(/^props/i);
     const option = await screen.findByRole("button", { name: /^Has unused props/ });
-    expect(option).toHaveTextContent("A declared prop no use passes");
-    expect(option).toHaveTextContent("3");
+    expect(option).toHaveTextContent(/^Has unused props\s*3$/);
     fireEvent.click(option);
     expect(onChange).toHaveBeenCalledWith({ ...emptyFacets(), hasUnusedProps: true });
   });

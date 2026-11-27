@@ -3,7 +3,6 @@ import { type KeyboardEvent, type MouseEvent, type RefCallback, useCallback, use
 import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentRow, DiffMark } from "@scoutui/web-shared";
-import { plural } from "@scoutui/web-shared/client";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -342,9 +341,7 @@ function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClic
           {/* Only while the unused props filter is on: most rows have none, so
               a column for it was mostly blank (#179). */}
           {showUnusedProps && r.apiUsage && hasUnusedProps(r) ? (
-            <Badge variant="outline" className={MARK_BADGE} title={plural(r.apiUsage.declaredCount, "declared prop")}>
-              {unusedPropsText(r.apiUsage)}
-            </Badge>
+            <Badge variant="outline" className={MARK_BADGE}>{unusedPropsText(r.apiUsage)}</Badge>
           ) : null}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}
         </div>

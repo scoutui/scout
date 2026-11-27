@@ -143,17 +143,22 @@ describe("declaredVerdicts", () => {
   const props = [prop("tone", { status: "unused", verdict: "unused" }), prop("align", { status: "unused", verdict: "possibly-unused" }), prop("label", { status: "unused", verdict: "unused" }), prop("size", { status: "used" })];
 
   it("names the declared props of each verdict, by name", () => {
-    expect(declaredVerdicts({ props, hasDeclaredApi: true, summary: summary({ unusedCount: 2, possiblyUnusedCount: 1 }) })).toEqual({ declaredCount: 3, unused: ["label", "tone"], possiblyUnused: ["align"] });
+    expect(declaredVerdicts({ props, hasDeclaredApi: true, events: [], summary: summary({ unusedCount: 2, possiblyUnusedCount: 1 }) })).toEqual({ declaredCount: 4, unused: ["label", "tone"], possiblyUnused: ["align"] });
   });
 
   it("is null without declared props, and for a head projected before verdicts", () => {
-    expect(declaredVerdicts({ props, hasDeclaredApi: false, summary: summary({ unusedCount: 2, possiblyUnusedCount: 1 }) })).toBeNull();
-    expect(declaredVerdicts({ props, hasDeclaredApi: true, summary: summary({}) })).toBeNull();
+    expect(declaredVerdicts({ props, hasDeclaredApi: false, events: [], summary: summary({ unusedCount: 2, possiblyUnusedCount: 1 }) })).toBeNull();
+    expect(declaredVerdicts({ props, hasDeclaredApi: true, events: [], summary: summary({}) })).toBeNull();
+  });
+
+  it("counts only the declared props Top props would list, leaving out styling props", () => {
+    const withStyling = [...props, prop("className", { status: "unused", declared: { type: null, required: null, default: null } })];
+    expect(declaredVerdicts({ props: withStyling, hasDeclaredApi: true, events: [], summary: summary({ declaredCount: 5, unusedCount: 2, possiblyUnusedCount: 1 }) })?.declaredCount).toBe(4);
   });
 
   it("names none for a component with no uses", () => {
     const none = { ...summary({}), footprint: { callCount: 0, fileCount: 0, rendersCount: 0, renderedByCount: 0 } };
-    expect(declaredVerdicts({ props, hasDeclaredApi: true, summary: none })).toEqual({ declaredCount: 3, unused: [], possiblyUnused: [] });
+    expect(declaredVerdicts({ props, hasDeclaredApi: true, events: [], summary: none })).toEqual({ declaredCount: 4, unused: [], possiblyUnused: [] });
   });
 });
 

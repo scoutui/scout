@@ -5,6 +5,7 @@ import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-g
 import { shownWrittenName } from "./display-name.js";
 import { disambiguatorOf, governanceIdentity, presentIdentity, type GovernanceIdentity } from "./present-identity.js";
 import { deriveScanFindings } from "./scan-findings.js";
+import { propGroup } from "./prop-group.js";
 import { createProjectionContext, displayNameCollisionKey, packageExportKey, type ComponentProjectionContext, type OccurrenceStatistics, type ProjectionContext } from "./projection-context.js";
 import { usedComponentKey, isUsed } from "./usage.js";
 
@@ -100,7 +101,8 @@ export type DeclaredVerdicts = {
 };
 
 /**
- * The verdict of each declared prop no use names. It's `unused` only when every use is fully seen, no package
+ * The verdict of each declared prop no use names, among the props `propGroup` lists as the component's own: styling
+ * props, test ids and attributes get none. It's `unused` only when every use is fully seen, no package
  * component in the scan shares the declaration's package and export name, and the prop declares no default. A prop
  * with a default gets no verdict: uses that leave it out get the default. Anything Scout can't read, such as a spread
  * or a default it didn't read, makes it `possibly-unused`. Null when the component has no declared API.
@@ -117,12 +119,13 @@ export function deriveDeclaredVerdicts(context: ComponentProjectionContext, comp
       ? (context.packageExports.get(packageExportKey(component.owningPackage, identity.exportName)) ?? null)
       : null;
   const othersMayPass = unseen > 0 || packageComponentId !== null;
+  const events = new Set(Object.keys(component.events ?? {}));
   const verdicts = new Map<string, DeclaredPropVerdict>();
   const defaultCounts = new Map<string, number>();
   for (const [name, prop] of Object.entries(declared.props)) {
     const hasDefault = hasDefaultOf(prop);
     if (hasDefault === true) defaultCounts.set(name, seen - (stats?.seenNamed.get(name) ?? 0));
-    if (uses === 0 || name in component.props || hasDefault === true) continue;
+    if (uses === 0 || name in component.props || hasDefault === true || propGroup(name, true, events, true) !== "prop") continue;
     verdicts.set(name, othersMayPass || hasDefault === null ? "possibly-unused" : "unused");
   }
   const tally = (verdict: DeclaredPropVerdict) => [...verdicts.values()].filter((v) => v === verdict).length;

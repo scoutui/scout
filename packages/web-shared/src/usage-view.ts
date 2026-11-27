@@ -1,8 +1,9 @@
 import { isKind } from "@scoutui/scan-format";
 import type { ComponentDetail, ComponentDetailHead, DeclaredMeta, OccurrencePropChip, OccurrenceRow, PropUsage } from "./dto.js";
+import { propGroup, type PropGroup } from "./prop-group.js";
 
 /** Which part of the Usage tab's column a prop is listed in. */
-export type UsageGroup = "prop" | "styling" | "event" | "attribute";
+export type UsageGroup = PropGroup;
 export type UsagePickKind = "value" | "dynamic" | "unset";
 /** One picked value of one prop: a written value (`label` is it), `{…}` or not set (`label` is ""). */
 export type UsagePick = { prop: string; kind: UsagePickKind; label: string };
@@ -120,18 +121,6 @@ export type UsageView = {
 /** At or below this many calls a component counts as having few calls, and while this many or fewer are in view, file rows start open. */
 const FEW = 5;
 
-const ATTRIBUTE = /^(data-|aria-)|^(key|ref)$/;
-/** HTML attributes listed under Attributes for every component, unless it declares a prop of that name. */
-const PASS_THROUGH = new Set(["id", "role", "tabIndex", "tabindex"]);
-/** HTML attributes listed under Attributes only for a component with declared props that doesn't declare one of that name. */
-const OTHER_HTML_ATTRIBUTE = new Set(["slot", "dir", "lang", "hidden", "title"]);
-/**
- * Test ids: names that start with the word `qa` or `e2e` (`qa`, `qaSelector`, `qa-id`, `e2eId`), or end in the words
- * `test` and `id` (`testId`, `testID`, `test-id`, `dataTestId`). `latestId`, `quantity` and `TestId` don't match.
- */
-const TEST_ID = /^(qa|e2e)(?![a-z])|(^|[-_])test[-_]?(id|Id|ID)$|[a-z]Test(Id|ID)$/;
-const STYLING = new Set(["className", "class", "style", "sx", "css"]);
-
 const MAX_COLUMNS = 3;
 /** A value at least this share of a prop's set calls use is common, and its column is sized to show it in full. */
 const VALUE_COMMON = 0.02;
@@ -148,14 +137,10 @@ const UNSET = { kind: "unset", label: "" } as const;
 
 const isSpread = (name: string) => name.startsWith("...");
 
+const isDeclared = (status: PropUsage["status"]) => status === "used" || status === "unused";
+
 function groupOf(name: string, status: PropUsage["status"], events: ReadonlySet<string>, hasDeclaredApi: boolean): UsageGroup {
-  const declared = status === "used" || status === "unused";
-  const html = PASS_THROUGH.has(name) || (hasDeclaredApi && OTHER_HTML_ATTRIBUTE.has(name));
-  if (ATTRIBUTE.test(name)) return "attribute";
-  if (events.has(name)) return "event";
-  if ((html && !declared) || TEST_ID.test(name)) return "attribute";
-  if (STYLING.has(name)) return "styling";
-  return "prop";
+  return propGroup(name, isDeclared(status), events, hasDeclaredApi);
 }
 
 /**
@@ -232,12 +217,15 @@ export function topValueLabel(value: Pick<TopPropValue, "kind" | "label">): stri
 export type DeclaredVerdictLists = { declaredCount: number; unused: string[]; possiblyUnused: string[] };
 
 /**
- * The declared props no use passes, by verdict, each list by name. Empty lists for a component with no uses. Null for a
- * component without declared props, and for a head projected before verdicts existed.
+ * The declared props no use passes, by verdict, each list by name, out of the declared props Top props would list (no
+ * styling props, test ids or attributes). Empty lists for a component with no uses. Null for a component without
+ * declared props, and for a head projected before verdicts existed.
  */
-export function declaredVerdicts(head: Pick<ComponentDetailHead, "props" | "hasDeclaredApi" | "summary">): DeclaredVerdictLists | null {
+export function declaredVerdicts(head: Pick<ComponentDetailHead, "props" | "events" | "hasDeclaredApi" | "summary">): DeclaredVerdictLists | null {
   if (!head.hasDeclaredApi) return null;
-  const { declaredCount, unusedCount } = head.summary.apiUsage;
+  const events = new Set(head.events.map((e) => e.name));
+  const declaredCount = head.props.filter((p) => isDeclared(p.status) && groupOf(p.name, p.status, events, true) === "prop").length;
+  const { unusedCount } = head.summary.apiUsage;
   if (head.summary.footprint.callCount === 0) return { declaredCount, unused: [], possiblyUnused: [] };
   if (unusedCount === undefined) return null;
   const named = (verdict: PropUsage["verdict"]) => head.props.filter((p) => p.verdict === verdict).map((p) => p.name).sort((a, b) => a.localeCompare(b));

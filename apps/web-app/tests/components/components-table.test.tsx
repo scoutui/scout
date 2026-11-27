@@ -189,7 +189,6 @@ describe("ComponentsTable", () => {
     it("reads `N unused props` beside the name while the filter is on, after the deprecated mark", () => {
       render(<ComponentsTable repoId="r1" rows={[panel]} showUnusedProps />);
       const pill = within(trOf("Panel")).getByText("2 unused props");
-      expect(pill).toHaveAttribute("title", "5 declared props");
       // In the name line, so it shows on the stacked mobile row too.
       const nameLine = screen.getByRole("link", { name: "Panel" }).parentElement as HTMLElement;
       expect(nameLine).toContainElement(pill);

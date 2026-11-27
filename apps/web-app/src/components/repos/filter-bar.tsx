@@ -120,7 +120,7 @@ export function FilterBar({
           {
             key: "props",
             label: "Props",
-            values: [{ value: "unused", label: "Has unused props", description: "A declared prop no use passes, with no default", count: options.hasUnusedPropsCount }],
+            values: [{ value: "unused", label: "Has unused props", count: options.hasUnusedPropsCount }],
             selected: facets.hasUnusedProps === true ? ["unused"] : [],
             onSelect: ([v]: string[]) => onChange({ ...facets, hasUnusedProps: v === "unused" ? true : null }),
             single: true,

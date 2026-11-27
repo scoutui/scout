@@ -238,6 +238,12 @@ describe("declared-prop verdicts: unused only when every use is fully seen and t
     expect(project({ size: { hasDefault: false } }, [RENDER, use]).verdicts.size).toBe("possibly-unused");
   });
 
+  it("gives styling props, test ids and attributes no verdict, as Top props leaves them out", () => {
+    const none = { hasDefault: false };
+    const { verdicts, head } = project({ className: none, style: none, testId: none, "data-state": none, size: none }, [RENDER]);
+    expect({ verdicts, counts: head?.summary.apiUsage }).toMatchObject({ verdicts: { size: "unused" }, counts: { unusedCount: 1, possiblyUnusedCount: 0 } });
+  });
+
   it("gives a prop a use passes no verdict, whatever its default", () => {
     expect(project({ size: { hasDefault: false } }, [{ props: { size: { tier: "written", value: "sm" } } }, SPREAD]).verdicts).toEqual({});
   });
