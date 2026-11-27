@@ -279,9 +279,9 @@ describe("FilterBar Props facet", () => {
     expect(onChange).toHaveBeenCalledWith(emptyFacets());
   });
 
-  it("shows a pasted ?unused-props=false as a removable props: all used pill", () => {
+  it("shows a pasted ?unused-props=false as a removable props: no unused pill", () => {
     const onChange = renderBar({ ...options, hasUnusedPropsMax: 0, hasUnusedPropsCount: 0 }, { ...emptyFacets(), hasUnusedProps: false });
-    fireEvent.click(screen.getByRole("button", { name: "Remove props all used" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove props no unused" }));
     expect(onChange).toHaveBeenCalledWith(emptyFacets());
   });
 });

@@ -165,6 +165,16 @@ describe("ComponentsTable", () => {
   });
 
   describe("unused props pill", () => {
+    it.each<[string, NonNullable<ComponentRow["apiUsage"]>, string | null]>([
+      ["unused props only", { declaredCount: 5, neverUsedCount: 4, unusedCount: 2, possiblyUnusedCount: 0 }, "2 unused props"],
+      ["unused and possibly unused props", { declaredCount: 9, neverUsedCount: 5, unusedCount: 2, possiblyUnusedCount: 3 }, "2 unused · 3 possibly unused"],
+      ["only possibly unused props, which the filter doesn't keep", { declaredCount: 9, neverUsedCount: 3, unusedCount: 0, possiblyUnusedCount: 3 }, null],
+    ])("reads a row with %s while the filter is on", (_case, apiUsage, text) => {
+      render(<ComponentsTable repoId="r1" rows={[{ ...row, componentId: "v", displayName: "Field", apiUsage }]} showUnusedProps />);
+      if (text === null) expect(screen.queryByText(/unused/)).toBeNull();
+      else expect(within(trOf("Field")).getByText(text)).toBeInTheDocument();
+    });
+
     const panel: ComponentRow = { ...row, componentId: "p", displayName: "Panel", deprecated: true, apiUsage: { declaredCount: 5, neverUsedCount: 2 } };
     const allUsed: ComponentRow = { ...row, componentId: "a", displayName: "Card", apiUsage: { declaredCount: 3, neverUsedCount: 0 } };
     const undeclared: ComponentRow = { ...row, componentId: "u", displayName: "Tag" };
@@ -179,7 +189,7 @@ describe("ComponentsTable", () => {
     it("reads `N unused props` beside the name while the filter is on, after the deprecated mark", () => {
       render(<ComponentsTable repoId="r1" rows={[panel]} showUnusedProps />);
       const pill = within(trOf("Panel")).getByText("2 unused props");
-      expect(pill).toHaveAttribute("title", "2 of 5 declared props never passed");
+      expect(pill).toHaveAttribute("title", "5 declared props");
       // In the name line, so it shows on the stacked mobile row too.
       const nameLine = screen.getByRole("link", { name: "Panel" }).parentElement as HTMLElement;
       expect(nameLine).toContainElement(pill);

@@ -22,7 +22,7 @@ describe("immutable read models", () => {
       kind: "occurrence", scanId: scan.meta.scanId, ordinal: 0, componentId: button.id,
       occurrence: { occurrenceId: call.occurrenceId, filePath: "src/App.tsx", line: 4, column: 1, credit: call.credit, trace: call.trace, props: [], events: [] },
     }]);
-    expect(rows.flatMap(row => row.kind === "detail" ? [row.head.summary.footprint] : [])).toEqual([{ callCount: 1, fileCount: 1, rendersCount: 0, renderedByCount: 0 }]);
+    expect(rows.flatMap(row => row.kind === "detail" ? [row.head.summary.footprint] : [])).toEqual([{ callCount: 1, fileCount: 1, rendersCount: 0, renderedByCount: 0, unseenCount: 1 }]);
     expect(rows.flatMap(row => row.kind === "component" ? [row.fact.stats] : [])).toEqual([{ occurrenceCount: 1, fileCount: 1 }]);
     expect(rows.flatMap(row => row.kind === "graph-node" ? [row.node.occurrenceCount] : [])).toEqual([1]);
   });
@@ -54,15 +54,25 @@ describe("immutable read models", () => {
       Object.defineProperty(context, property, { get() { throw new Error(`${property} revisited`); } });
     }
     const detail = deriveComponentDetailHead(context, componentKey(packageExport("@sample/core", "Button")));
-    expect(detail?.summary.footprint).toEqual({ callCount: 1, fileCount: 1, rendersCount: 0, renderedByCount: 1 });
+    expect(detail?.summary.footprint).toEqual({ callCount: 1, fileCount: 1, rendersCount: 0, renderedByCount: 1, unseenCount: 0 });
   });
 
-  it.each(["graph", "facts"] as const)("derives %s without reading occurrences", projection => {
+  it("derives the graph without reading occurrences", () => {
     const scan = genericArtifacts()[0];
     if (!scan) throw new Error("Missing fixture");
     Object.defineProperty(scan, "occurrences", { get() { throw new Error("Occurrences accessed"); } });
-    if (projection === "graph") expect(projectCompositionGraph(scan).nodes).toHaveLength(9);
-    if (projection === "facts") expect(deriveFactScan(scan).components).toHaveLength(9);
+    expect(projectCompositionGraph(scan).nodes).toHaveLength(9);
+  });
+
+  it("derives facts from indexed statistics without revisiting occurrences", () => {
+    const scan = genericArtifacts()[0];
+    if (!scan) throw new Error("Missing fixture");
+    const context = createProjectionContext(scan);
+    Object.defineProperty(scan, "occurrences", { get() { throw new Error("Occurrences revisited"); } });
+    for (const property of ["occurrences", "occurrencesByComponent"]) {
+      Object.defineProperty(context, property, { get() { throw new Error(`${property} revisited`); } });
+    }
+    expect(deriveFactScan(scan, context).components).toHaveLength(9);
   });
 
   it.each([
@@ -188,5 +198,96 @@ describe("declared-prop usage: shared by the component fact and the detail head'
     const rows = reduceComponentRows(fact, "");
     expect(rows.find(r => r.componentId === panel.id)?.apiUsage).toEqual({ declaredCount: 2, neverUsedCount: 1 });
     expect(rows.find(r => r.componentId === button.id)?.apiUsage).toBeUndefined();
+  });
+});
+
+describe("declared-prop verdicts: unused only when every use is fully seen and the prop declares no default", () => {
+  const PANEL = repoDeclaration("repo-a", "src/Panel.tsx", "Panel");
+  /** A Panel whose uses are `uses`, declaring `declared` props, its `props` rolled up from the uses. */
+  function project(declared: Record<string, object>, uses: Partial<Parameters<typeof resolvedAt>[3]>[], extra: { components?: ReturnType<typeof component>[]; owningPackage?: string } = {}) {
+    const named = new Set(uses.flatMap(u => Object.keys(u?.props ?? {})));
+    const panel = component(PANEL, {
+      declared: { props: declared, hasRest: false },
+      props: Object.fromEntries([...named].map(name => [name, { values: [], dynamic: 1, omitted: uses.length - 1 }])),
+      ...(extra.owningPackage ? { owningPackage: extra.owningPackage } : {}),
+    });
+    const scan = artifact({ components: [panel, ...(extra.components ?? [])], occurrences: uses.map((u, i) => resolvedAt(panel, "src/App.tsx", i + 1, u)) });
+    const context = createProjectionContext(scan);
+    const head = deriveComponentDetailHead(context, panel.id);
+    const verdicts = Object.fromEntries((head?.props ?? []).flatMap(p => (p.verdict ? [[p.name, p.verdict]] : [])));
+    return { head, verdicts, fact: deriveFactScan(scan, context).components.find(c => c.id === panel.id) };
+  }
+  const RENDER = {};
+  const SPREAD = { props: { "...rest": { tier: "dynamic" as const } } };
+
+  it.each([
+    ["no default", { hasDefault: false }, "unused"],
+    ["a literal default", { required: false, default: "md" }, undefined],
+    ["a non-literal default", { required: false, hasDefault: true }, undefined],
+    ["a default Scout didn't read", {}, "possibly-unused"],
+  ])("gives a never-passed prop with %s, on fully seen uses, the verdict %s", (_case, size, verdict) => {
+    expect(project({ size }, [RENDER, RENDER]).verdicts.size).toBe(verdict);
+  });
+
+  it.each([
+    ["spreads props", SPREAD],
+    ["is passed as an argument", { credit: { kind: "argument" as const, callee: "useModal", index: 0 } }],
+    ["goes through a wrapper that may add props", { trace: [{ kind: "hoc" as const, callee: "withTheme", mayAddProps: true as const }] }],
+    ["goes through a wrapper with no mark", { trace: [{ kind: "hoc" as const, callee: "memo" }] }],
+  ])("makes a never-passed prop with no default possibly unused when one use %s", (_case, use) => {
+    expect(project({ size: { hasDefault: false } }, [RENDER, use]).verdicts.size).toBe("possibly-unused");
+  });
+
+  it("gives a prop a use passes no verdict, whatever its default", () => {
+    expect(project({ size: { hasDefault: false } }, [{ props: { size: { tier: "written", value: "sm" } } }, SPREAD]).verdicts).toEqual({});
+  });
+
+  it("gives no verdicts to a component with no uses", () => {
+    const { verdicts, head, fact } = project({ size: { hasDefault: false } }, []);
+    expect({ verdicts, apiUsage: head?.summary.apiUsage, fact: fact?.apiUsage }).toEqual({
+      verdicts: {},
+      apiUsage: { declaredCount: 1, usedCount: 0, neverUsedCount: 1, undeclaredCount: 0 },
+      fact: { declaredCount: 1, neverUsedCount: 1 },
+    });
+  });
+
+  it("makes never-passed props possibly unused when a package component in the scan has the declaration's package and export", () => {
+    const shared = component(packageExport("@example/shared", "Panel"));
+    const other = component(packageExport("@example/shared", "Card"));
+    const declared = { size: { hasDefault: false } };
+    expect(project(declared, [RENDER], { owningPackage: "@example/shared", components: [shared] }).verdicts.size).toBe("possibly-unused");
+    expect(project(declared, [RENDER], { owningPackage: "@example/shared", components: [other] }).verdicts.size).toBe("unused");
+  });
+
+  it("counts each verdict on the component fact and the head, and the uses Scout doesn't fully see", () => {
+    const { head, fact } = project({ size: { hasDefault: false }, tone: {}, label: { default: "Go" } }, [RENDER, RENDER]);
+    expect({ fact: fact?.apiUsage, apiUsage: head?.summary.apiUsage, unseen: head?.summary.footprint.unseenCount }).toEqual({
+      fact: { declaredCount: 3, neverUsedCount: 3, unusedCount: 1, possiblyUnusedCount: 1 },
+      apiUsage: { declaredCount: 3, usedCount: 0, neverUsedCount: 3, undeclaredCount: 0, unusedCount: 1, possiblyUnusedCount: 1 },
+      unseen: 0,
+    });
+    expect(project({ size: { hasDefault: false } }, [RENDER, SPREAD]).head?.summary.footprint.unseenCount).toBe(1);
+  });
+
+  it("counts the fully seen uses that leave out a prop with a known default", () => {
+    const { head } = project(
+      { size: { default: "md" }, icon: { hasDefault: true, defaultRef: "defaultIcon" }, tone: { hasDefault: false } },
+      [{ props: { size: { tier: "written", value: "sm" } } }, RENDER, RENDER, SPREAD],
+    );
+    const byName = new Map(head?.props.map(p => [p.name, p]));
+    expect({
+      size: [byName.get("size")?.defaultCount, byName.get("size")?.declared],
+      icon: [byName.get("icon")?.defaultCount, byName.get("icon")?.declared],
+      tone: [byName.get("tone")?.defaultCount, byName.get("tone")?.declared],
+    }).toEqual({
+      size: [2, { type: null, required: null, default: "md", hasDefault: true, defaultRef: null }],
+      icon: [3, { type: null, required: null, default: null, hasDefault: true, defaultRef: "defaultIcon" }],
+      tone: [undefined, { type: null, required: null, default: null, hasDefault: false, defaultRef: null }],
+    });
+  });
+
+  it("names the package component whose uses may pass the declaration's props", () => {
+    const shared = component(packageExport("@example/shared", "Panel"));
+    expect(project({ size: { hasDefault: false } }, [RENDER], { owningPackage: "@example/shared", components: [shared] }).head?.packageComponentId).toBe(shared.id);
   });
 });

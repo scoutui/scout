@@ -3,6 +3,7 @@ import { type KeyboardEvent, type MouseEvent, type RefCallback, useCallback, use
 import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentRow, DiffMark } from "@scoutui/web-shared";
+import { plural } from "@scoutui/web-shared/client";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -11,7 +12,7 @@ import { SlashBreaks } from "@/components/dashboards/cohort-label";
 import { DeprecatedMark } from "@/components/deprecated-mark";
 import { PackageName } from "@/components/package-name";
 import { SortButton, ariaSort, sortRows, useSort } from "@/components/ui/sortable";
-import { NO_PACKAGE_TITLE, writtenNameMatch } from "@/lib/component-facets";
+import { hasUnusedProps, NO_PACKAGE_TITLE, unusedPropsText, writtenNameMatch } from "@/lib/component-facets";
 import { componentHref, packageArea } from "@/lib/usage-url";
 import { deltaOf, deltaTone, signedCount } from "@/lib/scan-diff-view";
 import { sortByVersion } from "@/lib/version-order";
@@ -340,13 +341,9 @@ function RowCells({ r, nameRef, shortPath, href, selected, tabStop, onButtonClic
           {deprecated ? <DeprecatedMark /> : null}
           {/* Only while the unused props filter is on: most rows have none, so
               a column for it was mostly blank (#179). */}
-          {showUnusedProps && r.apiUsage && r.apiUsage.neverUsedCount > 0 ? (
-            <Badge
-              variant="outline"
-              className={MARK_BADGE}
-              title={`${r.apiUsage.neverUsedCount} of ${r.apiUsage.declaredCount} declared props never passed`}
-            >
-              {r.apiUsage.neverUsedCount.toLocaleString()} unused {r.apiUsage.neverUsedCount === 1 ? "prop" : "props"}
+          {showUnusedProps && r.apiUsage && hasUnusedProps(r) ? (
+            <Badge variant="outline" className={MARK_BADGE} title={plural(r.apiUsage.declaredCount, "declared prop")}>
+              {unusedPropsText(r.apiUsage)}
             </Badge>
           ) : null}
           {mark?.kind === "added" ? <Badge variant="outline" className={MARK_BADGE}>Added</Badge> : null}

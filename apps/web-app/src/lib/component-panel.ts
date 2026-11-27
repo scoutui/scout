@@ -1,4 +1,4 @@
-import { presentIdentity, scanOrderTime, topProps, type DigestScan, type ScanSummary, type StorageDriver, type TopProp } from "@scoutui/web-shared";
+import { declaredVerdicts, presentIdentity, scanOrderTime, topProps, type DeclaredVerdictLists, type DigestScan, type ScanSummary, type StorageDriver, type TopProp } from "@scoutui/web-shared";
 
 /** A component's uses in one scan, at the scan's place in the repo's history. */
 export type HistoryPoint = { t: string; value: number };
@@ -10,8 +10,11 @@ export type HistoryPoint = { t: string; value: number };
 export type ComponentPanelFacts = {
   /** Where a component defined in the repo is declared; the line only where the scan keeps it. */
   source: { filePath: string; line: number | null } | null;
-  /** The most set props; `kept` is false for a scan that doesn't keep prop values (only a repo's latest scan does). */
-  props: { kept: true; uses: number; top: TopProp[]; unused: string[] | null } | { kept: false };
+  /**
+   * The most set props, and the declared props no use passes by verdict (`declaredVerdicts`); `kept` is false for a
+   * scan that doesn't keep prop values (only a repo's latest scan does).
+   */
+  props: { kept: true; uses: number; top: TopProp[]; declared: DeclaredVerdictLists | null } | { kept: false };
   /** The component's uses in each ready scan from the first holding it to this one, oldest first (`componentHistory`). */
   history: HistoryPoint[];
 };
@@ -26,7 +29,7 @@ export async function componentPanelFacts(snapshot: StorageDriver, repoId: strin
   const uses = head?.summary.footprint.callCount ?? 0;
   return {
     source: filePath === null ? null : { filePath, line: head?.definedAt?.filePath === filePath ? head.definedAt.line : null },
-    props: head ? { kept: true, uses, ...topProps(head, uses) } : { kept: false },
+    props: head ? { kept: true, uses, ...topProps(head, uses), declared: declaredVerdicts(head) } : { kept: false },
     history: componentHistory(await snapshot.listScans(repoId), digests, scanId),
   };
 }

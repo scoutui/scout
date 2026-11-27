@@ -132,6 +132,13 @@ describe("Has unused props", () => {
     expect(filterRows([declared, fullyUsed, undeclared], { ...emptyFacets(), hasUnusedProps: true }).map(r => r.componentId)).toEqual(["d"]);
   });
 
+  it("counts only unused props when the row has verdicts, not possibly unused ones, and never a row with no uses", () => {
+    const confirmed = { ...baseRow, componentId: "c", apiUsage: { declaredCount: 4, neverUsedCount: 3, unusedCount: 1, possiblyUnusedCount: 2 } };
+    const possibly = { ...baseRow, componentId: "p", apiUsage: { declaredCount: 4, neverUsedCount: 3, unusedCount: 0, possiblyUnusedCount: 3 } };
+    const unusedRow = { ...declared, componentId: "n", occurrenceCount: 0 };
+    expect(filterRows([confirmed, possibly, unusedRow], { ...emptyFacets(), hasUnusedProps: true }).map(r => r.componentId)).toEqual(["c"]);
+  });
+
   it("without the filter, keeps every row regardless of declared API", () => {
     expect(filterRows([declared, fullyUsed, undeclared], emptyFacets()).map(r => r.componentId)).toEqual(["d", "f", "u"]);
   });

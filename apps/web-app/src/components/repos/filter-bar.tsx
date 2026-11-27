@@ -120,7 +120,7 @@ export function FilterBar({
           {
             key: "props",
             label: "Props",
-            values: [{ value: "unused", label: "Has unused props", description: "A declared prop no use passes", count: options.hasUnusedPropsCount }],
+            values: [{ value: "unused", label: "Has unused props", description: "A declared prop no use passes, with no default", count: options.hasUnusedPropsCount }],
             selected: facets.hasUnusedProps === true ? ["unused"] : [],
             onSelect: ([v]: string[]) => onChange({ ...facets, hasUnusedProps: v === "unused" ? true : null }),
             single: true,
@@ -165,7 +165,7 @@ export function FilterBar({
       : []),
     // `false` arrives only from a pasted URL, like `deprecated: false` above.
     ...(facets.hasUnusedProps !== null && facets.hasUnusedProps !== undefined
-      ? [{ key: "props", field: "props", value: facets.hasUnusedProps ? "unused" : "all used", onRemove: () => onChange({ ...facets, hasUnusedProps: null }) }]
+      ? [{ key: "props", field: "props", value: facets.hasUnusedProps ? "unused" : "no unused", onRemove: () => onChange({ ...facets, hasUnusedProps: null }) }]
       : []),
     ...(facets.occurrences
       ? [

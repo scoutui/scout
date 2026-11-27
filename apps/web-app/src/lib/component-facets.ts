@@ -93,9 +93,21 @@ export function deprecatedInUse(r: ComponentRow): boolean {
   return r.deprecated && r.occurrenceCount > 0;
 }
 
-/** A row with a declared prop its scan never saw passed: what the "has unused props" chip counts and keeps. */
+/**
+ * A used row with a declared prop whose verdict is unused: what the "has unused props" chip counts and keeps. A row
+ * projected before verdicts existed counts its never-passed props instead.
+ */
 export function hasUnusedProps(r: ComponentRow): boolean {
-  return (r.apiUsage?.neverUsedCount ?? 0) > 0;
+  return r.occurrenceCount > 0 && unusedCountOf(r.apiUsage) > 0;
+}
+
+const unusedCountOf = (apiUsage: ComponentRow["apiUsage"]) => apiUsage?.unusedCount ?? apiUsage?.neverUsedCount ?? 0;
+
+/** A row's unused props as its badge reads: `2 unused props`, or `2 unused · 3 possibly unused`. */
+export function unusedPropsText(apiUsage: NonNullable<ComponentRow["apiUsage"]>): string {
+  const unused = unusedCountOf(apiUsage);
+  const possibly = apiUsage.possiblyUnusedCount ?? 0;
+  return possibly > 0 ? `${unused.toLocaleString()} unused · ${possibly.toLocaleString()} possibly unused` : `${unused.toLocaleString()} unused ${unused === 1 ? "prop" : "props"}`;
 }
 
 /** Does a row match the facets? `changed` is the explorer's to apply; this never reads it. */
