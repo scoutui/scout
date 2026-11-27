@@ -1,5 +1,5 @@
 "use client";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Code, X } from "lucide-react";
 import type { ComponentRow, DeclaredVerdictLists, DiffMark, GovernanceTracking, TopProp, TopPropValue } from "@scoutui/web-shared";
@@ -35,8 +35,10 @@ export type PanelFactsState = PanelFactsResult | { state: "loading"; previous: P
 export type PanelMode = "column" | "sheet";
 
 const TOP = 3;
-/** Declared props named in a verdict row before "and N more"; a list one longer shows in full rather than hide a single name. */
+/** Declared props named in a verdict row before "Show N more"; a list one longer shows in full rather than hide a single name. */
 const UNUSED_SHOWN = 6;
+/** A prop value or a declared prop's name: the one chip shape the panel uses. */
+const CHIP = "inline-flex min-h-6 min-w-0 max-w-full items-center rounded-md border bg-secondary px-1.5 font-mono text-xs";
 const LINK = "rounded-sm underline decoration-border underline-offset-3 hover:decoration-current";
 const ROW = "grid grid-cols-[minmax(0,1fr)_6rem_3.5rem] items-center gap-x-2.5 gap-y-1.5 text-sm";
 /** A Top props row: the name and its bar, with the values on the line below. */
@@ -298,7 +300,7 @@ function TopProps({ repoId, row, linked, facts }: { repoId: string; row: Compone
           </ul>
         </section>
       ) : null}
-      {showDeclared ? <DeclaredProps declared={declared} uses={props.uses} /> : null}
+      {showDeclared ? <DeclaredProps key={row.componentId} declared={declared} uses={props.uses} /> : null}
     </>
   );
 }
@@ -320,22 +322,29 @@ function DeclaredProps({ declared, uses }: { declared: DeclaredVerdictLists; use
   );
 }
 
-/** One verdict's props by name: the first few, then how many more. Nothing when it has none. */
+/** One verdict's props by name: the first few, then a button that shows the rest. Nothing when it has none. */
 function VerdictRow({ id, term, names }: { id: string; term: string; names: string[] }) {
+  const [open, setOpen] = useState(false);
   if (names.length === 0) return null;
-  const shown = names.length > UNUSED_SHOWN + 1 ? names.slice(0, UNUSED_SHOWN) : names;
-  const more = names.length - shown.length;
+  const capped = names.length > UNUSED_SHOWN + 1;
+  const shown = capped && !open ? names.slice(0, UNUSED_SHOWN) : names;
   return (
     <div className="space-y-1.5">
       <dt id={id}>{term}</dt>
       <dd>
         <ul aria-labelledby={id} className="flex flex-wrap gap-1.5">
           {shown.map((name) => (
-            <li key={name}>
-              <Badge variant="outline" className="font-mono font-normal" title={name}>{name}</Badge>
+            <li key={name} className="min-w-0 max-w-full">
+              <span className={CHIP} title={name}><span className="truncate">{name}</span></span>
             </li>
           ))}
-          {more > 0 ? <li className="self-center text-xs text-muted-foreground">and {more.toLocaleString()} more</li> : null}
+          {capped ? (
+            <li className="flex items-center">
+              <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={cn(LINK, "text-xs text-muted-foreground hover:text-foreground")}>
+                {open ? "Show fewer" : `Show ${(names.length - UNUSED_SHOWN).toLocaleString()} more`}
+              </button>
+            </li>
+          ) : null}
         </ul>
       </dd>
     </div>
@@ -353,7 +362,6 @@ function ValueChip({ prop, value, href }: { prop: TopProp; value: TopPropValue; 
   const isDefault = value.kind === "default" || value.isDefault === true;
   const speech = topValueSpeech(value);
   const label = `${prop.name} ${speech}${isDefault ? ", the default" : ""}, ${plural(value.count, "use")}`;
-  const className = "inline-flex min-h-6 min-w-0 max-w-full items-center rounded-md border bg-secondary px-1.5 font-mono text-xs";
   const body = (
     <>
       <span className={cn("min-w-0 truncate", value.kind === "dynamic" && "italic text-muted-foreground")}>{topValueLabel(value)}</span>
@@ -362,11 +370,11 @@ function ValueChip({ prop, value, href }: { prop: TopProp; value: TopPropValue; 
     </>
   );
   return href ? (
-    <Link href={href} aria-label={label} title={`Opens usage filtered to ${prop.name} ${speech}`} className={cn(className, "hover:border-muted-foreground/70")}>
+    <Link href={href} aria-label={label} title={`Opens usage filtered to ${prop.name} ${speech}`} className={cn(CHIP, "hover:border-muted-foreground/70")}>
       {body}
     </Link>
   ) : (
-    <span aria-label={label} title={topValueLabel(value)} className={className}>{body}</span>
+    <span aria-label={label} title={topValueLabel(value)} className={CHIP}>{body}</span>
   );
 }
 

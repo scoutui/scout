@@ -94,9 +94,9 @@ describe("ComponentDetailsPanel", () => {
       expect(screen.getByRole("link", { name: "@example/web" })).toHaveAttribute("href", "/repos/r1/components/c1?area=@example/web");
       expect(screen.queryByRole("link", { name: "@example/lab" })).toBeNull();
     }],
-    ["a component with twelve unused props, six named and the rest counted", {}, { props: { kept: true, uses: 40, top: [variant], declared: { declaredCount: 14, unused: names(12), possiblyUnused: [] } } }, () => {
+    ["a component with twelve unused props, six named and a button for the rest", {}, { props: { kept: true, uses: 40, top: [variant], declared: { declaredCount: 14, unused: names(12), possiblyUnused: [] } } }, () => {
       const section = screen.getByRole("region", { name: "Declared props · 14" });
-      expect(within(section).getAllByRole("listitem").map(li => li.textContent)).toEqual(["prop01", "prop02", "prop03", "prop04", "prop05", "prop06", "and 6 more"]);
+      expect(within(section).getAllByRole("listitem").map(li => li.textContent)).toEqual(["prop01", "prop02", "prop03", "prop04", "prop05", "prop06", "Show 6 more"]);
       expect(within(section).queryByRole("list", { name: "Possibly unused" })).toBeNull();
       expect(within(section).queryByRole("link")).toBeNull();
       expect(screen.getByRole("heading", { name: "Top props" })).toBeInTheDocument();
@@ -151,6 +151,30 @@ describe("ComponentDetailsPanel", () => {
     expect(screen.queryByRole("link", { name: "HTMLDataTable" })).toBeNull();
     expect(breaks(screen.getByText((_, el) => el?.textContent === "@example/ui"))).toBe("@example/|ui");
     expect(breaks(screen.getByText((_, el) => el?.textContent === "src/components/data-table.tsx"))).toBe("src/|components/|data-table.tsx");
+  });
+
+  it("shows a verdict row's hidden props on request, and hides them again", () => {
+    panel({}, { props: { kept: true, uses: 40, top: [], declared: { declaredCount: 14, unused: names(12), possiblyUnused: [] } } });
+    const more = screen.getByRole("button", { name: "Show 6 more" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(more);
+    expect(within(screen.getByRole("list", { name: "Unused" })).getAllByRole("listitem").map(li => li.textContent)).toEqual([...names(12), "Show fewer"]);
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(within(screen.getByRole("list", { name: "Unused" })).getAllByRole("listitem")).toHaveLength(7);
+  });
+
+  it("closes a verdict row's hidden props when the panel moves to another component", () => {
+    const declared = { declaredCount: 14, unused: names(12), possiblyUnused: [] };
+    const { rerender } = panel({}, { props: { kept: true, uses: 40, top: [], declared } });
+    fireEvent.click(screen.getByRole("button", { name: "Show 6 more" }));
+    rerender(
+      <ComponentDetailsPanel
+        repoId="r1" row={{ ...row, componentId: "c2" }} linked usedIn={null} mark={undefined} showChange={false}
+        facts={{ state: "ready", facts: { ...facts, props: { kept: true, uses: 40, top: [], declared } } }} previousUsesStory={false}
+        entry={null} olderScanAt={null} otherRepos={null} source={null} mode="column" onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Show 6 more" })).toBeInTheDocument();
   });
 
   it("lists Top props without a uses column, the bar's count only in the row's name", () => {
