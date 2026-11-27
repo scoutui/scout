@@ -1,5 +1,15 @@
 # @scoutui/cli
 
+## 0.7.0
+
+### Minor Changes
+
+- [#254](https://github.com/scoutui/scout/pull/254) [`afec576`](https://github.com/scoutui/scout/commit/afec5769fbe9774a6b6d732e677960e8d006bbf4) Thanks [@siggerzz](https://github.com/siggerzz)! - The scan file now says whether each declared prop has a default. A default that isn't a literal, such as `icon = defaultIcon` or `items = () => []`, is written as `hasDefault: true`, with `defaultRef: "defaultIcon"` when it names a variable or a dotted path. A prop with no default is written as `hasDefault: false`. Before, both looked the same. A literal default is still written as `default`. A default the scan can't read, such as an Angular setter input or Vue `withDefaults` with a variable, has none of the three fields. The scan also reads Angular input defaults (`@Input() size = "md"`, `input("md")` and `model(0)`) for the first time. The scan format version doesn't change, and older dashboards ignore the new fields.
+
+### Patch Changes
+
+- [#247](https://github.com/scoutui/scout/pull/247) [`019b162`](https://github.com/scoutui/scout/commit/019b162295f49d5377f4b2bda23b6b0f6730481c) Thanks [@nhunsaker](https://github.com/nhunsaker)! - A render call in a `.js` or `.ts` file is now counted as a use. `createElement(Card, { size: "sm" })` with `createElement` from `react`, and `h(Card, { size: "sm" })` with `h` from `vue` (or `vue-demi`), pass `size` to `Card` the same way `<Card size="sm" />` does. Before, a prop passed only this way, such as one passed from a Vue composable, showed as never passed. Props passed as anything other than an object literal, such as `h(Card, props)`, are recorded as `...rest`, the same as `v-bind="props"`.
+
 ## 0.6.0
 
 ### Minor Changes
