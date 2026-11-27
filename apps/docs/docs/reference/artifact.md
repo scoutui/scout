@@ -188,12 +188,12 @@ For every prop, the counts in `values` plus `dynamic`, `other` and `omitted` add
 
 ### `declared` {#declared}
 
-The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`), from `defineProps` and `defineModel()` in Vue, and from inputs in Angular. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
+The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`) and from its `propTypes` and `defaultProps` (`ProductCard.propTypes = {…}` at module level, or `static propTypes = {…}` in a class), from `defineProps` and `defineModel()` in Vue, and from inputs in Angular. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `props` | object | Prop name to `{ type, required, default, hasDefault, defaultRef }`, in source order. Each field is present only when the code states it. `type`: Vue only, such as `"number"` or `"String"`. `required`: `false` for a destructured React prop with a default; in Vue, from `?` in a type or `required:` in a props object; in Angular, `true` for a required input. The other three fields give the prop's default, as the next table shows. |
-| `hasRest` | `boolean` | `true` when the component collects the remaining props (`...rest`) or declares an index signature. |
+| `props` | object | Prop name to `{ type, required, default, hasDefault, defaultRef }`, in source order. Each field is present only when the code states it. `type`: Vue only, such as `"number"` or `"String"`. `required`: in React, `false` for a prop with a default in its destructure or `defaultProps`, else `true` for a `propTypes` value ending `.isRequired` and `false` for another `prop-types` validator; in Vue, from `?` in a type or `required:` in a props object; in Angular, `true` for a required input. The other three fields give the prop's default, as the next table shows. |
+| `hasRest` | `boolean` | `true` when the component collects the remaining props (`...rest`), declares an index signature, spreads its whole props object (`{...props}`), or has `propTypes` the scan can't fully read, such as a spread of another component's. |
 
 | Default | Fields | Example |
 | --- | --- | --- |
@@ -202,7 +202,7 @@ The props a component defined in the repo declares in its own code. Read from a 
 | None | `hasDefault: false` | `title`, `size = undefined` |
 | Not read | none of the three | an Angular setter input, or Vue `withDefaults` with a variable |
 
-The scan reads only defaults declared with the prop. A default set in the component's body, such as `size ?? "md"`, isn't read. Scans from CLI versions before `hasDefault` existed write only `default`.
+The scan reads only defaults declared with the prop. A default set in the component's body, such as `size ?? "md"`, isn't read. In React, a destructured default comes first, then `defaultProps`. A prop that a fully read `defaultProps` doesn't name has no default, and when `defaultProps` can't be read in full, such as an imported object or a spread, the props it could set aren't read. React 19 ignores `defaultProps` on function components, so with React 19 or later installed they have no default from it, and when the scan can't find which React is installed, the props it names aren't read. Class components keep their `defaultProps` in every version. Scans from CLI versions before `hasDefault` existed write only `default`.
 
 ```json title="declared for a React ProductCard component"
 { "props": { "title": { "hasDefault": false }, "size": { "required": false, "default": "md" } }, "hasRest": false }

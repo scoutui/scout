@@ -511,6 +511,20 @@ export async function scanRepository(input: {
   // Parsed scripts' top-level const arrays and classes: a component's `imports` may name a const array (`ExampleImports`) instead of the classes in it.
   const scripts = new Map<string, { imports: ReturnType<typeof importsOf>; arrays: ReturnType<typeof readConstArrays>; classes: Set<string>; stars: string[] }>();
 
+  // React's installed major version, from a file's folder: React 19 ignores a
+  // function component's `defaultProps`. One lookup per folder.
+  const readVersion = installedVersionReader(outputRoot);
+  const reactMajorByDir = new Map<string, Promise<number | null>>();
+  const reactMajorFor = (outRel: string): Promise<number | null> => {
+    const dir = dirname(outRel);
+    let major = reactMajorByDir.get(dir);
+    if (major === undefined) {
+      major = readVersion("react", outRel).then(majorVersion);
+      reactMajorByDir.set(dir, major);
+    }
+    return major;
+  };
+
   // ── Phase 1: read + parse + emit local definitions ──────────────────────
   let filesScanned = 0;
   for (const file of files) {
@@ -581,7 +595,7 @@ export async function scanRepository(input: {
         importedModules: importedModulesOf(parsed.ast),
       });
     } else if (parsed.kind === "babel") {
-      declaredByFile.set(outRel, extractReactDeclaredProps(parsed.ast));
+      declaredByFile.set(outRel, extractReactDeclaredProps(parsed.ast, { reactMajor: await reactMajorFor(outRel) }));
       localDefs.push(...detectWebComponents(parsed.ast, source, outRel));
       // Script mode finds Vue `defineComponent` calls in plain .ts/.js files, as
       // local-index/index.ts does for non-SFC files.
@@ -1022,4 +1036,12 @@ function normaliseVia(
   if (!("specifier" in v) || v.specifier === undefined || !isAbsolute(v.specifier)) return v;
   const scanRel = posixPath(relative(configDir, v.specifier));
   return { ...v, specifier: rebase(scanRel) };
+}
+
+/** A version's leading major number (`19.0.0-rc.1` → 19), or `null` for none,
+ *  an unreadable one, or `0.0.0-…` (React's experimental and canary builds). */
+export function majorVersion(version: string | null): number | null {
+  const match = version === null ? null : /^\s*v?(\d+)\./.exec(version);
+  const major = match ? Number(match[1]) : 0;
+  return major > 0 ? major : null;
 }
