@@ -132,7 +132,9 @@
       },
       "declared": {
         "props": {
-          "label": {}
+          "label": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -196,7 +198,9 @@
       },
       "declared": {
         "props": {
-          "label": {}
+          "label": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },

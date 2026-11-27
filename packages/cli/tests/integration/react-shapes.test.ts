@@ -919,8 +919,8 @@ describe("integration: react-shapes fixture", () => {
     });
 
     it("a row takes the declared props of its own declaration, whether or not anything exports it", () => {
-      expect(declared("signup-form.jsx", "SignupForm")?.declared).toEqual({ props: { title: {} }, hasRest: false });
-      expect(declared("pennant.jsx", "PennantView")?.declared).toEqual({ props: { label: {} }, hasRest: false });
+      expect(declared("signup-form.jsx", "SignupForm")?.declared).toEqual({ props: { title: { hasDefault: false } }, hasRest: false });
+      expect(declared("pennant.jsx", "PennantView")?.declared).toEqual({ props: { label: { hasDefault: false } }, hasRest: false });
     });
 
     it("an export alias keeps its own declaration's definition when a nested declaration shares the alias name", () => {
@@ -937,7 +937,7 @@ describe("integration: react-shapes fixture", () => {
       const tessera = declared("mosaic.jsx", "Tessera");
       expect(tessera).toBeDefined();
       expect(tessera?.definition).toEqual({ line: 4, column: 14 });
-      expect(tessera?.declared).toEqual({ props: { outer: {} }, hasRest: false });
+      expect(tessera?.declared).toEqual({ props: { outer: { hasDefault: false } }, hasRest: false });
     });
 
     it("no phantom externals and no non-components", () => {

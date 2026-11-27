@@ -267,7 +267,9 @@
       },
       "declared": {
         "props": {
-          "children": {}
+          "children": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -456,7 +458,9 @@
       "props": {},
       "declared": {
         "props": {
-          "k": {}
+          "k": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -559,7 +563,9 @@
       "props": {},
       "declared": {
         "props": {
-          "type": {}
+          "type": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -1106,7 +1112,9 @@
       },
       "declared": {
         "props": {
-          "items": {}
+          "items": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -1366,7 +1374,9 @@
       },
       "declared": {
         "props": {
-          "slot": {}
+          "slot": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -1712,7 +1722,9 @@
       },
       "declared": {
         "props": {
-          "outer": {}
+          "outer": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -1763,7 +1775,9 @@
       ],
       "declared": {
         "props": {
-          "label": {}
+          "label": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -1923,7 +1937,9 @@
       "props": {},
       "declared": {
         "props": {
-          "title": {}
+          "title": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -2584,7 +2600,9 @@
       },
       "declared": {
         "props": {
-          "x": {}
+          "x": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -2632,7 +2650,9 @@
       },
       "declared": {
         "props": {
-          "y": {}
+          "y": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3176,7 +3196,9 @@
       ],
       "declared": {
         "props": {
-          "rows": {}
+          "rows": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3222,7 +3244,9 @@
       },
       "declared": {
         "props": {
-          "rows": {}
+          "rows": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3272,7 +3296,9 @@
       },
       "declared": {
         "props": {
-          "k": {}
+          "k": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3363,7 +3389,9 @@
       },
       "declared": {
         "props": {
-          "c": {}
+          "c": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3402,7 +3430,9 @@
       "props": {},
       "declared": {
         "props": {
-          "children": {}
+          "children": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3484,7 +3514,9 @@
       },
       "declared": {
         "props": {
-          "t": {}
+          "t": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3570,7 +3602,9 @@
       },
       "declared": {
         "props": {
-          "k": {}
+          "k": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3690,7 +3724,9 @@
       },
       "declared": {
         "props": {
-          "c": {}
+          "c": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -3922,7 +3958,9 @@
       "props": {},
       "declared": {
         "props": {
-          "x": {}
+          "x": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },

@@ -60,7 +60,9 @@
       },
       "declared": {
         "props": {
-          "id": {}
+          "id": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -96,7 +98,9 @@
       "props": {},
       "declared": {
         "props": {
-          "item": {}
+          "item": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -174,7 +178,9 @@
       },
       "declared": {
         "props": {
-          "label": {}
+          "label": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -327,7 +333,9 @@
       },
       "declared": {
         "props": {
-          "src": {}
+          "src": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },
@@ -396,7 +404,9 @@
       },
       "declared": {
         "props": {
-          "label": {}
+          "label": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },

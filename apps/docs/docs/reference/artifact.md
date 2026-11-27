@@ -188,15 +188,24 @@ For every prop, the counts in `values` plus `dynamic`, `other` and `omitted` add
 
 ### `declared` {#declared}
 
-The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`), and from `defineProps` and `defineModel()` in Vue. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
+The props a component defined in the repo declares in its own code. Read from a destructured first parameter in React (`function ProductCard({ title, size = "md" })`), from `defineProps` and `defineModel()` in Vue, and from inputs in Angular. `defineModel()` declares `modelValue`, and `defineModel("open")` declares `open`. Absent when the props can't be read that way.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `props` | object | Prop name to `{ type, required, default }`, in source order. Each field is present only when the code states it. `type`: Vue only, such as `"number"` or `"String"`. `required`: `false` for a destructured React prop with a default; in Vue, from `?` in a type or `required:` in a props object. `default`: set when the default is a literal. |
+| `props` | object | Prop name to `{ type, required, default, hasDefault, defaultRef }`, in source order. Each field is present only when the code states it. `type`: Vue only, such as `"number"` or `"String"`. `required`: `false` for a destructured React prop with a default; in Vue, from `?` in a type or `required:` in a props object; in Angular, `true` for a required input. The other three fields give the prop's default, as the next table shows. |
 | `hasRest` | `boolean` | `true` when the component collects the remaining props (`...rest`) or declares an index signature. |
 
+| Default | Fields | Example |
+| --- | --- | --- |
+| A literal | `default` holds the value | `size = "md"` |
+| Another expression | `hasDefault: true`, and `defaultRef` when the expression is a variable or a dotted path | `icon = defaultIcon`, `items = () => []` |
+| None | `hasDefault: false` | `title`, `size = undefined` |
+| Not read | none of the three | an Angular setter input, or Vue `withDefaults` with a variable |
+
+The scan reads only defaults declared with the prop. A default set in the component's body, such as `size ?? "md"`, isn't read. Scans from CLI versions before `hasDefault` existed write only `default`.
+
 ```json title="declared for a React ProductCard component"
-{ "props": { "title": {}, "size": { "required": false, "default": "md" } }, "hasRest": false }
+{ "props": { "title": { "hasDefault": false }, "size": { "required": false, "default": "md" } }, "hasRest": false }
 ```
 
 ### `composition` {#composition}

@@ -134,9 +134,25 @@ describe("detect-vue: declared prop API", () => {
     expect(out[0]?.declared).toEqual({
       props: {
         variant: { required: false, type: "string", default: "primary" },
-        size: { required: true, type: "number" },
+        size: { required: true, type: "number", hasDefault: false },
       },
       hasRest: false,
+    });
+  });
+
+  it("keeps a type-literal prop optional when the destructure defaults it to undefined", () => {
+    const out = detectVueComponents(sfcInput(sfc("const { tone = undefined } = defineProps<{ tone: string }>()")), "tests/inline/Tone.vue");
+    expect(out[0]?.declared?.props.tone).toEqual({ required: false, type: "string", hasDefault: false });
+  });
+
+  it("keeps an object-runtime default that a destructure without a default reads", () => {
+    const out = detectVueComponents(
+      sfcInput(sfc(`const { size, tone } = defineProps({ size: { type: String, default: 'md' }, tone: String })`)),
+      "tests/inline/Chip.vue",
+    );
+    expect(out[0]?.declared?.props).toEqual({
+      size: { type: "String", default: "md" },
+      tone: { type: "String", hasDefault: false },
     });
   });
 
@@ -147,6 +163,40 @@ describe("detect-vue: declared prop API", () => {
     );
     expect(out[0]?.declared?.props.open).toEqual({ required: false, type: "boolean", default: false });
   });
+
+  it("reads a withDefaults factory or binding as a default without its value", () => {
+    const out = detectVueComponents(
+      sfcInput(sfc("const props = withDefaults(defineProps<{ items?: string[]; icon?: string }>(), { items: () => [], icon: defaultIcon })")),
+      "tests/inline/List.vue",
+    );
+    expect(out[0]?.declared?.props).toEqual({
+      items: { required: false, type: "string[]", hasDefault: true },
+      icon: { required: false, type: "string", hasDefault: true, defaultRef: "defaultIcon" },
+    });
+  });
+
+  it("reads no default when withDefaults takes a value Scout can't read", () => {
+    const out = detectVueComponents(
+      sfcInput(sfc("const props = withDefaults(defineProps<{ size?: string }>(), sharedDefaults)")),
+      "tests/inline/Size.vue",
+    );
+    expect(out[0]?.declared?.props.size).toEqual({ required: false, type: "string" });
+  });
+
+  it("reads only the withDefaults entries after a spread", () => {
+    const out = detectVueComponents(
+      sfcInput(
+        sfc("const props = withDefaults(defineProps<{ size?: string; tone?: string; open?: boolean }>(), { size: 'md', ...shared, open: false })"),
+      ),
+      "tests/inline/Spread.vue",
+    );
+    expect(out[0]?.declared?.props).toEqual({
+      size: { required: false, type: "string", hasDefault: true },
+      tone: { required: false, type: "string" },
+      open: { required: false, type: "boolean", default: false },
+    });
+  });
+
 
   it("reads object-runtime defineProps", () => {
     const out = detectVueComponents(

@@ -100,7 +100,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
 
     it("declares ButtonComponent's input() props as its declared API", () => {
       expect(componentOf(buttonComponent)?.declared).toEqual({
-        props: { label: {}, variant: {}, disabled: {} },
+        props: { label: { default: "" }, variant: { default: "primary" }, disabled: { default: false } },
         hasRest: false,
       });
       expect(componentOf(buttonComponent)?.framework).toBe("angular");
@@ -157,7 +157,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
 
     it("declares the aliased input under its alias, not its property name", () => {
       expect(componentOf(toggle)?.declared).toEqual({
-        props: { label: {}, checkedState: {} },
+        props: { label: { default: "" }, checkedState: { default: false } },
         hasRest: false,
       });
     });
@@ -186,7 +186,7 @@ describe.each(VERSIONS)("integration: angular-app fixture (Angular %d)", (ngVers
 
     it("declares model()'s backing property as an input, plus its generated <name>Change output", () => {
       expect(componentOf(counter)?.declared).toEqual({
-        props: { step: {}, value: {} },
+        props: { step: { default: 1 }, value: { default: 0 } },
         hasRest: false,
       });
     });

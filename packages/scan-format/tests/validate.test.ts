@@ -112,4 +112,29 @@ describe("validateArtifact", () => {
     const a = fixture(); setAt(a, path, value);
     expect(validateArtifact(a)).toEqual(invalidAt(path));
   });
+
+  const declaredSize = (size: Record<string, unknown>) => ({ props: { size }, hasRest: false });
+
+  it.each([
+    ["a literal default", { required: false, default: "md" }],
+    ["a non-literal default with its reference", { required: false, hasDefault: true, defaultRef: "theme.size" }],
+    ["a non-literal default without a reference", { required: false, hasDefault: true }],
+    ["a literal default that also states hasDefault", { hasDefault: true, default: 0 }],
+    ["no default", { hasDefault: false }],
+    ["a default Scout didn't read", {}],
+  ])("accepts a declared prop with %s", (_case, size) => {
+    const a = fixture(); a.components[0].declared = declaredSize(size);
+    expect(validateArtifact(a).ok).toBe(true);
+  });
+
+  it.each([
+    ["no default and a literal default", { hasDefault: false, default: "md" }, "hasDefault"],
+    ["no default and a reference", { hasDefault: false, defaultRef: "theme.size" }, "defaultRef"],
+    ["a reference without hasDefault", { defaultRef: "theme.size" }, "defaultRef"],
+    ["an empty reference", { hasDefault: true, defaultRef: "" }, "defaultRef"],
+    ["a hasDefault that isn't a boolean", { hasDefault: "yes" }, "hasDefault"],
+  ])("rejects a declared prop with %s, at that field", (_case, size, field) => {
+    const a = fixture(); a.components[0].declared = declaredSize(size);
+    expect(validateArtifact(a)).toEqual(invalidAt(`components[0].declared.props.size.${field}`));
+  });
 });

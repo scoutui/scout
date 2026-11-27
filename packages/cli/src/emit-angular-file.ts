@@ -74,7 +74,9 @@ export function angularDefinitions(
 ): LocalDefinition[] {
   return components.map((c) => {
     const props: DeclaredPropApi["props"] = {};
-    for (const input of c.inputs) props[input.alias ?? input.name] = input.required ? { required: true } : {};
+    for (const input of c.inputs) {
+      props[input.alias ?? input.name] = { ...(input.required ? { required: true } : {}), ...input.defaultState };
+    }
     return {
       componentId: { kind: "angular-component", export: c.className, source: { type: "local", filePath: definitionPath } },
       exportName: c.className,

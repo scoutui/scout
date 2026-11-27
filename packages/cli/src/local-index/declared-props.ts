@@ -10,6 +10,7 @@ import type {
   CallExpression,
 } from "@oxc-project/types";
 import type { DeclaredProp, DeclaredPropApi } from "@scoutui/scan-format";
+import { memberPath } from "@scoutui/parser-react";
 
 /** Read a literal expression node into its JS value, or undefined if non-literal.
  *  oxc uses a unified ESTree `Literal` node; the value lives on `.value`. */
@@ -23,6 +24,43 @@ export function readLiteralValue(
     }
   }
   return undefined;
+}
+
+/** The fields of a `DeclaredProp` that state its default. All absent: the default wasn't read. */
+export type DeclaredDefault = Pick<DeclaredProp, "default" | "hasDefault" | "defaultRef">;
+
+const NO_DEFAULT: DeclaredDefault = { hasDefault: false };
+
+/** What a default's initialiser states: its literal value; for another
+ *  expression, that a default exists, with the identifier or dotted path it
+ *  names; and no default for a missing initialiser or `undefined`. */
+export function readDefault(node: Expression | null | undefined): DeclaredDefault {
+  if (!node || (node.type === "Identifier" && node.name === "undefined")) return NO_DEFAULT;
+  const literal = readLiteralValue(node);
+  if (literal !== undefined) return { default: literal };
+  const ref = memberPath(node);
+  return ref ? { hasDefault: true, defaultRef: ref } : { hasDefault: true };
+}
+
+/** `prop` with its default fields replaced by `state`. */
+export function withDefaultState(prop: DeclaredProp, state: DeclaredDefault): DeclaredProp {
+  const { default: _value, hasDefault: _has, defaultRef: _ref, ...rest } = prop;
+  return { ...rest, ...state };
+}
+
+/** Whether `state` says the prop has a default, literal or not. */
+export const statesDefault = (state: DeclaredDefault): boolean => state.default !== undefined || state.hasDefault === true;
+
+/** The default left after an object spread that may set it: a default with an
+ *  unknown value if one was set before, otherwise unread. */
+export const afterSpread = (state: DeclaredDefault): DeclaredDefault => (statesDefault(state) ? { hasDefault: true } : {});
+
+/** An object property's static name: an identifier key or a string-literal key. */
+export function staticKeyName(property: { key: Node; computed: boolean }): string | undefined {
+  if (property.computed) return undefined;
+  if (property.key.type === "Identifier") return (property.key as { name: string }).name;
+  const literal = readLiteralValue(property.key);
+  return typeof literal === "string" ? literal : undefined;
 }
 
 /** Object-destructure pattern → declared API. Shared by React destructuring
@@ -39,14 +77,7 @@ export function objectPatternToDeclared(pattern: ObjectPattern): DeclaredPropApi
     if (p.type !== "Property") continue;
     if (p.key.type !== "Identifier") continue; // skip computed / string keys
     const name = p.key.name;
-    if (p.value.type === "AssignmentPattern") {
-      const decl: DeclaredProp = { required: false };
-      const lit = readLiteralValue(p.value.right);
-      if (lit !== undefined) decl.default = lit;
-      props[name] = decl;
-    } else {
-      props[name] = {};
-    }
+    props[name] = p.value.type === "AssignmentPattern" ? { required: false, ...readDefault(p.value.right) } : NO_DEFAULT;
   }
   return { props, hasRest };
 }
@@ -68,27 +99,45 @@ export function typeLiteralToDeclared(typeLit: TSTypeLiteral, scriptSource: stri
       const t = m.typeAnnotation.typeAnnotation;
       decl.type = scriptSource.slice(t.start, t.end);
     }
-    props[m.key.name] = decl;
+    props[m.key.name] = { ...decl, ...NO_DEFAULT };
   }
   return { props, hasRest };
 }
 
-/** A Vue prop options object (`{ type, required, default }`) → what it states. */
+/** A Vue prop options object (`{ type, required, default }`) → what it states.
+ *  A spread or computed key may set the default, so it isn't read past one. */
 export function propOptionsToDeclared(options: ObjectExpression): DeclaredProp {
   const decl: DeclaredProp = {};
+  let state = NO_DEFAULT;
   for (const d of options.properties) {
-    if (d.type !== "Property" || d.key.type !== "Identifier") continue;
-    if (d.key.name === "type" && d.value.type === "Identifier") {
+    if (d.type !== "Property" || d.computed) {
+      state = afterSpread(state);
+      continue;
+    }
+    const key = staticKeyName(d);
+    if (key === "type" && d.value.type === "Identifier") {
       decl.type = d.value.name;
-    } else if (d.key.name === "required") {
+    } else if (key === "required") {
       const r = readLiteralValue(d.value);
       if (typeof r === "boolean") decl.required = r;
-    } else if (d.key.name === "default") {
-      const lit = readLiteralValue(d.value);
-      if (lit !== undefined) decl.default = lit;
+    } else if (key === "default") {
+      state = readDefault(d.value);
     }
   }
-  return decl;
+  return { ...decl, ...state };
+}
+
+/** Vue's built-in prop type constructors: a shorthand naming one declares no default. */
+const VUE_TYPE_CONSTRUCTORS = new Set(["String", "Number", "Boolean", "Array", "Object", "Date", "Function", "Symbol", "BigInt"]);
+
+/** A Vue runtime prop value that isn't an options object: a constructor
+ *  shorthand (`variant: String`) or a type list (`[String, Number]`). Any other
+ *  identifier may name a shared options object, so its default isn't read. */
+function shorthandToDeclared(value: Expression): DeclaredProp {
+  if (value.type === "Identifier") {
+    return VUE_TYPE_CONSTRUCTORS.has(value.name) ? { type: value.name, ...NO_DEFAULT } : { type: value.name };
+  }
+  return value.type === "ArrayExpression" ? NO_DEFAULT : {};
 }
 
 /** Vue object-runtime `defineProps({ ... })` → declared API. Reads each key's
@@ -99,12 +148,7 @@ export function objectRuntimeToDeclared(obj: ObjectExpression): DeclaredPropApi 
     if (p.type !== "Property") continue;
     if (p.key.type !== "Identifier") continue;
     const val = p.value;
-    props[p.key.name] =
-      val.type === "ObjectExpression"
-        ? propOptionsToDeclared(val)
-        : val.type === "Identifier"
-          ? { type: val.name } // shorthand: `variant: String`
-          : {};
+    props[p.key.name] = val.type === "ObjectExpression" ? propOptionsToDeclared(val) : shorthandToDeclared(val);
   }
   return { props, hasRest: false };
 }

@@ -47,9 +47,9 @@ describe("declared-props: readLiteralValue", () => {
 });
 
 describe("declared-props: objectPatternToDeclared", () => {
-  it("records required:false for a non-literal default but omits the value", () => {
+  it("records a non-literal default as hasDefault, without its value", () => {
     const out = objectPatternToDeclared(pattern("{ items = makeItems() }"));
-    expect(out.props.items).toEqual({ required: false });
+    expect(out.props.items).toEqual({ required: false, hasDefault: true });
     expect(out.hasRest).toBe(false);
   });
 });
@@ -60,8 +60,8 @@ describe("declared-props: typeLiteralToDeclared", () => {
     const out = typeLiteralToDeclared(lit, source);
     expect(out).toEqual({
       props: {
-        variant: { required: false, type: "'sm' | 'lg'" },
-        size: { required: true, type: "number" },
+        variant: { required: false, type: "'sm' | 'lg'", hasDefault: false },
+        size: { required: true, type: "number", hasDefault: false },
       },
       hasRest: false,
     });
@@ -70,7 +70,7 @@ describe("declared-props: typeLiteralToDeclared", () => {
   it("maps an index signature to hasRest", () => {
     const { lit, source } = typeLiteral("{ id: string; [k: string]: unknown }");
     const out = typeLiteralToDeclared(lit, source);
-    expect(out.props.id).toEqual({ required: true, type: "string" });
+    expect(out.props.id).toEqual({ required: true, type: "string", hasDefault: false });
     expect(out.hasRest).toBe(true);
   });
 });
@@ -83,9 +83,25 @@ describe("declared-props: objectRuntimeToDeclared", () => {
     expect(out).toEqual({
       props: {
         variant: { type: "String", required: true, default: "primary" },
-        size: { type: "Number" },
+        size: { type: "Number", hasDefault: false },
       },
       hasRest: false,
     });
+  });
+
+  it.each([
+    ["a descriptor without a default", "{ type: String }", { type: "String", hasDefault: false }],
+    ["a factory default", "{ type: Array, default: () => [] }", { type: "Array", hasDefault: true }],
+    ["a default that names a binding", "{ type: String, default: sizes.md }", { type: "String", hasDefault: true, defaultRef: "sizes.md" }],
+    ["an undefined default", "{ type: String, default: undefined }", { type: "String", hasDefault: false }],
+    ["a spread without a later default", "{ ...shared, type: String }", { type: "String" }],
+    ["a spread after a default", "{ default: 'md', ...shared }", { hasDefault: true }],
+    ["a default after a spread", "{ ...shared, default: 'md' }", { default: "md" }],
+    ["a built-in constructor shorthand", "Boolean", { type: "Boolean", hasDefault: false }],
+    ["a type list", "[String, Number]", { hasDefault: false }],
+    ["a shorthand Scout can't tell from a shared descriptor", "sizeProp", { type: "sizeProp" }],
+    ["a call", "makeProp()", {}],
+  ])("reads the default state of %s", (_case, value, expected) => {
+    expect(objectRuntimeToDeclared(objectExpr(`{ size: ${value} }`)).props.size).toEqual(expected);
   });
 });

@@ -2,22 +2,8 @@ import type { JSXAttribute, JSXOpeningElement } from "oxc-parser";
 import type { Expression } from "@oxc-project/types";
 import { isHandlerName, type PropUsage } from "@scoutui/reference-graph";
 import { unwrapTsNoise } from "./infer-value.js";
+import { memberPath } from "./member-path.js";
 
-/** Dotted static member path, or null if any segment is computed/dynamic. */
-function memberPath(node: Expression): string | null {
-  const parts: string[] = [];
-  let cur: Expression = node;
-  while (cur.type === "MemberExpression") {
-    const m = cur as unknown as { object: Expression; property: { type: string; name?: string; value?: unknown }; computed?: boolean };
-    if (m.computed) return null;
-    if (m.property.type !== "Identifier" || typeof m.property.name !== "string") return null;
-    parts.unshift(m.property.name);
-    cur = m.object;
-  }
-  if (cur.type !== "Identifier") return null;
-  parts.unshift((cur as unknown as { name: string }).name);
-  return parts.join(".");
-}
 
 const isLiteralValue = (v: unknown): v is string | number | boolean | null =>
   v === null || ["string", "number", "boolean"].includes(typeof v);
