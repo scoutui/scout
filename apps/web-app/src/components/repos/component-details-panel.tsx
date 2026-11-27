@@ -311,7 +311,7 @@ function DeclaredProps({ declared, uses }: { declared: DeclaredVerdictLists; use
       {uses === 0 ? (
         <p className="text-xs text-muted-foreground">No uses</p>
       ) : (
-        <dl className="divide-y text-sm">
+        <dl className="space-y-3 text-sm">
           <VerdictRow id="details-unused" term="Unused" names={declared.unused} />
           <VerdictRow id="details-possibly-unused" term="Possibly unused" names={declared.possiblyUnused} />
         </dl>
@@ -326,8 +326,8 @@ function VerdictRow({ id, term, names }: { id: string; term: string; names: stri
   const shown = names.length > UNUSED_SHOWN + 1 ? names.slice(0, UNUSED_SHOWN) : names;
   const more = names.length - shown.length;
   return (
-    <div className="grid grid-cols-[7rem_minmax(0,1fr)] items-baseline gap-2 py-1.5 first:pt-0">
-      <dt id={id} className="text-xs text-muted-foreground">{term}</dt>
+    <div className="space-y-1.5">
+      <dt id={id}>{term}</dt>
       <dd>
         <ul aria-labelledby={id} className="flex flex-wrap gap-1.5">
           {shown.map((name) => (
@@ -348,7 +348,7 @@ function topValueSpeech(value: TopPropValue): string {
   return valueSpeech({ kind: value.kind, label: value.label });
 }
 
-/** One of a prop's values with its uses: `{…}` muted for variables and expressions, and a default marked "default". */
+/** One of a prop's values with its uses: `{…}` muted for variables and expressions, and a default, named or literal, marked "default". */
 function ValueChip({ prop, value, href }: { prop: TopProp; value: TopPropValue; href: string | null }) {
   const isDefault = value.kind === "default" || value.isDefault === true;
   const speech = topValueSpeech(value);
@@ -356,7 +356,7 @@ function ValueChip({ prop, value, href }: { prop: TopProp; value: TopPropValue; 
   const className = "inline-flex min-h-6 min-w-0 max-w-full items-center rounded-md border bg-secondary px-1.5 font-mono text-xs";
   const body = (
     <>
-      <span className={cn("min-w-0 truncate", value.kind !== "value" && "italic text-muted-foreground")}>{topValueLabel(value)}</span>
+      <span className={cn("min-w-0 truncate", value.kind === "dynamic" && "italic text-muted-foreground")}>{topValueLabel(value)}</span>
       {isDefault ? <span className="ms-1 shrink-0 font-sans text-muted-foreground">default</span> : null}
       <span className="ms-1 shrink-0 tabular-nums text-muted-foreground">{value.count.toLocaleString()}</span>
     </>
