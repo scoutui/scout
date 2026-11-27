@@ -202,7 +202,7 @@ The props a component defined in the repo declares in its own code. Read from a 
 | None | `hasDefault: false` | `title`, `size = undefined` |
 | Not read | none of the three | an Angular setter input, or Vue `withDefaults` with a variable |
 
-The scan reads only defaults declared with the prop. A default set in the component's body, such as `size ?? "md"`, isn't read. Scans from CLI versions before `hasDefault` existed write only `default`.
+The scan reads only defaults declared with the prop. A default set in the component's body, such as `size ?? "md"`, isn't read. In React, a destructured default comes first, then `defaultProps`. A prop that a fully read `defaultProps` doesn't name has no default, and when `defaultProps` can't be read in full, such as an imported object or a spread, the props it could set aren't read. React 19 ignores `defaultProps` on function components, so with React 19 or later installed they have no default from it, and when the scan can't find which React is installed, the props it names aren't read. Class components keep their `defaultProps` in every version. Scans from CLI versions before `hasDefault` existed write only `default`.
 
 ```json title="declared for a React ProductCard component"
 { "props": { "title": { "hasDefault": false }, "size": { "required": false, "default": "md" } }, "hasRest": false }

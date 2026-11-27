@@ -171,9 +171,17 @@ type StaticValue = ObjectExpression | null;
  * or a module-level `X.propTypes = …` (the last assignment wins, as when the
  * module runs). Each holds an object literal, a module-level `const` bound
  * to one, or a one-argument call around one (`forbidExtraProps({…})`).
- * `mergeDeclared` combines them.
+ * `mergeDeclared` combines them. `reactMajor` decides whether a function
+ * component's `defaultProps` applies: React 19 ignores it.
  */
-export function extractReactDeclaredProps(program: Program): Map<string, DeclaredPropApi> {
+export function extractReactDeclaredProps(
+  program: Program,
+  options: {
+    /** React's installed major version for this module, or `null` when unknown. */
+    reactMajor?: number | null;
+  } = {},
+): Map<string, DeclaredPropApi> {
+  const reactMajor = options.reactMajor ?? null;
   const components = new Map<string, ComponentDecl>();
   const constObjects = new Map<string, Node>();
   const assignments: { symbol: string; member: "propTypes" | "defaultProps"; value: Node }[] = [];
@@ -236,6 +244,7 @@ export function extractReactDeclaredProps(program: Program): Map<string, Declare
       propTypes,
       defaultProps,
       propTypesNames,
+      defaultPropsUse: defaultPropsUse(component, reactMajor),
     });
     if (declared) found.set(symbol, declared);
   }
@@ -320,12 +329,33 @@ function forwardsAllProps(component: ComponentDecl): boolean {
   return visit(body);
 }
 
-/** A static property key's name: an identifier, or a string literal. */
+/** A static property key's name: an identifier, or a string literal. Undefined for a spread. */
 function propertyName(p: ObjectExpression["properties"][number]): string | undefined {
-  if (p.type !== "Property" || p.computed) return undefined;
-  if (p.key.type === "Identifier") return p.key.name;
-  const lit = readLiteralValue(p.key);
-  return typeof lit === "string" ? lit : undefined;
+  return p.type === "Property" ? staticKeyName(p) : undefined;
+}
+
+/** What a `defaultProps` object states: the default state of each prop it
+ *  names, and whether it was read in full. `null` when it can't be read. */
+type DefaultPropsRead = { entries: Map<string, DeclaredDefault>; complete: boolean } | null;
+
+/** Reads `defaultProps` in source order. A spread or computed key may set any
+ *  prop, so the entries before it lose a known value (`afterSpread`) and the
+ *  object counts as partly read. An absent `defaultProps` is read in full: it
+ *  sets nothing. */
+function readDefaultProps(value: StaticValue | undefined): DefaultPropsRead {
+  if (value === null) return null;
+  const entries = new Map<string, DeclaredDefault>();
+  let complete = true;
+  for (const p of value?.properties ?? []) {
+    const name = propertyName(p);
+    if (p.type === "Property" && name !== undefined) {
+      entries.set(name, readDefault(p.value as Expression));
+      continue;
+    }
+    for (const [key, state] of entries) entries.set(key, afterSpread(state));
+    complete = false;
+  }
+  return { entries, complete };
 }
 
 /**
@@ -338,8 +368,9 @@ function propertyName(p: ObjectExpression["properties"][number]): string | undef
  *   `defaultProps`), else `true` for a `propTypes` value ending `.isRequired`
  *   and `false` for another `prop-types` validator. A value the scan can't
  *   read as either leaves it absent.
- * - `default`: the destructured default, else the `defaultProps` value, when
- *   it's a literal.
+ * - The default (`default`, `hasDefault`, `defaultRef`): a destructured
+ *   default, which applies in every React version, else what `defaultProps`
+ *   states (see `defaultState`).
  * - `hasRest`: the destructure collects `...rest`, the component spreads its
  *   whole props object (`forwardsAll`), or `propTypes` names props the scan
  *   can't read (a spread, a computed key, or a value that isn't an object).
@@ -350,6 +381,8 @@ function mergeDeclared(input: {
   propTypes: StaticValue | undefined;
   defaultProps: StaticValue | undefined;
   propTypesNames: ReadonlySet<string>;
+  /** How React treats this component's `defaultProps` (see `defaultPropsUse`). */
+  defaultPropsUse: DefaultPropsUse;
 }): DeclaredPropApi | undefined {
   const fromPattern = input.pattern ? objectPatternToDeclared(input.pattern) : { props: {}, hasRest: false };
   const props = new Map<string, DeclaredProp>(Object.entries(fromPattern.props).map(([name, decl]) => [name, { ...decl }]));
@@ -371,18 +404,46 @@ function mergeDeclared(input: {
     }
     props.set(name, decl);
   }
-  for (const p of input.defaultProps?.properties ?? []) {
-    const name = propertyName(p);
-    const decl = name === undefined ? undefined : props.get(name);
-    if (p.type !== "Property" || name === undefined || decl === undefined) continue;
-    decl.required = false;
+  const defaults = readDefaultProps(input.defaultProps);
+  for (const [name, decl] of props) {
     // A destructured default, literal or not, is the one recorded.
-    if (!destructuredDefaults.has(name)) {
-      const lit = readLiteralValue(p.value);
-      if (lit !== undefined) decl.default = lit;
-    }
+    if (destructuredDefaults.has(name)) continue;
+    const entry = defaults?.entries.get(name);
+    if (entry !== undefined && statesDefault(entry) && input.defaultPropsUse !== "ignored") decl.required = false;
+    props.set(name, withDefaultState(decl, defaultState(defaults, entry, input.defaultPropsUse)));
   }
   return props.size > 0 ? { props: Object.fromEntries(props), hasRest } : undefined;
+}
+
+/**
+ * How React treats a component's `defaultProps`: `"applied"` for a class
+ * component, or a function component on React 18 or earlier; `"ignored"` for
+ * a function component on React 19 or later, which ignores `defaultProps`;
+ * `"unknown"` for a function component when the React version isn't known.
+ */
+type DefaultPropsUse = "applied" | "ignored" | "unknown";
+
+/** The `DefaultPropsUse` for a component, from React's installed major version (`null` when unknown). */
+function defaultPropsUse(component: ComponentDecl, reactMajor: number | null): DefaultPropsUse {
+  if ("cls" in component) return "applied";
+  if (reactMajor === null) return "unknown";
+  return reactMajor >= 19 ? "ignored" : "applied";
+}
+
+/**
+ * A prop's default from `defaultProps`, for a prop without a destructured one:
+ * - no default when React ignores `defaultProps`, or when the read-in-full
+ *   object (or its absence) doesn't name the prop;
+ * - not read when the object can't be read, when a spread or computed key may
+ *   name the prop, or when the object names it but the React version that
+ *   decides whether it applies isn't known;
+ * - otherwise the entry's own state: a literal, a non-literal default, or none.
+ */
+function defaultState(defaults: DefaultPropsRead, entry: DeclaredDefault | undefined, use: DefaultPropsUse): DeclaredDefault {
+  if (use === "ignored") return NO_DEFAULT;
+  if (defaults === null) return {};
+  if (entry === undefined) return defaults.complete ? NO_DEFAULT : {};
+  return use === "unknown" ? {} : entry;
 }
 
 /** `true` for a validator ending `.isRequired`, `false` for another one built

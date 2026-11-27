@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpa
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runScan, scanExitCode } from "../../../src/commands/scan.js";
+import { majorVersion, runScan, scanExitCode } from "../../../src/commands/scan.js";
 import * as parserReact from "@scoutui/parser-react";
 import { Logger } from "../../../src/util/log.js";
 import { createColor } from "../../../src/util/style.js";
@@ -248,5 +248,46 @@ describe("runScan warnings about files it reads", () => {
     const lines = stderrOf(stderr).split("\n");
     expect(lines).toContain("Monorepo root: ../..");
     expect(lines.filter((line) => line.startsWith("[scan]"))).toEqual([]);
+  });
+});
+
+describe("runScan: React's version decides a function component's defaultProps", () => {
+  /** A consumer whose Button sets defaultProps, with React `version` installed (none for `null`). */
+  function setupDefaults(version: string | null): string {
+    const dir = setupConsumer();
+    writeFileSync(
+      join(dir, "src", "Button.tsx"),
+      "export function Button({ size }: { size?: string }) { return <button />; }\nButton.defaultProps = { size: 'md' };\n",
+    );
+    writeFileSync(join(dir, "src", "App.tsx"), 'import { Button } from "./Button";\nexport function App() { return <Button />; }\n');
+    if (version !== null) {
+      mkdirSync(join(dir, "node_modules", "react"), { recursive: true });
+      writeFileSync(join(dir, "node_modules", "react", "package.json"), JSON.stringify({ name: "react", version }));
+    }
+    return dir;
+  }
+
+  it.each([
+    ["19.1.0", { hasDefault: false }],
+    ["18.3.1", { required: false, default: "md" }],
+    [null, { required: false }],
+  ])("with React %s installed, states the Button's size default as %j", async (version, size) => {
+    const dir = setupDefaults(version);
+    const result = await runScan({ configPath: join(dir, "scout.config.json"), quiet: true });
+    const button = result.output?.components.find((c) => c.identity.kind === "repository-declaration" && c.identity.exportName === "Button");
+    expect(button?.declared?.props.size).toEqual(size);
+  });
+});
+
+describe("majorVersion", () => {
+  it.each([
+    ["19.1.0", 19],
+    ["19.0.0-rc.1", 19],
+    ["v18.3.1", 18],
+    ["0.0.0-experimental-1234", null],
+    ["latest", null],
+    [null, null],
+  ])("reads %s as %s", (version, major) => {
+    expect(majorVersion(version)).toBe(major);
   });
 });
