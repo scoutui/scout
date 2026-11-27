@@ -94,7 +94,9 @@
       },
       "declared": {
         "props": {
-          "text": {}
+          "text": {
+            "default": ""
+          }
         },
         "hasRest": false
       },
@@ -554,7 +556,9 @@
       },
       "declared": {
         "props": {
-          "text": {}
+          "text": {
+            "default": ""
+          }
         },
         "hasRest": false
       },
@@ -652,8 +656,12 @@
       },
       "declared": {
         "props": {
-          "label": {},
-          "checkedState": {}
+          "label": {
+            "default": ""
+          },
+          "checkedState": {
+            "default": false
+          }
         },
         "hasRest": false
       },
@@ -735,7 +743,9 @@
       },
       "declared": {
         "props": {
-          "label": {}
+          "label": {
+            "default": ""
+          }
         },
         "hasRest": false
       },
@@ -873,8 +883,12 @@
       },
       "declared": {
         "props": {
-          "appTip": {},
-          "tipPosition": {}
+          "appTip": {
+            "default": ""
+          },
+          "tipPosition": {
+            "default": ""
+          }
         },
         "hasRest": false
       },
@@ -1099,7 +1113,9 @@
       },
       "declared": {
         "props": {
-          "text": {}
+          "text": {
+            "default": ""
+          }
         },
         "hasRest": false
       },
@@ -1352,7 +1368,9 @@
       },
       "declared": {
         "props": {
-          "text": {}
+          "text": {
+            "default": ""
+          }
         },
         "hasRest": false
       },
@@ -1621,8 +1639,12 @@
       },
       "declared": {
         "props": {
-          "step": {},
-          "value": {}
+          "step": {
+            "default": 1
+          },
+          "value": {
+            "default": 0
+          }
         },
         "hasRest": false
       },
@@ -1754,9 +1776,15 @@
       },
       "declared": {
         "props": {
-          "label": {},
-          "variant": {},
-          "disabled": {}
+          "label": {
+            "default": ""
+          },
+          "variant": {
+            "default": "primary"
+          },
+          "disabled": {
+            "default": false
+          }
         },
         "hasRest": false
       },

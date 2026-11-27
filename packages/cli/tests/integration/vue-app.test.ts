@@ -219,7 +219,7 @@ describe("integration: vue-app fixture", () => {
     it("reads each `defineModel()` as a declared prop", () => {
       expect(componentOf(field)?.declared).toEqual({
         props: {
-          modelValue: { type: "string" },
+          modelValue: { type: "string", hasDefault: false },
           open: { type: "boolean", required: false, default: false },
         },
         hasRest: false,

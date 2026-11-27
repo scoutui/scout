@@ -18,10 +18,25 @@ describe("extractReactDeclaredProps: the declared prop API", () => {
     expect(declared.get("Button")).toEqual({
       props: {
         variant: { required: false, default: "primary" },
-        size: {},
+        size: { hasDefault: false },
         disabled: { required: false, default: false },
       },
       hasRest: true,
+    });
+  });
+
+  it("records each kind of destructured default", () => {
+    const declared = extract("/repo/src/icon-button.tsx", [
+      "export function IconButton({ icon = defaultIcon, size = theme.size, items = makeItems(), label = undefined, tone }) {",
+      "  return <button/>;",
+      "}",
+    ]);
+    expect(declared.get("IconButton")?.props).toEqual({
+      icon: { required: false, hasDefault: true, defaultRef: "defaultIcon" },
+      size: { required: false, hasDefault: true, defaultRef: "theme.size" },
+      items: { required: false, hasDefault: true },
+      label: { required: false, hasDefault: false },
+      tone: { hasDefault: false },
     });
   });
 
@@ -30,7 +45,7 @@ describe("extractReactDeclaredProps: the declared prop API", () => {
       "import type { Props } from './props';",
       "export const Card = ({ title, elevated = true }: Props) => <div/>;",
     ]);
-    expect(declared.get("Card")?.props).toEqual({ title: {}, elevated: { required: false, default: true } });
+    expect(declared.get("Card")?.props).toEqual({ title: { hasDefault: false }, elevated: { required: false, default: true } });
   });
 
   it("reads props through a forwardRef wrapper's first param", () => {
@@ -39,7 +54,7 @@ describe("extractReactDeclaredProps: the declared prop API", () => {
       "const Input = forwardRef(({ value, big = false }, ref) => <input ref={ref}/>);",
       "export default Input;",
     ]);
-    expect(declared.get("Input")?.props).toEqual({ value: {}, big: { required: false, default: false } });
+    expect(declared.get("Input")?.props).toEqual({ value: { hasDefault: false }, big: { required: false, default: false } });
   });
 
   it("reads props through a memo wrapper's first param", () => {
@@ -47,7 +62,7 @@ describe("extractReactDeclaredProps: the declared prop API", () => {
       "import { memo } from 'react';",
       "export const Badge = memo(function ({ tone }) { return <b/>; });",
     ]);
-    expect(declared.get("Badge")?.props).toEqual({ tone: {} });
+    expect(declared.get("Badge")?.props).toEqual({ tone: { hasDefault: false } });
   });
 
   it("omits a component that takes a non-destructured props param", () => {
@@ -71,7 +86,7 @@ describe("extractReactDeclaredProps: the declared prop API", () => {
 describe("extractReactDeclaredProps: no judgement about what is a component", () => {
   it("extracts a declaration nothing exports", () => {
     const declared = extract("/repo/src/panel.tsx", ["const Panel = ({ title }) => <section>{title}</section>;"]);
-    expect(declared.get("Panel")).toEqual({ props: { title: {} }, hasRest: false });
+    expect(declared.get("Panel")).toEqual({ props: { title: { hasDefault: false } }, hasRest: false });
   });
 
   it("extracts a lowercase helper", () => {
@@ -79,14 +94,14 @@ describe("extractReactDeclaredProps: no judgement about what is a component", ()
       "function renderRow({ id, label = \"none\" }) { return <li key={id}>{label}</li>; }",
     ]);
     expect(declared.get("renderRow")).toEqual({
-      props: { id: {}, label: { required: false, default: "none" } },
+      props: { id: { hasDefault: false }, label: { required: false, default: "none" } },
       hasRest: false,
     });
   });
 
   it("extracts a function that returns null", () => {
     const declared = extract("/repo/src/empty.tsx", ["export function Empty({ when }) { return null; }"]);
-    expect(declared.get("Empty")).toEqual({ props: { when: {} }, hasRest: false });
+    expect(declared.get("Empty")).toEqual({ props: { when: { hasDefault: false } }, hasRest: false });
   });
 
   it("reads props through a wrapper nested in another wrapper", () => {
@@ -95,7 +110,7 @@ describe("extractReactDeclaredProps: no judgement about what is a component", ()
       "export const Field = memo(forwardRef(({ name, size = \"m\" }, ref) => <input name={name} ref={ref}/>));",
     ]);
     expect(declared.get("Field")).toEqual({
-      props: { name: {}, size: { required: false, default: "m" } },
+      props: { name: { hasDefault: false }, size: { required: false, default: "m" } },
       hasRest: false,
     });
   });
@@ -106,12 +121,12 @@ describe("extractReactDeclaredProps: no judgement about what is a component", ()
       hasRest: false,
     });
     expect(extract("/repo/src/b.tsx", ["export default function ({ open }) { return <div/>; }"]).get("default")).toEqual({
-      props: { open: {} },
+      props: { open: { hasDefault: false } },
       hasRest: false,
     });
     expect(
       extract("/repo/src/c.tsx", ["import { memo } from 'react';", "export default memo(({ items }) => <ul/>);"]).get("default"),
-    ).toEqual({ props: { items: {} }, hasRest: false });
+    ).toEqual({ props: { items: { hasDefault: false } }, hasRest: false });
   });
 
   it("keys a named default export by its own name", () => {

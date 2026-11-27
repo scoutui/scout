@@ -100,7 +100,9 @@
       },
       "declared": {
         "props": {
-          "title": {}
+          "title": {
+            "hasDefault": false
+          }
         },
         "hasRest": false
       },

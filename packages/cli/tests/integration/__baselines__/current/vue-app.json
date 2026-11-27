@@ -62,7 +62,8 @@
         "props": {
           "checked": {
             "required": false,
-            "type": "boolean"
+            "type": "boolean",
+            "hasDefault": false
           }
         },
         "hasRest": false
@@ -227,7 +228,8 @@
         "props": {
           "onLabel": {
             "required": false,
-            "type": "string"
+            "type": "string",
+            "hasDefault": false
           }
         },
         "hasRest": false
@@ -321,11 +323,13 @@
         "props": {
           "isPreview": {
             "required": false,
-            "type": "boolean"
+            "type": "boolean",
+            "hasDefault": false
           },
           "onSelect": {
             "required": false,
-            "type": "() => void"
+            "type": "() => void",
+            "hasDefault": false
           }
         },
         "hasRest": false
@@ -382,6 +386,7 @@
       "declared": {
         "props": {
           "modelValue": {
+            "hasDefault": false,
             "type": "string"
           },
           "open": {
@@ -450,7 +455,8 @@
         "props": {
           "size": {
             "required": false,
-            "type": "string"
+            "type": "string",
+            "hasDefault": false
           }
         },
         "hasRest": false
@@ -525,7 +531,8 @@
         "props": {
           "label": {
             "required": true,
-            "type": "string"
+            "type": "string",
+            "hasDefault": false
           }
         },
         "hasRest": false
@@ -625,7 +632,8 @@
         "props": {
           "title": {
             "required": true,
-            "type": "string"
+            "type": "string",
+            "hasDefault": false
           }
         },
         "hasRest": false

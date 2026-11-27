@@ -231,7 +231,25 @@ export type DeclaredProp = {
    *  `PropValueEntry.value`, so it stringifies identically to observed written
    *  values. Absent for no default or a non-literal default. */
   default?: string | number | boolean | null;
+  /** `true` for a default that isn't a literal, `false` for no default. Absent
+   *  when `default` holds a literal, or when the scan didn't read the default. */
+  hasDefault?: boolean;
+  /** The identifier or dotted path a non-literal default names, such as
+   *  `defaultIcon` or `theme.size`. Only with `hasDefault: true`. */
+  defaultRef?: string;
 };
+
+/** The declared prop fields that break the default contract, as field names. */
+function invalidDefaultFields(prop: DeclaredProp): (keyof DeclaredProp)[] {
+  const fields: (keyof DeclaredProp)[] = [];
+  const { hasDefault, defaultRef } = prop;
+  if (hasDefault !== undefined && typeof hasDefault !== "boolean") fields.push("hasDefault");
+  else if (hasDefault === false && prop.default !== undefined) fields.push("hasDefault");
+  if (defaultRef !== undefined && (hasDefault !== true || typeof defaultRef !== "string" || defaultRef === "")) {
+    fields.push("defaultRef");
+  }
+  return fields;
+}
 
 /**
  * Source-derived declared prop API for a local component. Absent on a
@@ -283,6 +301,11 @@ const componentSchema = z
     if (component.id !== componentKey(component.identity)) fail(ctx, ["id"]);
     if (component.attribution !== undefined && !onTag) fail(ctx, ["attribution"]);
     if (onTag ? component.framework !== undefined : component.framework === undefined) fail(ctx, ["framework"]);
+    const declaredProps = component.declared?.props;
+    for (const [name, prop] of Object.entries(isPlainObject(declaredProps) ? declaredProps : {})) {
+      if (!isPlainObject(prop)) continue;
+      for (const field of invalidDefaultFields(prop)) fail(ctx, ["declared", "props", name, field]);
+    }
   });
 export type Component = z.infer<typeof componentSchema>;
 

@@ -10,7 +10,7 @@ import type {
 } from "@oxc-project/types";
 import { walk } from "oxc-walker";
 import { positionAt } from "@scoutui/parser-react";
-import { readLiteralValue } from "./declared-props.js";
+import { readLiteralValue, readDefault, type DeclaredDefault } from "./declared-props.js";
 
 // ---------------------------------------------------------------------------
 // Public types (spike-exact: see spike/angular-lowering handoff)
@@ -26,7 +26,13 @@ export type AngularTemplateRef =
     }
   | { kind: "url"; /** the literal templateUrl as written */ url: string };
 
-export type AngularInput = { name: string; alias?: string; required: boolean };
+export type AngularInput = {
+  name: string;
+  alias?: string;
+  required: boolean;
+  /** What the input's initial value states about its default. Absent when Scout doesn't read it, as for a setter input. */
+  defaultState?: DeclaredDefault;
+};
 export type AngularOutput = { name: string; alias?: string };
 
 export type AngularComponentDecl = {
@@ -498,7 +504,7 @@ function readMembers(node: OxcClass): { inputs: AngularInput[]; outputs: Angular
 
     const inputDecorator = findDecoratorCall(memberDecorators(member), "Input");
     if (inputDecorator) {
-      inputs.push(angularInputFromDecorator(keyName, inputDecorator));
+      inputs.push(angularInputFromDecorator(keyName, inputDecorator, decoratedInputDefault(member)));
       continue;
     }
     const outputDecorator = findDecoratorCall(memberDecorators(member), "Output");
@@ -516,7 +522,13 @@ function readMembers(node: OxcClass): { inputs: AngularInput[]; outputs: Angular
         continue;
       }
       // "input" or "model"
-      inputs.push({ name: keyName, required: signal.required, ...(alias !== undefined ? { alias } : {}) });
+      const defaultState = signalInputDefault(member.value, signal.required);
+      inputs.push({
+        name: keyName,
+        required: signal.required,
+        ...(alias !== undefined ? { alias } : {}),
+        ...(defaultState ? { defaultState } : {}),
+      });
       if (signal.kind === "model") {
         // `model()` also produces an output named `<name>Change`.
         const changeAlias = alias !== undefined ? `${alias}Change` : undefined;
@@ -544,9 +556,27 @@ function memberKeyName(member: ClassElement): string | undefined {
   return typeof lit === "string" ? lit : undefined;
 }
 
-function angularInputFromDecorator(keyName: string, call: CallExpression): AngularInput {
+function angularInputFromDecorator(keyName: string, call: CallExpression, defaultState: DeclaredDefault | undefined): AngularInput {
   const { alias, required } = decoratorArgOptions(call);
-  return { name: keyName, required: required ?? false, ...(alias !== undefined ? { alias } : {}) };
+  return {
+    name: keyName,
+    required: required ?? false,
+    ...(alias !== undefined ? { alias } : {}),
+    ...(defaultState ? { defaultState } : {}),
+  };
+}
+
+/** A decorated input's default: a field's initialiser. A setter's isn't read. */
+function decoratedInputDefault(member: ClassElement): DeclaredDefault | undefined {
+  if (member.type !== "PropertyDefinition" && member.type !== "AccessorProperty") return undefined;
+  return readDefault(member.value);
+}
+
+/** A signal input's default: `input(x)` and `model(x)` take it as their first argument; a required one has none. */
+function signalInputDefault(call: CallExpression, required: boolean): DeclaredDefault | undefined {
+  if (required) return readDefault(undefined);
+  const initial = call.arguments[0];
+  return initial?.type === "SpreadElement" ? undefined : readDefault(initial);
 }
 
 function angularOutputFromDecorator(keyName: string, call: CallExpression): AngularOutput {

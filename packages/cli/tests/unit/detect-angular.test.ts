@@ -40,24 +40,28 @@ ${memberSrc}
 }
 
 describe("detectAngularComponents: inputs", () => {
-  const rows: { name: string; member: string; expected: { name: string; alias?: string; required: boolean } }[] = [
-    { name: "plain @Input()", member: `@Input() label = "";`, expected: { name: "label", required: false } },
+  const rows: { name: string; member: string; expected: AngularComponentDecl["inputs"][number] }[] = [
+    { name: "plain @Input()", member: `@Input() label = "";`, expected: { name: "label", required: false, defaultState: { default: "" } } },
     {
       name: "@Input('alias') string form",
       member: `@Input("aliasName") x = 1;`,
-      expected: { name: "x", alias: "aliasName", required: false },
+      expected: { name: "x", alias: "aliasName", required: false, defaultState: { default: 1 } },
     },
     {
       name: "@Input({required, alias}) object form",
       member: `@Input({ required: true, alias: "y" }) y = 1;`,
-      expected: { name: "y", alias: "y", required: true },
+      expected: { name: "y", alias: "y", required: true, defaultState: { default: 1 } },
     },
-    { name: "signal input()", member: `sig = input("");`, expected: { name: "sig", required: false } },
-    { name: "signal input.required()", member: "req = input.required<string>();", expected: { name: "req", required: true } },
+    { name: "signal input()", member: `sig = input("");`, expected: { name: "sig", required: false, defaultState: { default: "" } } },
+    {
+      name: "signal input.required()",
+      member: "req = input.required<string>();",
+      expected: { name: "req", required: true, defaultState: { hasDefault: false } },
+    },
     {
       name: "aliased signal input",
       member: `aliasedSig = input(0, { alias: "z" });`,
-      expected: { name: "aliasedSig", alias: "z", required: false },
+      expected: { name: "aliasedSig", alias: "z", required: false, defaultState: { default: 0 } },
     },
   ];
 
@@ -71,11 +75,11 @@ describe("detectAngularComponents: inputs", () => {
 
   it("model() produces an input and a `<name>Change` output", () => {
     const decl = detectMember("m = model(false);");
-    expect(decl.inputs).toEqual([{ name: "m", required: false }]);
+    expect(decl.inputs).toEqual([{ name: "m", required: false, defaultState: { default: false } }]);
     expect(decl.outputs).toEqual([{ name: "mChange" }]);
   });
 
-  it("@Input() on a setter", () => {
+  it("@Input() on a setter, whose default Scout doesn't read", () => {
     const decl = detectMember(`#v = "";
 @Input() set label(value: string) { this.#v = value; }
 get label(): string { return this.#v; }`);
@@ -84,12 +88,25 @@ get label(): string { return this.#v; }`);
 
   it("@Input({transform}) with no alias/required still yields a plain, non-required input", () => {
     const decl = detectMember(`@Input({ transform: (v: string) => v.trim() }) label = "";`);
-    expect(decl.inputs).toEqual([{ name: "label", required: false }]);
+    expect(decl.inputs).toEqual([{ name: "label", required: false, defaultState: { default: "" } }]);
   });
 
   it("input.required<T>({alias}) combines required with an alias", () => {
     const decl = detectMember(`req = input.required<string>({ alias: "label" });`);
-    expect(decl.inputs).toEqual([{ name: "req", alias: "label", required: true }]);
+    expect(decl.inputs).toEqual([{ name: "req", alias: "label", required: true, defaultState: { hasDefault: false } }]);
+  });
+
+  it.each([
+    ["an @Input() without a value", "@Input() size!: string;", { hasDefault: false }],
+    ["an @Input() set to a binding", "@Input() size = sizes.md;", { hasDefault: true, defaultRef: "sizes.md" }],
+    ["an @Input() set to a call", "@Input() items = makeItems();", { hasDefault: true }],
+    ["an @Input() set to undefined", "@Input() size = undefined;", { hasDefault: false }],
+    ["an input() without a value", "size = input<string>();", { hasDefault: false }],
+    ["an input() with a binding", "size = input(defaultSize);", { hasDefault: true, defaultRef: "defaultSize" }],
+    ["a model() without a value", "size = model<string>();", { hasDefault: false }],
+    ["a model.required()", "size = model.required<string>();", { hasDefault: false }],
+  ])("reads the default state of %s", (_case, member, defaultState) => {
+    expect(detectMember(member).inputs[0]?.defaultState).toEqual(defaultState);
   });
 
   // Negative: a plain class field with no decorator and no input()/output()/model() call is not an input.

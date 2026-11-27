@@ -17,7 +17,11 @@ import {
   typeLiteralToDeclared,
   objectRuntimeToDeclared,
   propOptionsToDeclared,
-  readLiteralValue,
+  readDefault,
+  withDefaultState,
+  statesDefault,
+  afterSpread,
+  staticKeyName,
 } from "./declared-props.js";
 
 // Mirrors @scoutui/parser-vue's VueParseWrapper, which its package root
@@ -243,7 +247,8 @@ type DefinePropsSite = {
   typeArg?: TSType;
   runtimeArg?: ObjectExpression;
   destructure?: ObjectPattern;
-  withDefaults?: ObjectExpression;
+  /** `withDefaults`' second argument, as written. */
+  withDefaults?: Expression;
 };
 
 function isDefinePropsCall(node: Node): boolean {
@@ -270,7 +275,7 @@ function siteFromInit(init: Node | null | undefined, id: Node | undefined): Defi
       return {
         ...typeAndRuntime(inner as Extract<Node, { type: "CallExpression" }>),
         ...(destructure ? { destructure } : {}),
-        ...(defaults && defaults.type === "ObjectExpression" ? { withDefaults: defaults } : {}),
+        ...(defaults && defaults.type !== "SpreadElement" ? { withDefaults: defaults } : {}),
       };
     }
     return null;
@@ -308,26 +313,39 @@ function siteToDeclared(site: DefinePropsSite, scriptSource: string): DeclaredPr
     if (!base) base = { props: {}, hasRest: false };
     base.hasRest = base.hasRest || d.hasRest;
     for (const [name, dp] of Object.entries(d.props)) {
-      base.props[name] = {
-        ...(base.props[name] ?? {}),
-        ...(dp.default !== undefined ? { default: dp.default } : {}),
-        ...(dp.required === false ? { required: false } : {}),
-      };
+      const declared = base.props[name];
+      if (!declared) base.props[name] = dp;
+      else if (dp.required === false) {
+        const optional = { ...declared, required: false };
+        base.props[name] = statesDefault(dp) ? withDefaultState(optional, dp) : optional;
+      }
     }
   }
-  if (site.withDefaults && base) {
-    for (const p of site.withDefaults.properties) {
-      if (p.type !== "Property" || p.key.type !== "Identifier") continue;
-      const lit = readLiteralValue(p.value as Expression);
-      base.props[p.key.name] = {
-        ...(base.props[p.key.name] ?? {}),
-        required: false,
-        ...(lit !== undefined ? { default: lit } : {}),
-      };
-    }
-  }
+  if (site.withDefaults && base) applyWithDefaults(base, site.withDefaults);
   if (!base || Object.keys(base.props).length === 0) return undefined;
   return base;
+}
+
+/** Applies `withDefaults`' second argument to `api`'s props, in source order.
+ *  A spread, a computed key or a value that isn't an object literal may set any
+ *  prop's default, so past one Scout reads only the entries written after it. */
+function applyWithDefaults(api: DeclaredPropApi, defaults: Expression): void {
+  const unreadAll = (): void => {
+    for (const [name, prop] of Object.entries(api.props)) api.props[name] = withDefaultState(prop, afterSpread(prop));
+  };
+  if (defaults.type !== "ObjectExpression") {
+    unreadAll();
+    return;
+  }
+  for (const p of defaults.properties) {
+    if (p.type !== "Property" || p.computed) {
+      unreadAll();
+      continue;
+    }
+    const name = staticKeyName(p);
+    if (name === undefined) continue;
+    api.props[name] = withDefaultState({ ...api.props[name], required: false }, readDefault(p.value));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -362,7 +380,8 @@ function modelToDeclared(call: CallNode, scriptSource: string): [string, Declare
   const [first, second] = call.arguments;
   const name = first?.type === "Literal" && typeof first.value === "string" ? first.value : undefined;
   const options = name === undefined ? first : second;
-  const decl: DeclaredProp = options?.type === "ObjectExpression" ? propOptionsToDeclared(options) : {};
+  const decl: DeclaredProp =
+    options === undefined ? { hasDefault: false } : options.type === "ObjectExpression" ? propOptionsToDeclared(options) : {};
   const typeArg = call.typeArguments?.params[0];
   if (typeArg) decl.type = scriptSource.slice(typeArg.start, typeArg.end);
   if (decl.default !== undefined && decl.required === undefined) decl.required = false;
