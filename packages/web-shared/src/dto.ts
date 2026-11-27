@@ -298,13 +298,17 @@ export type MigrationStatus = z.infer<typeof MigrationStatusSchema>;
 export const PackageCountsSchema = z.object({ occurrenceCount: z.number().int().nonnegative(), fileCount: z.number().int().nonnegative() });
 export type PackageCounts = z.infer<typeof PackageCountsSchema>;
 
-// A component's declared-prop counts, the same two the detail head's `summary.apiUsage`
-// carries (see `deriveApiUsageCounts`). Absent on a row whose component has no
-// readable declared API, never zeroed: "no declared API" and "a declared API with
-// nothing unused" read differently in the list.
+// A component's declared-prop counts, the same ones the detail head's `summary.apiUsage`
+// carries (see `deriveApiUsageCounts` and `deriveDeclaredVerdicts`). Absent on a row whose
+// component has no readable declared API, never zeroed: "no declared API" and "a declared
+// API with nothing unused" read differently in the list.
 export const ComponentApiUsageSchema = z.object({
   declaredCount: z.number().int().nonnegative(),
   neverUsedCount: z.number().int().nonnegative(),
+  /** Declared props with the verdict `unused`; absent for a component with no uses, and on rows projected before verdicts existed. */
+  unusedCount: z.number().int().nonnegative().optional(),
+  /** Declared props with the verdict `possibly-unused`; absent where `unusedCount` is. */
+  possiblyUnusedCount: z.number().int().nonnegative().optional(),
 });
 export type ComponentApiUsage = z.infer<typeof ComponentApiUsageSchema>;
 
@@ -441,7 +445,12 @@ export type ReferenceSource = z.infer<typeof ReferenceSourceSchema>;
 export const DeclaredMetaSchema = z.object({
   type: z.string().nullable(),
   required: z.boolean().nullable(),
+  /** The literal default, as text. */
   default: z.string().nullable(),
+  /** Whether the prop declares a default, literal or not; null when the scan didn't read it. Absent on rows projected before it existed. */
+  hasDefault: z.boolean().nullable().optional(),
+  /** The variable or dotted path a non-literal default names, such as `defaultIcon`. */
+  defaultRef: z.string().nullable().optional(),
 });
 export type DeclaredMeta = z.infer<typeof DeclaredMetaSchema>;
 
@@ -454,6 +463,10 @@ export const PropUsageSchema = z.object({
   truncatedWrittenCount: z.number().int().nonnegative().default(0),
   status: z.enum(["used", "unused", "undeclared"]).nullable(),
   declared: DeclaredMetaSchema.nullable(),
+  /** A declared prop no use passes: `unused` when every use is fully seen and it declares no default, `possibly-unused` when a use or a default Scout can't read may supply it. Absent otherwise. */
+  verdict: z.enum(["unused", "possibly-unused"]).optional(),
+  /** For a prop with a known default, the fully seen uses that leave it out and so get the default. */
+  defaultCount: z.number().int().nonnegative().optional(),
 });
 export type PropUsage = z.infer<typeof PropUsageSchema>;
 
@@ -503,12 +516,16 @@ export const ComponentSummaryBandSchema = z.object({
     fileCount: z.number().int().nonnegative(),
     rendersCount: z.number().int().nonnegative(),
     renderedByCount: z.number().int().nonnegative(),
+    /** Uses with props Scout can't all see: a spread, or a call or wrapper the component is handed to. Absent on rows projected before it existed. */
+    unseenCount: z.number().int().nonnegative().optional(),
   }),
   apiUsage: z.object({
     declaredCount: z.number().int().nonnegative(),
     usedCount: z.number().int().nonnegative(),
     neverUsedCount: z.number().int().nonnegative(),
     undeclaredCount: z.number().int().nonnegative(),
+    unusedCount: z.number().int().nonnegative().optional(),
+    possiblyUnusedCount: z.number().int().nonnegative().optional(),
   }),
   provenance: z.object({
     written: z.number().int().nonnegative(),
@@ -543,6 +560,8 @@ export const ComponentDetailSchema = z.object({
       column: z.number().int().nonnegative(),
     })
     .nullable(),
+  /** The package component in the same scan with this declaration's package and export name, whose uses may pass its props. */
+  packageComponentId: z.string().optional(),
   props: z.array(PropUsageSchema),
   events: z.array(EventUsageSchema).default([]),
   composition: z.object({

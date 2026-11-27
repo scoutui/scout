@@ -13,4 +13,5 @@ export * from "./governance.js";
 export * from "./governance-integrity.js";
 export * from "./usage.js";
 export * from "./usage-view.js";
+export * from "./use-visibility.js";
 export * from "./scan-diff.js";

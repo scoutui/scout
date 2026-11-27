@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { PropValueState, ResolvedOccurrence } from "@scoutui/scan-format";
-import type { OccurrencePropChip, OccurrenceRow, PropUsage } from "../src/dto.js";
+import type { ComponentDetailHead, OccurrencePropChip, OccurrenceRow, PropUsage } from "../src/dto.js";
 import { deriveOccurrenceRow } from "../src/read-models.js";
-import { callJsx, cellTitle, copyListText, countText, DEFAULT_USAGE_SORT, emptyText, filterText, nextUsageSort, oneFolderText, pickGroups, propSections, togglePick, topProps, usageDue, usageIndex, usageView, valueColumns, valueLabel, valueSpeech, whereHeading, type CopyListInput, type UsageDue, type UsageFilters, type UsageInput, type UsagePick, type UsageSortKey, type UsageView } from "../src/usage-view.js";
+import { callJsx, cellTitle, copyListText, countText, declaredVerdicts, DEFAULT_USAGE_SORT, emptyText, filterText, nextUsageSort, oneFolderText, pickGroups, propSections, togglePick, topProps, usageDue, usageIndex, usageView, valueColumns, valueLabel, valueSpeech, whereHeading, type CopyListInput, type UsageDue, type UsageFilters, type UsageInput, type UsagePick, type UsageSortKey, type UsageView } from "../src/usage-view.js";
 
 const lit = (name: string, value: string): OccurrencePropChip => ({ kind: "literal", name, value });
 const ref = (name: string, target: string): OccurrencePropChip => ({ kind: "reference", name, ref: target });
@@ -93,15 +93,8 @@ describe("topProps", () => {
       prop("variant", { omittedCount: 2 }), prop("size", { omittedCount: 5 }), prop("tone", { omittedCount: 5 }), prop("label", { omittedCount: 8 }),
       prop("className"), prop("onClick"), prop("data-state"), prop("...rest"), prop("hidden", { status: "unused" }),
     ];
-    const { top, unused } = topProps({ props, events: [{ name: "onClick", boundCount: 10 }], hasDeclaredApi: false }, 10);
+    const { top } = topProps({ props, events: [{ name: "onClick", boundCount: 10 }], hasDeclaredApi: false }, 10);
     expect(top.map(p => [p.name, p.set])).toEqual([["variant", 8], ["size", 5], ["tone", 5]]);
-    expect(unused).toBeNull();
-    expect(topProps({ props: props.map(p => ({ ...p, status: p.status ?? "used" })), events: [], hasDeclaredApi: true }, 10).unused).toEqual(["hidden"]);
-  });
-
-  it("names the never-passed declared props by name", () => {
-    const props = [prop("tone", { status: "unused" }), prop("align", { status: "unused" }), prop("size", { status: "used" })];
-    expect(topProps({ props, events: [], hasDeclaredApi: true }, 4).unused).toEqual(["align", "tone"]);
   });
 
   it("counts written values that read the same once, and variables with expressions as one {…}, keeping the three most used", () => {
@@ -115,6 +108,57 @@ describe("topProps", () => {
       { kind: "dynamic", label: "", count: 5 },
       { kind: "value", label: "red", count: 4 },
     ]);
+  });
+
+  const declared = (extra: Partial<NonNullable<PropUsage["declared"]>>): PropUsage["declared"] => ({ type: null, required: null, default: null, hasDefault: null, defaultRef: null, ...extra });
+
+  it("adds the uses that leave a prop out to its literal default's value, marked as the default", () => {
+    const size = prop("size", { status: "used", written: [{ value: "sm", count: 7 }, { value: "md", count: 5 }], omittedCount: 23, defaultCount: 23, declared: declared({ default: "md", hasDefault: true }) });
+    expect(topProps({ props: [size], events: [], hasDeclaredApi: true }, 35).top[0]?.values).toEqual([
+      { kind: "value", label: "md", count: 28, isDefault: true },
+      { kind: "value", label: "sm", count: 7 },
+    ]);
+  });
+
+  it("gives a non-literal default its own value, counting only the uses that leave the prop out", () => {
+    const icon = prop("icon", { status: "used", references: [{ ref: "defaultIcon", count: 2 }], omittedCount: 6, defaultCount: 6, declared: declared({ hasDefault: true, defaultRef: "defaultIcon" }) });
+    expect(topProps({ props: [icon], events: [], hasDeclaredApi: true }, 8).top[0]?.values).toEqual([
+      { kind: "default", label: "defaultIcon", count: 6 },
+      { kind: "dynamic", label: "", count: 2 },
+    ]);
+  });
+
+  it("adds no default value for a prop without a known default", () => {
+    const tone = prop("tone", { status: "used", written: [{ value: "red", count: 2 }], omittedCount: 3, declared: declared({ hasDefault: false }) });
+    expect(topProps({ props: [tone], events: [], hasDeclaredApi: true }, 5).top[0]?.values).toEqual([{ kind: "value", label: "red", count: 2 }]);
+  });
+});
+
+describe("declaredVerdicts", () => {
+  const summary = (apiUsage: Partial<ComponentDetailHead["summary"]["apiUsage"]>) => ({
+    footprint: { callCount: 4, fileCount: 1, rendersCount: 0, renderedByCount: 0 },
+    apiUsage: { declaredCount: 3, usedCount: 1, neverUsedCount: 2, undeclaredCount: 0, ...apiUsage },
+    provenance: { written: 0, reference: 0, dynamic: 0 },
+  });
+  const props = [prop("tone", { status: "unused", verdict: "unused" }), prop("align", { status: "unused", verdict: "possibly-unused" }), prop("label", { status: "unused", verdict: "unused" }), prop("size", { status: "used" })];
+
+  it("names the declared props of each verdict, by name", () => {
+    expect(declaredVerdicts({ props, hasDeclaredApi: true, events: [], summary: summary({ unusedCount: 2, possiblyUnusedCount: 1 }) })).toEqual({ declaredCount: 4, unused: ["label", "tone"], possiblyUnused: ["align"] });
+  });
+
+  it("is null without declared props, and for a head projected before verdicts", () => {
+    expect(declaredVerdicts({ props, hasDeclaredApi: false, events: [], summary: summary({ unusedCount: 2, possiblyUnusedCount: 1 }) })).toBeNull();
+    expect(declaredVerdicts({ props, hasDeclaredApi: true, events: [], summary: summary({}) })).toBeNull();
+  });
+
+  it("counts only the declared props Top props would list, leaving out styling props", () => {
+    const withStyling = [...props, prop("className", { status: "unused", declared: { type: null, required: null, default: null } })];
+    expect(declaredVerdicts({ props: withStyling, hasDeclaredApi: true, events: [], summary: summary({ declaredCount: 5, unusedCount: 2, possiblyUnusedCount: 1 }) })?.declaredCount).toBe(4);
+  });
+
+  it("names none for a component with no uses", () => {
+    const none = { ...summary({}), footprint: { callCount: 0, fileCount: 0, rendersCount: 0, renderedByCount: 0 } };
+    expect(declaredVerdicts({ props, hasDeclaredApi: true, events: [], summary: none })).toEqual({ declaredCount: 4, unused: [], possiblyUnused: [] });
   });
 });
 

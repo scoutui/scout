@@ -1,0 +1,5 @@
+---
+"@scoutui/web-app": minor
+---
+
+The details panel's **Unused props** list is now **Declared props**, with two rows. **Unused** lists the declared props that no use passes and that declare no default. **Possibly unused** lists the ones that something Scout can't read may pass or give a default: a use that spreads props, passes the component to a function or wraps it, or a default the scan didn't read. A prop with a default that no use passes isn't listed, and a component with no uses shows **No uses**. Like **Top props**, the section leaves out styling props such as `className`, test IDs and attributes such as `data-*`. **Has unused props** and its count now include only unused props. Its badge reads, for example, `2 unused · 3 possibly unused`. **Top props** counts the uses that leave a prop out on the prop's default, for example `md default 28`, and no longer shows a count column. Scans from a CLI that doesn't say whether a prop has a default show those props as possibly unused until the repo upgrades the CLI. The dashboard rebuilds every stored scan's data after the upgrade.

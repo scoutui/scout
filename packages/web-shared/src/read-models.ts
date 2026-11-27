@@ -1,18 +1,19 @@
-import { canonicalValueSet, displayNameOf, type Component, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
+import { canonicalValueSet, displayNameOf, type Component, type DeclaredProp, type ResolvedOccurrence, type ScanArtifact } from "@scoutui/scan-format";
 import type { ComponentApiUsage, ComponentDetailHead, ComponentSummaryBand, CompositionEdge, DeclaredMeta, EventUsage, OccurrencePropChip, OccurrenceRow, PackageCounts, PropUsage, ReferenceSource, ScanFinding, WrittenValue } from "./dto.js";
 import { type ComponentDigest, toComponentDigest } from "./digest.js";
 import type { CompositionGraphEdge, CompositionGraphNode } from "./composition-graph.js";
 import { shownWrittenName } from "./display-name.js";
 import { disambiguatorOf, governanceIdentity, presentIdentity, type GovernanceIdentity } from "./present-identity.js";
 import { deriveScanFindings } from "./scan-findings.js";
-import { createComponentProjectionContext, displayNameCollisionKey, type ComponentProjectionContext, type OccurrenceStatistics, type ProjectionContext } from "./projection-context.js";
+import { propGroup } from "./prop-group.js";
+import { createProjectionContext, displayNameCollisionKey, packageExportKey, type ComponentProjectionContext, type OccurrenceStatistics, type ProjectionContext } from "./projection-context.js";
 import { usedComponentKey, isUsed } from "./usage.js";
 
 // A stored-format change increments READ_MODEL_FORMAT_VERSION and PROJECTION_VERSION together.
 // PROJECTION_VERSION alone, bumped for an additive change (a new optional field
 // a reader can treat as absent), reprojects every scan without making its
 // current rows unreadable in the meantime.
-export const PROJECTION_VERSION: number = 11;
+export const PROJECTION_VERSION: number = 12;
 export const READ_MODEL_FORMAT_VERSION: number = 6;
 
 export type ImmutableDetailHead = Omit<ComponentDetailHead, "claimedBy" | "deprecated" | "migrationStatus" | "governedByRecordId">;
@@ -61,7 +62,7 @@ export type ReadModelRow = RepoViewRow | ComponentFactRow | PackageContributionR
  * (not merely unwritten — absent as a key). `hasRest`/an index signature doesn't change either
  * count: a rest param only says the component can take undeclared props, not that its declared
  * ones were used. Shared by `deriveComponentFact` and `deriveComponentDetailHead`'s
- * `summary.apiUsage`, so a component's two read models can't drift on what counts as unused.
+ * `summary.apiUsage`, so a component's two read models can't drift on what counts as never passed.
  * Null when the component has no declared API (readable only for repository declarations).
  */
 export function deriveApiUsageCounts(component: Component): ComponentApiUsage & { usedCount: number; undeclaredCount: number } | null {
@@ -77,11 +78,72 @@ export function deriveApiUsageCounts(component: Component): ComponentApiUsage & 
   return { declaredCount: declaredKeys.size, usedCount, neverUsedCount: declaredKeys.size - usedCount, undeclaredCount };
 }
 
+/** Whether a declared prop has a default, literal or not; null when the scan didn't read it. */
+function hasDefaultOf(prop: DeclaredProp): boolean | null {
+  if (prop.default !== undefined) return true;
+  return prop.hasDefault ?? null;
+}
+
+export type DeclaredPropVerdict = NonNullable<PropUsage["verdict"]>;
+
+/** What a component's uses say about its declared props, beyond whether each is named. */
+export type DeclaredVerdicts = {
+  /** The verdict of each declared prop no use names. Empty for a component with no uses. */
+  verdicts: Map<string, DeclaredPropVerdict>;
+  /** How many props have each verdict; absent for a component with no uses. */
+  counts: { unusedCount: number; possiblyUnusedCount: number } | undefined;
+  /** For each declared prop with a known default, the fully seen uses that leave it out. */
+  defaultCounts: Map<string, number>;
+  /** Uses with props Scout can't all see: `unseenBy` isn't null. */
+  unseenCount: number;
+  /** The package component with the declaration's package and export name: uses of it may pass the props too. */
+  packageComponentId: string | null;
+};
+
+/**
+ * The verdict of each declared prop no use names, among the props `propGroup` lists as the component's own: styling
+ * props, test ids and attributes get none. It's `unused` only when every use is fully seen, no package
+ * component in the scan shares the declaration's package and export name, and the prop declares no default. A prop
+ * with a default gets no verdict: uses that leave it out get the default. Anything Scout can't read, such as a spread
+ * or a default it didn't read, makes it `possibly-unused`. Null when the component has no declared API.
+ */
+export function deriveDeclaredVerdicts(context: ComponentProjectionContext, component: Component, stats: OccurrenceStatistics | undefined): DeclaredVerdicts | null {
+  const declared = component.declared;
+  if (declared === undefined) return null;
+  const uses = stats?.count ?? 0;
+  const unseen = stats?.unseen ?? 0;
+  const seen = uses - unseen;
+  const { identity } = component;
+  const packageComponentId =
+    identity.kind === "repository-declaration" && component.owningPackage !== undefined
+      ? (context.packageExports.get(packageExportKey(component.owningPackage, identity.exportName)) ?? null)
+      : null;
+  const othersMayPass = unseen > 0 || packageComponentId !== null;
+  const events = new Set(Object.keys(component.events ?? {}));
+  const verdicts = new Map<string, DeclaredPropVerdict>();
+  const defaultCounts = new Map<string, number>();
+  for (const [name, prop] of Object.entries(declared.props)) {
+    const hasDefault = hasDefaultOf(prop);
+    if (hasDefault === true) defaultCounts.set(name, seen - (stats?.seenNamed.get(name) ?? 0));
+    if (uses === 0 || name in component.props || hasDefault === true || propGroup(name, true, events, true) !== "prop") continue;
+    verdicts.set(name, othersMayPass || hasDefault === null ? "possibly-unused" : "unused");
+  }
+  const tally = (verdict: DeclaredPropVerdict) => [...verdicts.values()].filter((v) => v === verdict).length;
+  return {
+    verdicts,
+    counts: uses === 0 ? undefined : { unusedCount: tally("unused"), possiblyUnusedCount: tally("possibly-unused") },
+    defaultCounts,
+    unseenCount: unseen,
+    packageComponentId,
+  };
+}
+
 function deriveComponentFact(context: ComponentProjectionContext, component: Component, stats?: OccurrenceStatistics): ComponentFact {
   const presented = presentIdentity(component);
   const displayName = context.names.get(component.id) ?? displayNameOf(component);
   const collides = (context.collisions.get(displayNameCollisionKey(presented.packageName, displayName)) ?? 0) > 1;
   const apiUsage = deriveApiUsageCounts(component);
+  const verdictCounts = deriveDeclaredVerdicts(context, component, stats)?.counts;
   return {
     id: component.id,
     identity: component.identity,
@@ -100,7 +162,7 @@ function deriveComponentFact(context: ComponentProjectionContext, component: Com
     ...(stats?.byPackage.size
       ? { usedIn: Object.fromEntries([...stats.byPackage].map(([name, inPackage]) => [name, { occurrenceCount: inPackage.count, fileCount: inPackage.files.size }])) }
       : {}),
-    ...(apiUsage ? { apiUsage: { declaredCount: apiUsage.declaredCount, neverUsedCount: apiUsage.neverUsedCount } } : {}),
+    ...(apiUsage ? { apiUsage: { declaredCount: apiUsage.declaredCount, neverUsedCount: apiUsage.neverUsedCount, ...verdictCounts } } : {}),
   };
 }
 
@@ -108,8 +170,8 @@ function deriveRepoView(artifact: ScanArtifact): RepoViewRow {
   return { kind: "repo", scanId: artifact.meta.scanId, ordinal: 0, meta: artifact.meta, findings: deriveScanFindings(artifact) };
 }
 
-export function deriveFactScan(artifact: ScanArtifact, context = createComponentProjectionContext(artifact)): { meta: ScanArtifact["meta"]; components: ComponentFact[] } {
-  return { meta: artifact.meta, components: artifact.components.map(component => deriveComponentFact(context, component)) };
+export function deriveFactScan(artifact: ScanArtifact, context = createProjectionContext(artifact)): { meta: ScanArtifact["meta"]; components: ComponentFact[] } {
+  return { meta: artifact.meta, components: artifact.components.map(component => deriveComponentFact(context, component, context.occurrenceStatistics.get(component.id))) };
 }
 
 /**
@@ -198,7 +260,17 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
       type: d.type ?? null,
       required: d.required ?? null,
       default: d.default === undefined ? null : String(d.default),
+      hasDefault: hasDefaultOf(d),
+      defaultRef: d.defaultRef ?? null,
     };
+  };
+  const statistics = context.occurrenceStatistics.get(componentId);
+  const findings = deriveDeclaredVerdicts(context, component, statistics);
+  /** A prop's verdict and the uses that get its default, where it has them. */
+  const verdictFieldsFor = (name: string): Pick<PropUsage, "verdict" | "defaultCount"> => {
+    const verdict = findings?.verdicts.get(name);
+    const defaultCount = findings?.defaultCounts.get(name);
+    return { ...(verdict ? { verdict } : {}), ...(defaultCount !== undefined ? { defaultCount } : {}) };
   };
 
   const props: PropUsage[] = Object.entries(component.props).map(([name, dist]) => {
@@ -223,6 +295,7 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
       truncatedWrittenCount: dist.truncated ?? 0,
       status: !hasDeclaredApi ? null : declaredKeys.has(name) ? "used" : "undeclared",
       declared: declaredMetaFor(name),
+      ...verdictFieldsFor(name),
     };
   });
 
@@ -235,6 +308,7 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
         omittedCount: 0, truncatedWrittenCount: 0,
         status: "unused",
         declared: declaredMetaFor(name),
+        ...verdictFieldsFor(name),
       });
     }
   }
@@ -264,15 +338,15 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
         }
       : null;
 
-  const statistics = context.occurrenceStatistics.get(componentId);
   const summary: ComponentSummaryBand = {
     footprint: {
       callCount: statistics?.count ?? 0,
       fileCount: statistics?.files.size ?? 0,
       rendersCount: Object.keys(rendersByCount).length,
       renderedByCount: Object.keys(renderedByCount).length,
+      unseenCount: statistics?.unseen ?? 0,
     },
-    apiUsage: deriveApiUsageCounts(component) ?? { declaredCount: 0, usedCount: 0, neverUsedCount: 0, undeclaredCount: 0 },
+    apiUsage: { ...(deriveApiUsageCounts(component) ?? { declaredCount: 0, usedCount: 0, neverUsedCount: 0, undeclaredCount: 0 }), ...findings?.counts },
     provenance: props.reduce(
       (acc, p) => ({
         written: acc.written + p.written.reduce((s, w) => s + w.count, 0),
@@ -295,6 +369,7 @@ export function deriveComponentDetailHead(context: ProjectionContext, componentI
     hasDeclaredApi,
     hasRest,
     definedAt,
+    ...(findings?.packageComponentId ? { packageComponentId: findings.packageComponentId } : {}),
     props,
     events,
     composition: {

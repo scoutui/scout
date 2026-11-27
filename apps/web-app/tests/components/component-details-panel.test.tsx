@@ -11,7 +11,7 @@ const row: ComponentRow = {
   componentId: "c1", kind: "react-component", scope: "external", packageName: "@example/ui",
   displayName: "Button", disambiguator: null, version: "1.0.0", occurrenceCount: 40, fileCount: 12, deprecated: false,
 };
-const facts: ComponentPanelFacts = { source: null, props: { kept: true, uses: 40, top: [], unused: null }, history: [] };
+const facts: ComponentPanelFacts = { source: null, props: { kept: true, uses: 40, top: [], declared: null }, history: [] };
 const variant = { name: "variant", set: 30, values: [{ kind: "value" as const, label: "primary", count: 20 }, { kind: "dynamic" as const, label: "", count: 10 }] };
 
 function panel(over: Partial<ComponentProps<typeof ComponentDetailsPanel>> = {}, given: Partial<ComponentPanelFacts> = {}) {
@@ -71,14 +71,14 @@ describe("ComponentDetailsPanel", () => {
     ["a retired component with a three-sentence reason", {
       row: { ...row, deprecated: true, migration: { status: { status: "retired", reason: "Use Tag instead. Badge duplicated Tag. Migrate before Q3." }, recordId: null } },
     }, {}, () => expect(screen.getByText("Retired: Use Tag instead. Badge duplicated Tag. Migrate before Q3.")).toBeInTheDocument()],
-    ["a component from outside the repo", {}, { props: { kept: true, uses: 40, top: [variant], unused: null } }, () => {
+    ["a component from outside the repo", {}, { props: { kept: true, uses: 40, top: [variant], declared: null } }, () => {
       expect(screen.queryByRole("link", { name: /source/ })).toBeNull();
       expect(screen.queryByText(/never set/)).toBeNull();
     }],
     ["a component defined in the repo", { source: { remote: { host: "github.com", href: "https://github.com/example/app" } as never, commit: "abc123" } }, { source: { filePath: "src/Button.tsx", line: 12 } }, () => {
       expect(screen.getByRole("link", { name: "View Button source" })).toHaveAttribute("href", "https://github.com/example/app/blob/abc123/src/Button.tsx#L12");
     }],
-    ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], unused: null }, history: [{ t: "2026-11-13T00:00:00.000Z", value: 40 }] }, () => {
+    ["a component new in this scan, on the sheet", { mode: "sheet", mark: { kind: "added" }, showChange: true, row: { ...row, usedIn: { "@example/web": counts(30), "@example/admin": counts(10) } } }, { props: { kept: true, uses: 40, top: [variant], declared: null }, history: [{ t: "2026-11-13T00:00:00.000Z", value: 40 }] }, () => {
       expect(screen.getByRole("heading", { name: "Uses · 3 months" })).toBeInTheDocument();
       expect(paragraph("40 uses in this scan")).toBeInTheDocument();
       expectOneDotAtTheEnd("Uses of Button: 40 on 13 Nov.", "13 Nov");
@@ -94,24 +94,32 @@ describe("ComponentDetailsPanel", () => {
       expect(screen.getByRole("link", { name: "@example/web" })).toHaveAttribute("href", "/repos/r1/components/c1?area=@example/web");
       expect(screen.queryByRole("link", { name: "@example/lab" })).toBeNull();
     }],
-    ["a component with twelve declared props never passed, six named and the rest counted", {}, { props: { kept: true, uses: 40, top: [variant], unused: names(12) } }, () => {
-      const section = screen.getByRole("region", { name: "Unused props · 12" });
-      expect(within(section).getAllByRole("listitem").map(li => li.textContent)).toEqual(["prop01", "prop02", "prop03", "prop04", "prop05", "prop06", "and 6 more"]);
-      expect(within(section).getByText("Declared, but no use passes them.")).toBeInTheDocument();
+    ["a component with twelve unused props, six named and a button for the rest", {}, { props: { kept: true, uses: 40, top: [variant], declared: { declaredCount: 14, unused: names(12), possiblyUnused: [] } } }, () => {
+      const section = screen.getByRole("region", { name: "Declared props · 14" });
+      expect(within(section).getAllByRole("listitem").map(li => li.textContent)).toEqual(["prop01", "prop02", "prop03", "prop04", "prop05", "prop06", "Show 6 more"]);
+      expect(within(section).queryByRole("list", { name: "Possibly unused" })).toBeNull();
       expect(within(section).queryByRole("link")).toBeNull();
       expect(screen.getByRole("heading", { name: "Top props" })).toBeInTheDocument();
     }],
-    ["a component with seven declared props never passed, all named rather than hide one", {}, { props: { kept: true, uses: 40, top: [], unused: names(7) } }, () => {
-      const section = screen.getByRole("region", { name: "Unused props · 7" });
-      expect(within(section).getAllByRole("listitem")).toHaveLength(7);
+    ["a component with seven unused props, all named rather than hide one", {}, { props: { kept: true, uses: 40, top: [], declared: { declaredCount: 7, unused: names(7), possiblyUnused: [] } } }, () => {
+      expect(within(screen.getByRole("list", { name: "Unused" })).getAllByRole("listitem")).toHaveLength(7);
       expect(screen.queryByRole("heading", { name: "Top props" })).toBeNull();
     }],
-    ["a component with no uses, listing every declared prop as unused", {}, { props: { kept: true, uses: 0, top: [], unused: ["label"] } }, () => {
-      expect(within(screen.getByRole("region", { name: "Unused props · 1" })).getByText("label")).toBeInTheDocument();
-      expect(screen.getByText("Declared, but no use passes it.")).toBeInTheDocument();
+    ["a component with unused and possibly unused props, in a row each", {}, { props: { kept: true, uses: 40, top: [variant], declared: { declaredCount: 12, unused: ["iconOnly", "loading"], possiblyUnused: ["label", "width"] } } }, () => {
+      expect(within(screen.getByRole("list", { name: "Unused" })).getAllByRole("listitem").map(li => li.textContent)).toEqual(["iconOnly", "loading"]);
+      expect(within(screen.getByRole("list", { name: "Possibly unused" })).getAllByRole("listitem").map(li => li.textContent)).toEqual(["label", "width"]);
+      expect(screen.queryByText(/no use passes/)).toBeNull();
     }],
-    ["a component whose declared props are all passed", {}, { props: { kept: true, uses: 40, top: [variant], unused: [] } }, () => {
-      expect(screen.queryByRole("heading", { name: /Unused props/ })).toBeNull();
+    ["a component with only possibly unused props, without an empty Unused row", {}, { props: { kept: true, uses: 40, top: [], declared: { declaredCount: 3, unused: [], possiblyUnused: ["label"] } } }, () => {
+      expect(screen.getByRole("list", { name: "Possibly unused" })).toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Unused" })).toBeNull();
+    }],
+    ["a component with no uses, saying so in place of verdicts", {}, { props: { kept: true, uses: 0, top: [], declared: { declaredCount: 4, unused: [], possiblyUnused: [] } } }, () => {
+      expect(within(screen.getByRole("region", { name: "Declared props · 4" })).getByText("No uses")).toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Unused" })).toBeNull();
+    }],
+    ["a component whose declared props are all passed or defaulted", {}, { props: { kept: true, uses: 40, top: [variant], declared: { declaredCount: 3, unused: [], possiblyUnused: [] } } }, () => {
+      expect(screen.queryByRole("heading", { name: /Declared props/ })).toBeNull();
     }],
     ["an older scan, whose prop values aren't kept, with a note in place of the props", {}, { props: { kept: false } }, () => {
       expect(screen.queryByRole("heading", { name: "Top props" })).toBeNull();
@@ -145,8 +153,49 @@ describe("ComponentDetailsPanel", () => {
     expect(breaks(screen.getByText((_, el) => el?.textContent === "src/components/data-table.tsx"))).toBe("src/|components/|data-table.tsx");
   });
 
+  it("shows a verdict row's hidden props on request, and hides them again", () => {
+    panel({}, { props: { kept: true, uses: 40, top: [], declared: { declaredCount: 14, unused: names(12), possiblyUnused: [] } } });
+    const more = screen.getByRole("button", { name: "Show 6 more" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(more);
+    expect(within(screen.getByRole("list", { name: "Unused" })).getAllByRole("listitem").map(li => li.textContent)).toEqual([...names(12), "Show fewer"]);
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(within(screen.getByRole("list", { name: "Unused" })).getAllByRole("listitem")).toHaveLength(7);
+  });
+
+  it("closes a verdict row's hidden props when the panel moves to another component", () => {
+    const declared = { declaredCount: 14, unused: names(12), possiblyUnused: [] };
+    const { rerender } = panel({}, { props: { kept: true, uses: 40, top: [], declared } });
+    fireEvent.click(screen.getByRole("button", { name: "Show 6 more" }));
+    rerender(
+      <ComponentDetailsPanel
+        repoId="r1" row={{ ...row, componentId: "c2" }} linked usedIn={null} mark={undefined} showChange={false}
+        facts={{ state: "ready", facts: { ...facts, props: { kept: true, uses: 40, top: [], declared } } }} previousUsesStory={false}
+        entry={null} olderScanAt={null} otherRepos={null} source={null} mode="column" onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Show 6 more" })).toBeInTheDocument();
+  });
+
+  it("lists Top props without a uses column, the bar's count only in the row's name", () => {
+    panel({}, { props: { kept: true, uses: 40, top: [variant], declared: null } });
+    const section = screen.getByRole("region", { name: "Top props" });
+    expect(within(section).getByRole("listitem", { name: "variant, set on 30 of 40 uses" })).toBeInTheDocument();
+    expect(within(section).queryByText("30")).toBeNull();
+    expect(within(section).queryByText("uses")).toBeNull();
+  });
+
+  it("marks a default as the default and doesn't link it, since usage doesn't list the uses that leave the prop out yet", () => {
+    const size = { name: "size", set: 12, values: [{ kind: "value" as const, label: "md", count: 28, isDefault: true as const }, { kind: "value" as const, label: "sm", count: 7 }] };
+    const icon = { name: "icon", set: 2, values: [{ kind: "default" as const, label: "defaultIcon", count: 6 }] };
+    panel({}, { props: { kept: true, uses: 40, top: [size, icon], declared: null } });
+    expect(screen.getByLabelText("size md, the default, 28 uses").tagName).toBe("SPAN");
+    expect(screen.getByLabelText("icon defaultIcon, the default, 6 uses")).toHaveTextContent("{defaultIcon}default6");
+    expect(screen.getByRole("link", { name: "size sm, 7 uses" })).toHaveAttribute("href", "/repos/r1/components/c1?sel=size~value~sm");
+  });
+
   it("links each prop value to usage filtered to it, reads {…} as an expression, and leaves the prop name plain", () => {
-    panel({}, { props: { kept: true, uses: 40, top: [variant], unused: null } });
+    panel({}, { props: { kept: true, uses: 40, top: [variant], declared: null } });
     expect(screen.getByRole("link", { name: "variant primary, 20 uses" })).toHaveAttribute("href", "/repos/r1/components/c1?sel=variant~value~primary");
     expect(screen.getByRole("link", { name: "variant expression, 10 uses" })).toHaveAttribute("href", "/repos/r1/components/c1?sel=variant~dynamic~");
     expect(screen.getByText("{…}")).toBeInTheDocument();

@@ -1,8 +1,9 @@
 import { isKind } from "@scoutui/scan-format";
-import type { ComponentDetail, DeclaredMeta, OccurrencePropChip, OccurrenceRow, PropUsage } from "./dto.js";
+import type { ComponentDetail, ComponentDetailHead, DeclaredMeta, OccurrencePropChip, OccurrenceRow, PropUsage } from "./dto.js";
+import { propGroup, type PropGroup } from "./prop-group.js";
 
 /** Which part of the Usage tab's column a prop is listed in. */
-export type UsageGroup = "prop" | "styling" | "event" | "attribute";
+export type UsageGroup = PropGroup;
 export type UsagePickKind = "value" | "dynamic" | "unset";
 /** One picked value of one prop: a written value (`label` is it), `{…}` or not set (`label` is ""). */
 export type UsagePick = { prop: string; kind: UsagePickKind; label: string };
@@ -120,18 +121,6 @@ export type UsageView = {
 /** At or below this many calls a component counts as having few calls, and while this many or fewer are in view, file rows start open. */
 const FEW = 5;
 
-const ATTRIBUTE = /^(data-|aria-)|^(key|ref)$/;
-/** HTML attributes listed under Attributes for every component, unless it declares a prop of that name. */
-const PASS_THROUGH = new Set(["id", "role", "tabIndex", "tabindex"]);
-/** HTML attributes listed under Attributes only for a component with declared props that doesn't declare one of that name. */
-const OTHER_HTML_ATTRIBUTE = new Set(["slot", "dir", "lang", "hidden", "title"]);
-/**
- * Test ids: names that start with the word `qa` or `e2e` (`qa`, `qaSelector`, `qa-id`, `e2eId`), or end in the words
- * `test` and `id` (`testId`, `testID`, `test-id`, `dataTestId`). `latestId`, `quantity` and `TestId` don't match.
- */
-const TEST_ID = /^(qa|e2e)(?![a-z])|(^|[-_])test[-_]?(id|Id|ID)$|[a-z]Test(Id|ID)$/;
-const STYLING = new Set(["className", "class", "style", "sx", "css"]);
-
 const MAX_COLUMNS = 3;
 /** A value at least this share of a prop's set calls use is common, and its column is sized to show it in full. */
 const VALUE_COMMON = 0.02;
@@ -148,14 +137,10 @@ const UNSET = { kind: "unset", label: "" } as const;
 
 const isSpread = (name: string) => name.startsWith("...");
 
+const isDeclared = (status: PropUsage["status"]) => status === "used" || status === "unused";
+
 function groupOf(name: string, status: PropUsage["status"], events: ReadonlySet<string>, hasDeclaredApi: boolean): UsageGroup {
-  const declared = status === "used" || status === "unused";
-  const html = PASS_THROUGH.has(name) || (hasDeclaredApi && OTHER_HTML_ATTRIBUTE.has(name));
-  if (ATTRIBUTE.test(name)) return "attribute";
-  if (events.has(name)) return "event";
-  if ((html && !declared) || TEST_ID.test(name)) return "attribute";
-  if (STYLING.has(name)) return "styling";
-  return "prop";
+  return propGroup(name, isDeclared(status), events, hasDeclaredApi);
 }
 
 /**
@@ -176,31 +161,41 @@ function propRows(input: UsageInput): UsagePropInfo[] {
   return rows.filter((r) => !isSpread(r.name)).sort((a, b) => setOf(b.name) - setOf(a.name) || a.name.localeCompare(b.name));
 }
 
-/** One of a prop's most used values across the scan: a written value, or `{…}` for its variables and expressions. */
-export type TopPropValue = { kind: "value" | "dynamic"; label: string; count: number };
+/**
+ * One of a prop's most used values across the scan: a written value, `{…}` for its variables and expressions, or a
+ * non-literal default (`default`, labelled with the variable it names, or "" for another expression). `isDefault`
+ * marks the written value that is the prop's literal default.
+ */
+export type TopPropValue = { kind: "value" | "dynamic" | "default"; label: string; count: number; isDefault?: true };
 export type TopProp = { name: string; set: number; values: TopPropValue[] };
 
 const TOP = 3;
+const KIND_ORDER: Record<TopPropValue["kind"], number> = { value: 0, default: 1, dynamic: 2 };
 
-/** A prop's values by calls, written values that read the same counted as one, then `{…}`; on a tie a written value comes first. */
+/**
+ * A prop's values by uses: written values that read the same counted as one, then `{…}`. Uses that leave out a prop
+ * with a known default get it: they count on a literal default's written value, or on a value of their own for a
+ * non-literal default. On a tie a written value comes first, then a default, then `{…}`.
+ */
 function topValues(p: PropUsage): TopPropValue[] {
   const written = new Map<string, number>();
   for (const w of p.written) written.set(w.value, (written.get(w.value) ?? 0) + w.count);
-  const values: TopPropValue[] = [...written].map(([label, count]) => ({ kind: "value", label, count }));
+  const literalDefault = p.declared?.default ?? null;
+  const left = p.defaultCount ?? 0;
+  if (literalDefault !== null && left > 0) written.set(literalDefault, (written.get(literalDefault) ?? 0) + left);
+  const values: TopPropValue[] = [...written].map(([label, count]) => ({ kind: "value", label, count, ...(label === literalDefault ? { isDefault: true as const } : {}) }));
+  if (literalDefault === null && p.declared?.hasDefault && left > 0) values.push({ kind: "default", label: p.declared.defaultRef ?? "", count: left });
   const dynamic = p.references.reduce((n, r) => n + r.count, 0) + p.dynamicCount;
   if (dynamic > 0) values.push({ kind: "dynamic", label: "", count: dynamic });
-  return values
-    .sort((a, b) => b.count - a.count || (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === "value" ? -1 : 1))
-    .slice(0, TOP);
+  return values.sort((a, b) => b.count - a.count || KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.label.localeCompare(b.label)).slice(0, TOP);
 }
 
 /**
  * The component's three most set props, from its scan-wide prop counts over `uses` calls: props only (no styling,
  * events, attributes or spreads), most set first, then by name, each with its three most used values. A prop is set on
- * the calls that don't leave it out. `unused` names the declared props no call passes, by name, and is null when the
- * scan knows no declared props.
+ * the calls that don't leave it out.
  */
-export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclaredApi">, uses: number): { top: TopProp[]; unused: string[] | null } {
+export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclaredApi">, uses: number): { top: TopProp[] } {
   const events = new Set(input.events.map((e) => e.name));
   const top = input.props
     .filter((p) => p.status !== "unused" && !isSpread(p.name) && groupOf(p.name, p.status, events, input.hasDeclaredApi) === "prop")
@@ -208,8 +203,33 @@ export function topProps(input: Pick<UsageInput, "props" | "events" | "hasDeclar
     .filter((p) => p.set > 0)
     .sort((a, b) => b.set - a.set || a.name.localeCompare(b.name))
     .slice(0, TOP);
-  const unused = input.hasDeclaredApi ? input.props.filter((p) => p.status === "unused").map((p) => p.name).sort((a, b) => a.localeCompare(b)) : null;
-  return { top, unused };
+  return { top };
+}
+
+/** How a top value reads: a non-literal default as `{defaultIcon}`, or `{…}` for another expression; others as `valueLabel`. */
+export function topValueLabel(value: Pick<TopPropValue, "kind" | "label">): string {
+  const { kind, label } = value;
+  if (kind === "default") return label ? `{${label}}` : "{…}";
+  return valueLabel({ kind, label });
+}
+
+/** The declared props no use passes, by verdict and name, out of `declaredCount`. */
+export type DeclaredVerdictLists = { declaredCount: number; unused: string[]; possiblyUnused: string[] };
+
+/**
+ * The declared props no use passes, by verdict, each list by name, out of the declared props Top props would list (no
+ * styling props, test ids or attributes). Empty lists for a component with no uses. Null for a component without
+ * declared props, and for a head projected before verdicts existed.
+ */
+export function declaredVerdicts(head: Pick<ComponentDetailHead, "props" | "events" | "hasDeclaredApi" | "summary">): DeclaredVerdictLists | null {
+  if (!head.hasDeclaredApi) return null;
+  const events = new Set(head.events.map((e) => e.name));
+  const declaredCount = head.props.filter((p) => isDeclared(p.status) && groupOf(p.name, p.status, events, true) === "prop").length;
+  const { unusedCount } = head.summary.apiUsage;
+  if (head.summary.footprint.callCount === 0) return { declaredCount, unused: [], possiblyUnused: [] };
+  if (unusedCount === undefined) return null;
+  const named = (verdict: PropUsage["verdict"]) => head.props.filter((p) => p.verdict === verdict).map((p) => p.name).sort((a, b) => a.localeCompare(b));
+  return { declaredCount, unused: named("unused"), possiblyUnused: named("possibly-unused") };
 }
 
 /** The leading directories every path shares. */

@@ -1,9 +1,9 @@
 "use client";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Code, X } from "lucide-react";
-import type { ComponentRow, DiffMark, GovernanceTracking, TopProp, TopPropValue } from "@scoutui/web-shared";
-import { friendlyKind, plural, valueLabel, valueSpeech } from "@scoutui/web-shared/client";
+import type { ComponentRow, DeclaredVerdictLists, DiffMark, GovernanceTracking, TopProp, TopPropValue } from "@scoutui/web-shared";
+import { friendlyKind, plural, topValueLabel, valueSpeech } from "@scoutui/web-shared/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -35,10 +35,14 @@ export type PanelFactsState = PanelFactsResult | { state: "loading"; previous: P
 export type PanelMode = "column" | "sheet";
 
 const TOP = 3;
-/** Unused props named before "and N more"; a list one longer shows in full rather than hide a single name. */
+/** Declared props named in a verdict row before "Show N more"; a list one longer shows in full rather than hide a single name. */
 const UNUSED_SHOWN = 6;
+/** A prop value or a declared prop's name: the one chip shape the panel uses. */
+const CHIP = "inline-flex min-h-6 min-w-0 max-w-full items-center rounded-md border bg-secondary px-1.5 font-mono text-xs";
 const LINK = "rounded-sm underline decoration-border underline-offset-3 hover:decoration-current";
 const ROW = "grid grid-cols-[minmax(0,1fr)_6rem_3.5rem] items-center gap-x-2.5 gap-y-1.5 text-sm";
+/** A Top props row: the name and its bar, with the values on the line below. */
+const PROP_ROW = "grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-x-2.5 gap-y-1.5 text-sm";
 /** The name row sticks to the top of its scroll container and covers the container's padding there. */
 const STICKY: Record<PanelMode, string> = { column: "-top-5 -mx-5 -mt-5 px-5 pt-5", sheet: "-top-3 -mx-4 -mt-3 px-4 pt-3" };
 
@@ -234,9 +238,9 @@ function ListHead({ id, title, more, uses = true }: { id: string; title: string;
 }
 
 /**
- * The three most set props with their most used values, each value linking to usage filtered to it, then the declared
- * props no use passes. While they load, the last ones shown, faded and unlinked, or with none, a skeleton once the read
- * is slow, its space held until then.
+ * The three most set props with their most used values, each value but a default linking to usage filtered to it, then
+ * the declared props no use passes, by verdict. While they load, the last ones shown, faded and unlinked, or with none,
+ * a skeleton once the read is slow, its space held until then.
  */
 function TopProps({ repoId, row, linked, facts }: { repoId: string; row: ComponentRow; linked: boolean; facts: PanelFactsState }) {
   if (facts.state === "error") return <p className="text-xs text-muted-foreground">Couldn't load some details.</p>;
@@ -268,26 +272,26 @@ function TopProps({ repoId, row, linked, facts }: { repoId: string; row: Compone
   }
   const { props } = facts.facts;
   if (!props.kept) return <p className="text-xs text-muted-foreground">Top props are kept for the latest scan only.</p>;
-  // A component with no uses still lists its declared props: none is passed, and the row's pill counts them.
-  if (props.top.length === 0 && !props.unused?.length) return null;
+  const declared = props.declared;
+  const showDeclared = declared !== null && (props.uses === 0 || declared.unused.length + declared.possiblyUnused.length > 0);
+  if (props.top.length === 0 && !showDeclared) return null;
   return (
     <>
       {props.top.length > 0 ? (
         <section aria-labelledby="details-props">
-          <ListHead id="details-props" title="Top props" />
+          <ListHead id="details-props" title="Top props" uses={false} />
           <ul className="space-y-3">
             {props.top.map((p) => (
-              <li key={p.name} className={ROW} aria-label={`${p.name}, set on ${p.set.toLocaleString()} of ${plural(props.uses, "use")}`}>
+              <li key={p.name} className={PROP_ROW} aria-label={`${p.name}, set on ${p.set.toLocaleString()} of ${plural(props.uses, "use")}`}>
                 <span className="truncate font-mono" title={p.name}>{p.name}</span>
                 <Track share={p.set / props.uses} />
-                <span className="text-end tabular-nums text-muted-foreground">{p.set.toLocaleString()}</span>
                 <span className="col-span-full flex flex-wrap gap-1.5">
                   {p.values.slice(0, TOP).map((v) => (
                     <ValueChip
                       key={`${v.kind}:${v.label}`}
                       prop={p}
                       value={v}
-                      href={linked ? componentHref(repoId, row.componentId, [["sel", serializeSel([{ prop: p.name, kind: v.kind, label: v.label }])]]) : null}
+                      href={linked && v.kind !== "default" && !v.isDefault ? componentHref(repoId, row.componentId, [["sel", serializeSel([{ prop: p.name, kind: v.kind, label: v.label }])]]) : null}
                     />
                   ))}
                 </span>
@@ -296,47 +300,81 @@ function TopProps({ repoId, row, linked, facts }: { repoId: string; row: Compone
           </ul>
         </section>
       ) : null}
-      {props.unused?.length ? <UnusedProps names={props.unused} /> : null}
+      {showDeclared ? <DeclaredProps key={row.componentId} declared={declared} uses={props.uses} /> : null}
     </>
   );
 }
 
-/** The declared props no use passes, by name: the first few, then how many more. */
-function UnusedProps({ names }: { names: string[] }) {
-  const shown = names.length > UNUSED_SHOWN + 1 ? names.slice(0, UNUSED_SHOWN) : names;
-  const more = names.length - shown.length;
+/** The declared props no use passes, a row for each verdict that has any, or "No uses" for a component with none. */
+function DeclaredProps({ declared, uses }: { declared: DeclaredVerdictLists; uses: number }) {
   return (
-    <section aria-labelledby="details-unused">
-      <ListHead id="details-unused" title="Unused props" more={names.length.toLocaleString()} uses={false} />
-      <ul className="flex flex-wrap gap-1.5" aria-describedby="details-unused-note">
-        {shown.map((name) => (
-          <li key={name}>
-            <Badge variant="outline" className="font-mono font-normal" title={name}>{name}</Badge>
-          </li>
-        ))}
-        {more > 0 ? <li className="self-center text-xs text-muted-foreground">and {more.toLocaleString()} more</li> : null}
-      </ul>
-      <p id="details-unused-note" className="mt-2 text-xs text-muted-foreground">Declared, but no use passes {names.length === 1 ? "it" : "them"}.</p>
+    <section aria-labelledby="details-declared">
+      <ListHead id="details-declared" title="Declared props" more={declared.declaredCount.toLocaleString()} uses={false} />
+      {uses === 0 ? (
+        <p className="text-xs text-muted-foreground">No uses</p>
+      ) : (
+        <dl className="space-y-3 text-sm">
+          <VerdictRow id="details-unused" term="Unused" names={declared.unused} />
+          <VerdictRow id="details-possibly-unused" term="Possibly unused" names={declared.possiblyUnused} />
+        </dl>
+      )}
     </section>
   );
 }
 
-/** One of a prop's values with its uses: `{…}` muted for variables and expressions. */
+/** One verdict's props by name: the first few, then a button that shows the rest. Nothing when it has none. */
+function VerdictRow({ id, term, names }: { id: string; term: string; names: string[] }) {
+  const [open, setOpen] = useState(false);
+  if (names.length === 0) return null;
+  const capped = names.length > UNUSED_SHOWN + 1;
+  const shown = capped && !open ? names.slice(0, UNUSED_SHOWN) : names;
+  return (
+    <div className="space-y-1.5">
+      <dt id={id}>{term}</dt>
+      <dd>
+        <ul aria-labelledby={id} className="flex flex-wrap gap-1.5">
+          {shown.map((name) => (
+            <li key={name} className="min-w-0 max-w-full">
+              <span className={CHIP} title={name}><span className="truncate">{name}</span></span>
+            </li>
+          ))}
+          {capped ? (
+            <li className="flex items-center">
+              <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={cn(LINK, "text-xs text-muted-foreground hover:text-foreground")}>
+                {open ? "Show fewer" : `Show ${(names.length - UNUSED_SHOWN).toLocaleString()} more`}
+              </button>
+            </li>
+          ) : null}
+        </ul>
+      </dd>
+    </div>
+  );
+}
+
+/** How a top value is read aloud: a non-literal default by the variable it names, `expression` for `{…}`. */
+function topValueSpeech(value: TopPropValue): string {
+  if (value.kind === "default") return value.label || "expression";
+  return valueSpeech({ kind: value.kind, label: value.label });
+}
+
+/** One of a prop's values with its uses: `{…}` muted for variables and expressions, and a default, named or literal, marked "default". */
 function ValueChip({ prop, value, href }: { prop: TopProp; value: TopPropValue; href: string | null }) {
-  const label = `${prop.name} ${valueSpeech(value)}, ${plural(value.count, "use")}`;
-  const className = "inline-flex min-h-6 min-w-0 max-w-full items-center rounded-md border bg-secondary px-1.5 font-mono text-xs";
+  const isDefault = value.kind === "default" || value.isDefault === true;
+  const speech = topValueSpeech(value);
+  const label = `${prop.name} ${speech}${isDefault ? ", the default" : ""}, ${plural(value.count, "use")}`;
   const body = (
     <>
-      <span className={cn("min-w-0 truncate", value.kind === "dynamic" && "italic text-muted-foreground")}>{valueLabel(value)}</span>
+      <span className={cn("min-w-0 truncate", value.kind === "dynamic" && "italic text-muted-foreground")}>{topValueLabel(value)}</span>
+      {isDefault ? <span className="ms-1 shrink-0 font-sans text-muted-foreground">default</span> : null}
       <span className="ms-1 shrink-0 tabular-nums text-muted-foreground">{value.count.toLocaleString()}</span>
     </>
   );
   return href ? (
-    <Link href={href} aria-label={label} title={`Opens usage filtered to ${prop.name} ${valueSpeech(value)}`} className={cn(className, "hover:border-muted-foreground/70")}>
+    <Link href={href} aria-label={label} title={`Opens usage filtered to ${prop.name} ${speech}`} className={cn(CHIP, "hover:border-muted-foreground/70")}>
       {body}
     </Link>
   ) : (
-    <span aria-label={label} title={valueLabel(value)} className={className}>{body}</span>
+    <span aria-label={label} title={topValueLabel(value)} className={CHIP}>{body}</span>
   );
 }
 
